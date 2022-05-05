@@ -440,10 +440,14 @@ function VFIO_GRUB {
 
         # temporarily save VGA drivers and hardware IDs of all VGA devices except the current VGA device
         for element_2 in $arr_validVGAindex; do
-            if [[ $element_2 != $element ]]
+
+            if [[ $element_2 != $element ]]; then
+
                 declare -a arr_VGAdriver+=${arr_PCIdriver[$element]}
                 declare -a arr_VGAhwID+=${arr_PCIhwID[$element]}
+
             fi
+
         done
 
         # GRUB command line
@@ -460,7 +464,8 @@ function VFIO_GRUB {
     linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUBline
     echo    'Loading initial ramdisk ...'
     initrd  /boot/initrd.img-$str_rootKernel
-    echo    'Xorg: $str_VGAdev")
+    echo    'Xorg: $str_VGAdev"
+)
 
         # write to file
         echo ${arr_file_1[@]} > $str_dir_1'40_'$str_VGAbusID
@@ -521,37 +526,40 @@ function 02_VFIO_VGA {
 
         else
 
-        echo "Enter input:"
-        IFS=' ' read -r -a arr_input <<< $str_input
+            echo "Enter input:"
+            IFS=' ' read -r -a arr_input <<< $str_input
 
-        # '0' for all
-        if [[ $str_input == "0" ]]; then break; fi  
+            # '0' for all
+            if [[ $str_input == "0" ]]; then break; fi  
 
             for element in $arr_input; do
 
                 for element_2 in $arr_VGAindex; do
 
                     # false match, subtract from old array
-                    if [[ $element != $element_2 ]]; then arr_input-=($element);
+                    if [[ $element != $element_2 ]]; then "${arr_input[@]/$element}"
 
                     # if match, add to new array
                     else arr_validVGAindex+=$element; fi
-
-                    done
 
                 done
 
                 # if new array is valid and old array is empty, continue
                 if [[ ! -z $arr_validVGAindex && -z $arr_input ]]; then break; fi
 
-        done
+            done
 
+        fi
         #
+
         # if new array is empty, prompt error
 
         if [[ -z $arr_validVGAindex ]]; then echo "VFIO_VGA: Invalid input."; fi
 
-        int_count=$int_count+1     
+        # counter
+        echo "VFIO_RAM: int_count: \"$int_count\""
+        int_count=$int_count+1    
+        echo "VFIO_RAM: int_count: \"$int_count\""   
 
     done
 
@@ -585,18 +593,18 @@ function 02_VFIO_RAM {
 
         else
 
-        echo "VFIO_RAM: [Y/n]:"
-        read str_input
+            echo "VFIO_RAM: [Y/n]:"
+            read str_input
 
-        # prompt
-        case $str_input in
+            # prompt
+            case $str_input in
 
-            "Y")
+                "Y")
 
                 echo "VFIO: Creating Hugepages."
                 break;;
 
-            "N")
+                "N")
 
                 echo "VFIO: Skipping."
                 bool_RAM=true
@@ -605,15 +613,17 @@ function 02_VFIO_RAM {
                 break
                 ;;
 
-            *)
+                *)
                 echo "VFIO: Invalid input.";;
 
-        esac
+            esac
 
-        # counter
-        echo "VFIO_RAM: int_count: \"$int_count\""
-        int_count=$int_count+1    
-        echo "VFIO_RAM: int_count: \"$int_count\""
+            # counter
+            echo "VFIO_RAM: int_count: \"$int_count\""
+            int_count=$int_count+1    
+            echo "VFIO_RAM: int_count: \"$int_count\""
+
+        fi
 
     done
 
@@ -638,21 +648,23 @@ function 02_VFIO_RAM {
 
             else
 
-            #echo "VFIO_RAM: Enter the sum of hugepages (sum * $int_hugepageSizeG GiB) (best example: integer multiple of same-size RAM channel/stick): "
-            echo "VFIO_RAM: Enter the sum of hugepages (sum * $int_hugepageSizeG GiB):"
-            read str_input
+                #echo "VFIO_RAM: Enter the sum of hugepages (sum * $int_hugepageSizeG GiB) (best example: integer multiple of same-size RAM channel/stick): "
+                echo "VFIO_RAM: Enter the sum of hugepages (sum * $int_hugepageSizeG GiB):"
+                read str_input
 
-            # default selection
-            int_hugePageSum=1
+                # default selection
+                int_hugePageSum=1
 
-            # validate input
-            if [[ "$str_input" -ge 0 ]] 2>/dev/null; then int_hugePageSum="$str_input";   
-            else echo "VFIO: Invalid input."; fi
+                # validate input
+                if [[ "$str_input" -ge 0 ]] 2>/dev/null; then int_hugePageSum="$str_input";   
+                else echo "VFIO: Invalid input."; fi
 
-            # counter
-            echo "VFIO_RAM: int_count: \"$int_count\""
-            int_count=$int_count+1    
-            echo "VFIO_RAM: int_count: \"$int_count\"" 
+                # counter
+                echo "VFIO_RAM: int_count: \"$int_count\""
+                int_count=$int_count+1    
+                echo "VFIO_RAM: int_count: \"$int_count\""
+
+            fi
 
         done
 
@@ -681,7 +693,7 @@ function 02_VFIO_RAM {
     # final loop: cycle list, save all PCI hardware IDs to an array (same size as before).
     # next function: update config files (/etc/modules, /etc/default/grub)
 
-# Xorg VFIO-PCI Setup TO-DO:
+    # Xorg VFIO-PCI Setup TO-DO:
     # *run as a systemd service
     # first loop: cycle list, save all PCI bus IDs to an array, and save index of VGA devices to an array.
     # final loop: cycle list, stop at first VGA device without VFIO-PCI driver; find the index of the array with all PCI devices with the index of the array of VGA devices; save the VGA bus ID and driver.
