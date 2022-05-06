@@ -9,7 +9,7 @@ IFS=$'\n'      # Change IFS to newline char
 
 function 01_lspci {
 
-    echo "lspci: Start."
+    echo -e "lspci:\t\tStart."
 
     # parameters #
     str_CPUbusID="00:00.0"
@@ -35,8 +35,10 @@ function 01_lspci {
     #
 
     # create log file #
-    str_dir="/var/log/"
+    #str_dir="/var/log/"
     #str_dir="/dev/tmp/"
+    cd ~/
+    str_dir="./"
     str_file_arr_PCIInfo=$str_dir'lspci.log'
     str_file_arr_PCIDriver=$str_dir'lspci-k.log'
     str_file_arr_PCIHWID=$str_dir'lspci-n.log'
@@ -53,7 +55,7 @@ function 01_lspci {
     declare -i int_index=0
 
     # parse list of PCI devices
-    while read str_line; do
+    while read -r str_line; do
 
         if [[ ${str_line:0:7} == "01:00.0" ]]; then bool_parsePCI=true; fi
 
@@ -125,7 +127,7 @@ function 01_lspci {
     declare -i int_index=0
 
     # parse list of PCI devices
-    while read str_line; do
+    while read -r str_line; do
 
         if [[ ${str_line:0:7} == "01:00.0" ]]; then bool_parsePCI=true; fi
 
@@ -197,14 +199,14 @@ function 01_lspci {
     rm $str_file_arr_PCIInfo $str_file_arr_PCIDriver $str_file_arr_PCIHWID
     #
 
-    echo "lspci: End."
+    echo -e "lspci:\t\tEnd."
 
 }
 
 # NOTE: test!
 function 02_VFIO {
 
-    echo "VFIO: Start."
+    echo -e "VFIO:\t\tStart."
 
     # dependencies #
     # bool_RAM #
@@ -252,14 +254,14 @@ function 02_VFIO {
     #
 
     ## prompt ##
-    echo -e "VFIO: You may setup VFIO 'persistently' or through GRUB.\nPersistent includes modifying '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*.\nGRUB includes multiple GRUB options of omitted, single VGA devices (example: omit a given VGA device to boot Xorg from)."
+    echo -e "VFIO:\t\tYou may setup VFIO 'persistently' or through GRUB.\nPersistent includes modifying '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*.\nGRUB includes multiple GRUB options of omitted, single VGA devices (example: omit a given VGA device to boot Xorg from)."
 
     while true; do
 
         # after three tries, continue with default selection
         if [[ $int_count -ge 3 ]]; then
 
-            echo "VFIO: Exceeded max attempts."
+            echo -e "VFIO:\t\tExceeded max attempts."
             # default selection
             str_input="B"
             # reset counter
@@ -267,8 +269,8 @@ function 02_VFIO {
 
         else
 
-            echo "VFIO: ['ETC'/'GRUB'/'both']"
-            read str_input
+            echo -en "VFIO:\t\t['ETC'/'GRUB'/'both']: "
+            read -r str_input
             # string to upper
             str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
         fi        
@@ -295,7 +297,7 @@ function 02_VFIO {
                 break;;
 
         *)
-            echo "VFIO: Invalid input.";;
+            echo -e "VFIO:\t\tInvalid input.";;
 
         esac
 
@@ -305,14 +307,14 @@ function 02_VFIO {
     done
     ##
 
-    echo "VFIO: End."
+    echo -e "VFIO:\t\tEnd."
 
 }
 
 # NOTE: test!
 function VFIO_ETC {
 
-    echo "VFIO_ETC: Start."
+    echo -e "VFIO_ETC:\tStart."
 
     # dependencies #
     # arr_PCIDriver
@@ -334,14 +336,20 @@ function VFIO_ETC {
     #
 
     # directories #
-    str_dir_1="/etc/modprobe.d/"
+    #str_dir_1="/etc/modprobe.d/"
+    cd ~/
+    str_dir_1="./"
     #
 
     # files #
-    str_file_1="/etc/default/grub"
-    str_file_2="/etc/initramfs-tools/modules"
-    str_file_3="/etc/modules"
-    str_file_4="/etc/modprobe.d/vfio.conf"
+    #str_file_1="/etc/default/grub"
+    #str_file_2="/etc/initramfs-tools/modules"
+    #str_file_3="/etc/modules"
+    #str_file_4="/etc/modprobe.d/vfio.conf"
+    str_file_1="0_grub.log"
+    str_file_2="0_initramfs.log"
+    str_file_3="0_modules.log"
+    str_file_4="0_vfio.log"
     #
 
     # GRUB #
@@ -426,14 +434,14 @@ options vfio_pci ids=$str_arr_PCIHWID")
     echo ${str_file_4[@]} > $str_file_4
     #
 
-    echo "VFIO_ETC: End."
+    echo -e "VFIO_ETC:\tEnd."
 
 }
 
 # NOTE: test!
 function VFIO_GRUB {
 
-    echo "VFIO_GRUB: Start."
+    echo -e "VFIO_GRUB:\tStart."
 
     # dependencies #
     # str_GRUBlineRAM #
@@ -515,14 +523,14 @@ function VFIO_GRUB {
 
     done
 
-    echo "VFIO_GRUB: End."
+    echo -e "VFIO_GRUB:\tEnd."
 
 }
 
 # NOTE: test!
 function VFIO_RAM {
 
-    echo "VFIO_RAM: Start."
+    echo -e "VFIO_RAM:\tStart."
 
     # outputs #
     str_GRUBlineRAM=""
@@ -535,36 +543,37 @@ function VFIO_RAM {
     declare -i int_hugePageSum=1
     #
 
-    echo -e "VFIO_RAM: Do you wish to enable Hugepages?\nHugepages is a feature which statically allocates system RAM to page-files, which may be used by Virtual machines.\nFor example, performance benefits include reduced/minimal memory latency."
+    echo -e "VFIO_RAM:\tDo you wish to enable Hugepages?\nHugepages is a feature which statically allocates system RAM to page-files, which may be used by Virtual machines.\nFor example, performance benefits include reduced/minimal memory latency."
 
     # after three tries, continue with default selection
     while true; do
 
         if [[ $int_count -ge 3 ]]; then
 
-            echo "VFIO_RAM: Exceeded max attempts."
+            echo -e "VFIO_RAM:\tExceeded max attempts."
 
             # default selection
             str_input="N"
-            echo "VFIO_RAM: str_input: \"$str_input\""
+            echo -e "VFIO_RAM:\tstr_input: \"$str_input\""
 
         else
 
-            echo "VFIO_RAM: [Y/n]:"
-            read str_input
+            echo -en "VFIO_RAM:\t[Y/n]: "
+            read -r str_input
+            str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
 
             # prompt
             case $str_input in
 
                 "Y")
 
-                echo "VFIO_RAM: Creating Hugepages."
+                echo -e "VFIO_RAM:\tCreating Hugepages."
+                bool_RAM=true
                 break;;
 
                 "N")
 
-                echo "VFIO_RAM: Skipping."
-                bool_RAM=true
+                echo -e "VFIO_RAM:\tSkipping."
 
                 # reset counter
                 int_count=0
@@ -572,14 +581,14 @@ function VFIO_RAM {
                 ;;
 
                 *)
-                echo "VFIO_RAM: Invalid input.";;
+                echo -e "VFIO_RAM:\tInvalid input.";;
 
             esac
 
             # counter
-            echo "VFIO_RAM: int_count: \"$int_count\""
+            echo -e "VFIO_RAM:\tint_count: \"$int_count\""
             int_count=$int_count+1    
-            echo "VFIO_RAM: int_count: \"$int_count\""
+            echo -e "VFIO_RAM:\tint_count: \"$int_count\""
 
         fi
 
@@ -590,16 +599,28 @@ function VFIO_RAM {
         # reset counter
         declare -i int_count=0 
 
-        #echo "VFIO_RAM: Enter the size (integer in Gigabytes) of a single hugepage (best example: size of one same-size RAM channel/stick): "
-        echo "VFIO_RAM: System RAM sizes in Kilobytes. Hint: 1 GiB == 1,024 MiB == 1,048,576 KiB"
-        echo `free`
+        # default selection
+        int_hugePageSum=1
+
+        # find total RAM #
+        str_sumMemK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`
+        declare -i int_sumMemK=$str_sumMemK
+        declare -i int_maxMemG=($int_sumMemK/1024/1024)
+        int_maxMemG=($int_maxMemG-4)
+        #
+
+        # prompt #
+        #echo -e "VFIO_RAM:\tEnter the size (integer in Gigabytes) of a single hugepage (best example: size of one same-size RAM channel/stick): "
+        echo -e "VFIO_RAM:\tSystem RAM size in Kilobytes. Hint: 1 G == 1,024 M == 1,048,576 K"
+        free
+        #
 
         # after three tries, continue with default selection
         while true; do
 
             if [[ $int_count -ge 3 ]]; then
 
-                echo "VFIO_RAM: Exceeded max attempts."
+                echo -e "VFIO_RAM:\tExceeded max attempts. Value set to $int_hugePageSum G."
 
                 # reset counter
                 int_count=0
@@ -607,44 +628,45 @@ function VFIO_RAM {
 
             else
 
-                #echo "VFIO_RAM: Enter the sum of hugepages (sum * $int_hugepageSizeG GiB) (best example: integer multiple of same-size RAM channel/stick): "
-                echo "VFIO_RAM: Enter the sum of hugepages (sum * $int_hugepageSizeG GiB):"
-                read str_input
+                #echo -e "VFIO_RAM:\tEnter the sum of hugepages (sum * $int_hugepageSizeG GiB) (best example: integer multiple of same-size RAM channel/stick): "
+                echo -en "VFIO_RAM:\tEnter the number (integer) of hugepages ( sum == $int_hugepageSizeG G * number_of_hugepages ): "
+                read -r str_input
 
-                # default selection
-                int_hugePageSum=1
+                # validate input #
+                str_NaN='^[0-9]+$'
 
-                # validate input
-                if [[ "$str_input" -ge 0 ]] 2>/dev/null; then int_hugePageSum="$str_input";   
-                else echo "VFIO_RAM: Invalid input."; fi
+                if [[ $str_input =~ "$str_NaN" || "$str_input" -lt 1 || "$str_input" -ge $int_maxMemG ]]; then echo -e "VFIO_RAM:\tInvalid input. Enter a value between 1 to $int_maxMemG G." >&2
+
+                else int_hugePageSum="$str_input"; fi
+                #
 
                 # counter
-                echo "VFIO_RAM: int_count: \"$int_count\""
                 int_count=$int_count+1    
-                echo "VFIO_RAM: int_count: \"$int_count\""
 
             fi
 
         done
 
         # reset line if empty
-        if [[ -z $str_GRUBlineRAM ]]; then $str_GRUBlineRAM=""
+        if [[ -z $str_GRUBlineRAM ]]; then str_GRUBlineRAM="";
 
         #else str_GRUBlineRAM="default_hugepagesz=1G hugepagesz=$int_hugepageSizeG hugepages=$int_hugepageSum"; fi
         else str_GRUBlineRAM="default_hugepagesz=1G hugepagesz=$int_hugepageSizeG hugepages=$int_hugepageSum"; fi
 
     fi
 
-    echo "VFIO_RAM: End."
+    echo -e "VFIO_RAM:\tEnd."
 
 }
 
 
 # methods end #
 
+# NOTE: add zram to setup? 
+
 # main start #
 
-echo "Main: Start."
+echo -e "Main:\t\tStart."
 
 # dependencies #
 declare -a arr_PCIBusID    
@@ -669,7 +691,7 @@ declare -a arr_VGAVendorIndex
     IFS=$SAVEIFS   # Restore original IFS
 #
 
-echo "Main: End."
+echo -e "Main:\t\tEnd."
 
 exit 0
 
