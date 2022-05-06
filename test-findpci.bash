@@ -190,7 +190,7 @@ function 01_lspci {
     ##
 
     ## run debug ##
-    VFIO_PCI_DEBUG
+    #VFIO_PCI_DEBUG
     ##
 
     # remove log files #
@@ -225,24 +225,24 @@ function 02_VFIO {
 
     # outputs #
     # array of PCI drivers excluding VGA drivers
-    declare -a arr_PCIdriver=""
+    declare -a arr_PCIDriver=""
 
     # array of PCI hw IDs excluding VGA hardware IDs
-    str_arr_PCIhwID=""
+    str_arr_PCIHWID=""
 
     # add PCI driver and hardware IDs to strings for VFIO
-    for (( int_index=0; int_index<$[${#arr_PCIdriver[@]}]; int_index++ )); do
+    for (( int_index=0; int_index<$[${#arr_PCIDriver[@]}]; int_index++ )); do
 
-        element=${arr_PCIdriver[$int_index]}
+        element=${arr_PCIDriver[$int_index]}
 
         for element_2 in $arr_VGAindex; do
 
             if [[ $element_2 != $int_index ]]; then
 
-                str_PCIdriver_softdep+=("#softdep $element pre: vfio vfio-pci" "$element")
+                str_PCIDriver_softdep+=("#softdep $element pre: vfio vfio-pci" "$element")
 
-                if [[ $int_index -eq "${#arr_PCIdriver[@]}-1" ]]; then str_arr_PCIhwID+=("$element");
-                else str_arr_PCIhwID+=("$element,"); fi
+                if [[ $int_index -eq "${#arr_PCIDriver[@]}-1" ]]; then str_arr_PCIHWID+=("$element");
+                else str_arr_PCIHWID+=("$element,"); fi
 
             fi
 
@@ -315,10 +315,9 @@ function VFIO_ETC {
     echo "VFIO_ETC: Start."
 
     # dependencies #
-    # arr_PCIdriver #
-    # str_arr_PCIhwID #
-    # arr_validVGAindex #
-    # str_GRUBlineRAM #
+    # arr_PCIDriver
+    # str_arr_PCIHWID
+    # str_GRUBlineRAM
     # arr_PCIBusID    
     # arr_PCIHWID
     # arr_PCIDriver
@@ -346,7 +345,7 @@ function VFIO_ETC {
     #
 
     # GRUB #
-    str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$str_arr_PCIdriver vfio_pci.ids=$str_arr_PCIhwID"
+    str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$str_arr_PCIDriver vfio_pci.ids=$str_arr_PCIHWID"
     echo -e \n"#"\n${str_GRUBline} >> $str_file_1
     #
 
@@ -369,15 +368,15 @@ function VFIO_ETC {
 # NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
 
 # Soft dependencies and PCI kernel drivers:
-$str_PCIdriver_softdep
+$str_PCIDriver_softdep
 
 vfio
 vfio_iommu_type1
 vfio_virqfd
 
 # GRUB command line and PCI hardware IDs:
-options vfio_pci ids=$str_arr_PCIhwID
-vfio_pci ids=$str_arr_PCIhwID
+options vfio_pci ids=$str_arr_PCIHWID
+vfio_pci ids=$str_arr_PCIHWID
 vfio_pci"
 )
     echo ${str_file_2[@]} > $str_file_2
@@ -405,13 +404,13 @@ apm power_off=1
 # In terminal, execute \"lspci -nnk\".
 
 # GRUB kernel parameters:
-vfio_pci ids=$str_arr_PCIhwID"
+vfio_pci ids=$str_arr_PCIHWID"
 )
     echo ${arr_file_3[@]} > $str_file_3
     #
 
     # modprobe.d/blacklists #
-    for $element in $arr_PCIdriver[@]; do
+    for $element in $arr_PCIDriver[@]; do
         echo "blacklist $element" > $str_dir_1$element'.conf'
     done
     #
@@ -420,10 +419,10 @@ vfio_pci ids=$str_arr_PCIhwID"
     declare -a arr_file_4=(
 "# NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
 # Soft dependencies:
-$str_PCIdriver_softdep
+$str_PCIDriver_softdep
 
 # PCI hardware IDs:
-options vfio_pci ids=$str_arr_PCIhwID")
+options vfio_pci ids=$str_arr_PCIHWID")
     echo ${str_file_4[@]} > $str_file_4
     #
 
@@ -450,13 +449,11 @@ function VFIO_GRUB {
 
     # active kernel #
     str_rootKernel=`uname -r`
-    #echo "FindRoot: str_rootKernel: \"$str_rootKernel\""
     #
 
     # root dev info #
     str_rootDiskInfo=`df -hT | grep /$`
     str_rootDev=${str_rootDiskInfo:5:4}   # example "sda1"
-    #echo "FindRoot: str_rootDev: \"$str_rootDev\""
     #
 
     # root UUID #
@@ -466,8 +463,6 @@ function VFIO_GRUB {
 
     # find UUID #
     for element in ${arr_str_rootBlkInfo[@]}; do
-
-        #echo "FindRoot: element: \"$element\""
 
         # root UUID match
         if [[ $bool_nextElement == true ]]; then str_rootUUID=$element; break
@@ -480,27 +475,27 @@ function VFIO_GRUB {
     #
 
     # create individual VGA device GRUB options
-    for element in $arr_validVGAindex; do
+    for element in $arr_VGAIndex; do
 
         # save current VGA bus ID
-        str_VGAbusID=${arr_PCIbusID[$element]}
+        str_VGABusID=${arr_PCIbusID[$element]}
 
         # temporarily save VGA drivers and hardware IDs of all VGA devices except the current VGA device
-        for element_2 in $arr_validVGAindex; do
+        for element_2 in $arr_VGAIndex; do
 
             if [[ $element_2 != $element ]]; then
 
-                declare -a arr_VGAdriver+=${arr_PCIdriver[$element]}
-                declare -a arr_VGAhwID+=${arr_PCIhwID[$element]}
+                declare -a arr_VGADriver+=${arr_PCIDriver[$element]}
+                declare -a arr_VGAHWID+=${arr_PCIHWID[$element]}
 
             fi
 
         done
 
         # GRUB command line
-        str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$arr_VGAdriver,$str_arr_PCIdriver vfio_pci.ids=$arr_VGAhwID,$str_arr_PCIhwID"
+        str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$arr_VGADriver,$str_arr_PCIDriver vfio_pci.ids=$arr_VGAHWID,$str_arr_PCIHWID"
 
-        str_VGAdev=`lspci | grep $str_VGAbusID`
+        str_VGAdev=`lspci | grep $str_VGABusID`
 
         # GRUB custom menu
         declare -a arr_dir_1_file=(
@@ -516,7 +511,7 @@ function VFIO_GRUB {
         #
 
         # write to file
-        echo ${arr_file_1[@]} > $str_dir_1'40_'$str_VGAbusID
+        echo ${arr_file_1[@]} > $str_dir_1'40_'$str_VGABusID
 
     done
 
@@ -533,7 +528,7 @@ function VFIO_RAM {
     str_GRUBlineRAM=""
     #
 
-    # local parameters #
+    # parameters #
     bool_RAM=false
     declare -i int_count=0
     declare -i int_hugepageSizeG=1
@@ -605,6 +600,7 @@ function VFIO_RAM {
             if [[ $int_count -ge 3 ]]; then
 
                 echo "VFIO_RAM: Exceeded max attempts."
+
                 # reset counter
                 int_count=0
                 break
@@ -667,7 +663,7 @@ declare -a arr_VGAVendorIndex
 #
 
 01_lspci
-#02_VFIO
+02_VFIO
 
 # reset IFS #
     IFS=$SAVEIFS   # Restore original IFS
