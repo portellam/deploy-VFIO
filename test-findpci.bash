@@ -211,7 +211,7 @@ function 02_VFIO {
     # dependencies #
     # bool_RAM #
     # int_count #
-    # int_hugepageSizeG #
+    # int_hugePageSizeG #
     # int_hugePageSum #
     #
 
@@ -527,10 +527,10 @@ function VFIO_GRUB {
 
 }
 
-# NOTE: test!
+# NOTE: works!
 function VFIO_RAM {
 
-    echo -e "\nVFIO_RAM:\tStart."
+    #echo -e "\nVFIO_RAM:\tStart."
 
     # outputs #
     str_GRUBlineRAM=""
@@ -539,7 +539,7 @@ function VFIO_RAM {
     # parameters #
     bool_RAM=false
     declare -i int_count=0
-    declare -i int_hugepageSizeG=1
+    declare -i int_hugePageSizeG=1
     declare -i int_hugePageSum=1
     #
 
@@ -598,7 +598,6 @@ function VFIO_RAM {
     declare -i int_sumMemK=$str_sumMemK
     declare -i int_maxMemG=($int_sumMemK/1024/1024)
     int_maxMemG=($int_maxMemG-4)
-    int_maxMemG=1
     #
 
     # skip if max RAM is too little #
@@ -686,8 +685,8 @@ function VFIO_RAM {
 
             else
 
-                #echo -e "VFIO_RAM:\tEnter the sum of hugepages (sum * $int_hugepageSizeG GiB) (best example: integer multiple of same-size RAM channel/stick): "
-                echo -en "VFIO_RAM:\tEnter the number (integer) of hugepages ( sum == $int_hugepageSizeG G * number_of_hugepages ): "
+                #echo -e "VFIO_RAM:\tEnter the sum of hugepages (sum * $int_hugePageSizeG GiB) (best example: integer multiple of same-size RAM channel/stick): "
+                echo -en "VFIO_RAM:\tEnter the number (integer) of hugepages ( sum == "$int_hugePageSizeG"G * number_of_hugepages ): "
                 read -r str_input
 
                 # validate input #
@@ -695,7 +694,12 @@ function VFIO_RAM {
 
                 if [[ $str_input =~ "$str_NaN" || "$str_input" -lt 1 || "$str_input" -ge $int_maxMemG ]]; then echo -e "VFIO_RAM:\tInvalid input. Enter a value between 1 to $int_maxMemG G." >&2
 
-                else int_hugePageSum="$str_input"; fi
+                else
+                    
+                    int_hugePageSum="$str_input"
+                    break
+                    
+                fi
                 #
 
                 # counter
@@ -706,14 +710,14 @@ function VFIO_RAM {
         done
 
         # reset line if empty
-        if [[ -z $str_GRUBlineRAM ]]; then str_GRUBlineRAM="";
+        if [[ ! -z $str_GRUBlineRAM ]]; then str_GRUBlineRAM="";
 
-        #else str_GRUBlineRAM="default_hugepagesz=1G hugepagesz=$int_hugepageSizeG hugepages=$int_hugepageSum"; fi
-        else str_GRUBlineRAM="default_hugepagesz=1G hugepagesz=$int_hugepageSizeG hugepages=$int_hugepageSum"; fi
+        #else str_GRUBlineRAM="default_hugepagesz=1G hugepagesz=$int_hugePageSizeG hugepages=$int_hugepageSum"; fi
+        else str_GRUBlineRAM="default_hugepagesz="$int_hugePageSizeG"G hugepagesz=$int_hugePageSum hugepages=$int_hugePageSum"; fi
 
     fi
 
-    echo -e "VFIO_RAM:\tEnd."
+    #echo -e "VFIO_RAM:\tEnd."
 
 }
 
@@ -723,7 +727,7 @@ function VFIO_RAM {
 
 # main start #
 
-echo -e "Main:\t\tStart."
+#echo -e "Main:\t\tStart."
 
 # dependencies #
 declare -a arr_PCIBusID    
@@ -748,7 +752,7 @@ declare -a arr_VGAVendorIndex
     IFS=$SAVEIFS   # Restore original IFS
 #
 
-echo -e "Main:\t\tEnd."
+#echo -e "Main:\t\tEnd."
 
 exit 0
 
