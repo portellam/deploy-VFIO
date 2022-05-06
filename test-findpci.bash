@@ -9,7 +9,7 @@ IFS=$'\n'      # Change IFS to newline char
 
 function 01_lspci {
 
-    #echo -e "\nlspci:\t\tStart."
+    #echo -e "lspci:\t\tStart."
 
     # parameters #
     str_CPUbusID="00:00.0"
@@ -574,11 +574,7 @@ function VFIO_RAM {
                 "N")
 
                 echo -e "VFIO_RAM:\tSkipping."
-
-                # reset counter
-                int_count=0
-                break
-                ;;
+                break;;
 
                 *)
                 echo -e "VFIO_RAM:\tInvalid input.";;
@@ -594,20 +590,82 @@ function VFIO_RAM {
 
     done
 
+    # default selection
+    int_hugePageSum=1
+
+    # find total RAM #
+    str_sumMemK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`
+    declare -i int_sumMemK=$str_sumMemK
+    declare -i int_maxMemG=($int_sumMemK/1024/1024)
+    int_maxMemG=($int_maxMemG-4)
+    int_maxMemG=1
+    #
+
+    # skip if max RAM is too little #
+    if [[ $int_maxMemG -le 1 ]]; then
+        
+        echo -e "VFIO_RAM:\tSystem RAM is too limited to create hugepages. Skipping."
+        bool_RAM=false    
+            
+    fi
+    #
+
+    # warn if max RAM may be too little # 
+    if [[ $int_maxMemG -le 4 && $int_maxMemG -gt 1 ]]; then
+
+        echo -e "VFIO_RAM:\tSystem RAM may be too limited to create hugepages. Continue?"
+
+        while true; do
+
+            if [[ $int_count -ge 3 ]]; then
+
+                echo -e "VFIO_RAM:\tExceeded max attempts."
+
+                # default selection
+                str_input="N"
+                echo -e "VFIO_RAM:\tstr_input: \"$str_input\""
+
+            else
+
+                echo -en "VFIO_RAM:\t[Y/n]: "
+                read -r str_input
+                str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
+
+                # prompt
+                case $str_input in
+
+                    "Y")
+
+                    echo -e "VFIO_RAM:\tCreating Hugepages."
+                    break;;
+
+                    "N")
+
+                    echo -e "VFIO_RAM:\tSkipping."
+                    bool_RAM=false
+                    break;;
+
+                    *)
+                    echo -e "VFIO_RAM:\tInvalid input.";;
+
+                esac
+
+                # counter
+                echo -e "VFIO_RAM:\tint_count: \"$int_count\""
+                int_count=$int_count+1    
+                echo -e "VFIO_RAM:\tint_count: \"$int_count\""
+
+            fi
+
+        done
+
+    fi
+    #
+
     if [[ $bool_RAM == true ]]; then
 
         # reset counter
         declare -i int_count=0 
-
-        # default selection
-        int_hugePageSum=1
-
-        # find total RAM #
-        str_sumMemK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`
-        declare -i int_sumMemK=$str_sumMemK
-        declare -i int_maxMemG=($int_sumMemK/1024/1024)
-        int_maxMemG=($int_maxMemG-4)
-        #
 
         # prompt #
         #echo -e "VFIO_RAM:\tEnter the size (integer in Gigabytes) of a single hugepage (best example: size of one same-size RAM channel/stick): "
@@ -659,14 +717,13 @@ function VFIO_RAM {
 
 }
 
-
 # methods end #
 
 # NOTE: add zram to setup? 
 
 # main start #
 
-echo -e "\nMain:\t\tStart."
+echo -e "Main:\t\tStart."
 
 # dependencies #
 declare -a arr_PCIBusID    
