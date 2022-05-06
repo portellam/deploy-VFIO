@@ -7,9 +7,9 @@ IFS=$'\n'      # Change IFS to newline char
 
 # methods start #
 
-function 01_VFIO_PCI {
+function 01_lspci {
 
-    echo "VFIO_PCI: Start."
+    echo "lspci: Start."
 
     # parameters #
     str_CPUbusID="00:00.0"
@@ -189,15 +189,341 @@ function 01_VFIO_PCI {
     }
     ##
 
+    ## run debug ##
     VFIO_PCI_DEBUG
+    ##
 
     # remove log files #
     rm $str_file_arr_PCIInfo $str_file_arr_PCIDriver $str_file_arr_PCIHWID
     #
 
-    echo "VFIO_PCI: End."
+    echo "lspci: End."
 
 }
+
+# NOTE: test!
+#function 02_VFIO {}
+
+# NOTE: test!
+function VFIO_ETC {
+
+    echo "VFIO_ETC: Start."
+
+    # dependencies #
+    # arr_PCIdriver #
+    # str_arr_PCIhwID #
+    # arr_validVGAindex #
+    # str_GRUBlineRAM #
+
+    # directories #
+    str_dir_1="/etc/modprobe.d/"
+    #
+
+    # files #
+    str_file_1="/etc/default/grub"
+    str_file_2="/etc/initramfs-tools/modules"
+    str_file_3="/etc/modules"
+    str_file_4="/etc/modprobe.d/vfio.conf"
+    #
+
+    # GRUB #
+    str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$str_arr_PCIdriver vfio_pci.ids=$str_arr_PCIhwID"
+    echo \n"#"\n${str_GRUBline} >> $str_file_1
+    #
+
+    # initramfs-tools #
+    declare -a str_file_2=(
+"# List of modules that you want to include in your initramfs.
+# They will be loaded at boot time in the order below.
+#
+# Syntax:  module_name [args ...]
+#
+# You must run update-initramfs(8) to effect this change.
+#
+# Examples:
+#
+# raid1
+# sd_mod
+#
+# NOTE: GRUB command line is an easier and cleaner method if vfio-pci grabs all hardware.
+# Example: Reboot hypervisor (Linux) to swap host graphics (Intel, AMD, NVIDIA) by use-case (AMD for Win XP, NVIDIA for Win 10).
+# NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
+
+# Soft dependencies and PCI kernel drivers:
+$str_PCIdriver_softdep
+
+vfio
+vfio_iommu_type1
+vfio_virqfd
+
+# GRUB command line and PCI hardware IDs:
+options vfio_pci ids=$str_arr_PCIhwID
+vfio_pci ids=$str_arr_PCIhwID
+vfio_pci"
+)
+    echo ${str_file_2[@]} > $str_file_2
+    #
+
+    # modules #
+    declare -a arr_file_3=(
+"# /etc/modules: kernel modules to load at boot time.
+#
+# This file contains the names of kernel modules that should be loaded
+# at boot time, one per line. Lines beginning with \"#\" are ignored.
+#
+# NOTE: GRUB command line is an easier and cleaner method if vfio-pci grabs all hardware.
+# Example: Reboot hypervisor (Linux) to swap host graphics (Intel, AMD, NVIDIA) by use-case (AMD for Win XP, NVIDIA for Win 10).
+# NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
+#
+vfio
+vfio_iommu_type1
+vfio_pci
+vfio_virqfd
+kvm
+kvm_intel
+apm power_off=1
+
+# In terminal, execute \"lspci -nnk\".
+
+# GRUB kernel parameters:
+vfio_pci ids=$str_arr_PCIhwID"
+)
+    echo ${arr_file_3[@]} > $str_file_3
+    #
+
+    # modprobe.d/blacklists #
+    for $element in $arr_PCIdriver[@]; do
+        echo "blacklist $element" > $str_dir_1$element'.conf'
+    done
+    #
+
+    # modprobe.d/vfio.conf #
+    declare -a arr_file_4=(
+"# NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
+# Soft dependencies:
+$str_PCIdriver_softdep
+
+# PCI hardware IDs:
+options vfio_pci ids=$str_arr_PCIhwID")
+    echo ${str_file_4[@]} > $str_file_4
+    #
+
+    echo "VFIO_ETC: End."
+
+}
+
+# NOTE: test!
+function VFIO_GRUB {
+
+    echo "VFIO_GRUB: Start."
+
+    # dependencies #
+    # str_GRUBlineRAM #
+    #
+
+    # grub menu entry
+    str_GRUBtitle="Debian "`uname -o`", with"`uname -r`
+    #
+
+    # set directory
+    str_dir_1="/etc/grub.d/"
+    #
+
+    # active kernel #
+    str_rootKernel=`uname -r`
+    #echo "FindRoot: str_rootKernel: \"$str_rootKernel\""
+    #
+
+    # root dev info #
+    str_rootDiskInfo=`df -hT | grep /$`
+    str_rootDev=${str_rootDiskInfo:5:4}   # example "sda1"
+    #echo "FindRoot: str_rootDev: \"$str_rootDev\""
+    #
+
+    # root UUID #
+    str_rootUUID=""
+    declare -a arr_str_rootBlkInfo+=( `lsblk -o NAME,UUID` )
+    #
+
+    # find UUID #
+    for element in ${arr_str_rootBlkInfo[@]}; do
+
+        #echo "FindRoot: element: \"$element\""
+
+        # root UUID match
+        if [[ $bool_nextElement == true ]]; then str_rootUUID=$element; break
+        else bool_nextElement=false; fi
+
+        # root dev match
+        if [[ $element == *$str_rootDev* ]]; then bool_nextElement=true; fi     
+
+    done
+    #
+
+    # create individual VGA device GRUB options
+    for element in $arr_validVGAindex; do
+
+        # save current VGA bus ID
+        str_VGAbusID=${arr_PCIbusID[$element]}
+
+        # temporarily save VGA drivers and hardware IDs of all VGA devices except the current VGA device
+        for element_2 in $arr_validVGAindex; do
+
+            if [[ $element_2 != $element ]]; then
+
+                declare -a arr_VGAdriver+=${arr_PCIdriver[$element]}
+                declare -a arr_VGAhwID+=${arr_PCIhwID[$element]}
+
+            fi
+
+        done
+
+        # GRUB command line
+        str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$arr_VGAdriver,$str_arr_PCIdriver vfio_pci.ids=$arr_VGAhwID,$str_arr_PCIhwID"
+
+        str_VGAdev=`lspci | grep $str_VGAbusID`
+
+        # GRUB custom menu
+        declare -a arr_dir_1_file=(
+"menuentry '$str_GRUBtitle (Xorg: $str_VGAdev)' {
+    insmod gzio
+    set root='/dev/$str_rootDev'
+    echo    'Loading Linux $str_rootKernel ...'
+    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUBline
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-$str_rootKernel
+    echo    'Xorg: $str_VGAdev"
+)
+        #
+
+        # write to file
+        echo ${arr_file_1[@]} > $str_dir_1'40_'$str_VGAbusID
+
+    done
+
+    echo "VFIO_GRUB: End."
+
+}
+
+# NOTE: test!
+function VFIO_RAM {
+
+    echo "VFIO_RAM: Start."
+
+    # outputs #
+    str_GRUBlineRAM=""
+    #
+
+    # local parameters #
+    bool_RAM=false
+    declare -i int_count=0
+    declare -i int_hugepageSizeG=1
+    declare -i int_hugePageSum=1
+    #
+
+    echo -e "VFIO_RAM: Do you wish to enable Hugepages?\nHugepages is a feature which statically allocates system RAM to page-files, which may be used by Virtual machines.\nFor example, performance benefits include reduced/minimal memory latency."
+
+    # after three tries, continue with default selection
+    while true; do
+
+        if [[ $int_count -ge 3 ]]; then
+
+            echo "VFIO_RAM: Exceeded max attempts."
+
+            # default selection
+            str_input="N"
+            echo "VFIO_RAM: str_input: \"$str_input\""
+
+        else
+
+            echo "VFIO_RAM: [Y/n]:"
+            read str_input
+
+            # prompt
+            case $str_input in
+
+                "Y")
+
+                echo "VFIO: Creating Hugepages."
+                break;;
+
+                "N")
+
+                echo "VFIO: Skipping."
+                bool_RAM=true
+
+                # reset counter
+                int_count=0
+                break
+                ;;
+
+                *)
+                echo "VFIO: Invalid input.";;
+
+            esac
+
+            # counter
+            echo "VFIO_RAM: int_count: \"$int_count\""
+            int_count=$int_count+1    
+            echo "VFIO_RAM: int_count: \"$int_count\""
+
+        fi
+
+    done
+
+    if [[ $bool_RAM == true ]]; then
+
+        # reset counter
+        declare -i int_count=0 
+
+        #echo "VFIO_RAM: Enter the size (integer in Gigabytes) of a single hugepage (best example: size of one same-size RAM channel/stick): "
+        echo "VFIO_RAM: System RAM sizes in Kilobytes. Hint: 1 GiB == 1,024 MiB == 1,048,576 KiB"
+        echo `free`
+
+        # after three tries, continue with default selection
+        while true; do
+
+            if [[ $int_count -ge 3 ]]; then
+
+                echo "VFIO_RAM: Exceeded max attempts."
+                # reset counter
+                int_count=0
+                break
+
+            else
+
+                #echo "VFIO_RAM: Enter the sum of hugepages (sum * $int_hugepageSizeG GiB) (best example: integer multiple of same-size RAM channel/stick): "
+                echo "VFIO_RAM: Enter the sum of hugepages (sum * $int_hugepageSizeG GiB):"
+                read str_input
+
+                # default selection
+                int_hugePageSum=1
+
+                # validate input
+                if [[ "$str_input" -ge 0 ]] 2>/dev/null; then int_hugePageSum="$str_input";   
+                else echo "VFIO: Invalid input."; fi
+
+                # counter
+                echo "VFIO_RAM: int_count: \"$int_count\""
+                int_count=$int_count+1    
+                echo "VFIO_RAM: int_count: \"$int_count\""
+
+            fi
+
+        done
+
+        # reset line if empty
+        if [[ -z $str_GRUBlineRAM ]]; then $str_GRUBlineRAM=""
+
+        #else str_GRUBlineRAM="default_hugepagesz=1G hugepagesz=$int_hugepageSizeG hugepages=$int_hugepageSum"; fi
+        else str_GRUBlineRAM="default_hugepagesz=1G hugepagesz=$int_hugepageSizeG hugepages=$int_hugepageSum"; fi
+
+    fi
+
+    echo "VFIO_RAM: End."
+
+}
+
 
 # methods end #
 
@@ -205,7 +531,25 @@ function 01_VFIO_PCI {
 
 echo "Main: Start."
 
-01_VFIO_PCI
+# dependencies #
+declare -a arr_PCIBusID    
+declare -a arr_PCIHWID
+declare -a arr_PCIDriver
+declare -a arr_PCIIndex
+declare -a arr_PCIInfo
+declare -a arr_VGABusID
+declare -a arr_VGADriver
+declare -a arr_VGAHWID
+declare -a arr_VGAIndex
+declare -a arr_VGAVendorBusID
+declare -a arr_VGAVendorDriver
+declare -a arr_VGAVendorHWID
+declare -a arr_VGAVendorIndex
+#
+
+#01_lspci
+#02_VFIO
+VFIO_RAM
 
 # reset IFS #
     IFS=$SAVEIFS   # Restore original IFS
