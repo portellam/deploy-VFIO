@@ -1,126 +1,147 @@
 #!/bin/bash
 
-    ### set IFS ##
-    SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
-    IFS=$'\n'      # Change IFS to newline char
-    ###
+# set IFS #
+SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
+IFS=$'\n'      # Change IFS to newline char
+#
 
+# methods start #
+
+function 01_VFIO_PCI {
+
+    echo "VFIO_PCI: Start."
+
+    # parameters #
     str_CPUbusID="00:00.0"
-    declare -a arr_PCIdevBusID
-    declare -a arr_PCIdevDriver
-    declare -a arr_PCIdevHWID
-    declare -a arr_PCIdevInfo
-    declare -a arr_PCIdevIndex
-    declare -a arr_VGAdevIndex
+    str_thisPCIBusID=""
+    str_prevPCIBusID=""
+    str_VGAVendor=""
+    #
+
+    # outputs #
+    declare -a arr_PCIBusID    
+    declare -a arr_PCIHWID
+    declare -a arr_PCIDriver
+    declare -a arr_PCIIndex
+    declare -a arr_PCIInfo
+    declare -a arr_VGABusID
+    declare -a arr_VGADriver
+    declare -a arr_VGAHWID
+    declare -a arr_VGAIndex
+    declare -a arr_VGAVendorBusID
+    declare -a arr_VGAVendorDriver
+    declare -a arr_VGAVendorHWID
+    declare -a arr_VGAVendorIndex
+    #
 
     # create log file #
     str_dir="/var/log/"
-    str_file_arr_PCIinfo=$str_dir'str_file_arr_PCIinfo.log'
-    str_file_arr_PCIdriver=$str_dir'arr_PCIdriver.log'
-    str_file_arr_PCIHWID=$str_dir'arr_PCIhwID.log'
-    #
-
-    lspci | grep ":00." > $str_file_arr_PCIinfo
-    lspci -k > $str_file_arr_PCIdriver
+    #str_dir="/dev/tmp/"
+    str_file_arr_PCIInfo=$str_dir'lspci.log'
+    str_file_arr_PCIDriver=$str_dir'lspci-k.log'
+    str_file_arr_PCIHWID=$str_dir'lspci-n.log'
+    lspci | grep ":00." > $str_file_arr_PCIInfo
+    lspci -k > $str_file_arr_PCIDriver
     lspci -n | grep ":00." > $str_file_arr_PCIHWID
-
-    # test loop #
-    # NOTE: works
-    #declare -i i=0
-    #while read str_line; do
-        #if [[ $str_line == *":00."* && $str_line != *"00:00.0"* ]]; then 
-            #echo -e $i":\t'"$str_line
-        #fi
-        #((i++))
-    #done < $str_file_arr_PCIinfo
     #
 
-    # find external PCI device Index values #
-    # from here you can find the Hardware ID, using the same structure loop #
+    # find external PCI device Index values, Bus ID, and drivers #
+    
+    bool_parsePCI=false
+    bool_parseVGA=false
+    bool_parseVGAVendor=false
+    declare -i int_index=0
+
     # parse list of PCI devices
-    bool1=false
-    bool_VGA=false
-    bool_VGA_SND=false
-    declare -i i=0
     while read str_line; do
 
-        #echo $str_line
+        if [[ ${str_line:0:7} == "01:00.0" ]]; then bool_parsePCI=true; fi
 
-        if [[ ${str_line:0:7} == "01:00.0" ]]; then
-            bool1=true;
-        fi
+        if [[ $bool_parsePCI == true ]]; then
 
-        if $bool1 == true; then
-
+            # line includes PCI bus ID
             if [[ $str_line != *"Subsystem: "* && $str_line != *"Kernel driver in use: "* && $str_line != *"Kernel modules: "* ]]; then
             
-                ((i++))     # increment only if Bus ID is found
-                str_thisPCIdevBusID=(${str_line:0:8})
-                arr_PCIdevInfo+=($str_line)     # add line to list
-                arr_PCIdevBusID+=($str_thisPCIdevBusID)   # add Bus ID index to list
+                ((int_index++))                     # increment only if Bus ID is found
+                arr_PCIInfo+=($str_line)            # add line to list
+                str_thisPCIBusID=(${str_line:0:7})
+                arr_PCIBusID+=($str_thisPCIBusID)   # add Bus ID index to list
 
+                # match VGA device
                 if [[ $str_line == *"VGA"* ]]; then
 
-                    arr_VGAdevBusID+=($str_thisPCIdevBusID);
-                    bool_VGA=true
-                    bool_VGA_SND=true
+                    arr_VGABusID+=($str_thisPCIBusID);
+                    str_prevPCIBusID=($str_thisPCIBusID)
+                    bool_parseVGA=true
 
                 fi
 
-                if [[ $bool_VGA_SND == true && $str_line == *"Audio"* ]]; then
-
-                    arr_VGAdevBusID+=($str_thisPCIdevBusID);
-                    bool_VGA_SND=false
+                # match VGA vendor device (Audio, USB3, etc.)
+                if [[ ${str_thisPCIBusID:0:6} == ${str_prevPCIBusID:0:6} && $str_thisPCIBusID != $str_prevPCIBusID ]]; then
+                
+                    arr_VGAVendorBusID+=($str_thisPCIBusID);
+                    bool_parseVGAVendor=true
 
                 fi
-
-                #echo -e $i":\t'"${str_line:0:8}
 
             fi
             
+            # line includes PCI driver
+            # add to list only if driver is found
             if [[ $str_line == *"Kernel driver in use: "* ]]; then 
             
                 declare -i int_offset=${#str_line}-22
-                str_thisPCIdevDriver=${str_line:23:$int_offset}
-                arr_PCIdevDriver+=($str_thisPCIdevDriver)
-                #echo -e $i":\t'"${str_line:23:$int_offset}
-                arr_PCIdevIndex+=("$i")     # add to list only if driver is found
+                str_thisPCIDriver=${str_line:23:$int_offset}
+                arr_PCIDriver+=($str_thisPCIDriver)
+                arr_PCIIndex+=("$int_index")                
 
-                if [[ $bool_VGA == true ]]; then
+                # add to lists only if VGA device
+                if [[ $bool_parseVGA == true ]]; then
 
-                    arr_VGAdevDriver+=($str_thisPCIdevDriver);
-                    bool_VGA=false
+                    arr_VGAIndex+=("$int_index")
+                    arr_VGADriver+=($str_thisPCIDriver);    # save for blacklists and Xorg
 
                 fi
+
+                # add to list only if VGA vendor device  
+                if [[ $bool_parseVGAVendor == true ]]; then
                 
+                    arr_VGAVendorIndex+=("$int_index");
+                    arr_VGAVendorDriver+=("$str_thisPCIDriver")    
+                    
+                fi
+
+                bool_parseVGA=false
+                bool_parseVGAVendor=false
+
             fi
         fi
 
-    done < $str_file_arr_PCIdriver
-    ##
-
+    done < $str_file_arr_PCIDriver
     #
-    bool_VGA_SND=false
-    declare -i i=0
+
+    # find external PCI Hardware IDs#
+    bool_parseVGAVendor=false
+    declare -i int_index=0
+
+    # parse list of PCI devices
     while read str_line; do
 
-        if [[ $str_line == *":00."* && $str_line != *"00:00.0"* ]]; then
+        if [[ ${str_line:0:7} == "01:00.0" ]]; then bool_parsePCI=true; fi
 
-            str_thisPCIdevHWID=(${str_line:14:9})
-            arr_PCIdevHWID+=($str_thisPCIdevHWID)
-            #echo -e $i":\t'"${str_line:14:9}
-            #echo ${arr_PCIdevInfo[$i]}
-            if [[ ${arr_PCIdevInfo[$i]} == *"VGA"* ]]; then
-            
-                arr_VGAdevHWID+=($str_thisPCIdevHWID)
-                bool_VGA_SND=true
+        if [[ $bool_parsePCI == true ]]; then 
 
-            fi
+            str_thisPCIHWID=(${str_line:14:9})
+            arr_PCIHWID+=($str_thisPCIHWID)
 
-            if [[ $bool_VGA_SND == true && ${arr_PCIdevInfo[$i]} == *"Audio"* ]]; then
+            # add to list only if VGA device
+            if [[ ${arr_PCIInfo[$i]} == *"VGA"* ]]; then arr_VGAHWID+=($str_thisPCIHWID); fi
 
-                arr_VGAdevHWID+=($str_thisPCIdevHWID);
-                bool_VGA_SND=false
+            # add to lists only if VGA vendor device
+            if [[ ${str_thisPCIBusID:0:6} == ${str_prevPCIBusID:0:6} && $str_thisPCIBusID != $str_prevPCIBusID ]]; then
+                
+                arr_VGAVendorHWID+=($str_thisPCIHWID);
+                bool_parseVGAVendor=false
 
             fi
 
@@ -131,116 +152,67 @@
     done < $str_file_arr_PCIHWID
     #
 
-    echo "PCIdevBusID"
-    for element in ${arr_PCIdevBusID[@]}; do
-        echo $element
-    done
-
-    echo "arr_PCIdevDriver"
-    for element in ${arr_PCIdevDriver[@]}; do
-        echo $element
-    done
-
-    echo "arr_PCIdevHWID"
-    for element in ${arr_PCIdevHWID[@]}; do
-        echo $element
-    done
-
-    echo "arr_VGAdevBusID"
-    for element in ${arr_VGAdevBusID[@]}; do
-        echo $element
-    done
-
-    echo "arr_VGAdevDriver"
-    for element in ${arr_VGAdevDriver[@]}; do
-        echo $element
-    done
-
-    echo "arr_VGAdevHWID"
-    for element in ${arr_VGAdevHWID[@]}; do
-        echo $element
-    done
-
-
-    echo "."
+    ##
+    function VFIO_PCI_DEBUG {
     
-    # all external PCI devices (with bus ID and type)
-    declare -a arr_PCIinfo=`lspci | grep ":00."`
-    declare -a arr_PCIinfoNew
-    # delete first element
-    arr_PCIinfo=( "${arr_PCIinfo[@]/$str_CPUbusID}" )
+        ## debug ##
+        echo -e "arr_PCIIndex:\t\t${#arr_PCIIndex[@]}i"
+        for element in ${arr_PCIIndex[@]}; do
+            echo -e "arr_PCIIndex:\t\t"$element
+        done
+
+        echo -e "arr_VGAIndex:\t\t${#arr_VGAIndex[@]}i"
+        for element in ${arr_VGAIndex[@]}; do
+            echo -e "arr_VGAIndex:\t\t"$element
+        done
+
+        echo -e "arr_VGAVendorIndex:\t${#arr_VGAVendorIndex[@]}i"
+        for element in ${arr_VGAVendorIndex[@]}; do
+            echo -e "arr_VGAVendorIndex:\t"$element
+        done
+
+        echo -e "arr_PCIBusID:\t\t${#arr_PCIBusID[@]}i"
+        for element in ${arr_PCIBusID[@]}; do
+            echo -e "PCIBusID:\t\t"$element
+        done
+
+        echo -e "arr_VGABusID:\t\t${#arr_VGABusID[@]}i"
+        for element in ${arr_VGABusID[@]}; do
+            echo -e "arr_VGABusID:\t\t"$element
+        done
+
+        echo -e "arr_VGAVendorBusID:\t${#arr_VGAVendorBusID[@]}i"
+        for element in ${arr_VGAVendorBusID[@]}; do
+            echo -e "arr_VGAVendorBusID:\t"$element
+        done
     
-    #
-    #for (( i=0; i<${#str_file_arr_PCIinfo[@]}; i++ )); do
-    #for element in $arr_PCIinfo; do
-        #echo $element
-        #if [[ $element == *":00."* && $element != *"00:00.0"* ]]; then arr_PCIinfoNew+=( "$element" ); fi
-    #done
+    }
+    ##
 
-    echo "."
+    VFIO_PCI_DEBUG
 
-    for element in $arr_PCIinfoNew; do
-        echo $element
-    done
-
-    # all external PCI devices (with bus ID and hardware ID)
-    declare -a arr_PCIhwID=( `lspci -n | grep ":00."` )
-    # delete first element
-    arr_PCIhwID=( "${arr_PCIhwID[@]/$str_CPUbusID}" )
+    # remove log files #
+    rm $str_file_arr_PCIInfo $str_file_arr_PCIDriver $str_file_arr_PCIHWID
     #
 
-    #echo ${arr_PCIhwID[@]}
-    #echo "."
+    echo "VFIO_PCI: End."
 
-    # all external PCI devices (with kernel driver)
-    declare -a arr_PCIdriver=`lspci -k | grep "Kernel driver in use: "`
-    # delete all elements before given index
-    for (( int_index=0; int_index<$[${#arr_PCIdriver[@]}]; int_index++ )); do
+}
 
-        element=${arr_PCIdriver[$int_index]}
-        if [[ $element != *"1:00.0"* ]]; then arr_PCIdriver=("${arr_PCIdriver[$int_index]/$element}");
-        else break; fi
+# methods end #
 
-    done
-    # delete all unrelated info
-    for (( int_index=0; int_index<$[${#arr_PCIdriver[@]}]; int_index++ )); do
+# main start #
 
-        element=${arr_PCIdriver[$int_index]}
-        if [[ $element != *"Kernel driver in use: "* ]]; then arr_PCIdriver=("${arr_PCIdriver[$int_index]/$element}");
-        else break; fi
+echo "Main: Start."
 
-    done
+01_VFIO_PCI
 
-    #
-
-    #echo ${arr_PCIdriver[@]}
-    #echo "."
-
-    # all external VGA devices (with bus ID)
-    arr_lspci_VGA=`lspci | grep VGA`
-    #
-
-    #echo ${arr_lspci_VGA[@]}
-    #echo "."
-
-    
-names="Netgear
-Hon Hai Precision Ind. Co.
-Apple"
-    
-SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
-IFS=$'\n'      # Change IFS to newline char
-names=($names) # split the `names` string into an array by the same name
-IFS=$SAVEIFS   # Restore original IFS
-
-for (( i=0; i<${#names[@]}; i++ ))
-do
-    echo "$i: ${names[$i]}"
-done
-
-
-### reset IFS ##
+# reset IFS #
     IFS=$SAVEIFS   # Restore original IFS
-##
+#
+
+echo "Main: End."
 
 exit 0
+
+# main end
