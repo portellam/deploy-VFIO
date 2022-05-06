@@ -202,7 +202,112 @@ function 01_lspci {
 }
 
 # NOTE: test!
-#function 02_VFIO {}
+function 02_VFIO {
+
+    echo "VFIO: Start."
+
+    # dependencies #
+    # bool_RAM #
+    # int_count #
+    # int_hugepageSizeG #
+    # int_hugePageSum #
+    #
+
+    # arameters #
+    bool_GRUB_VGA=false
+    declare -i int_count=0
+    #
+
+    # prompt #
+    # ask user to enable/disable hugepages
+    VFIO_RAM
+    #
+
+    # outputs #
+    # array of PCI drivers excluding VGA drivers
+    declare -a arr_PCIdriver=""
+
+    # array of PCI hw IDs excluding VGA hardware IDs
+    str_arr_PCIhwID=""
+
+    # add PCI driver and hardware IDs to strings for VFIO
+    for (( int_index=0; int_index<$[${#arr_PCIdriver[@]}]; int_index++ )); do
+
+        element=${arr_PCIdriver[$int_index]}
+
+        for element_2 in $arr_VGAindex; do
+
+            if [[ $element_2 != $int_index ]]; then
+
+                str_PCIdriver_softdep+=("#softdep $element pre: vfio vfio-pci" "$element")
+
+                if [[ $int_index -eq "${#arr_PCIdriver[@]}-1" ]]; then str_arr_PCIhwID+=("$element");
+                else str_arr_PCIhwID+=("$element,"); fi
+
+            fi
+
+        done
+
+    done
+    #
+
+    ## prompt ##
+    echo -e "VFIO: You may setup VFIO 'persistently' or through GRUB.\nPersistent includes modifying '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*.\nGRUB includes multiple GRUB options of omitted, single VGA devices (example: omit a given VGA device to boot Xorg from)."
+
+    while true; do
+
+        # after three tries, continue with default selection
+        if [[ $int_count -ge 3 ]]; then
+
+            echo "VFIO: Exceeded max attempts."
+            # default selection
+            str_input="B"
+            # reset counter
+            int_count=0
+
+        else
+
+            echo "VFIO: ['ETC'/'GRUB'/'both']"
+            read str_input
+            # string to upper
+            str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
+        fi        
+
+        # switch #
+        case $str_input in
+
+            "GRUB")
+                # modify GRUB boot options only
+                VFIO_GRUB
+                break;;
+
+            "ETC")
+                # ask user which VGA devices to passthrough OR which to avoid
+                # modify modules and initramfs-tools only
+                VFIO_ETC
+                break;;
+
+            "BOTH")
+
+                # execute GRUB and VFIO, save VGA devices for GRUB options
+                VFIO_GRUB
+                VFIO_ETC
+                break;;
+
+        *)
+            echo "VFIO: Invalid input.";;
+
+        esac
+
+        # counter
+        int_count=$int_count+1  
+
+    done
+    ##
+
+    echo "VFIO: End."
+
+}
 
 # NOTE: test!
 function VFIO_ETC {
@@ -214,6 +319,20 @@ function VFIO_ETC {
     # str_arr_PCIhwID #
     # arr_validVGAindex #
     # str_GRUBlineRAM #
+    # arr_PCIBusID    
+    # arr_PCIHWID
+    # arr_PCIDriver
+    # arr_PCIIndex
+    # arr_PCIInfo
+    # arr_VGABusID
+    # arr_VGADriver
+    # arr_VGAHWID
+    # arr_VGAIndex
+    # arr_VGAVendorBusID
+    # arr_VGAVendorDriver
+    # arr_VGAVendorHWID
+    # arr_VGAVendorIndex
+    #
 
     # directories #
     str_dir_1="/etc/modprobe.d/"
@@ -228,7 +347,7 @@ function VFIO_ETC {
 
     # GRUB #
     str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$str_arr_PCIdriver vfio_pci.ids=$str_arr_PCIhwID"
-    echo \n"#"\n${str_GRUBline} >> $str_file_1
+    echo -e \n"#"\n${str_GRUBline} >> $str_file_1
     #
 
     # initramfs-tools #
@@ -444,12 +563,12 @@ function VFIO_RAM {
 
                 "Y")
 
-                echo "VFIO: Creating Hugepages."
+                echo "VFIO_RAM: Creating Hugepages."
                 break;;
 
                 "N")
 
-                echo "VFIO: Skipping."
+                echo "VFIO_RAM: Skipping."
                 bool_RAM=true
 
                 # reset counter
@@ -458,7 +577,7 @@ function VFIO_RAM {
                 ;;
 
                 *)
-                echo "VFIO: Invalid input.";;
+                echo "VFIO_RAM: Invalid input.";;
 
             esac
 
@@ -501,7 +620,7 @@ function VFIO_RAM {
 
                 # validate input
                 if [[ "$str_input" -ge 0 ]] 2>/dev/null; then int_hugePageSum="$str_input";   
-                else echo "VFIO: Invalid input."; fi
+                else echo "VFIO_RAM: Invalid input."; fi
 
                 # counter
                 echo "VFIO_RAM: int_count: \"$int_count\""
@@ -547,9 +666,8 @@ declare -a arr_VGAVendorHWID
 declare -a arr_VGAVendorIndex
 #
 
-#01_lspci
+01_lspci
 #02_VFIO
-VFIO_RAM
 
 # reset IFS #
     IFS=$SAVEIFS   # Restore original IFS
