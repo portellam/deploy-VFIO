@@ -9,7 +9,7 @@ IFS=$'\n'      # Change IFS to newline char
 
 function 01_lspci {
 
-    echo -e "lspci:\t\tStart."
+    #echo -e "\nlspci:\t\tStart."
 
     # parameters #
     str_CPUbusID="00:00.0"
@@ -199,14 +199,14 @@ function 01_lspci {
     rm $str_file_arr_PCIInfo $str_file_arr_PCIDriver $str_file_arr_PCIHWID
     #
 
-    echo -e "lspci:\t\tEnd."
+    #echo -e "lspci:\t\tEnd."
 
 }
 
 # NOTE: test!
 function 02_VFIO {
 
-    echo -e "VFIO:\t\tStart."
+    echo -e "\nVFIO:\t\tStart."
 
     # dependencies #
     # bool_RAM #
@@ -314,7 +314,7 @@ function 02_VFIO {
 # NOTE: test!
 function VFIO_ETC {
 
-    echo -e "VFIO_ETC:\tStart."
+    echo -e "\nVFIO_ETC:\tStart."
 
     # dependencies #
     # arr_PCIDriver
@@ -441,7 +441,7 @@ options vfio_pci ids=$str_arr_PCIHWID")
 # NOTE: test!
 function VFIO_GRUB {
 
-    echo -e "VFIO_GRUB:\tStart."
+    echo -e "\nVFIO_GRUB:\tStart."
 
     # dependencies #
     # str_GRUBlineRAM #
@@ -530,7 +530,7 @@ function VFIO_GRUB {
 # NOTE: test!
 function VFIO_RAM {
 
-    echo -e "VFIO_RAM:\tStart."
+    echo -e "\nVFIO_RAM:\tStart."
 
     # outputs #
     str_GRUBlineRAM=""
@@ -666,7 +666,7 @@ function VFIO_RAM {
 
 # main start #
 
-echo -e "Main:\t\tStart."
+echo -e "\nMain:\t\tStart."
 
 # dependencies #
 declare -a arr_PCIBusID    
