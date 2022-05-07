@@ -11,6 +11,7 @@ Useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 
 ## Long version:
 Run at system-setup or whenever a hardware change occurs. Parses Bash for list of **External PCI devices** ( Bus ID, Hardware ID, and Kernel driver ). *External* refers to PCI Bus ID *01:00.0* onward.
+
 User may implement:
 * **Evdev KVM** to libvirt ( a virtual *Keyboard-video-mouse* switch ).
 * **Hugepages** ( allocate system RAM *statically* for reduced memory latency ).
