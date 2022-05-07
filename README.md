@@ -3,6 +3,10 @@
 ## TL;DR:
 Generate and/or Regenerate a VFIO setup (**Persistent** or **Multi-boot**). VFIO for Dummies
 
+## What is VFIO?
+
+See hyperlink: https://www.kernel.org/doc/html/latest/driver-api/vfio.html
+
 ## Long version:
 Run at system-setup or whenever a hardware change occurs. Parses Bash for list of **External PCI devices** ( Bus ID, Hardware ID, and Kernel driver ). *External* refers to PCI Bus ID *01:00.0* onward.
 User may implement
