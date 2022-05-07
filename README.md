@@ -12,7 +12,7 @@ Run at system-setup or whenever a hardware change occurs. Parses Bash for list o
 User may implement
 * **Evdev KVM** to libvirt ( a virtual *Keyboard-video-mouse* switch ).
 * **Hugepages** ( allocate system RAM *statically* for reduced memory latency ).
-* **Zram swapfile** ( if user uses host machine as a desktop regularly *( browsing with many tabs open )*, reduce occurrances of host machine lock-up ).
+* **Zram swapfile** ( if user *red-lines* host machine system resources, this change reduces/prevents occurrances of host machine lock-up ).
 
 User may choose between a
 * **Persistent setup** ( modify *'/etc/modules'*, blacklists, etc. ).
