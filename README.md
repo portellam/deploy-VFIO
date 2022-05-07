@@ -30,7 +30,7 @@ My use-cases include:
 
 [2] providing a VBIOS for Windows may be necessary for NVIDIA devices, when said device is initialized at host BIOS/UEFI startup.
 
-[3] Windows XP x86 ( GTX 900-series devices and below, and Radeon RX 200(?)-series devices and below )
+[3] Windows XP ( GTX 900-series devices and below ), Windows 9x ( GTX 8000-series and below ).
 
 ## TO-DO:
 * test
