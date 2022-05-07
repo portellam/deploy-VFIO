@@ -17,7 +17,8 @@ User may choose between a
   **I want to use this.** I am tired of doing this by-hand over-and-over.
 My use-cases include:
 * a testbench to test old PCI devices over a PCI/PCIe bridge
-* a testbench to test VGA BIOSes without flashing ( includes adding a pointer to a VBIOS in a VM's XML file )[1] 
-[1] providing a VBIOS for Windows may be necessary for NVIDIA devices, when said device is initialized a host BIOS/UEFI startup)
+* a testbench to test VGA BIOSes without flashing ( includes adding a pointer to a VBIOS in a VM's XML file )[1]
 * booting Windows XP x86 ( GTX 900-series devices below, and Radeon RX 200(?)-series devices below )
+
+[1] providing a VBIOS for Windows may be necessary for NVIDIA devices, when said device is initialized a host BIOS/UEFI startup)
 
