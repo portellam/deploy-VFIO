@@ -5,6 +5,20 @@ SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 #
 
+declare -a arr_PCIBusID    
+    declare -a arr_PCIHWID
+    declare -a arr_PCIDriver
+    declare -a arr_PCIIndex
+    declare -a arr_PCIInfo
+    declare -a arr_VGABusID
+    declare -a arr_VGADriver
+    declare -a arr_VGAHWID
+    declare -a arr_VGAIndex
+    declare -a arr_VGAVendorBusID
+    declare -a arr_VGAVendorDriver
+    declare -a arr_VGAVendorHWID
+    declare -a arr_VGAVendorIndex
+
 # methods start #
 
 function 01_lspci {
@@ -199,9 +213,13 @@ function 01_lspci {
     rm $str_file_arr_PCIInfo $str_file_arr_PCIDriver $str_file_arr_PCIHWID
     #
 
-    #echo -e "lspci:\t\tEnd."
+    echo -e "VFIO_GRUB:\narr_VGAIndex: \"${arr_VGAIndex[@]}\""
+    echo -e "lspci:\t\tEnd."
 
 }
+
+# ETC: prompt user to ask which VGA devices to passthrough, or all
+# GRUB: do menus for each device to be booted from
 
 # NOTE: test!
 function 02_VFIO {
@@ -337,8 +355,6 @@ function VFIO_ETC {
 
     # directories #
     #str_dir_1="/etc/modprobe.d/"
-    cd ~/
-    str_dir_1="./"
     #
 
     # files #
@@ -350,15 +366,16 @@ function VFIO_ETC {
     str_file_2="0_initramfs.log"
     str_file_3="0_modules.log"
     str_file_4="0_vfio.log"
+    touch $str_file_1 $str_file_2 $str_file_3 $str_file_4
     #
 
     # GRUB #
-    str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$str_arr_PCIDriver vfio_pci.ids=$str_arr_PCIHWID"
-    echo -e \n"#"\n${str_GRUBline} >> $str_file_1
+    str_GRUBline="GRUB_CMDLINE_LINUX=acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$str_arr_PCIDriver vfio_pci.ids=$str_arr_PCIHWID"
+    echo -e "\n#\n${str_GRUBline}" >> $str_file_1
     #
 
     # initramfs-tools #
-    declare -a str_file_2=(
+    declare -a arr_file_2=(
 "# List of modules that you want to include in your initramfs.
 # They will be loaded at boot time in the order below.
 #
@@ -386,8 +403,9 @@ vfio_virqfd
 options vfio_pci ids=$str_arr_PCIHWID
 vfio_pci ids=$str_arr_PCIHWID
 vfio_pci"
-)
-    echo ${str_file_2[@]} > $str_file_2
+    )
+
+    echo -e "\n${arr_file_2[@]}" > $str_file_2
     #
 
     # modules #
@@ -413,12 +431,12 @@ apm power_off=1
 
 # GRUB kernel parameters:
 vfio_pci ids=$str_arr_PCIHWID"
-)
-    echo ${arr_file_3[@]} > $str_file_3
+    )
+    echo -e "\n${arr_file_3[@]}" > $str_file_3
     #
 
     # modprobe.d/blacklists #
-    for $element in $arr_PCIDriver[@]; do
+    for element in $arr_PCIDriver[@]; do
         echo "blacklist $element" > $str_dir_1$element'.conf'
     done
     #
@@ -431,7 +449,7 @@ $str_PCIDriver_softdep
 
 # PCI hardware IDs:
 options vfio_pci ids=$str_arr_PCIHWID")
-    echo ${str_file_4[@]} > $str_file_4
+    echo -e "\n${arr_file_4[@]}" > $str_file_4
     #
 
     echo -e "VFIO_ETC:\tEnd."
@@ -451,8 +469,22 @@ function VFIO_GRUB {
     str_GRUBtitle="Debian "`uname -o`", with"`uname -r`
     #
 
+    # set file #
+    str_file="/etc/grub.d/proxifiedScripts/custom"
+    if [[ ! -e $str_file"_old" ]]; then
+    
+        cp $str_file $str_file"_old"
+        echo -e "#!/bin/sh
+exec tail -n +3 $0
+# This file provides an easy way to add custom menu entries.  Simply type the
+# menu entries you want to add after this comment.  Be careful not to change
+# the 'exec tail' line above." > $str_file
+
+    fi
+    #
+
     # set directory
-    str_dir_1="/etc/grub.d/"
+    #str_dir_1="/etc/default/grub.d/"
     #
 
     # active kernel #
@@ -482,44 +514,82 @@ function VFIO_GRUB {
     done
     #
 
+    # note: note which VGA vendor devices go with which VGA device
+
+    echo -e "VFIO_GRUB:\narr_VGAIndex: \"${arr_VGAIndex[@]}\""
+
     # create individual VGA device GRUB options
     for element in $arr_VGAIndex; do
+        
+        str_thisVGABusID="${arr_VGABusID[$element]}"
+        str_thisVGADriver="${arr_VGADriver[$element]}"
+        str_thisVGAHWID="${arr_VGAHWID[$element]}"
 
-        # save current VGA bus ID
-        str_VGABusID=${arr_PCIbusID[$element]}
+        echo -e "VFIO_GRUB:\telement: \"$element\""
+        echo -e "VFIO_GRUB:\str_thisVGABusID: \"$str_thisVGABusID\""
+        echo -e "VFIO_GRUB:\str_thisVGADriver: \"$str_thisVGADriver\""
+        echo -e "VFIO_GRUB:\str_thisVGAHWID: \"$str_thisVGAHWID\""
 
-        # temporarily save VGA drivers and hardware IDs of all VGA devices except the current VGA device
-        for element_2 in $arr_VGAIndex; do
+        # add to list, separate by comma
+        for (( int_index=0; int_index<${#arr_PCIIndex[@]}; int_index++ )); do
+
+            # save current index
+            element_2=${arr_PCIIndex[int_index]}
+            str_thisPCIDriver=${arr_PCIDriver[$element_2]}
 
             if [[ $element_2 != $element ]]; then
-
-                declare -a arr_VGADriver+=${arr_PCIDriver[$element]}
-                declare -a arr_VGAHWID+=${arr_PCIHWID[$element]}
-
+            
+                str_listPCIBusID+="${arr_PCIBusID[$element_2]},"
+                str_listPCIHWID+="${arr_PCIHWID[$element_2]},"
+                
             fi
 
-        done
+            if [[ $str_thisPCIDriver != $str_thisVGADriver ]]; then
+            
+                str_listPCIDriver+="${arr_PCIBusID[$element_2]},"
+                
+            fi
 
-        # GRUB command line
-        str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$arr_VGADriver,$str_arr_PCIDriver vfio_pci.ids=$arr_VGAHWID,$str_arr_PCIHWID"
+            # last index #
+            if [[ $element_2 != $element && $int_index == ${#arr_PCIIndex[@]}-1 ]]; then
+            
+                str_listPCIBusID+="${arr_PCIBusID[$element_2]}"
+                str_listPCIHWID+="${arr_PCIHWID[$element_2]}"
+            
+            fi
 
-        str_VGAdev=`lspci | grep $str_VGABusID`
+            if [[ $str_thisPCIDriver != $str_thisVGADriver && $int_index == ${#arr_PCIIndex[@]}-1 ]]; then
+            
+                str_listPCIDriver+="${arr_PCIBusID[$element_2]}"
+                
+            fi
+            #
 
-        # GRUB custom menu
-        declare -a arr_dir_1_file=(
-"menuentry '$str_GRUBtitle (Xorg: $str_VGAdev)' {
+            # GRUB command line
+            str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$arr_VGADriver,$str_arr_PCIDriver vfio_pci.ids=$arr_VGAHWID,$str_arr_PCIHWID"
+
+            # GRUB custom menu
+            declare -a arr_file=(
+"menuentry '$str_GRUBtitle (Xorg: $str_thisVGABusID: $str_thisVGADriver)' {
     insmod gzio
     set root='/dev/$str_rootDev'
     echo    'Loading Linux $str_rootKernel ...'
     linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUBline
     echo    'Loading initial ramdisk ...'
     initrd  /boot/initrd.img-$str_rootKernel
-    echo    'Xorg: $str_VGAdev"
-)
-        #
+    echo    'Xorg: $str_thisVGABusID: $str_thisVGADriver'"
+            )   
+            #
 
-        # write to file
-        echo ${arr_file_1[@]} > $str_dir_1'40_'$str_VGABusID
+            # write to file
+            #str_file_1=$str_dir_1"40_custom_"$str_thisVGABusID"_"$str_thisVGADriver
+            #touch $str_file_1
+            #echo -e "\n${arr_file_1[@]}" > $str_file_1
+            
+            echo -e "\n${arr_file[@]}" > $str_file
+            #
+
+        done
 
     done
 
@@ -668,7 +738,7 @@ function VFIO_RAM {
 
         # prompt #
         #echo -e "VFIO_RAM:\tEnter the size (integer in Gigabytes) of a single hugepage (best example: size of one same-size RAM channel/stick): "
-        echo -e "VFIO_RAM:\tSystem RAM size in Kilobytes. Hint: 1 G == 1,024 M == 1,048,576 K"
+        echo -e "VFIO_RAM:\tSystem RAM size in Kilobytes. Hint: 1G == 1,024M == 1,048,576K"
         free
         #
 
@@ -730,19 +800,7 @@ function VFIO_RAM {
 #echo -e "Main:\t\tStart."
 
 # dependencies #
-declare -a arr_PCIBusID    
-declare -a arr_PCIHWID
-declare -a arr_PCIDriver
-declare -a arr_PCIIndex
-declare -a arr_PCIInfo
-declare -a arr_VGABusID
-declare -a arr_VGADriver
-declare -a arr_VGAHWID
-declare -a arr_VGAIndex
-declare -a arr_VGAVendorBusID
-declare -a arr_VGAVendorDriver
-declare -a arr_VGAVendorHWID
-declare -a arr_VGAVendorIndex
+
 #
 
 01_lspci
