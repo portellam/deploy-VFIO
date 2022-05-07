@@ -1,308 +1,240 @@
 #!/bin/bash
 
-## methods start ##
+## set IFS ##
+SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
+IFS=$'\n'      # Change IFS to newline char
+##
 
-function 01_FindPCI {
-    
-    echo "FindPCI: Start."
+########## find PCI devices ##########
 
-    # create log file #
-    str_dir="/var/log/"
-    str_file_1=$str_file'lspci_n.log'
-    str_file_2=$str_file'lspci.log'
-    str_file_3=$str_file'lspci_k.log'
-    lspci -n > $str_file_1
-    lspci -k > $str_file_2
-    #
+## parameters ##
+str_CPUbusID="00:00.0"
+str_thisPCIBusID=""
+str_prevPCIBusID=""
+str_VGAVendor=""
+##
 
-    # booleans #
-    bool_beginParsePCI=false
-    bool_beginParseVGA=false
-    bool_thisVGA=false
-    #
+## lists ##
+function VFIO_init {
 
-    # counter #
-    declare -i int_count=1
-    #
+    declare -a arr_PCIBusID=""
+    declare -a arr_PCIHWID=""
+    declare -a arr_PCIDriver=""
+    declare -a arr_PCIIndex=""
+    declare -a arr_PCIInfo=""
+    declare -a arr_VGABusID=""
+    declare -a arr_VGADriver=""
+    declare -a arr_VGAHWID=""
+    declare -a arr_VGAIndex=""
+    declare -a arr_VGAVendorBusID=""
+    declare -a arr_VGAVendorDriver=""
+    declare -a arr_VGAVendorHWID=""
+    declare -a arr_VGAVendorIndex=""
 
-    # PCI #
-    str_firstPCIbusID="1:00.0"
-    str_thisPCIbusID=""
-    str_thisPCIdriver=""
-    str_thisPCIhwID=""
-    str_thisPCItype=""
-    str_VGAbusID=""
-    str_VGAdriver=""
-    #
-
-    # outputs #
-    declare -a arr_PCIbusID
-    declare -a arr_PCIdriver
-    declare -a arr_PCIhwID
-    declare -a arr_VGAindex
-    #
-
-    # file 1 #
-    # parse file, save PCI bus ID and PCI hardware ID to arrays
-    while read str_line_1; do
-
-        str_thisPCIbusID=${str_line_1:1:6}
-        echo "PCI: str_thisPCIbusID: \"$str_thisPCIbusID\""
-
-        # start read from first external PCI device
-        if [[ $str_thisPCIbusID == $str_firstPCIbusID ]]; then bool_beginParsePCI=true; fi
-
-        # save PCI hardware ID
-        if [[ $bool_beginParsePCI == true ]]; then
-
-            arr_PCIbusID+=("$str_thisPCIbusID")
-            echo "PCI: str_thisPCIbusID: \"$str_thisPCIbusID\""
-            str_thisPCIhwID=$( echo ${str_line_1:14:9} )
-            echo "PCI: str_thisPCIhwID: \"$str_thisPCIhwID\""
-            arr_PCIhwID+=("$str_thisPCIhwID") 
-        fi
-
-    done < $str_file_1
-    # file 1 end #
-
-    # file 2 #
-    # parse file, save each driver for vfio setup, and check if indexed VGA device is not grabbed by 'vfio-pci' driver and save VGA device bus ID, hardware ID, and driver (for Xorg)
-    while read str_line_2; do
-
-        str_thisPCIbusID=${str_line_2:1:6}
-        echo "PCI: str_thisPCIbusID: \"$str_thisPCIbusID\""
-        int_len_str_line_3=${#str_line_3}-22
-        str_thisPCIdriver=${str_line_3:22:$int_len_str_line_3}
-        echo "PCI: str_thisPCIdriver: \"$str_thisPCIdriver\""
-
-        # start read from first external PCI device
-        if [[ $str_thisPCIbusID == $str_firstPCIbusID && $str_line_2 != *"Kernel driver in use: "* && $str_line_2 != *"Subsystem: "* && $str_line_2 != *"Kernel modules: "* ]]; then
-
-            if [[ $str_line_2 == *"VGA compatible controller"* ]]; then bool_beginParseVGA=true
-            else bool_beginParseVGA=false; fi
-
-            bool_beginParsePCI=true
-
-        fi
-
-        # validate string for PCI driver
-        if [[ $bool_beginParsePCI == true && $str_thisPCIdriver != "vfio-pci" && $str_line_2 == *"Kernel driver in use: "* ]]; then
-
-            if [[ $bool_beginParseVGA == true ]]; then
-
-                arr_VGAindex+="$int_count"
-                bool_beginParseVGA=false
-
-            else arr_PCIdriver+=("$str_thisPCIdriver"); fi
-
-            bool_beginParsePCI=false
-
-        fi
-
-        echo "PCI: int_count:\"$int_count\""
-        int_count=$int_count+1
-        echo "PCI: int_count:\"$int_count\""
-
-    done < $str_file_2
-    # file 2 end #    
-
-    # clear log files
-    rm $str_file_1 $str_file_2   
-
-    echo "FindPCI: End."
-    
 }
+##
 
-function 02_VFIO {
+## create log file ##
+str_dir="/var/log/"
+str_file_PCIInfo=$str_dir'lspci.log'
+str_file_PCIDriver=$str_dir'lspci-k.log'
+str_file_PCIHWID=$str_dir'lspci-n.log'
+lspci | grep ":00." > $str_file_PCIInfo
+lspci -k > $str_file_PCIDriver
+lspci -n | grep ":00." > $str_file_PCIHWID
+##
 
-    echo "VFIO: Start."
+## find external PCI device Index values, Bus ID, and drivers ##
+bool_parsePCI=false
+bool_parseVGA=false
+bool_parseVGAVendor=false
+declare -i int_index=0
+##
 
-    # dependencies #
-    # bool_RAM #
-    # int_count #
-    # int_hugepageSizeG #
-    # int_hugePageSum #
-    #
+#### parse list of PCI devices ####
+function VFIO_parse {
 
-    # dependency parameters #
-    declare -a arr_validVGAindex
-    declare -a arr_VGAdriver
-    declare -a arr_VGAhwID
-    #
+    while read -r str_line; do
 
-    # local parameters #
-    bool_GRUB_VGA=false
-    declare -i int_count=0
-    #
+        if [[ ${str_line:0:7} == "01:00.0" ]]; then bool_parsePCI=true; fi
 
-    # prompt #
-    # ask user to enable/disable hugepages
-    VFIO_RAM
-    #
+        ## parse external PCI devices ##
+        if [[ $bool_parsePCI == true ]]; then
 
-    # prompt #
-    while true; do
+            if [[ $str_line != *"Subsystem: "* && $str_line != *"Kernel driver in use: "* && $str_line != *"Kernel modules: "* ]]; then     # line includes PCI bus ID
 
-        echo "VFIO: Do you wish to passthrough every VGA device?"\n"In other words, do you wish to create separate GRUB options to run Xorg with VGA devices?"\n" For example, first GRUB option will omit first VGA device, second option will omit second, and so on."\n"[Y/n]: "
-        read str_input
+                ((int_index++))                     # increment only if Bus ID is found
+                arr_PCIInfo+=($str_line)            # add line to list
+                str_thisPCIBusID=(${str_line:0:7})
+                arr_PCIBusID+=($str_thisPCIBusID)   # add Bus ID index to list
 
-        # after three tries, continue with default selection
-        if [[ $int_count -ge 3 ]]; then
+                ## match VGA device ##
+                if [[ $str_line == *"VGA"* ]]; then
+            
+                    arr_VGABusID+=($str_thisPCIBusID);
+                    str_prevPCIBusID=($str_thisPCIBusID)
+                    bool_parseVGA=true
 
-            echo "VFIO: Exceeded max attempts."
-            # default selection
-            str_input="Y"
-            # reset counter
-            int_count=0 
+                fi
+                ##
 
-        else
+                ## match VGA vendor device (Audio, USB3, etc.) ##
+                if [[ ${str_thisPCIBusID:0:6} == ${str_prevPCIBusID:0:6} && $str_thisPCIBusID != $str_prevPCIBusID ]]; then
 
-            # string to upper
-            str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
-            str_input=${str_input:0:1}
-        fi
+                    arr_VGAVendorBusID+=($str_thisPCIBusID);
+                    bool_parseVGAVendor=true
 
-        # prompt
-        case $str_input in
-
-            "Y")
-
-                echo "VFIO: Passing-through every VGA device. Skipping GRUB options."
-                break;;
-
-            "N")
-
-                echo "VFIO: Creating GRUB options."
-                bool_GRUB_VGA=true
-                02_VFIO_VGA
-                break
-                ;;
-
-            *)
-
-                echo "VFIO: Invalid input.";;
-
-        esac 
-
-        # counter
-        int_count=$int_count+1    
-    done
-    #
-
-    # outputs #
-    # array of PCI drivers excluding VGA drivers
-    declare -a arr_PCIdriver=""
-
-    # array of PCI hw IDs excluding VGA hardware IDs
-    str_arr_PCIhwID=""
-
-    # add PCI driver and hardware IDs to strings for VFIO
-    for (( int_index=0; int_index<$[${#arr_PCIdriver[@]}]; int_index++ )); do
-
-        element=${arr_PCIdriver[$int_index]}
-
-        for element_2 in $arr_VGAindex; do
-
-            if [[ $element_2 != $int_index ]]; then
-
-                str_PCIdriver_softdep+=("#softdep $element pre: vfio vfio-pci" "$element")
-
-                if [[ $int_index -eq "${#arr_PCIdriver[@]}-1" ]]; then str_arr_PCIhwID+=("$element");
-                else str_arr_PCIhwID+=("$element,"); fi
+                fi
+                ##
 
             fi
 
-        done
+            ## add to list only if driver is found ##
+            if [[ $str_line == *"Kernel driver in use: "* ]]; then      # line includes PCI driver
 
+                declare -i int_offset=${#str_line}-22
+                str_thisPCIDriver=${str_line:23:$int_offset}
+                arr_PCIDriver+=($str_thisPCIDriver)
+                arr_PCIIndex+=("$int_index")        
+
+                ## add to lists only if VGA device ##
+                if [[ $bool_parseVGA == true ]]; then
+
+                    arr_VGAIndex+=("$int_index")
+                    arr_VGADriver+=($str_thisPCIDriver);                # save for blacklists and Xorg
+
+                fi
+                ##
+
+                ## add to list only if VGA vendor device ##
+                if [[ $bool_parseVGAVendor == true ]]; then
+
+                    arr_VGAVendorIndex+=("$int_index");
+                    arr_VGAVendorDriver+=("$str_thisPCIDriver")  
+
+                fi
+                ##
+
+                ## reset booleans ##
+                bool_parseVGA=false
+                bool_parseVGAVendor=false
+                ##
+
+            fi
+            ##
+
+        fi
+        ##
+
+    done < $str_file_PCIDriver
+    ####
+
+    ## find external PCI Hardware IDs ##
+    bool_parseVGAVendor=false
+    declare -i int_index=0
+
+    #### parse list of PCI devices ####
+    while read -r str_line; do
+
+        if [[ ${str_line:0:7} == "01:00.0" ]]; then bool_parsePCI=true; fi
+
+        ## parse external PCI devices ##
+        if [[ $bool_parsePCI == true ]]; then 
+
+            str_thisPCIHWID=(${str_line:14:9})
+            arr_PCIHWID+=($str_thisPCIHWID)
+
+            # add to list only if VGA device
+            if [[ ${arr_PCIInfo[$i]} == *"VGA"* ]]; then arr_VGAHWID+=($str_thisPCIHWID); fi
+
+            # add to lists only if VGA vendor device
+            if [[ ${str_thisPCIBusID:0:6} == ${str_prevPCIBusID:0:6} && $str_thisPCIBusID != $str_prevPCIBusID ]]; then
+        
+            arr_VGAVendorHWID+=($str_thisPCIHWID);
+            bool_parseVGAVendor=false
+
+            fi
+
+            ((i++))     # increment only if match is found
+
+        fi
+        ##
+
+    done < $str_file_PCIHWID
+}
+####
+
+##
+function VFIO_parse_debug {
+
+    ## debug ##
+    echo -e "arr_PCIIndex:\t\t${#arr_PCIIndex[@]}i"
+    for element in ${arr_PCIIndex[@]}; do
+        echo -e "arr_PCIIndex:\t\t"$element
     done
-    #
 
-    ## prompt ##
-    echo "VFIO: You may setup VFIO 'persistently' or through GRUB."\n"Persistent includes modifying '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*."\n"GRUB includes GRUB options of omitted, single VGA devices (example: omit a given VGA device to boot Xorg from)."\n"['ETC'/'GRUB'/'both']:"
-
-    while true; do
-
-        # after three tries, continue with default selection
-        if [[ $int_count -ge 3 ]]; then
-
-            echo "VFIO: Exceeded max attempts."
-            # default selection
-            str_input="B"
-            # reset counter
-            int_count=0
-
-        else
-
-            read str_input
-            # string to upper
-            str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
-        fi        
-
-        # switch #
-        case $str_input in
-
-            "GRUB")
-                # modify GRUB boot options only
-                #02_VFIO_GRUB
-                break;;
-
-            "ETC")
-                # ask user which VGA devices to passthrough OR which to avoid
-                # modify modules and initramfs-tools only
-                #02_VFIO_ETC
-                break;;
-
-            "BOTH")
-
-                # execute GRUB and VFIO, save VGA devices for GRUB options
-                #02_VFIO_GRUB
-                #02_VFIO_ETC
-                break;;
-
-        *)
-            echo "VFIO: Invalid input.";;
-
-        esac
-
-        # counter
-        int_count=$int_count+1  
-
+    echo -e "arr_VGAIndex:\t\t${#arr_VGAIndex[@]}i"
+    for element in ${arr_VGAIndex[@]}; do
+        echo -e "arr_VGAIndex:\t\t"$element
     done
 
+    echo -e "arr_VGAVendorIndex:\t${#arr_VGAVendorIndex[@]}i"
+    for element in ${arr_VGAVendorIndex[@]}; do
+        echo -e "arr_VGAVendorIndex:\t"$element
+    done
+
+    echo -e "arr_PCIBusID:\t\t${#arr_PCIBusID[@]}i"
+    for element in ${arr_PCIBusID[@]}; do
+        echo -e "PCIBusID:\t\t"$element
+    done
+
+    echo -e "arr_VGABusID:\t\t${#arr_VGABusID[@]}i"
+    for element in ${arr_VGABusID[@]}; do
+        echo -e "arr_VGABusID:\t\t"$element
+    done
+
+    echo -e "arr_VGAVendorBusID:\t${#arr_VGAVendorBusID[@]}i"
+    for element in ${arr_VGAVendorBusID[@]}; do
+        echo -e "arr_VGAVendorBusID:\t"$element
+    done
+    
+    }
+##
+
+VFIO_init           # init vars
+# NOTE: when function is called more than once, arrays are changed and ran multiple times???
+VFIO_parse          # parse lists
+VFIO_parse_debug    # run debug
+
+########## end find PCI devices ##########
+
+########## VFIO functions ##########
+
+# TODO: test
+## ETC ##
+function VFIO_ETC {
+
+    #str_dir_modprobed="/etc/modprobe.d/"   # directories
+
+    ## files ##
+    #str_file_GRUB="/etc/default/grub"
+    #str_file_initramfs="/etc/initramfs-tools/modules"
+    #str_file_modules="/etc/modules"
+    #str_file_vfio="/etc/modprobe.d/vfio.conf"
+    str_file_GRUB="0_grub.log"
+    str_file_initramfs="0_initramfs.log"
+    str_file_modules="0_modules.log"
+    str_file_vfio="0_vfio.log"
+    touch $str_file_GRUB $str_file_initramfs $str_file_modules $str_file_vfio
     ##
 
-    echo "VFIO: End."
+    ## GRUB ##
+    str_GRUBline="GRUB_CMDLINE_LINUX=acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$str_arr_PCIDriver vfio_pci.ids=$str_arr_PCIHWID"
+    echo -e "\n#\n${str_GRUBline}" >> $str_file_GRUB
+    ##
 
-}
-
-function 02_VFIO_ETC {
-
-    echo "VFIO_ETC: Start."
-
-    # dependencies #
-    # arr_PCIdriver #
-    # str_arr_PCIhwID #
-    # arr_validVGAindex #
-    # $str_GRUBlineRAM #
-
-    # directories #
-    str_dir_1="/etc/modprobe.d/"
-    #
-
-    # files #
-    str_file_1="/etc/default/grub"
-    str_file_2="/etc/initramfs-tools/modules"
-    str_file_3="/etc/modules"
-    str_file_4="/etc/modprobe.d/vfio.conf"
-    #
-
-    # GRUB #
-    str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$str_arr_PCIdriver vfio_pci.ids=$str_arr_PCIhwID"
-    echo \n"#"\n${str_GRUBline} >> $str_file_1
-    #
-
-    # initramfs-tools #
-    declare -a str_file_2=(
+    ## initramfs-tools ##
+    declare -a arr_file_initramfs=(
 "# List of modules that you want to include in your initramfs.
 # They will be loaded at boot time in the order below.
 #
@@ -320,22 +252,23 @@ function 02_VFIO_ETC {
 # NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
 
 # Soft dependencies and PCI kernel drivers:
-$str_PCIdriver_softdep
+$str_PCIDriver_softdep
 
 vfio
 vfio_iommu_type1
 vfio_virqfd
 
 # GRUB command line and PCI hardware IDs:
-options vfio_pci ids=$str_arr_PCIhwID
-vfio_pci ids=$str_arr_PCIhwID
+options vfio_pci ids=$str_arr_PCIHWID
+vfio_pci ids=$str_arr_PCIHWID
 vfio_pci"
-)
-    echo ${str_file_2[@]} > $str_file_2
+    )
+
+    echo -e "\n${arr_file_initramfs[@]}" > $str_file_initramfs
     #
 
     # modules #
-    declare -a arr_file_3=(
+    declare -a arr_file_modules=(
 "# /etc/modules: kernel modules to load at boot time.
 #
 # This file contains the names of kernel modules that should be loaded
@@ -356,360 +289,411 @@ apm power_off=1
 # In terminal, execute \"lspci -nnk\".
 
 # GRUB kernel parameters:
-vfio_pci ids=$str_arr_PCIhwID"
-)
-    echo ${arr_file_3[@]} > $str_file_3
+vfio_pci ids=$str_arr_PCIHWID"
+    )
+    echo -e "\n${arr_file_modules[@]}" > $str_file_modules
     #
 
     # modprobe.d/blacklists #
-    for $element in $arr_PCIdriver[@]; do
-        echo "blacklist $element" > $str_dir_1$element'.conf'
+    for element in $arr_PCIDriver[@]; do
+        echo "blacklist $element" > $str_dir_modprobe$element'.conf'
     done
     #
 
     # modprobe.d/vfio.conf #
-    declare -a arr_file_4=(
+    declare -a arr_file_vfio=(
 "# NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
 # Soft dependencies:
-$str_PCIdriver_softdep
+$str_PCIDriver_softdep
 
 # PCI hardware IDs:
-options vfio_pci ids=$str_arr_PCIhwID")
-    echo ${str_file_4[@]} > $str_file_4
+options vfio_pci ids=$str_arr_PCIHWID")
+    echo -e "\n${arr_file_vfio[@]}" > $str_file_vfio
     #
-
-    echo "VFIO_ETC: End."
 
 }
 
-# NOTE: Untested
+## GRUB ##                      # NOTE: test!
+# NOTE: test!
 function VFIO_GRUB {
 
-    echo "VFIO_GRUB: Start."
+    VFIO_init           # init vars
+    VFIO_parse          # parse lists
+    VFIO_parse_debug    # run debug
 
-    # dependencies #
-    # arr_PCIdriver #
-    # arr_validVGAindex #
-    # str_GRUBlineRAM #
-    #
-
-    # grub menu entry
-    str_GRUBtitle="Debian "`uname -o`", with"`uname -r`
-    #
-
-    # set directory
-    str_dir_1="/etc/grub.d/"
-    #
-
-    # active kernel #
-    str_rootKernel=`uname -r`
-    #echo "FindRoot: str_rootKernel: \"$str_rootKernel\""
-    #
-
-    # root dev info #
+    #### parameters ####
+    str_GRUBtitle="Debian "`uname -o`", with"`uname -r` # grub menu entry
+    str_rootKernel=`uname -r`                           # active kernel
+    
+    ## root dev info ##
     str_rootDiskInfo=`df -hT | grep /$`
     str_rootDev=${str_rootDiskInfo:5:4}   # example "sda1"
-    #echo "FindRoot: str_rootDev: \"$str_rootDev\""
-    #
+    str_rootUUID=`sudo blkid | grep sdc4 | cut -d '"' -f 2`
+    ##
 
-    # root UUID #
-    str_rootUUID=""
-    declare -a arr_str_rootBlkInfo+=( `lsblk -o NAME,UUID` )
-    #
+    ## custom GRUB ##
+    str_file_customGRUB="/etc/grub.d/proxifiedScripts/custom"
+    if [[ -z $str_file_customGRUB"_old" ]]; then
 
-    # find UUID #
-    for element in ${arr_str_rootBlkInfo[@]}; do
+        cp $str_file_customGRUB $str_file_customGRUB"_old"
+        echo -e "#!/bin/sh
+exec tail -n +3 /home/user/test-findpci.bash
+# This file provides an easy way to add custom menu entries.  Simply type the
+# menu entries you want to add after this comment.  Be careful not to change
+# the 'exec tail' line above." > $str_file_customGRUB
 
-        #echo "FindRoot: element: \"$element\""
+    fi
+    ##
 
-        # root UUID match
-        if [[ $bool_nextElement == true ]]; then str_rootUUID=$element; break
-        else bool_nextElement=false; fi
+    ####
 
-        # root dev match
-        if [[ $element == *$str_rootDev* ]]; then bool_nextElement=true; fi     
+    ## create individual VGA device GRUB options ##
+    for element in $arr_VGAIndex; do
+        
+        str_thisVGABusID="${arr_VGABusID[$element]}"
+        str_thisVGADriver="${arr_VGADriver[$element]}"
+        str_thisVGAHWID="${arr_VGAHWID[$element]}"
 
-    done
-    #
+        echo -e "VFIO_GRUB:\telement: \"$element\""
+        echo -e "VFIO_GRUB:\str_thisVGABusID: \"$str_thisVGABusID\""
+        echo -e "VFIO_GRUB:\str_thisVGADriver: \"$str_thisVGADriver\""
+        echo -e "VFIO_GRUB:\str_thisVGAHWID: \"$str_thisVGAHWID\""
 
-    # create individual VGA device GRUB options
-    for element in $arr_validVGAindex; do
+        ## add to list, separate by comma ##
+        for (( int_index=0; int_index<${#arr_PCIIndex[@]}; int_index++ )); do
 
-        # save current VGA bus ID
-        str_VGAbusID=${arr_PCIbusID[$element]}
-
-        # temporarily save VGA drivers and hardware IDs of all VGA devices except the current VGA device
-        for element_2 in $arr_validVGAindex; do
+            ## save current index ##
+            element_2=${arr_PCIIndex[int_index]}
+            str_thisPCIDriver=${arr_PCIDriver[$element_2]}
 
             if [[ $element_2 != $element ]]; then
-
-                declare -a arr_VGAdriver+=${arr_PCIdriver[$element]}
-                declare -a arr_VGAhwID+=${arr_PCIhwID[$element]}
-
+            
+                str_listPCIBusID+="${arr_PCIBusID[$element_2]},"
+                str_listPCIHWID+="${arr_PCIHWID[$element_2]},"
+                
             fi
 
-        done
+            if [[ $str_thisPCIDriver != $str_thisVGADriver ]]; then
+            
+                str_listPCIDriver+="${arr_PCIBusID[$element_2]},"
+                
+            fi
 
-        # GRUB command line
-        str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$arr_VGAdriver,$str_arr_PCIdriver vfio_pci.ids=$arr_VGAhwID,$str_arr_PCIhwID"
+            ## last index ##
+            if [[ $element_2 != $element && $int_index == ${#arr_PCIIndex[@]}-1 ]]; then
+            
+                str_listPCIBusID+="${arr_PCIBusID[$element_2]}"
+                str_listPCIHWID+="${arr_PCIHWID[$element_2]}"
+            
+            fi
 
-        str_VGAdev=`lspci | grep $str_VGAbusID`
+            if [[ $str_thisPCIDriver != $str_thisVGADriver && $int_index == ${#arr_PCIIndex[@]}-1 ]]; then
+            
+                str_listPCIDriver+="${arr_PCIBusID[$element_2]}"
+                
+            fi
+            ##
 
-        # GRUB custom menu
-        declare -a arr_dir_1_file=(
-"menuentry '$str_GRUBtitle (Xorg: $str_VGAdev)' {
+            ## GRUB command line ##
+            str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$arr_VGADriver,$str_arr_PCIDriver vfio_pci.ids=$arr_VGAHWID,$str_arr_PCIHWID"
+            ##
+
+            ## GRUB custom menu ##
+            declare -a arr_file_customGRUB=(
+"menuentry '$str_GRUBtitle (Xorg: $str_thisVGABusID: $str_thisVGADriver)' {
     insmod gzio
     set root='/dev/$str_rootDev'
     echo    'Loading Linux $str_rootKernel ...'
     linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUBline
     echo    'Loading initial ramdisk ...'
     initrd  /boot/initrd.img-$str_rootKernel
-    echo    'Xorg: $str_VGAdev"
-)
+    echo    'Xorg: $str_thisVGABusID: $str_thisVGADriver'"
+            )   
+            ##   
 
-        # write to file
-        echo ${arr_file_1[@]} > $str_dir_1'40_'$str_VGAbusID
-
-    done
-
-    echo "VFIO_GRUB: End."
-
-}
-
-# NOTE: Untested
-function 02_VFIO_VGA {
-
-    echo "VFIO_VGA: Start."
-
-    # dependencies #
-    # arr_PCIbusID #
-    # arr_PCIdriver #
-    # arr_PCIhwID #
-    # arr_VGAindex #
-    #
-
-    # parameters #
-    declare -i int_count=0
-    #
-
-    # outputs #
-    declare -a arr_validVGAindex
-    #
-
-    echo "VFIO_VGA: Enter index of each VGA device to passthrough (separated by space). Enter '0' for all."
-    
-    while true; do
-
-        # list all VGA devices #
-        for element in $arr_VGAindex; do
-
-            str_output=`lspci | grep *${arr_PCIbusID[$element]}*`
-            echo "FindRoot: str_output: \"$str_output\""
-
-            if [[ ! -z $str_ouput ]]; then echo "VFIO_VGA: $element: $str_output"; fi
+            echo -e "\n${arr_file_customGRUB[@]}" >> $str_file_customGRUB      # write to file
 
         done
-        #
-
-        # prompt #
-        # after three tries, continue with default selection
-        if [[ $int_count -ge 3 ]]; then
-
-            echo "VFIO: Exceeded max attempts."
-
-            # default selection
-            str_input="0"
-            echo "FindRoot: str_input: \"$str_input\""
-
-            # reset counter
-            int_count=0  
-
-        else
-
-            echo "Enter input:"
-            IFS=' ' read -r -a arr_input <<< $str_input
-
-            # '0' for all
-            if [[ $str_input == "0" ]]; then break; fi  
-
-            for element in $arr_input; do
-
-                for element_2 in $arr_VGAindex; do
-
-                    # false match, subtract from old array
-                    if [[ $element != $element_2 ]]; then "${arr_input[@]/$element}"
-
-                    # if match, add to new array
-                    else arr_validVGAindex+=$element; fi
-
-                done
-
-                # if new array is valid and old array is empty, continue
-                if [[ ! -z $arr_validVGAindex && -z $arr_input ]]; then break; fi
-
-            done
-
-        fi
-        #
-
-        # if new array is empty, prompt error
-
-        if [[ -z $arr_validVGAindex ]]; then echo "VFIO_VGA: Invalid input."; fi
-
-        # counter
-        echo "VFIO_RAM: int_count: \"$int_count\""
-        int_count=$int_count+1    
-        echo "VFIO_RAM: int_count: \"$int_count\""   
+        ##
 
     done
-
-    echo "VFIO_VGA: End."
+    ##
 
 }
+##
 
-function 02_VFIO_RAM {
+## Hugepages ##                 # NOTE: works!
+function VFIO_RAM {
 
-    echo "VFIO_RAM: Start."
-
-    # local parameters #
+    ## parameters ##
+    str_GRUBlineRAM=""
     bool_RAM=false
     declare -i int_count=0
-    declare -i int_hugepageSizeG=1
+    str_hugePageSize="1G"           # NOTE: ask user if they want to use 1G or 2M hugepage size, adjust warnings accordingly. recommend 1G hugepages as default.
     declare -i int_hugePageSum=1
-    str_GRUBlineRAM=""
-    #
+    ##
 
-    echo "VFIO_RAM: Do you wish to enable Hugepages?"\n"Hugepages is a feature which statically allocates system RAM to page-files, which may be used by Virtual machines."\n"For example, performance benefits include reduced/minimal memory latency."
+    echo -e "VFIO_RAM:\tDo you wish to enable Hugepages?\nHugepages is a feature which statically allocates system RAM to page-files, which may be used by Virtual machines.\nFor example, performance benefits include reduced/minimal memory latency."
 
-    # after three tries, continue with default selection
+    ## after three tries, continue with default selection ##
     while true; do
 
         if [[ $int_count -ge 3 ]]; then
 
-            echo "VFIO_RAM: Exceeded max attempts."
-            # default selection
-            str_input="N"
-            echo "VFIO_RAM: str_input: \"$str_input\""
+            echo -e "VFIO_RAM:\tExceeded max attempts."
+            str_input="N"       # default selection 
+            echo -e "VFIO_RAM:\tstr_input: \"$str_input\""  # DEBUG
 
         else
 
-            echo "VFIO_RAM: [Y/n]:"
-            read str_input
+            echo -en "VFIO_RAM:\t[Y/n]: "
+            read -r str_input
+            str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
 
-            # prompt
+            ## prompt ##
             case $str_input in
 
                 "Y")
 
-                echo "VFIO: Creating Hugepages."
+                echo -e "VFIO_RAM:\tCreating Hugepages."
+                bool_RAM=true
                 break;;
 
                 "N")
 
-                echo "VFIO: Skipping."
-                bool_RAM=true
-                # reset counter
-                int_count=0
-                break
-                ;;
+                echo -e "VFIO_RAM:\tSkipping."
+                break;;
 
                 *)
-                echo "VFIO: Invalid input.";;
+                echo -e "VFIO_RAM:\tInvalid input.";;
 
             esac
+            ##
 
-            # counter
-            echo "VFIO_RAM: int_count: \"$int_count\""
-            int_count=$int_count+1    
-            echo "VFIO_RAM: int_count: \"$int_count\""
+            int_count=$int_count+1      # reset counter  
 
         fi
 
     done
+    ##
 
-    if [[ $bool_RAM == true ]]; then
+    int_hugePageSum=1   # default selection
 
-        # reset counter
-        declare -i int_count=0 
+    ## find total RAM ##
+    str_sumMemK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`
+    declare -i int_sumMemK=$str_sumMemK
+    declare -i int_maxMemG=($int_sumMemK/1024/1024)
+    int_maxMemG=($int_maxMemG-4)
+    ###
 
-        #echo "VFIO_RAM: Enter the size (integer in Gigabytes) of a single hugepage (best example: size of one same-size RAM channel/stick): "
-        echo "VFIO_RAM: System RAM sizes in Kilobytes. Hint: 1 GiB == 1,024 MiB == 1,048,576 KiB"
-        echo `free`
+    ## skip if max RAM is too little ##
+    if [[ $int_maxMemG -le 1 ]]; then
+        
+        echo -e "VFIO_RAM:\tSystem RAM is too limited to create hugepages. Skipping."
+        bool_RAM=false    
+            
+    fi
+    ##
 
-        # after three tries, continue with default selection
+    ## warn if max RAM may be too little ## 
+    if [[ $int_maxMemG -le 4 && $int_maxMemG -gt 1 ]]; then
+
+        echo -e "VFIO_RAM:\tSystem RAM may be too limited to create hugepages. Continue?"
+
         while true; do
 
             if [[ $int_count -ge 3 ]]; then
 
-                echo "VFIO_RAM: Exceeded max attempts."
-                # reset counter
-                int_count=0
-                break
+                echo -e "VFIO_RAM:\tExceeded max attempts."                
+                str_input="N"   # default selection
+                echo -e "VFIO_RAM:\tstr_input: \"$str_input\""  # DEBUG
 
             else
 
-                #echo "VFIO_RAM: Enter the sum of hugepages (sum * $int_hugepageSizeG GiB) (best example: integer multiple of same-size RAM channel/stick): "
-                echo "VFIO_RAM: Enter the sum of hugepages (sum * $int_hugepageSizeG GiB):"
-                read str_input
+                echo -en "VFIO_RAM:\t[Y/n]: "
+                read -r str_input
+                str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
 
-                # default selection
-                int_hugePageSum=1
+                ## prompt ##
+                case $str_input in
 
-                # validate input
-                if [[ "$str_input" -ge 0 ]] 2>/dev/null; then int_hugePageSum="$str_input";   
-                else echo "VFIO: Invalid input."; fi
+                    "Y")
 
-                # counter
-                echo "VFIO_RAM: int_count: \"$int_count\""
-                int_count=$int_count+1    
-                echo "VFIO_RAM: int_count: \"$int_count\""
+                    echo -e "VFIO_RAM:\tCreating Hugepages."
+                    break;;
+
+                    "N")
+
+                    echo -e "VFIO_RAM:\tSkipping."
+                    bool_RAM=false
+                    break;;
+
+                    *)
+                    echo -e "VFIO_RAM:\tInvalid input.";;
+
+                esac
+                ##
+
+                int_count=$int_count+1      # reset counter
 
             fi
 
         done
 
-        # reset line if empty
-        if [[ -z $str_GRUBlineRAM ]]; then $str_GRUBlineRAM=""
-        #else str_GRUBlineRAM="default_hugepagesz=1G hugepagesz=$int_hugepageSizeG hugepages=$int_hugepageSum"; fi
-        else str_GRUBlineRAM="default_hugepagesz=1G hugepagesz=$int_hugepageSizeG hugepages=$int_hugepageSum"; fi
+    fi
+    ##
+
+    if [[ $bool_RAM == true ]]; then
+
+        declare -i int_count=0      # reset counter
+
+        ## prompt ##
+        #echo -e "VFIO_RAM:\tEnter the size (integer in Gigabytes) of a single hugepage (best example: size of one same-size RAM channel/stick): "
+        echo -e "VFIO_RAM:\tSystem RAM size in Kilobytes. Hint: 1 G == 1,024 M == 1,048,576 K"
+        free
+        ##
+
+        ## after three tries, continue with default selection ##
+        while true; do
+
+            if [[ $int_count -ge 3 ]]; then
+
+                echo -e "VFIO_RAM:\tExceeded max attempts. Value set to $int_hugePageSum G."
+                int_count=0     # reset counter
+                break
+
+            else
+
+                #echo -e "VFIO_RAM:\tEnter the number of the hugepage size ( size_of_hugepage == sum / number_of_hugepages ) (best example: integer multiple of same-size RAM channel/stick): "
+                echo -en "VFIO_RAM:\tEnter the number (integer) of hugepages ( sum == $str_hugePageSize * number_of_hugepages ): "
+                read -r str_input
+
+                ## validate input ##
+                str_NaN='^[0-9]+$'
+
+                if [[ $str_input =~ "$str_NaN" || "$str_input" -lt 1 || "$str_input" -ge $int_maxMemG ]]; then echo -e "VFIO_RAM:\tInvalid input. Enter a value between 1 to $int_maxMemG G." >&2
+
+                else
+                    
+                    int_hugePageSum="$str_input"
+                    break
+                    
+                fi
+                ##
+
+                int_count=$int_count+1      # reset counter
+
+            fi
+
+        done
+
+        ## reset line if empty ##
+        if [[ ! -z $str_GRUBlineRAM ]]; then str_GRUBlineRAM="";
+
+        #else str_GRUBlineRAM="default_hugepagesz=$str_hugePageSize hugepagesz=$str_hugePageSize hugepages=$int_hugepageSum"; fi
+        else str_GRUBlineRAM="default_hugepagesz=$str_hugePageSize hugepagesz=$str_hugePageSize hugepages=$int_hugePageSum"; fi
+        ##
 
     fi
 
-    echo "VFIO_RAM: End."
-
 }
+##
 
+##########
 
-## methods end ##
+# TODO: test
+########## setup VFIO ##########
 
-# NOTES:
-# divide large functions into smaller ones, note dependencies and order accordingly.
-# VFIO should be Boot-based VFIO and Permanent VFIO, and/or Combined ( example: GRUB, and MODULES+MODPROBE.D )
-# reduce repeated functions/work
+VFIO_RAM                        # prompt: ask user to enable/disable hugepages
 
-# Auto VFIO-PCI TO-DO:
-    # first loop: cycle list, save all PCI bus IDs to an array.
-    # second loop: assume first-run for new system (no devices added to VFIO-PCI): cycle list, save all PCI drivers to an array (same size as before).
-    # final loop: cycle list, save all PCI hardware IDs to an array (same size as before).
-    # next function: update config files (/etc/modules, /etc/default/grub)
+## parameters ##
+bool_GRUB_VGA=false
+declare -i int_count=0          # reset counter
+declare -a arr_PCIDriver=""     # array of PCI drivers excluding VGA drivers
+str_arr_PCIHWID=""              # array of PCI hw IDs excluding VGA hardware IDs
+##
 
-    # Xorg VFIO-PCI Setup TO-DO:
-    # *run as a systemd service
-    # first loop: cycle list, save all PCI bus IDs to an array, and save index of VGA devices to an array.
-    # final loop: cycle list, stop at first VGA device without VFIO-PCI driver; find the index of the array with all PCI devices with the index of the array of VGA devices; save the VGA bus ID and driver.
-    # next function: update xorg conf file
+## add PCI driver and hardware IDs to strings for VFIO ##
+for (( int_index=0; int_index<$[${#arr_PCIDriver[@]}]; int_index++ )); do
 
-## main start ##
+    element=${arr_PCIDriver[$int_index]}
 
-echo "Main: Start."
+    for element_2 in $arr_VGAindex; do
 
-# methods #
-01_FindPCI
-#02_VFIO
-#
+        if [[ $element_2 != $int_index ]]; then
 
-echo "Main: End."
+            str_PCIDriver_softdep+=("#softdep $element pre: vfio vfio-pci" "$element")
 
-## main end ##
+            if [[ $int_index -eq "${#arr_PCIDriver[@]}-1" ]]; then str_arr_PCIHWID+=("$element");
+            else str_arr_PCIHWID+=("$element,"); fi
+
+        fi
+
+    done
+
+done
+##
+
+## prompt ##
+echo -e "VFIO:\t\tYou may setup VFIO 'persistently' or through GRUB.\nPersistent includes modifying '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*'.\nGRUB includes multiple GRUB options of omitted, single VGA devices (example: omit a given VGA device to boot Xorg from)."
+
+while true; do
+
+    ## after three tries, continue with default selection
+    if [[ $int_count -ge 3 ]]; then
+
+        echo -e "VFIO:\t\tExceeded max attempts."
+        str_input="B"   # default selection
+        int_count=0     # reset counter
+
+    else
+
+        echo -en "VFIO:\t\t['ETC'/'GRUB'/'both']: "
+        read -r str_input
+        str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`    # string to upper
+
+    fi        
+    ##
+
+    ## switch ##
+    case $str_input in
+
+        "GRUB")         # modify GRUB boot options only
+            
+            VFIO_GRUB
+            break;;
+
+        "ETC")          # modify modules and initramfs-tools only
+            
+            
+            VFIO_ETC    # ask user which VGA devices to passthrough OR which to avoid
+            break;;
+
+        "BOTH")         # execute GRUB and VFIO, save VGA devices for GRUB options
+
+            VFIO_GRUB
+            VFIO_ETC
+            break;;
+
+        *)
+            echo -e "VFIO:\t\tInvalid input.";;
+
+    esac
+    ##
+
+    int_count=$int_count+1  # counter
+
+done
+##
+
+########## end setup VFIO ##########
+
+## reset IFS ##
+IFS=$SAVEIFS   # Restore original IFS
+##
+
+## remove log files ##
+rm $str_file_PCIInfo $str_file_PCIDriver $str_file_PCIHWID
+##
 
 exit 0
