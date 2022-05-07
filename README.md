@@ -3,6 +3,7 @@
 ## TL;DR:
   Run a system-setup or whenever a hardware change occurs. Parses Bash for list of **External PCI devices** ( Bus ID, Hardware ID, and Kernel driver ). *External* refers to PCI Bus ID *01:00.0* onward.
   User may implement:
+  
                       **Evdev KVM** to libvirt ( a virtual *Keyboard-video-mouse* switch),
                       
                       **Hugepages** ( allocate system RAM *statically* for reduced memory latency ),
@@ -10,6 +11,7 @@
                       **Zram swapfile** ( if user uses host as a desktop machine regularly *(example, browsing with many tabs open)*, reduce occurrances of host machine lock-up ).
 
   User may choose between:
+  
                             **Persistent setup** ( modify *'/etc/modules'*, blacklists, etc. ),
                             
                             **Multi-boot setup** ( add *GRUB* menu listings ).
