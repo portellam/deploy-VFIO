@@ -1,7 +1,7 @@
 ## Status: Unfinished, Work-in-progress
 # Auto-vfio-pci
 ## TL;DR:
-Generate and/or Regenerate a VFIO setup (**Persistent** or **Multi-boot**).
+Generate and/or Regenerate a VFIO setup (**Persistent** or **Multi-boot**). VFIO for Dummies
 
 ## Long version:
 Run at system-setup or whenever a hardware change occurs. Parses Bash for list of **External PCI devices** ( Bus ID, Hardware ID, and Kernel driver ). *External* refers to PCI Bus ID *01:00.0* onward.
@@ -30,5 +30,5 @@ My use-cases include:
 * create script for Xorg-vfio-pci ( SystemD service that regenerates Xorg at boot, finds first non vfio-pci VGA device )
 * include VM XML tweaks ( that I use )
 * implement features
-* add Scream (Windows audio server to host machine client?)
+* add Scream? ( Windows audio server to host machine client? )
 
