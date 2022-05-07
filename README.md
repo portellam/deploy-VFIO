@@ -6,6 +6,7 @@ Generate and/or Regenerate a VFIO setup (**Persistent** or **Multi-boot**). VFIO
 ## What is VFIO?
 
 See hyperlink:  https://www.kernel.org/doc/html/latest/driver-api/vfio.html
+
 Useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 
 ## Long version:
