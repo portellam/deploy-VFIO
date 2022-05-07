@@ -28,7 +28,7 @@ My use-cases include:
 * a testbench to test VGA BIOSes without flashing ( includes adding a pointer to a VBIOS in a VM's XML file ). [2]
 * swap host Xorg VGA device, to run an older OS which cannot support modern VGA devices. [3]
 
-[2] providing a VBIOS for Windows may be necessary for NVIDIA devices, when said device is initialized at host BIOS/UEFI startup.
+[2] providing a VBIOS for Windows may be necessary for NVIDIA devices, when said device's VBIOS is tainted by host startup/OS initialization.
 
 [3] Windows XP ( GTX 900-series devices and below ), Windows 9x ( GTX 8000-series and below ).
 
