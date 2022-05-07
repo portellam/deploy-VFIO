@@ -11,12 +11,12 @@ Useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 
 ## Long version:
 Run at system-setup or whenever a hardware change occurs. Parses Bash for list of **External PCI devices** ( Bus ID, Hardware ID, and Kernel driver ). *External* refers to PCI Bus ID *01:00.0* onward.
-User may implement
+User may implement:
 * **Evdev KVM** to libvirt ( a virtual *Keyboard-video-mouse* switch ).
 * **Hugepages** ( allocate system RAM *statically* for reduced memory latency ).
 * **Zram swapfile** ( if user redlines host machine system resources, this change reduces/prevents occurrances of host machine lock-up ).
 
-User may choose between a
+User may choose:
 * **Persistent setup** ( modify *'/etc/modules'*, blacklists, etc. ).
 * **Multi-boot setup** ( add *GRUB* menu listings ). [1]
                             
@@ -25,7 +25,7 @@ User may choose between a
 ## Why?
   **I want to use this.** I am tired of doing this by-hand over-and-over.
   
-My use-cases include:
+My use-cases:
 * a testbench to test old PCI devices over a PCI/PCIe bridge.
 * a testbench to test VGA BIOSes without flashing ( includes adding a pointer to a VBIOS in a VM's XML file ). [2]
 * swap host Xorg VGA device ( see above for *Multi-boot-setup* ).
