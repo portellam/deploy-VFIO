@@ -1,7 +1,10 @@
 ## Status: Unfinished, Work-in-progress
 # Auto-vfio-pci
 ## TL;DR:
-Run a system-setup or whenever a hardware change occurs. Parses Bash for list of **External PCI devices** ( Bus ID, Hardware ID, and Kernel driver ). *External* refers to PCI Bus ID *01:00.0* onward.
+Generate and/or Regenerate a VFIO setup (**Persistent** or **Multi-boot**).
+
+## Long version:
+Run at system-setup or whenever a hardware change occurs. Parses Bash for list of **External PCI devices** ( Bus ID, Hardware ID, and Kernel driver ). *External* refers to PCI Bus ID *01:00.0* onward.
 User may implement
 * **Evdev KVM** to libvirt ( a virtual *Keyboard-video-mouse* switch ).
 * **Hugepages** ( allocate system RAM *statically* for reduced memory latency ).
@@ -21,4 +24,11 @@ My use-cases include:
 * booting Windows XP x86 ( GTX 900-series devices below, and Radeon RX 200(?)-series devices below ).
 
 [2] providing a VBIOS for Windows may be necessary for NVIDIA devices, when said device is initialized at host BIOS/UEFI startup)
+
+## TO-DO:
+* test
+* create script for Xorg-vfio-pci ( SystemD service that regenerates Xorg at boot, finds first non vfio-pci VGA device )
+* include VM XML tweaks ( that I use )
+* implement features
+* add Scream (Windows audio server to host machine client?)
 
