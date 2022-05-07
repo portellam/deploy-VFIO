@@ -18,7 +18,7 @@ User may choose between a
 * **Persistent setup** ( modify *'/etc/modules'*, blacklists, etc. ).
 * **Multi-boot setup** ( add *GRUB* menu listings ). [1]
                             
-[1] *Multi-boot setup* offers flexibility with the ability to exclude a given VGA device, and boot Xorg/Display Manager from it (useful for systems with more than one VGA device). A *Persistent setup* offers less flexibility than a *Multi-boot setup*.
+[1] *Multi-boot setup* offers flexibility with the ability to exclude a given VGA device, and boot Xorg/Display Manager from it ( useful for systems with more than one VGA device ). A *Persistent setup* offers less flexibility than a *Multi-boot setup*.
 
 ## Why?
   **I want to use this.** I am tired of doing this by-hand over-and-over.
