@@ -29,6 +29,7 @@ My use-cases include:
 * swap host Xorg VGA device, to run an older OS which cannot support modern VGA devices. [3]
 
 [2] providing a VBIOS for Windows may be necessary for NVIDIA devices, when said device is initialized at host BIOS/UEFI startup.
+
 [3] Windows XP x86 ( GTX 900-series devices and below, and Radeon RX 200(?)-series devices and below )
 
 ## TO-DO:
