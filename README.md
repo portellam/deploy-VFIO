@@ -19,7 +19,7 @@ User may implement:
 * Multi-Boot setup (includes some Static setup) or Static setup.
   - Multi-Boot:   change Xorg VGA device on-the-fly (at boot).
   - Static:       set Xorg VGA device statically.
-* Hugepages             == static allocation of RAM for zero memory fragmentation and reduced memory latency.
+* Hugepages             == static allocation of RAM for zero memory fragmentation and reduced memory latency. Best-case scenario: use whole Memory channels/sticks.
 * Event devices (Evdev) == virtual Keyboard-Mouse switch.
 * Zram swapfile         == compressed RAM, to reduce Host lock-up from over-allocated Host memory.
 
