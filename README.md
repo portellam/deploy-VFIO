@@ -1,7 +1,7 @@
 ## Status: Unfinished, Work-in-progress
 # Auto-vfio-pci
 ## TL;DR:
-Generate and/or Regenerate a VFIO setup (**Persistent** or **Multi-boot**). VFIO for Dummies
+Generate and/or Regenerate a VFIO setup (**Multi-Boot** or **Static**). VFIO for Dummies.
 
 ## What is VFIO?
 
@@ -10,18 +10,16 @@ See hyperlink:  https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 Useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 
 ## Long version:
-Run at system-setup or whenever a hardware change occurs. Parses Bash for list of **External PCI devices** ( Bus ID, Hardware ID, and Kernel driver ). *External* refers to PCI Bus ID *01:00.0* onward.
+Run at system-setup or whenever a hardware change occurs.
+Parses Bash for list of External PCI devices ( Bus ID, Hardware ID, and Kernel driver ). External refers to PCI Bus ID 01:00.0 onward.
 
 User may implement:
-* **Evdev KVM** to libvirt ( a virtual *Keyboard-video-mouse* switch ).
-* **Hugepages** ( allocate system RAM *statically* for reduced memory latency ).
-* **Zram swapfile** ( if user redlines host machine system resources, this change reduces/prevents occurrances of host machine lock-up ).
-
-User may choose:
-* **Persistent setup** ( modify *'/etc/modules'*, blacklists, etc. ).
-* **Multi-boot setup** ( add *GRUB* menu listings ). [1]
-                            
-[1] *Multi-boot setup* offers flexibility with the ability to exclude a given VGA device, and boot Xorg from it ( useful for systems with more than one VGA device ). A *Persistent setup* offers less flexibility than a *Multi-boot setup*.
+* Multi-Boot setup (includes some Static setup) or Static setup.
+  - Multi-Boot:   change Xorg VGA device on-the-fly.
+  - Static:       set Xorg VGA device statically.
+* Hugepages             == static allocation of RAM for zero memory fragmentation and reduced memory latency.
+* Event devices (Evdev) == virtual Keyboard-Mouse switch.
+* Zram swapfile         == compressed RAM, to reduce Host lock-up from over-allocated Host memory.
 
 ## Why?
   **I want to use this.** I am tired of doing this by-hand over-and-over.
