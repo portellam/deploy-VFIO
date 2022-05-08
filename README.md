@@ -9,6 +9,8 @@ See hyperlink:  https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 
 Useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 
+Community:      https://old.reddit.com/r/VFIO
+
 ## Long version:
 Run at system-setup or hardware-change.
 Parses Bash for list of External PCI devices ( Bus ID, Hardware ID, and Kernel driver ). External refers to PCI Bus ID 01:00.0 onward.
@@ -22,7 +24,7 @@ User may implement:
 * Zram swapfile         == compressed RAM, to reduce Host lock-up from over-allocated Host memory.
 
 ## Why?
-  **I want to use this.** I am tired of doing this by-hand over-and-over.
+  **I want to use this.**
   
 My use-cases:
 * a testbench to test old PCI devices over a PCI/PCIe bridge.
