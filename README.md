@@ -15,7 +15,7 @@ Parses Bash for list of External PCI devices ( Bus ID, Hardware ID, and Kernel d
 
 User may implement:
 * Multi-Boot setup (includes some Static setup) or Static setup.
-  - Multi-Boot:   change Xorg VGA device on-the-fly.
+  - Multi-Boot:   change Xorg VGA device on-the-fly (at boot).
   - Static:       set Xorg VGA device statically.
 * Hugepages             == static allocation of RAM for zero memory fragmentation and reduced memory latency.
 * Event devices (Evdev) == virtual Keyboard-Mouse switch.
