@@ -35,9 +35,8 @@ My use-cases:
 [3] Windows XP ( GTX 900-series devices and below ), Windows 9x ( GTX 8000-series and below ).
 
 ## TO-DO:
-* test
-* create script for Xorg-vfio-pci ( SystemD service that regenerates Xorg at boot, finds first non vfio-pci VGA device )
-* include VM XML tweaks ( that I use )
-* implement features
-* add Scream? ( Windows audio server to host machine client? )
-
+* tests
+* StaticSetup
+* EvDev
+* zRAM
+* Xorg
