@@ -16,13 +16,9 @@
 #       - Static:       set Xorg VGA device statically.
 #   * Hugepages             == static allocation of RAM for zero memory fragmentation and reduced memory latency.
 #   * Event devices (Evdev) == virtual Keyboard-Mouse switch.
-#   * Zram swapfile         == compressed RAM, to reduce Host lock-up from over-allocated Host memory.
+#   * ZRAM swapfile         == compressed RAM, to reduce Host lock-up from over-allocated Host memory.
 
-# TO-DO:
-# a lot lol
-# add current user (not root) to libvirt group and evdev?
-
-########## pre main ##########
+########## pre-main ##########
 
 # check if sudo #
 if [[ `whoami` != "root" ]]; then
@@ -33,7 +29,7 @@ if [[ `whoami` != "root" ]]; then
 fi
 #
 
-## set IFS #
+# set IFS #
 SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 #
@@ -48,62 +44,58 @@ echo "\$6: $6"          # enable Zram       [Y/Z or N]
 # example:              sudo bash script_name.sh b h 1g 24 e z 2g
 #
 
-########## end pre main ##########
+########## end pre-main ##########
 
 ########## VFIOPCIParse ##########
 
-# NOTE: when function is called more than once, arrays are changed and ran multiple times???
-
 function VFIOPCI {
 
-## parameters ##
-str_CPUbusID="00:00.0"
-str_thisPCIBusID=""
-str_prevPCIBusID=""
-str_VGAVendor=""
-##
+    # parameters #
+    str_CPUbusID="00:00.0"
+    str_thisPCIBusID=""
+    str_prevPCIBusID=""
+    str_VGAVendor=""
+    #
 
-## lists ##
-declare -a arr_PCIBusID=""
-declare -a arr_PCIHWID=""
-declare -a arr_PCIDriver=""
-declare -a arr_PCIIndex=""
-declare -a arr_PCIInfo=""
-declare -a arr_VGABusID=""
-declare -a arr_VGADriver=""
-declare -a arr_VGAHWID=""
-declare -a arr_VGAIndex=""
-declare -a arr_VGAVendorBusID=""
-declare -a arr_VGAVendorDriver=""
-declare -a arr_VGAVendorHWID=""
-declare -a arr_VGAVendorIndex=""
-##
+    # lists #
+    declare -a arr_PCIBusID=""
+    declare -a arr_PCIHWID=""
+    declare -a arr_PCIDriver=""
+    declare -a arr_PCIIndex=""
+    declare -a arr_PCIInfo=""
+    declare -a arr_VGABusID=""
+    declare -a arr_VGADriver=""
+    declare -a arr_VGAHWID=""
+    declare -a arr_VGAIndex=""
+    declare -a arr_VGAVendorBusID=""
+    declare -a arr_VGAVendorDriver=""
+    declare -a arr_VGAVendorHWID=""
+    declare -a arr_VGAVendorIndex=""
+    #
 
-## create log file ##
-str_dir_log="/var/log/"
-str_file_PCIInfo=$str_dir_log'lspci.log'
-str_file_PCIDriver=$str_dir_log'lspci-k.log'
-str_file_PCIHWID=$str_dir_log'lspci-n.log'
-lspci | grep ":00." > $str_file_PCIInfo
-lspci -k > $str_file_PCIDriver
-lspci -n | grep ":00." > $str_file_PCIHWID
-##
+    # create log file #
+    str_dir_log="/var/log/"
+    str_file_PCIInfo=$str_dir_log'lspci.log'
+    str_file_PCIDriver=$str_dir_log'lspci-k.log'
+    str_file_PCIHWID=$str_dir_log'lspci-n.log'
+    lspci | grep ":00." > $str_file_PCIInfo
+    lspci -k > $str_file_PCIDriver
+    lspci -n | grep ":00." > $str_file_PCIHWID
+    #
 
-## find external PCI device Index values, Bus ID, and drivers ##
-bool_parsePCI=false
-bool_parseVGA=false
-bool_parseVGAVendor=false
-declare -i int_index=0
-##
+    # find external PCI device Index values, Bus ID, and drivers ##
+    bool_parsePCI=false
+    bool_parseVGA=false
+    bool_parseVGAVendor=false
+    declare -i int_index=0
+    #
 
-#### parse list of PCI devices ####
-function VFIOPCIParse {
-
+    ## parse list of PCI devices ##
     while read -r str_line; do
 
         if [[ ${str_line:0:7} == "01:00.0" ]]; then bool_parsePCI=true; fi
 
-        ## parse external PCI devices ##
+        # parse external PCI devices #
         if [[ $bool_parsePCI == true ]]; then
 
             if [[ $str_line != *"Subsystem: "* && $str_line != *"Kernel driver in use: "* && $str_line != *"Kernel modules: "* ]]; then     # line includes PCI bus ID
@@ -113,7 +105,7 @@ function VFIOPCIParse {
                 str_thisPCIBusID=(${str_line:0:7})
                 arr_PCIBusID+=($str_thisPCIBusID)   # add Bus ID index to list
 
-                ## match VGA device ##
+                # match VGA device #
                 if [[ $str_line == *"VGA"* ]]; then
             
                     arr_VGABusID+=($str_thisPCIBusID);
@@ -121,20 +113,20 @@ function VFIOPCIParse {
                     bool_parseVGA=true
 
                 fi
-                ##
+                #
 
-                ## match VGA vendor device (Audio, USB3, etc.) ##
+                # match VGA vendor device (Audio, USB3, etc.) #
                 if [[ ${str_thisPCIBusID:0:6} == ${str_prevPCIBusID:0:6} && $str_thisPCIBusID != $str_prevPCIBusID ]]; then
 
                     arr_VGAVendorBusID+=($str_thisPCIBusID);
                     bool_parseVGAVendor=true
 
                 fi
-                ##
+                #
 
             fi
 
-            ## add to list only if driver is found ##
+            # add to list only if driver is found #
             if [[ $str_line == *"Kernel driver in use: "* ]]; then      # line includes PCI driver
 
                 declare -i int_offset=${#str_line}-22
@@ -142,48 +134,48 @@ function VFIOPCIParse {
                 arr_PCIDriver+=($str_thisPCIDriver)
                 arr_PCIIndex+=("$int_index")        
 
-                ## add to lists only if VGA device ##
+                # add to lists only if VGA device #
                 if [[ $bool_parseVGA == true ]]; then
 
                     arr_VGAIndex+=("$int_index")
                     arr_VGADriver+=($str_thisPCIDriver);                # save for blacklists and Xorg
 
                 fi
-                ##
+                #
 
-                ## add to list only if VGA vendor device ##
+                # add to list only if VGA vendor device #
                 if [[ $bool_parseVGAVendor == true ]]; then
 
                     arr_VGAVendorIndex+=("$int_index");
                     arr_VGAVendorDriver+=("$str_thisPCIDriver")  
 
                 fi
-                ##
+                #
 
-                ## reset booleans ##
+                # reset booleans #
                 bool_parseVGA=false
                 bool_parseVGAVendor=false
-                ##
+                #
 
             fi
-            ##
+            #
 
         fi
-        ##
+        #
 
     done < $str_file_PCIDriver
-    ####
+    ##
 
     ## find external PCI Hardware IDs ##
     bool_parseVGAVendor=false
     declare -i int_index=0
 
-    #### parse list of PCI devices ####
+    # parse list of PCI devices #
     while read -r str_line; do
 
         if [[ ${str_line:0:7} == "01:00.0" ]]; then bool_parsePCI=true; fi
 
-        ## parse external PCI devices ##
+        # parse external PCI devices ##
         if [[ $bool_parsePCI == true ]]; then 
 
             str_thisPCIHWID=(${str_line:14:9})
@@ -203,47 +195,48 @@ function VFIOPCIParse {
             ((i++))     # increment only if match is found
 
         fi
-        ##
+        #
 
     done < $str_file_PCIHWID
-}
-####
 
-## debug ##
-function VFIOPCIDebug {
+    # debug #
+    function VFIOPCIDebug {
 
-    echo -e "arr_PCIIndex:\t\t${#arr_PCIIndex[@]}i"
-    for element in ${arr_PCIIndex[@]}; do
-        echo -e "arr_PCIIndex:\t\t"$element
-    done
+        echo -e "arr_PCIIndex:\t\t${#arr_PCIIndex[@]}i"
+        for element in ${arr_PCIIndex[@]}; do
+            echo -e "arr_PCIIndex:\t\t"$element
+        done
 
-    echo -e "arr_VGAIndex:\t\t${#arr_VGAIndex[@]}i"
-    for element in ${arr_VGAIndex[@]}; do
-        echo -e "arr_VGAIndex:\t\t"$element
-    done
+        echo -e "arr_VGAIndex:\t\t${#arr_VGAIndex[@]}i"
+        for element in ${arr_VGAIndex[@]}; do
+            echo -e "arr_VGAIndex:\t\t"$element
+        done
 
-    echo -e "arr_VGAVendorIndex:\t${#arr_VGAVendorIndex[@]}i"
-    for element in ${arr_VGAVendorIndex[@]}; do
-        echo -e "arr_VGAVendorIndex:\t"$element
-    done
+        echo -e "arr_VGAVendorIndex:\t${#arr_VGAVendorIndex[@]}i"
+        for element in ${arr_VGAVendorIndex[@]}; do
+            echo -e "arr_VGAVendorIndex:\t"$element
+        done
 
-    echo -e "arr_PCIBusID:\t\t${#arr_PCIBusID[@]}i"
-    for element in ${arr_PCIBusID[@]}; do
-        echo -e "PCIBusID:\t\t"$element
-    done
+        echo -e "arr_PCIBusID:\t\t${#arr_PCIBusID[@]}i"
+        for element in ${arr_PCIBusID[@]}; do
+            echo -e "PCIBusID:\t\t"$element
+        done
 
-    echo -e "arr_VGABusID:\t\t${#arr_VGABusID[@]}i"
-    for element in ${arr_VGABusID[@]}; do
-        echo -e "arr_VGABusID:\t\t"$element
-    done
+        echo -e "arr_VGABusID:\t\t${#arr_VGABusID[@]}i"
+        for element in ${arr_VGABusID[@]}; do
+            echo -e "arr_VGABusID:\t\t"$element
+        done
 
-    echo -e "arr_VGAVendorBusID:\t${#arr_VGAVendorBusID[@]}i"
-    for element in ${arr_VGAVendorBusID[@]}; do
-        echo -e "arr_VGAVendorBusID:\t"$element
-    done
+        echo -e "arr_VGAVendorBusID:\t${#arr_VGAVendorBusID[@]}i"
+        for element in ${arr_VGAVendorBusID[@]}; do
+            echo -e "arr_VGAVendorBusID:\t"$element
+        done
     
-}
-##
+    }
+
+    # debug #
+    VFIOPCIDebug
+    #
 
 }
 
@@ -310,7 +303,7 @@ done
 str_HugePageSize=$3
 str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
 
-declare -i int_count=0                  # reset counter
+declare -i int_count=0      # reset counter
 
 while true; do
                  
@@ -471,106 +464,106 @@ done
 
 function MultiBootSetup {
 
-#### parameters ####
-str_Distribution=`lsb_release -a | grep "Distributor ID: "* | cut -d ":" -f 2`  # Linux distro name
-str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` "                 # incomplete, append Kernel image rev.
-declare -a arr_rootKernel+=`find /boot/vmli*`                                   # list of Kernels
+    ## parameters ##
+    str_Distribution=`lsb_release -a | grep "Distributor ID: "* | cut -d ":" -f 2`  # Linux distro name
+    str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` "                 # incomplete, append Kernel image rev.
+    declare -a arr_rootKernel+=`find /boot/vmli*`                                   # list of Kernels
     
-## root Dev ##
-str_rootDiskInfo=`df -hT | grep /$`
-str_rootDev=${str_rootDiskInfo:5:4}                     # example "sda1"
-##
+    # root Dev #
+    str_rootDiskInfo=`df -hT | grep /$`
+    str_rootDev=${str_rootDiskInfo:5:4}     # example "sda1"
+    #
 
-## root UUID ##
-str_rootUUID=`sudo blkid | grep $str_rootDev | cut -d '"' -f 2`
-##
+    # root UUID #
+    str_rootUUID=`sudo blkid | grep $str_rootDev | cut -d '"' -f 2`
+    #
 
-## custom GRUB ##
-str_file_customGRUB="/etc/grub.d/proxifiedScripts/custom"
-if [[ ! -z $str_file_customGRUB"_old" ]]; then
+    # custom GRUB #
+    str_file1="/etc/grub.d/proxifiedScripts/custom"
+    if [[ ! -z $str_file1"_old" ]]; then
 
-    cp $str_file_customGRUB $str_file_customGRUB"_old"
-    echo -e"#!/bin/sh
+        cp $str_file1 $str_file1"_old"
+        echo -e"#!/bin/sh
 exec tail -n +3 /home/user/test-findpci.bash
 # This file provides an easy way to add custom menu entries.  Simply type the
 # menu entries you want to add after this comment.  Be careful not to change
-# the 'exec tail' line above." > $str_file_customGRUB
+# the 'exec tail' line above." > $str_file1
 
-fi
-##
-####
-
-## find UUID ##
-for element in ${arr_str_rootBlkInfo[@]}; do
-
-    ## root UUID match ##
-    if [[ $bool_nextElement == true ]]; then str_rootUUID=$element; break
-    else bool_nextElement=false; fi
+    fi
+    #
     ##
 
-    if [[ $element == *$str_rootDev* ]]; then bool_nextElement=true; fi     # root dev match
+    # find UUID #
+    for element in ${arr_str_rootBlkInfo[@]}; do
 
-done
-##
+        # root UUID match #
+        if [[ $bool_nextElement == true ]]; then str_rootUUID=$element; break
+        else bool_nextElement=false; fi
+        #
 
-## create individual VGA device GRUB options ##
-for int_VGAIndex in $arr_VGAIndex; do
+        if [[ $element == *$str_rootDev* ]]; then bool_nextElement=true; fi     # root dev match
+
+    done
+    #
+
+    # create individual VGA device GRUB options #
+    for int_VGAIndex in $arr_VGAIndex; do
         
-    str_thisVGABusID="${arr_VGABusID[$int_VGAIndex]}"
-    str_thisVGADriver="${arr_VGADriver[$int_VGAIndex]}"
-    str_thisVGAHWID="${arr_VGAHWID[$int_VGAIndex]}"
+        str_thisVGABusID="${arr_VGABusID[$int_VGAIndex]}"
+        str_thisVGADriver="${arr_VGADriver[$int_VGAIndex]}"
+        str_thisVGAHWID="${arr_VGAHWID[$int_VGAIndex]}"
 
-    #echo -e "GRUB:\int_VGAIndex: \"$int_VGAIndex\""
-    #echo -e "GRUB:\str_thisVGABusID: \"$str_thisVGABusID\""
-    #echo -e "GRUB:\str_thisVGADriver: \"$str_thisVGADriver\""
-    #echo -e "GRUB:\str_thisVGAHWID: \"$str_thisVGAHWID\""
+        #echo -e "GRUB:\int_VGAIndex: \"$int_VGAIndex\""
+        #echo -e "GRUB:\str_thisVGABusID: \"$str_thisVGABusID\""
+        #echo -e "GRUB:\str_thisVGADriver: \"$str_thisVGADriver\""
+        #echo -e "GRUB:\str_thisVGAHWID: \"$str_thisVGAHWID\""
 
-    ## add to list, separate by comma ##
-    for (( int_index=0; int_index<${#arr_PCIIndex[@]}; int_index++ )); do
+        # add to list, separate by comma #
+        for (( int_index=0; int_index<${#arr_PCIIndex[@]}; int_index++ )); do
 
-        int_PCIIndex=${arr_PCIIndex[int_index]}             # save current index
-        str_thisPCIDriver=${arr_PCIDriver[$int_PCIIndex]}
+            int_PCIIndex=${arr_PCIIndex[int_index]}             # save current index
+            str_thisPCIDriver=${arr_PCIDriver[$int_PCIIndex]}
 
-        ## add index ##
-        if [[ $str_thisPCIDriver != $str_thisVGADriver ]]; then str_listPCIDriver+="${arr_PCIBusID[$int_PCIIndex]}," ;fi
+            # add index #
+            if [[ $str_thisPCIDriver != $str_thisVGADriver ]]; then str_listPCIDriver+="${arr_PCIBusID[$int_PCIIndex]}," ;fi
 
-        if [[ $int_PCIIndex != $int_VGAIndex ]]; then
+            if [[ $int_PCIIndex != $int_VGAIndex ]]; then
             
-            str_listPCIBusID+="${arr_PCIBusID[$int_PCIIndex]},"
-            str_listPCIHWID+="${arr_PCIHWID[$int_PCIIndex]},"
+                str_listPCIBusID+="${arr_PCIBusID[$int_PCIIndex]},"
+                str_listPCIHWID+="${arr_PCIHWID[$int_PCIIndex]},"
                 
-        fi
-        ##
+            fi
+            #
 
-        ## add last index ##
-        if [[ $str_thisPCIDriver != $str_thisVGADriver && $int_index == ${#arr_PCIIndex[@]}-1 ]]; then str_listPCIDriver+="${arr_PCIBusID[$int_PCIIndex]}"; fi
+            # add last index #
+            if [[ $str_thisPCIDriver != $str_thisVGADriver && $int_index == ${#arr_PCIIndex[@]}-1 ]]; then str_listPCIDriver+="${arr_PCIBusID[$int_PCIIndex]}"; fi
 
-        if [[ $int_PCIIndex != $int_VGAIndex && $int_index == ${#arr_PCIIndex[@]}-1 ]]; then
+            if [[ $int_PCIIndex != $int_VGAIndex && $int_index == ${#arr_PCIIndex[@]}-1 ]]; then
             
-            str_listPCIBusID+="${arr_PCIBusID[$int_PCIIndex]}"
-            str_listPCIHWID+="${arr_PCIHWID[$int_PCIIndex]}"
+                str_listPCIBusID+="${arr_PCIBusID[$int_PCIIndex]}"
+                str_listPCIHWID+="${arr_PCIHWID[$int_PCIIndex]}"
             
-        fi
-        ##
+            fi
+            #
 
-        ## GRUB command line ##
-        str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$arr_VGADriver,$str_arr_PCIDriver vfio_pci.ids=$arr_VGAHWID,$str_arr_PCIHWID"
-        ##
+            # GRUB command line #
+            str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$arr_VGADriver,$str_arr_PCIDriver vfio_pci.ids=$arr_VGAHWID,$str_arr_PCIHWID"
+            #
 
-        ## parse Kernels ##
-        for str_rootKernel in arr_rootKernel; do
+            # parse Kernels #
+            for str_rootKernel in arr_rootKernel; do
 
-            ## set Kernel ##
-            declare -i int_rootKernel=${#str_rootKernel}-14
-            str_rootKernel=${str_rootKernel:14:int_rootKernel}
-            ##
+                # set Kernel #
+                declare -i int_rootKernel=${#str_rootKernel}-14
+                str_rootKernel=${str_rootKernel:14:int_rootKernel}
+                #
 
-            ## GRUB Menu Title ##
-            str_GRUBMenuTitle+="$str_rootKernel (Xorg: Bus=$str_thisVGABusID, Drv=$str_thisVGADriver)'"
-            ##
+                # GRUB Menu Title #
+                str_GRUBMenuTitle+="$str_rootKernel (Xorg: Bus=$str_thisVGABusID, Drv=$str_thisVGADriver)'"
+                #
 
-            ## GRUB custom menu ##
-            declare -a arr_file_customGRUB=(
+                # GRUB custom menu #
+                declare -a arr_file_customGRUB=(
 "menuentry '$str_GRUBMenuTitle' {
     insmod gzio
     set root='/dev/$str_rootDev'
@@ -581,19 +574,18 @@ for int_VGAIndex in $arr_VGAIndex; do
     echo    'Xorg: $str_thisVGABusID: $str_thisVGADriver'"
             )
 
-            echo -e "\n${arr_file_customGRUB[@]}" > $str_file_customGRUB      # write to file
+                echo -e "\n${arr_file_customGRUB[@]}" > $str_file1      # write to file
 
-        done   
-        ##
+            done   
+            #
+
+        done
+        #
 
     done
-    ##
-
-done
-##
+    #
 
 }
-##
 
 ########## end MultiBootSetup ##########
 
@@ -605,24 +597,20 @@ done
 
 function StaticSetup {
 
-# directories #
-str_dir_MODPROBE="/etc/modprobe.d/"
-#
-
     # files #
-    str_file_GRUB="/etc/default/grub"
-    arr_file_INITRAMFS="/etc/initramfs-tools/modules"
-    str_file_MODULES="/etc/modules"
-    str_file_MODPROBE="/etc/modprobe.d/vfio.conf"
+    str_file1="/etc/default/grub"
+    str_file2="/etc/initramfs-tools/modules"
+    str_file3="/etc/modules"
+    str_file4="/etc/modprobe.d/vfio.conf"
     #
 
     # GRUB #
-    str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_arr_PCIDriver vfio_pci.ids=$str_arr_PCIHWID"
-    echo \n"#"\n${str_GRUBline} >> $str_file_GRUB
+    str_GRUB="GRUB_CMDLINE_DEFAULT=\" acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_arr_PCIDriver vfio_pci.ids=$str_arr_PCIHWID\""
+    echo -e "#\n${str_GRUB}" >> $str_file1
     #
 
     # initramfs-tools #
-    declare -a arr_file_INITRAMFS=(
+    declare -a arr_file2=(
 "# List of modules that you want to include in your initramfs.
 # They will be loaded at boot time in the order below.
 #
@@ -651,11 +639,11 @@ options vfio_pci ids=$str_arr_PCIHWID
 vfio_pci ids=$str_arr_PCIHWID
 vfio_pci"
 )
-    echo ${arr_file_INITRAMFS[@]} > $arr_file_INITRAMFS
+    echo ${arr_file2[@]} > $str_file2
     #
 
     # modules #
-    declare -a arr_file_MODULES=(
+    declare -a arr_file3=(
 "# /etc/modules: kernel modules to load at boot time.
 #
 # This file contains the names of kernel modules that should be loaded
@@ -678,24 +666,24 @@ apm power_off=1
 # GRUB kernel parameters:
 vfio_pci ids=$str_arr_PCIHWID"
 )
-    echo ${arr_file_MODULES[@]} > $str_file_MODULES
+    echo ${arr_file3[@]} > $str_file3
     #
 
     # modprobe.d/blacklists #
-    for $element in $arr_PCIDriver[@]; do
-        echo "blacklist $element" > $str_dir_MODPROBE$element'.conf'
+    for str_PCIDriver in $arr_PCIDriver[@]; do
+        echo "blacklist $str_PCIDriver" > "/etc/modprobe.d/$str_PCIDriver.conf"
     done
     #
 
     # modprobe.d/vfio.conf #
-    declare -a arr_file_4=(
+    declare -a arr_file4=(
 "# NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
 # Soft dependencies:
 $str_PCIDriver_softdep
 
 # PCI hardware IDs:
 options vfio_pci ids=$str_arr_PCIHWID")
-    echo ${str_file_MODPROBE[@]} > $str_file_MODPROBE
+    echo ${arr_file4[@]} > $str_file4
     #
 
 }
@@ -712,7 +700,7 @@ function EvDev {
 
     # parameters #
     str_input=$5
-    str_file="/etc/libvirt/qemu.conf"
+    str_file1="/etc/libvirt/qemu.conf"
     #
 
     # prompt #
@@ -797,12 +785,12 @@ cgroup_device_acl = [
     #
 
     # backup config file #
-    if [[ ! -z $str_file"_old" ]]; then cp $str_file $str_file"_old"
-    else cp $str_file $str_file"_old" $str_file $str_file; fi
+    if [[ ! -z $str_file1"_old" ]]; then cp $str_file1 $str_file1"_old"
+    else cp $str_file1 $str_file1"_old" $str_file1; fi
     #
 
     # write to file #
-    echo $str_file_QEMU > $str_file
+    echo $str_file_QEMU > $str_file1
     #
 
 }
