@@ -20,6 +20,7 @@
 
 # TO-DO:
 # a lot lol
+# add current user (not root) to libvirt group and evdev?
 
 ########## pre main ##########
 
@@ -44,7 +45,6 @@ echo "\$3: $3"          # set size          [2M or 1G]
 echo "\$4: $4"          # set num           [min or max]
 echo "\$5: $5"          # enable Evdev      [Y/E or N]
 echo "\$6: $6"          # enable Zram       [Y/Z or N]
-echo "\$7: $7"          # set size          [min or max]     *dependent on values set by hugepages
 # example:              sudo bash script_name.sh b h 1g 24 e z 2g
 #
 
@@ -255,6 +255,7 @@ function HugePages {
 
 # parameters #
 str_input=$2
+str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                # default output
 int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
 #
 
@@ -306,8 +307,8 @@ done
 #
 
 # Hugepage size: validate input #
-str_HugePagesize=$3
-str_HugePagesize=`echo $str_HugePagesize | tr '[:lower:]' '[:upper:]'`
+str_HugePageSize=$3
+str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
 
 declare -i int_count=0                  # reset counter
 
@@ -317,19 +318,19 @@ while true; do
     if [[ $int_count -ge 3 ]]; then
 
         echo "Exceeded max attempts."
-        str_HugePagesize="1G"           # default selection
+        str_HugePageSize="1G"           # default selection
         
     else
 
         echo -en "Enter Hugepage size and byte-size. [ 2M / 1G ]:\t"
-        read -r str_HugePagesize
-        str_HugePagesize=`echo $str_HugePagesize | tr '[:lower:]' '[:upper:]'`
+        read -r str_HugePageSize
+        str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
 
     fi
     #
 
     # check input #
-    case $str_HugePagesize in
+    case $str_HugePageSize in
 
         "2M")
             break;;
@@ -363,7 +364,7 @@ while true; do
     else
 
         # Hugepage Size #
-        if [[ $str_HugePagesize == "2M" ]]; then
+        if [[ $str_HugePageSize == "2M" ]]; then
 
             str_prefixMem="M"
             declare -i int_HugePageK=2048       # Hugepage size
@@ -371,7 +372,7 @@ while true; do
 
         fi
 
-        if [[ $str_HugePagesize == "1G" ]]; then
+        if [[ $str_HugePageSize == "1G" ]]; then
 
             str_prefixMem="G"
             declare -i int_HugePageK=1048576    # Hugepage size
@@ -383,7 +384,7 @@ while true; do
         declare -i int_HugePageMemMax=$int_HostMemMaxK-$int_HostMemMinK
         declare -i int_HugePageMax=$int_HugePageMemMax/$int_HugePageK   # max HugePages
 
-        echo -en "Enter number of HugePages ( num * $str_HugePagesize ). [ $int_HugePageMin to $int_HugePageMax pages ] : "
+        echo -en "Enter number of HugePages ( num * $str_HugePageSize ). [ $int_HugePageMin to $int_HugePageMax pages ] : "
         read -r int_HugePageNum
         #
 
@@ -399,6 +400,7 @@ while true; do
     else
     
         echo -e "Continuing..."
+        str_GRUB_CMDLINE_Hugepages="default_hugepagesz=$str_HugePageSize hugepagesz=$str_HugePageSize hugepages=$int_HugePageNum"
         break
         
     fi
@@ -444,14 +446,14 @@ while [[ $str_input != "B" && $str_input != "S" ]]; do
             echo "Continuing with Multi-Boot setup..."
             HugePages $2 $3 $4
             VFIOParse
-            MultiBootSetup $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
-            StaticSetup $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
+            MultiBootSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
+            StaticSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
             break;;
 
         "S")
             echo "Continuing with Static setup..."
             HugePages $2 $3 $4
-            StaticSetup $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
+            StaticSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
             break;;
 
         *)
@@ -609,18 +611,18 @@ str_dir_MODPROBE="/etc/modprobe.d/"
 
     # files #
     str_file_GRUB="/etc/default/grub"
-    str_file_INITRAMFS="/etc/initramfs-tools/modules"
+    arr_file_INITRAMFS="/etc/initramfs-tools/modules"
     str_file_MODULES="/etc/modules"
     str_file_MODPROBE="/etc/modprobe.d/vfio.conf"
     #
 
     # GRUB #
-    str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$str_arr_PCIDriver vfio_pci.ids=$str_arr_PCIHWID"
+    str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_arr_PCIDriver vfio_pci.ids=$str_arr_PCIHWID"
     echo \n"#"\n${str_GRUBline} >> $str_file_GRUB
     #
 
     # initramfs-tools #
-    declare -a str_file_INITRAMFS=(
+    declare -a arr_file_INITRAMFS=(
 "# List of modules that you want to include in your initramfs.
 # They will be loaded at boot time in the order below.
 #
@@ -649,7 +651,7 @@ options vfio_pci ids=$str_arr_PCIHWID
 vfio_pci ids=$str_arr_PCIHWID
 vfio_pci"
 )
-    echo ${str_file_INITRAMFS[@]} > $str_file_INITRAMFS
+    echo ${arr_file_INITRAMFS[@]} > $arr_file_INITRAMFS
     #
 
     # modules #
@@ -706,11 +708,264 @@ options vfio_pci ids=$str_arr_PCIHWID")
 
 ########## EvDev ##########
 
+function EvDev {
+
+    # parameters #
+    str_input=$5
+    str_file="/etc/libvirt/qemu.conf"
+    #
+
+    # prompt #
+    declare -i int_count=0      # reset counter
+    str_prompt="Setup EvDev?\nEvDev (Event Devices) is a method that assigns input devices to a Virtual KVM (Keyboard-Video-Mouse) switch.\nEvDev is recommended for setups without an external KVM switch and multiple USB controllers.\nNOTE: View '/etc/libvirt/qemu.conf' to review changes, and append to a Virtual machine's configuration file."
+
+    if [[ -z $str_input ]]; then echo -e $str_prompt; fi
+
+    while [[ $str_input != "Y" && $str_input != "Z" && $str_input != "N" ]]; do
+
+    if [[ $int_count -ge 3 ]]; then
+
+        echo "Exceeded max attempts."
+        str_input="Y"                   # default selection
+        
+    else
+
+        echo -en "Setup EvDev?\t[ Y/n ]: "
+        read -r str_input
+        str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
+
+    fi
+
+    case $str_input in
+
+        "Y"||"E")
+            echo "Continuing with EvDev setup..."
+            break;;
+
+        "N")
+            echo "Skipping EvDev setup..."
+            return 0;;
+
+        *)
+            echo "Invalid input.";;
+
+    esac
+    ((int_count++))
+
+    done
+    #
+
+    # find first normal user
+    str_UID1000=`cat /etc/passwd | grep 1000 | cut -d ":" -f 1`
+    #
+
+    # add to group
+    declare -a arr_User=(`getent passwd {1000..60000} | cut -d ":" -f 1`)   # find all normal users
+    for str_User in $arr_User; do sudo adduser $str_User libvirt; done      # add each normal user to libvirt group
+    #
+
+    # list of input devices
+    declare -a arr_InputDeviceID=(`ls /dev/input/by-id`)
+    #declare -a arr_InputDeviceInfo=(`ls -al /dev/input/by-id`)
+    #
+
+    # file changes #
+    str_file_QEMU=$("
+#
+user = "$str_UID1000"
+group = "user"
+#
+#
+hugetlbfs_mount = "/dev/hugepages"
+#
+nvram = [
+   "/usr/share/OVMF/OVMF_CODE.fd:/usr/share/OVMF/OVMF_VARS.fd",
+   "/usr/share/OVMF/OVMF_CODE.secboot.fd:/usr/share/OVMF/OVMF_VARS.fd",
+   "/usr/share/AAVMF/AAVMF_CODE.fd:/usr/share/AAVMF/AAVMF_VARS.fd",
+   "/usr/share/AAVMF/AAVMF32_CODE.fd:/usr/share/AAVMF/AAVMF32_VARS.fd"
+]
+cgroup_device_acl = [
+")
+
+    for str_InputDeviceID in $arr_InputDeviceID; do $str_file_QEMU+=$(""/dev/input/by-id/$str_InputDeviceID""); done
+
+    str_file_QEMU+=$("    "/dev/null", "/dev/full", "/dev/zero",
+    "/dev/random", "/dev/urandom",
+    "/dev/ptmx", "/dev/kvm",
+    "/dev/rtc","/dev/hpet"
+]")
+    #
+
+    # backup config file #
+    if [[ ! -z $str_file"_old" ]]; then cp $str_file $str_file"_old"
+    else cp $str_file $str_file"_old" $str_file $str_file; fi
+    #
+
+    # write to file #
+    echo $str_file_QEMU > $str_file
+    #
+
+}
+
 ########## end EvDev ##########
 
-########## zRAM ##########
+########## ZRAM ##########
 
-########## end zRAM ##########
+function ZRAM {
+
+    # parameters #
+    str_input=$6
+    str_file1="/etc/default/zramswap"
+    str_file2="/etc/default/zram-swap"
+    #
+
+    # prompt #
+    declare -i int_count=0      # reset counter
+    str_prompt="Setup ZRAM? ZRAM allocates RAM as a compressed swapfile. The default compression method \"lz4\", at a ratio of 2:1, offers the highest performance."
+
+    if [[ -z $str_input ]]; then echo -e $str_prompt; fi
+
+    while [[ $str_input != "Y" && $str_input != "Z" && $str_input != "N" ]]; do
+
+    if [[ $int_count -ge 3 ]]; then
+
+        echo "Exceeded max attempts."
+        str_input="Y"                   # default selection
+        
+    else
+
+        echo -en "Setup ZRAM?\t[ Y/n ]: "
+        read -r str_input
+        str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
+
+    fi
+
+    case $str_input in
+
+        "Y"||"Z")
+            echo "Continuing with ZRAM setup..."
+            break;;
+
+        "N")
+            echo "Skipping ZRAM setup..."
+            return 0;;
+
+        *)
+            echo "Invalid input.";;
+
+    esac
+    ((int_count++))
+
+    done
+    #
+
+    # parameters #
+    int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
+    str_GitHub_Repo="FoundObjects/zram-swap"
+    #
+
+    # check for zram-utils #
+    if [[ ! -z $str_file1 ]]; then
+
+        apt install -y git zram-utils
+        systemctl stop zramswap
+        systemctl disable zramswap
+
+    fi
+    #
+
+    # check for local repo #
+    if [[ ! -z "/root/git/$str_GitHub_Repo" ]]; then
+    
+        mkdir /root/git
+        mkdir /root/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`
+        cd /root/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`
+        git clone https://www.github.com/$str_GitHub_Repo
+
+    else
+
+        cd /root/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`    
+        git pull https://www.github.com/$str_GitHub_Repo
+    
+    fi
+    #
+
+    # check for zram-swap #
+    if [[ ! -z $str_file2 ]]; then sh /root/git/$str_GitHub_Repo/install.sh fi
+    #
+
+    # disable ZRAM swap #
+    if [[ `sudo swapon -v | grep /dev/zram*` == "/dev/zram"* ]]; then sudo swapoff /dev/zram*; fi
+    #
+    
+    # backup config file #
+    if [[ ! -z $str_file2"_old" ]]; then cp $str_file2 $str_file2"_old"; fi
+    #
+
+    # find HugePage size #
+    if [[ $str_HugePageSize == "2M" ]]; then declare -i int_HugePageSizeK=2048; fi
+
+    if [[ $str_HugePageSize == "1G" ]]; then declare -i int_HugePageSizeK=1048576; fi
+    #
+
+    # find free memory #
+    declare -i int_HostMemFreeG=($int_HostMemMaxK-($int_HugePageNum*$int_HugePageSizeK))/1048576
+    declare -i int_ZRAM_SizeG=0
+    #
+
+    # setup ZRAM #
+    if [[ $int_HostMemFreeG -le 8 ]]; then $int_ZRAM_SizeG=$int_HostMemFreeG/2
+    else $int_ZRAM_SizeG=4; fi
+    str_input_ZRAM="_zram_fixedsize=\"`$int_ZRAM_SizeG`G\""
+    #
+
+    # file 3
+    declare -a arr_file_ZRAM="# compression algorithm to employ (lzo, lz4, zstd, lzo-rle)
+# default: lz4
+_zram_algorithm="lz4"
+
+# portion of system ram to use as zram swap (expression: "1/2", "2/3", "0.5", etc)
+# default: "1/2"
+#_zram_fraction="1/2"
+
+# setting _zram_swap_debugging to any non-zero value enables debugging
+# default: undefined
+#_zram_swap_debugging="beep boop"
+
+# expected compression factor; set this by hand if your compression results are
+# drastically different from the estimates below
+#
+# Note: These are the defaults coded into /usr/local/sbin/zram-swap.sh; don't alter
+#       these values, use the override variable '_comp_factor' below.
+#
+# defaults if otherwise unset:
+#       lzo*|zstd)  _comp_factor="3"   ;; # expect 3:1 compression from lzo*, zstd
+#       lz4)        _comp_factor="2.5" ;; # expect 2.5:1 compression from lz4
+#       *)          _comp_factor="2"   ;; # default to 2:1 for everything else
+#
+#_comp_factor="2.5"
+
+# if set skip device size calculation and create a fixed-size swap device
+# (size, in MiB/GiB, eg: "250M" "500M" "1.5G" "2G" "6G" etc.)
+#
+# Note: this is the swap device size before compression, real memory use will
+#       depend on compression results, a 2-3x reduction is typical
+#
+$str_input_ZRAM
+
+# vim:ft=sh:ts=2:sts=2:sw=2:et:"
+    #
+
+    # write to file #
+    rm $str_file2
+    for str_line in ${arr_file_ZRAM[@]}; do
+        echo $str_line >> $str_file2
+    done
+    #
+
+}
+
+########## end ZRAM ##########
 
 ########## main ##########
 
@@ -718,7 +973,7 @@ options vfio_pci ids=$str_arr_PCIHWID")
 Prompts $1 $2 $3 $4
 #Xorg
 #EvDev $5
-#zRAM $6 $7
+#ZRAM $6
 
 ## reset IFS ##
 IFS=$SAVEIFS   # Restore original IFS
