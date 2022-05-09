@@ -90,7 +90,7 @@ function VFIOPCI {
     declare -i int_index=0
     #
 
-    ## parse list of PCI devices ##
+    # parse list of PCI devices #
     while read -r str_line; do
 
         if [[ ${str_line:0:7} == "01:00.0" ]]; then bool_parsePCI=true; fi
@@ -164,9 +164,9 @@ function VFIOPCI {
         #
 
     done < $str_file_PCIDriver
-    ##
+    #
 
-    ## find external PCI Hardware IDs ##
+    # find external PCI Hardware IDs #
     bool_parseVGAVendor=false
     declare -i int_index=0
 
@@ -692,6 +692,55 @@ options vfio_pci ids=$str_arr_PCIHWID")
 
 ########## Xorg ##########
 
+# NOTE: create function that creates a a system service
+# service will scan for the first non vfio pci driver VGA device, create an Xorg file for it
+# 
+
+function Xorg {
+
+    # set working directory #
+    str_dir="/etc/X11/xorg.conf.d/"
+    #
+
+    # set working file #
+    str_file=$str_dir"10-"$str_xorg_PCIdriver".conf"
+    #
+
+    # CLEAR FILES
+    rm $str_dir"10-"*".conf"
+    
+    # PARAMETERS
+    declare -a arr_Xorg=(
+"Section "Device"
+Identifier     "Device0"
+Driver         "$str_xorg_PCIdriver"
+BusID          "PCI:$str_xorg_PCIbusID"
+EndSection
+"
+)
+
+    # ARRAY LENGTH
+    int_sources=${#arr_sources[@]}
+    
+    # WRITE ARRAY TO FILE
+    for (( int_index=0; int_index<$int_sources; int_index++ )); do
+    
+        str_line=${arr_Xorg[$int_index]}
+        echo $str_line >> $str_file
+        
+    done
+
+    # FIND PRIMARY DISPLAY MANAGER
+    str_DM=`cat /etc/X11/default-display-manager`
+    str_DM=${str_DM:8:(${#str_DM}-9)}
+
+    # restart service #
+    systemctl enable $str_DM
+    systemctl restart $str_DM
+    #
+
+}
+
 ########## end Xorg ##########
 
 ########## EvDev ##########
@@ -791,6 +840,11 @@ cgroup_device_acl = [
 
     # write to file #
     echo $str_file_QEMU > $str_file1
+    #
+
+    # restart service #
+    systemctl enable libvirtd
+    systemctl restart libvirtd
     #
 
 }
@@ -958,7 +1012,7 @@ $str_input_ZRAM
 ########## main ##########
 
 #VFIOPCIParse
-Prompts $1 $2 $3 $4
+#Prompts $1 $2 $3 $4
 #Xorg
 #EvDev $5
 #ZRAM $6
