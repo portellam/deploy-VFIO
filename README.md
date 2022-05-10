@@ -1,4 +1,27 @@
 ## Status: Unfinished, Work-in-progress
+# TODO:
+* installer that copies each file to exact locations
+* 
+* tests
+* 
+* StaticSetup
+
+* EvDev
+
+* zRAM
+
+* Xorg
+
+# Xorg-vfio-pci
+*Xorg-vfio-pci.sh
+Xorg-vfio-pci.service*
+## TL;DR:
+Generates Xorg for first available VGA device.
+
+## Long version:
+Run as SystemD service; run once at boot. Parses list of PCI devices, saves first VGA device (without vfio-pci driver). Appends to Xorg file ('/etc/X11/xorg.conf.d/10-Xorg-vfio-pci.conf').
+Useful for **Multi-Boot** VFIO setups (see below).
+
 # Auto-vfio-pci
 ## TL;DR:
 Generate and/or Regenerate a VFIO setup (**Multi-Boot** or **Static**). VFIO for Dummies.
@@ -35,10 +58,3 @@ My use-cases:
 [2] providing a VBIOS for Windows may be necessary for NVIDIA devices, when said device's VBIOS is tainted by host startup/OS initialization.
 
 [3] Windows XP ( GTX 960 ), Windows 9x ( 8400 GS ).
-
-## TO-DO:
-* tests
-* StaticSetup
-* EvDev
-* zRAM
-* Xorg
