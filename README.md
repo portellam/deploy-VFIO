@@ -1,5 +1,5 @@
 ### TODO:
-* installer that copies each file to exact locations
+* installer that copies each file to exact locations, sets file permissions
 * tests
 * StaticSetup
 * EvDev
