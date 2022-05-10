@@ -1,15 +1,10 @@
 ## Status: Unfinished, Work-in-progress
 # TODO:
 * installer that copies each file to exact locations
-* 
 * tests
-* 
 * StaticSetup
-
 * EvDev
-
-* zRAM
-
+* ZRAM
 * Xorg
 
 # Xorg-vfio-pci
