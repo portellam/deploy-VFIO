@@ -1,4 +1,3 @@
-## Status: Unfinished, Work-in-progress
 ### TODO:
 * installer that copies each file to exact locations
 * tests
@@ -8,7 +7,7 @@
 * Xorg
 
 
-## Xorg-vfio-pci
+## Xorg-vfio-pci  (Status: Complete)
 ### TL;DR:
 Generates Xorg for first available VGA device.
 
@@ -17,7 +16,7 @@ Run Once at boot. Parses list of PCI devices, saves first VGA device (without vf
 Useful for **Multi-Boot** VFIO setups (see below).
 
 
-## Auto-vfio-pci
+## Auto-vfio-pci  (Status: Work-in-progress)
 ### TL;DR:
 Generate and/or Regenerate a VFIO setup (**Multi-Boot** or **Static**). VFIO for Dummies.
 
