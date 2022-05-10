@@ -41,8 +41,9 @@ My use-cases:
 * swap host Xorg VGA device ( see above for *Multi-boot-setup* ).
 * run Legacy OS with Legacy hardware. [3]
 
-* [2] providing a VBIOS for Windows may be necessary for NVIDIA devices, when said device's VBIOS is tainted by host startup/OS initialization.
-* [3] Windows XP ( GTX 960 ), Windows 9x ( 8400 GS ).
+[2] providing a VBIOS for Windows may be necessary for NVIDIA devices, when said device's VBIOS is tainted by host startup/OS initialization.
+
+[3] Windows XP ( GTX 960 ), Windows 9x ( 8400 GS ).
 
 
 ### What is VFIO?
