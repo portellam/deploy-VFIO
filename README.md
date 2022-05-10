@@ -8,8 +8,6 @@
 * Xorg
 
 # Xorg-vfio-pci
-*Xorg-vfio-pci.sh
-Xorg-vfio-pci.service*
 ## TL;DR:
 Generates Xorg for first available VGA device.
 
