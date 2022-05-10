@@ -1,5 +1,5 @@
 ## Status: Unfinished, Work-in-progress
-# TODO:
+## TODO:
 * installer that copies each file to exact locations
 * tests
 * StaticSetup
