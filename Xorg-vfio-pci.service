@@ -1,0 +1,11 @@
+[Unit]
+Description=Run once, Generate Xorg for first available VGA device.
+
+[Service]
+#ExecStart="/bin/bash /usr/sbin/Xorg-vfio-pci.sh dm"    #   Restart DM
+ExecStart=/bin/bash /usr/sbin/Xorg-vfio-pci.sh          #   Do NOT Restart DM
+RemainAfterExit=true
+Type=oneshot
+
+[Install]
+WantedBy=multi-user.target
