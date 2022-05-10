@@ -1,12 +1,3 @@
-### TODO:
-* installer that copies each file to exact locations, sets file permissions
-* tests
-* StaticSetup
-* EvDev
-* ZRAM
-* Xorg
-
-
 ## Xorg-vfio-pci  (Status: Complete)
 ### TL;DR:
 Generates Xorg for first available VGA device.
@@ -32,6 +23,7 @@ User may implement:
 * Event devices (Evdev) == virtual Keyboard-Mouse switch.
 * Zram swapfile         == compressed RAM, to reduce Host lock-up from over-allocated Host memory.
 
+
 ### Why?
   **I want to use this.**
 My use-cases:
@@ -49,3 +41,13 @@ My use-cases:
 * See hyperlink:  https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 * Useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 * Community:      https://old.reddit.com/r/VFIO
+
+
+### TODO:
+
+* installer that copies each file to exact locations, sets file permissions
+* tests
+* StaticSetup
+* EvDev
+* ZRAM
+* Xorg
