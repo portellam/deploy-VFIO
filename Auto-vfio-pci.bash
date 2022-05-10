@@ -696,6 +696,8 @@ options vfio_pci ids=$str_arr_PCIHWID")
 # service will scan for the first non vfio pci driver VGA device, create an Xorg file for it
 # 
 
+# TODO: fix PCI Bus ID string ab:cd.e to b:cd:e 
+
 function Xorg {
 
     # set file #
@@ -801,11 +803,13 @@ fi
 exit 0`)
 
     declare -a arr_XorgService=("[Unit]
-Description=Generate Xorg for first available VGA device, and Restart Display Manager.
+Description=Run once, Generate Xorg for first available VGA device.
 
 [Service]
-#ExecStart=/bin/bash /usr/sbin/Xorg-vfio-pci.sh DM   #   Restart DM
+#ExecStart=\"/bin/bash /usr/sbin/Xorg-vfio-pci.sh DM\"   #   Restart DM
 ExecStart=/bin/bash /usr/sbin/Xorg-vfio-pci.sh      #   Do NOT Restart DM
+RemainAfterExit=true
+Type=oneshot
 
 [Install]
 WantedBy=multi-user.target")
