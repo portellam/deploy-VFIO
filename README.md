@@ -1,17 +1,17 @@
 ## Xorg-vfio-pci  (Status: Complete)
-### TL;DR:
+#### TL;DR:
 Generates Xorg for first available VGA device.
 
-### Long version:
+#### Long version:
 Run Once at boot. Parses list of PCI devices, saves first VGA device (without vfio-pci driver). Appends to Xorg file ('/etc/X11/xorg.conf.d/10-Xorg-vfio-pci.conf').
 Useful for **Multi-Boot** VFIO setups (see below).
 
 
 ## Auto-vfio-pci  (Status: Work-in-progress)
-### TL;DR:
+#### TL;DR:
 Generate and/or Regenerate a VFIO setup (**Multi-Boot** or **Static**). VFIO for Dummies.
 
-### Long version:
+#### Long version:
 Run at system-setup or hardware-change.
 Parses Bash for list of External PCI devices ( Bus ID, Hardware ID, and Kernel driver ). External refers to PCI Bus ID 01:00.0 onward.
 
@@ -24,7 +24,7 @@ User may implement:
 * Zram swapfile         == compressed RAM, to reduce Host lock-up from over-allocated Host memory.
 
 
-### Why?
+#### Why?
   **I want to use this.**
 My use-cases:
 * a testbench to test old PCI devices over a PCI/PCIe bridge.
@@ -37,13 +37,13 @@ My use-cases:
 [3] Windows XP ( GTX 960 ), Windows 9x ( 8400 GS ).
 
 
-### What is VFIO?
+#### What is VFIO?
 * See hyperlink:  https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 * Useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 * Community:      https://old.reddit.com/r/VFIO
 
 
-### TODO:
+#### TODO:
 
 * installer that copies each file to exact locations, sets file permissions
 * tests
