@@ -12,7 +12,7 @@
 Generates Xorg for first available VGA device.
 
 ## Long version:
-Run as SystemD service; run once at boot. Parses list of PCI devices, saves first VGA device (without vfio-pci driver). Appends to Xorg file ('/etc/X11/xorg.conf.d/10-Xorg-vfio-pci.conf').
+Run Once at boot. Parses list of PCI devices, saves first VGA device (without vfio-pci driver). Appends to Xorg file ('/etc/X11/xorg.conf.d/10-Xorg-vfio-pci.conf').
 Useful for **Multi-Boot** VFIO setups (see below).
 
 # Auto-vfio-pci
