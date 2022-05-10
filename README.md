@@ -1,8 +1,14 @@
+**What is VFIO?**
+* See hyperlink:  https://www.kernel.org/doc/html/latest/driver-api/vfio.html
+* Useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
+* Community:      https://old.reddit.com/r/VFIO
+
+
 ## Xorg-vfio-pci  (Status: Complete)
-#### TL;DR:
+**TL;DR:**
 Generates Xorg for first available VGA device.
 
-#### Long version:
+**Long version:**
 Run Once at boot. Parses list of PCI devices, saves first VGA device (without vfio-pci driver). Appends to Xorg file ('/etc/X11/xorg.conf.d/10-Xorg-vfio-pci.conf').
 Useful for **Multi-Boot** VFIO setups (see below).
 
@@ -35,12 +41,6 @@ My use-cases:
 [2] providing a VBIOS for Windows may be necessary for NVIDIA devices, when said device's VBIOS is tainted by host startup/OS initialization.
 
 [3] Windows XP ( GTX 960 ), Windows 9x ( 8400 GS ).
-
-
-#### What is VFIO?
-* See hyperlink:  https://www.kernel.org/doc/html/latest/driver-api/vfio.html
-* Useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
-* Community:      https://old.reddit.com/r/VFIO
 
 
 #### TODO:
