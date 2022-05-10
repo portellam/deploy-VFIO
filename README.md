@@ -1,20 +1,19 @@
-**What is VFIO?**
+##What is VFIO?
 * See hyperlink:  https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 * Useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 * Community:      https://old.reddit.com/r/VFIO
 
 
 ## Xorg-vfio-pci  (Status: Complete)
-**TL;DR:**
-Generates Xorg for first available VGA device.
+**TL;DR:** Generates Xorg for first available VGA device.
 
-**Long version:**
+#### Long version;
 Run Once at boot. Parses list of PCI devices, saves first VGA device (without vfio-pci driver). Appends to Xorg file ('/etc/X11/xorg.conf.d/10-Xorg-vfio-pci.conf').
 Useful for **Multi-Boot** VFIO setups (see below).
 
 
 ## Auto-vfio-pci  (Status: Work-in-progress)
-#### TL;DR:
+**TL;DR:**
 Generate and/or Regenerate a VFIO setup (**Multi-Boot** or **Static**). VFIO for Dummies.
 
 #### Long version:
@@ -32,6 +31,7 @@ User may implement:
 
 #### Why?
   **I want to use this.**
+
 My use-cases:
 * a testbench to test old PCI devices over a PCI/PCIe bridge.
 * a testbench to test VGA BIOSes without flashing ( includes adding a pointer to a VBIOS in a VM's XML file ). [2]
