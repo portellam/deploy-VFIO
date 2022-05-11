@@ -11,7 +11,7 @@
   * It is NOT necessary to run 'Auto-Xorg'. The service will run once at boot. See '/etc/X11/xorg.conf.d/10-Auto-Xorg.conf'.
   * You may run 'Auto-vfio-pci.sh' or 'systemctl restart Auto-vfio-pci.service'. Run once first-time or at hardware-change.
   * For 'Auto-vfio-pci.sh', see README for Bash Arguments.
-
+#
 
 ## Auto-vfio-pci  (not included in installer yet)
 **TL;DR:**
@@ -28,7 +28,7 @@ User may implement:
 * Hugepages             == static allocation of RAM for zero memory fragmentation and reduced memory latency. Best-case scenario: use whole Memory channels/sticks.
 * Event devices (Evdev) == virtual Keyboard-Mouse switch.
 * Zram swapfile         == compressed RAM, to reduce Host lock-up from over-allocated Host memory.
-
+#
 
 ## Auto-Xorg  (Status: Complete)
 **TL;DR:** Generates Xorg for first available VGA device.
@@ -37,7 +37,7 @@ User may implement:
 Run Once at boot. Parses list of PCI devices, saves first VGA device (without vfio-pci driver). Appends to Xorg file ('/etc/X11/xorg.conf.d/10-Xorg-vfio-pci.conf').
 
 Useful for **Multi-Boot** VFIO setups (see above).
-
+#
 
 #### Why?
   **I want to use this.**
