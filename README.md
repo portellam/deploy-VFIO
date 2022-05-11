@@ -4,14 +4,6 @@
 * Community:      https://old.reddit.com/r/VFIO
 
 
-## Xorg-vfio-pci  (Status: Complete)
-**TL;DR:** Generates Xorg for first available VGA device.
-
-#### Long version;
-Run Once at boot. Parses list of PCI devices, saves first VGA device (without vfio-pci driver). Appends to Xorg file ('/etc/X11/xorg.conf.d/10-Xorg-vfio-pci.conf').
-Useful for **Multi-Boot** VFIO setups (see below).
-
-
 ## Auto-vfio-pci  (Status: Work-in-progress)
 **TL;DR:**
 Generate and/or Regenerate a VFIO setup (**Multi-Boot** or **Static**). VFIO for Dummies.
@@ -27,6 +19,15 @@ User may implement:
 * Hugepages             == static allocation of RAM for zero memory fragmentation and reduced memory latency. Best-case scenario: use whole Memory channels/sticks.
 * Event devices (Evdev) == virtual Keyboard-Mouse switch.
 * Zram swapfile         == compressed RAM, to reduce Host lock-up from over-allocated Host memory.
+
+
+## Auto-Xorg  (Status: Complete)
+**TL;DR:** Generates Xorg for first available VGA device.
+
+#### Long version;
+Run Once at boot. Parses list of PCI devices, saves first VGA device (without vfio-pci driver). Appends to Xorg file ('/etc/X11/xorg.conf.d/10-Xorg-vfio-pci.conf').
+
+Useful for **Multi-Boot** VFIO setups (see above).
 
 
 #### Why?
