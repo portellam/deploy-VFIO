@@ -11,6 +11,7 @@
 * EvDev
 * Hugepages
 * ZRAM
+* libvirt XML configs, as templates or cheatsheet. Tips and tricks?
 #
 
 ## What is VFIO?
