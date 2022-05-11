@@ -52,7 +52,7 @@ Run Once at boot. Parses list of PCI devices, saves first VGA device (without vf
 Useful for **Multi-Boot** VFIO setups (see above).
 #
 
-#### Why?
+## Why?
   **I want to use this.**
 
 My use-cases:
