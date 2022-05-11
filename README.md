@@ -1,5 +1,18 @@
 # Status: Work-in-progress
 
+#### NOTICE:
+* Tested on Debian Stable Linux system. Services are SystemD based.
+
+#### TODO:
+* update README
+* setup and list Bash Arguments for 'Auto-vfio-pci.sh'. Really useful for automatic setup!
+* installer, should I create a system service for Auto-vfio-pci or just Auto-Xorg?
+* MultiBootSetup and StaticSetup
+* EvDev
+* Hugepages
+* ZRAM
+#
+
 ## What is VFIO?
 * See hyperlink:  https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 * Useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
@@ -49,13 +62,3 @@ My use-cases:
 * run Legacy OS with Legacy hardware.
 
 [1] providing a VBIOS for Windows may be necessary for NVIDIA devices, when said device's VBIOS is tainted by host startup/OS initialization.
-
-
-#### TODO:
-* update README
-* setup and list Bash Arguments for 'Auto-vfio-pci.sh'. Really useful for automatic setup!
-* installer, should I create a system service for Auto-vfio-pci or just Auto-Xorg?
-* MultiBootSetup and StaticSetup
-* EvDev
-* Hugepages
-* ZRAM
