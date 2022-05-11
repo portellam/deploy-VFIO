@@ -9,9 +9,6 @@
 * setup and list Bash Arguments for 'Auto-vfio-pci.sh'. Really useful for automatic setup!
 * installer, should I create a system service for Auto-vfio-pci or just Auto-Xorg?
 * MultiBootSetup and StaticSetup
-* EvDev
-* Hugepages
-* ZRAM
 * libvirt XML configs, as templates or cheatsheet. Tips and tricks?
 #
 
