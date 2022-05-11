@@ -1,7 +1,8 @@
 # Status: Work-in-progress
 
 #### NOTICE:
-* Tested on Debian Stable Linux system. Services are SystemD based.
+* Tested on Debian Stable Linux system.
+* Services are SystemD.
 
 #### TODO:
 * update README
