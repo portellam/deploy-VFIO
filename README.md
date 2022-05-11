@@ -19,7 +19,7 @@ Generate and/or Regenerate a VFIO setup (**Multi-Boot** or **Static**). VFIO for
 
 #### Long version:
 Run at system-setup or hardware-change.
-Parses Bash for list of External PCI devices ( Bus ID, Hardware ID, and Kernel driver ). External refers to PCI Bus ID 01:00.0 onward.
+Parses Bash for list of External PCI devices (Bus ID, Hardware ID, and Kernel driver). External refers to PCI Bus ID 01:00.0 onward.
 
 User may implement:
 * Multi-Boot setup (includes some Static setup) or Static setup.
