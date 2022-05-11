@@ -282,7 +282,7 @@ while [[ $str_input != "Y" && $str_input != "N" ]]; do
 
     case $str_input in
 
-        "Y"||"H")
+        "Y"|"H")
             echo "Continuing..."
             break;;
 
@@ -408,6 +408,8 @@ done
 
 ########## Prompts ##########
 
+function Prompts {
+
 # parameters #
 str_input=$1
 #
@@ -457,6 +459,8 @@ while [[ $str_input != "B" && $str_input != "S" ]]; do
 
 done
 #
+
+}
 
 ########## end Prompts ##########
 
@@ -855,7 +859,7 @@ function EvDev {
 
     case $str_input in
 
-        "Y"||"E")
+        "Y"|"E")
             echo "Continuing with EvDev setup..."
             break;;
 
@@ -936,7 +940,7 @@ cgroup_device_acl = [
 function ZRAM {
 
     # parameters #
-    str_input=$6
+    #str_input=$6
     str_file1="/etc/default/zramswap"
     str_file2="/etc/default/zram-swap"
     #
@@ -964,7 +968,7 @@ function ZRAM {
 
     case $str_input in
 
-        "Y"||"Z")
+        "Y"|"Z")
             echo "Continuing with ZRAM setup..."
             break;;
 
@@ -989,31 +993,42 @@ function ZRAM {
     # check for zram-utils #
     if [[ ! -z $str_file1 ]]; then
 
-        apt install -y git zram-utils
+        apt install -y git zram-tools
         systemctl stop zramswap
         systemctl disable zramswap
 
     fi
     #
 
+    echo "repo: "$str_GitHub_Repo
+
+
+
     # check for local repo #
-    if [[ ! -z "/root/git/$str_GitHub_Repo" ]]; then
+    #if [[ ! -z "/root/git/$str_GitHub_Repo" ]]; then
+
+        #cd /root/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`    
+        #git pull https://www.github.com/$str_GitHub_Repo
+    
+    #fi
+
+    if [[ -z "/root/git/$str_GitHub_Repo" ]]; then
     
         mkdir /root/git
         mkdir /root/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`
         cd /root/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`
         git clone https://www.github.com/$str_GitHub_Repo
 
-    else
-
-        cd /root/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`    
-        git pull https://www.github.com/$str_GitHub_Repo
-    
     fi
     #
 
+    echo "CANARY"
+
     # check for zram-swap #
-    if [[ ! -z $str_file2 ]]; then sh /root/git/$str_GitHub_Repo/install.sh fi
+    if [[ -z $str_file2 ]]; then
+        cd /root/git/$str_GitHub_Repo
+        sh ./install.sh
+    fi
     #
 
     # disable ZRAM swap #
@@ -1021,38 +1036,42 @@ function ZRAM {
     #
     
     # backup config file #
-    if [[ ! -z $str_file2"_old" ]]; then cp $str_file2 $str_file2"_old"; fi
+    if [[ -z $str_file2"_old" ]]; then cp $str_file2 $str_file2"_old"; fi
     #
 
     # find HugePage size #
+    str_HugePageSize="1G"
+
     if [[ $str_HugePageSize == "2M" ]]; then declare -i int_HugePageSizeK=2048; fi
 
     if [[ $str_HugePageSize == "1G" ]]; then declare -i int_HugePageSizeK=1048576; fi
     #
 
     # find free memory #
-    declare -i int_HostMemFreeG=($int_HostMemMaxK-($int_HugePageNum*$int_HugePageSizeK))/1048576
+    declare -i int_HostMemMaxG=$((int_HostMemMaxK/1048576))
+    declare -i int_HostMemFreeG=$((int_HugePageNum*int_HugePageSizeK))
+    int_HostMemFreeG=$((int_HostMemMaxG-int_HostMemFreeG))
     declare -i int_ZRAM_SizeG=0
     #
 
     # setup ZRAM #
-    if [[ $int_HostMemFreeG -le 8 ]]; then $int_ZRAM_SizeG=$int_HostMemFreeG/2
-    else $int_ZRAM_SizeG=4; fi
-    str_input_ZRAM="_zram_fixedsize=\"`$int_ZRAM_SizeG`G\""
+    if [[ $int_HostMemFreeG -le 8 ]]; then int_ZRAM_SizeG=$int_HostMemFreeG/2
+    else int_ZRAM_SizeG=4; fi
+    str_input_ZRAM="_zram_fixedsize=\"${int_ZRAM_SizeG}G\""
     #
 
     # file 3
-    declare -a arr_file_ZRAM="# compression algorithm to employ (lzo, lz4, zstd, lzo-rle)
+    declare -a arr_file_ZRAM=("# compression algorithm to employ (lzo, lz4, zstd, lzo-rle)
 # default: lz4
-_zram_algorithm="lz4"
+_zram_algorithm=\"lz4\"
 
-# portion of system ram to use as zram swap (expression: "1/2", "2/3", "0.5", etc)
-# default: "1/2"
-#_zram_fraction="1/2"
+# portion of system ram to use as zram swap (expression: \"1/2\", \"2/3\", \"0.5\", etc)
+# default: \"1/2\"
+#_zram_fraction=\"1/2\"
 
 # setting _zram_swap_debugging to any non-zero value enables debugging
 # default: undefined
-#_zram_swap_debugging="beep boop"
+#_zram_swap_debugging=\"beep boop\"
 
 # expected compression factor; set this by hand if your compression results are
 # drastically different from the estimates below
@@ -1061,28 +1080,26 @@ _zram_algorithm="lz4"
 #       these values, use the override variable '_comp_factor' below.
 #
 # defaults if otherwise unset:
-#       lzo*|zstd)  _comp_factor="3"   ;; # expect 3:1 compression from lzo*, zstd
-#       lz4)        _comp_factor="2.5" ;; # expect 2.5:1 compression from lz4
-#       *)          _comp_factor="2"   ;; # default to 2:1 for everything else
+#       lzo*|zstd)  _comp_factor=\"3\"   ;; # expect 3:1 compression from lzo*, zstd
+#       lz4)        _comp_factor=\"2.5\" ;; # expect 2.5:1 compression from lz4
+#       *)          _comp_factor=\"2\"   ;; # default to 2:1 for everything else
 #
-#_comp_factor="2.5"
+#_comp_factor=\"2.5\"
 
 # if set skip device size calculation and create a fixed-size swap device
-# (size, in MiB/GiB, eg: "250M" "500M" "1.5G" "2G" "6G" etc.)
+# (size, in MiB/GiB, eg: \"250M\" \"500M\" \"1.5G\" \"2G\" \"6G\" etc.)
 #
 # Note: this is the swap device size before compression, real memory use will
 #       depend on compression results, a 2-3x reduction is typical
 #
 $str_input_ZRAM
 
-# vim:ft=sh:ts=2:sts=2:sw=2:et:"
+# vim:ft=sh:ts=2:sts=2:sw=2:et:")
     #
 
     # write to file #
     rm $str_file2
-    for str_line in ${arr_file_ZRAM[@]}; do
-        echo $str_line >> $str_file2
-    done
+    for str_line in ${arr_file_ZRAM[@]}; do echo -e $str_line >> $str_file2; done
     #
 
 }
@@ -1097,9 +1114,9 @@ $str_input_ZRAM
 #EvDev $5
 #ZRAM $6
 
-## reset IFS ##
+# reset IFS #
 IFS=$SAVEIFS   # Restore original IFS
-##
+#
 
 exit 0
 
