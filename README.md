@@ -1,10 +1,19 @@
+# Status: Work-in-progress
+
 ## What is VFIO?
 * See hyperlink:  https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 * Useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 * Community:      https://old.reddit.com/r/VFIO
 
 
-## Auto-vfio-pci  (Status: Work-in-progress)
+## How-to
+* In terminal, execute *'sudo bash installer.sh'*
+  * It is NOT necessary to run 'Auto-Xorg'. The service will run once at boot. See '/etc/X11/xorg.conf.d/10-Auto-Xorg.conf'.
+  * You may run 'Auto-vfio-pci.sh' or 'systemctl restart Auto-vfio-pci.service'. Run once first-time or at hardware-change.
+  * For 'Auto-vfio-pci.sh', see README for Bash Arguments.
+
+
+## Auto-vfio-pci  (not included in installer yet)
 **TL;DR:**
 Generate and/or Regenerate a VFIO setup (**Multi-Boot** or **Static**). VFIO for Dummies.
 
@@ -35,20 +44,18 @@ Useful for **Multi-Boot** VFIO setups (see above).
 
 My use-cases:
 * a testbench to test old PCI devices over a PCI/PCIe bridge.
-* a testbench to test VGA BIOSes without flashing ( includes adding a pointer to a VBIOS in a VM's XML file ). [2]
+* a testbench to test VGA BIOSes without flashing ( includes adding a pointer to a VBIOS in a VM's XML file ). [1]
 * swap host Xorg VGA device ( see above for *Multi-boot-setup* ).
-* run Legacy OS with Legacy hardware. [3]
+* run Legacy OS with Legacy hardware.
 
-[2] providing a VBIOS for Windows may be necessary for NVIDIA devices, when said device's VBIOS is tainted by host startup/OS initialization.
-
-[3] Windows XP ( GTX 960 ), Windows 9x ( 8400 GS ).
+[1] providing a VBIOS for Windows may be necessary for NVIDIA devices, when said device's VBIOS is tainted by host startup/OS initialization.
 
 
 #### TODO:
-
-* installer that copies each file to exact locations, sets file permissions
-* tests
-* StaticSetup
+* update README
+* setup and list Bash Arguments for 'Auto-vfio-pci.sh'. Really useful for automatic setup!
+* installer, should I create a system service for Auto-vfio-pci or just Auto-Xorg?
+* MultiBootSetup and StaticSetup
 * EvDev
+* Hugepages
 * ZRAM
-* Xorg
