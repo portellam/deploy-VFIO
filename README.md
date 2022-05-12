@@ -30,7 +30,7 @@ Automate VFIO passthrough setup, dynamically ('Multi-Boot') or statically.
     * Static
         * appends to '/etc/initramfs-tools/modules', '/etc/modules', '/etc/modprobe.d/*' 
 * Hugepages
-    * static allocation of RAM for zero memory fragmentation and reduced memory latency. Best-case scenario: use whole Memory channels/sticks.
+    * static allocation of RAM for zero memory fragmentation and reduced memory latency.        Best-case scenario: use multiples of each Memory channel/stick.
 * Event devices (Evdev)
     * virtual Keyboard-Mouse switch (best to have physical KVM and multiple PCI USB devices, better than nothing).
 * Zram swapfile
