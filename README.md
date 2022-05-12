@@ -24,13 +24,15 @@
 Automate VFIO passthrough setup, dynamically ('Multi-Boot') or statically.
 * Runs once at boot.
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers)
-* Dynamic/Multi-Boot VFIO passthrough setup  **(RECOMMENDED)**
-- adds multiple GRUB menu entries for each non-passthrough VGA device, and one entry with every VGA device passed-through). 
-* Static VFIO passthrough setup.
+* Prompt user for VFIO passthrough setup:
+    * Dynamic/Multi-Boot    **(RECOMMENDED)**
+        * adds multiple GRUB menu entries for each non-passthrough VGA device, and one entry with every VGA device passed-through). 
+    * Static
+        * appends to '/etc/initramfs-tools/modules', '/etc/modules', '/etc/modprobe.d/*' 
 * Hugepages
-- static allocation of RAM for zero memory fragmentation and reduced memory latency. Best-case scenario: use whole Memory channels/sticks.
+    * static allocation of RAM for zero memory fragmentation and reduced memory latency. Best-case scenario: use whole Memory channels/sticks.
 * Event devices (Evdev)
-- virtual Keyboard-Mouse switch (best to have physical KVM and multiple PCI USB devices, better than nothing).
+    * virtual Keyboard-Mouse switch (best to have physical KVM and multiple PCI USB devices, better than nothing).
 * Zram swapfile
-- compressed swapfile to RAM disk, to reduce Host lock-up from over-allocated Host memory.
+    * compressed swapfile to RAM disk, to reduce Host lock-up from over-allocated Host memory.
 #
