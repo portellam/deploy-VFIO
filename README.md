@@ -1,7 +1,5 @@
 ## What is VFIO?
 * See hyperlink:  https://www.kernel.org/doc/html/latest/driver-api/vfio.html
-* Useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
-* Community:      https://old.reddit.com/r/VFIO
 
 #
 ## How-to
