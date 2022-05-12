@@ -12,10 +12,10 @@
         $2 == "Y/N" or "E/N"
 ###### enable ZRAM:
         $3 == "Y/N" or "Z/N"
-###### enable Hugepages, set size, set sum:
+###### enable Hugepages, set hugepage-size (megabytes or gigabytes), set sum (number of hugepages):
         $4 == "Y/N" or "H/N"
         $5 == "2M/1G"
-        $6 == integer
+        $6 == integer between minimum and maximum
 
 #
 ## Auto-VFIO
