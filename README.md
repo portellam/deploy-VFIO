@@ -10,13 +10,10 @@
 
         sudo bash Auto-VFIO.sh $1 $2 $3 $4 $5 $6
 * Multi-Boot setup or Static setup:
-
         $1 == "Y/N" or "B/S"
 * enable EvDev:
-
         $2 == "Y/N" or "E/N"
 * enable ZRAM:
-
         $3 == "Y/N" or "Z/N"
 * enable Hugepages:
 
