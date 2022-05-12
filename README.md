@@ -4,6 +4,7 @@
 * See hyperlink:  https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 * Useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 * Community:      https://old.reddit.com/r/VFIO
+
 #
 ## How-to
 ###### In terminal, execute:
@@ -19,6 +20,7 @@
         $4 == "Y/N" or "H/N"
         $5 == "2M/1G"
         $6 == integer
+
 #
 ## Auto-VFIO
 Automate VFIO passthrough setup, dynamically ('Multi-Boot') or statically.
@@ -35,4 +37,3 @@ Automate VFIO passthrough setup, dynamically ('Multi-Boot') or statically.
     * virtual Keyboard-Mouse switch (best to have physical KVM and multiple PCI USB devices, better than nothing).
 * Zram swapfile
     * compressed swapfile to RAM disk, to reduce Host lock-up from over-allocated Host memory.
-#
