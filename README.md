@@ -42,15 +42,6 @@ User may implement:
 * Zram swapfile         == compressed RAM, to reduce Host lock-up from over-allocated Host memory.
 #
 
-## Auto-Xorg  (Status: Complete)
-**TL;DR:** Generates Xorg for first available VGA device.
-
-#### Long version;
-Run Once at boot. Parses list of PCI devices, saves first VGA device (without vfio-pci driver). Appends to Xorg file ('/etc/X11/xorg.conf.d/10-Xorg-vfio-pci.conf').
-
-Useful for **Multi-Boot** VFIO setups (see above).
-#
-
 ## Why?
   **I want to use this.**
 
