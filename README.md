@@ -10,7 +10,7 @@
         sudo bash Auto-VFIO.sh $1 $2 $3 $4 $5 $6
 ###### Multi-Boot setup or Static setup:
         $1 == "Y/N" or "B/S"
-###### enable EvDev:
+###### enable Evdev:
         $2 == "Y/N" or "E/N"
 ###### enable ZRAM:
         $3 == "Y/N" or "Z/N"
@@ -31,7 +31,7 @@ Automate VFIO passthrough setup, dynamically ('Multi-Boot') or statically.
         * appends to '/etc/initramfs-tools/modules', '/etc/modules', '/etc/modprobe.d/*' 
 * Hugepages
     * static allocation of RAM for zero memory fragmentation and reduced memory latency (best to use multiples of each Memory channel/stick).
-* Event devices (Evdev)
+* Evdev (Event devices)
     * virtual Keyboard-Mouse switch (best to have physical KVM and multiple PCI USB devices, better than nothing).
 * Zram swapfile
     * compressed swapfile to RAM disk, to reduce Host lock-up from over-allocated Host memory.
