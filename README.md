@@ -1,54 +1,40 @@
 # Status: Work-in-progress
-
-#### NOTICE:
-* Tested on Debian Stable Linux system.
-* Services are SystemD.
-
+#
 #### TODO:
 * update README
-* setup and list Bash Arguments for 'Auto-vfio-pci.sh'. Really useful for automatic setup!
-* installer, should I create a system service for Auto-vfio-pci or just Auto-Xorg?
+* setup and list Bash Arguments for 'Auto-VFIO.sh'. Really useful for automatic setup!
+* installer, should I create a system service for Auto-VFIO?
 * MultiBootSetup and StaticSetup
 * libvirt XML configs, as templates or cheatsheet. Tips and tricks?
 #
-
 ## What is VFIO?
 * See hyperlink:  https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 * Useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 * Community:      https://old.reddit.com/r/VFIO
 #
-
 ## How-to
 * In terminal, execute *'sudo bash installer.sh'*
-  * It is NOT necessary to run 'Auto-Xorg'. The service will run once at boot. See '/etc/X11/xorg.conf.d/10-Auto-Xorg.conf'.
-  * You may run 'Auto-vfio-pci.sh' or 'systemctl restart Auto-vfio-pci.service'. Run once first-time or at hardware-change.
-  * For 'Auto-vfio-pci.sh', see README for Bash Arguments.
+  * TODO: input details on bash arguments
 #
-
 ## Auto-vfio-pci  (not included in installer yet)
 **TL;DR:**
-Generate and/or Regenerate a VFIO setup (**Multi-Boot** or **Static**). VFIO for Dummies.
-
-#### Long version:
-Run at system-setup or hardware-change.
-Parses Bash for list of External PCI devices (Bus ID, Hardware ID, and Kernel driver). External refers to PCI Bus ID 01:00.0 onward.
-
-User may implement:
-* Multi-Boot setup (includes some Static setup) or Static setup.
-  - Multi-Boot:   change Xorg VGA device on-the-fly (at boot).
-  - Static:       set Xorg VGA device statically.
-* Hugepages             == static allocation of RAM for zero memory fragmentation and reduced memory latency. Best-case scenario: use whole Memory channels/sticks.
-* Event devices (Evdev) == virtual Keyboard-Mouse switch (best to have physical KVM and multiple PCI USB devices, better than nothing).
-* Zram swapfile         == compressed RAM, to reduce Host lock-up from over-allocated Host memory.
+Automate VFIO passthrough setup, dynamically ('Multi-Boot') or statically.
 #
-
+#### Long version:
+* Run at system-setup or hardware-change.
+* Parses Bash for list of external PCI devices (external meaning PCI expansion devices).
+* Saves relevant information: Bus ID, Hardware ID, and Kernel driver.
+* User may implement:
+  * **RECOMMENDED:** Dynamic/Multi-Boot VFIO passthrough setup
+   - adds multiple GRUB menu entries for each non-passthrough VGA device, and one entry with every VGA device passed-through). 
+  * Static VFIO passthrough setup.
+ * Hugepages
+   - static allocation of RAM for zero memory fragmentation and reduced memory latency. Best-case scenario: use whole Memory channels/sticks.
+ * Event devices (Evdev)
+   - virtual Keyboard-Mouse switch (best to have physical KVM and multiple PCI USB devices, better than nothing).
+ * Zram swapfile
+   - compressed swapfile to RAM disk, to reduce Host lock-up from over-allocated Host memory.
+#
 ## Why?
-  **I want to use this.**
-
-My use-cases:
-* a testbench to test old PCI devices over a PCI/PCIe bridge.
-* a testbench to test VGA BIOSes without flashing ( includes adding a pointer to a VBIOS in a VM's XML file ). [1]
-* swap host Xorg VGA device ( see above for *Multi-boot-setup* ).
-* run Legacy OS with Legacy hardware.
-
-[1] providing a VBIOS for Windows may be necessary for NVIDIA devices, when said device's VBIOS is tainted by host startup/OS initialization.
+  I want to use this. It's time-consuming to setup VFIO passthrough on a new machine or Linux install.
+#
