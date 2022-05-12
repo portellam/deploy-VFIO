@@ -15,12 +15,10 @@ declare -a arr_VGABusID
 declare -a arr_VGADriver
 declare -a arr_VGAHWID
 declare -a arr_VGAVendorBusID
-declare -a arr_VGAVendorDriver
 declare -a arr_VGAVendorHWID
 bool_parseA=false
 bool_parseB=false
 bool_parseVGA=false
-bool_parseVGAVendor=false
 #
 
 # set file #
@@ -38,7 +36,7 @@ for (( int_indexA=0; int_indexA<${#arr_lspci_m[@]}; int_indexA++ )); do
     str_line3=${arr_lspci_n[$int_indexA]}    # element
 
     # begin parse #
-    if [[ ${str_line1:0:7} == *"01:00.0"* ]]; then bool_parseA=true; fi
+    if [[ $str_line1 == *"01:00.0"* ]]; then bool_parseA=true; fi
 
     # parse #
     if [[ $bool_parseA == true ]]; then
@@ -71,43 +69,35 @@ for (( int_indexA=0; int_indexA<${#arr_lspci_m[@]}; int_indexA++ )); do
 
         # parse list of drivers
         #for str_line2 in $arr_lspci_k; do
+        declare -i int_indexB=0
         for (( int_indexB=0; int_indexB<${#arr_lspci_k[@]}; int_indexB++ )); do
             
-            str_line2=${arr_lspci_k[$int_indexB]}    # element    
+            str_line2=${arr_lspci_k[$int_indexB]}    # element
+            #echo "str_line2 == '$str_line2'"     
 
             # begin parse #
-            if [[ ${str_line2:0:7} == *"01:00.0"* ]]; then bool_parseB=true; fi
+            if [[ $str_line2 == *"$str_thisPCIBusID"* ]]; then bool_parseB=true; fi
             #
 
-            # parse #
-            if [[ $bool_parseB == true ]]; then
-                # match VGA #
-                if [[ $str_line2 == *"VGA"* ]]; then bool_parseVGA=true; fi
-                #
-
-                # match VGA Vendor #
-                if [[ $str_line2 != *"VGA"* && $str_prevLine2 == *"$str_thisPCIVendor"* ]]; then bool_parseVGAVendor=true; fi
-                #
+            # match VGA #
+            if [[ $bool_parseB == true && $str_line2 == *"VGA"* ]]; then
+                bool_parseVGA=true
             fi
             #
 
-            if [[ $bool_parseB == true && $str_line2 != *"vfio-pci"* && $str_line2 == *"Kernel driver in use: "* && $str_line2 != *"Subsystem: "* && $str_line2 != *"Kernel modules: "* ]]; then
-
+            # match driver #
+            if [[ $bool_parseB == true && $str_line2 == *"Kernel driver in use: "* && $str_line2 != *"vfio-pci"* && $str_line2 != *"Subsystem: "* && $str_line2 != *"Kernel modules: "* ]]; then
+                
                 str_thisPCIDriver=`echo $str_line2 | cut -d " " -f 5`   # PCI driver
-                echo "str_thisPCIDriver == '$str_thisPCIDriver'"
-                arr_PCIDriver+=("$str_PCIDriver")                       # add to list
+                arr_PCIDriver+=("$str_thisPCIDriver")                   # add to list
 
                 # match VGA, add to list #
                 if [[ $bool_parseVGA == true ]]; then
-                    arr_thisVGADriver+=("$str_PCIDriver")
+                    arr_VGADriver+=("$str_thisPCIDriver")
                 fi
 
-                # match VGA, add to list #
-                if [[ $bool_parseVGAVendor == true ]]; then
-                    arr_thisVGAVendorDriver+=("$str_thisPCIDriver")
-                fi
-
-                int_indexB=${#arr_lspci_k[@]}   # break loop
+                bool_parseB=false
+                bool_parseVGA=false         
             fi
             #
 
@@ -124,51 +114,50 @@ done
 #
 
 #
-        echo -e "arr_PCIBusID == ${#arr_PCIBusID[@]}i"
-        for element in ${arr_PCIBusID[@]}; do
-            echo -e "PCIBusID == "$element
-        done
+function DEBUG {
+echo -e "arr_PCIBusID == ${#arr_PCIBusID[@]}i"
+for element in ${arr_PCIBusID[@]}; do
+    echo -e "arr_PCIBusID == "$element
+done
 
-        echo -e "arr_VGABusID == ${#arr_VGABusID[@]}i"
-        for element in ${arr_VGABusID[@]}; do
-            echo -e "arr_VGABusID == "$element
-        done
+echo -e "arr_VGABusID == ${#arr_VGABusID[@]}i"
+for element in ${arr_VGABusID[@]}; do
+    echo -e "arr_VGABusID == "$element
+done
 
-        echo -e "arr_VGAVendorBusID == ${#arr_VGAVendorBusID[@]}i"
-        for element in ${arr_VGAVendorBusID[@]}; do
-            echo -e "arr_VGAVendorBusID == "$element
-        done
+echo -e "arr_VGAVendorBusID == ${#arr_VGAVendorBusID[@]}i"
+for element in ${arr_VGAVendorBusID[@]}; do
+    echo -e "arr_VGAVendorBusID == "$element
+done
 
-        echo -e "arr_PCIDriver == ${#arr_PCIDriver[@]}i"
-        for element in ${arr_PCIDriver[@]}; do
-            echo -e "PCIDriver == "$element
-        done
+echo -e "arr_PCIDriver == ${#arr_PCIDriver[@]}i"
+for element in ${arr_PCIDriver[@]}; do
+    echo -e "arr_PCIDriver == "$element
+done
 
-        echo -e "arr_VGADriver == ${#arr_VGADriver[@]}i"
-        for element in ${arr_VGADriver[@]}; do
-            echo -e "arr_VGADriver == "$element
-        done
+echo -e "arr_VGADriver == ${#arr_VGADriver[@]}i"
+for element in ${arr_VGADriver[@]}; do
+    echo -e "arr_VGADriver == "$element
+done
 
-        echo -e "arr_VGAVendorDriver == ${#arr_VGAVendorDriver[@]}i"
-        for element in ${arr_VGAVendorDriver[@]}; do
-            echo -e "arr_VGAVendorDriver == "$element
-        done
+echo -e "arr_PCIHWID == ${#arr_PCIHWID[@]}i"
+for element in ${arr_PCIHWID[@]}; do
+    echo -e "arr_PCIHWID == "$element
+done
 
-        echo -e "arr_PCIHWID == ${#arr_PCIHWID[@]}i"
-        for element in ${arr_PCIHWID[@]}; do
-            echo -e "PCIHWID == "$element
-        done
+echo -e "arr_VGAHWID == ${#arr_VGAHWID[@]}i"
+for element in ${arr_VGAHWID[@]}; do
+    echo -e "arr_VGAHWID == "$element
+done
 
-        echo -e "arr_VGAHWID == ${#arr_VGAHWID[@]}i"
-        for element in ${arr_VGAHWID[@]}; do
-            echo -e "arr_VGAHWID == "$element
-        done
-
-        echo -e "arr_VGAVendorHWID == ${#arr_VGAVendorHWID[@]}i"
-        for element in ${arr_VGAVendorHWID[@]}; do
-            echo -e "arr_VGAVendorHWID == "$element
-        done
+echo -e "arr_VGAVendorHWID == ${#arr_VGAVendorHWID[@]}i"
+for element in ${arr_VGAVendorHWID[@]}; do
+    echo -e "arr_VGAVendorHWID == "$element
+done
+}
 #
+
+#DEBUG
 
 }
 
