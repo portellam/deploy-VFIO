@@ -21,8 +21,7 @@
 Automate VFIO passthrough setup, dynamically ('Multi-Boot') or statically.
 #### Long version:
 * Run at system-setup or hardware-change.
-* Parses Bash for list of external PCI devices (external meaning PCI expansion devices).
-* Saves relevant information: Bus ID, Hardware ID, and Kernel driver.
+* Parses Bash for list of external PCI devices (external meaning PCI expansion devices), for PCI Bus IDs, Hardware IDs, and Kernel drivers.
 * User may implement:
   * Dynamic/Multi-Boot VFIO passthrough setup  **(RECOMMENDED)**
     * adds multiple GRUB menu entries for each non-passthrough VGA device, and one entry with every VGA device passed-through). 
