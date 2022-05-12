@@ -19,7 +19,6 @@
 ## Auto-vfio-pci  (not included in installer yet)
 **TL;DR:**
 Automate VFIO passthrough setup, dynamically ('Multi-Boot') or statically.
-#
 #### Long version:
 * Run at system-setup or hardware-change.
 * Parses Bash for list of external PCI devices (external meaning PCI expansion devices).
