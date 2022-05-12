@@ -6,7 +6,7 @@
 * Community:      https://old.reddit.com/r/VFIO
 #
 ## How-to
-##### In terminal, execute:
+###### In terminal, execute:
 
         sudo bash Auto-VFIO.sh $1 $2 $3 $4 $5 $6
 ###### Multi-Boot setup or Static setup:
@@ -15,11 +15,9 @@
         $2 == "Y/N" or "E/N"
 ###### enable ZRAM:
         $3 == "Y/N" or "Z/N"
-###### enable Hugepages:
+###### enable Hugepages, set size, set sum:
         $4 == "Y/N" or "H/N"
-###### set Hugepage size:
         $5 == "2M/1G"
-###### set number of Hugepages:
         $6 == integer
 #
 ## Auto-vfio-pci  (not included in installer yet)
