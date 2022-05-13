@@ -425,6 +425,7 @@ function Prompts {
 ########## MultiBootSetup ##########
 
 # NOTE: make sure proper backups of etc files are made! I had to download raw from github to restore them here!
+# NOTE: function needs work before testing
 
 function MultiBootSetup {
 
@@ -482,9 +483,9 @@ function MultiBootSetup {
         for element in ${arr_VGAVendorHWID[@]}; do
             echo -e "arr_VGAVendorHWID == "$element
         done
-}
+    }
     #
-    DEBUG
+    #DEBUG
     #
 
     ## parameters ##
@@ -530,64 +531,149 @@ exec tail -n +3 \$0
     done
     #
 
-    # create individual VGA device GRUB options #
-    for int_VGAIndex in $arr_VGAIndex; do
-        
-        str_thisVGABusID="${arr_VGABusID[$int_VGAIndex]}"
-        str_thisVGADriver="${arr_VGADriver[$int_VGAIndex]}"
-        str_thisVGAHWID="${arr_VGAHWID[$int_VGAIndex]}"
+    #
 
-        echo -e "GRUB:\int_VGAIndex: \"$int_VGAIndex\""
-        echo -e "GRUB:\str_thisVGABusID: \"$str_thisVGABusID\""
-        echo -e "GRUB:\str_thisVGADriver: \"$str_thisVGADriver\""
-        echo -e "GRUB:\str_thisVGAHWID: \"$str_thisVGAHWID\""
+   
 
-        # add to list, separate by comma #
-        for (( int_index=0; int_index<${#arr_PCIIndex[@]}; int_index++ )); do
+    ## parse each PCI device, save list and write to a given Boot menu entry ( sans a given VGA/VGA Vendor device ) ##
+    # create a Boot Menu entry for each possible subtracted VGA device ( and VGA Vendor device(s) ) #
 
-            int_PCIIndex=${arr_PCIIndex[int_index]}             # save current index
-            str_thisPCIDriver=${arr_PCIDriver[$int_PCIIndex]}
+    while true; do
 
-            # add index #
-            if [[ $str_thisPCIDriver != $str_thisVGADriver ]]; then str_listPCIDriver+="${arr_PCIBusID[$int_PCIIndex]}," ;fi
+        bool_VGA=true
+        bool_VGAVendor=true
+        declare -i int_lastIndexPCI=${#arr_PCIBusID[@]}-1
+        declare -i int_indexVGA=0
+        declare -i int_indexVGAVendor=0
 
-            if [[ $int_PCIIndex != $int_VGAIndex ]]; then
-            
-                str_listPCIBusID+="${arr_PCIBusID[$int_PCIIndex]},"
-                str_listPCIHWID+="${arr_PCIHWID[$int_PCIIndex]},"
+        # parse PCI #
+        for (( int_indexPCI=0; int_indexPCI<${#arr_PCIBusID[@]}; int_indexPCI++ )); do
+
+            # index value #
+            str_thisPCIBusID=${arr_PCIBusID[$int_indexPCI]}
+            #
+
+            # save these variables for VFIO #
+            str_thisPCIDriver=${arr_PCIDriver[$int_indexPCI]}
+            str_thisPCIHWID=${arr_PCIHWID[$int_indexPCI]}
+            #
+
+            # subtract VGA device from list #
+            while [[ $int_indexVGA -lt ${#arr_VGABusID[@]} && bool_VGA == true ]]; do
+
+                # index value #
+                str_thisVGABusID=${arr_VGABusID[$int_indexVGA]}
+                #
+
+                # save these variables for VFIO #
+                str_thisVGADriver=${arr_VGADriver[$int_indexVGA]}
+                str_thisVGAHWID=${arr_VGAHWID[$int_indexVGA]}
+                #
+
+                # match VGA #
+                if [[ $str_thisVGABusID == $str_thisPCIBusID && $str_thisVGADriver == $str_thisPCIDriver && $str_thisVGAHWID == $str_thisPCIHWID ]]; then
+
+                    # clear VGA before added to list #
+                    str_thisPCIDriver=""
+                    str_thisPCIHWID=""
+                    #
+
+                    ((int_indexVGA++))
+                    bool_VGA=false    # exit current loop, finish parse of this device
+
+                fi
+                #
+            done
+            #
+
+            # NOTE: read current value and read ahead, if next device is not valid and/or is not the same parent bus ID, then stop.
+            # NOTE: read ahead could be retooled to above loop, VGA match. 
+            # subtract VGA Vendor device from list #
+            while [[ $int_indexVGAVendor -lt ${#arr_VGAVendorBusID[@]} && bool_VGAVendor == true ]]; do
+
+                # read ahead, if next index is valid #
+                declare -i int_nextIndexVGAVendor=$int_indexVGAVendor+1
+
+                if [[ $int_nextIndexVGAVendor -lt ${#arr_VGAVendorBusID[@]} ]]; then
                 
+                    # save these variables for VFIO #
+                    str_nextVGAVendorBusID=${arr_VGAVendorBusID[$int_nextIndexVGAVendor]}
+                    str_nextVGADriver=${arr_VGADriver[$int_nextIndexVGAVendor]}
+                    str_nextVGAHWID=${arr_VGAHWID[$int_nextIndexVGAVendor]}
+                    #
+
+                fi
+                #
+
+                # save these variables for VFIO #
+                str_thisVGAVendorBusID=${arr_VGAVendorBusID[$int_indexVGAVendor]}
+                str_thisVGAVendorDriver=${arr_VGAVendorDriver[$int_indexVGAVendor]}
+                str_thisVGAVendorHWID=${arr_VGAVendorHWID[$int_indexVGAVendor]}
+                #
+
+                # match VGA Vendor #
+                if [[ ${str_thisVGAVendorBusID:0:5} == ${str_thisVGABusID:0:5} && $str_thisVGAVendorBusID == $str_thisPCIBusID && $str_thisVGAVendorDriver == $str_thisPCIDriver && $str_thisVGAVendorHWID == $str_thisPCIHWID ]]; then
+               
+                    # clear VGA before added to list #
+                    str_thisPCIDriver=""
+                    str_thisPCIHWID=""
+                    #
+
+                fi
+                #
+
+                # match next VGA Vendor #
+                if [[ ${str_nextVGAVendorBusID:0:5} == ${str_thisVGAVendorBusID:0:5} && $str_thisVGAVendorDriver == $str_thisPCIDriver && $str_thisVGAVendorHWID == $str_thisPCIHWID ]]; then
+               
+                    # clear VGA before added to list #
+                    str_nextPCIDriver=""
+                    str_nextPCIHWID=""
+                    #
+                
+                    ((int_indexVGAVendor++))
+                    bool_VGAVendor=false    # exit current loop, finish parse of this device
+
+                fi
+                #
+
+            done
+            #
+
+            # add current PCI device to list, if string is not empty #
+            if [[ ! -z $str_thisPCIDriver || ! -z $str_thisPCIHWID ]]; then
+
+                str_listPCIDriver+="$str_thisPCIDriver,"
+                str_listPCIHWID+="$str_thisPCIHWID,"
+
             fi
             #
 
-            # add last index #
-            if [[ $str_thisPCIDriver != $str_thisVGADriver && $int_index == ${#arr_PCIIndex[@]}-1 ]]; then str_listPCIDriver+="${arr_PCIBusID[$int_PCIIndex]}"; fi
+        done
+        #
 
-            if [[ $int_PCIIndex != $int_VGAIndex && $int_index == ${#arr_PCIIndex[@]}-1 ]]; then
-            
-                str_listPCIBusID+="${arr_PCIBusID[$int_PCIIndex]}"
-                str_listPCIHWID+="${arr_PCIHWID[$int_PCIIndex]}"
-            
-            fi
+        ## setup Boot menu entry ##
+
+        # GRUB command line #
+        str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$str_listPCIDriver vfio_pci.ids=$str_listPCIHWID"
+        #
+
+        # parse Kernels #
+        # TODO: hard cap the amount of Boot menu entries, use max. latest three Kernels.
+        # NOTE: if the system has more than X amount of VGA devices, and/or Y amount of Kernels, then the amount of Boot menu entries may be very large
+        # EXAMPLE:      vga == 3, and kernels == 4, then vga*kernels == 3*4 == 12 Boot menu entries
+        for str_rootKernel in arr_rootKernel; do
+
+            # set Kernel #
+            declare -i int_rootKernel=${#str_rootKernel}-14
+            str_rootKernel=${str_rootKernel:14:int_rootKernel}
             #
 
-            # GRUB command line #
-            str_GRUBline="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$arr_VGADriver,$str_arr_PCIDriver vfio_pci.ids=$arr_VGAHWID,$arr_PCIHWID"
+            # GRUB Menu Title #
+            str_GRUBMenuTitle+="$str_rootKernel (Xorg: Bus=$str_thisVGABusID, Drv=$str_thisVGADriver)'"
             #
 
-            # parse Kernels #
-            for str_rootKernel in arr_rootKernel; do
-
-                # set Kernel #
-                declare -i int_rootKernel=${#str_rootKernel}-14
-                str_rootKernel=${str_rootKernel:14:int_rootKernel}
-                #
-
-                # GRUB Menu Title #
-                str_GRUBMenuTitle+="$str_rootKernel (Xorg: Bus=$str_thisVGABusID, Drv=$str_thisVGADriver)'"
-                #
-
-                # GRUB custom menu #
-                declare -a arr_file_customGRUB=(
+            # GRUB custom menu #
+            declare -a arr_file_customGRUB=(
 "menuentry '$str_GRUBMenuTitle' {
     insmod gzio
     set root='/dev/$str_rootDev'
@@ -599,13 +685,11 @@ exec tail -n +3 \$0
             )
 
                 #echo -e "\n${arr_file_customGRUB[@]}" > $str_file1      # write to file
-            done   
-            #
+                echo -e ""\n${arr_file_customGRUB[@]}""                 # debug
         done
-        #
+        ##   
     done
-    #
-
+    ##
 }
 
 ########## end MultiBootSetup ##########
@@ -620,5 +704,3 @@ IFS=$SAVEIFS   # Restore original IFS
 
 exit 0
 ########## end main ##########
-
-
