@@ -7,17 +7,6 @@
 # TL;DR:
 # Generates a VFIO passthrough setup (Multi-Boot or Static).
 
-# Long version:
-# Run at system-setup or whenever a hardware change occurs.
-# Parses Bash for list of External PCI devices ( Bus ID, Hardware ID, and Kernel driver ). External refers to PCI Bus ID 01:00.0 onward.
-# User may implement:
-#   * Multi-Boot setup (includes some Static setup) or Static setup.
-#       - Multi-Boot:   change Xorg VGA device on-the-fly.
-#       - Static:       set Xorg VGA device statically.
-#   * Hugepages             == static allocation of RAM for zero memory fragmentation and reduced memory latency.
-#   * Event devices (Evdev) == virtual Keyboard-Mouse switch.
-#   * ZRAM swapfile         == compressed RAM, to reduce Host lock-up from over-allocated Host memory.
-
 ########## pre-main ##########
 
 # check if sudo #
@@ -35,15 +24,16 @@ IFS=$'\n'      # Change IFS to newline char
 #
 
 # debug first input #
-echo "\$1: $1"          # multiboot/static  [Y/B or N/S]
-echo "\$2: $2"          # enable Evdev      [Y/E or N]
-echo "\$3: $3"          # enable Zram       [Y/Z or N]
-echo "\$4: $4"          # enable hugepages  [Y/H or N]
-echo "\$5: $5"          # set size          [2M or 1G]
-echo "\$6: $6"          # set num           [min or max]
-# example:              sudo bash Auto-vfio-pci.sh b e z h 1g 24
-# example:              sudo bash Auto-vfio-pci.sh b y y y 1g 24
-# example:              sudo bash Auto-vfio-pci.sh b n n n
+echo "$0: \$1 == '$1'"          # multiboot/static  [Y/B or N/S]
+echo "$0: \$2 == '$2'"          # enable Evdev      [Y/E or N]
+echo "$0: \$3 == '$3'"          # enable Zram       [Y/Z or N]
+echo "$0: \$4 == '$4'"          # enable hugepages  [Y/H or N]
+echo "$0: \$5 == '$5'"          # set size          [2M or 1G]
+echo "$0: \$6 == '$6'"          # set num           [min or max]
+echo -e
+# example:              sudo bash $0 b e z h 1g 24
+# example:              sudo bash $0 b y y y 1g 24
+# example:              sudo bash $0 b n n n
 
 ########## end pre-main ##########
 
@@ -51,161 +41,161 @@ echo "\$6: $6"          # set num           [min or max]
 
 function ParsePCI {
 
-# parameters #
-declare -a arr_PCIBusID
-declare -a arr_PCIDriver
-declare -a arr_PCIHWID
-declare -a arr_VGABusID
-declare -a arr_VGADriver
-declare -a arr_VGAHWID
-declare -a arr_VGAVendorBusID
-declare -a arr_VGAVendorHWID
-bool_parseA=false
-bool_parseB=false
-bool_parseVGA=false
-#
-
-# set file #
-declare -a arr_lspci_k=(`lspci -k`)
-declare -a arr_lspci_m=(`lspci -m`)
-declare -a arr_lspci_n=(`lspci -n`)
-str_file2="/etc/X11/xorg.conf.d/10-Auto-Xorg.conf"
-#
-
-# parse list of PCI #
-#for str_line1 in $arr_lspci_m; do
-for (( int_indexA=0; int_indexA<${#arr_lspci_m[@]}; int_indexA++ )); do
-
-    str_line1=${arr_lspci_m[$int_indexA]}    # element
-    str_line3=${arr_lspci_n[$int_indexA]}    # element
-
-    # begin parse #
-    if [[ $str_line1 == *"01:00.0"* ]]; then bool_parseA=true; fi
-
-    # parse #
-    if [[ $bool_parseA == true ]]; then
-
-        # PCI info #
-        str_thisPCIBusID=(${str_line1:0:7})                     # raw VGA Bus ID
-        str_thisPCIType=`echo $str_line1 | cut -d '"' -f 2`     # example:  VGA
-        str_thisPCIVendor=`echo $str_line1 | cut -d '"' -f 4`   # example:  NVIDIA
-        str_thisPCIHWID=`echo $str_line3 | cut -d " " -f 3`     # example:  AB12:CD34
-        #
-
-        # add to list
-        arr_PCIBusID+=("$str_thisPCIBusID")
-        arr_PCIHWID+=("$str_thisPCIHWID") 
-        #
-
-        # match VGA device, add to list #
-        if [[ $str_thisPCIType == *"VGA"* ]]; then
-            arr_VGABusID+=("$str_thisPCIBusID")
-            arr_VGAHWID+=("$str_thisPCIHWID")
-        fi
-        #
-
-        # match VGA Vendor device, add to list #
-        if [[ $str_thisPCIType != *"VGA"* && $str_prevLine1 == *"$str_thisPCIVendor"* ]]; then
-            arr_VGAVendorBusID+=("$str_thisPCIBusID")
-            arr_VGAVendorHWID+=("$str_thisPCIHWID")
-        fi
-        #
-
-        # parse list of drivers
-        #for str_line2 in $arr_lspci_k; do
-        declare -i int_indexB=0
-        for (( int_indexB=0; int_indexB<${#arr_lspci_k[@]}; int_indexB++ )); do
-            
-            str_line2=${arr_lspci_k[$int_indexB]}    # element
-            #echo "str_line2 == '$str_line2'"     
-
-            # begin parse #
-            if [[ $str_line2 == *"$str_thisPCIBusID"* ]]; then bool_parseB=true; fi
-            #
-
-            # match VGA #
-            if [[ $bool_parseB == true && $str_line2 == *"VGA"* ]]; then
-                bool_parseVGA=true
-            fi
-            #
-
-            # match driver #
-            if [[ $bool_parseB == true && $str_line2 == *"Kernel driver in use: "* && $str_line2 != *"vfio-pci"* && $str_line2 != *"Subsystem: "* && $str_line2 != *"Kernel modules: "* ]]; then
-                
-                str_thisPCIDriver=`echo $str_line2 | cut -d " " -f 5`   # PCI driver
-                arr_PCIDriver+=("$str_thisPCIDriver")                   # add to list
-
-                # match VGA, add to list #
-                if [[ $bool_parseVGA == true ]]; then
-                    arr_VGADriver+=("$str_thisPCIDriver")
-                fi
-
-                bool_parseB=false
-                bool_parseVGA=false         
-            fi
-            #
-
-            str_prevLine2=$str_line2    # save previous line for comparison
-
-        done
-        #
-    fi
+    # parameters #
+    #declare -a arr_PCIBusID
+    #declare -a arr_PCIDriver
+    #declare -a arr_PCIHWID
+    #declare -a arr_VGABusID
+    #declare -a arr_VGADriver
+    #declare -a arr_VGAHWID
+    #declare -a arr_VGAVendorBusID
+    #declare -a arr_VGAVendorHWID
+    bool_parseA=false
+    bool_parseB=false
+    bool_parseVGA=false
     #
 
-    str_prevLine1=$str_line1    # save previous line for comparison
+    # set file #
+    declare -a arr_lspci_k=(`lspci -k`)
+    declare -a arr_lspci_m=(`lspci -m`)
+    declare -a arr_lspci_n=(`lspci -n`)
+    str_file2="/etc/X11/xorg.conf.d/10-Auto-Xorg.conf"
+    #
 
-done
-#
+    # parse list of PCI #
+    #for str_line1 in $arr_lspci_m; do
+    for (( int_indexA=0; int_indexA<${#arr_lspci_m[@]}; int_indexA++ )); do
 
-#test input parameter#
-$arr_example=$arr_PCIDriver
-#
+        str_line1=${arr_lspci_m[$int_indexA]}    # element
+        str_line3=${arr_lspci_n[$int_indexA]}    # element
 
-# Debug
-function DEBUG {
-echo -e "arr_PCIBusID == ${#arr_PCIBusID[@]}i"
-for element in ${arr_PCIBusID[@]}; do
-    echo -e "arr_PCIBusID == "$element
-done
+        # begin parse #
+        if [[ $str_line1 == *"01:00.0"* ]]; then bool_parseA=true; fi
+        #
 
-echo -e "arr_VGABusID == ${#arr_VGABusID[@]}i"
-for element in ${arr_VGABusID[@]}; do
-    echo -e "arr_VGABusID == "$element
-done
+        # parse #
+        if [[ $bool_parseA == true ]]; then
 
-echo -e "arr_VGAVendorBusID == ${#arr_VGAVendorBusID[@]}i"
-for element in ${arr_VGAVendorBusID[@]}; do
-    echo -e "arr_VGAVendorBusID == "$element
-done
+            # PCI info #
+            str_thisPCIBusID=(${str_line1:0:7})                     # raw VGA Bus ID
+            str_thisPCIType=`echo $str_line1 | cut -d '"' -f 2`     # example:  VGA
+            str_thisPCIVendor=`echo $str_line1 | cut -d '"' -f 4`   # example:  NVIDIA
+            str_thisPCIHWID=`echo $str_line3 | cut -d " " -f 3`     # example:  AB12:CD34
+            #
 
-echo -e "arr_PCIDriver == ${#arr_PCIDriver[@]}i"
-for element in ${arr_PCIDriver[@]}; do
-    echo -e "arr_PCIDriver == "$element
-done
+            # add to list
+            arr_PCIBusID+=("$str_thisPCIBusID")
+            arr_PCIHWID+=("$str_thisPCIHWID") 
+            #
 
-echo -e "arr_VGADriver == ${#arr_VGADriver[@]}i"
-for element in ${arr_VGADriver[@]}; do
-    echo -e "arr_VGADriver == "$element
-done
+            # match VGA device, add to list #
+            if [[ $str_thisPCIType == *"VGA"* ]]; then
+                arr_VGABusID+=("$str_thisPCIBusID")
+                arr_VGAHWID+=("$str_thisPCIHWID")
+            fi
+            #
 
-echo -e "arr_PCIHWID == ${#arr_PCIHWID[@]}i"
-for element in ${arr_PCIHWID[@]}; do
-    echo -e "arr_PCIHWID == "$element
-done
+            # match VGA Vendor device, add to list #
+            if [[ $str_thisPCIType != *"VGA"* && $str_prevLine1 == *"$str_thisPCIVendor"* ]]; then
+                arr_VGAVendorBusID+=("$str_thisPCIBusID")
+                arr_VGAVendorHWID+=("$str_thisPCIHWID")
+            fi
+            #
 
-echo -e "arr_VGAHWID == ${#arr_VGAHWID[@]}i"
-for element in ${arr_VGAHWID[@]}; do
-    echo -e "arr_VGAHWID == "$element
-done
+            # parse list of drivers
+            #for str_line2 in $arr_lspci_k; do
+            declare -i int_indexB=0
+            for (( int_indexB=0; int_indexB<${#arr_lspci_k[@]}; int_indexB++ )); do
+            
+                str_line2=${arr_lspci_k[$int_indexB]}    # element
+                #echo "str_line2 == '$str_line2'"     
 
-echo -e "arr_VGAVendorHWID == ${#arr_VGAVendorHWID[@]}i"
-for element in ${arr_VGAVendorHWID[@]}; do
-    echo -e "arr_VGAVendorHWID == "$element
-done
-}
-#
+                # begin parse #
+                if [[ $str_line2 == *"$str_thisPCIBusID"* ]]; then bool_parseB=true; fi
+                #
 
-#DEBUG
+                # match VGA #
+                if [[ $bool_parseB == true && $str_line2 == *"VGA"* ]]; then
+                    bool_parseVGA=true
+                fi
+                #
+
+                # match driver #
+                if [[ $bool_parseB == true && $str_line2 == *"Kernel driver in use: "* && $str_line2 != *"vfio-pci"* && $str_line2 != *"Subsystem: "* && $str_line2 != *"Kernel modules: "* ]]; then
+                
+                    str_thisPCIDriver=`echo $str_line2 | cut -d " " -f 5`   # PCI driver
+                    arr_PCIDriver+=("$str_thisPCIDriver")                   # add to list
+
+                    # match VGA, add to list #
+                    if [[ $bool_parseVGA == true ]]; then
+                        arr_VGADriver+=("$str_thisPCIDriver")
+                    fi
+
+                    bool_parseB=false
+                    bool_parseVGA=false         
+                fi
+                #
+
+                str_prevLine2=$str_line2    # save previous line for comparison
+
+            done
+            #
+        fi
+        #
+
+        str_prevLine1=$str_line1    # save previous line for comparison
+
+    done
+    #
+
+    # Debug
+    function DEBUG {
+
+    echo -e "$0: arr_PCIBusID == ${#arr_PCIBusID[@]}i"
+    for element in ${arr_PCIBusID[@]}; do
+        echo -e "$0: arr_PCIBusID == "$element
+    done
+
+    echo -e "$0: arr_VGABusID == ${#arr_VGABusID[@]}i"
+    for element in ${arr_VGABusID[@]}; do
+        echo -e "$0: arr_VGABusID == "$element
+    done
+
+    echo -e "$0: arr_VGAVendorBusID == ${#arr_VGAVendorBusID[@]}i"
+    for element in ${arr_VGAVendorBusID[@]}; do
+        echo -e "$0: arr_VGAVendorBusID == "$element
+    done
+
+    echo -e "$0: arr_PCIDriver == ${#arr_PCIDriver[@]}i"
+    for element in ${arr_PCIDriver[@]}; do
+        echo -e "$0: arr_PCIDriver == "$element
+    done
+
+    echo -e "$0: arr_VGADriver == ${#arr_VGADriver[@]}i"
+    for element in ${arr_VGADriver[@]}; do
+        echo -e "$0: arr_VGADriver == "$element
+    done
+
+    echo -e "$0: arr_PCIHWID == ${#arr_PCIHWID[@]}i"
+    for element in ${arr_PCIHWID[@]}; do
+        echo -e "$0: arr_PCIHWID == "$element
+    done
+
+    echo -e "$0: arr_VGAHWID == ${#arr_VGAHWID[@]}i"
+    for element in ${arr_VGAHWID[@]}; do
+        echo -e "$0: arr_VGAHWID == "$element
+    done
+
+    echo -e "$0: arr_VGAVendorHWID == ${#arr_VGAVendorHWID[@]}i"
+    for element in ${arr_VGAVendorHWID[@]}; do
+        echo -e "$0: arr_VGAVendorHWID == "$element
+    done
+    }
+
+    echo -e
+    #
+
+    #DEBUG
 
 }
 
@@ -215,161 +205,161 @@ done
 
 function HugePages {
 
-# parameters #
-str_input=$4
-str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                # default output
-int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
-#
+    # parameters #
+    str_input=$4
+    str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                # default output
+    int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
+    #
 
-# prompt #
-declare -i int_count=0      # reset counter
-str_prompt="HugePages is a feature which statically allocates System Memory to pagefiles.\nVirtual machines can use HugePages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, the less memory latency.\n"
+    # prompt #
+    declare -i int_count=0      # reset counter
+    str_prompt="$0: HugePages is a feature which statically allocates System Memory to pagefiles.\nVirtual machines can use HugePages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, the less memory latency.\n"
 
-if [[ $str_input == "N" ]]; then
-
-    echo "Skipping HugePages..."
-    return 0;
-fi
-
-
-if [[ -z $str_input || $str_input == "Y" ]]; then echo -e $str_prompt; fi
-
-while [[ $str_input != "Y" && $str_input != "N" ]]; do
-
-    if [[ $int_count -ge 3 ]]; then
-
-        echo "Exceeded max attempts."
-        str_input="N"                   # default selection
-        
-    else
-
-        echo -en "Setup HugePages?\t[Y/n]: "
-        read -r str_input
-        str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
+    if [[ $str_input == "N" ]]; then
+    
+        echo "$0: Skipping HugePages..."
+        return 0;
 
     fi
 
-    case $str_input in
+    if [[ -z $str_input || $str_input == "Y" ]]; then echo -e $str_prompt; fi
 
-        "Y"|"H")
-            echo "Continuing..."
-            break;;
+    while [[ $str_input != "Y" && $str_input != "N" ]]; do
 
-        "N")
-            echo "Skipping..."
-            return 0;;
+        if [[ $int_count -ge 3 ]]; then
 
-        *)
-            echo "Invalid input.";;
+            echo "$0: Exceeded max attempts."
+            str_input="N"                   # default selection
+        
+        else
 
-    esac
-    ((int_count++))
+            echo -en "$0: Setup HugePages?\t[Y/n]: "
+            read -r str_input
+            str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
 
-done
-#
+        fi
 
-# Hugepage size: validate input #
-str_HugePageSize=$5
-str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
+        case $str_input in
 
-declare -i int_count=0      # reset counter
+            "Y"|"H")
+                echo "$0: Continuing..."
+                break;;
 
-while true; do
+            "N")
+                echo "$0: Skipping..."
+                return 0;;
+
+            *)
+                echo "$0: Invalid input.";;
+
+        esac
+        ((int_count++))
+
+    done
+    #
+
+    # Hugepage size: validate input #
+    str_HugePageSize=$5
+    str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
+
+    declare -i int_count=0      # reset counter
+
+    while true; do
                  
-    # attempt #
-    if [[ $int_count -ge 3 ]]; then
+        # attempt #
+        if [[ $int_count -ge 3 ]]; then
 
-        echo "Exceeded max attempts."
-        str_HugePageSize="1G"           # default selection
+            echo "$0: Exceeded max attempts."
+            str_HugePageSize="1G"           # default selection
         
-    else
+        else
 
-        echo -en "Enter Hugepage size and byte-size. [ 2M / 1G ]:\t"
-        read -r str_HugePageSize
-        str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
-
-    fi
-    #
-
-    # check input #
-    case $str_HugePageSize in
-
-        "2M")
-            break;;
-
-        "1G")
-            break;;
-
-        *)
-            echo "Invalid input.";;
-
-    esac
-    #
-
-    ((int_count++))                     # inc counter
-
-done
-#
-
-# Hugepage sum: validate input #
-int_HugePageNum=$6
-declare -i int_count=0      # reset counter
-
-while true; do
-
-    # attempt #
-    if [[ $int_count -ge 3 ]]; then
-
-        echo "Exceeded max attempts."
-        int_HugePageNum=$int_HugePageMax        # default selection
-        
-    else
-
-        # Hugepage Size #
-        if [[ $str_HugePageSize == "2M" ]]; then
-
-            str_prefixMem="M"
-            declare -i int_HugePageK=2048       # Hugepage size
-            declare -i int_HugePageMin=2        # min HugePages
+            echo -en "$0: Enter Hugepage size and byte-size. [ 2M / 1G ]:\t"
+            read -r str_HugePageSize
+            str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
 
         fi
-
-        if [[ $str_HugePageSize == "1G" ]]; then
-
-            str_prefixMem="G"
-            declare -i int_HugePageK=1048576    # Hugepage size
-            declare -i int_HugePageMin=1        # min HugePages
-
-        fi
-
-        declare -i int_HostMemMinK=4194304                              # min host RAM in KiB
-        declare -i int_HugePageMemMax=$int_HostMemMaxK-$int_HostMemMinK
-        declare -i int_HugePageMax=$int_HugePageMemMax/$int_HugePageK   # max HugePages
-
-        echo -en "Enter number of HugePages ( num * $str_HugePageSize ). [ $int_HugePageMin to $int_HugePageMax pages ] : "
-        read -r int_HugePageNum
         #
 
-    fi
+        # check input #
+        case $str_HugePageSize in
+
+            "2M")
+                break;;
+
+            "1G")
+                break;;
+
+            *)
+                echo "$0: Invalid input.";;
+
+        esac
+        #
+
+        ((int_count++))                     # inc counter
+
+    done
     #
+
+    # Hugepage sum: validate input #
+    int_HugePageNum=$6
+    declare -i int_count=0      # reset counter
+
+    while true; do
+
+        # attempt #
+        if [[ $int_count -ge 3 ]]; then
+
+            echo "$0: Exceeded max attempts."
+            int_HugePageNum=$int_HugePageMax        # default selection
+        
+        else
+
+            # Hugepage Size #
+            if [[ $str_HugePageSize == "2M" ]]; then
+
+                str_prefixMem="M"
+                declare -i int_HugePageK=2048       # Hugepage size
+                declare -i int_HugePageMin=2        # min HugePages
+
+            fi
+
+            if [[ $str_HugePageSize == "1G" ]]; then
+
+                str_prefixMem="G"
+                declare -i int_HugePageK=1048576    # Hugepage size
+                declare -i int_HugePageMin=1        # min HugePages
+
+            fi
+
+            declare -i int_HostMemMinK=4194304                              # min host RAM in KiB
+            declare -i int_HugePageMemMax=$int_HostMemMaxK-$int_HostMemMinK
+            declare -i int_HugePageMax=$int_HugePageMemMax/$int_HugePageK   # max HugePages
+
+            echo -en "$0: Enter number of HugePages ( num * $str_HugePageSize ). [ $int_HugePageMin to $int_HugePageMax pages ] : "
+            read -r int_HugePageNum
+            #
+
+        fi
+        #
 
     # check input #
     if [[ $int_HugePageNum -lt $int_HugePageMin || $int_HugePageNum -gt $int_HugePageMax ]]; then
 
-        echo "Invalid input."
+        echo "$0: Invalid input."
         ((int_count++));     # inc counter
 
     else
     
-        echo -e "Continuing..."
+        echo -e "$0: Continuing..."
         str_GRUB_CMDLINE_Hugepages="default_hugepagesz=$str_HugePageSize hugepagesz=$str_HugePageSize hugepages=$int_HugePageNum"
         break
         
     fi
     #
 
-done
-#
+    done
+    #
 
 }
 
@@ -379,54 +369,54 @@ done
 
 function Prompts {
 
-# parameters #
-str_input=$1
-#
+    # parameters #
+    str_input=$1
+    #
 
-# prompt #
-declare -i int_count=0      # reset counter
-str_prompt="Setup VFIO by 'Multi-Boot' or Statically.\nMulti-Boot Setup includes adding GRUB boot options, each with one specific omitted VGA device.\nStatic Setup modifies '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*.\nMulti-boot is the more flexible choice."
+    # prompt #
+    declare -i int_count=0      # reset counter
+    str_prompt="$0: Setup VFIO by 'Multi-Boot' or Statically.\n$0: Multi-Boot Setup includes adding GRUB boot options, each with one specific omitted VGA device.\n$0: Static Setup modifies '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*.\n$0: Multi-boot is the more flexible choice.\n"
 
-if [[ -z $str_input ]]; then echo -e $str_prompt; fi
+    if [[ -z $str_input ]]; then echo -e $str_prompt; fi
 
-while [[ $str_input != "B" && $str_input != "S" && $str_input != "Y" && $str_input != "N" ]]; do
+    while [[ $str_input != "B" && $str_input != "S" && $str_input != "Y" && $str_input != "N" ]]; do
 
-    if [[ $int_count -ge 3 ]]; then
+        if [[ $int_count -ge 3 ]]; then
 
-        echo "Exceeded max attempts."
-        str_input="B"                   # default selection
+            echo "$0: Exceeded max attempts."
+            str_input="B"                   # default selection
         
-    else
+        else
 
-        echo -en "Setup VFIO?\t[ Multi-(B)oot / (S)tatic ]: "
-        read -r str_input
-        str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
+            echo -en "$0: Setup VFIO?\t[ Multi-(B)oot / (S)tatic ]: "
+            read -r str_input
+            str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
 
-    fi
+        fi
 
-    case $str_input in
+        case $str_input in
 
-        "Y"|"B")
-            echo "Continuing with Multi-Boot setup..."
-            HugePages $4 $5 $6
-            MultiBootSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
-            #StaticSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
-            break;;
+            "Y"|"B")
+                echo "$0: Continuing with Multi-Boot setup..."
+                HugePages $4 $5 $6
+                MultiBootSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
+                #StaticSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
+                break;;
 
-        "N"|"S")
-            echo "Continuing with Static setup..."
-            HugePages $4 $5 $6
-            StaticSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
-            break;;
+            "N"|"S")
+                echo "$0: Continuing with Static setup..."
+                HugePages $4 $5 $6
+                StaticSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
+                break;;
 
-        *)
-            echo "Invalid input.";;
+            *)
+                echo "$0: Invalid input.";;
 
-    esac
-    ((int_count++))
+        esac
+        ((int_count++))
 
-done
-#
+    done
+    #
 
 }
 
@@ -438,15 +428,21 @@ done
 
 function MultiBootSetup {
 
-    # dependencies #
-    declare -a arr_example
-    ParsePCI $arr_example
-    for element in ${arr_example[@]}; do
-        echo -e "arr_example == "$element
-    done
+    # dependencies # 
+    declare -a arr_PCIBusID
+    declare -a arr_PCIDriver
+    declare -a arr_PCIHWID
+    declare -a arr_VGABusID
+    declare -a arr_VGADriver
+    declare -a arr_VGAHWID
+    declare -a arr_VGAVendorBusID
+    declare -a arr_VGAVendorHWID
+    ParsePCI $arr_PCIBusID $arr_PCIDriver $arr_PCIHWID $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAVendorBusID $arr_VGAVendorHWID 
+    #
 
     # Debug
     function DEBUG {
+
         echo -e "arr_PCIBusID == ${#arr_PCIBusID[@]}i"
         for element in ${arr_PCIBusID[@]}; do
             echo -e "arr_PCIBusID == "$element
@@ -511,7 +507,7 @@ function MultiBootSetup {
 
         cp $str_file1 $str_file1"_old"
         echo -e"#!/bin/sh
-exec tail -n +3 $0
+exec tail -n +3 \$0
 # This file provides an easy way to add custom menu entries. Simply type the
 # menu entries you want to add after this comment. Be careful not to change
 # the 'exec tail' line above.
@@ -603,13 +599,10 @@ exec tail -n +3 $0
             )
 
                 #echo -e "\n${arr_file_customGRUB[@]}" > $str_file1      # write to file
-
             done   
             #
-
         done
         #
-
     done
     #
 
@@ -627,3 +620,5 @@ IFS=$SAVEIFS   # Restore original IFS
 
 exit 0
 ########## end main ##########
+
+
