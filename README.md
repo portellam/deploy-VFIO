@@ -20,7 +20,7 @@
 
 #
 ## Auto-VFIO
-Automate VFIO passthrough setup, dynamically ('Multi-Boot') or statically.
+Automated VFIO passthrough setup. Setup dynamically (Multi-Boot) or statically.
 * Runs once at boot.
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers)
 * Prompt user for VFIO passthrough setup:
