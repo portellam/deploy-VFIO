@@ -46,10 +46,10 @@ function ParsePCI {
     #declare -a arr_PCIDriver
     #declare -a arr_PCIHWID
     #declare -a arr_VGABusID
-    #declare -a arr_VGADriver
-    #declare -a arr_VGAHWID
-    #declare -a arr_VGAVendorBusID
-    #declare -a arr_VGAVendorHWID
+    ##declare -a arr_VGADriver          ## unused
+    ##declare -a arr_VGAHWID            ## unused
+    ##declare -a arr_VGAVendorBusID     ## unused
+    ##declare -a arr_VGAVendorHWID      ## unused
     bool_parseA=false
     bool_parseB=false
     bool_parseVGA=false
@@ -96,10 +96,10 @@ function ParsePCI {
             #
 
             # match VGA Vendor device, add to list #
-            if [[ $str_thisPCIType != *"VGA"* && $str_prevLine1 == *"$str_thisPCIVendor"* ]]; then
-                arr_VGAVendorBusID+=("$str_thisPCIBusID")
-                arr_VGAVendorHWID+=("$str_thisPCIHWID")
-            fi
+            #if [[ $str_thisPCIType != *"VGA"* && $str_prevLine1 == *"$str_thisPCIVendor"* ]]; then
+                #arr_VGAVendorBusID+=("$str_thisPCIBusID")
+                #arr_VGAVendorHWID+=("$str_thisPCIHWID")
+            #fi
             #
 
             # parse list of drivers
@@ -107,8 +107,7 @@ function ParsePCI {
             declare -i int_indexB=0
             for (( int_indexB=0; int_indexB<${#arr_lspci_k[@]}; int_indexB++ )); do
             
-                str_line2=${arr_lspci_k[$int_indexB]}    # element
-                #echo "str_line2 == '$str_line2'"     
+                str_line2=${arr_lspci_k[$int_indexB]}    # element   
 
                 # begin parse #
                 if [[ $str_line2 == *"$str_thisPCIBusID"* ]]; then bool_parseB=true; fi
@@ -161,10 +160,10 @@ function ParsePCI {
         echo -e "$0: arr_VGABusID == "$element
     done
 
-    echo -e "$0: arr_VGAVendorBusID == ${#arr_VGAVendorBusID[@]}i"
-    for element in ${arr_VGAVendorBusID[@]}; do
-        echo -e "$0: arr_VGAVendorBusID == "$element
-    done
+    #echo -e "$0: arr_VGAVendorBusID == ${#arr_VGAVendorBusID[@]}i"
+    #for element in ${arr_VGAVendorBusID[@]}; do
+        #echo -e "$0: arr_VGAVendorBusID == "$element
+    #done
 
     echo -e "$0: arr_PCIDriver == ${#arr_PCIDriver[@]}i"
     for element in ${arr_PCIDriver[@]}; do
@@ -186,10 +185,10 @@ function ParsePCI {
         echo -e "$0: arr_VGAHWID == "$element
     done
 
-    echo -e "$0: arr_VGAVendorHWID == ${#arr_VGAVendorHWID[@]}i"
-    for element in ${arr_VGAVendorHWID[@]}; do
-        echo -e "$0: arr_VGAVendorHWID == "$element
-    done
+    #echo -e "$0: arr_VGAVendorHWID == ${#arr_VGAVendorHWID[@]}i"
+    #for element in ${arr_VGAVendorHWID[@]}; do
+        #echo -e "$0: arr_VGAVendorHWID == "$element
+    #done
     }
 
     echo -e
@@ -435,10 +434,8 @@ function MultiBootSetup {
     declare -a arr_PCIHWID
     declare -a arr_VGABusID
     declare -a arr_VGADriver
-    declare -a arr_VGAHWID
-    declare -a arr_VGAVendorBusID
-    declare -a arr_VGAVendorHWID
-    ParsePCI $arr_PCIBusID $arr_PCIDriver $arr_PCIHWID $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAVendorBusID $arr_VGAVendorHWID 
+    #declare -a arr_VGAHWID
+    ParsePCI $arr_PCIBusID $arr_PCIDriver $arr_PCIHWID $arr_VGABusID $arr_VGADriver #$arr_VGAHWID
     #
 
     # Debug
@@ -454,35 +451,17 @@ function MultiBootSetup {
             echo -e "arr_VGABusID == "$element
         done
 
-        echo -e "arr_VGAVendorBusID == ${#arr_VGAVendorBusID[@]}i"
-        for element in ${arr_VGAVendorBusID[@]}; do
-           echo -e "arr_VGAVendorBusID == "$element
-        done
-
         echo -e "arr_PCIDriver == ${#arr_PCIDriver[@]}i"
         for element in ${arr_PCIDriver[@]}; do
            echo -e "arr_PCIDriver == "$element
         done
 
-        echo -e "arr_VGADriver == ${#arr_VGADriver[@]}i"
-        for element in ${arr_VGADriver[@]}; do
-           echo -e "arr_VGADriver == "$element
-        done
 
         echo -e "arr_PCIHWID == ${#arr_PCIHWID[@]}i"
         for element in ${arr_PCIHWID[@]}; do
            echo -e "arr_PCIHWID == "$element
         done
 
-        echo -e "arr_VGAHWID == ${#arr_VGAHWID[@]}i"
-        for element in ${arr_VGAHWID[@]}; do
-            echo -e "arr_VGAHWID == "$element
-        done
-
-        echo -e "arr_VGAVendorHWID == ${#arr_VGAVendorHWID[@]}i"
-        for element in ${arr_VGAVendorHWID[@]}; do
-            echo -e "arr_VGAVendorHWID == "$element
-        done
     }
     #
     #DEBUG
@@ -534,11 +513,6 @@ exec tail -n +3 \$0
     ## parse GRUB menu entries ##
     declare -i int_lastIndexPCI=${#arr_PCIBusID[@]}-1
     declare -i int_lastIndexVGA=${#arr_VGABusID[@]}-1
-
-    # save for GRUB #
-    declare -a arr_str_listPCIDriverID
-    declare -a arr_str_listPCIHWID
-    #
     
     # parse list of VGA devices #
     for (( int_indexVGA=0; int_indexVGA<${#arr_VGABusID[@]}; int_indexVGA++ )); do
@@ -549,13 +523,11 @@ exec tail -n +3 \$0
         for (( int_indexPCI=0; int_indexPCI<${#arr_PCIBusID[@]}; int_indexPCI++ )); do
 
             bool_thisPCINoMatch=false                               # check for match if false
-
-            str_thisPCIBusID=${arr_PCIBusID[$int_indexPCI]}
+            str_thisPCIBusID=${arr_PCIBusID[$int_indexPCI]}         # save for match
             str_thisPCIDriver=${arr_PCIDriver[$int_indexPCI]}       # save for GRUB
             str_thisPCIHWID=${arr_PCIHWID[$int_indexPCI]}           # save for GRUB
-
-            str_thisVGABusID=${arr_VGABusID[$int_indexVGA]}
-            #str_thisVGADriver=${arr_VGADriver[$int_indexVGA]}       # save for GRUB
+            str_thisVGABusID=${arr_VGABusID[$int_indexVGA]}         # save for match
+            str_thisVGADriver=${arr_VGADriver[$int_indexVGA]}       # save for GRUB
             #str_thisVGAHWID=${arr_VGAHWID[$int_indexVGA]}           # save for GRUB
 
             # if PCI is an expansion device, parse it #
@@ -563,34 +535,32 @@ exec tail -n +3 \$0
             #
 
             # match VGA device exactly #
-            if [[ $bool_parsePCIifExternal == true && ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} && $str_thisVGABusID == $str_thisPCIBusID && bool_thisPCINoMatch == false ]]; then
+            if [[ $bool_parsePCIifExternal == true && ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} && $str_thisVGABusID == $str_thisPCIBusID ]]; then
                     
                 # clear variables #
                 str_thisPCIDriver=""
                 str_thisPCIHWID=""
                 #
 
-                bool_thisPCINoMatch=true     # do not run next match check
-
             fi
 
             # match VGA device's child interface #
-            if [[ $bool_parsePCIifExternal == true && ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} && $str_thisVGABusID != $str_thisPCIBusID && bool_thisPCINoMatch == false ]]; then
+            if [[ $bool_parsePCIifExternal == true && ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} && $str_thisVGABusID != $str_thisPCIBusID ]]; then
 
                 # clear variables #
                 str_thisPCIDriver=""
                 str_thisPCIHWID=""
                 #
 
-                bool_thisPCINoMatch=true     # do not run next match check
-
             fi
 
             # if no match found (if string is not empty), add to list #
-            if [[ $bool_parsePCIifExternal == true && $bool_thisPCINoMatch == false && ! -z $str_thisPCIDriver && ! -z $str_thisPCIHWID]]; then
+            if [[ $bool_thisPCINoMatch == false && ! -z $str_thisPCIDriver && ! -z $str_thisPCIHWID]]; then
                 
+                # add to list #
                 str_listPCIDriver+="$str_thisPCIDriver,"
                 str_listPCIHWID+="$str_thisPCIHWID,"
+                #
 
             fi
             #
@@ -602,12 +572,7 @@ exec tail -n +3 \$0
         if [[ ${str_listPCIHWID: -1} == "," ]]; then str_listPCIHWID=${str_listPCIHWID::-1}; fi
         #
 
-        # add to array, when parsing GRUB menu entries #
-        #arr_str_listPCIDriverID+=("$str_listPCIDriver")
-        #arr_str_listPCIHWID+=("$str_listPCIHWID")
-        #
-
-        # setup Boot menu entry #
+        ### setup Boot menu entry ###
 
         # GRUB command line #
         str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$str_listPCIDriver vfio_pci.ids=$str_listPCIHWID"
