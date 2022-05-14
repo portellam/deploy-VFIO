@@ -216,7 +216,7 @@ function HugePages {
 
     # prompt #
     declare -i int_count=0      # reset counter
-    str_prompt="$0: HugePages is a feature which statically allocates System Memory to pagefiles.\nVirtual machines can use HugePages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, the less memory latency.\n"
+    str_prompt="$0: HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, the less memory latency.\n"
 
     if [[ $str_input == "N" ]]; then
     
@@ -422,7 +422,7 @@ function Prompts {
 
     # prompt #
     declare -i int_count=0      # reset counter
-    str_prompt="$0: Setup VFIO by 'Multi-Boot' or Statically.\n$0: Multi-Boot Setup includes adding GRUB boot options, each with one specific omitted VGA device.\n$0: Static Setup modifies '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*.\n$0: Multi-boot is the more flexible choice.\n"
+    str_prompt="$0: Setup VFIO by 'Multi-Boot' or Statically.\n\tMulti-Boot Setup includes adding GRUB boot options, each with one specific omitted VGA device.\n\tStatic Setup modifies '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*.\n\tMulti-boot is the more flexible choice.\n"
 
     if [[ -z $str_input1 ]]; then echo -e $str_prompt; fi
 
@@ -484,7 +484,7 @@ function MultiBootSetup {
 
     # prompt #
     declare -i int_count=0      # reset counter
-    str_prompt="$0: Do you wish to review each VGA device before creating a GRUB menu entry?\n$0: In other words, do you wish to passthrough given VGA device(s), but not all?\n$0: If you are confused, please refer to the README for clarification."
+    str_prompt="$0: Do you wish to review each VGA device before creating a GRUB menu entry?\n\tIn other words, do you wish to passthrough given VGA device(s), but not all?\n\tIf you are confused, please refer to the README for clarification.\n"
 
     if [[ -z $str_input1 || $str_input1 != "Y" && $str_input1 != "N" ]]; then echo -e $str_prompt; fi
 
@@ -497,7 +497,7 @@ function MultiBootSetup {
         
         else
 
-            echo -en "$0: Review each VGA device (and pause Multi-Boot setup), or automate Multi-Boot setup?\t[Y/n]: "
+            echo -en "$0: Review each VGA device (and intermittently pause Multi-Boot setup), or Automate Multi-Boot setup?\t[Y/n]: "
             read -r str_input1
             str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
 
@@ -557,7 +557,7 @@ function MultiBootSetup {
 
     }
     #
-    DEBUG
+    #DEBUG
     #
 
     ## parameters ##
@@ -569,41 +569,21 @@ function MultiBootSetup {
 
     # root Dev #
     str_rootDiskInfo=`df -hT | grep /$`
-    str_rootDev=${str_rootDiskInfo:5:4}     # example "sda1"
-    #
-
-    # root UUID #
-    str_rootUUID=`sudo blkid | grep $str_rootDev | cut -d '"' -f 2`
+    #str_rootDev=${str_rootDiskInfo:5:4}     # example "sda1"
+    str_rootDev=${str_rootDiskInfo:0:9}     # example "/dev/sda1"
+    str_rootUUID=`sudo lsblk -n $str_rootDev -o UUID`
     #
 
     # custom GRUB #
     str_file1="/etc/grub.d/proxifiedScripts/custom"
-    if [[ ! -z $str_file1"_old" ]]; then
-
-        cp $str_file1 $str_file1"_old"
-        echo -e"#!/bin/sh
+    echo -e "#!/bin/sh
 exec tail -n +3 \$0
 # This file provides an easy way to add custom menu entries. Simply type the
 # menu entries you want to add after this comment. Be careful not to change
 # the 'exec tail' line above.
 " > $str_file1
-
-    fi
     #
     ##
-
-    # find UUID #
-    for element in ${arr_str_rootBlkInfo[@]}; do
-
-        # root UUID match #
-        if [[ $bool_nextElement == true ]]; then str_rootUUID=$element; break
-        else bool_nextElement=false; fi
-        #
-
-        if [[ $element == *$str_rootDev* ]]; then bool_nextElement=true; fi     # root dev match
-
-    done
-    #
 
     ## parse GRUB menu entries ##
     declare -i int_lastIndexPCI=${#arr_PCIBusID[@]}-1
@@ -664,7 +644,7 @@ exec tail -n +3 \$0
         #
 
         # default choice: if NOT passing-through device, run loop #
-        if [[ $str_input2 == "N" ]]; then
+        if [[ $str_input2 != "Y" ]]; then
 
             # parse list of PCI devices #
             for (( int_indexPCI=0; int_indexPCI<${#arr_PCIBusID[@]}; int_indexPCI++ )); do
@@ -756,29 +736,102 @@ exec tail -n +3 \$0
                 declare -a arr_file_customGRUB=(
 "menuentry '$str_GRUBMenuTitle' {
     insmod gzio
-    set root='/dev/$str_rootDev'
+    set root='/dev/disk/by-uuid/$str_rootUUID'
     echo    'Loading Linux $str_rootKernel ...'
     linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE
     echo    'Loading initial ramdisk ...'
     initrd  /boot/initrd.img-$str_rootKernel
-    echo    'Xorg: $str_thisVGABusID: $str_thisVGADriver'"
-            )
+}"
+                )
 
-                #echo -e "\n${arr_file_customGRUB[@]}" > $str_file1      # write to file
-                echo -e ""
-                #echo -e ""\n${arr_file_customGRUB[@]}""                 # debug
+                # write to file
+                echo -e "\n" >> $str_file1    
 
                 for element in ${arr_file_customGRUB[@]}; do
-                    echo -e "arr_file_customGRUB == "$element
+                    echo -e $element >> $str_file1
                 done
-
+                #
             done
             #
+
+            ## setup final GRUB entry with all PCI devices passed-through (for headless setup) ##
+            str_listPCIDriver=""
+            str_listPCIHWID=""
+
+            # parse list of PCI devices #
+            for (( int_indexPCI=0; int_indexPCI<${#arr_PCIBusID[@]}; int_indexPCI++ )); do
+
+                str_thisPCIBusID=${arr_PCIBusID[$int_indexPCI]}         # save for match
+                str_thisPCIDriver=${arr_PCIDriver[$int_indexPCI]}       # save for GRUB
+                str_thisPCIHWID=${arr_PCIHWID[$int_indexPCI]}           # save for GRUB    
+
+                # if PCI is an expansion device, parse it #
+                if [[ $str_thisPCIBusID == "01:00.0" ]]; then bool_parsePCIifExternal=true; fi
+                #
+
+                # if PCI driver is already present in list, clear driver #
+                if [[ $str_listPCIDriver == *"$str_thisPCIDriver"* ]]; then str_thisPCIDriver=""; fi
+                #
+
+                # if no PCI driver match found (if string is not empty), add to list #
+                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIDriver ]]; then str_listPCIDriver+="$str_thisPCIDriver,"; fi
+                #
+                
+                # if no PCI HW ID match found (if string is not empty), add to list #
+                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIHWID ]]; then str_listPCIHWID+="$str_thisPCIHWID,"; fi
+                #
+
+            done  
+            # end parse list of PCI devices #
+
+            # remove last separator #
+            if [[ ${str_listPCIDriver: -1} == "," ]]; then str_listPCIDriver=${str_listPCIDriver::-1}; fi
+            if [[ ${str_listPCIHWID: -1} == "," ]]; then str_listPCIHWID=${str_listPCIHWID::-1}; fi
+            #
+
+            # GRUB command line #
+            str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_listPCIDriver vfio_pci.ids=$str_listPCIHWID"
+            #
+
+            # parse Kernels #
+            for str_rootKernel in ${arr_rootKernel[@]}; do
+
+                # set Kernel #
+                str_rootKernel=${str_rootKernel:1:100}          # arbitrary length
+                #
+
+                # GRUB Menu Title #
+                str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel"
+                #
+
+                # GRUB custom menu #
+                declare -a arr_file_customGRUB=(
+"menuentry '$str_GRUBMenuTitle' {
+    insmod gzio
+    set root='/dev/disk/by-uuid/$str_rootUUID'
+    echo    'Loading Linux $str_rootKernel ...'
+    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-$str_rootKernel
+}"
+            )
+
+                # write to file
+                echo -e "\n" >> $str_file1    
+
+                for element in ${arr_file_customGRUB[@]}; do
+                    echo -e $element >> $str_file1
+                done
+                #
+            done
+            ##
         fi
         #
     done
     # end parse list of VGA devices #
     ## end parse GRUB menu entries ##
+
+    sudo update-grub    # update GRUB for good measure
 
 }
 
