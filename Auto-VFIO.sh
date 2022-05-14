@@ -305,6 +305,7 @@ function HugePages {
     #
 
     # Hugepage sum: validate input #
+    echo -e ""
     int_HugePageNum=$str7
     declare -i int_count=0      # reset counter
 
