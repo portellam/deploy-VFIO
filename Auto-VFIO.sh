@@ -428,6 +428,8 @@ function Prompts {
 
 function MultiBootSetup {
 
+    echo -e ""
+
     # prompt #
     declare -i int_count=0      # reset counter
     str_prompt="$0: Do you wish to review each VGA device before creating a GRUB menu entry?\n$0: In other words, do you wish to passthrough given VGA device(s), but not all?\n$0: If you are confused, please refer to the README for clarification."
@@ -503,7 +505,7 @@ function MultiBootSetup {
 
     }
     #
-    #DEBUG
+    DEBUG
     #
 
     ## parameters ##
@@ -554,7 +556,7 @@ exec tail -n +3 \$0
     declare -i int_lastIndexVGA=${#arr_VGABusID[@]}-1
     
     # parse list of VGA devices #
-    for (( int_indexVGA=0; int_indexVGA<${#arr_VGABusID[@]}; int_indexVGA++ )); do
+    for (( int_indexVGA=0; int_indexVGA<=${#arr_VGABusID[@]}; int_indexVGA++ )); do
 
         bool_parsePCIifExternal=false
         str_thisVGABusID=${arr_VGABusID[$int_indexVGA]}             # save for match
@@ -563,13 +565,9 @@ exec tail -n +3 \$0
         #
         if [[ $str_input1 == "Y" ]]; then
 
-            echo -e ""
-
             # prompt #
             declare -i int_count=0      # reset counter
-            str_prompt="$0: `echo lspci -m | grep $str_thisVGABusID`"
-
-            if [[ -z $str_input2 || $str_input2 == "Y" ]]; then echo -e $str_prompt; fi
+            echo -en "$0: " && lspci -m | grep $str_thisVGABusID
 
             while [[ $str_input2 != "Y" && $str_input2 != "N" ]]; do
 
@@ -613,7 +611,6 @@ exec tail -n +3 \$0
             # parse list of PCI devices #
             for (( int_indexPCI=0; int_indexPCI<${#arr_PCIBusID[@]}; int_indexPCI++ )); do
 
-                bool_thisPCINoMatch=false                               # check for match if false
                 str_thisPCIBusID=${arr_PCIBusID[$int_indexPCI]}         # save for match
                 str_thisPCIDriver=${arr_PCIDriver[$int_indexPCI]}       # save for GRUB
                 str_thisPCIHWID=${arr_PCIHWID[$int_indexPCI]}           # save for GRUB    
@@ -643,7 +640,7 @@ exec tail -n +3 \$0
                 fi
 
                 # if no match found (if string is not empty), add to list #
-                if [[ $bool_thisPCINoMatch == false && ! -z $str_thisPCIDriver && ! -z $str_thisPCIHWID]]; then
+                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIDriver && ! -z $str_thisPCIHWID ]]; then
                 
                     # add to list #
                     str_listPCIDriver+="$str_thisPCIDriver,"
