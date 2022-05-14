@@ -428,14 +428,53 @@ function Prompts {
 
 function MultiBootSetup {
 
+    # prompt #
+    declare -i int_count=0      # reset counter
+    str_prompt="$0: Do you wish to review each VGA device before creating a GRUB menu entry?\n$0: In other words, do you wish to passthrough given VGA device(s), but not all?\n$0: If you are confused, please refer to the README for clarification."
+
+    if [[ -z $str_input1 || $str_input1 == "Y" ]]; then echo -e $str_prompt; fi
+
+    while [[ $str_input1 != "Y" && $str_input1 != "N" ]]; do
+
+        if [[ $int_count -ge 3 ]]; then
+
+            echo "$0: Exceeded max attempts."
+            str_input1="N"                   # default selection
+        
+        else
+
+            echo -en "$0: Review each VGA device (and pause Multi-Boot setup), or automate Multi-Boot setup?\t[Y/n]: "
+            read -r str_input1
+            str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
+
+        fi
+
+        case $str_input1 in
+
+            "Y")
+                echo "$0: Reviewing each VGA device..."
+                break;;
+
+            "N")
+                echo "$0: Automating Multi-Boot setup..."
+                break;;
+
+            *)
+                echo "$0: Invalid input.";;
+
+        esac
+        ((int_count++))
+
+    done
+    #
+
     # dependencies # 
     declare -a arr_PCIBusID
     declare -a arr_PCIDriver
     declare -a arr_PCIHWID
     declare -a arr_VGABusID
     declare -a arr_VGADriver
-    #declare -a arr_VGAHWID
-    ParsePCI $arr_PCIBusID $arr_PCIDriver $arr_PCIHWID $arr_VGABusID $arr_VGADriver #$arr_VGAHWID
+    ParsePCI $arr_PCIBusID $arr_PCIDriver $arr_PCIHWID $arr_VGABusID $arr_VGADriver
     #
 
     # Debug
@@ -518,80 +557,129 @@ exec tail -n +3 \$0
     for (( int_indexVGA=0; int_indexVGA<${#arr_VGABusID[@]}; int_indexVGA++ )); do
 
         bool_parsePCIifExternal=false
+        str_thisVGABusID=${arr_VGABusID[$int_indexVGA]}             # save for match
+        str_thisVGADriver=${arr_VGADriver[$int_indexVGA]}           # save for GRUB
 
-        # parse list of PCI devices #
-        for (( int_indexPCI=0; int_indexPCI<${#arr_PCIBusID[@]}; int_indexPCI++ )); do
+        #
+        if [[ $str_input1 == "Y" ]]; then
 
-            bool_thisPCINoMatch=false                               # check for match if false
-            str_thisPCIBusID=${arr_PCIBusID[$int_indexPCI]}         # save for match
-            str_thisPCIDriver=${arr_PCIDriver[$int_indexPCI]}       # save for GRUB
-            str_thisPCIHWID=${arr_PCIHWID[$int_indexPCI]}           # save for GRUB
-            str_thisVGABusID=${arr_VGABusID[$int_indexVGA]}         # save for match
-            str_thisVGADriver=${arr_VGADriver[$int_indexVGA]}       # save for GRUB
-            #str_thisVGAHWID=${arr_VGAHWID[$int_indexVGA]}           # save for GRUB
+            echo -e ""
 
-            # if PCI is an expansion device, parse it #
-            if [[ $str_thisPCIBusID == "01:00.0" ]]; then bool_parsePCIifExternal=true; fi
+            # prompt #
+            declare -i int_count=0      # reset counter
+            str_prompt="$0: `echo lspci -m | grep $str_thisVGABusID`"
+
+            if [[ -z $str_input2 || $str_input2 == "Y" ]]; then echo -e $str_prompt; fi
+
+            while [[ $str_input2 != "Y" && $str_input2 != "N" ]]; do
+
+                if [[ $int_count -ge 3 ]]; then
+
+                    echo "$0: Exceeded max attempts."
+                    str_input2="N"                   # default selection
+        
+                else
+
+                    echo -en "$0: Do you wish to passthrough this VGA device (or not)?\t[Y/n]: "
+                    read -r str_input2
+                    str_input2=`echo $str_input2 | tr '[:lower:]' '[:upper:]'`
+
+                fi
+
+                case $str_input2 in
+
+                    "Y")
+                        echo "$0: Passing-through VGA device..."
+                        break;;
+
+                    "N")
+                        echo "$0: Omitting VGA device..."
+                        break;;
+
+                    *)
+                        echo "$0: Invalid input.";;
+
+                esac
+                ((int_count++))
+
+            done
             #
+        fi
+        #
 
-            # match VGA device exactly #
-            if [[ $bool_parsePCIifExternal == true && ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} && $str_thisVGABusID == $str_thisPCIBusID ]]; then
+        # default choice: if NOT passing-through device, run loop #
+        if [[ $str_input2 == "N" ]]; then
+
+            # parse list of PCI devices #
+            for (( int_indexPCI=0; int_indexPCI<${#arr_PCIBusID[@]}; int_indexPCI++ )); do
+
+                bool_thisPCINoMatch=false                               # check for match if false
+                str_thisPCIBusID=${arr_PCIBusID[$int_indexPCI]}         # save for match
+                str_thisPCIDriver=${arr_PCIDriver[$int_indexPCI]}       # save for GRUB
+                str_thisPCIHWID=${arr_PCIHWID[$int_indexPCI]}           # save for GRUB    
+
+                # if PCI is an expansion device, parse it #
+                if [[ $str_thisPCIBusID == "01:00.0" ]]; then bool_parsePCIifExternal=true; fi
+                #
+
+                # match VGA device exactly #
+                if [[ $bool_parsePCIifExternal == true && ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} && $str_thisVGABusID == $str_thisPCIBusID ]]; then
                     
-                # clear variables #
-                str_thisPCIDriver=""
-                str_thisPCIHWID=""
-                #
+                    # clear variables #
+                    str_thisPCIDriver=""
+                    str_thisPCIHWID=""
+                    #
 
-            fi
+                fi
 
-            # match VGA device's child interface #
-            if [[ $bool_parsePCIifExternal == true && ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} && $str_thisVGABusID != $str_thisPCIBusID ]]; then
+                # match VGA device's child interface #
+                if [[ $bool_parsePCIifExternal == true && ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} && $str_thisVGABusID != $str_thisPCIBusID ]]; then
 
-                # clear variables #
-                str_thisPCIDriver=""
-                str_thisPCIHWID=""
-                #
+                    # clear variables #
+                    str_thisPCIDriver=""
+                    str_thisPCIHWID=""
+                    #
 
-            fi
+                fi
 
-            # if no match found (if string is not empty), add to list #
-            if [[ $bool_thisPCINoMatch == false && ! -z $str_thisPCIDriver && ! -z $str_thisPCIHWID]]; then
+                # if no match found (if string is not empty), add to list #
+                if [[ $bool_thisPCINoMatch == false && ! -z $str_thisPCIDriver && ! -z $str_thisPCIHWID]]; then
                 
-                # add to list #
-                str_listPCIDriver+="$str_thisPCIDriver,"
-                str_listPCIHWID+="$str_thisPCIHWID,"
+                    # add to list #
+                    str_listPCIDriver+="$str_thisPCIDriver,"
+                    str_listPCIHWID+="$str_thisPCIHWID,"
+                    #
+
+                fi
+                #
+            done  
+            # end parse list of PCI devices #
+
+            # remove last separator #
+            if [[ ${str_listPCIDriver: -1} == "," ]]; then str_listPCIDriver=${str_listPCIDriver::-1}; fi
+            if [[ ${str_listPCIHWID: -1} == "," ]]; then str_listPCIHWID=${str_listPCIHWID::-1}; fi
+            #
+
+            ### setup Boot menu entry ###
+
+            # GRUB command line #
+            str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$str_listPCIDriver vfio_pci.ids=$str_listPCIHWID"
+            #
+
+            # parse Kernels #
+            for str_rootKernel in arr_rootKernel; do
+
+                # set Kernel #
+                declare -i int_rootKernel=${#str_rootKernel}-14
+                str_rootKernel=${str_rootKernel:14:int_rootKernel}
                 #
 
-            fi
-            #
-        done  
-        # end parse list of PCI devices #
+                # GRUB Menu Title #
+                str_GRUBMenuTitle+="$str_rootKernel (Xorg: Bus=$str_thisVGABusID, Drv=$str_thisVGADriver)'"
+                #
 
-        # remove last separator #
-        if [[ ${str_listPCIDriver: -1} == "," ]]; then str_listPCIDriver=${str_listPCIDriver::-1}; fi
-        if [[ ${str_listPCIHWID: -1} == "," ]]; then str_listPCIHWID=${str_listPCIHWID::-1}; fi
-        #
-
-        ### setup Boot menu entry ###
-
-        # GRUB command line #
-        str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUBlineRAM modprobe.blacklist=$str_listPCIDriver vfio_pci.ids=$str_listPCIHWID"
-        #
-
-        # parse Kernels #
-        for str_rootKernel in arr_rootKernel; do
-
-            # set Kernel #
-            declare -i int_rootKernel=${#str_rootKernel}-14
-            str_rootKernel=${str_rootKernel:14:int_rootKernel}
-            #
-
-            # GRUB Menu Title #
-            str_GRUBMenuTitle+="$str_rootKernel (Xorg: Bus=$str_thisVGABusID, Drv=$str_thisVGADriver)'"
-            #
-
-            # GRUB custom menu #
-            declare -a arr_file_customGRUB=(
+                # GRUB custom menu #
+                declare -a arr_file_customGRUB=(
 "menuentry '$str_GRUBMenuTitle' {
     insmod gzio
     set root='/dev/$str_rootDev'
@@ -604,7 +692,9 @@ exec tail -n +3 \$0
 
                 #echo -e "\n${arr_file_customGRUB[@]}" > $str_file1      # write to file
                 echo -e ""\n${arr_file_customGRUB[@]}""                 # debug
-        done
+            done
+            #
+        fi
         #
     done
     # end parse list of VGA devices #
