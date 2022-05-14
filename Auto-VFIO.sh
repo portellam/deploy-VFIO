@@ -801,7 +801,7 @@ exec tail -n +3 \$0
                 #
 
                 # GRUB Menu Title #
-                str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel"
+                str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel (Xorg: N/A)"
                 #
 
                 # GRUB custom menu #
