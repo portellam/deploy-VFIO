@@ -6,7 +6,7 @@
 #   StaticSetup
 #   prompt user to install/execute Auto-Xorg.
 #   setup input parameter passthrough
-#
+#   Virtual audio, Scream?
 #
 
 # DONE:
@@ -14,6 +14,7 @@
 #   Prompts
 #   MultiBootSetup
 #   Hugepages
+#   Evdev
 #   ZRAM
 #
 #
@@ -209,7 +210,6 @@ function ParsePCI {
 function HugePages {
 
     # parameters #
-    str_input1=$str5
     str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                # default output
     int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
     #
@@ -218,14 +218,8 @@ function HugePages {
     declare -i int_count=0      # reset counter
     str_prompt="$0: HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, the less memory latency.\n"
 
-    if [[ $str_input == "N" ]]; then
-    
-        echo "$0: Skipping HugePages..."
-        return 0;
-
-    fi
-
-    if [[ -z $str_input1 || $str_input1 == "Y" ]]; then echo -e $str_prompt; fi
+    echo -e $str_prompt
+    str_input1=""
 
     while [[ $str_input1 != "Y" && $str_input1 != "N" ]]; do
 
@@ -373,70 +367,22 @@ function HugePages {
 
 function Prompts {
 
-    ## first input ##
-    str1=$1
-    str2=$2
-    str3=$3
-    str4=$4
-    str5=$5
-    str6=$6
-    str7=$7
-    echo "$0: \$str1 == '$str1'"          # multiboot/static          [Y/B or N/S]
-    echo "$0: \$str2 == '$str2'"          # M-B: passthru given VGA   [Y/N]
-    echo "$0: \$str3 == '$str3'"          # enable Evdev              [Y/E or N]
-    echo "$0: \$str4 == '$str4'"          # enable Zram               [Y/Z or N]
-    echo "$0: \$str5 == '$str5'"          # enable hugepages          [Y/H or N]
-    echo "$0: \$str6 == '$str6'"          # set size                  [2M or 1G]
-    echo "$0: \$str7 == '$str7'"          # set num                   [min or max]
-
-    echo -e
-
-    # example:              sudo bash $0 b e z h 1g 24 n
-    # example:              sudo bash $0 b y y y 1g 24
-    # example:              sudo bash $0 b n n n
-    # example:              sudo bash $0 b n n n 1g 24 n
-
-    # shift back first input if first input is NULL #
-    str7=`echo $str7 | tr '[:lower:]' '[:upper:]'`
-    if [[ -z $str7 ]]; then str7=$str6; fi
-
-    str6=`echo $str6 | tr '[:lower:]' '[:upper:]'`
-    if [[ -z $str6 ]]; then str6=$str5; fi
-
-    str5=`echo $str5 | tr '[:lower:]' '[:upper:]'`
-    if [[ -z $str5 ]]; then str5=$str4; fi
-
-    str4=`echo $str4 | tr '[:lower:]' '[:upper:]'`
-    if [[ -z $str4 ]]; then str4=$str3; fi
-
-    str3=`echo $str2 | tr '[:lower:]' '[:upper:]'`
-    if [[ -z $str2 ]]; then str3=$str2; fi
-
-    str2=`echo $str2 | tr '[:lower:]' '[:upper:]'`
-    if [[ -z $str2 ]]; then str2=$str1; fi
-    #
-    ##
-
-    # parameters #
-    str_input1=$str1
-    #
-
     # prompt #
     declare -i int_count=0      # reset counter
     str_prompt="$0: Setup VFIO by 'Multi-Boot' or Statically.\n\tMulti-Boot Setup includes adding GRUB boot options, each with one specific omitted VGA device.\n\tStatic Setup modifies '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*.\n\tMulti-boot is the more flexible choice.\n"
 
     if [[ -z $str_input1 ]]; then echo -e $str_prompt; fi
 
-    while [[ $str_input1 != "B" && $str_input1 != "S" && $str_input1 != "Y" && $str_input1 != "N" ]]; do
+    while [[ $str_input1 != "M" && $str_input1 != "S" && $str_input1 != "Y" && $str_input1 != "N" ]]; do
 
         if [[ $int_count -ge 3 ]]; then
 
             echo "$0: Exceeded max attempts."
-            str_input1="B"                   # default selection
+            str_input1="M"                   # default selection
         
         else
 
-            echo -en "$0: Setup VFIO?\t[ Multi-(B)oot / (S)tatic ]: "
+            echo -en "$0: Setup VFIO?\t[ (M)ulti-Boot / (S)tatic ]: "
             read -r str_input1
             str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
 
@@ -444,16 +390,16 @@ function Prompts {
 
         case $str_input1 in
 
-            "Y"|"B")
+            "Y"|"M")
                 echo "$0: Continuing with Multi-Boot setup..."
-                HugePages $str5 $str6 $str7 $str_GRUB_CMDLINE_Hugepages
-                MultiBootSetup $str2 $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
+                HugePages $str_GRUB_CMDLINE_Hugepages
+                MultiBootSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
                 #StaticSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
                 break;;
 
             "N"|"S")
                 echo "$0: Continuing with Static setup..."
-                HugePages $str5 $str6 $str7 $str_GRUB_CMDLINE_Hugepages
+                HugePages $str_GRUB_CMDLINE_Hugepages
                 StaticSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
                 break;;
 
@@ -465,6 +411,9 @@ function Prompts {
 
     done
     #
+
+    EvDev
+    ZRAM
 
 }
 
@@ -478,16 +427,13 @@ function Prompts {
 function MultiBootSetup {
 
     echo -e ""
-
-    # parameters #
-    str_input1=$str2
-    #
+    str_input1=""
 
     # prompt #
     declare -i int_count=0      # reset counter
-    str_prompt="$0: Do you wish to review each VGA device before creating a GRUB menu entry?\n\tIn other words, do you wish to passthrough given VGA device(s), but not all?\n\tIf you are confused, please refer to the README for clarification.\n"
+    str_prompt="$0: Do you wish to Review each VGA device to Passthrough or not passthrough, before creating a given GRUB menu entry?"
 
-    if [[ -z $str_input1 || $str_input1 != "Y" && $str_input1 != "N" ]]; then echo -e $str_prompt; fi
+    echo -e $str_prompt
 
     while [[ $str_input1 != "Y" && $str_input1 != "N" ]]; do
 
@@ -498,7 +444,7 @@ function MultiBootSetup {
         
         else
 
-            echo -en "$0: Review each VGA device (and intermittently pause Multi-Boot setup), or Automate Multi-Boot setup?\t[Y/n]: "
+            echo -en "$0: Review each VGA device, or not?\t[Y/n]: "
             read -r str_input1
             str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
 
@@ -507,11 +453,11 @@ function MultiBootSetup {
         case $str_input1 in
 
             "Y")
-                echo "$0: Reviewing each VGA device..."
+                echo "$0: Continuing Multi-Boot setup manually..."
                 break;;
 
             "N")
-                echo "$0: Automating Multi-Boot setup..."
+                echo "$0: Continuing Multi-Boot setup automated..."
                 break;;
 
             *)
@@ -576,7 +522,8 @@ function MultiBootSetup {
     #
 
     # custom GRUB #
-    str_file1="/etc/grub.d/proxifiedScripts/custom"
+    #str_file1="/etc/grub.d/proxifiedScripts/custom"
+    str_file1="/etc/grub.d/40_custom"
     echo -e "#!/bin/sh
 exec tail -n +3 \$0
 # This file provides an easy way to add custom menu entries. Simply type the
@@ -748,8 +695,9 @@ exec tail -n +3 \$0
                 # write to file
                 echo -e "\n" >> $str_file1    
 
-                for element in ${arr_file_customGRUB[@]}; do
-                    echo -e $element >> $str_file1
+                for str_line in ${arr_file_customGRUB[@]}; do
+                    echo -e $str_line >> $str_file1
+                    #echo -e $str_line
                 done
                 #
             done
@@ -820,12 +768,16 @@ exec tail -n +3 \$0
                 # write to file
                 echo -e "\n" >> $str_file1    
 
-                for element in ${arr_file_customGRUB[@]}; do
-                    echo -e $element >> $str_file1
+                for str_line in ${arr_file_customGRUB[@]}; do
+                    echo -e $str_line >> $str_file1
+                    #echo -e $str_line
                 done
                 #
             done
             ##
+
+            if [[ $str_input2 == "N" ]]; then str_input2=""; fi    # reset input
+
         fi
         #
     done
@@ -838,9 +790,292 @@ exec tail -n +3 \$0
 
 ########## end MultiBootSetup ##########
 
+########## EvDev ##########
+
+function EvDev {
+
+    # parameters #
+    str_file1="/etc/libvirt/qemu.conf"
+    #
+
+    # prompt #
+    declare -i int_count=0      # reset counter
+    str_prompt="$0: Setup EvDev?\nEvDev (Event Devices) is a method that assigns input devices to a Virtual KVM (Keyboard-Video-Mouse) switch.\n\tEvDev is recommended for setups without an external KVM switch and multiple USB controllers.\n\tNOTE: View '/etc/libvirt/qemu.conf' to review changes, and append to a Virtual machine's configuration file."
+
+    echo -e $str_prompt
+
+    while [[ $str_input != "Y" && $str_input != "Z" && $str_input != "N" ]]; do
+
+    if [[ $int_count -ge 3 ]]; then
+
+        echo "Exceeded max attempts."
+        str_input="Y"                   # default selection
+        
+    else
+
+        echo -en "Setup EvDev?\t[ Y/n ]: "
+        read -r str_input
+        str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
+
+    fi
+
+    case $str_input in
+
+        "Y"|"E")
+            echo "Continuing with EvDev setup..."
+            break;;
+
+        "N")
+            echo "Skipping EvDev setup..."
+            return 0;;
+
+        *)
+            echo "Invalid input.";;
+
+    esac
+    ((int_count++))
+
+    done
+    #
+
+    # find first normal user
+    str_UID1000=`cat /etc/passwd | grep 1000 | cut -d ":" -f 1`
+    #
+
+    # add to group
+    declare -a arr_User=(`getent passwd {1000..60000} | cut -d ":" -f 1`)   # find all normal users
+    for str_User in $arr_User; do sudo adduser $str_User libvirt; done      # add each normal user to libvirt group
+    #
+
+    # list of input devices
+    declare -a arr_InputDeviceID=`ls /dev/input/by-id`
+    #
+
+    # file changes #
+    declare -a arr_file_QEMU=("
+#
+# NOTE: Generated by 'Auto-vfio-pci.sh'
+#
+user = \"$str_UID1000\"
+group = \"user\"
+#
+hugetlbfs_mount = \"/dev/hugepages\"
+#
+nvram = [
+   \"/usr/share/OVMF/OVMF_CODE.fd:/usr/share/OVMF/OVMF_VARS.fd\",
+   \"/usr/share/OVMF/OVMF_CODE.secboot.fd:/usr/share/OVMF/OVMF_VARS.fd\",
+   \"/usr/share/AAVMF/AAVMF_CODE.fd:/usr/share/AAVMF/AAVMF_VARS.fd\",
+   \"/usr/share/AAVMF/AAVMF32_CODE.fd:/usr/share/AAVMF/AAVMF32_VARS.fd\"
+]
+#
+cgroup_device_acl = [
+")
+
+    for str_InputDeviceID in $arr_InputDeviceID; do arr_file_QEMU+=("    \"/dev/input/by-id/$str_InputDeviceID\","); done
+
+    arr_file_QEMU+=("    \"/dev/null\", \"/dev/full\", \"/dev/zero\",
+    \"/dev/random\", \"/dev/urandom\",
+    \"/dev/ptmx\", \"/dev/kvm\",
+    \"/dev/rtc\", \"/dev/hpet\"
+]
+#")
+    #
+
+    # backup config file #
+    if [[ -z $str_file1"_old" ]]; then cp $str_file1 $str_file1"_old"; fi
+    if [[ ! -z $str_file1"_old" ]]; then cp $str_file1"_old" $str_file1; fi
+    #
+
+    # write to file #
+    for str_line in ${arr_file_QEMU[@]}; do echo -e $str_line >> $str_file1; done
+    #
+
+    # restart service #
+    systemctl enable libvirtd
+    systemctl restart libvirtd
+    #
+
+}
+
+########## end EvDev ##########
+
+########## ZRAM ##########
+
+function ZRAM {
+
+    # parameters #
+    str_file1="/etc/default/zramswap"
+    str_file2="/etc/default/zram-swap"
+    #
+
+    # prompt #
+    declare -i int_count=0      # reset counter
+    str_prompt="Setup ZRAM? ZRAM allocates RAM as a compressed swapfile. The default compression method \"lz4\", at a ratio of 2:1, offers the highest performance."
+
+    echo -e $str_prompt
+    str_input1=""
+
+    while [[ $str_input != "Y" && $str_input != "Z" && $str_input != "N" ]]; do
+
+    if [[ $int_count -ge 3 ]]; then
+
+        echo "Exceeded max attempts."
+        str_input="Y"                   # default selection
+        
+    else
+
+        echo -en "Setup ZRAM?\t[ Y/n ]: "
+        read -r str_input
+        str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
+
+    fi
+
+    case $str_input in
+
+        "Y"|"Z")
+            echo "Continuing with ZRAM setup..."
+            break;;
+
+        "N")
+            echo "Skipping ZRAM setup..."
+            return 0;;
+
+        *)
+            echo "Invalid input.";;
+
+    esac
+    ((int_count++))
+
+    done
+    #
+
+    # parameters #
+    int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
+    str_GitHub_Repo="FoundObjects/zram-swap"
+    #
+
+    # check for zram-utils #
+    if [[ ! -z $str_file1 ]]; then
+
+        apt install -y git zram-tools
+        systemctl stop zramswap
+        systemctl disable zramswap
+
+    fi
+    #
+
+    # check for local repo #
+    #if [[ ! -z "/root/git/$str_GitHub_Repo" ]]; then
+
+        #cd /root/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`    
+        #git pull https://www.github.com/$str_GitHub_Repo
+    
+    #fi
+
+    if [[ -z "/root/git/$str_GitHub_Repo" ]]; then
+    
+        mkdir /root/git
+        mkdir /root/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`
+        cd /root/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`
+        git clone https://www.github.com/$str_GitHub_Repo
+
+    fi
+    #
+
+    # check for zram-swap #
+    if [[ -z $str_file2 ]]; then
+        cd /root/git/$str_GitHub_Repo
+        sh ./install.sh
+    fi
+    #
+
+    # disable ZRAM swap #
+    if [[ `sudo swapon -v | grep /dev/zram*` == "/dev/zram"* ]]; then sudo swapoff /dev/zram*; fi
+    #
+    
+    # backup config file #
+    if [[ -z $str_file2"_old" ]]; then cp $str_file2 $str_file2"_old"; fi
+    #
+
+    # find HugePage size #
+    str_HugePageSize="1G"
+
+    if [[ $str_HugePageSize == "2M" ]]; then declare -i int_HugePageSizeK=2048; fi
+
+    if [[ $str_HugePageSize == "1G" ]]; then declare -i int_HugePageSizeK=1048576; fi
+    #
+
+    # find free memory #
+    declare -i int_HostMemMaxG=$((int_HostMemMaxK/1048576))
+    declare -i int_SysMemMaxG=$((int_HostMemMaxG+1))                    # use modulus?
+    declare -i int_HostMemFreeG=$((int_HugePageNum*int_HugePageSizeK/1048576))
+    int_HostMemFreeG=$((int_SysMemMaxG-int_HostMemFreeG))
+    declare -i int_ZRAM_SizeG=0
+    #
+
+    # setup ZRAM #
+    if [[ $int_HostMemFreeG -le 8 ]]; then int_ZRAM_SizeG=4
+    else nt_ZRAM_SizeG=$int_SysMemMaxG/2; fi
+
+    declare -i int_denominator=$int_SysMemMaxG/$int_ZRAM_SizeG
+    #str_input_ZRAM="_zram_fixedsize=\"${int_ZRAM_SizeG}G\""
+    #
+
+    # file 3
+    declare -a arr_file_ZRAM=(
+"# compression algorithm to employ (lzo, lz4, zstd, lzo-rle)
+# default: lz4
+_zram_algorithm=\"lz4\"
+
+# portion of system ram to use as zram swap (expression: \"1/2\", \"2/3\", \"0.5\", etc)
+# default: \"1/2\"
+_zram_fraction=\"1/$int_denominator\"
+
+# setting _zram_swap_debugging to any non-zero value enables debugging
+# default: undefined
+#_zram_swap_debugging=\"beep boop\"
+
+# expected compression factor; set this by hand if your compression results are
+# drastically different from the estimates below
+#
+# Note: These are the defaults coded into /usr/local/sbin/zram-swap.sh; don't alter
+#       these values, use the override variable '_comp_factor' below.
+#
+# defaults if otherwise unset:
+#       lzo*|zstd)  _comp_factor=\"3\"   ;; # expect 3:1 compression from lzo*, zstd
+#       lz4)        _comp_factor=\"2.5\" ;; # expect 2.5:1 compression from lz4
+#       *)          _comp_factor=\"2\"   ;; # default to 2:1 for everything else
+#
+#_comp_factor=\"2.5\"
+
+# if set skip device size calculation and create a fixed-size swap device
+# (size, in MiB/GiB, eg: \"250M\" \"500M\" \"1.5G\" \"2G\" \"6G\" etc.)
+#
+# Note: this is the swap device size before compression, real memory use will
+#       depend on compression results, a 2-3x reduction is typical
+#
+#_zram_fixedsize=\"4G\"
+
+# vim:ft=sh:ts=2:sts=2:sw=2:et:"
+)
+    #
+
+    # write to file #
+    rm $str_file2
+    for str_line in ${arr_file_ZRAM[@]}; do
+        echo -e $str_line >> $str_file2
+    done
+    #
+    
+    systemctl restart zram-swap     # restart service
+
+}
+
+########## end ZRAM ##########
+
 ########## main ##########
 
-Prompts $1 $2 $3 $4 $5 $6 $7
+Prompts
 
 # reset IFS #
 IFS=$SAVEIFS   # Restore original IFS
