@@ -14,7 +14,6 @@
 #   Prompts
 #   MultiBootSetup
 #   Hugepages
-#   Evdev
 #   ZRAM
 #
 #
@@ -658,12 +657,13 @@ exec tail -n +3 \$0
             if [[ ${str_listPCIDriver: -1} == "," ]]; then str_listPCIDriver=${str_listPCIDriver::-1}; fi
             if [[ ${str_listPCIHWID: -1} == "," ]]; then str_listPCIHWID=${str_listPCIHWID::-1}; fi
             #
-
-            ### setup Boot menu entry ###
+  
+            echo -e ""
 
             # GRUB command line #
             str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_listPCIDriver vfio_pci.ids=$str_listPCIHWID"
-            #
+
+            ### setup Boot menu entry ###           # TODO: fix automated menu entry setup!
 
             # parse Kernels #
             for str_rootKernel in ${arr_rootKernel[@]}; do
@@ -678,6 +678,10 @@ exec tail -n +3 \$0
                 if [[ ! -z $str_thisVGADevice ]]; then
                     str_GRUBMenuTitle+=" (Xorg: $str_thisVGADevice)'"
                 fi
+                #
+
+                # MANUAL setup Boot menu entry ###    # NOTE: temporary
+                echo -e "$0: Automated GRUB menu entry feature not available. Execute GRUB Customizer, copy a valid entry, and place the following output into a new entry.\n\n\tTitle: '$str_GRUBMenuTitle'\n\tEntry: '$str_GRUB_CMDLINE'\n"
                 #
 
                 # GRUB custom menu #
@@ -695,10 +699,10 @@ exec tail -n +3 \$0
                 # write to file
                 echo -e "\n" >> $str_file1    
 
-                for str_line in ${arr_file_customGRUB[@]}; do
-                    echo -e $str_line >> $str_file1
-                    #echo -e $str_line
-                done
+                #for str_line in ${arr_file_customGRUB[@]}; do
+                    #echo -e $str_line >> $str_file1                     # TODO: fix GRUB menu entries!
+                    #echo -e $str_line                # for now, output GRUB COMMAND LINE to terminal for user to copy to GRUB customizer
+                #done
                 #
             done
             #
@@ -768,10 +772,10 @@ exec tail -n +3 \$0
                 # write to file
                 echo -e "\n" >> $str_file1    
 
-                for str_line in ${arr_file_customGRUB[@]}; do
-                    echo -e $str_line >> $str_file1
+                #for str_line in ${arr_file_customGRUB[@]}; do
+                    #echo -e $str_line >> $str_file1               # TODO: fix GRUB menu entries!
                     #echo -e $str_line
-                done
+                #done
                 #
             done
             ##
@@ -784,7 +788,7 @@ exec tail -n +3 \$0
     # end parse list of VGA devices #
     ## end parse GRUB menu entries ##
 
-    sudo update-grub    # update GRUB for good measure
+    #sudo update-grub    # update GRUB for good measure     # TODO: reenable when automated setup is fixed!
 
 }
 
@@ -1082,4 +1086,4 @@ IFS=$SAVEIFS   # Restore original IFS
 #
 
 exit 0
-########## end main ##########
+######### end main ##########
