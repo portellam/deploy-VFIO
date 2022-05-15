@@ -7,16 +7,6 @@
 ###### In terminal, execute:
 
         sudo bash Auto-VFIO.sh $1 $2 $3 $4 $5 $6
-###### Multi-Boot setup or Static setup:
-        $1 == "Y/N" or "B/S"
-###### enable Evdev:
-        $2 == "Y/N" or "E/N"
-###### enable ZRAM:
-        $3 == "Y/N" or "Z/N"
-###### enable Hugepages, set hugepage-size (megabytes or gigabytes), set sum (number of hugepages):
-        $4 == "Y/N" or "H/N"
-        $5 == "2M/1G"
-        $6 == integer between minimum and maximum
 
 #
 ## Auto-VFIO
