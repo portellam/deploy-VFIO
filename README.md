@@ -22,4 +22,4 @@ Automated VFIO passthrough setup. Setup dynamically (Multi-Boot) or statically.
 * Evdev (Event devices)
     * virtual Keyboard-Mouse switch (best to have physical KVM and multiple PCI USB devices, better than nothing).
 * Zram swapfile
-    * compressed swapfile to RAM disk, to reduce Host lock-up from over-allocated Host memory.
+    * compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
