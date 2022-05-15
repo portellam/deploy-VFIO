@@ -6,7 +6,7 @@
 ## How-to
 In terminal, execute:
 
-        sudo bash Auto-VFIO.sh $1 $2 $3 $4 $5 $6
+        sudo bash Auto-VFIO.sh
 #
 ## Auto-VFIO
 Automated VFIO passthrough setup. Setup dynamically (Multi-Boot) or statically.
