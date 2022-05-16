@@ -7,19 +7,18 @@
 # otherwise, ask per device which the user wishes to passthrough
 
 # TODO:
+#   MultiBootSetup; menu entry
 #   StaticSetup
-#   prompt user to install/execute Auto-Xorg.
+#   hint/prompt user to install/execute Auto-Xorg.
 #   setup input parameter passthrough
 #   Virtual audio, Scream?
 #
 
 # DONE:
 #   ParsePCI
-#   Prompts
-#   MultiBootSetup
+#   Prompts   
 #   Hugepages
 #   ZRAM
-#
 #
 
 # Maintainer: github/portellam
@@ -33,12 +32,16 @@
 function Prompts {
 
     # call functions #
+    Evdev
+    ZRAM
+    HugePages $str_GRUB_CMDLINE_Hugepages
     ParsePCI
     #
 
     # prompt #
+    str_input1=""
     declare -i int_count=0      # reset counter
-    str_prompt="$0: Setup VFIO by 'Multi-Boot' or Statically.\n\tMulti-Boot Setup includes adding GRUB boot options, each with one specific omitted VGA device.\n\tStatic Setup modifies '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*.\n\tMulti-boot is the more flexible choice.\n"
+    str_prompt="$0: Setup VFIO by 'Multi-Boot' or Statically?\n\tMulti-Boot Setup includes adding GRUB boot options, each with one specific omitted VGA device.\n\tStatic Setup modifies '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*.\n\tMulti-boot is the more flexible choice."
 
     if [[ -z $str_input1 ]]; then echo -e $str_prompt; fi
 
@@ -47,11 +50,12 @@ function Prompts {
         if [[ $int_count -ge 3 ]]; then
 
             echo "$0: Exceeded max attempts."
-            str_input1="M"                   # default selection
+            #str_input1="M"                   # default selection
+            break
         
         else
 
-            echo -en "$0: Setup VFIO?\t[ (M)ulti-Boot / (S)tatic ]: "
+            echo -en "$0: Setup VFIO? [ (M)ulti-Boot / (S)tatic / (N)one ]: "
             read -r str_input1
             str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
 
@@ -59,18 +63,23 @@ function Prompts {
 
         case $str_input1 in
 
-            "Y"|"M")
-                echo "$0: Continuing with Multi-Boot setup..."
-                HugePages $str_GRUB_CMDLINE_Hugepages
-                MultiBootSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
-                #StaticSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
+            "M")
+                echo -e "$0: Continuing with Multi-Boot setup...\n"
+                MultiBootSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID
+                StaticSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID
+                sudo update-grub                    # update GRUB
+                sudo update-initramfs -u -k all     # update INITRAMFS
                 break;;
 
-            "N"|"S")
-                echo "$0: Continuing with Static setup..."
-                HugePages $str_GRUB_CMDLINE_Hugepages
-                StaticSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID $arr_VGAIndex $arr_VGAVendorBusID $arr_VGAVendorDriver $arr_VGAVendorHWID $arr_VGAVendorIndex
+            "S")
+                echo -e "$0: Continuing with Static setup...\n"
+                StaticSetup $str_GRUB_CMDLINE_Hugepages $arr_PCIBusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID
+                sudo update-grub                    # update GRUB
+                sudo update-initramfs -u -k all     # update INITRAMFS
                 break;;
+
+            "N")
+                echo -e "$0: Skipping...\n";;
 
             *)
                 echo "$0: Invalid input.";;
@@ -81,59 +90,53 @@ function Prompts {
     done
     #
 
-    # call functions #
-    EvDev
-    ZRAM
-    #
-
 }
 ##### end Prompts #####
 
-##### EvDev #####
-function EvDev {
-
-    echo -e ""
+##### Evdev #####
+function Evdev {
 
     # parameters #
     str_file1="/etc/libvirt/qemu.conf"
     #
 
     # prompt #
+    str_input1=""
     declare -i int_count=0      # reset counter
-    str_prompt="$0: Setup EvDev?\nEvDev (Event Devices) is a method that assigns input devices to a Virtual KVM (Keyboard-Video-Mouse) switch.\n\tEvDev is recommended for setups without an external KVM switch and multiple USB controllers.\n\tNOTE: View '/etc/libvirt/qemu.conf' to review changes, and append to a Virtual machine's configuration file."
+    str_prompt="$0: Evdev (Event Devices) is a method that assigns input devices to a Virtual KVM (Keyboard-Video-Mouse) switch.\n\tEvdev is recommended for setups without an external KVM switch and multiple USB controllers.\n\tNOTE: View '/etc/libvirt/qemu.conf' to review changes, and append to a Virtual machine's configuration file."
 
     echo -e $str_prompt
 
-    while [[ $str_input != "Y" && $str_input != "Z" && $str_input != "N" ]]; do
+    while [[ $str_input1 != "Y" && $str_input1 != "Z" && $str_input1 != "N" ]]; do
 
-    if [[ $int_count -ge 3 ]]; then
+        if [[ $int_count -ge 3 ]]; then
 
-        echo "Exceeded max attempts."
-        str_input="Y"                   # default selection
+            echo "$0: Exceeded max attempts."
+            str_input1="N"                   # default selection
         
-    else
+        else
 
-        echo -en "Setup EvDev?\t[ Y/n ]: "
-        read -r str_input
-        str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
+            echo -en "$0: Setup Evdev? [ Y/n ]: "
+            read -r str_input1
+            str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
 
-    fi
+        fi
 
-    case $str_input in
+        case $str_input1 in
 
-        "Y"|"E")
-            #echo "Continuing with EvDev setup..."
-            break;;
+            "Y"|"E")
+                #echo -e "$0: Continuing...\n"
+                break;;
 
-        "N")
-            echo "Skipping EvDev setup..."
-            return 0;;
+            "N")
+                echo -e "$0: Skipping...\n"
+                return 0;;
 
-        *)
-            echo "Invalid input.";;
+            *)
+                echo "$0: Invalid input.";;
 
-    esac
-    ((int_count++))
+        esac
+        ((int_count++))
 
     done
     #
@@ -196,7 +199,7 @@ cgroup_device_acl = [
     #
 
 }
-##### end EvDev #####
+##### end Evdev #####
 
 ##### HugePages #####
 function HugePages {
@@ -222,7 +225,7 @@ function HugePages {
         
         else
 
-            echo -en "$0: Setup HugePages?\t[Y/n]: "
+            echo -en "$0: Setup HugePages? [Y/n]: "
             read -r str_input1
             str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
 
@@ -231,15 +234,15 @@ function HugePages {
         case $str_input1 in
 
             "Y"|"H")
-                #echo "$0: Continuing..."
+                #echo -e "$0: Continuing...\n"
                 break;;
 
             "N")
-                echo "$0: Skipping Hugepages..."
+                echo -e "$0: Skipping Hugepages...\n"
                 return 0;;
 
             *)
-                echo "$0: Invalid input.";;
+                echo -e "$0: Invalid input.\n";;
 
         esac
         ((int_count++))
@@ -350,8 +353,6 @@ function HugePages {
     done
     #
 
-    echo -e     # newline
-
 }
 ##### end HugePages #####
 
@@ -375,7 +376,7 @@ function MultiBootSetup {
         
         else
 
-            echo -en "$0: Review each VGA device?\t[Y/n]: "
+            echo -en "$0: Review each VGA device? [Y/n]: "
             read -r str_input1
             str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
 
@@ -384,11 +385,11 @@ function MultiBootSetup {
         case $str_input1 in
 
             "Y")
-                #echo "$0: Continuing Multi-Boot setup manually..."
+                #echo -e "$0: Continuing Multi-Boot setup manually...\n"
                 break;;
 
             "N")
-                #echo "$0: Continuing Multi-Boot setup automated..."
+                #echo -e "$0: Continuing Multi-Boot setup automated...\n"
                 break;;
 
             *)
@@ -480,7 +481,7 @@ function MultiBootSetup {
         
                 else
 
-                    echo -en "$0: Do you wish to passthrough this VGA device (or not)?\t[Y/n]: "
+                    echo -en "$0: Do you wish to passthrough this VGA device (or not)? [Y/n]: "
                     read -r str_input2
                     str_input2=`echo $str_input2 | tr '[:lower:]' '[:upper:]'`
 
@@ -547,7 +548,7 @@ function MultiBootSetup {
                 # OR match VGA driver, clear driver #
                 # OR match PCI driver in list, clear driver #
                 if [[ ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} || $str_thisPCIDriver == $str_thisVGAChildDriver || $str_listPCIDriver == *"$str_thisPCIDriver"* ]]; then
-                
+
                     str_thisPCIDriver=""
                     
                 fi
@@ -874,6 +875,8 @@ function StaticSetup {
 
     ## parameters ##
     str_input1=""
+    declare -a arr_listPCIDriver
+    declare -a arr_listPCIHWID
 
     # dependencies # 
     declare -a arr_PCIBusID
@@ -935,7 +938,7 @@ function StaticSetup {
         
             else
 
-                echo -en "$0: Do you wish to passthrough this VGA device (or not)?\t[Y/n]: "
+                echo -en "$0: Do you wish to passthrough this VGA device (or not)? [Y/n]: "
                 read -r str_input1
                 str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
 
@@ -1010,112 +1013,19 @@ function StaticSetup {
                 #
 
                 # if no PCI driver match found (if string is not empty), add to list #
-                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIDriver ]]; then str_listPCIDriver+="$str_thisPCIDriver,"; fi
+                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIDriver ]]; then
+                    str_listPCIDriver+="$str_thisPCIDriver,"
+                    arr_listPCIDriver+="$str_thisPCIDriver"
+                fi
                 #
                 
                 # if no PCI HW ID match found (if string is not empty), add to list #
-                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIHWID ]]; then str_listPCIHWID+="$str_thisPCIHWID,"; fi
-                #
-
-            done  
-            # end parse list of PCI devices #
-
-            # remove last separator #
-            if [[ ${str_listPCIDriver: -1} == "," ]]; then str_listPCIDriver=${str_listPCIDriver::-1}; fi
-            if [[ ${str_listPCIHWID: -1} == "," ]]; then str_listPCIHWID=${str_listPCIHWID::-1}; fi
-            #
-  
-            echo -e ""
-
-            # GRUB command line #
-            str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_listPCIDriver vfio_pci.ids=$str_listPCIHWID"
-
-            ### setup Boot menu entry ###           # TODO: fix automated menu entry setup!
-
-            # parse Kernels #
-            for str_rootKernel in ${arr_rootKernel[@]}; do
-
-                # set Kernel #
-                str_rootKernel=${str_rootKernel:1:100}          # arbitrary length
-                #echo "str_rootKernel == '$str_rootKernel'"
-                #
-
-                # GRUB Menu Title #
-                str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel"
-                if [[ ! -z $str_thisVGADevice ]]; then
-                    str_GRUBMenuTitle+=" (Xorg: $str_thisVGADevice)'"
+                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIHWID ]]; then
+                    str_listPCIHWID+="$str_thisPCIHWID,"
+                    arr_listPCIHWID+="$str_thisPCIHWID"
                 fi
                 #
 
-                # MANUAL setup Boot menu entry ###    # NOTE: temporary
-                echo -e "$0: Automated GRUB menu entry feature not available. Execute GRUB Customizer, copy a valid entry, and place the following output into a new entry.\n\n\tTitle: '$str_GRUBMenuTitle'\n\tEntry: '$str_GRUB_CMDLINE'\n"
-                #
-
-                # GRUB custom menu #
-                declare -a arr_file_customGRUB=(
-"menuentry '$str_GRUBMenuTitle' {
-    load_video
-    insmod gzio
-    if [ x\$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
-	insmod part_gpt
-	insmod ext2
-    set root='hd2,gpt4'
-    set root='/dev/disk/by-uuid/$str_rootUUID'
-    if [ x$feature_platform_search_hint = xy ]; then
-	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  $str_rootUUID
-	else
-	  search --no-floppy --fs-uuid --set=root $str_rootUUID
-	fi
-    echo    'Loading Linux $str_rootKernel ...'
-    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE
-    echo    'Loading initial ramdisk ...'
-    initrd  /boot/initrd.img-$str_rootKernel
-
-}
-"
-                )
-
-                # write to file
-                echo -e >> $str_file1    
-
-                #for str_line in ${arr_file_customGRUB[@]}; do
-                    #echo -e $str_line >> $str_file1            # TODO: fix GRUB menu entries!
-                    echo -e $str_line
-                #done
-                
-                echo -e >> $str_file1 
-                #
-
-            done
-            #
-
-            ## setup final GRUB entry with all PCI devices passed-through (for headless setup) ##
-            str_listPCIDriver=""
-            str_listPCIHWID=""
-
-            # parse list of PCI devices #
-            for (( int_indexPCI=0; int_indexPCI<${#arr_PCIBusID[@]}; int_indexPCI++ )); do
-
-                str_thisPCIBusID=${arr_PCIBusID[$int_indexPCI]}         # save for match
-                str_thisPCIDriver=${arr_PCIDriver[$int_indexPCI]}       # save for GRUB
-                str_thisPCIHWID=${arr_PCIHWID[$int_indexPCI]}           # save for GRUB    
-
-                # if PCI is an expansion device, parse it #
-                if [[ $str_thisPCIBusID == "01:00.0" ]]; then bool_parsePCIifExternal=true; fi
-                #
-
-                # if PCI driver is already present in list, clear driver #
-                if [[ $str_listPCIDriver == *"$str_thisPCIDriver"* ]]; then str_thisPCIDriver=""; fi
-                #
-
-                # if no PCI driver match found (if string is not empty), add to list #
-                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIDriver ]]; then str_listPCIDriver+="$str_thisPCIDriver,"; fi
-                #
-                
-                # if no PCI HW ID match found (if string is not empty), add to list #
-                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIHWID ]]; then str_listPCIHWID+="$str_thisPCIHWID,"; fi
-                #
-
             done  
             # end parse list of PCI devices #
 
@@ -1123,44 +1033,6 @@ function StaticSetup {
             if [[ ${str_listPCIDriver: -1} == "," ]]; then str_listPCIDriver=${str_listPCIDriver::-1}; fi
             if [[ ${str_listPCIHWID: -1} == "," ]]; then str_listPCIHWID=${str_listPCIHWID::-1}; fi
             #
-
-            # GRUB command line #
-            str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_listPCIDriver vfio_pci.ids=$str_listPCIHWID"
-            #
-
-            # parse Kernels #
-            for str_rootKernel in ${arr_rootKernel[@]}; do
-
-                # set Kernel #
-                str_rootKernel=${str_rootKernel:1:100}          # arbitrary length
-                #
-
-                # GRUB Menu Title #
-                str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel (Xorg: N/A)"
-                #
-
-                # GRUB custom menu #
-                declare -a arr_file_customGRUB=(
-"menuentry '$str_GRUBMenuTitle' {
-    insmod gzio
-    set root='/dev/disk/by-uuid/$str_rootUUID'
-    echo    'Loading Linux $str_rootKernel ...'
-    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE
-    echo    'Loading initial ramdisk ...'
-    initrd  /boot/initrd.img-$str_rootKernel
-}"
-            )
-
-                # write to file
-                echo -e "\n" >> $str_file1    
-
-                #for str_line in ${arr_file_customGRUB[@]}; do
-                    #echo -e $str_line >> $str_file1               # TODO: fix GRUB menu entries!
-                    echo -e $str_line
-                #done
-                #
-            done
-            ##
 
             if [[ $str_input2 == "N" ]]; then str_input2=""; fi    # reset input
 
@@ -1168,11 +1040,15 @@ function StaticSetup {
         #
     done
     # end parse list of VGA devices #
-    ## end parse GRUB menu entries ##
 
+    # VFIO soft dependencies #
+    for str_thisPCIDriver in $arr_listPCIDriver; do
+        str_listPCIDriver_softdep="softdep $str_thisPCIDriver pre: vfio-pci\n$str_thisPCIDriver"
+    done
+    #
 
     # GRUB #
-    str_GRUB="GRUB_CMDLINE_DEFAULT=\" acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_arr_PCIDriver vfio_pci.ids=$str_arr_PCIHWID\""
+    str_GRUB="GRUB_CMDLINE_DEFAULT=\"acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_listPCIDriver vfio_pci.ids=$str_listPCIHWID\""
     echo -e "#\n${str_GRUB}" >> $str_file1
     #
 
@@ -1195,15 +1071,15 @@ function StaticSetup {
 # NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
 
 # Soft dependencies and PCI kernel drivers:
-$str_PCIDriver_softdep
+$str_listPCIDriver_softdep
 
 vfio
 vfio_iommu_type1
 vfio_virqfd
 
 # GRUB command line and PCI hardware IDs:
-options vfio_pci ids=$str_arr_PCIHWID
-vfio_pci ids=$str_arr_PCIHWID
+options vfio_pci ids=$str_listPCIHWID
+vfio_pci ids=$str_listPCIHWID
 vfio_pci"
 )
     echo ${arr_file2[@]} > $str_file2
@@ -1231,14 +1107,14 @@ apm power_off=1
 # In terminal, execute \"lspci -nnk\".
 
 # GRUB kernel parameters:
-vfio_pci ids=$str_arr_PCIHWID"
+vfio_pci ids=$str_listPCIHWID"
 )
     echo ${arr_file3[@]} > $str_file3
     #
 
     # modprobe.d/blacklists #
-    for str_PCIDriver in $arr_PCIDriver[@]; do
-        echo "blacklist $str_PCIDriver" > "/etc/modprobe.d/$str_PCIDriver.conf"
+    for str_thisPCIDriver in $arr_listPCIDriver[@]; do
+        echo "blacklist $str_thisPCIDriver" > "/etc/modprobe.d/$str_thisPCIDriver.conf"
     done
     #
 
@@ -1246,10 +1122,10 @@ vfio_pci ids=$str_arr_PCIHWID"
     declare -a arr_file4=(
 "# NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
 # Soft dependencies:
-$str_PCIDriver_softdep
+$str_listPCIDriver_softdep
 
 # PCI hardware IDs:
-options vfio_pci ids=$str_arr_PCIHWID")
+options vfio_pci ids=$str_listPCIHWID")
     echo ${arr_file4[@]} > $str_file4
     #
 
@@ -1266,41 +1142,41 @@ function ZRAM {
 
     # prompt #
     declare -i int_count=0      # reset counter
-    str_prompt="Setup ZRAM? ZRAM allocates RAM as a compressed swapfile. The default compression method \"lz4\", at a ratio of 2:1, offers the highest performance."
+    str_prompt="$0: ZRAM allocates RAM as a compressed swapfile.\n\tThe default compression method \"lz4\", at a ratio of 2:1 to 5:2, offers the greatest performance."
 
     echo -e $str_prompt
     str_input1=""
 
-    while [[ $str_input != "Y" && $str_input != "Z" && $str_input != "N" ]]; do
+    while [[ $str_input1 != "Y" && $str_input1 != "Z" && $str_input1 != "N" ]]; do
 
-    if [[ $int_count -ge 3 ]]; then
+        if [[ $int_count -ge 3 ]]; then
 
-        echo "Exceeded max attempts."
-        str_input="Y"                   # default selection
+            echo "$0: Exceeded max attempts."
+            str_input1="N"                   # default selection
         
-    else
+        else
 
-        echo -en "Setup ZRAM?\t[ Y/n ]: "
-        read -r str_input
-        str_input=`echo $str_input | tr '[:lower:]' '[:upper:]'`
+            echo -en "$0: Setup ZRAM? [ Y/n ]: "
+            read -r str_input1
+            str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
 
-    fi
+        fi
 
-    case $str_input in
+        case $str_input1 in
 
-        "Y"|"Z")
-            #echo "Continuing with ZRAM setup..."
-            break;;
+            "Y"|"Z")
+                #echo -e "$0: Continuing...\n"
+                break;;
 
-        "N")
-            echo "Skipping ZRAM setup..."
-            return 0;;
+            "N")
+                echo -e "$0: Skipping...\n"
+                return 0;;
 
-        *)
-            echo "Invalid input.";;
+            *)
+                echo "$0: Invalid input.";;
 
-    esac
-    ((int_count++))
+        esac
+        ((int_count++))
 
     done
     #
@@ -1361,17 +1237,20 @@ function ZRAM {
     if [[ $str_HugePageSize == "1G" ]]; then declare -i int_HugePageSizeK=1048576; fi
     #
 
-    # find free memory #
+    ## find free memory ##
     declare -i int_HostMemMaxG=$((int_HostMemMaxK/1048576))
     declare -i int_SysMemMaxG=$((int_HostMemMaxG+1))                    # use modulus?
-    declare -i int_HostMemFreeG=$((int_HugePageNum*int_HugePageSizeK/1048576))
+
+    # free memory # 
+    if [[ ! -z $int_HugePageNum || ! -z $int_HugePageSizeK ]]; then declare -i int_HostMemFreeG=$((int_HugePageNum*int_HugePageSizeK/1048576))
+    else declare -i int_HostMemFreeG=4; fi
     int_HostMemFreeG=$((int_SysMemMaxG-int_HostMemFreeG))
-    declare -i int_ZRAM_SizeG=0
     #
+    ##
 
     # setup ZRAM #
-    if [[ $int_HostMemFreeG -le 8 ]]; then int_ZRAM_SizeG=4
-    else nt_ZRAM_SizeG=$int_SysMemMaxG/2; fi
+    if [[ $int_HostMemFreeG -le 8 ]]; then declare -i int_ZRAM_SizeG=4
+    else declare -i int_ZRAM_SizeG=$int_SysMemMaxG/2; fi
 
     declare -i int_denominator=$int_SysMemMaxG/$int_ZRAM_SizeG
     #str_input_ZRAM="_zram_fixedsize=\"${int_ZRAM_SizeG}G\""
