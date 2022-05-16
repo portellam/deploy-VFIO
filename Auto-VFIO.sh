@@ -2,6 +2,10 @@
 
 ########## README ##########
 
+# NOTES:
+# when parsing LSPCI or lists, list all devices in the same IOMMU group, and ask user if they wish to passthrough all or none.
+# otherwise, ask per device which the user wishes to passthrough
+
 # TODO:
 #   StaticSetup
 #   prompt user to install/execute Auto-Xorg.
@@ -23,348 +27,14 @@
 # TL;DR:
 # Generates a VFIO passthrough setup (Multi-Boot or Static).
 
-########## pre-main ##########
+########## functions ##########
 
-# check if sudo #
-if [[ `whoami` != "root" ]]; then
-
-    echo "WARNING: Script must be run as Sudo or Root! Exiting."
-    exit 0
-
-fi
-#
-
-# set IFS #
-SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
-IFS=$'\n'      # Change IFS to newline char
-#
-
-########## end pre-main ##########
-
-########## ParsePCI ##########
-
-function ParsePCI {
-
-    # parameters #
-    #declare -a arr_PCIBusID
-    #declare -a arr_PCIDriver
-    #declare -a arr_PCIHWID
-    #declare -a arr_VGABusID
-    ##declare -a arr_VGADriver          ## unused
-    ##declare -a arr_VGAHWID            ## unused
-    ##declare -a arr_VGAVendorBusID     ## unused
-    ##declare -a arr_VGAVendorHWID      ## unused
-    bool_parseA=false
-    bool_parseB=false
-    bool_parseVGA=false
-    #
-
-    # set file #
-    declare -a arr_lspci_k=(`lspci -k`)
-    declare -a arr_lspci_m=(`lspci -m`)
-    declare -a arr_lspci_n=(`lspci -n`)
-    str_file2="/etc/X11/xorg.conf.d/10-Auto-Xorg.conf"
-    #
-
-    # parse list of PCI #
-    #for str_line1 in $arr_lspci_m; do
-    for (( int_indexA=0; int_indexA<${#arr_lspci_m[@]}; int_indexA++ )); do
-
-        str_line1=${arr_lspci_m[$int_indexA]}    # element
-        str_line3=${arr_lspci_n[$int_indexA]}    # element
-
-        # begin parse #
-        if [[ $str_line1 == *"01:00.0"* ]]; then bool_parseA=true; fi
-        #
-
-        # parse #
-        if [[ $bool_parseA == true ]]; then
-
-            # PCI info #
-            str_thisPCIBusID=(${str_line1:0:7})                     # raw VGA Bus ID
-            str_thisPCIType=`echo $str_line1 | cut -d '"' -f 2`     # example:  VGA
-            str_thisPCIVendor=`echo $str_line1 | cut -d '"' -f 4`   # example:  NVIDIA
-            str_thisPCIHWID=`echo $str_line3 | cut -d " " -f 3`     # example:  AB12:CD34
-            #
-
-            # add to list
-            arr_PCIBusID+=("$str_thisPCIBusID")
-            arr_PCIHWID+=("$str_thisPCIHWID") 
-            #
-
-            # match VGA device, add to list #
-            if [[ $str_thisPCIType == *"VGA"* ]]; then
-                arr_VGABusID+=("$str_thisPCIBusID")
-                arr_VGAHWID+=("$str_thisPCIHWID")
-            fi
-            #
-
-            # match VGA Vendor device, add to list #
-            #if [[ $str_thisPCIType != *"VGA"* && $str_prevLine1 == *"$str_thisPCIVendor"* ]]; then
-                #arr_VGAVendorBusID+=("$str_thisPCIBusID")
-                #arr_VGAVendorHWID+=("$str_thisPCIHWID")
-            #fi
-            #
-
-            # parse list of drivers
-            #for str_line2 in $arr_lspci_k; do
-            declare -i int_indexB=0
-            for (( int_indexB=0; int_indexB<${#arr_lspci_k[@]}; int_indexB++ )); do
-            
-                str_line2=${arr_lspci_k[$int_indexB]}    # element   
-
-                # begin parse #
-                if [[ $str_line2 == *"$str_thisPCIBusID"* ]]; then bool_parseB=true; fi
-                #
-
-                # match VGA #
-                if [[ $bool_parseB == true && $str_line2 == *"VGA"* ]]; then
-                    bool_parseVGA=true
-                fi
-                #
-
-                # match driver #
-                if [[ $bool_parseB == true && $str_line2 == *"Kernel driver in use: "* && $str_line2 != *"vfio-pci"* && $str_line2 != *"Subsystem: "* && $str_line2 != *"Kernel modules: "* ]]; then
-                
-                    str_thisPCIDriver=`echo $str_line2 | cut -d " " -f 5`   # PCI driver
-                    arr_PCIDriver+=("$str_thisPCIDriver")                   # add to list
-
-                    # match VGA, add to list #
-                    if [[ $bool_parseVGA == true ]]; then
-                        arr_VGADriver+=("$str_thisPCIDriver")
-                    fi
-
-                    bool_parseB=false
-                    bool_parseVGA=false         
-                fi
-                #
-
-                str_prevLine2=$str_line2    # save previous line for comparison
-
-            done
-            #
-        fi
-        #
-
-        str_prevLine1=$str_line1    # save previous line for comparison
-
-    done
-    #
-
-    # Debug
-    function DEBUG {
-
-    echo -e "$0: arr_PCIBusID == ${#arr_PCIBusID[@]}i"
-    for element in ${arr_PCIBusID[@]}; do
-        echo -e "$0: arr_PCIBusID == "$element
-    done
-
-    echo -e "$0: arr_VGABusID == ${#arr_VGABusID[@]}i"
-    for element in ${arr_VGABusID[@]}; do
-        echo -e "$0: arr_VGABusID == "$element
-    done
-
-    #echo -e "$0: arr_VGAVendorBusID == ${#arr_VGAVendorBusID[@]}i"
-    #for element in ${arr_VGAVendorBusID[@]}; do
-        #echo -e "$0: arr_VGAVendorBusID == "$element
-    #done
-
-    echo -e "$0: arr_PCIDriver == ${#arr_PCIDriver[@]}i"
-    for element in ${arr_PCIDriver[@]}; do
-        echo -e "$0: arr_PCIDriver == "$element
-    done
-
-    echo -e "$0: arr_VGADriver == ${#arr_VGADriver[@]}i"
-    for element in ${arr_VGADriver[@]}; do
-        echo -e "$0: arr_VGADriver == "$element
-    done
-
-    echo -e "$0: arr_PCIHWID == ${#arr_PCIHWID[@]}i"
-    for element in ${arr_PCIHWID[@]}; do
-        echo -e "$0: arr_PCIHWID == "$element
-    done
-
-    echo -e "$0: arr_VGAHWID == ${#arr_VGAHWID[@]}i"
-    for element in ${arr_VGAHWID[@]}; do
-        echo -e "$0: arr_VGAHWID == "$element
-    done
-
-    #echo -e "$0: arr_VGAVendorHWID == ${#arr_VGAVendorHWID[@]}i"
-    #for element in ${arr_VGAVendorHWID[@]}; do
-        #echo -e "$0: arr_VGAVendorHWID == "$element
-    #done
-    }
-
-    echo -e
-    #
-
-    #DEBUG
-
-}
-
-########## end ParsePCI ##########
-
-########## HugePages ##########
-
-function HugePages {
-
-    # parameters #
-    str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                # default output
-    int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
-    #
-
-    # prompt #
-    declare -i int_count=0      # reset counter
-    str_prompt="$0: HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, the less memory latency.\n"
-
-    echo -e $str_prompt
-    str_input1=""
-
-    while [[ $str_input1 != "Y" && $str_input1 != "N" ]]; do
-
-        if [[ $int_count -ge 3 ]]; then
-
-            echo "$0: Exceeded max attempts."
-            str_input1="N"                   # default selection
-        
-        else
-
-            echo -en "$0: Setup HugePages?\t[Y/n]: "
-            read -r str_input1
-            str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
-
-        fi
-
-        case $str_input1 in
-
-            "Y"|"H")
-                echo "$0: Continuing..."
-                break;;
-
-            "N")
-                echo "$0: Skipping..."
-                return 0;;
-
-            *)
-                echo "$0: Invalid input.";;
-
-        esac
-        ((int_count++))
-
-    done
-    #
-
-    # Hugepage size: validate input #
-    str_HugePageSize=$str6
-    str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
-
-    declare -i int_count=0      # reset counter
-
-    while true; do
-                 
-        # attempt #
-        if [[ $int_count -ge 3 ]]; then
-
-            echo "$0: Exceeded max attempts."
-            str_HugePageSize="1G"           # default selection
-        
-        else
-
-            echo -en "$0: Enter Hugepage size and byte-size. [ 2M / 1G ]:\t"
-            read -r str_HugePageSize
-            str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
-
-        fi
-        #
-
-        # check input #
-        case $str_HugePageSize in
-
-            "2M")
-                break;;
-
-            "1G")
-                break;;
-
-            *)
-                echo "$0: Invalid input.";;
-
-        esac
-        #
-
-        ((int_count++))                     # inc counter
-
-    done
-    #
-
-    # Hugepage sum: validate input #
-    echo -e ""
-    int_HugePageNum=$str7
-    declare -i int_count=0      # reset counter
-
-    while true; do
-
-        # attempt #
-        if [[ $int_count -ge 3 ]]; then
-
-            echo "$0: Exceeded max attempts."
-            int_HugePageNum=$int_HugePageMax        # default selection
-        
-        else
-
-            # Hugepage Size #
-            if [[ $str_HugePageSize == "2M" ]]; then
-
-                str_prefixMem="M"
-                declare -i int_HugePageK=2048       # Hugepage size
-                declare -i int_HugePageMin=2        # min HugePages
-
-            fi
-
-            if [[ $str_HugePageSize == "1G" ]]; then
-
-                str_prefixMem="G"
-                declare -i int_HugePageK=1048576    # Hugepage size
-                declare -i int_HugePageMin=1        # min HugePages
-
-            fi
-
-            declare -i int_HostMemMinK=4194304                              # min host RAM in KiB
-            declare -i int_HugePageMemMax=$int_HostMemMaxK-$int_HostMemMinK
-            declare -i int_HugePageMax=$int_HugePageMemMax/$int_HugePageK   # max HugePages
-
-            echo -en "$0: Enter number of HugePages ( num * $str_HugePageSize ). [ $int_HugePageMin to $int_HugePageMax pages ] : "
-            read -r int_HugePageNum
-            #
-
-        fi
-        #
-
-    # check input #
-    if [[ $int_HugePageNum -lt $int_HugePageMin || $int_HugePageNum -gt $int_HugePageMax ]]; then
-
-        echo "$0: Invalid input."
-        ((int_count++));     # inc counter
-
-    else
-    
-        echo -e "$0: Continuing..."
-        str_GRUB_CMDLINE_Hugepages="default_hugepagesz=$str_HugePageSize hugepagesz=$str_HugePageSize hugepages=$int_HugePageNum"
-        break
-        
-    fi
-    #
-
-    done
-    #
-
-}
-
-########## end HugePages ##########
-
-########## Prompts ##########
-
+##### Prompts #####
 function Prompts {
+
+    # call functions #
+    ParsePCI
+    #
 
     # prompt #
     declare -i int_count=0      # reset counter
@@ -411,392 +81,18 @@ function Prompts {
     done
     #
 
+    # call functions #
     EvDev
     ZRAM
+    #
 
 }
+##### end Prompts #####
 
-########## end Prompts ##########
-
-########## MultiBootSetup ##########
-
-# NOTE: make sure proper backups of etc files are made! I had to download raw from github to restore them here!
-# NOTE: function needs work before testing
-
-function MultiBootSetup {
+##### EvDev #####
+function EvDev {
 
     echo -e ""
-    str_input1=""
-
-    # prompt #
-    declare -i int_count=0      # reset counter
-    str_prompt="$0: Do you wish to Review each VGA device to Passthrough or not passthrough, before creating a given GRUB menu entry?"
-
-    echo -e $str_prompt
-
-    while [[ $str_input1 != "Y" && $str_input1 != "N" ]]; do
-
-        if [[ $int_count -ge 3 ]]; then
-
-            echo "$0: Exceeded max attempts."
-            str_input1="N"                   # default selection
-        
-        else
-
-            echo -en "$0: Review each VGA device, or not?\t[Y/n]: "
-            read -r str_input1
-            str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
-
-        fi
-
-        case $str_input1 in
-
-            "Y")
-                echo "$0: Continuing Multi-Boot setup manually..."
-                break;;
-
-            "N")
-                echo "$0: Continuing Multi-Boot setup automated..."
-                break;;
-
-            *)
-                echo "$0: Invalid input.";;
-
-        esac
-        ((int_count++))
-
-    done
-    #
-
-    # dependencies # 
-    declare -a arr_PCIBusID
-    declare -a arr_PCIDriver
-    declare -a arr_PCIHWID
-    declare -a arr_VGABusID
-    declare -a arr_VGADriver
-    ParsePCI $arr_PCIBusID $arr_PCIDriver $arr_PCIHWID $arr_VGABusID $arr_VGADriver
-    #
-
-    # Debug
-    function DEBUG {
-
-        echo -e "arr_PCIBusID == ${#arr_PCIBusID[@]}i"
-        for element in ${arr_PCIBusID[@]}; do
-            echo -e "arr_PCIBusID == "$element
-        done
-
-        echo -e "arr_VGABusID == ${#arr_VGABusID[@]}i"
-        for element in ${arr_VGABusID[@]}; do
-            echo -e "arr_VGABusID == "$element
-        done
-
-        echo -e "arr_PCIDriver == ${#arr_PCIDriver[@]}i"
-        for element in ${arr_PCIDriver[@]}; do
-           echo -e "arr_PCIDriver == "$element
-        done
-
-
-        echo -e "arr_PCIHWID == ${#arr_PCIHWID[@]}i"
-        for element in ${arr_PCIHWID[@]}; do
-           echo -e "arr_PCIHWID == "$element
-        done
-
-    }
-    #
-    #DEBUG
-    #
-
-    ## parameters ##
-    str_Distribution=`lsb_release -i`   # Linux distro name
-    declare -i int_Distribution=${#str_Distribution}-16
-    str_Distribution=${str_Distribution:16:int_Distribution}
-    declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2`)                                # list of Kernels
-    #
-
-    # root Dev #
-    str_rootDiskInfo=`df -hT | grep /$`
-    #str_rootDev=${str_rootDiskInfo:5:4}     # example "sda1"
-    str_rootDev=${str_rootDiskInfo:0:9}     # example "/dev/sda1"
-    str_rootUUID=`sudo lsblk -n $str_rootDev -o UUID`
-    #
-
-    # custom GRUB #
-    #str_file1="/etc/grub.d/proxifiedScripts/custom"
-    str_file1="/etc/grub.d/40_custom"
-    echo -e "#!/bin/sh
-exec tail -n +3 \$0
-# This file provides an easy way to add custom menu entries. Simply type the
-# menu entries you want to add after this comment. Be careful not to change
-# the 'exec tail' line above.
-" > $str_file1
-    #
-    ##
-
-    ## parse GRUB menu entries ##
-    declare -i int_lastIndexPCI=${#arr_PCIBusID[@]}-1
-    declare -i int_lastIndexVGA=${#arr_VGABusID[@]}-1
-    
-    # parse list of VGA devices #
-    for (( int_indexVGA=0; int_indexVGA<${#arr_VGABusID[@]}; int_indexVGA++ )); do
-
-        bool_parsePCIifExternal=false
-        bool_parseEnd=false
-        str_thisVGABusID=${arr_VGABusID[$int_indexVGA]}             # save for match
-        str_thisVGADriver=${arr_VGADriver[$int_indexVGA]}           # save for GRUB
-        str_thisVGADevice=`lspci -m | grep $str_thisVGABusID | cut -d '"' -f 6`
-        str_listPCIDriver=""
-        str_listPCIHWID=""
-
-        #
-        if [[ $str_input1 == "Y" ]]; then
-
-            # prompt #
-            declare -i int_count=0      # reset counter
-            echo -en "$0: " && lspci -m | grep $str_thisVGABusID
-
-            while [[ $str_input2 != "Y" && $str_input2 != "N" ]]; do
-
-                if [[ $int_count -ge 3 ]]; then
-
-                    echo "$0: Exceeded max attempts."
-                    str_input2="N"                   # default selection
-        
-                else
-
-                    echo -en "$0: Do you wish to passthrough this VGA device (or not)?\t[Y/n]: "
-                    read -r str_input2
-                    str_input2=`echo $str_input2 | tr '[:lower:]' '[:upper:]'`
-
-                fi
-
-                case $str_input2 in
-
-                    "Y")
-                        echo "$0: Passing-through VGA device..."
-                        break;;
-
-                    "N")
-                        echo "$0: Omitting VGA device..."
-                        break;;
-
-                    *)
-                        echo "$0: Invalid input.";;
-
-                esac
-                ((int_count++))
-
-            done
-            #
-        fi
-        #
-
-        # default choice: if NOT passing-through device, run loop #
-        if [[ $str_input2 != "Y" ]]; then
-
-            # parse list of PCI devices #
-            for (( int_indexPCI=0; int_indexPCI<${#arr_PCIBusID[@]}; int_indexPCI++ )); do
-
-                str_thisPCIBusID=${arr_PCIBusID[$int_indexPCI]}         # save for match
-                str_thisPCIDriver=${arr_PCIDriver[$int_indexPCI]}       # save for GRUB
-                str_thisPCIHWID=${arr_PCIHWID[$int_indexPCI]}           # save for GRUB    
-
-                # if PCI is an expansion device, parse it #
-                if [[ $str_thisPCIBusID == "01:00.0" ]]; then bool_parsePCIifExternal=true; fi
-                #
-
-                # match VGA device exactly #
-                if [[ ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} && $str_thisVGABusID == $str_thisPCIBusID ]]; then
-                    
-                    # clear variables #
-                    str_thisPCIDriver=""
-                    str_thisPCIHWID=""
-                    #
-
-                fi
-
-                # match VGA device's child interface #
-                if [[ ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} && $str_thisVGABusID != $str_thisPCIBusID ]]; then
-                
-                    str_thisVGAChildDriver=$str_thisPCIDriver
-
-                    # clear variables #
-                    str_thisPCIDriver=""
-                    str_thisPCIHWID=""
-                    #
-
-                fi
-
-                # match driver and no partial match Bus ID, clear driver #
-                if [[ $str_thisVGADriver == $str_thisPCIDriver && $str_thisVGABusID != $str_thisPCIBusID ]]; then str_thisPCIDriver=""; fi
-                #
-
-                # partial match Bus ID, clear PCI child driver #
-                if [[ ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} ]]; then str_thisPCIDriver=""; fi
-                #
-
-                # if VGA child driver match found, clear driver #
-                if [[ $str_thisPCIDriver == $str_thisVGAChildDriver ]]; then str_thisPCIDriver=""; fi
-                #
-
-                # if PCI driver is already present in list, clear driver #
-                if [[ $str_listPCIDriver == *"$str_thisPCIDriver"* ]]; then str_thisPCIDriver=""; fi
-                #
-
-                # if no PCI driver match found (if string is not empty), add to list #
-                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIDriver ]]; then str_listPCIDriver+="$str_thisPCIDriver,"; fi
-                #
-                
-                # if no PCI HW ID match found (if string is not empty), add to list #
-                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIHWID ]]; then str_listPCIHWID+="$str_thisPCIHWID,"; fi
-                #
-
-            done  
-            # end parse list of PCI devices #
-
-            # remove last separator #
-            if [[ ${str_listPCIDriver: -1} == "," ]]; then str_listPCIDriver=${str_listPCIDriver::-1}; fi
-            if [[ ${str_listPCIHWID: -1} == "," ]]; then str_listPCIHWID=${str_listPCIHWID::-1}; fi
-            #
-  
-            echo -e ""
-
-            # GRUB command line #
-            str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_listPCIDriver vfio_pci.ids=$str_listPCIHWID"
-
-            ### setup Boot menu entry ###           # TODO: fix automated menu entry setup!
-
-            # parse Kernels #
-            for str_rootKernel in ${arr_rootKernel[@]}; do
-
-                # set Kernel #
-                str_rootKernel=${str_rootKernel:1:100}          # arbitrary length
-                #echo "str_rootKernel == '$str_rootKernel'"
-                #
-
-                # GRUB Menu Title #
-                str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel"
-                if [[ ! -z $str_thisVGADevice ]]; then
-                    str_GRUBMenuTitle+=" (Xorg: $str_thisVGADevice)'"
-                fi
-                #
-
-                # MANUAL setup Boot menu entry ###    # NOTE: temporary
-                echo -e "$0: Automated GRUB menu entry feature not available. Execute GRUB Customizer, copy a valid entry, and place the following output into a new entry.\n\n\tTitle: '$str_GRUBMenuTitle'\n\tEntry: '$str_GRUB_CMDLINE'\n"
-                #
-
-                # GRUB custom menu #
-                declare -a arr_file_customGRUB=(
-"menuentry '$str_GRUBMenuTitle' {
-    insmod gzio
-    set root='/dev/disk/by-uuid/$str_rootUUID'
-    echo    'Loading Linux $str_rootKernel ...'
-    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE
-    echo    'Loading initial ramdisk ...'
-    initrd  /boot/initrd.img-$str_rootKernel
-}"
-                )
-
-                # write to file
-                echo -e "\n" >> $str_file1    
-
-                #for str_line in ${arr_file_customGRUB[@]}; do
-                    #echo -e $str_line >> $str_file1                     # TODO: fix GRUB menu entries!
-                    #echo -e $str_line                # for now, output GRUB COMMAND LINE to terminal for user to copy to GRUB customizer
-                #done
-                #
-            done
-            #
-
-            ## setup final GRUB entry with all PCI devices passed-through (for headless setup) ##
-            str_listPCIDriver=""
-            str_listPCIHWID=""
-
-            # parse list of PCI devices #
-            for (( int_indexPCI=0; int_indexPCI<${#arr_PCIBusID[@]}; int_indexPCI++ )); do
-
-                str_thisPCIBusID=${arr_PCIBusID[$int_indexPCI]}         # save for match
-                str_thisPCIDriver=${arr_PCIDriver[$int_indexPCI]}       # save for GRUB
-                str_thisPCIHWID=${arr_PCIHWID[$int_indexPCI]}           # save for GRUB    
-
-                # if PCI is an expansion device, parse it #
-                if [[ $str_thisPCIBusID == "01:00.0" ]]; then bool_parsePCIifExternal=true; fi
-                #
-
-                # if PCI driver is already present in list, clear driver #
-                if [[ $str_listPCIDriver == *"$str_thisPCIDriver"* ]]; then str_thisPCIDriver=""; fi
-                #
-
-                # if no PCI driver match found (if string is not empty), add to list #
-                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIDriver ]]; then str_listPCIDriver+="$str_thisPCIDriver,"; fi
-                #
-                
-                # if no PCI HW ID match found (if string is not empty), add to list #
-                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIHWID ]]; then str_listPCIHWID+="$str_thisPCIHWID,"; fi
-                #
-
-            done  
-            # end parse list of PCI devices #
-
-            # remove last separator #
-            if [[ ${str_listPCIDriver: -1} == "," ]]; then str_listPCIDriver=${str_listPCIDriver::-1}; fi
-            if [[ ${str_listPCIHWID: -1} == "," ]]; then str_listPCIHWID=${str_listPCIHWID::-1}; fi
-            #
-
-            # GRUB command line #
-            str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_listPCIDriver vfio_pci.ids=$str_listPCIHWID"
-            #
-
-            # parse Kernels #
-            for str_rootKernel in ${arr_rootKernel[@]}; do
-
-                # set Kernel #
-                str_rootKernel=${str_rootKernel:1:100}          # arbitrary length
-                #
-
-                # GRUB Menu Title #
-                str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel (Xorg: N/A)"
-                #
-
-                # GRUB custom menu #
-                declare -a arr_file_customGRUB=(
-"menuentry '$str_GRUBMenuTitle' {
-    insmod gzio
-    set root='/dev/disk/by-uuid/$str_rootUUID'
-    echo    'Loading Linux $str_rootKernel ...'
-    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE
-    echo    'Loading initial ramdisk ...'
-    initrd  /boot/initrd.img-$str_rootKernel
-}"
-            )
-
-                # write to file
-                echo -e "\n" >> $str_file1    
-
-                #for str_line in ${arr_file_customGRUB[@]}; do
-                    #echo -e $str_line >> $str_file1               # TODO: fix GRUB menu entries!
-                    #echo -e $str_line
-                #done
-                #
-            done
-            ##
-
-            if [[ $str_input2 == "N" ]]; then str_input2=""; fi    # reset input
-
-        fi
-        #
-    done
-    # end parse list of VGA devices #
-    ## end parse GRUB menu entries ##
-
-    #sudo update-grub    # update GRUB for good measure     # TODO: reenable when automated setup is fixed!
-
-}
-
-########## end MultiBootSetup ##########
-
-########## EvDev ##########
-
-function EvDev {
 
     # parameters #
     str_file1="/etc/libvirt/qemu.conf"
@@ -826,7 +122,7 @@ function EvDev {
     case $str_input in
 
         "Y"|"E")
-            echo "Continuing with EvDev setup..."
+            #echo "Continuing with EvDev setup..."
             break;;
 
         "N")
@@ -900,11 +196,1067 @@ cgroup_device_acl = [
     #
 
 }
+##### end EvDev #####
 
-########## end EvDev ##########
+##### HugePages #####
+function HugePages {
 
-########## ZRAM ##########
+    # parameters #
+    str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                # default output
+    int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
+    #
 
+    # prompt #
+    declare -i int_count=0      # reset counter
+    str_prompt="$0: HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, the less memory latency.\n"
+
+    echo -e $str_prompt
+    str_input1=""
+
+    while [[ $str_input1 != "Y" && $str_input1 != "N" ]]; do
+
+        if [[ $int_count -ge 3 ]]; then
+
+            echo "$0: Exceeded max attempts."
+            str_input1="N"                   # default selection
+        
+        else
+
+            echo -en "$0: Setup HugePages?\t[Y/n]: "
+            read -r str_input1
+            str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
+
+        fi
+
+        case $str_input1 in
+
+            "Y"|"H")
+                #echo "$0: Continuing..."
+                break;;
+
+            "N")
+                echo "$0: Skipping Hugepages..."
+                return 0;;
+
+            *)
+                echo "$0: Invalid input.";;
+
+        esac
+        ((int_count++))
+
+    done
+    #
+
+    # Hugepage size: validate input #
+    str_HugePageSize=$str6
+    str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
+
+    declare -i int_count=0      # reset counter
+
+    while true; do
+                 
+        # attempt #
+        if [[ $int_count -ge 3 ]]; then
+
+            echo "$0: Exceeded max attempts."
+            str_HugePageSize="1G"           # default selection
+        
+        else
+
+            echo -en "$0: Enter Hugepage size and byte-size. [ 2M / 1G ]:\t"
+            read -r str_HugePageSize
+            str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
+
+        fi
+        #
+
+        # check input #
+        case $str_HugePageSize in
+
+            "2M")
+                break;;
+
+            "1G")
+                break;;
+
+            *)
+                echo "$0: Invalid input.";;
+
+        esac
+        #
+
+        ((int_count++))                     # inc counter
+
+    done
+    #
+
+    # Hugepage sum: validate input #
+    int_HugePageNum=$str7
+    declare -i int_count=0      # reset counter
+
+    while true; do
+
+        # attempt #
+        if [[ $int_count -ge 3 ]]; then
+
+            echo "$0: Exceeded max attempts."
+            int_HugePageNum=$int_HugePageMax        # default selection
+        
+        else
+
+            # Hugepage Size #
+            if [[ $str_HugePageSize == "2M" ]]; then
+
+                str_prefixMem="M"
+                declare -i int_HugePageK=2048       # Hugepage size
+                declare -i int_HugePageMin=2        # min HugePages
+
+            fi
+
+            if [[ $str_HugePageSize == "1G" ]]; then
+
+                str_prefixMem="G"
+                declare -i int_HugePageK=1048576    # Hugepage size
+                declare -i int_HugePageMin=1        # min HugePages
+
+            fi
+
+            declare -i int_HostMemMinK=4194304                              # min host RAM in KiB
+            declare -i int_HugePageMemMax=$int_HostMemMaxK-$int_HostMemMinK
+            declare -i int_HugePageMax=$int_HugePageMemMax/$int_HugePageK   # max HugePages
+
+            echo -en "$0: Enter number of HugePages ( num * $str_HugePageSize ). [ $int_HugePageMin to $int_HugePageMax pages ] : "
+            read -r int_HugePageNum
+            #
+
+        fi
+        #
+
+    # check input #
+    if [[ $int_HugePageNum -lt $int_HugePageMin || $int_HugePageNum -gt $int_HugePageMax ]]; then
+
+        echo "$0: Invalid input."
+        ((int_count++));     # inc counter
+
+    else
+    
+        #echo -e "$0: Continuing..."
+        str_GRUB_CMDLINE_Hugepages="default_hugepagesz=$str_HugePageSize hugepagesz=$str_HugePageSize hugepages=$int_HugePageNum"
+        break
+        
+    fi
+    #
+
+    done
+    #
+
+    echo -e     # newline
+
+}
+##### end HugePages #####
+
+##### MultiBootSetup #####
+function MultiBootSetup {
+
+    str_input1=""
+
+    # prompt #
+    declare -i int_count=0      # reset counter
+    str_prompt="$0: Do you wish to Review each VGA device to Passthrough or not (before creating a given GRUB menu entry)?"
+
+    echo -e $str_prompt
+
+    while [[ $str_input1 != "Y" && $str_input1 != "N" ]]; do
+
+        if [[ $int_count -ge 3 ]]; then
+
+            echo "$0: Exceeded max attempts."
+            str_input1="N"                   # default selection
+        
+        else
+
+            echo -en "$0: Review each VGA device?\t[Y/n]: "
+            read -r str_input1
+            str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
+
+        fi
+
+        case $str_input1 in
+
+            "Y")
+                #echo "$0: Continuing Multi-Boot setup manually..."
+                break;;
+
+            "N")
+                #echo "$0: Continuing Multi-Boot setup automated..."
+                break;;
+
+            *)
+                echo "$0: Invalid input.";;
+
+        esac
+        ((int_count++))
+
+    done
+    #
+
+    # dependencies # 
+    declare -a arr_PCIBusID
+    declare -a arr_PCIDriver
+    declare -a arr_PCIHWID
+    declare -a arr_VGABusID
+    declare -a arr_VGADriver
+    ParsePCI $arr_PCIBusID $arr_PCIDriver $arr_PCIHWID $arr_VGABusID $arr_VGADriver
+    #
+
+    ## parameters ##
+    str_Distribution=`lsb_release -i`   # Linux distro name
+    declare -i int_Distribution=${#str_Distribution}-16
+    str_Distribution=${str_Distribution:16:int_Distribution}
+    declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2`)                                # list of Kernels
+    #
+
+    # root Dev #
+    str_rootDiskInfo=`df -hT | grep /$`
+    #str_rootDev=${str_rootDiskInfo:5:4}     # example "sda1"
+    str_rootDev=${str_rootDiskInfo:0:9}     # example "/dev/sda1"
+    str_rootUUID=`sudo lsblk -n $str_rootDev -o UUID`
+    #
+
+    # custom GRUB #
+    #str_file1="/etc/grub.d/proxifiedScripts/custom"
+    str_file1="/etc/grub.d/40_custom"
+    echo -e "#!/bin/sh\nexec tail -n +3 \$0\n# This file provides an easy way to add custom menu entries. Simply type the\n# menu entries you want to add after this comment. Be careful not to change\n# the 'exec tail' line above." > $str_file1
+    #
+    ##
+
+    # list IOMMU groups #
+    if [[ $str_input1 == "Y" ]]; then
+
+        echo -e "$0: PCI devices may share IOMMU groups. IOMMU groups are the result of which PCI slots are populated and the PCI devices that populate them. given PCI devices.\n\tReview the output below before choosing which VGA devices to passthrough or not.\n$0: DISCLAIMER: Script does NOT add internal PCI devices (Bus IDs before 01:00.0) to VFIO passthrough.\n"
+    
+        for str_thisPCIBusID in ${arr_PCIBusID[@]}; do
+    
+            str_thisPCIDevice=`lspci -m | grep $str_thisPCIBusID | cut -d '"' -f 6`
+            str_thisPCIIOMMUInfo=`dmesg | grep "Adding to iommu group" | grep $str_thisPCIBusID | cut -d "]" -f 2`
+            echo -e "\t$str_thisPCIIOMMUInfo:\t$str_thisPCIDevice"
+
+        done
+
+        echo -e "\n$0: NOTE: PCI 16x slot devices may share IOMMU groups.\n\tFor example, in the past, multiple-GPU setups (NVIDIA SLI or AMD CrossFire), designate the first two or more 16x slots for said setup, thus a shared IOMMU group.\n$0: NOTE: Internal PCI devices, such as USB controllers may ('or may NOT') share IOMMU groups with other internal devices.\n"
+    
+    fi
+    #
+
+    ## parse GRUB menu entries ##
+    declare -i int_lastIndexPCI=${#arr_PCIBusID[@]}-1
+    declare -i int_lastIndexVGA=${#arr_VGABusID[@]}-1
+    
+    # parse list of VGA devices #
+    for (( int_indexVGA=0; int_indexVGA<${#arr_VGABusID[@]}; int_indexVGA++ )); do
+
+        bool_parsePCIifExternal=false
+        bool_parseEnd=false
+        str_thisVGABusID=${arr_VGABusID[$int_indexVGA]}                         # save for match
+        str_thisVGADriver=${arr_VGADriver[$int_indexVGA]}                       # save for GRUB
+        str_thisVGADevice=`lspci -m | grep $str_thisVGABusID | cut -d '"' -f 6`
+        str_thisVGAIOMMUID=`dmesg | grep "Adding to iommu group" | grep $str_thisVGABusID | cut -d " " -f 12`
+        str_listPCIDriver=""
+        str_listPCIHWID=""
+
+        #
+        if [[ $str_input1 == "Y" ]]; then
+
+            # prompt #
+            declare -i int_count=0      # reset counter
+            echo -e "\t" && lspci -m | grep $str_thisVGABusID
+
+            while [[ $str_input2 != "Y" && $str_input2 != "N" ]]; do
+
+                if [[ $int_count -ge 3 ]]; then
+
+                    echo "$0: Exceeded max attempts."
+                    str_input2="N"                   # default selection
+        
+                else
+
+                    echo -en "$0: Do you wish to passthrough this VGA device (or not)?\t[Y/n]: "
+                    read -r str_input2
+                    str_input2=`echo $str_input2 | tr '[:lower:]' '[:upper:]'`
+
+                fi
+
+                case $str_input2 in
+
+                    "Y")
+                        #echo "$0: Passing-through VGA device..."
+                        break;;
+
+                    "N")
+                        echo -e "$0: Omitting VGA device...\n"
+                        break;;
+
+                    *)
+                        echo "$0: Invalid input.";;
+
+                esac
+                ((int_count++))
+
+            done
+            #
+        fi
+        #
+
+        # default choice: if NOT passing-through device, run loop #
+        if [[ $str_input2 != "Y" ]]; then
+
+            # parse list of PCI devices #
+            for (( int_indexPCI=0; int_indexPCI<${#arr_PCIBusID[@]}; int_indexPCI++ )); do
+
+                str_thisPCIBusID=${arr_PCIBusID[$int_indexPCI]}         # save for match
+                str_thisPCIDriver=${arr_PCIDriver[$int_indexPCI]}       # save for GRUB
+                str_thisPCIHWID=${arr_PCIHWID[$int_indexPCI]}           # save for GRUB
+                str_thisPCIIOMMUID=`dmesg | grep "Adding to iommu group" | grep $str_thisPCIBusID | cut -d " " -f 12`
+
+                # if PCI is an expansion device, parse it #
+                if [[ $str_thisPCIBusID == "01:00.0" ]]; then bool_parsePCIifExternal=true; fi
+                #
+
+                # match VGA device's child interface, save driver #
+                if [[ ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} && $str_thisVGABusID != $str_thisPCIBusID ]]; then str_thisVGAChildDriver=$str_thisPCIDriver; fi
+                #
+
+                # match Bus ID or IOMMU ID, clear vars #
+                # NOTE: if device shares same IOMMU group as Xorg VGA device, then it is not possible to (without loss of security), to seperate device from the group.
+                if [[ $str_thisVGABusID == $str_thisPCIBusID || $str_thisVGAIOMMUID == $str_thisPCIIOMMUID ]]; then
+                    
+                    # clear variables #
+                    str_thisPCIDriver=""
+                    str_thisPCIHWID=""
+                    #
+
+                fi
+                #
+                
+
+                # match driver and false match partial Bus ID, clear driver #
+                if [[ $str_thisVGABusID != $str_thisPCIBusID && $str_thisVGADriver == $str_thisPCIDriver ]]; then str_thisPCIDriver=""; fi
+                #
+
+                # partial match Bus ID, clear PCI child driver #
+                # OR match VGA driver, clear driver #
+                # OR match PCI driver in list, clear driver #
+                if [[ ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} || $str_thisPCIDriver == $str_thisVGAChildDriver || $str_listPCIDriver == *"$str_thisPCIDriver"* ]]; then
+                
+                    str_thisPCIDriver=""
+                    
+                fi
+                #
+
+                # if no PCI driver match found (if string is not empty), add to list #
+                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIDriver ]]; then str_listPCIDriver+="$str_thisPCIDriver,"; fi
+                #
+                
+                # if no PCI HW ID match found (if string is not empty), add to list #
+                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIHWID ]]; then str_listPCIHWID+="$str_thisPCIHWID,"; fi
+                #
+
+            done  
+            # end parse list of PCI devices #
+
+            # remove last separator #
+            if [[ ${str_listPCIDriver: -1} == "," ]]; then str_listPCIDriver=${str_listPCIDriver::-1}; fi
+            if [[ ${str_listPCIHWID: -1} == "," ]]; then str_listPCIHWID=${str_listPCIHWID::-1}; fi
+            #
+  
+            # GRUB command line #
+            str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_listPCIDriver vfio_pci.ids=$str_listPCIHWID"
+
+            ### setup Boot menu entry ###           # TODO: fix automated menu entry setup!
+
+            # MANUAL setup Boot menu entry #        # NOTE: temporary
+            echo -e "$0: Execute GRUB Customizer, Clone an existing, valid menu entry, Copy the fields 'Title' and 'Entry' below, and Paste the following output into a new menu entry, where appropriate.\n$0: DISCLAIMER: Automated GRUB menu entry feature not available yet."
+
+            # parse Kernels #
+            for str_rootKernel in ${arr_rootKernel[@]}; do
+
+                # set Kernel #
+                str_rootKernel=${str_rootKernel:1:100}          # arbitrary length
+                #echo "str_rootKernel == '$str_rootKernel'"
+                #
+
+                # GRUB Menu Title #
+                str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel"
+                if [[ ! -z $str_thisVGADevice ]]; then
+                    str_GRUBMenuTitle+=" (Xorg: $str_thisVGADevice)'"
+                fi
+                #
+
+                # MANUAL setup Boot menu entry #        # NOTE: temporary
+                echo -e "\n\tTitle: '$str_GRUBMenuTitle'\n\tEntry: '$str_GRUB_CMDLINE'\n"
+                #
+
+                # GRUB custom menu #
+                declare -a arr_file_customGRUB=(
+"menuentry '$str_GRUBMenuTitle' {
+    load_video
+    insmod gzio
+    if [ x\$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/$str_rootUUID'
+    if [ x$feature_platform_search_hint = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  $str_rootUUID
+	else
+	  search --no-floppy --fs-uuid --set=root $str_rootUUID
+	fi
+    echo    'Loading Linux $str_rootKernel ...'
+    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-$str_rootKernel
+
+}
+"
+                )
+
+                # write to file
+                #echo -e >> $str_file1    
+
+                #for str_line in ${arr_file_customGRUB[@]}; do
+                    #echo -e $str_line >> $str_file1            # TODO: fix GRUB menu entries!
+                    #echo -e $str_line
+                #done
+                
+                #echo -e >> $str_file1 
+                #
+
+            done
+            #
+
+            ## setup final GRUB entry with all PCI devices passed-through (for headless setup) ##
+            str_listPCIDriver=""
+            str_listPCIHWID=""
+
+            # parse list of PCI devices #
+            for (( int_indexPCI=0; int_indexPCI<${#arr_PCIBusID[@]}; int_indexPCI++ )); do
+
+                str_thisPCIBusID=${arr_PCIBusID[$int_indexPCI]}         # save for match
+                str_thisPCIDriver=${arr_PCIDriver[$int_indexPCI]}       # save for GRUB
+                str_thisPCIHWID=${arr_PCIHWID[$int_indexPCI]}           # save for GRUB    
+
+                # if PCI is an expansion device, parse it #
+                if [[ $str_thisPCIBusID == "01:00.0" ]]; then bool_parsePCIifExternal=true; fi
+                #
+
+                # if PCI driver is already present in list, clear driver #
+                if [[ $str_listPCIDriver == *"$str_thisPCIDriver"* ]]; then str_thisPCIDriver=""; fi
+                #
+
+                # if no PCI driver match found (if string is not empty), add to list #
+                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIDriver ]]; then str_listPCIDriver+="$str_thisPCIDriver,"; fi
+                #
+                
+                # if no PCI HW ID match found (if string is not empty), add to list #
+                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIHWID ]]; then str_listPCIHWID+="$str_thisPCIHWID,"; fi
+                #
+
+            done  
+            # end parse list of PCI devices #
+
+            # remove last separator #
+            if [[ ${str_listPCIDriver: -1} == "," ]]; then str_listPCIDriver=${str_listPCIDriver::-1}; fi
+            if [[ ${str_listPCIHWID: -1} == "," ]]; then str_listPCIHWID=${str_listPCIHWID::-1}; fi
+            #
+
+            # GRUB command line #
+            str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_listPCIDriver vfio_pci.ids=$str_listPCIHWID"
+            #
+
+            # parse Kernels #
+            for str_rootKernel in ${arr_rootKernel[@]}; do
+
+                # set Kernel #
+                str_rootKernel=${str_rootKernel:1:100}          # arbitrary length
+                #
+
+                # GRUB Menu Title #
+                str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel (Xorg: N/A)"
+                #
+
+                # GRUB custom menu #
+                declare -a arr_file_customGRUB=(
+"menuentry '$str_GRUBMenuTitle' {
+    insmod gzio
+    set root='/dev/disk/by-uuid/$str_rootUUID'
+    echo    'Loading Linux $str_rootKernel ...'
+    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-$str_rootKernel
+}"
+            )
+
+                # write to file
+                #echo -e "\n" >> $str_file1    
+
+                #for str_line in ${arr_file_customGRUB[@]}; do
+                    #echo -e $str_line >> $str_file1               # TODO: fix GRUB menu entries!
+                    #echo -e $str_line
+                #done
+                #
+            done
+            ##
+
+            if [[ $str_input2 == "N" ]]; then str_input2=""; fi    # reset input
+
+        fi
+        #
+    done
+    # end parse list of VGA devices #
+    ## end parse GRUB menu entries ##
+
+    #sudo update-grub    # update GRUB for good measure     # TODO: reenable when automated setup is fixed!
+
+}
+##### end MultiBootSetup #####
+
+##### ParsePCI #####
+function ParsePCI {
+
+    ## parameters ##
+
+    # inputs #
+    #declare -a arr_PCIBusID
+    #declare -a arr_PCIDriver
+    #declare -a arr_PCIHWID
+    #declare -a arr_VGABusID
+    #declare -a arr_VGADriver
+    #declare -a arr_VGAHWID
+    #
+    
+    bool_parseA=false
+    bool_parseB=false
+    bool_parseVGA=false
+
+    # set file #
+    declare -a arr_lspci_k=(`lspci -k`)
+    declare -a arr_lspci_m=(`lspci -m`)
+    declare -a arr_lspci_n=(`lspci -n`)
+    str_file2="/etc/X11/xorg.conf.d/10-Auto-Xorg.conf"
+    #
+    ##
+
+    # parse list of PCI #
+    for (( int_indexA=0; int_indexA<${#arr_lspci_m[@]}; int_indexA++ )); do
+
+        str_line1=${arr_lspci_m[$int_indexA]}    # element
+        str_line3=${arr_lspci_n[$int_indexA]}    # element
+
+        # begin parse #
+        if [[ $str_line1 == *"01:00.0"* ]]; then bool_parseA=true; fi
+        #
+
+        # parse #
+        if [[ $bool_parseA == true ]]; then
+
+            # PCI info #
+            str_thisPCIBusID=(${str_line1:0:7})                     # raw VGA Bus ID
+            str_thisPCIType=`echo $str_line1 | cut -d '"' -f 2`     # example:  VGA
+            str_thisPCIVendor=`echo $str_line1 | cut -d '"' -f 4`   # example:  NVIDIA
+            str_thisPCIHWID=`echo $str_line3 | cut -d " " -f 3`     # example:  AB12:CD34
+            #
+
+            # add to list
+            arr_PCIBusID+=("$str_thisPCIBusID")
+            arr_PCIHWID+=("$str_thisPCIHWID") 
+            #
+
+            # match VGA device, add to list #
+            if [[ $str_thisPCIType == *"VGA"* ]]; then
+                arr_VGABusID+=("$str_thisPCIBusID")
+                arr_VGAHWID+=("$str_thisPCIHWID")
+            fi
+            #
+
+            # parse list of drivers
+            declare -i int_indexB=0
+
+            for (( int_indexB=0; int_indexB<${#arr_lspci_k[@]}; int_indexB++ )); do
+            
+                str_line2=${arr_lspci_k[$int_indexB]}    # element   
+
+                # begin parse #
+                if [[ $str_line2 == *"$str_thisPCIBusID"* ]]; then bool_parseB=true; fi
+                #
+
+                # match VGA #
+                if [[ $bool_parseB == true && $str_line2 == *"VGA"* ]]; then
+                    bool_parseVGA=true
+                fi
+                #
+
+                # match driver #
+                if [[ $bool_parseB == true && $str_line2 == *"Kernel driver in use: "* && $str_line2 != *"vfio-pci"* && $str_line2 != *"Subsystem: "* && $str_line2 != *"Kernel modules: "* ]]; then
+                
+                    str_thisPCIDriver=`echo $str_line2 | cut -d " " -f 5`   # PCI driver
+                    arr_PCIDriver+=("$str_thisPCIDriver")                   # add to list
+
+                    # match VGA, add to list #
+                    if [[ $bool_parseVGA == true ]]; then
+                        arr_VGADriver+=("$str_thisPCIDriver")
+                    fi
+
+                    bool_parseB=false
+                    bool_parseVGA=false         
+                fi
+                #
+
+                str_prevLine2=$str_line2    # save previous line for comparison
+
+            done
+            #
+        fi
+        #
+
+        str_prevLine1=$str_line1            # save previous line for comparison
+
+    done
+    #
+
+    echo -e                                 # newline
+
+    # Debug
+    function DEBUG {
+
+        echo -e "$0: arr_PCIBusID == ${#arr_PCIBusID[@]}i"
+        for element in ${arr_PCIBusID[@]}; do
+            echo -e "$0: arr_PCIBusID == "$element
+        done
+
+        echo -e "$0: arr_VGABusID == ${#arr_VGABusID[@]}i"
+        for element in ${arr_VGABusID[@]}; do
+            echo -e "$0: arr_VGABusID == "$element
+        done
+
+        echo -e "$0: arr_PCIDriver == ${#arr_PCIDriver[@]}i"
+        for element in ${arr_PCIDriver[@]}; do
+            echo -e "$0: arr_PCIDriver == "$element
+        done
+
+        echo -e "$0: arr_VGADriver == ${#arr_VGADriver[@]}i"
+        for element in ${arr_VGADriver[@]}; do
+            echo -e "$0: arr_VGADriver == "$element
+        done
+
+        echo -e "$0: arr_PCIHWID == ${#arr_PCIHWID[@]}i"
+        for element in ${arr_PCIHWID[@]}; do
+            echo -e "$0: arr_PCIHWID == "$element
+        done
+
+        echo -e "$0: arr_VGAHWID == ${#arr_VGAHWID[@]}i"
+        for element in ${arr_VGAHWID[@]}; do
+            echo -e "$0: arr_VGAHWID == "$element
+        done
+
+    }
+    #DEBUG
+    #
+
+}
+##### end ParsePCI #####
+
+########## StaticSetup ##########
+# NOTES:
+# make sure StaticSetup checks if MultiBootSetup ran. If true, create Static configs with only non-VGA and non-VGA-vendor devices.
+# otherwise, ask user which VGA device to leave as Host VGA device
+
+function StaticSetup {
+
+    ## parameters ##
+    str_input1=""
+
+    # dependencies # 
+    declare -a arr_PCIBusID
+    declare -a arr_PCIDriver
+    declare -a arr_PCIHWID
+    declare -a arr_VGABusID
+    declare -a arr_VGADriver
+    ParsePCI $arr_PCIBusID $arr_PCIDriver $arr_PCIHWID $arr_VGABusID $arr_VGADriver
+    #
+
+    # files #
+    str_file1="/etc/default/grub"
+    str_file2="/etc/initramfs-tools/modules"
+    str_file3="/etc/modules"
+    str_file4="/etc/modprobe.d/vfio.conf"
+    #
+    ##
+    
+    # list IOMMU groups #
+    echo -e "$0: PCI devices may share IOMMU groups.\n\tReview the output below before choosing which VGA devices to passthrough or not.\n\tDISCLAIMER: Script parses but does NOT add internal PCI devices (Bus IDs before 01:00.0) to VFIO passthrough."
+    
+    for str_thisPCIBusID in ${arr_PCIBusID[@]}; do
+    
+        str_thisPCIDevice=`lspci -m | grep $str_thisPCIBusID | cut -d '"' -f 6`
+        str_thisPCIIOMMUInfo=`sudo dmesg | grep "Adding to iommu group" | grep $str_thisPCIBusID | cut -d "]" -f 2`
+        echo -e "\t$str_thisPCIDevice:$str_thisPCIIOMMUID"
+
+    done
+
+    echo -e "$0: NOTE: PCIe 16x slot devices may share IOMMU groups.\n\tFor example, in the past, multiple-GPU setups (NVIDIA SLI or AMD CrossFire), designate the first two or more 16x slots for said setup, thus a shared IOMMU group.\n$0: NOTE: Internal PCI devices, such as USB controllers may ('or may NOT') share IOMMU groups with other internal devices."
+    #
+
+    ## parse GRUB menu entries ##
+    declare -i int_lastIndexPCI=${#arr_PCIBusID[@]}-1
+    declare -i int_lastIndexVGA=${#arr_VGABusID[@]}-1
+    
+    # parse list of VGA devices #
+    for (( int_indexVGA=0; int_indexVGA<${#arr_VGABusID[@]}; int_indexVGA++ )); do
+
+        bool_parsePCIifExternal=false
+        bool_parseEnd=false
+        str_thisVGABusID=${arr_VGABusID[$int_indexVGA]}                         # save for match
+        str_thisVGADriver=${arr_VGADriver[$int_indexVGA]}                       # save for GRUB
+        str_thisVGADevice=`lspci -m | grep $str_thisVGABusID | cut -d '"' -f 6`
+        str_thisVGAIOMMUID=`dmesg | grep "Adding to iommu group" | grep $str_thisVGABusID | cut -d " " -f 12`
+        str_listPCIDriver=""
+        str_listPCIHWID=""
+
+        # prompt #
+        declare -i int_count=0      # reset counter
+        echo -en "$0: " && lspci -m | grep $str_thisVGABusID
+
+        while [[ $str_input1 != "Y" && $str_input1 != "N" ]]; do
+
+            if [[ $int_count -ge 3 ]]; then
+
+                echo "$0: Exceeded max attempts."
+                str_input2="N"                      # default selection
+        
+            else
+
+                echo -en "$0: Do you wish to passthrough this VGA device (or not)?\t[Y/n]: "
+                read -r str_input1
+                str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
+
+            fi
+
+            case $str_input1 in
+
+                "Y")
+                        echo "$0: Passing-through VGA device..."
+                        break;;
+
+                "N")
+                        echo "$0: Omitting VGA device..."
+                        break;;
+
+                *)
+                        echo "$0: Invalid input.";;
+
+            esac
+            ((int_count++))
+
+        done
+        #
+
+        # default choice: if NOT passing-through device, run loop #
+        if [[ $str_input1 != "Y" ]]; then
+
+            # parse list of PCI devices #
+            for (( int_indexPCI=0; int_indexPCI<${#arr_PCIBusID[@]}; int_indexPCI++ )); do
+
+                str_thisPCIBusID=${arr_PCIBusID[$int_indexPCI]}         # save for match
+                str_thisPCIDevice=`lspci -m | grep $str_thisPCIBusID | cut -d '"' -f 6`
+                str_thisPCIDriver=${arr_PCIDriver[$int_indexPCI]}       # save for GRUB
+                str_thisPCIHWID=${arr_PCIHWID[$int_indexPCI]}           # save for GRUB
+                str_thisPCIIOMMUID=`dmesg | grep "Adding to iommu group" | grep $str_thisPCIBusID | cut -d " " -f 12`
+
+                # if PCI is an expansion device, parse it #
+                if [[ $str_thisPCIBusID == "01:00.0" ]]; then bool_parsePCIifExternal=true; fi
+                #
+
+                # match VGA device's child interface, save driver #
+                if [[ ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} && $str_thisVGABusID != $str_thisPCIBusID ]]; then str_thisVGAChildDriver=$str_thisPCIDriver; fi
+                #
+
+                # match Bus ID or IOMMU ID, clear vars #
+                # NOTE: if device shares same IOMMU group as Xorg VGA device, then it is not possible to (without loss of security), to seperate device from the group.
+                if [[ $str_thisVGABusID == $str_thisPCIBusID || $str_thisVGAIOMMUID == $str_thisPCIIOMMUID ]]; then
+                    
+                    # clear variables #
+                    str_thisPCIDriver=""
+                    str_thisPCIHWID=""
+                    #
+
+                    echo -e "$0: Device $str_thisPCIDevice shares IOMMU group with $str_thisVGADevice. Skipping..."
+
+                fi
+                #
+                
+
+                # match driver and false match partial Bus ID, clear driver #
+                if [[ $str_thisVGABusID != $str_thisPCIBusID && $str_thisVGADriver == $str_thisPCIDriver ]]; then str_thisPCIDriver=""; fi
+                #
+
+                # partial match Bus ID, clear PCI child driver #
+                # OR match VGA driver, clear driver #
+                # OR match PCI driver in list, clear driver #
+                if [[ ${str_thisVGABusID:0:5} == ${str_thisPCIBusID:0:5} || $str_thisPCIDriver == $str_thisVGAChildDriver || $str_listPCIDriver == *"$str_thisPCIDriver"* ]]; then
+                
+                    str_thisPCIDriver=""
+                    
+                fi
+                #
+
+                # if no PCI driver match found (if string is not empty), add to list #
+                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIDriver ]]; then str_listPCIDriver+="$str_thisPCIDriver,"; fi
+                #
+                
+                # if no PCI HW ID match found (if string is not empty), add to list #
+                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIHWID ]]; then str_listPCIHWID+="$str_thisPCIHWID,"; fi
+                #
+
+            done  
+            # end parse list of PCI devices #
+
+            # remove last separator #
+            if [[ ${str_listPCIDriver: -1} == "," ]]; then str_listPCIDriver=${str_listPCIDriver::-1}; fi
+            if [[ ${str_listPCIHWID: -1} == "," ]]; then str_listPCIHWID=${str_listPCIHWID::-1}; fi
+            #
+  
+            echo -e ""
+
+            # GRUB command line #
+            str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_listPCIDriver vfio_pci.ids=$str_listPCIHWID"
+
+            ### setup Boot menu entry ###           # TODO: fix automated menu entry setup!
+
+            # parse Kernels #
+            for str_rootKernel in ${arr_rootKernel[@]}; do
+
+                # set Kernel #
+                str_rootKernel=${str_rootKernel:1:100}          # arbitrary length
+                #echo "str_rootKernel == '$str_rootKernel'"
+                #
+
+                # GRUB Menu Title #
+                str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel"
+                if [[ ! -z $str_thisVGADevice ]]; then
+                    str_GRUBMenuTitle+=" (Xorg: $str_thisVGADevice)'"
+                fi
+                #
+
+                # MANUAL setup Boot menu entry ###    # NOTE: temporary
+                echo -e "$0: Automated GRUB menu entry feature not available. Execute GRUB Customizer, copy a valid entry, and place the following output into a new entry.\n\n\tTitle: '$str_GRUBMenuTitle'\n\tEntry: '$str_GRUB_CMDLINE'\n"
+                #
+
+                # GRUB custom menu #
+                declare -a arr_file_customGRUB=(
+"menuentry '$str_GRUBMenuTitle' {
+    load_video
+    insmod gzio
+    if [ x\$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/$str_rootUUID'
+    if [ x$feature_platform_search_hint = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  $str_rootUUID
+	else
+	  search --no-floppy --fs-uuid --set=root $str_rootUUID
+	fi
+    echo    'Loading Linux $str_rootKernel ...'
+    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-$str_rootKernel
+
+}
+"
+                )
+
+                # write to file
+                echo -e >> $str_file1    
+
+                #for str_line in ${arr_file_customGRUB[@]}; do
+                    #echo -e $str_line >> $str_file1            # TODO: fix GRUB menu entries!
+                    echo -e $str_line
+                #done
+                
+                echo -e >> $str_file1 
+                #
+
+            done
+            #
+
+            ## setup final GRUB entry with all PCI devices passed-through (for headless setup) ##
+            str_listPCIDriver=""
+            str_listPCIHWID=""
+
+            # parse list of PCI devices #
+            for (( int_indexPCI=0; int_indexPCI<${#arr_PCIBusID[@]}; int_indexPCI++ )); do
+
+                str_thisPCIBusID=${arr_PCIBusID[$int_indexPCI]}         # save for match
+                str_thisPCIDriver=${arr_PCIDriver[$int_indexPCI]}       # save for GRUB
+                str_thisPCIHWID=${arr_PCIHWID[$int_indexPCI]}           # save for GRUB    
+
+                # if PCI is an expansion device, parse it #
+                if [[ $str_thisPCIBusID == "01:00.0" ]]; then bool_parsePCIifExternal=true; fi
+                #
+
+                # if PCI driver is already present in list, clear driver #
+                if [[ $str_listPCIDriver == *"$str_thisPCIDriver"* ]]; then str_thisPCIDriver=""; fi
+                #
+
+                # if no PCI driver match found (if string is not empty), add to list #
+                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIDriver ]]; then str_listPCIDriver+="$str_thisPCIDriver,"; fi
+                #
+                
+                # if no PCI HW ID match found (if string is not empty), add to list #
+                if [[ $bool_parsePCIifExternal == true && ! -z $str_thisPCIHWID ]]; then str_listPCIHWID+="$str_thisPCIHWID,"; fi
+                #
+
+            done  
+            # end parse list of PCI devices #
+
+            # remove last separator #
+            if [[ ${str_listPCIDriver: -1} == "," ]]; then str_listPCIDriver=${str_listPCIDriver::-1}; fi
+            if [[ ${str_listPCIHWID: -1} == "," ]]; then str_listPCIHWID=${str_listPCIHWID::-1}; fi
+            #
+
+            # GRUB command line #
+            str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_listPCIDriver vfio_pci.ids=$str_listPCIHWID"
+            #
+
+            # parse Kernels #
+            for str_rootKernel in ${arr_rootKernel[@]}; do
+
+                # set Kernel #
+                str_rootKernel=${str_rootKernel:1:100}          # arbitrary length
+                #
+
+                # GRUB Menu Title #
+                str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel (Xorg: N/A)"
+                #
+
+                # GRUB custom menu #
+                declare -a arr_file_customGRUB=(
+"menuentry '$str_GRUBMenuTitle' {
+    insmod gzio
+    set root='/dev/disk/by-uuid/$str_rootUUID'
+    echo    'Loading Linux $str_rootKernel ...'
+    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-$str_rootKernel
+}"
+            )
+
+                # write to file
+                echo -e "\n" >> $str_file1    
+
+                #for str_line in ${arr_file_customGRUB[@]}; do
+                    #echo -e $str_line >> $str_file1               # TODO: fix GRUB menu entries!
+                    echo -e $str_line
+                #done
+                #
+            done
+            ##
+
+            if [[ $str_input2 == "N" ]]; then str_input2=""; fi    # reset input
+
+        fi
+        #
+    done
+    # end parse list of VGA devices #
+    ## end parse GRUB menu entries ##
+
+
+    # GRUB #
+    str_GRUB="GRUB_CMDLINE_DEFAULT=\" acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_arr_PCIDriver vfio_pci.ids=$str_arr_PCIHWID\""
+    echo -e "#\n${str_GRUB}" >> $str_file1
+    #
+
+    # initramfs-tools #
+    declare -a arr_file2=(
+"# List of modules that you want to include in your initramfs.
+# They will be loaded at boot time in the order below.
+#
+# Syntax:  module_name [args ...]
+#
+# You must run update-initramfs(8) to effect this change.
+#
+# Examples:
+#
+# raid1
+# sd_mod
+#
+# NOTE: GRUB command line is an easier and cleaner method if vfio-pci grabs all hardware.
+# Example: Reboot hypervisor (Linux) to swap host graphics (Intel, AMD, NVIDIA) by use-case (AMD for Win XP, NVIDIA for Win 10).
+# NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
+
+# Soft dependencies and PCI kernel drivers:
+$str_PCIDriver_softdep
+
+vfio
+vfio_iommu_type1
+vfio_virqfd
+
+# GRUB command line and PCI hardware IDs:
+options vfio_pci ids=$str_arr_PCIHWID
+vfio_pci ids=$str_arr_PCIHWID
+vfio_pci"
+)
+    echo ${arr_file2[@]} > $str_file2
+    #
+
+    # modules #
+    declare -a arr_file3=(
+"# /etc/modules: kernel modules to load at boot time.
+#
+# This file contains the names of kernel modules that should be loaded
+# at boot time, one per line. Lines beginning with \"#\" are ignored.
+#
+# NOTE: GRUB command line is an easier and cleaner method if vfio-pci grabs all hardware.
+# Example: Reboot hypervisor (Linux) to swap host graphics (Intel, AMD, NVIDIA) by use-case (AMD for Win XP, NVIDIA for Win 10).
+# NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
+#
+vfio
+vfio_iommu_type1
+vfio_pci
+vfio_virqfd
+kvm
+kvm_intel
+apm power_off=1
+
+# In terminal, execute \"lspci -nnk\".
+
+# GRUB kernel parameters:
+vfio_pci ids=$str_arr_PCIHWID"
+)
+    echo ${arr_file3[@]} > $str_file3
+    #
+
+    # modprobe.d/blacklists #
+    for str_PCIDriver in $arr_PCIDriver[@]; do
+        echo "blacklist $str_PCIDriver" > "/etc/modprobe.d/$str_PCIDriver.conf"
+    done
+    #
+
+    # modprobe.d/vfio.conf #
+    declare -a arr_file4=(
+"# NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
+# Soft dependencies:
+$str_PCIDriver_softdep
+
+# PCI hardware IDs:
+options vfio_pci ids=$str_arr_PCIHWID")
+    echo ${arr_file4[@]} > $str_file4
+    #
+
+}
+########## end StaticSetup ##########
+
+##### ZRAM #####
 function ZRAM {
 
     # parameters #
@@ -937,7 +1289,7 @@ function ZRAM {
     case $str_input in
 
         "Y"|"Z")
-            echo "Continuing with ZRAM setup..."
+            #echo "Continuing with ZRAM setup..."
             break;;
 
         "N")
@@ -1074,16 +1426,29 @@ _zram_fraction=\"1/$int_denominator\"
     systemctl restart zram-swap     # restart service
 
 }
+##### end ZRAM #####
 
-########## end ZRAM ##########
+########## end functions ##########
 
 ########## main ##########
 
+# check if sudo #
+if [[ `whoami` != "root" ]]; then echo "$0: Script must be run as Sudo or Root!"; exit 0; fi
+#
+
+# set IFS #
+SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
+IFS=$'\n'      # Change IFS to newline char
+#
+
+# call functions #
 Prompts
+#
 
 # reset IFS #
 IFS=$SAVEIFS   # Restore original IFS
 #
 
 exit 0
-######### end main ##########
+
+########## end main ##########
