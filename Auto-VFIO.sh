@@ -2,6 +2,9 @@
 
 ########## README ##########
 
+# Maintainer:   github/portellam
+# TL;DR:        Generates a VFIO passthrough setup (Multi-Boot or Static).
+
 # NOTES:
 # when parsing LSPCI or lists, list all devices in the same IOMMU group, and ask user if they wish to passthrough all or none.
 # otherwise, ask per device which the user wishes to passthrough
@@ -20,11 +23,6 @@
 #   Hugepages
 #   ZRAM
 #
-
-# Maintainer: github/portellam
-
-# TL;DR:
-# Generates a VFIO passthrough setup (Multi-Boot or Static).
 
 ########## functions ##########
 
@@ -1313,6 +1311,10 @@ _zram_fraction=\"1/$int_denominator\"
 
 # check if sudo #
 if [[ `whoami` != "root" ]]; then echo "$0: Script must be run as Sudo or Root!"; exit 0; fi
+#
+
+# check if system supports IOMMU #
+if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*" > /dev/null; then echo "$0: AMD IOMMU / Intel VT-D is NOT enabled in the BIOS/UEFI."; fi
 #
 
 # set IFS #
