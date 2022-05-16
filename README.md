@@ -5,12 +5,11 @@
 * community:        https://old.reddit.com/r/VFIO
 * a useful guide:   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 
-#
 ## How-to
 In terminal, execute:
 
         sudo bash Auto-VFIO.sh
-#
+        
 ## Auto-VFIO
 Automated VFIO passthrough setup. Setup dynamically (Multi-Boot) or statically.
 * Runs once at boot.
