@@ -6,12 +6,12 @@ function ParsePCI {
     # TODO: input parameters, do I need to remove declarations?
     # NOTE: all parsed lists should be same size/length, for easy recall
 
-    declare -a arr_PCI_BusID=`lspci -m | cut -d '"' -f 1`       # ex '01:00.0'
-    declare -a arr_PCI_DeviceName=`lspci -m | cut -d '"' -f 6`  # ex 'GP104 [GeForce GTX 1070]''
-    declare -a arr_PCI_HW_ID=`lspci -n | cut -d ' ' -f 3`       # ex '10de:1b81'
+    declare -a arr_PCI_BusID=(`lspci -m | cut -d '"' -f 1`)       # ex '01:00.0'
+    declare -a arr_PCI_DeviceName=(`lspci -m | cut -d '"' -f 6`)  # ex 'GP104 [GeForce GTX 1070]''
+    declare -a arr_PCI_HW_ID=(`lspci -n | cut -d ' ' -f 3`)       # ex '10de:1b81'
     declare -a arr_PCI_IOMMU_ID
-    declare -a arr_PCI_Type=`lspci -m | cut -d '"' -f 2`        # ex 'VGA compatible controller'
-    declare -a arr_PCI_VendorName=`lspci -m | cut -d '"' -f 4`  # ex 'NVIDIA Corporation'
+    declare -a arr_PCI_Type=(`lspci -m | cut -d '"' -f 2`)        # ex 'VGA compatible controller'
+    declare -a arr_PCI_VendorName=(`lspci -m | cut -d '"' -f 4`)  # ex 'NVIDIA Corporation'
 
     # add empty values to pad out and make it easier for parse/recall
     declare -a arr_PCI_Driver                                   # ex 'nouveau' or 'nvidia'
@@ -19,46 +19,49 @@ function ParsePCI {
     ##
 
     # unparsed list #
-    declare -a arr_lspci_k=`lspci -k | grep -Eiv 'DeviceName|Subsystem|modules'`
-    declare -a arr_compgen_G=`compgen -G "/sys/kernel/iommu_groups/*/devices/*"`
-    #
+    declare -a arr_lspci_k=(`lspci -k | grep -Eiv 'DeviceName|Subsystem|modules'`)
+    declare -a arr_compgen_G=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*"`)
 
-    # parse IOMMU #
-    # parse list of Bus IDs
-    for (( int_i=0; int_i<${arr_PCI_BusID[@]}; int_i++ )); do
+    ## parse IOMMU ##
+    # parse list of Bus IDs #
+    for (( int_i=0; int_i<${#arr_PCI_BusID[@]}; int_i++ )); do
 
-        # parse list of output (Bus IDs and IOMMU IDs) 
-        for (( int_j=0; int_j<${arr_compgen_G[@]}; int_j++ )); do
+        # reformat element
+        arr_PCI_BusID[$int_i]=${arr_PCI_BusID[$int_i]::-1}
+
+        # parse list of output (Bus IDs and IOMMU IDs) #
+        for (( int_j=0; int_j<${#arr_compgen_G[@]}; int_j++ )); do
 
             # match output with Bus ID #
-            # true, save IOMMU ID at given index #
+            # true, save IOMMU ID at given index, exit loop #
             if [[ ${arr_compgen_G[$int_j]} == *"${arr_PCI_BusID[$int_i]}"* ]]; then
 
-                arr_PCI_IOMMU_ID[$int_i]=`echo $str_line1 | cut -d '/' -f 5`
-                int_j=${#arr_compgen_G[@]}
+                arr_PCI_IOMMU_ID[$int_i]=`echo ${arr_compgen_G[$int_j]} | cut -d '/' -f 5`
+                declare -i int_i=${#arr_compgen_G}
 
             fi
+            #
+
+            # false match, save empty entry at given index #
+            if [[ -z arr_PCI_IOMMU_ID[$int_i] ]]; then
+
+                arr_PCI_IOMMU_ID[$int_i]=""
+        
+            fi
+            #
 
         done
         #
 
-        # false match, save empty entry at given index #
-        if [[ -z arr_PCI_IOMMU_ID[$int_i] ]]; then
-
-            arr_PCI_IOMMU_ID[$int_i]=""
-        
-        fi
-        #
-
     done
-    #
-
+    ##
     
-    # parse drivers #
-    declare -i int_i=0
-
+    ## parse drivers ##
     # parse list of output (Bus IDs and drivers)
-    for str_line1 in $arr_lspci_k[@]; do
+    for (( int_i=0; int_i<${#arr_lspci_k[@]}; int_i++ )); do
+
+        str_line1=${arr_lspci_k[$int_i]}
+        echo $str_line1
 
         # find driver #
         str_PCI_Driver=`echo $str_line1 | cut -d ' ' -f 5`
@@ -69,20 +72,25 @@ function ParsePCI {
 
             arr_PCI_Driver[$int_i]=$str_PCI_Driver
             bool_parseNextLine=false
+            echo "A"
 
-        # false, save empty entry at given index #
-        else
+        fi
 
-            arr_PCI_Driver[$int_i]=""
+        # false match, save empty entry at given index #
+        if [[ bool_parseNextLine == true && $str_line1 == *"driver"* && $str_PCI_Driver == "vfio-pci" ]]; then
+
+            arr_PCI_Driver[$int_i]="null"
             bool_parseNextLine=false
+            echo "B"
 
         fi
         #
 
         # parse list of Bus IDs #
-        while [[ $bool_parseNextLine == false && $int_i -lt ${#arr_PCI_BusID[@]} ]]; do
+        for (( int_j=0; int_j<${#arr_PCI_Driver[@]}; int_j++ )); do
 
-            str_line2=${arr_PCI_BusID[$int_i]}   # current line
+            str_line2=${arr_PCI_Driver[$int_j]}
+            echo $str_line2
 
             # match current line with Bus ID #
             # true, parse next line #
@@ -98,7 +106,7 @@ function ParsePCI {
         #
 
     done
-    #
+    ##
 
     #
     function debug {
@@ -140,7 +148,7 @@ function ParsePCI {
 
     }
     
-    debug
+    #debug
     #
 
 }
