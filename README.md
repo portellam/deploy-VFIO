@@ -27,7 +27,7 @@ Automated VFIO passthrough setup. Setup dynamically (Multi-Boot) or statically.
         * Checks IOMMU groups/PCI groups of PCI devices, for conflicts. Adjusts accordingly.
     * Prompt user for VFIO passthrough setup:
         * Dynamic/Multi-Boot    **(RECOMMENDED)**
-            * parses IOMMU groups (see **guide** above), lists all PCI devices that reside in given IOMMU group.
+            * parses 'IOMMU' groups (see **guide** above), lists all PCI devices that reside in given IOMMU group.
             * adds multiple GRUB menu entries for each non-passthrough VGA device (and given IOMMU group), and one entry with every VGA device passed-through).
             * Executes 'Static' setup for non-VGA devices and different IOMMU groups.
         * Static
