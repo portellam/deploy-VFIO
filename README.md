@@ -27,8 +27,12 @@ Automated VFIO passthrough setup. Setup dynamically (Multi-Boot) or statically.
         * Checks IOMMU groups/PCI groups of PCI devices, for conflicts. Adjusts accordingly.
     * Prompt user for VFIO passthrough setup:
         * Dynamic/Multi-Boot    **(RECOMMENDED)**
-            * adds multiple GRUB menu entries for each non-passthrough VGA device, and one entry with every VGA device passed-through).
-            * Executes 'Static' setup for non-VGA devices.
+            * parses IOMMU groups (see **guide** above), lists all PCI devices that reside in given IOMMU group.
+            * adds multiple GRUB menu entries for each non-passthrough VGA device (and given IOMMU group), and one entry with every VGA device passed-through).
+            * Executes 'Static' setup for non-VGA devices and different IOMMU groups.
         * Static
+            * if Multi-Boot setup was ran, warns user of any VGA device in given IOMMU group 
             * appends to '/etc/initramfs-tools/modules', '/etc/modules', '/etc/modprobe.d/*'.
     * Updates GRUB and INITRAMFS .
+* Automatic features:
+    * checks for existing VFIO setup, asks user to uninstall setup and restart machine to contine.
