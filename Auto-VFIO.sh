@@ -351,7 +351,8 @@ function MultiBootSetup {
     ## NOTE:
     ##  i want to make the function parse all devices, and a given IOMMU group.
     ##  ask user to either passthrough (add to list) or not (subtract from list/create a given boot menu entry)
-    ##
+    ## OR
+    ## auto parse IOMMU groups, add each groups drivers and HW IDs into separate 
 
     # match existing VFIO setup install, suggest uninstall or exit #
     while [[ $bool_isVFIOsetup== false ]]; do
@@ -378,7 +379,8 @@ function MultiBootSetup {
 
         # lists #
         declare -a arr_PCI_Driver_list
-        declare -a arr_PCI_Driver_templist
+        str_PCI_Driver_list=""
+        str_PCI_HW_ID_list=""
         #
 
         # dependencies #
@@ -404,26 +406,10 @@ function MultiBootSetup {
         for (( int_i=0; int_i<=$int_PCI_IOMMU_ID_last; int_i++ )); do
 
             bool_hasExternalPCI=false   # reset boolean
+            bool_hasExternalVGA=false   # reset boolean
         
             # parse list of IOMMU IDs (in no order) #
             for (( int_j=0; int_j<${#arr_PCI_IOMMU_ID[@]}; int_j++ )); do
-
-                str_thisPCI_Bus_ID=${arr_PCI_Bus_ID[$int_j]}
-                
-                # find Device Class ID, truncate first index if equal to zero (to convert to integer)
-                if [[ "${str_thisPCI_Bus_ID:0:1}" == "0" ]] then              
-                    declare -i int_thisPCI_DevClass_ID=${str_thisPCI_Bus_ID:1:1}
-                else    
-                    declare -i int_thisPCI_DevClass_ID=${str_thisPCI_Bus_ID:0:2}
-                fi
-                #
-
-                # is device external PCI and NOT onboard PCI #
-                # match greater/equal to Device Class ID #1
-                if [[ $int_thisPCI_DevClass_ID -ge 1 ]]; then
-                    bool_hasExternalPCI=true            # list contains external PCI
-                fi
-                #
 
                 # match given IOMMU ID at given index #
                 if [[ "${arr_PCI_IOMMU_ID[$int_j]}" == "$int_i" ]]; then
@@ -437,69 +423,80 @@ function MultiBootSetup {
             ## window of PCI devices in given IOMMU group ##
             echo -e "\tIOMMU ID:\t\t#$int_i"
 
+            #bool_VGA_IOMMU_{$int_i}=false      # prompt disabled, necessary for prompt
+
             # parse list of PCI devices in given IOMMU group #
             for int_PCI_index in $arr_PCI_index_list; do
 
                 str_thisPCI_Bus_ID=${arr_PCI_Bus_ID[$int_j]}
                 
                 # find Device Class ID, truncate first index if equal to zero (to convert to integer)
-                if [[ "${str_thisPCI_Bus_ID:0:1}" == "0" ]] then              
+                if [[ "${str_thisPCI_Bus_ID:0:1}" == "0" ]]; then              
                     str_thisPCI_Bus_ID=${str_thisPCI_Bus_ID:1:1}
                 else    
                     str_thisPCI_Bus_ID=${str_thisPCI_Bus_ID:0:2}
                 fi
                 #
                 
-                # is device external PCI and NOT onboard PCI #
                 # match greater/equal to Device Class ID #1
                 if [[ $str_thisPCI_Bus_ID -ge 1 ]]; then
-                    bool_hasExternalPCI=true               # list contains external PCI
+                
+                    # add IOMMU group information to lists #
+                    arr_PCI_IOMMU_Driver_list_{$int_i}+=("${arr_PCI_Driver[$int_PCI_index]}")
+                    str_PCI_IOMMU_Driver_list_{$int_i}+="${arr_PCI_Driver[$int_PCI_index]},"
+                    str_PCI_IOMMU_HW_ID_list_{$int_i}+="${arr_PCI_HW_ID[$int_PCI_index]},"
+                    #
+
+                    #bool_hasExternalPCI=true               # list contains external PCI     # prompt disabled, necessary for prompt
+
                 fi
                 #
 
                 # is device external and is VGA #
-                if [[ $str_thisPCI_Bus_ID -ge 1 && ${arr_PCI_Type[$int_PCI_index]} == *"VGA"* ]]; then
-                    bool_hasExternalVGA=true               # list contains external VGA
+                if [[ $str_thisPCI_Bus_ID -ge 1 && ${arr_PCI_Type[$int_PCI_index]} == *"VGA"* ]]; then   
+                    str_VGA_IOMMU_DeviceName_{$int_i}=${arr_PCI_DeviceName[$int_PCI_index]}
+                    #bool_hasExternalVGA=true               # list contains external VGA     # prompt disabled, necessary for prompt
                 fi
                 #
 
-                # add to lists #
-                arr_PCI_Driver_templist+=("${arr_PCI_Driver[$int_PCI_index]}")
-                str_PCI_Driver_tempList+="${arr_PCI_Driver[$int_PCI_index]},"
-                str_PCI_HW_ID_tempList+="${arr_PCI_HW_ID[$int_PCI_index]},"
-                #
-
-                # output #
-                echo -e "\n\tBus ID:\t\t${arr_PCI_BusID[$int_PCI_index]}"
-                echo -e "\tDeviceName:\t${arr_PCI_DeviceName[$int_PCI_index]}"
-                echo -e "\tDriver:\t\t${arr_PCI_Driver[$int_PCI_index]}"
-                echo -e "\tHW ID:\t\t${arr_PCI_HW_ID[$int_PCI_index]}"
-                echo -e "\tType:\t\t${arr_PCI_Type[$int_PCI_index]}"
-                echo -e "\tVendorName:\t${arr_PCI_VendorName[$int_PCI_index]}"
+                # output #      # prompt disabled, necessary for prompt
+                #echo -e "\n\tBus ID:\t\t${arr_PCI_BusID[$int_PCI_index]}"
+                #echo -e "\tDeviceName:\t${arr_PCI_DeviceName[$int_PCI_index]}"
+                #echo -e "\tType:\t\t${arr_PCI_Type[$int_PCI_index]}"
+                ##echo -e "\tDriver:\t\t${arr_PCI_Driver[$int_PCI_index]}"          # too verbose
+                ##echo -e "\tHW ID:\t\t${arr_PCI_HW_ID[$int_PCI_index]}"            # too verbose    
+                ##echo -e "\tVendorName:\t${arr_PCI_VendorName[$int_PCI_index]}"    # too verbose
                 #
 
             done
             ##
+
+            # NOTE: prompt may be unnecessary.
+            # The next loop will double parse the IOMMU group list,
+            # creating a GRUB entry for with all groups, minus a given VGA device (and group).
 
             ## prompt ##
             str_input1=""               # reset input
             declare -i int_count=0      # reset counter
 
             # match if list does NOT contain external PCI #
-            if [[ $bool_hasExternalPCI == false && $bool_hasExternalVGA == false ]] then
-                echo -e "$0: No external PCI devices found in IOMMU group ID #$int_i ."
-                str_input1="N"
-            fi
+            # do NOT passthrough all devices #
+            #if [[ $bool_hasExternalPCI == false ]]; then
+                #echo -e "$0: No external PCI devices found in IOMMU group ID #$int_i ."
+                #str_input1="N"
+            #fi
             #
             
             # match if list does not contain VGA #
-            if [[ $bool_hasExternalVGA == false ]] then
-                echo -e "$0: No external VGA devices found in IOMMU group ID #$int_i ."
-                str_input1="N"
-            fi
+            # do passthrough all devices #
+            #if [[ $bool_hasExternalVGA == false ]]; then
+                #echo -e "$0: No external VGA devices found in IOMMU group ID #$int_i ."
+                #str_input1="Y"
+            #fi
             #
 
-            while [[ $str_input1 != "Y" && $str_input1 != "N" ]]; do
+            #while [[ $str_input1 != "Y" && $str_input1 != "N" ]]; do   # prompt disabled, necessary for prompt
+            while false; do
 
                 if [[ $int_count -ge 3 ]]; then
                     echo "$0: Exceeded max attempts."
@@ -515,23 +512,16 @@ function MultiBootSetup {
                     "Y")
                         echo "$0: Passing-through IOMMU group ID #$int_i ..."
 
-                        # add to lists #
-                        arr_PCI_Driver_list+=($arr_PCI_Driver_templist)
-                        str_PCI_Driver_list+="$str_PCI_Driver_tempList"
-                        str_PCI_HW_ID_list+="$str_PCI_HW_ID_tempList"
+                        # add IOMMU group to VFIO pass-through lists #
+                        arr_PCI_Driver_list+=($arr_PCI_IOMMU_{$int_i}_Driver_list)
+                        str_PCI_Driver_list+=$str_PCI_IOMMU_{$int_i}_Driver_list
+                        str_PCI_HW_ID_list+=$str_PCI_IOMMU_{$int_i}_HW_ID_list
                         #
 
                         break;;
 
                     "N")
                         echo "$0: Skipping IOMMU group ID #$int_i ..."
-
-                        # clear variables #
-                        declare -a arr_PCI_Driver_templist=""
-                        str_PCI_Driver_tempList=""
-                        str_PCI_HW_ID_tempList=""
-                        #
-
                         break;;
 
                     *)
@@ -544,21 +534,62 @@ function MultiBootSetup {
             done
             #   
 
-            # match YES #
-            if [[ $str_input1 == "Y" ]] then;
+        done
+        #
+
+        
+        # remove last separator #       # prompt disabled, necessary for prompt
+        #if [[ ${str_PCI_Driver_list: -1} == "," ]]; then
+            #str_PCI_Driver_list=${str_PCI_Driver_list::-1}
+        #fi
+
+        #if [[ ${str_PCI_HW_ID_list: -1} == "," ]]; then
+            #str_PCI_HW_ID_list=${str_PCI_HW_ID_list::-1}
+        #fi
+        #
+
+        # parse list of IOMMU groups, in order of IOMMU ID #
+        for (( int_i=0; int_i<=$int_PCI_IOMMU_ID_last; int_i++ )); do
+
+            # reset temp list of IOMMU groups #
+            #declare -a arr_PCI_Driver_tempList=($arr_PCI_Driver_list)     # prompt disabled, necessary for prompt
+            #str_PCI_Driver_tempList=$str_PCI_Driver_list","    # prompt disabled, necessary for prompt
+            #str_PCI_HW_ID_tempList=$str_PCI_HW_ID_list","      # prompt disabled, necessary for prompt
+            declare -a arr_PCI_Driver_tempList
+            str_PCI_Driver_tempList=""
+            str_PCI_HW_ID_tempList=""
+            #
+
+            # parse list of IOMMU groups, in order of IOMMU ID #
+            for (( int_j=0; int_j<=$int_PCI_IOMMU_ID_last; int_j++ )); do
+
+                # match false current index, add non-VFIO passthrough IOMMU groups to temp lists #
+                if [[ $int_j != $int_i ]]; then
+                    arr_PCI_Driver_tempList+=($arr_PCI_IOMMU_Driver_list_{$int_i})
+                    str_PCI_Driver_tempList+=$str_PCI_IOMMU_Driver_list_{$int_i}
+                    str_PCI_HW_ID_tempList+=$str_PCI_IOMMU_HW_ID_list_{$int_i}
+                fi
+                #
+
+            done
+            #
+
+            if [[ ! -z $str_VGA_IOMMU_DeviceName_{$int_i} ]]; then
+
+                str_thisVGA_IOMMU_DeviceName=$str_VGA_IOMMU_DeviceName_{$int_i}     # save current VGA device name
 
                 # remove last separator #
-                if [[ ${str_PCI_Driver_list: -1} == "," ]]; then
-                str_PCI_Driver_list=${str_PCI_Driver_list::-1}
+                if [[ ${str_PCI_Driver_tempList: -1} == "," ]]; then
+                    str_PCI_Driver_tempList=${str_PCI_Driver_tempList::-1}
                 fi
 
-                if [[ ${str_PCI_HW_ID_list: -1} == "," ]]; then
-                    str_PCI_HW_ID_list=${str_PCI_HW_ID_list::-1}
+                if [[ ${str_PCI_HW_ID_tempList: -1} == "," ]]; then
+                    str_PCI_HW_ID_tempList=${str_PCI_HW_ID_tempList::-1}
                 fi
                 #
 
                 # GRUB command line #
-                str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_PCI_Driver_list vfio_pci.ids=$str_PCI_HW_ID_list"
+                str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_PCI_Driver_tempList vfio_pci.ids=$str_PCI_HW_ID_tempList"
                 #
 
                 ### setup Boot menu entry ###           # TODO: fix automated menu entry setup!
@@ -571,15 +602,10 @@ function MultiBootSetup {
 
                     # set Kernel #
                     str_rootKernel=${str_rootKernel:1:100}          # arbitrary length
-                    #echo "str_rootKernel == '$str_rootKernel'"
                     #
 
                     # GRUB Menu Title #
-                    str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel"
-                
-                    if [[ ! -z $str_thisVGA_Device ]]; then
-                        str_GRUBMenuTitle+=" (Xorg: $str_thisVGA_Device)'"
-                    fi
+                    str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel (Xorg: $str_thisVGA_IOMMU_DeviceName)'"
                     #
 
                     # MANUAL setup Boot menu entry #        # NOTE: temporary
@@ -592,15 +618,15 @@ function MultiBootSetup {
     load_video
     insmod gzio
     if [ x\$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
-	insmod part_gpt
-	insmod ext2
+    insmod part_gpt
+    insmod ext2
     set root='hd2,gpt4'
     set root='/dev/disk/by-uuid/$str_rootUUID'
     if [ x$feature_platform_search_hint = xy ]; then
-	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  $str_rootUUID
-	else
-	  search --no-floppy --fs-uuid --set=root $str_rootUUID
-	fi
+      search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  $str_rootUUID
+    else
+      search --no-floppy --fs-uuid --set=root $str_rootUUID
+    fi
     echo    'Loading Linux $str_rootKernel ...'
     linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE
     echo    'Loading initial ramdisk ...'
@@ -621,11 +647,11 @@ function MultiBootSetup {
                     #echo -e >> $str_file1 
                     #
 
-                fi
-                #
+                    # NOTE: manual GRUB menu entry
+                    echo -e "$0: GRUB menu entry:\n\t$str_GRUBMenuTitle\n\t$str_GRUB_CMDLINE"
 
             done
-            ##
+            #
 
         done
         #
@@ -782,7 +808,7 @@ function StaticSetup {
                 str_thisPCI_Bus_ID=${arr_PCI_Bus_ID[$int_j]}
                 
                 # find Device Class ID, truncate first index if equal to zero (to convert to integer)
-                if [[ "${str_thisPCI_Bus_ID:0:1}" == "0" ]] then              
+                if [[ "${str_thisPCI_Bus_ID:0:1}" == "0" ]]; then              
                     declare -i int_thisPCI_DevClass_ID=${str_thisPCI_Bus_ID:1:1}
                 else    
                     declare -i int_thisPCI_DevClass_ID=${str_thisPCI_Bus_ID:0:2}
@@ -827,7 +853,7 @@ function StaticSetup {
             done
             ##
 
-            if [[ $bool_hasExternalPCI == false ]] then
+            if [[ $bool_hasExternalPCI == false ]]; then
                 echo -e "$0: No external PCI devices found in IOMMU group ID #$int_i . Skipping..."
             fi
 
