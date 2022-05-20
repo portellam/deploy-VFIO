@@ -348,6 +348,11 @@ function HugePages {
 ##### MultiBootSetup #####
 function MultiBootSetup {
 
+    ## NOTE:
+    ##  i want to make the function parse all devices, and a given IOMMU group.
+    ##  ask user to either passthrough (add to list) or not (subtract from list/create a given boot menu entry)
+    ##
+
     # match existing VFIO setup install, suggest uninstall or exit #
     while [[ $bool_isVFIOsetup== false ]]; do
 
@@ -411,18 +416,20 @@ function MultiBootSetup {
                 else    
                     declare -i int_thisPCI_DevClass_ID=${str_thisPCI_Bus_ID:0:2}
                 fi
-                
+                #
+
                 # is device external PCI and NOT onboard PCI #
                 # match greater/equal to Device Class ID #1
                 if [[ $int_thisPCI_DevClass_ID -ge 1 ]]; then
                     bool_hasExternalPCI=true            # list contains external PCI
                 fi
+                #
 
-
-                # match given IOMMU ID at given index
+                # match given IOMMU ID at given index #
                 if [[ "${arr_PCI_IOMMU_ID[$int_j]}" == "$int_i" ]]; then
                     arr_PCI_index_list+=("$int_j")      # add new index to list
                 fi
+                #
 
             done
             #
@@ -432,6 +439,29 @@ function MultiBootSetup {
 
             # parse list of PCI devices in given IOMMU group #
             for int_PCI_index in $arr_PCI_index_list; do
+
+                str_thisPCI_Bus_ID=${arr_PCI_Bus_ID[$int_j]}
+                
+                # find Device Class ID, truncate first index if equal to zero (to convert to integer)
+                if [[ "${str_thisPCI_Bus_ID:0:1}" == "0" ]] then              
+                    str_thisPCI_Bus_ID=${str_thisPCI_Bus_ID:1:1}
+                else    
+                    str_thisPCI_Bus_ID=${str_thisPCI_Bus_ID:0:2}
+                fi
+                #
+                
+                # is device external PCI and NOT onboard PCI #
+                # match greater/equal to Device Class ID #1
+                if [[ $str_thisPCI_Bus_ID -ge 1 ]]; then
+                    bool_hasExternalPCI=true               # list contains external PCI
+                fi
+                #
+
+                # is device external and is VGA #
+                if [[ $str_thisPCI_Bus_ID -ge 1 && ${arr_PCI_Type[$int_PCI_index]} == *"VGA"* ]]; then
+                    bool_hasExternalVGA=true               # list contains external VGA
+                fi
+                #
 
                 # add to lists #
                 arr_PCI_Driver_templist+=("${arr_PCI_Driver[$int_PCI_index]}")
@@ -451,19 +481,29 @@ function MultiBootSetup {
             done
             ##
 
-            if [[ $bool_hasExternalPCI == false ]] then
-                echo -e "$0: No external PCI devices found in IOMMU group ID #$int_i . Skipping..."
-            fi
-
-            # prompt #
+            ## prompt ##
             str_input1=""               # reset input
             declare -i int_count=0      # reset counter
 
-            while [[ $str_input1 != "Y" && $str_input1 != "N" && $bool_hasExternalPCI == true ]]; do
+            # match if list does NOT contain external PCI #
+            if [[ $bool_hasExternalPCI == false && $bool_hasExternalVGA == false ]] then
+                echo -e "$0: No external PCI devices found in IOMMU group ID #$int_i ."
+                str_input1="N"
+            fi
+            #
+            
+            # match if list does not contain VGA #
+            if [[ $bool_hasExternalVGA == false ]] then
+                echo -e "$0: No external VGA devices found in IOMMU group ID #$int_i ."
+                str_input1="N"
+            fi
+            #
+
+            while [[ $str_input1 != "Y" && $str_input1 != "N" ]]; do
 
                 if [[ $int_count -ge 3 ]]; then
                     echo "$0: Exceeded max attempts."
-                    str_input2="N"                      # default selection        
+                    str_input1="N"                      # default selection        
                 else
                     echo -en "$0: Do you wish to pass-through IOMMU group ID #$int_i ? [ Y/n ]: "
                     read -r str_input1
@@ -504,47 +544,50 @@ function MultiBootSetup {
             done
             #   
 
-            # remove last separator #
-            if [[ ${str_PCI_Driver_list: -1} == "," ]]; then
-            str_PCI_Driver_list=${str_PCI_Driver_list::-1}
-            fi
+            # match YES #
+            if [[ $str_input1 == "Y" ]] then;
 
-            if [[ ${str_PCI_HW_ID_list: -1} == "," ]]; then
-                str_PCI_HW_ID_list=${str_PCI_HW_ID_list::-1}
-            fi
-            #
+                # remove last separator #
+                if [[ ${str_PCI_Driver_list: -1} == "," ]]; then
+                str_PCI_Driver_list=${str_PCI_Driver_list::-1}
+                fi
 
-            # GRUB command line #
-            str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_PCI_Driver_list vfio_pci.ids=$str_PCI_HW_ID_list"
-            #
-
-            ### setup Boot menu entry ###           # TODO: fix automated menu entry setup!
-
-            # MANUAL setup Boot menu entry #        # NOTE: temporary
-            echo -e "$0: Execute GRUB Customizer, Clone an existing, valid menu entry, Copy the fields 'Title' and 'Entry' below, and Paste the following output into a new menu entry, where appropriate.\n$0: DISCLAIMER: Automated GRUB menu entry feature not available yet."
-
-            # parse Kernels #
-            for str_rootKernel in ${arr_rootKernel[@]}; do
-
-                # set Kernel #
-                str_rootKernel=${str_rootKernel:1:100}          # arbitrary length
-                #echo "str_rootKernel == '$str_rootKernel'"
-                #
-
-                # GRUB Menu Title #
-                str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel"
-                
-                if [[ ! -z $str_thisVGA_Device ]]; then
-                    str_GRUBMenuTitle+=" (Xorg: $str_thisVGA_Device)'"
+                if [[ ${str_PCI_HW_ID_list: -1} == "," ]]; then
+                    str_PCI_HW_ID_list=${str_PCI_HW_ID_list::-1}
                 fi
                 #
 
-                # MANUAL setup Boot menu entry #        # NOTE: temporary
-                echo -e "\n\tTitle: '$str_GRUBMenuTitle'\n\tEntry: '$str_GRUB_CMDLINE'\n"
+                # GRUB command line #
+                str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_PCI_Driver_list vfio_pci.ids=$str_PCI_HW_ID_list"
                 #
 
-                # GRUB custom menu #
-                declare -a arr_file_customGRUB=(
+                ### setup Boot menu entry ###           # TODO: fix automated menu entry setup!
+
+                # MANUAL setup Boot menu entry #        # NOTE: temporary
+                echo -e "$0: Execute GRUB Customizer, Clone an existing, valid menu entry, Copy the fields 'Title' and 'Entry' below, and Paste the following output into a new menu entry, where appropriate.\n$0: DISCLAIMER: Automated GRUB menu entry feature not available yet."
+
+                # parse Kernels #
+                for str_rootKernel in ${arr_rootKernel[@]}; do
+
+                    # set Kernel #
+                    str_rootKernel=${str_rootKernel:1:100}          # arbitrary length
+                    #echo "str_rootKernel == '$str_rootKernel'"
+                    #
+
+                    # GRUB Menu Title #
+                    str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel"
+                
+                    if [[ ! -z $str_thisVGA_Device ]]; then
+                        str_GRUBMenuTitle+=" (Xorg: $str_thisVGA_Device)'"
+                    fi
+                    #
+
+                    # MANUAL setup Boot menu entry #        # NOTE: temporary
+                    echo -e "\n\tTitle: '$str_GRUBMenuTitle'\n\tEntry: '$str_GRUB_CMDLINE'\n"
+                    #
+
+                    # GRUB custom menu #
+                    declare -a arr_file_customGRUB=(
 "menuentry '$str_GRUBMenuTitle' {
     load_video
     insmod gzio
@@ -563,23 +606,26 @@ function MultiBootSetup {
     echo    'Loading initial ramdisk ...'
     initrd  /boot/initrd.img-$str_rootKernel
 
-    
+
 "
-                )
+                    )
 
-                # write to file
-                #echo -e >> $str_file1    
+                    # write to file
+                    #echo -e >> $str_file1    
 
-                #for str_line in ${arr_file_customGRUB[@]}; do
-                    #echo -e $str_line >> $str_file1            # TODO: fix GRUB menu entries!
-                    #echo -e $str_line
-                #done
+                    #for str_line in ${arr_file_customGRUB[@]}; do
+                        #echo -e $str_line >> $str_file1            # TODO: fix GRUB menu entries!
+                        #echo -e $str_line
+                    #done
                 
-                #echo -e >> $str_file1 
+                    #echo -e >> $str_file1 
+                    #
+
+                fi
                 #
 
             done
-            #
+            ##
 
         done
         #
@@ -793,7 +839,7 @@ function StaticSetup {
 
                 if [[ $int_count -ge 3 ]]; then
                     echo "$0: Exceeded max attempts."
-                    str_input2="N"                      # default selection        
+                    str_input1="N"                      # default selection        
                 else
                     echo -en "$0: Do you wish to pass-through IOMMU group ID #$int_i ? [ Y/n ]: "
                     read -r str_input1
