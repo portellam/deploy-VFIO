@@ -41,5 +41,6 @@ Automated VFIO passthrough setup. Setup dynamically (Multi-Boot) or statically.
 ## DISCLAIMER
 Use script at your own risk!
 
-Please refer and review community guide for any help. Script is not guaranteed to work with Laptop machines, host machines with less-than-favorable IOMMU groups, etc.
+Please refer and review community guides for any help. Script is not guaranteed to work with Laptop machines, host machines with less-than-favorable IOMMU groups, etc.
+
 Please review host machine's system specifications and resources.
