@@ -12,7 +12,7 @@ In terminal, execute:
         
 ## Auto-VFIO
 Automated VFIO passthrough setup. Setup dynamically (Multi-Boot) or statically.
-* Runs once at boot.
+* Run at first-time setup (of Linux host machine or setup
 * Recommended features:
     * Evdev (Event devices)
         * Virtual Keyboard-Mouse switch (best to have physical KVM and multiple PCI USB devices, better than nothing).
@@ -37,3 +37,9 @@ Automated VFIO passthrough setup. Setup dynamically (Multi-Boot) or statically.
     * Updates GRUB and INITRAMFS .
 * Automatic features:
     * Checks for existing VFIO setup, asks user to uninstall setup and restart machine to Continue.
+
+## DISCLAIMER
+Use script at your own risk!
+
+Please refer and review community guide for any help. Script is not guaranteed to work with Laptop machines, host machines with less-than-favorable IOMMU groups, etc.
+Please review host machine's system specifications and resources.
