@@ -378,12 +378,6 @@ function MultiBootSetup {
         echo -e "#!/bin/sh\nexec tail -n +3 \$0\n# This file provides an easy way to add custom menu entries. Simply type the\n# menu entries you want to add after this comment. Be careful not to change\n# the 'exec tail' line above." > $str_file1
         #
 
-        # lists #
-        declare -a arr_PCI_Driver_list
-        str_PCI_Driver_list=""
-        str_PCI_HW_ID_list=""
-        #
-
         # dependencies #
         declare -a arr_PCI_BusID
         declare -a arr_PCI_DeviceName
@@ -437,22 +431,17 @@ function MultiBootSetup {
                 fi
                 #
                 
-                # create temp lists for each IOMMU group #
+                # create temp lists for each IOMMU group with external VGA #
                 # match greater/equal to Device Class ID #1 (Bus ID '01:00.0')
-                if [[ $str_thisPCI_Bus_ID -ge 1 ]]; then
-                
+                if [[ $str_thisPCI_Bus_ID -ge 1 && ${arr_PCI_Type[$int_PCI_index]} == *"VGA"* ]]; then
+
+                    str_VGA_IOMMU_DeviceName_{$int_i}=${arr_PCI_DeviceName[$int_PCI_index]}
+
                     # add IOMMU group information to lists #
-                    arr_PCI_IOMMU_Driver_list_{$int_i}+=("${arr_PCI_Driver[$int_PCI_index]}")
-                    str_PCI_IOMMU_Driver_list_{$int_i}+="${arr_PCI_Driver[$int_PCI_index]},"
-                    str_PCI_IOMMU_HW_ID_list_{$int_i}+="${arr_PCI_HW_ID[$int_PCI_index]},"
+                    str_VGA_IOMMU_Driver_list_{$int_i}+="${arr_PCI_Driver[$int_PCI_index]},"
+                    str_VGA_IOMMU_HW_ID_list_{$int_i}+="${arr_PCI_HW_ID[$int_PCI_index]},"
                     #
 
-                fi
-                #
-
-                # is device external and is VGA #
-                if [[ $str_thisPCI_Bus_ID -ge 1 && ${arr_PCI_Type[$int_PCI_index]} == *"VGA"* ]]; then   
-                    str_VGA_IOMMU_DeviceName_{$int_i}=${arr_PCI_DeviceName[$int_PCI_index]}
                 fi
                 #
 
@@ -466,9 +455,8 @@ function MultiBootSetup {
         for (( int_i=0; int_i<=$int_PCI_IOMMU_ID_last; int_i++ )); do
 
             # reset temp list of IOMMU groups #
-            declare -a arr_PCI_Driver_tempList
-            str_PCI_Driver_tempList=""
-            str_PCI_HW_ID_tempList=""
+            str_VGA_IOMMU_Driver_tempList=""
+            str_VGA_IOMMU_HW_ID_tempList=""
             #
 
             # parse list of IOMMU groups, in order of IOMMU ID #
@@ -476,9 +464,8 @@ function MultiBootSetup {
 
                 # match false current index, add non-VFIO passthrough IOMMU groups to temp lists #
                 if [[ $int_j != $int_i ]]; then
-                    arr_PCI_Driver_tempList+=($arr_PCI_IOMMU_Driver_list_{$int_i})
-                    str_PCI_Driver_tempList+=$str_PCI_IOMMU_Driver_list_{$int_i}
-                    str_PCI_HW_ID_tempList+=$str_PCI_IOMMU_HW_ID_list_{$int_i}
+                    str_VGA_IOMMU_Driver_tempList+=$str_VGA_IOMMU_Driver_list_{$int_i}
+                    str_VGA_IOMMU_HW_ID_tempList+=$str_VGA_IOMMU_HW_ID_list_{$int_i}
                 fi
                 #
 
@@ -490,17 +477,17 @@ function MultiBootSetup {
                 str_thisVGA_IOMMU_DeviceName=$str_VGA_IOMMU_DeviceName_{$int_i}     # save current VGA device name
 
                 # remove last separator #
-                if [[ ${str_PCI_Driver_tempList: -1} == "," ]]; then
-                    str_PCI_Driver_tempList=${str_PCI_Driver_tempList::-1}
+                if [[ ${str_VGA_IOMMU_Driver_tempList: -1} == "," ]]; then
+                    str_VGA_IOMMU_Driver_tempList=${str_VGA_IOMMU_Driver_tempList::-1}
                 fi
 
-                if [[ ${str_PCI_HW_ID_tempList: -1} == "," ]]; then
-                    str_PCI_HW_ID_tempList=${str_PCI_HW_ID_tempList::-1}
+                if [[ ${str_VGA_IOMMU_HW_ID_tempList: -1} == "," ]]; then
+                    str_VGA_IOMMU_HW_ID_tempList=${str_VGA_IOMMU_HW_ID_tempList::-1}
                 fi
                 #
 
                 # GRUB command line #
-                str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_PCI_Driver_tempList vfio_pci.ids=$str_PCI_HW_ID_tempList"
+                str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_VGA_IOMMU_Driver_tempList vfio_pci.ids=$str_VGA_IOMMU_HW_ID_tempList"
                 #
 
                 ### setup Boot menu entry ###           # TODO: fix automated menu entry setup!
