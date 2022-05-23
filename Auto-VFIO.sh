@@ -23,11 +23,10 @@ function Prompts {
     Evdev                                   # 1
     HugePages $str_GRUB_CMDLINE_Hugepages   # 2
     ZRAM                                    # 3
-    ParsePCI $bool_VFIO_Setup
+    #ParsePCI $bool_isVFIOsetup
     #
 
     # prompt #
-    str_input1=""               # reset input
     declare -i int_count=0      # reset counter
 
     str_prompt="$0: Setup VFIO by 'Multi-Boot' or Statically?\n\tMulti-Boot Setup includes adding GRUB boot options, each with one specific omitted VGA device.\n\tStatic Setup modifies '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*.\n\tMulti-boot is the more flexible choice."
@@ -41,10 +40,10 @@ function Prompts {
         if [[ $int_count -ge 3 ]]; then
             echo "$0: Exceeded max attempts."
             str_input1="N"                   # default selection
-            break
         else
             echo -en "$0: Setup VFIO? [ (M)ulti-Boot / (S)tatic / (N)one ]: "
-            read -r str_input1
+            #read -r str_input1
+            str_input1="M"
             str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
         fi
 
@@ -53,9 +52,9 @@ function Prompts {
             "M")
                 echo -e "$0: Continuing with Multi-Boot setup...\n"
 
-                MultiBootSetup $bool_isVFIOsetup$str_GRUB_CMDLINE_Hugepages $arr_PCI_BusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID
+                MultiBootSetup $bool_isVFIOsetup $str_GRUB_CMDLINE_Hugepages
 
-                StaticSetup $bool_isVFIOsetup$str_GRUB_CMDLINE_Hugepages $arr_PCI_BusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID
+                StaticSetup $bool_isVFIOsetup $str_GRUB_CMDLINE_Hugepages
 
                 #sudo update-grub                    # update GRUB
                 #sudo update-initramfs -u -k all     # update INITRAMFS
@@ -66,7 +65,7 @@ function Prompts {
             "S")
                 echo -e "$0: Continuing with Static setup...\n"
 
-                StaticSetup $bool_isVFIOsetup$str_GRUB_CMDLINE_Hugepages $arr_PCI_BusID $arr_PCIHWID $arr_PCIDriver $arr_PCIIndex $arr_PCIInfo $arr_VGABusID $arr_VGADriver $arr_VGAHWID
+                StaticSetup $bool_isVFIOsetup $str_GRUB_CMDLINE_Hugepages
 
                 #sudo update-grub                    # update GRUB
                 #sudo update-initramfs -u -k all     # update INITRAMFS
@@ -75,8 +74,8 @@ function Prompts {
                 break;;
 
             "N")
-                echo -e "$0: Skipping...\n";;
-                exit 0
+                echo -e "$0: Skipping...\n"
+                exit 0;;
 
             *)
                 echo "$0: Invalid input.";;
@@ -98,27 +97,27 @@ function Evdev {
     #
 
     # prompt #
-    str_input1=""               # reset input
     declare -i int_count=0      # reset counter
     
-    str_prompt="$0: Evdev (Event Devices) is a method that assigns input devices to a Virtual KVM (Keyboard-Video-Mouse) switch.\n\tEvdev is recommended for setups without an external KVM switch and multiple USB controllers.\n\tNOTE: View '/etc/libvirt/qemu.conf' to review changes, and append to a Virtual machine's configuration file."
+    str_prompt="$0: Evdev (Event Devices) is a method that assigns input devices to a Virtual KVM (Keyboard-Video-Mouse) switch.\n\tEvdev is recommended for setups without an external KVM switch and passed-through USB controller(s).\n\tNOTE: View '/etc/libvirt/qemu.conf' to review changes, and append to a Virtual machine's configuration file."
 
     echo -e $str_prompt
 
-    while [[ $str_input1 != "Y" && $str_input1 != "Z" && $str_input1 != "N" ]]; do
+    while true; do
 
         if [[ $int_count -ge 3 ]]; then
             echo "$0: Exceeded max attempts."
             str_input1="N"                   # default selection
         else
             echo -en "$0: Setup Evdev? [ Y/n ]: "
-            read -r str_input1
+            #read -r str_input1
+                    str_input1="n"
             str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
         fi
 
         case $str_input1 in
 
-            "Y"|"E")
+            "Y")
                 #echo -e "$0: Continuing...\n"
                 break;;
 
@@ -216,27 +215,27 @@ function HugePages {
     #
 
     # prompt #
-    str_input1=""               # reset input
     declare -i int_count=0      # reset counter
 
     str_prompt="$0: HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, the less memory latency.\n"
 
     echo -e $str_prompt
 
-    while [[ $str_input1 != "Y" && $str_input1 != "N" ]]; do
+    while true; do
 
         if [[ $int_count -ge 3 ]]; then
             echo "$0: Exceeded max attempts."
             str_input1="N"                   # default selection
         else
             echo -en "$0: Setup HugePages? [Y/n]: "
-            read -r str_input1
+            #read -r str_input1
+                    str_input1="n"
             str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
         fi
 
         case $str_input1 in
 
-            "Y"|"H")
+            "Y")
                 #echo -e "$0: Continuing...\n"
                 break;;
 
@@ -356,7 +355,7 @@ function MultiBootSetup {
     ## and move y/n question to StaticSetup
 
     # match existing VFIO setup install, suggest uninstall or exit #
-    while [[ $bool_isVFIOsetup== false ]]; do
+    while [[ $bool_isVFIOsetup == false ]]; do
 
         ## parameters ##
         str_Distribution=`lsb_release -i`   # Linux distro name
@@ -387,6 +386,7 @@ function MultiBootSetup {
         declare -a arr_PCI_Type
         declare -a arr_PCI_VendorName
         declare -i int_PCI_IOMMU_ID_last
+        str_test1=""
         #
         ##
 
@@ -395,20 +395,33 @@ function MultiBootSetup {
         #
         
         # list IOMMU groups #
-        echo -e "$0: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.\n\tDevices that share IOMMU groups must be passed-through as whole or none at all.\n\tNOTE 1: Evaluate order of PCI slots to have PCI devices in individual IOMMU groups.\n\tNOTE 2: It is possible to divide IOMMU groups, but the action creates an attack vector (breaches hypervisor layer) and is not recommended (for security reasons).\n\tNOTE 3: Some onboard PCI devices may NOT share IOMMU groups. Example: a USB controller.\n$0:Review the output below before choosing which IOMMU groups (groups of PCI devices) to pass-through or not."
+        echo -e "$0: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.\n\tDevices that share IOMMU groups must be passed-through as whole or none at all.\n\tNOTE 1: Evaluate order of PCI slots to have PCI devices in individual IOMMU groups.\n\tNOTE 2: It is possible to divide IOMMU groups, but the action creates an attack vector (breaches hypervisor layer) and is not recommended (for security reasons).\n\tNOTE 3: Some onboard PCI devices may NOT share IOMMU groups. Example: a USB controller.\n$0: Review the output below before choosing which IOMMU groups (groups of PCI devices) to pass-through or not."
 
         # parse list of PCI devices, in order of IOMMU ID #
-        for (( int_i=0; int_i<=$int_PCI_IOMMU_ID_last; int_i++ )); do
+        declare -i int_i=0
+        declare -a arr_PCI_index_list
+        echo
+        echo -e "$0: {#arr_PCI_IOMMU_ID[@]} == '${#arr_PCI_IOMMU_ID[@]}'"
+
+        while [[ $int_i -le $int_PCI_IOMMU_ID_last ]]; do
+
+            echo -e "$0: int_i == '$int_i'"
 
             # create list #
-            if [[ -z $arr_PCI_index_list ]]; then
+            if [[ ${#arr_PCI_index_list[@]} -eq 0 ]]; then
+
+                echo -e "$0: {#arr_PCI_index_list[@]} == '${#arr_PCI_index_list[@]}'"
+                echo -e "$0: {#arr_PCI_IOMMU_ID[@]} == '${#arr_PCI_IOMMU_ID[@]}'"
         
                 # parse list of IOMMU IDs (in no order) #
                 for (( int_j=0; int_j<${#arr_PCI_IOMMU_ID[@]}; int_j++ )); do
 
+                    echo -e "$0: int_j == '$int_j'"
+                    echo -e "$0: {arr_PCI_IOMMU_ID[$int_j]} == '${arr_PCI_IOMMU_ID[$int_j]}'"
+
                     # match given IOMMU ID at given index #
                     if [[ "${arr_PCI_IOMMU_ID[$int_j]}" == "$int_i" ]]; then
-                    arr_PCI_index_list+=("$int_j")      # add new index to list
+                        arr_PCI_index_list+=("$int_j")      # add new index to list
                     fi
                     #
 
@@ -422,6 +435,7 @@ function MultiBootSetup {
             for int_PCI_index in $arr_PCI_index_list; do
 
                 str_thisPCI_Bus_ID=${arr_PCI_Bus_ID[$int_j]}
+                echo -e "$0: str_thisPCI_Bus_ID == '$str_thisPCI_Bus_ID'"
                 
                 # find Device Class ID, truncate first index if equal to zero (to convert to integer)
                 if [[ "${str_thisPCI_Bus_ID:0:1}" == "0" ]]; then              
@@ -448,11 +462,14 @@ function MultiBootSetup {
             done
             ##
 
+            ((int_i++))
+
         done
         #
 
         # parse list of IOMMU groups, in order of IOMMU ID #
-        for (( int_i=0; int_i<=$int_PCI_IOMMU_ID_last; int_i++ )); do
+        declare -i int_i=0
+        while [[ $int_i -le $int_PCI_IOMMU_ID_last ]]; do
 
             # reset temp list of IOMMU groups #
             str_VGA_IOMMU_Driver_tempList=""
@@ -460,7 +477,8 @@ function MultiBootSetup {
             #
 
             # parse list of IOMMU groups, in order of IOMMU ID #
-            for (( int_j=0; int_j<=$int_PCI_IOMMU_ID_last; int_j++ )); do
+            declare -i int_j=0
+            while [[ $int_j -le $int_PCI_IOMMU_ID_last ]]; do
 
                 # match false current index, add non-VFIO passthrough IOMMU groups to temp lists #
                 if [[ $int_j != $int_i ]]; then
@@ -468,6 +486,8 @@ function MultiBootSetup {
                     str_VGA_IOMMU_HW_ID_tempList+=$str_VGA_IOMMU_HW_ID_list_{$int_i}
                 fi
                 #
+
+                ((int_j++))
 
             done
             #
@@ -516,15 +536,15 @@ function MultiBootSetup {
     load_video
     insmod gzio
     if [ x\$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
-    insmod part_gpt
-    insmod ext2
+	insmod part_gpt
+	insmod ext2
     set root='hd2,gpt4'
     set root='/dev/disk/by-uuid/$str_rootUUID'
     if [ x$feature_platform_search_hint = xy ]; then
-      search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  $str_rootUUID
-    else
-      search --no-floppy --fs-uuid --set=root $str_rootUUID
-    fi
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  $str_rootUUID
+	else
+	  search --no-floppy --fs-uuid --set=root $str_rootUUID
+	fi
     echo    'Loading Linux $str_rootKernel ...'
     linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE
     echo    'Loading initial ramdisk ...'
@@ -548,16 +568,22 @@ function MultiBootSetup {
                     # NOTE: manual GRUB menu entry
                     echo -e "$0: GRUB menu entry:\n\t$str_GRUBMenuTitle\n\t$str_GRUB_CMDLINE"
 
-            done
+                done
+                #
+
+            fi
             #
+
+            ((int_i++))
 
         done
         #
 
+        exit 0
+        break
+
     done
     #
-
-    #sudo update-grub       # TODO: reenable when automated setup is fixed!
 
 }
 ##### end MultiBootSetup #####
@@ -566,16 +592,14 @@ function MultiBootSetup {
 function ParsePCI {
 
     # match existing VFIO setup install, suggest uninstall or exit #
-    while [[ $bool_isVFIOsetup== false ]]; do
+    while [[ $bool_isVFIOsetup == false ]]; do
  
         ### parameters ###
-        declare -i int_PCI_IOMMU_ID_last=${arr_PCI_IOMMU_ID[0]}       # greatest index of list
-
         ## same-size parsed lists ##                                  # NOTE: all parsed lists should be same size/length, for easy recall
         declare -a arr_PCI_BusID=(`lspci -m | cut -d '"' -f 1`)       # ex '01:00.0'
         declare -a arr_PCI_DeviceName=(`lspci -m | cut -d '"' -f 6`)  # ex 'GP104 [GeForce GTX 1070]''
         declare -a arr_PCI_HW_ID=(`lspci -n | cut -d ' ' -f 3`)       # ex '10de:1b81'
-        declare -a arr_PCI_IOMMU_ID                                   # list of IOMMU IDs by order of Bus IDs
+        declare -a arr_PCI_IOMMU_ID -A                                # list of IOMMU IDs by order of Bus IDs
         declare -a arr_PCI_Type=(`lspci -m | cut -d '"' -f 2`)        # ex 'VGA compatible controller'
         declare -a arr_PCI_VendorName=(`lspci -m | cut -d '"' -f 4`)  # ex 'NVIDIA Corporation'
 
@@ -588,22 +612,34 @@ function ParsePCI {
         declare -a arr_lspci_k=(`lspci -k | grep -Eiv 'DeviceName|Subsystem|modules'`)
         declare -a arr_compgen_G=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*"`)
         #
+
+        declare -i int_PCI_IOMMU_ID_last=0       # greatest index of list
         ###
 
-        ## parse output of IOMMU IDs##
+        ## reformat input ##
         # parse list of Bus IDs
         for (( int_i=0; int_i<${#arr_PCI_BusID[@]}; int_i++ )); do
 
             # reformat element
             arr_PCI_BusID[$int_i]=${arr_PCI_BusID[$int_i]::-1}
 
+        done
+        ##
+
+        ## parse output of IOMMU IDs ##
+        # parse list of Bus IDs
+        for (( int_i=0; int_i<${#arr_PCI_BusID[@]}; int_i++ )); do
+
             # parse list of output (Bus IDs and IOMMU IDs) #
             for (( int_j=0; int_j<${#arr_compgen_G[@]}; int_j++ )); do
 
                 # match output with Bus ID #
                 if [[ ${arr_compgen_G[$int_j]} == *"${arr_PCI_BusID[$int_i]}"* ]]; then
+
                     arr_PCI_IOMMU_ID[$int_i]=`echo ${arr_compgen_G[$int_j]} | cut -d '/' -f 5`      # save IOMMU ID at given index
-                    int_j=${#arr_compgen_G}                                                         # break loop
+
+                    int_j=${#arr_compgen_G[@]}                                                         # break loop
+
                 fi
                 #
 
@@ -623,14 +659,14 @@ function ParsePCI {
 
             # driver is NOT null and Bus ID is null #
             if [[ -z $str_PCI_BusID && ! -z $str_PCI_Driver && $str_PCI_Driver != 'vfio-pci' ]]; then
-                arr_PCI_Driver+=("$str_PCI_Driver")                             # add to list 
+                arr_PCI_Driver+=("$str_PCI_Driver")                             # add to list
             fi
             #
 
             # stop setup # 
             if [[ $str_PCI_Driver == 'vfio-pci' ]]; then
                 #arr_PCI_Driver+=("")
-                bool_VFIO_Setup=true
+                bool_isVFIOsetup=true
             fi
             #
 
@@ -648,6 +684,8 @@ function ParsePCI {
 
         done
         ##
+
+        break
 
     done
     #
@@ -667,6 +705,8 @@ function StaticSetup {
     while [[ $bool_isVFIOsetup == false ]]; do
 
         ## parameters ##
+        str_test1="CANARY"
+
         declare -a arr_PCI_Driver_list
         declare -a arr_PCI_Driver_templist
 
@@ -756,10 +796,9 @@ function StaticSetup {
             fi
 
             # prompt #
-            str_input1=""               # reset input
             declare -i int_count=0      # reset counter
 
-            while [[ $str_input1 != "Y" && $str_input1 != "N" && $bool_hasExternalPCI == true ]]; do
+            while [[ $bool_hasExternalPCI == true ]]; do
 
                 if [[ $int_count -ge 3 ]]; then
                     echo "$0: Exceeded max attempts."
@@ -953,7 +992,7 @@ function StaticSetup_new {
     ## if MultiBootSetup ran, save each index of IOMMU group to not passthrough and avoid.
 
     # match existing VFIO setup install, suggest uninstall or exit #
-    while [[ $bool_isVFIOsetup== false ]]; do
+    while [[ $bool_isVFIOsetup == false ]]; do
 
         
         ## parameters ##
@@ -1030,7 +1069,6 @@ function StaticSetup_new {
                 if [[ $str_thisPCI_Bus_ID -ge 1 ]]; then
                 
                     # add IOMMU group information to lists #
-                    arr_PCI_IOMMU_Driver_list_{$int_i}+=("${arr_PCI_Driver[$int_PCI_index]}")
                     str_PCI_IOMMU_Driver_list_{$int_i}+="${arr_PCI_Driver[$int_PCI_index]},"
                     str_PCI_IOMMU_HW_ID_list_{$int_i}+="${arr_PCI_HW_ID[$int_PCI_index]},"
                     #
@@ -1057,7 +1095,6 @@ function StaticSetup_new {
             ##
 
             ## prompt ##
-            str_input1=""               # reset input
             declare -i int_count=0      # reset counter
 
             # match if list does not contain VGA #
@@ -1084,7 +1121,7 @@ function StaticSetup_new {
             fi
             # 
 
-            while [[ $str_input1 != "Y" && $str_input1 != "N" ]]; do
+            while true; do
 
                 if [[ $int_count -ge 3 ]]; then
                     echo "$0: Exceeded max attempts."
@@ -1265,7 +1302,7 @@ options vfio_pci ids=$str_PCI_HW_ID_list")
 ##### UninstallMultiBootSetup #####
 function UninstallMultiBootSetup {
 
-
+    echo "CANARY"
 
 }
 ##### end UninstallMultiBootSetup #####
@@ -1293,8 +1330,6 @@ function UninstallStaticSetup {
 # raid1
 # sd_mod
 #
-# NOTE: GRUB command line is an easier and cleaner method if vfio-pci grabs all hardware.
-# Example: Reboot hypervisor (Linux) to swap host graphics (Intel, AMD, NVIDIA) by use-case (AMD for Win XP, NVIDIA for Win 10).
 # NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
 
 # Soft dependencies and PCI kernel drivers:
@@ -1306,10 +1341,13 @@ function UninstallStaticSetup {
 #vfio_iommu_type1
 #vfio_virqfd
 
+# In terminal, execute \"lspci -m\".
+
 # GRUB command line and PCI hardware IDs:
 #options vfio_pci ids=
 #vfio_pci ids=
 #vfio_pci"
+)
 
     declare -a arr_file3=(
 "# /etc/modules: kernel modules to load at boot time.
@@ -1317,8 +1355,6 @@ function UninstallStaticSetup {
 # This file contains the names of kernel modules that should be loaded
 # at boot time, one per line. Lines beginning with \"#\" are ignored.
 #
-# NOTE: GRUB command line is an easier and cleaner method if vfio-pci grabs all hardware.
-# Example: Reboot hypervisor (Linux) to swap host graphics (Intel, AMD, NVIDIA) by use-case (AMD for Win XP, NVIDIA for Win 10).
 # NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
 #
 #vfio
@@ -1329,7 +1365,7 @@ kvm
 #kvm_intel
 #apm power_off=1
 
-# In terminal, execute \"lspci -nnk\".
+# In terminal, execute \"lspci -m\".
 
 # GRUB kernel parameters:
 #vfio_pci ids="
@@ -1348,23 +1384,28 @@ kvm
 
 
     ## restore backups of files ##
-    if [[ ! -z $str_file1"_old" ]]
-        then cp $str_file1"_old" $str_file1
-    else echo -e "$0: WARNING: No backup found for '$str_file1'. Undo changes manually for file."; fi
+    if [[ ! -z $str_file1"_old" ]]; then
+        cp $str_file1"_old" $str_file1
+    else echo -e "$0: WARNING: No backup found for '$str_file1'. Undo changes manually for file."
+    fi
 
-    if [[ ! -z $str_file2"_old" ]]
-        then cp $str_file2"_old" $str_file2
-    else echo ${arr_file2[@]} > $str_file2; fi
+    if [[ ! -z $str_file2"_old" ]]; then
+        cp $str_file2"_old" $str_file2
+    else echo ${arr_file2[@]} > $str_file2
+    fi
 
-    if [[ ! -z $str_file3"_old" ]]
-        then cp $str_file3"_old" $str_file3
-    else echo ${arr_file3[@]} > $str_file3; fi
+    if [[ ! -z $str_file3"_old" ]]; then
+        cp $str_file3"_old" $str_file3
+    else echo ${arr_file3[@]} > $str_file3
+    fi
 
     if [[ ! -z $str_file4 ]]
-        then rm $str_file4; fi
+        then rm $str_file4
+    fi
     
     if [[ ! -z $str_file5 ]]
-        then echo ${arr_file5[@]} > $str_file5; fi
+        then echo ${arr_file5[@]} > $str_file5
+    fi
     ##
 
     sudo update-grub                    # update GRUB
@@ -1383,28 +1424,27 @@ function ZRAM {
     #
 
     # prompt #
-    str_input1=""               # reset input
     declare -i int_count=0      # reset counter
 
     str_prompt="$0: ZRAM allocates RAM as a compressed swapfile.\n\tThe default compression method \"lz4\", at a ratio of 2:1 to 5:2, offers the greatest performance."
 
     echo -e $str_prompt
-    str_input1=""
 
-    while [[ $str_input1 != "Y" && $str_input1 != "Z" && $str_input1 != "N" ]]; do
+    while true; do
 
         if [[ $int_count -ge 3 ]]; then
             echo "$0: Exceeded max attempts."
             str_input1="N"                   # default selection       
         else
             echo -en "$0: Setup ZRAM? [ Y/n ]: "
-            read -r str_input1
+            #read -r str_input1
+                    str_input1="n"
             str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
         fi
 
         case $str_input1 in
 
-            "Y"|"Z")
+            "Y")
                 #echo -e "$0: Continuing...\n"
                 break;;
 
@@ -1569,7 +1609,7 @@ fi
 #
 
 # a canary to check for previous VFIO setup installation #
-bool_VFIO_Setup=false
+bool_isVFIOsetup=false
 #
 
 # check if system supports IOMMU #
@@ -1586,7 +1626,7 @@ IFS=$'\n'      # Change IFS to newline char
 # call functions #
 while [[ $bool_isVFIOsetup == false ]]; do
 
-    Prompts $bool_VFIO_Setup
+    Prompts $bool_isVFIOsetup
     echo -e "$0: DISCLAIMER: Please review changes made.\n\tIf a given network (Ethernet, WLAN) or storage controller (NVME, SATA) is necessary for the Host machine, and the given device is passed-through, the Host machine will lose access to it."
 
 done
@@ -1597,7 +1637,7 @@ if [[ $bool_isVFIOsetup == true ]]; then
 
     echo -e "$0: WARNING: System is already setup with VFIO Passthrough.\n$0: To continue with a new VFIO setup:\n\tExecute the 'Uninstall VFIO setup,'\n\tReboot the system,\n\tExecute '$0'."
 
-    while [[ $bool_isVFIOsetup== true ]]; do
+    while [[ $bool_isVFIOsetup == true ]]; do
     
         if [[ $int_count -ge 3 ]]; then
             echo "$0: Exceeded max attempts."
@@ -1618,7 +1658,7 @@ if [[ $bool_isVFIOsetup == true ]]; then
 
             "N")
                 echo -e "$0: Skipping...\n"
-                exit 0
+                exit 0;;
 
             *)
                 echo "$0: Invalid input.";;
@@ -1627,10 +1667,8 @@ if [[ $bool_isVFIOsetup == true ]]; then
 
         ((int_count++))     # increment counter
 
-        done
-        #
-
     done
+    #
 
 fi
 #
