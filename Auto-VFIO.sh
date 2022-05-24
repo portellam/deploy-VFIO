@@ -357,6 +357,7 @@ function MultiBootSetup {
     ## OR
     ## auto parse IOMMU groups, add each groups drivers and HW IDs into separate 
     ## and move y/n question to StaticSetup
+    ## NOTE: this function is mess right now. I was able to figure out saving the IOMMU IDs and indexs of PCI devices...
 
     # match existing VFIO setup install, suggest uninstall or exit #
     while [[ $bool_isVFIOsetup == false ]]; do
@@ -422,6 +423,7 @@ function MultiBootSetup {
 
                 # match output with Bus ID #
                 if [[ ${arr_compgen_G[$int_j]} == *"${arr_PCI_BusID[$int_i]}"* ]]; then
+                    #echo "${arr_PCI_BusID[$int_i]}"
                     arr_PCI_IOMMU_ID[$int_i]=`echo ${arr_compgen_G[$int_j]} | cut -d '/' -f 5`      # save IOMMU ID at given index
                     int_j=${#arr_compgen_G[@]}                                                         # break loop
                 fi
@@ -489,69 +491,115 @@ function MultiBootSetup {
         # list IOMMU groups #
         echo -e "$0: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.\n\tDevices that share IOMMU groups must be passed-through as whole or none at all.\n\tNOTE 1: Evaluate order of PCI slots to have PCI devices in individual IOMMU groups.\n\tNOTE 2: It is possible to divide IOMMU groups, but the action creates an attack vector (breaches hypervisor layer) and is not recommended (for security reasons).\n\tNOTE 3: Some onboard PCI devices may NOT share IOMMU groups. Example: a USB controller.\n$0: Review the output below before choosing which IOMMU groups (groups of PCI devices) to pass-through or not."
 
-        # parse list of PCI devices, in order of IOMMU ID #
-        declare -i int_i=0
-        declare -a arr_PCI_index_list
+        # parse list of IOMMU IDs by order of PCI device #                                      # WORKS #
+        # save PCI device indexes by IOMMU group, order by contents of PCI type #
+        for (( int_i=0; int_i<${#arr_PCI_IOMMU_ID[@]}; int_i++ )); do
 
-        while [[ $int_i -le $int_PCI_IOMMU_ID_last ]]; do
-        
-            # parse list of IOMMU IDs (in no order) #
+            str_output1=""      # reset string
+
+            # parse list again #
             for (( int_j=0; int_j<${#arr_PCI_IOMMU_ID[@]}; int_j++ )); do
 
-                # match given IOMMU ID at given index #
-                if [[ "${arr_PCI_IOMMU_ID[$int_j]}" == "$int_i" ]]; then
-                    arr_PCI_index_list+=("$int_j")      # add new index to list
+                # match IOMMU ID and match false index, save output #
+                if [[ $int_j != $int_i && ${arr_PCI_IOMMU_ID[$int_j]} == ${arr_PCI_IOMMU_ID[$int_i]} ]]; then
+                    str_output1+="$int_j,"
                 fi
                 #
 
+                # match IOMMU ID and match index, save output #
+                if [[ $int_j == $int_i && ${arr_PCI_IOMMU_ID[$int_j]} == ${arr_PCI_IOMMU_ID[$int_i]} ]]; then
+                    str_output1+="$int_j"
+                fi
+                #
+                
             done
             #
 
-            # parse list of PCI devices in given IOMMU group #
-            for int_PCI_index in $arr_PCI_index_list; do
+            # match PCI type, match IOMMU ID and match false index, save list #
+            if [[ ${arr_PCI_Type[$int_i]} == *"VGA"* ]]; then
+                declare str_VGA_IOMMU_ID_"${arr_PCI_IOMMU_ID[$int_i]}"=$str_output1     # append to list
+            else
+                declare str_PCI_IOMMU_ID_"${arr_PCI_IOMMU_ID[$int_i]}"=$str_output1     # append to list
+            fi
+            #
 
-                str_thisPCI_BusID=${arr_PCI_BusID[$int_i]}
-                
-                # find Device Class ID, truncate first index if equal to zero (to convert to integer)
-                if [[ "${str_thisPCI_BusID:0:1}" == "0" ]]; then              
-                    str_thisPCI_BusID=${str_thisPCI_BusID:1:1}
-                else    
-                    str_thisPCI_BusID=${str_thisPCI_BusID:0:2}
-                fi
-                #
-                
-                # create temp lists for each IOMMU group with external VGA #
-                # match greater/equal to Device Class ID #1 (Bus ID '01:00.0')
-                if [[ $str_thisPCI_BusID -ge 1 && ${arr_PCI_Type[$int_PCI_index]} == *"VGA"* ]]; then
+            declare -i int_PCI_IOMMU_ID_last=${arr_PCI_IOMMU_ID[$int_i]}            # save last index
 
-                    arr_VGA_IOMMU_DeviceName+=("${arr_PCI_DeviceName[$int_PCI_index]}")
+        done
+        #
 
-                    # add IOMMU group information to lists #
-                    str_VGA_IOMMU_Driver_list_{$int_i}+="${arr_PCI_Driver[$int_PCI_index]},"
-                    str_VGA_IOMMU_HW_ID_list_{$int_i}+="${arr_PCI_HW_ID[$int_PCI_index]},"
+        #
+        declare -i int_i=0          # reset index
+        declare -i int_j=0          # reset index
+
+        # parse IOMMU groups #                                          # NEW: TEST!! #
+        while [[ $int_i -le $int_PCI_IOMMU_ID_last ]]; do
+
+            # match valid IOMMU group string, save given element as integer #
+            if [[ ! -z $str_PCI_IOMMU_ID_"${arr_PCI_IOMMU_ID[$int_i]}" ]]; then
+                declare -i int_PCI_index=`echo $str_PCI_IOMMU_ID_"${arr_PCI_IOMMU_ID[$int_i]}" | cut -d "," -f $int_j`   # save index of PCI device
+            fi
+            #
+
+            # match valid IOMMU group string, save given element as integer #
+            if [[ ! -z $str_VGA_IOMMU_ID_"${arr_PCI_IOMMU_ID[$int_i]}" ]]; then
+                declare -i int_PCI_index=`echo $str_VGA_IOMMU_ID_"${arr_PCI_IOMMU_ID[$int_i]}" | cut -d "," -f $int_j`   # save index of PCI device
+            fi
+            #
+
+            # match valid PCI/VGA device index #
+            if [[ ! -z $int_PCI_index ]]; then
+
+                # match false current index with main index, and if new index is valid #
+                if [[ $int_j != $int_i ]]; then
+
+                    # save output #
+                    str_output_Driver="${arr_PCI_Driver[$int_PCI_index]},"
+                    str_output_HW_ID="${arr_PCI_HW_ID[$int_PCI_index]},"
                     #
 
                 fi
                 #
 
-                # create temp lists for each IOMMU group with external VGA #
-                # match greater/equal to Device Class ID #1 (Bus ID '01:00.0')
-                if [[ ${arr_PCI_Type[$int_PCI_index]} != *"VGA"* ]]; then
-                    arr_VGA_IOMMU_DeviceName+=("")
+                # match current index with main index, and if new index is valid #
+                if [[ $int_j == $int_i ]]; then
+
+                    # save output #
+                    str_output_Driver="${arr_PCI_Driver[$int_PCI_index]}"
+                    str_output_HW_ID="${arr_PCI_HW_ID[$int_PCI_index]}"
+                    #
+
                 fi
                 #
 
-            done
-            ##
+                # match VGA device type, save as string #
+                if [[ ${arr_PCI_Type[$int_PCI_index]} == *"VGA"* ]]; then
+                    str_thisVGA_DeviceName="${arr_PCI_DeviceName[$int_PCI_index]}"
+                fi
+                #
 
-            ((int_i++))
+                ((int_j++))             # increment index
+
+            # match false, reset counters #
+            else
+
+                ### HERE, PUT FUNCTION CALL TO PROMPT. Y/N VFIO PASSTHROUGH. Y SAVE TO A MASTER LIST. N KEEP AS INDIVIDUALS #
+                declare -i int_j=0      # reset index
+                ((int_i++))             # increment index
+
+            fi
+            #
 
         done
         #
 
-        # parse list of IOMMU groups, in order of IOMMU ID #
+        exit 0
+
+        # parse list of IOMMU groups, in order of IOMMU ID #            # OLD, REDO!! #
         declare -i int_i=0
         while [[ $int_i -le $int_PCI_IOMMU_ID_last ]]; do
+
+            #echo -e "CANARY0"
 
             # reset temp list of IOMMU groups #
             str_VGA_IOMMU_Driver_tempList=""
@@ -561,6 +609,8 @@ function MultiBootSetup {
             # parse list of IOMMU groups, in order of IOMMU ID #
             declare -i int_j=0
             while [[ $int_j -le $int_PCI_IOMMU_ID_last ]]; do
+
+                #echo -e "CANARY1"
 
                 # match false current index, add non-VFIO passthrough IOMMU groups to temp lists #
                 if [[ $int_j != $int_i ]]; then
@@ -575,6 +625,9 @@ function MultiBootSetup {
             #
 
             if [[ ${arr_VGA_IOMMU_DeviceName[$int_i]} != "" ]]; then
+            #if true; then
+
+                echo -e "CANARY2"
 
                 str_thisVGA_IOMMU_DeviceName=${arr_VGA_IOMMU_DeviceName[$int_i]}     # save current VGA device name
                 echo -e "$0: str_thisVGA_IOMMU_DeviceName == '$str_thisVGA_IOMMU_DeviceName'"
