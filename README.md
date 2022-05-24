@@ -12,7 +12,7 @@ In terminal, execute:
         
 ## Auto-VFIO
 Automated VFIO passthrough setup. Setup dynamically (Multi-Boot) or statically.
-* Run at first-time setup (of Linux host machine or setup
+* Run at first-time setup (of Linux host machine) or new/re-do VFIO setup
 * Recommended features:
     * Evdev (Event devices)
         * Virtual Keyboard-Mouse switch (best to have physical KVM and multiple PCI USB devices, better than nothing).
