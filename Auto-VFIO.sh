@@ -14,7 +14,11 @@
 #   if VFIO setup already, suggest wipe of existing MultiBoot and/or StaticBoot
 #
 
-########## functions ##########
+# NOTES
+# 'declare -p' will print all initialized and hidden vars for bash
+#   review if any machine readable/specific info is available for script functions
+
+########## main ##########
 
 ##### Prompts #####
 function Prompts {
@@ -377,21 +381,109 @@ function MultiBootSetup {
         echo -e "#!/bin/sh\nexec tail -n +3 \$0\n# This file provides an easy way to add custom menu entries. Simply type the\n# menu entries you want to add after this comment. Be careful not to change\n# the 'exec tail' line above." > $str_file1
         #
 
+        ### parameters ###
+        ## same-size parsed lists ##                                  # NOTE: all parsed lists should be same size/length, for easy recall
+        declare -a arr_PCI_BusID=(`lspci -m | cut -d '"' -f 1`)       # ex '01:00.0'
+        declare -a arr_PCI_DeviceName=(`lspci -m | cut -d '"' -f 6`)  # ex 'GP104 [GeForce GTX 1070]''
+        declare -a arr_PCI_HW_ID=(`lspci -n | cut -d ' ' -f 3`)       # ex '10de:1b81'
+        declare -a arr_PCI_IOMMU_ID                                   # list of IOMMU IDs by order of Bus IDs
+        declare -a arr_PCI_Type=(`lspci -m | cut -d '"' -f 2`)        # ex 'VGA compatible controller'
+        declare -a arr_PCI_VendorName=(`lspci -m | cut -d '"' -f 4`)  # ex 'NVIDIA Corporation'
+
+        # add empty values to pad out and make it easier for parse/recall
+        declare -a arr_PCI_Driver                                     # ex 'nouveau' or 'nvidia'
+        #
+        ##
+
+        # unparsed lists #
+        declare -a arr_lspci_k=(`lspci -k | grep -Eiv 'DeviceName|Subsystem|modules'`)
+        declare -a arr_compgen_G=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*"`)
+        #
+
+        declare -i int_PCI_IOMMU_ID_last=0       # greatest index of list
+        ###
+
+        ## reformat input ##
+        # parse list of Bus IDs
+        for (( int_i=0; int_i<${#arr_PCI_BusID[@]}; int_i++ )); do
+
+            # reformat element
+            arr_PCI_BusID[$int_i]=${arr_PCI_BusID[$int_i]::-1}
+
+        done
+        ##
+
+        ## parse output of IOMMU IDs ##
+        # parse list of Bus IDs
+        for (( int_i=0; int_i<${#arr_PCI_BusID[@]}; int_i++ )); do
+
+            # parse list of output (Bus IDs and IOMMU IDs) #
+            for (( int_j=0; int_j<${#arr_compgen_G[@]}; int_j++ )); do
+
+                # match output with Bus ID #
+                if [[ ${arr_compgen_G[$int_j]} == *"${arr_PCI_BusID[$int_i]}"* ]]; then
+                    arr_PCI_IOMMU_ID[$int_i]=`echo ${arr_compgen_G[$int_j]} | cut -d '/' -f 5`      # save IOMMU ID at given index
+                    int_j=${#arr_compgen_G[@]}                                                         # break loop
+                fi
+                #
+
+            done
+            #
+
+        done
+        ##
+
+        ## parse output of drivers ##
+        # parse list of output (Bus IDs and drivers)
+        for (( int_i=0; int_i<${#arr_lspci_k[@]}; int_i++ )); do
+
+            str_line1=${arr_lspci_k[$int_i]}                                    # current line
+            str_PCI_BusID=`echo $str_line1 | grep -Eiv 'driver'`                # valid element
+            str_PCI_Driver=`echo $str_line1 | grep 'driver' | cut -d ' ' -f 5`  # valid element
+
+            # driver is NOT null and Bus ID is null #
+            if [[ -z $str_PCI_BusID && ! -z $str_PCI_Driver && $str_PCI_Driver != 'vfio-pci' ]]; then
+                arr_PCI_Driver+=("$str_PCI_Driver")                             # add to list
+            fi
+            #
+
+            # stop setup # 
+            if [[ $str_PCI_Driver == 'vfio-pci' ]]; then
+                #arr_PCI_Driver+=("")
+                bool_isVFIOsetup=true
+            fi
+            #
+
+        done
+        ##
+
+        ## save greatest index of list ##
+        # parse list of IOMMU IDs #
+        for (( int_i=0; int_i<${#arr_PCI_IOMMU_ID[@]}; int_i++ )); do
+
+            # match less than current index
+            if [[ $int_PCI_IOMMU_ID_last -lt ${arr_PCI_IOMMU_ID[$int_i]} ]]; then
+                int_PCI_IOMMU_ID_last=${arr_PCI_IOMMU_ID[$int_i]}       # update index
+            fi
+
+        done
+        ##
+
         # dependencies #
-        declare -a arr_PCI_BusID
-        declare -a arr_PCI_DeviceName
-        declare -a arr_PCI_Driver
-        declare -a arr_PCI_HW_ID
-        declare -a arr_PCI_IOMMU_ID
-        declare -a arr_PCI_Type
-        declare -a arr_PCI_VendorName
-        declare -i int_PCI_IOMMU_ID_last
+        #declare -a arr_PCI_BusID
+        #declare -a arr_PCI_DeviceName
+        #declare -a arr_PCI_Driver
+        #declare -a arr_PCI_HW_ID
+        #declare -a arr_PCI_IOMMU_ID
+        #declare -a arr_PCI_Type
+        #declare -a arr_PCI_VendorName
+        #declare -i int_PCI_IOMMU_ID_last=0
         str_test1=""
         #
         ##
 
         # call function #
-        ParsePCI $bool_isVFIOsetup $arr_PCI_BusID $arr_PCI_DeviceName $arr_PCI_Driver $arr_PCI_HW_ID $arr_PCI_IOMMU_ID $int_PCI_IOMMU_ID_last $arr_PCI_Type $arr_PCI_VendorName
+        #ParsePCI $bool_isVFIOsetup $arr_PCI_BusID $arr_PCI_DeviceName $arr_PCI_Driver $arr_PCI_HW_ID $arr_PCI_IOMMU_ID $arr_PCI_Type $arr_PCI_VendorName $int_PCI_IOMMU_ID_last
         #
         
         # list IOMMU groups #
@@ -400,62 +492,52 @@ function MultiBootSetup {
         # parse list of PCI devices, in order of IOMMU ID #
         declare -i int_i=0
         declare -a arr_PCI_index_list
-        echo
-        echo -e "$0: {#arr_PCI_IOMMU_ID[@]} == '${#arr_PCI_IOMMU_ID[@]}'"
 
         while [[ $int_i -le $int_PCI_IOMMU_ID_last ]]; do
-
-            echo -e "$0: int_i == '$int_i'"
-
-            # create list #
-            if [[ ${#arr_PCI_index_list[@]} -eq 0 ]]; then
-
-                echo -e "$0: {#arr_PCI_index_list[@]} == '${#arr_PCI_index_list[@]}'"
-                echo -e "$0: {#arr_PCI_IOMMU_ID[@]} == '${#arr_PCI_IOMMU_ID[@]}'"
         
-                # parse list of IOMMU IDs (in no order) #
-                for (( int_j=0; int_j<${#arr_PCI_IOMMU_ID[@]}; int_j++ )); do
+            # parse list of IOMMU IDs (in no order) #
+            for (( int_j=0; int_j<${#arr_PCI_IOMMU_ID[@]}; int_j++ )); do
 
-                    echo -e "$0: int_j == '$int_j'"
-                    echo -e "$0: {arr_PCI_IOMMU_ID[$int_j]} == '${arr_PCI_IOMMU_ID[$int_j]}'"
-
-                    # match given IOMMU ID at given index #
-                    if [[ "${arr_PCI_IOMMU_ID[$int_j]}" == "$int_i" ]]; then
-                        arr_PCI_index_list+=("$int_j")      # add new index to list
-                    fi
-                    #
-
-                done
+                # match given IOMMU ID at given index #
+                if [[ "${arr_PCI_IOMMU_ID[$int_j]}" == "$int_i" ]]; then
+                    arr_PCI_index_list+=("$int_j")      # add new index to list
+                fi
                 #
-            
-            fi
+
+            done
             #
 
             # parse list of PCI devices in given IOMMU group #
             for int_PCI_index in $arr_PCI_index_list; do
 
-                str_thisPCI_Bus_ID=${arr_PCI_Bus_ID[$int_j]}
-                echo -e "$0: str_thisPCI_Bus_ID == '$str_thisPCI_Bus_ID'"
+                str_thisPCI_BusID=${arr_PCI_BusID[$int_i]}
                 
                 # find Device Class ID, truncate first index if equal to zero (to convert to integer)
-                if [[ "${str_thisPCI_Bus_ID:0:1}" == "0" ]]; then              
-                    str_thisPCI_Bus_ID=${str_thisPCI_Bus_ID:1:1}
+                if [[ "${str_thisPCI_BusID:0:1}" == "0" ]]; then              
+                    str_thisPCI_BusID=${str_thisPCI_BusID:1:1}
                 else    
-                    str_thisPCI_Bus_ID=${str_thisPCI_Bus_ID:0:2}
+                    str_thisPCI_BusID=${str_thisPCI_BusID:0:2}
                 fi
                 #
                 
                 # create temp lists for each IOMMU group with external VGA #
                 # match greater/equal to Device Class ID #1 (Bus ID '01:00.0')
-                if [[ $str_thisPCI_Bus_ID -ge 1 && ${arr_PCI_Type[$int_PCI_index]} == *"VGA"* ]]; then
+                if [[ $str_thisPCI_BusID -ge 1 && ${arr_PCI_Type[$int_PCI_index]} == *"VGA"* ]]; then
 
-                    str_VGA_IOMMU_DeviceName_{$int_i}=${arr_PCI_DeviceName[$int_PCI_index]}
+                    arr_VGA_IOMMU_DeviceName+=("${arr_PCI_DeviceName[$int_PCI_index]}")
 
                     # add IOMMU group information to lists #
                     str_VGA_IOMMU_Driver_list_{$int_i}+="${arr_PCI_Driver[$int_PCI_index]},"
                     str_VGA_IOMMU_HW_ID_list_{$int_i}+="${arr_PCI_HW_ID[$int_PCI_index]},"
                     #
 
+                fi
+                #
+
+                # create temp lists for each IOMMU group with external VGA #
+                # match greater/equal to Device Class ID #1 (Bus ID '01:00.0')
+                if [[ ${arr_PCI_Type[$int_PCI_index]} != *"VGA"* ]]; then
+                    arr_VGA_IOMMU_DeviceName+=("")
                 fi
                 #
 
@@ -492,9 +574,10 @@ function MultiBootSetup {
             done
             #
 
-            if [[ ! -z $str_VGA_IOMMU_DeviceName_{$int_i} ]]; then
+            if [[ ${arr_VGA_IOMMU_DeviceName[$int_i]} != "" ]]; then
 
-                str_thisVGA_IOMMU_DeviceName=$str_VGA_IOMMU_DeviceName_{$int_i}     # save current VGA device name
+                str_thisVGA_IOMMU_DeviceName=${arr_VGA_IOMMU_DeviceName[$int_i]}     # save current VGA device name
+                echo -e "$0: str_thisVGA_IOMMU_DeviceName == '$str_thisVGA_IOMMU_DeviceName'"
 
                 # remove last separator #
                 if [[ ${str_VGA_IOMMU_Driver_tempList: -1} == "," ]]; then
@@ -513,7 +596,7 @@ function MultiBootSetup {
                 ### setup Boot menu entry ###           # TODO: fix automated menu entry setup!
 
                 # MANUAL setup Boot menu entry #        # NOTE: temporary
-                echo -e "$0: Execute GRUB Customizer, Clone an existing, valid menu entry, Copy the fields 'Title' and 'Entry' below, and Paste the following output into a new menu entry, where appropriate.\n$0: DISCLAIMER: Automated GRUB menu entry feature not available yet."
+                #echo -e "$0: Execute GRUB Customizer, Clone an existing, valid menu entry, Copy the fields 'Title' and 'Entry' below, and Paste the following output into a new menu entry, where appropriate.\n$0: DISCLAIMER: Automated GRUB menu entry feature not available yet."
 
                 # parse Kernels #
                 for str_rootKernel in ${arr_rootKernel[@]}; do
@@ -580,7 +663,7 @@ function MultiBootSetup {
         #
 
         exit 0
-        break
+        #break
 
     done
     #
@@ -599,7 +682,7 @@ function ParsePCI {
         declare -a arr_PCI_BusID=(`lspci -m | cut -d '"' -f 1`)       # ex '01:00.0'
         declare -a arr_PCI_DeviceName=(`lspci -m | cut -d '"' -f 6`)  # ex 'GP104 [GeForce GTX 1070]''
         declare -a arr_PCI_HW_ID=(`lspci -n | cut -d ' ' -f 3`)       # ex '10de:1b81'
-        declare -a arr_PCI_IOMMU_ID -A                                # list of IOMMU IDs by order of Bus IDs
+        declare -a arr_PCI_IOMMU_ID                                   # list of IOMMU IDs by order of Bus IDs
         declare -a arr_PCI_Type=(`lspci -m | cut -d '"' -f 2`)        # ex 'VGA compatible controller'
         declare -a arr_PCI_VendorName=(`lspci -m | cut -d '"' -f 4`)  # ex 'NVIDIA Corporation'
 
@@ -635,11 +718,8 @@ function ParsePCI {
 
                 # match output with Bus ID #
                 if [[ ${arr_compgen_G[$int_j]} == *"${arr_PCI_BusID[$int_i]}"* ]]; then
-
                     arr_PCI_IOMMU_ID[$int_i]=`echo ${arr_compgen_G[$int_j]} | cut -d '/' -f 5`      # save IOMMU ID at given index
-
                     int_j=${#arr_compgen_G[@]}                                                         # break loop
-
                 fi
                 #
 
@@ -685,7 +765,7 @@ function ParsePCI {
         done
         ##
 
-        break
+    break
 
     done
     #
@@ -743,13 +823,13 @@ function StaticSetup {
             # parse list of IOMMU IDs (in no order) #
             for (( int_j=0; int_j<${#arr_PCI_IOMMU_ID[@]}; int_j++ )); do
 
-                str_thisPCI_Bus_ID=${arr_PCI_Bus_ID[$int_j]}
+                str_thisPCI_BusID=${arr_PCI_BusID[$int_j]}
                 
                 # find Device Class ID, truncate first index if equal to zero (to convert to integer)
-                if [[ "${str_thisPCI_Bus_ID:0:1}" == "0" ]]; then              
-                    declare -i int_thisPCI_DevClass_ID=${str_thisPCI_Bus_ID:1:1}
+                if [[ "${str_thisPCI_BusID:0:1}" == "0" ]]; then              
+                    declare -i int_thisPCI_DevClass_ID=${str_thisPCI_BusID:1:1}
                 else    
-                    declare -i int_thisPCI_DevClass_ID=${str_thisPCI_Bus_ID:0:2}
+                    declare -i int_thisPCI_DevClass_ID=${str_thisPCI_BusID:0:2}
                 fi
                 
                 # is device external PCI and NOT onboard PCI #
@@ -978,7 +1058,6 @@ options vfio_pci ids=$str_PCI_HW_ID_list")
 }
 ##### end StaticSetup #####
 
-
 ##### StaticSetup_new #####
 function StaticSetup_new {
 
@@ -1055,18 +1134,18 @@ function StaticSetup_new {
             # parse list of PCI devices in given IOMMU group #
             for int_PCI_index in $arr_PCI_index_list; do
 
-                str_thisPCI_Bus_ID=${arr_PCI_Bus_ID[$int_j]}
+                str_thisPCI_BusID=${arr_PCI_BusID[$int_j]}
                 
                 # find Device Class ID, truncate first index if equal to zero (to convert to integer)
-                if [[ "${str_thisPCI_Bus_ID:0:1}" == "0" ]]; then              
-                    str_thisPCI_Bus_ID=${str_thisPCI_Bus_ID:1:1}
+                if [[ "${str_thisPCI_BusID:0:1}" == "0" ]]; then              
+                    str_thisPCI_BusID=${str_thisPCI_BusID:1:1}
                 else    
-                    str_thisPCI_Bus_ID=${str_thisPCI_Bus_ID:0:2}
+                    str_thisPCI_BusID=${str_thisPCI_BusID:0:2}
                 fi
                 #
                 
                 # match greater/equal to Device Class ID #1
-                if [[ $str_thisPCI_Bus_ID -ge 1 ]]; then
+                if [[ $str_thisPCI_BusID -ge 1 ]]; then
                 
                     # add IOMMU group information to lists #
                     str_PCI_IOMMU_Driver_list_{$int_i}+="${arr_PCI_Driver[$int_PCI_index]},"
@@ -1079,7 +1158,7 @@ function StaticSetup_new {
                 #
 
                 # is device external and is VGA #
-                if [[ $str_thisPCI_Bus_ID -ge 1 && ${arr_PCI_Type[$int_PCI_index]} == *"VGA"* ]]; then   
+                if [[ $str_thisPCI_BusID -ge 1 && ${arr_PCI_Type[$int_PCI_index]} == *"VGA"* ]]; then   
                     str_VGA_IOMMU_DeviceName_{$int_i}=${arr_PCI_DeviceName[$int_PCI_index]}
                     bool_hasExternalVGA=true               # list contains external VGA
                 fi
@@ -1598,10 +1677,6 @@ _zram_fraction=\"1/$int_denominator\"
 }
 ##### end ZRAM #####
 
-########## end functions ##########
-
-########## main ##########
-
 # check if sudo #
 if [[ `whoami` != "root" ]]; then
     echo "$0: Script must be run as Sudo or Root!"; exit 0
@@ -1679,4 +1754,5 @@ IFS=$SAVEIFS   # Restore original IFS
 
 exit 0
 
+}
 ########## end main ##########
