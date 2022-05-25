@@ -508,7 +508,7 @@ function MultiBootSetup {
 
                 # match IOMMU ID and match index, save output #
                 if [[ $int_j == $int_i && ${arr_PCI_IOMMU_ID[$int_j]} == ${arr_PCI_IOMMU_ID[$int_i]} ]]; then
-                    str_output1+="$int_j"
+                    str_output1+="$int_j,"
                 fi
                 #
                 
@@ -518,15 +518,20 @@ function MultiBootSetup {
             # match PCI type, match IOMMU ID and match false index, save list #
             if [[ ${arr_PCI_Type[$int_i]} == *"VGA"* ]]; then
                 declare str_VGA_IOMMU_ID_"${arr_PCI_IOMMU_ID[$int_i]}"=$str_output1     # append to list
+                echo 
             else
                 declare str_PCI_IOMMU_ID_"${arr_PCI_IOMMU_ID[$int_i]}"=$str_output1     # append to list
             fi
             #
 
+            echo -e "$0: str_output1 == '$str_output1'"
+
             declare -i int_PCI_IOMMU_ID_last=${arr_PCI_IOMMU_ID[$int_i]}            # save last index
 
         done
         #
+
+        exit 0
 
         #
         declare -i int_i=0          # reset index
