@@ -423,9 +423,13 @@ function MultiBootSetup {
 
                 # match output with Bus ID #
                 if [[ ${arr_compgen_G[$int_j]} == *"${arr_PCI_BusID[$int_i]}"* ]]; then
-                    #echo "${arr_PCI_BusID[$int_i]}"
-                    arr_PCI_IOMMU_ID[$int_i]=`echo ${arr_compgen_G[$int_j]} | cut -d '/' -f 5`      # save IOMMU ID at given index
-                    int_j=${#arr_compgen_G[@]}                                                         # break loop
+                    
+                    arr_PCI_IOMMU_ID[$int_i]=`echo ${arr_compgen_G[$int_j]} | cut -d '/' -f 5`  # save IOMMU ID at given index
+                    
+                    echo "$0: {arr_PCI_BusID[$int_i]} == '${arr_PCI_BusID[$int_i]}'"
+                    echo "$0: {arr_PCI_IOMMU_ID[$int_i]} == '${arr_PCI_IOMMU_ID[$int_i]}'"
+
+                    int_j=${#arr_compgen_G[@]}                                                  # break loop
                 fi
                 #
 
@@ -491,7 +495,7 @@ function MultiBootSetup {
         # list IOMMU groups #
         echo -e "$0: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.\n\tDevices that share IOMMU groups must be passed-through as whole or none at all.\n\tNOTE 1: Evaluate order of PCI slots to have PCI devices in individual IOMMU groups.\n\tNOTE 2: It is possible to divide IOMMU groups, but the action creates an attack vector (breaches hypervisor layer) and is not recommended (for security reasons).\n\tNOTE 3: Some onboard PCI devices may NOT share IOMMU groups. Example: a USB controller.\n$0: Review the output below before choosing which IOMMU groups (groups of PCI devices) to pass-through or not."
 
-        # parse list of IOMMU IDs by order of PCI device #                                      # WORKS #
+        # parse list of IOMMU IDs by order of PCI device #
         # save PCI device indexes by IOMMU group, order by contents of PCI type #
         for (( int_i=0; int_i<${#arr_PCI_IOMMU_ID[@]}; int_i++ )); do
 
@@ -500,20 +504,16 @@ function MultiBootSetup {
             # parse list again #
             for (( int_j=0; int_j<${#arr_PCI_IOMMU_ID[@]}; int_j++ )); do
 
-                # match IOMMU ID and match false index, save output #
-                if [[ $int_j != $int_i && ${arr_PCI_IOMMU_ID[$int_j]} == ${arr_PCI_IOMMU_ID[$int_i]} ]]; then
-                    str_output1+="$int_j,"
-                fi
-                #
-
-                # match IOMMU ID and match index, save output #
-                if [[ $int_j == $int_i && ${arr_PCI_IOMMU_ID[$int_j]} == ${arr_PCI_IOMMU_ID[$int_i]} ]]; then
-                    str_output1+="$int_j,"
+                # match IOMMU ID, save output #
+                if [[ ${arr_PCI_IOMMU_ID[$int_j]} == ${arr_PCI_IOMMU_ID[$int_i]} ]]; then
+                    str_output1+="$int_j,"         
                 fi
                 #
                 
             done
             #
+
+            str_output1=${str_output1::-1}                                              # remove last separator
 
             # match PCI type, match IOMMU ID and match false index, save list #
             if [[ ${arr_PCI_Type[$int_i]} == *"VGA"* ]]; then
@@ -524,20 +524,16 @@ function MultiBootSetup {
             fi
             #
 
-            echo -e "$0: str_output1 == '$str_output1'"
-
-            declare -i int_PCI_IOMMU_ID_last=${arr_PCI_IOMMU_ID[$int_i]}            # save last index
+            declare -i int_PCI_IOMMU_ID_last=${arr_PCI_IOMMU_ID[$int_i]}                # save last index
 
         done
         #
-
-        exit 0
 
         #
         declare -i int_i=0          # reset index
         declare -i int_j=0          # reset index
 
-        # parse IOMMU groups #                                          # NEW: TEST!! #
+        # parse IOMMU groups #
         while [[ $int_i -le $int_PCI_IOMMU_ID_last ]]; do
 
             # match valid IOMMU group string, save given element as integer #
@@ -552,29 +548,36 @@ function MultiBootSetup {
             fi
             #
 
+            echo -e "$0: int_i == '$int_i'"
+            echo -e "$0: int_PCI_index == '$int_PCI_index'"
+            #echo -e "$0: {arr_PCI_IOMMU_ID[$int_i]} == '${arr_PCI_IOMMU_ID[$int_i]}'"
+
             # match valid PCI/VGA device index #
             if [[ ! -z $int_PCI_index ]]; then
 
+                str_output_Driver+="${arr_PCI_Driver[$int_PCI_index]},"
+                str_output_HW_ID+="${arr_PCI_HW_ID[$int_PCI_index]},"
+
                 # match false current index with main index, and if new index is valid #
-                if [[ $int_j != $int_i ]]; then
+                #if [[ $int_j != $int_i ]]; then
 
                     # save output #
-                    str_output_Driver="${arr_PCI_Driver[$int_PCI_index]},"
-                    str_output_HW_ID="${arr_PCI_HW_ID[$int_PCI_index]},"
+                    #str_output_Driver="${arr_PCI_Driver[$int_PCI_index]},"
+                    #str_output_HW_ID="${arr_PCI_HW_ID[$int_PCI_index]},"
                     #
 
-                fi
+                #fi
                 #
 
                 # match current index with main index, and if new index is valid #
-                if [[ $int_j == $int_i ]]; then
+                #if [[ $int_j == $int_i ]]; then
 
                     # save output #
-                    str_output_Driver="${arr_PCI_Driver[$int_PCI_index]}"
-                    str_output_HW_ID="${arr_PCI_HW_ID[$int_PCI_index]}"
+                    #str_output_Driver="${arr_PCI_Driver[$int_PCI_index]}"
+                    #str_output_HW_ID="${arr_PCI_HW_ID[$int_PCI_index]}"
                     #
 
-                fi
+                #fi
                 #
 
                 # match VGA device type, save as string #
@@ -583,6 +586,8 @@ function MultiBootSetup {
                 fi
                 #
 
+                #echo -e "$0: str_thisVGA_DeviceName == '$str_thisVGA_DeviceName'"  
+
                 ((int_j++))             # increment index
 
             # match false, reset counters #
@@ -590,10 +595,17 @@ function MultiBootSetup {
 
                 ### HERE, PUT FUNCTION CALL TO PROMPT. Y/N VFIO PASSTHROUGH. Y SAVE TO A MASTER LIST. N KEEP AS INDIVIDUALS #
                 declare -i int_j=0      # reset index
-                ((int_i++))             # increment index
+                #((int_i++))             # increment index
 
             fi
             #
+
+            str_output_Driver=${str_output_Driver::-1}      # remove last separator
+            str_output_HW_ID=${str_output_HW_ID::-1}        # remove last separator
+
+            #echo -e "$0: str_output_Driver == '$str_output_Driver'"
+            #echo -e "$0: str_output_HW_ID == '$str_output_HW_ID'"
+            ((int_i++))             # increment index
 
         done
         #
@@ -882,6 +894,8 @@ function StaticSetup {
             for (( int_j=0; int_j<${#arr_PCI_IOMMU_ID[@]}; int_j++ )); do
 
                 str_thisPCI_BusID=${arr_PCI_BusID[$int_j]}
+
+                ## NOTE: my T520 has PCI devices with alphabet/hexadecimal Dev Class IDs (example: 00, 01, 03, 0d )
                 
                 # find Device Class ID, truncate first index if equal to zero (to convert to integer)
                 if [[ "${str_thisPCI_BusID:0:1}" == "0" ]]; then              
