@@ -76,7 +76,7 @@ echo -en "$0: PLEASE READ: Automatically answer Yes/No prompts with 'Yes'? [Y/n]
 ReadInput $str_input1
 
 echo -e "$0: Executing sudo functions."
-str_dir1="sudo-functions"
+str_dir1="functions"
 declare -a arr_dir1=`ls $str_dir1`
 
 # call functions #
