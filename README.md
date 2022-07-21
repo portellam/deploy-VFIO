@@ -1,5 +1,15 @@
 ## Work-In-Progress
 
+## Working
+* Evdev setup
+* Hugepages setup
+* Zram-swap setup
+
+## TBD
+* Multi-boot setup
+* Static-boot setup
+* fix dependency for Hugepages logfile, ignore and continue without it for users who choose not to use it.
+
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 * VFIO community:       https://old.reddit.com/r/VFIO
