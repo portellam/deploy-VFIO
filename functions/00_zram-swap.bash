@@ -1,5 +1,11 @@
 #!/bin/bash sh
 
+# function steps #
+# 1. check if related packages are installed, git repo exists, continue.
+# 2. read hugepages logfile for vars, calculate reasonable zram swap size
+# 3. save output to file, restart related services
+#
+
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then
     echo -e "$0: WARNING: Script must be run as Sudo or Root! Exiting."
@@ -7,9 +13,13 @@ if [[ `whoami` != "root" ]]; then
 fi
 #
 
+SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
+IFS=$'\n'      # Change IFS to newline char
+
 # parameters #
 str_file1="/etc/default/zramswap"
 str_file2="/etc/default/zram-swap"
+str_file3=`ls $(pwd) | grep -i 'hugepages' | grep -i '.log'`
 #
 
 # prompt #
@@ -47,30 +57,51 @@ if [[ -z $str_file2 ]]; then
 fi
 #
 
-if [[ `sudo swapon -v | grep /dev/zram*` == "/dev/zram"* ]]; then; sudo swapoff /dev/zram*; fi  # disable ZRAM swap
+if [[ `sudo swapon -v | grep /dev/zram*` == "/dev/zram"* ]]; then sudo swapoff /dev/zram*; fi   # disable ZRAM swap
 if [[ -z $str_file2"_old" ]]; then cp $str_file2 $str_file2"_old"; fi                           # backup config file
 
 # find HugePage size #
-str_HugePageSize="1G"
+#str_HugePageSize="1G"
+
+# read from hugepages log file
+
+# read from file #
+while read str_line1; do
+    if [[ $str_line1 == *"hugepagesz="* ]]; then str_HugePageSize=`echo $str_line1 | cut -d '=' -f2`; fi      # parse hugepage size
+    if [[ $str_line1 == *"hugepages="* ]]; then str_HugePageNum=`echo $str_line1 | cut -d '=' -f2`; fi        # parse hugepage num
+done < $str_file3
+#
+
 if [[ $str_HugePageSize == "2M" ]]; then declare -i int_HugePageSizeK=2048; fi
 if [[ $str_HugePageSize == "1G" ]]; then declare -i int_HugePageSizeK=1048576; fi
+
+int_HugePageNum=$str_HugePageNum
 #
 
 ## find free memory ##
 declare -i int_HostMemMaxG=$((int_HostMemMaxK/1048576))
 declare -i int_SysMemMaxG=$((int_HostMemMaxG+1))        # use modulus?
 
-# free memory # 
-if [[ ! -z $int_HugePageNum || ! -z $int_HugePageSizeK ]]; then declare -i int_HostMemFreeG=$((int_HugePageNum*int_HugePageSizeK/1048576))
-else declare -i int_HostMemFreeG=4; fi
-int_HostMemFreeG=$((int_SysMemMaxG-int_HostMemFreeG))
-##
+# free memory #
+declare -i int_HugepagesMemG=$int_HugePageNum*$int_HugePageSizeK/1048576
+declare -i int_HostMemFreeG=$int_SysMemMaxG-$int_HugepagesMemG
+echo -e "$0: Free system memory after hugepages (${int_HugepagesMemG}G): <= ${int_HostMemFreeG}G"
+#
 
 # setup ZRAM #
-if [[ $int_HostMemFreeG -le 8 ]]; then declare -i int_ZRAM_SizeG=4
-else declare -i int_ZRAM_SizeG=$int_SysMemMaxG/2; fi
+if [[ $int_HostMemFreeG -le 8 ]]; then declare -i int_ZRAM_SizeG=$int_HostMemFreeG/2
+else declare -i int_ZRAM_SizeG=4; fi
 
 declare -i int_denominator=$int_SysMemMaxG/$int_ZRAM_SizeG
+
+echo -e "$0: str_HugePageSize == '$str_HugePageSize'"
+echo -e "$0: int_HugePageSizeK == '$int_HugePageSizeK'"
+echo -e "$0: int_HugePageNum == '$int_HugePageNum'"
+echo -e "$0: int_HostMemFreeG == '$int_HostMemFreeG'"
+echo -e "$0: int_SysMemMaxG == '$int_SysMemMaxG'"
+echo -e "$0: int_ZRAM_SizeG == '$int_ZRAM_SizeG'"
+echo -e "$0: int_denominator == '$int_denominator'"
+
 #str_input_ZRAM="_zram_fixedsize=\"${int_ZRAM_SizeG}G\""
 #
 
@@ -114,13 +145,14 @@ _zram_fraction=\"1/$int_denominator\"
 #
 
 # write to file #
-rm $str_file2
+if [[ -e $str_file1 ]]; then rm $str_file1; fi      # clear existing file
 
-for str_line1 in ${arr_file_ZRAM[@]}; do
-    echo -e $str_line1 >> $str_file2
-done
+for str_line1 in ${arr_file_ZRAM[@]}; do echo -e $str_line1 >> $str_file2; done
 #
     
-systemctl restart zram-swap     # restart service
+systemctl restart zram-swap     # restart service   # NOTE: do not enable/start zramswap.service.
+# NOTE: in my setup, I prefer the git repo. I currently do not understand zram setup using the debian package/config file (zram pages are exact sizes compressed, not uncompressed as above).
 
+IFS=$SAVEIFS        # reset IFS
+echo "$0: Exiting."
 exit 0

@@ -13,6 +13,9 @@ if [[ `whoami` != "root" ]]; then
 fi
 #
 
+SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
+IFS=$'\n'      # Change IFS to newline char
+
 # parameters #
 str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                # default output
 int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
@@ -92,15 +95,23 @@ while true; do
         echo "$0: Invalid input."
         ((int_count++))     # increment counter
     else    
-        str_GRUB_CMDLINE_Hugepages="default_hugepagesz=$str_HugePageSize hugepagesz=$str_HugePageSize hugepages=$int_HugePageNum"   # shared variable with other function
+        #str_GRUB_CMDLINE_Hugepages="default_hugepagesz=$str_HugePageSize hugepagesz=$str_HugePageSize hugepages=$int_HugePageNum"   # shared variable with other function
+        arr_output1=("
+hugepagesz=$str_HugePageSize
+hugepages=$int_HugePageNum
+")
+        str_file1=$(pwd)'/'$0'.log'
         echo -e "$0: Writing logfile. Contents: partial text for GRUB menu entry."
         
-        str_file1=$(pwd)'/'$0'.log'
-        echo $str_GRUB_CMDLINE_Hugepages > $str_file1
+        if [[ -e $str_file1 ]]; then rm $str_file1; fi                          # clear existing file
+        for str_line1 in $arr_output1; do echo $str_line1 >> $str_file1; done   # write to file
+
         break
     fi
     #
 done
 #
 
+IFS=$SAVEIFS        # reset IFS
+echo "$0: Exiting."
 exit 0
