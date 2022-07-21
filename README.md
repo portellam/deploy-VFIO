@@ -22,7 +22,7 @@ In terminal, execute:
 
 ## Functions
 * **setup Evdev (Event devices)**
-    * Virtual Keyboard-Mouse switch (better than nothing, best to have physical KVM and multiple PCI USB devices).
+    * Virtual Keyboard-Mouse switch (better than nothing, best to have physical KVM and multiple PCI USB controllers).
     * Restarts related system service.
 * **setup Hugepages**
     * Static allocation of RAM for zero memory fragmentation and reduced memory latency (best to use multiples of each Memory channel/stick).
