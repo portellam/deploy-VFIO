@@ -16,6 +16,13 @@ fi
 SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
+# check #
+if [[ -z $str_file3 ]]; then
+    echo "$0: Required logfile does not exist. Execute: '"`ls $(pwd) | grep -i 'hugepages' | grep -i '.bash'`"'"
+    exit 0
+fi
+#
+
 # parameters #
 declare -i int_count=0      # reset counter
 str_file1="/etc/default/zramswap"
@@ -61,12 +68,6 @@ fi
 if [[ `sudo swapon -v | grep /dev/zram*` == "/dev/zram"* ]]; then sudo swapoff /dev/zram*; fi   # disable ZRAM swap
 if [[ -z $str_file2"_old" ]]; then cp $str_file2 $str_file2"_old"; fi                           # backup config file
 
-# find HugePage size #
-#str_HugePageSize="1G"
-
-# read from hugepages log file
-
-# read from file #
 while read str_line1; do
     if [[ $str_line1 == *"hugepagesz="* ]]; then str_HugePageSize=`echo $str_line1 | cut -d '=' -f2`; fi      # parse hugepage size
     if [[ $str_line1 == *"hugepages="* ]]; then str_HugePageNum=`echo $str_line1 | cut -d '=' -f2`; fi        # parse hugepage num
