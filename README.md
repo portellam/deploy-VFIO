@@ -1,11 +1,11 @@
 ## Work-In-Progress
 
-## Working
+# Working
 * Evdev setup
 * Hugepages setup
 * Zram-swap setup
 
-## TBD
+# TBD
 * Multi-boot setup
 * Static-boot setup
 * fix dependency for Hugepages logfile, ignore and continue without it for users who choose not to use it.
