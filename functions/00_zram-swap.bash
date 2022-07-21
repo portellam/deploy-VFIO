@@ -16,9 +16,6 @@ fi
 SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
-
-#
-
 # parameters #
 declare -i int_count=0      # reset counter
 str_file1="/etc/default/zramswap"
