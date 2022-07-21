@@ -35,8 +35,8 @@ str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
 while true; do
     # attempt #
     if [[ $int_count -ge 3 ]]; then
-        echo "$0: Exceeded max attempts."
         str_HugePageSize="1G"           # default selection
+        echo -e "$0: Exceeded max attempts.\n$0: Default selection: ${str_HugePageSize}"
     else
         echo -en "$0: Enter Hugepage size and byte-size. [2M/1G]: "
         read -r str_HugePageSize
@@ -64,8 +64,8 @@ declare -i int_count=0      # reset counter
 while true; do
     # attempt #
     if [[ $int_count -ge 3 ]]; then
-        echo "$0: Exceeded max attempts."
         int_HugePageNum=$int_HugePageMax        # default selection
+        echo "$0: Exceeded max attempts.\n$0: Default selection: ${int_HugePageNum}"
     else
         # Hugepage Size #
         if [[ $str_HugePageSize == "2M" ]]; then
