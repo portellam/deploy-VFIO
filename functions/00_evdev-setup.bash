@@ -7,6 +7,9 @@ if [[ `whoami` != "root" ]]; then
 fi
 #
 
+SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
+IFS=$'\n'      # Change IFS to newline char
+
 # parameters #
 str_file1="/etc/libvirt/qemu.conf"
 #
@@ -78,4 +81,6 @@ systemctl enable libvirtd
 systemctl restart libvirtd
 #
 
+IFS=$SAVEIFS        # reset IFS
+echo "$0: Exiting."
 exit 0
