@@ -35,7 +35,7 @@ In terminal, execute:
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups (see **guide** above) of devices.
     * Saves lists of external PCI devices, by order of IOMMU groups.
 * Prompt user for VFIO passthrough setup:
-    * **(RECOMMENDED)** Dynamic/Multi-Boot setup    
+    * Dynamic/Multi-Boot setup **(RECOMMENDED)**
         * Adds multiple GRUB menu entries for all IOMMU groups with an external VGA device, minus a given VGA's IOMMU group.
         * Executes Static setup.
     * Static setup
