@@ -29,7 +29,7 @@ while true; do
         echo "$0: Exceeded max attempts."
         str_HugePageSize="1G"           # default selection
     else
-        echo -en "$0: Enter Hugepage size and byte-size. [ 2M / 1G ]:\t"
+        echo -en "$0: Enter Hugepage size and byte-size. [2M/1G]: "
         read -r str_HugePageSize
         str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
     fi
@@ -37,7 +37,7 @@ while true; do
 
     # check input #
     case $str_HugePageSize in
-        "2M"||"1G")
+        "2M"|"1G")
             break;;
         *)
             echo "$0: Invalid input.";;
@@ -75,7 +75,7 @@ while true; do
         declare -i int_HugePageMemMax=$int_HostMemMaxK-$int_HostMemMinK
         declare -i int_HugePageMax=$int_HugePageMemMax/$int_HugePageK   # max HugePages
 
-        echo -en "$0: Enter number of HugePages ( num * $str_HugePageSize ). [ $int_HugePageMin to $int_HugePageMax pages ] : "
+        echo -en "$0: Enter number of HugePages (n * $str_HugePageSize). [$int_HugePageMin <= n <= $int_HugePageMax pages]: "
         read -r int_HugePageNum
         #
     fi
@@ -89,8 +89,8 @@ while true; do
         str_GRUB_CMDLINE_Hugepages="default_hugepagesz=$str_HugePageSize hugepagesz=$str_HugePageSize hugepages=$int_HugePageNum"   # shared variable with other function
         echo -e "$0: Writing logfile. Contents: partial text for GRUB menu entry."
         
-        str_file1='~/'$(pwd)$0'.log'
-        echo $str_GRUB_CMDLINE_Hugepages >> $str_file1
+        str_file1=$(pwd)'/'$0'.log'
+        echo $str_GRUB_CMDLINE_Hugepages > $str_file1
         break
     fi
     #
