@@ -29,7 +29,6 @@ In terminal, execute:
     * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
     * Restarts related system service.
 * **VFIO setup.** Setup dynamically (Multi-Boot) or statically.
-    * *see below*
 
 ## VFIO setup
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups (see **guide** above) of devices.
