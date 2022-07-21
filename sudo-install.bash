@@ -11,45 +11,45 @@ SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
 ## user input ##
-local_str_input1=""
+str_input1=""
 
 # precede with echo prompt for input #
 # ask user for input then validate #
 function ReadInput {
-    if [[ -z $local_str_input1 ]]; then read local_str_input1; fi
+    if [[ -z $str_input1 ]]; then read str_input1; fi
 
-    local_str_input1=$(echo $local_str_input1 | tr '[:lower:]' '[:upper:]')
-    local_str_input1=${local_str_input1:0:1}
-    ValidInput $local_str_input1
+    str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
+    str_input1=${str_input1:0:1}
+    ValidInput $str_input1
 }
 
 # validate input, ask again, default answer NO #
 function ValidInput {
-    declare -i local_int_count=0    # reset counter
-    echo $local_str_input1
+    declare -i int_count=0    # reset counter
+    echo $str_input1
     while true; do
         # passthru input variable if it is valid #
         if [[ $1 == "Y"* || $1 == "y"* ]]; then
-            local_str_input1=$1     # input variable
+            str_input1=$1     # input variable
             break
         fi
         #
 
         # manual prompt #
-        if [[ $local_int_count -ge 3 ]]; then       # auto answer
+        if [[ $int_count -ge 3 ]]; then       # auto answer
             echo -e "$0: Exceeded max attempts."
-            local_str_input1="N"                    # default input     # NOTE: change here
+            str_input1="N"                    # default input     # NOTE: change here
         else                                        # manual prompt
             echo -en "$0: [Y/n]: "
-            read local_str_input1
+            read str_input1
             # string to upper
-            local_str_input1=$(echo $local_str_input1 | tr '[:lower:]' '[:upper:]')
-            local_str_input1=${local_str_input1:0:1}
+            str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
+            str_input1=${str_input1:0:1}
             #
         fi
         #
 
-        case $local_str_input1 in
+        case $str_input1 in
             "Y"|"N")
                 break
             ;;
@@ -57,33 +57,49 @@ function ValidInput {
                 echo -e "$0: Invalid input."
             ;;
         esac  
-        ((local_int_count++))   # counter
+        ((int_count++))   # counter
     done  
 }
 ##
 
+# check if system supports IOMMU #
+if [[ ! compgen -G "/sys/kernel/iommu_groups/*/devices/*" > /dev/null ]]; then
+    echo "$0: WARNING: Virtualization (AMD IOMMU or Intel VT-D) is NOT enabled or available in the BIOS/UEFI.\n$0: VFIO setup will continue, enable/review availability after execution."
+fi
+#
+
 # parse and execute functions #
-local_str_input1=$1
+bool_isVFIOsetup=false          # a canary to check for previous VFIO setup installation
+str_input1=$1
+
 echo -en "$0: PLEASE READ: Automatically answer Yes/No prompts with 'Yes'? [Y/n]: "
-ReadInput $local_str_input1
+ReadInput $str_input1
+
 echo -e "$0: Executing sudo functions."
-local_str_dir1="sudo-functions"
-declare -a local_arr_dir1=`ls $local_str_dir1`
+str_dir1="sudo-functions"
+declare -a arr_dir1=`ls $str_dir1`
 
-for local_str_line in $local_arr_dir1; do
+# call functions #
+while [[ $bool_isVFIOsetup == false ]]; do
 
-    # execute sh/bash scripts in directory
-    if [[ $local_str_line == *".sh"||*".bash" ]]; then
-        echo -en "\n$0: Execute '$local_str_line'? [Y/n]: "
-        UserInput_1 $local_str_input1
-        echo -e "\n$0: Executing '$local_str_line'."
-    fi
+    for str_line1 in $arr_dir1; do
 
-    if [[ $local_str_input1 =="Y" && $local_str_line == *".bash" ]]; then sudo bash $local_str_dir1"/"$local_str_line $local_str_input1; fi  
+        # execute sh/bash scripts in directory
+        if [[ $str_line1 == *".sh"||*".bash" ]]; then
+            echo -en "\n$0: Execute '$str_line1'? [Y/n]: "
+            UserInput_1 $str_input1
+            echo -e "\n$0: Executing '$str_line1'."
+        fi
+
+        if [[ $str_input1 =="Y" && $str_line1 == *".bash" ]]; then sudo bash $str_dir1"/"$str_line1 $str_input1 $bool_isVFIOsetup; fi  
     
-    if [[ $local_str_input1 =="Y" && $local_str_line == *".sh" ]]; then sudo sh $local_str_dir1"/"$local_str_line $local_str_input1; fi  
+        if [[ $str_input1 =="Y" && $str_line1 == *".sh" ]]; then sudo sh $str_dir1"/"$str_line1 $str_input1 $bool_isVFIOsetup; fi  
+        #
+
+    done
     #
 
+    echo -e "$0: DISCLAIMER: Please review changes made.\n\tIf a given network (Ethernet, WLAN) or storage controller (NVME, SATA) is necessary for the Host machine, and the given device is passed-through, the Host machine will lose access to it."
 done
 #
 

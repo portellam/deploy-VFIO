@@ -13,20 +13,19 @@ int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k
 #
 
 # prompt #
-declare -i local_int_count=0      # reset counter
-local_str_output1="$0: HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, the less memory latency.\n"
+declare -i int_count=0      # reset counter
+str_output1="$0: HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, the less memory latency.\n"
 
-echo -e $local_str_output1
+echo -e $str_output1
+#
 
 # Hugepage size: validate input #
 str_HugePageSize=$str6
 str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
 
-declare -i local_int_count=0      # reset counter
-
 while true; do
     # attempt #
-    if [[ $local_int_count -ge 3 ]]; then
+    if [[ $int_count -ge 3 ]]; then
         echo "$0: Exceeded max attempts."
         str_HugePageSize="1G"           # default selection
     else
@@ -45,29 +44,29 @@ while true; do
     esac
     #
 
-    ((local_int_count++))     # increment counter
+    ((int_count++))     # increment counter
 done
 #
 
 # Hugepage sum: validate input #
 int_HugePageNum=$str7
-declare -i local_int_count=0      # reset counter
+declare -i int_count=0      # reset counter
 
 while true; do
     # attempt #
-    if [[ $local_int_count -ge 3 ]]; then
+    if [[ $int_count -ge 3 ]]; then
         echo "$0: Exceeded max attempts."
         int_HugePageNum=$int_HugePageMax        # default selection
     else
         # Hugepage Size #
         if [[ $str_HugePageSize == "2M" ]]; then
-            #str_prefixMem="M"                  # shared variable with other function?
+            #str_prefixMem="M"
             declare -i int_HugePageK=2048       # Hugepage size
             declare -i int_HugePageMin=2        # min HugePages
         fi
 
         if [[ $str_HugePageSize == "1G" ]]; then
-            #str_prefixMem="G"                  # shared variable with other function?
+            #str_prefixMem="G"
             declare -i int_HugePageK=1048576    # Hugepage size
             declare -i int_HugePageMin=1        # min HugePages
         fi
@@ -85,10 +84,13 @@ while true; do
     # check input #
     if [[ $int_HugePageNum -lt $int_HugePageMin || $int_HugePageNum -gt $int_HugePageMax ]]; then
         echo "$0: Invalid input."
-        ((local_int_count++))     # increment counter
+        ((int_count++))     # increment counter
     else    
-        #echo -e "$0: Continuing..."
         str_GRUB_CMDLINE_Hugepages="default_hugepagesz=$str_HugePageSize hugepagesz=$str_HugePageSize hugepages=$int_HugePageNum"   # shared variable with other function
+        echo -e "$0: Writing logfile. Contents: partial text for GRUB menu entry."
+        
+        str_file1='~/'$(pwd)$0'.log'
+        echo $str_GRUB_CMDLINE_Hugepages >> $str_file1
         break
     fi
     #

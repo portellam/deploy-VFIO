@@ -8,13 +8,13 @@ fi
 #
 
 # parameters #
-local_str_file1="/etc/libvirt/qemu.conf"
+str_file1="/etc/libvirt/qemu.conf"
 #
 
 # prompt #
-local_str_output1="$0: Evdev (Event Devices) is a method that assigns input devices to a Virtual KVM (Keyboard-Video-Mouse) switch.\n\tEvdev is recommended for setups without an external KVM switch and passed-through USB controller(s).\n\tNOTE: View '/etc/libvirt/qemu.conf' to review changes, and append to a Virtual machine's configuration file."
+str_output1="$0: Evdev (Event Devices) is a method that assigns input devices to a Virtual KVM (Keyboard-Video-Mouse) switch.\n\tEvdev is recommended for setups without an external KVM switch and passed-through USB controller(s).\n\tNOTE: View '/etc/libvirt/qemu.conf' to review changes, and append to a Virtual machine's configuration file."
 
-echo $local_str_output1
+echo $str_output1
 #
 
 str_UID1000=`cat /etc/passwd | grep 1000 | cut -d ":" -f 1` # find first normal user
@@ -49,11 +49,11 @@ nvram = [
 cgroup_device_acl = [
 ")
 
-    for str_InputDeviceID in $arr_InputDeviceID; do
-        arr_file_QEMU+=("    \"/dev/input/by-id/$str_InputDeviceID\",")
-    done
+for str_InputDeviceID in $arr_InputDeviceID; do
+    arr_file_QEMU+=("    \"/dev/input/by-id/$str_InputDeviceID\",")
+done
 
-    arr_file_QEMU+=("    \"/dev/null\", \"/dev/full\", \"/dev/zero\",
+arr_file_QEMU+=("    \"/dev/null\", \"/dev/full\", \"/dev/zero\",
     \"/dev/random\", \"/dev/urandom\",
     \"/dev/ptmx\", \"/dev/kvm\",
     \"/dev/rtc\", \"/dev/hpet\"
@@ -62,14 +62,14 @@ cgroup_device_acl = [
 #
 
 # backup config file #
-if [[ -z $local_str_file1"_old" ]]; then cp $local_str_file1 $local_str_file1"_old"; fi
+if [[ -z $str_file1"_old" ]]; then cp $str_file1 $str_file1"_old"; fi
 
-if [[ ! -z $local_str_file1"_old" ]]; then cp $local_str_file1"_old" $local_str_file1; fi
+if [[ ! -z $str_file1"_old" ]]; then cp $str_file1"_old" $str_file1; fi
 #
 
 # write to file #
-for local_str_line1 in ${arr_file_QEMU[@]}; do
-    echo -e $local_str_line1 >> $local_str_file1
+for str_line1 in ${arr_file_QEMU[@]}; do
+    echo -e $str_line1 >> $str_file1
 done
 #
 

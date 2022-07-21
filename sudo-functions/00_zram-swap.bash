@@ -8,14 +8,14 @@ fi
 #
 
 # parameters #
-local_str_file1="/etc/default/zramswap"
-local_str_file2="/etc/default/zram-swap"
+str_file1="/etc/default/zramswap"
+str_file2="/etc/default/zram-swap"
 #
 
 # prompt #
-local_str_output1="$0: ZRAM allocates RAM as a compressed swapfile.\n\tThe default compression method \"lz4\", at a ratio of 2:1 to 5:2, offers the greatest performance."
+str_output1="$0: ZRAM allocates RAM as a compressed swapfile.\n\tThe default compression method \"lz4\", at a ratio of 2:1 to 5:2, offers the greatest performance."
 
-echo -e $local_str_output1
+echo -e $str_output1
 #
 
 # parameters #
@@ -24,7 +24,7 @@ str_GitHub_Repo="FoundObjects/zram-swap"
 #
 
 # check for zram-utils #
-if [[ ! -z $local_str_file1 ]]; then
+if [[ ! -z $str_file1 ]]; then
     apt install -y git zram-tools
     systemctl stop zramswap
     systemctl disable zramswap
@@ -41,14 +41,14 @@ fi
 #
 
 # check for zram-swap #
-if [[ -z $local_str_file2 ]]; then
+if [[ -z $str_file2 ]]; then
     cd ~/git/$str_GitHub_Repo
     sh ./install.sh
 fi
 #
 
 if [[ `sudo swapon -v | grep /dev/zram*` == "/dev/zram"* ]]; then; sudo swapoff /dev/zram*; fi  # disable ZRAM swap
-if [[ -z $local_str_file2"_old" ]]; then cp $local_str_file2 $local_str_file2"_old"; fi                           # backup config file
+if [[ -z $str_file2"_old" ]]; then cp $str_file2 $str_file2"_old"; fi                           # backup config file
 
 # find HugePage size #
 str_HugePageSize="1G"
@@ -58,7 +58,7 @@ if [[ $str_HugePageSize == "1G" ]]; then declare -i int_HugePageSizeK=1048576; f
 
 ## find free memory ##
 declare -i int_HostMemMaxG=$((int_HostMemMaxK/1048576))
-declare -i int_SysMemMaxG=$((int_HostMemMaxG+1))    # use modulus?
+declare -i int_SysMemMaxG=$((int_HostMemMaxG+1))        # use modulus?
 
 # free memory # 
 if [[ ! -z $int_HugePageNum || ! -z $int_HugePageSizeK ]]; then declare -i int_HostMemFreeG=$((int_HugePageNum*int_HugePageSizeK/1048576))
@@ -114,10 +114,10 @@ _zram_fraction=\"1/$int_denominator\"
 #
 
 # write to file #
-rm $local_str_file2
+rm $str_file2
 
-for local_str_line in ${arr_file_ZRAM[@]}; do
-    echo -e $local_str_line >> $local_str_file2
+for str_line1 in ${arr_file_ZRAM[@]}; do
+    echo -e $str_line1 >> $str_file2
 done
 #
     
