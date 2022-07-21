@@ -16,11 +16,7 @@ fi
 SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
-# check #
-if [[ -z $str_file3 ]]; then
-    echo "$0: Required logfile does not exist. Execute: '"`ls $(pwd) | grep -i 'hugepages' | grep -i '.bash'`"'"
-    exit 0
-fi
+
 #
 
 # parameters #
@@ -68,29 +64,43 @@ fi
 if [[ `sudo swapon -v | grep /dev/zram*` == "/dev/zram"* ]]; then sudo swapoff /dev/zram*; fi   # disable ZRAM swap
 if [[ -z $str_file2"_old" ]]; then cp $str_file2 $str_file2"_old"; fi                           # backup config file
 
-while read str_line1; do
-    if [[ $str_line1 == *"hugepagesz="* ]]; then str_HugePageSize=`echo $str_line1 | cut -d '=' -f2`; fi      # parse hugepage size
-    if [[ $str_line1 == *"hugepages="* ]]; then str_HugePageNum=`echo $str_line1 | cut -d '=' -f2`; fi        # parse hugepage num
-done < $str_file3
-#
-
-if [[ $str_HugePageSize == "2M" ]]; then declare -i int_HugePageSizeK=2048; fi
-if [[ $str_HugePageSize == "1G" ]]; then declare -i int_HugePageSizeK=1048576; fi
-
-int_HugePageNum=$str_HugePageNum
-#
-
-## find free memory ##
+# find free memory #
 declare -i int_HostMemMaxG=$((int_HostMemMaxK/1048576))
 declare -i int_SysMemMaxG=$((int_HostMemMaxG+1))        # use modulus?
-
-# free memory #
-declare -i int_HugepagesMemG=$int_HugePageNum*$int_HugePageSizeK/1048576
-declare -i int_HostMemFreeG=$int_SysMemMaxG-$int_HugepagesMemG
 #
 
-# setup ZRAM #
-echo -en "$0: Free system memory after hugepages (${int_HugepagesMemG}G): <= ${int_HostMemFreeG}G.\n$0: Enter zram-swap size in G (0G < n < ${int_HostMemFreeG}G): "
+# check #
+if [[ -z $str_file3 ]]; then
+    echo "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '"`ls $(pwd) | grep -i 'hugepages' | grep -i '.bash'`"' and '$0'."
+
+    declare -i int_HostMemFreeG=$int_SysMemMaxG
+
+    # setup ZRAM #
+    echo -e "$0: Total system memory: <= ${int_SysMemMaxG}G.\n$0: If 'Z == ${int_SysMemMaxG}G - (V + X)', where ('Z' == ZRAM, 'V' == VM(s), and 'X' == remainder for Host machine).\n\tCalculate 'Z'."
+else
+
+    while read str_line1; do
+        if [[ $str_line1 == *"hugepagesz="* ]]; then str_HugePageSize=`echo $str_line1 | cut -d '=' -f2`; fi      # parse hugepage size
+        if [[ $str_line1 == *"hugepages="* ]]; then str_HugePageNum=`echo $str_line1 | cut -d '=' -f2`; fi        # parse hugepage num
+    done < $str_file3
+
+    if [[ $str_HugePageSize == "2M" ]]; then declare -i int_HugePageSizeK=2048; fi
+    if [[ $str_HugePageSize == "1G" ]]; then declare -i int_HugePageSizeK=1048576; fi
+
+    int_HugePageNum=$str_HugePageNum
+
+    # free memory #
+    declare -i int_HugepagesMemG=$int_HugePageNum*$int_HugePageSizeK/1048576
+    declare -i int_HostMemFreeG=$int_SysMemMaxG-$int_HugepagesMemG
+
+    # setup ZRAM #
+    echo -e "$0: Free system memory after hugepages (${int_HugepagesMemG}G): <= ${int_HostMemFreeG}G."
+    
+fi
+#
+
+str_output1="$0: Enter zram-swap size in G (0G < n < ${int_HostMemFreeG}G): "
+echo -en $str_output1
 read -r int_ZRAM_SizeG
 
 while true; do
@@ -101,7 +111,7 @@ while true; do
         break
     else
         if [[ -z $int_ZRAM_SizeG || $int_ZRAM_SizeG -lt 0 || $int_ZRAM_SizeG -ge $int_HostMemFreeG ]]; then
-            echo -en "$0: Invalid input.\n$0: Enter zram-swap size in G (0G < n <= ${int_HostMemFreeG}G): "
+            echo -en "$0: Invalid input.\n$str_output1"
             read -r int_ZRAM_SizeG
 
             #if [[ $int_HostMemFreeG -le 8 ]]; then declare -i int_ZRAM_SizeG=$int_HostMemFreeG/2
@@ -167,7 +177,7 @@ _zram_fraction=\"1/$int_denominator\"
     for str_line1 in ${arr_file_ZRAM[@]}; do echo -e $str_line1 >> $str_file2; done
     #
     
-    #sudo systemctl restart zram-swap     # restart service   # NOTE: do not enable/start zramswap.service.
+    sudo systemctl restart zram-swap     # restart service   # NOTE: do not enable/start zramswap.service.
     # NOTE: in my setup, I prefer the git repo. I currently do not understand zram setup using the debian package/config file (zram pages are exact sizes compressed, not uncompressed as above).
 fi
 #
