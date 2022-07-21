@@ -1,7 +1,7 @@
 ## To-Do
 * Multi-boot VFIO setup
 * Static-boot VFIO setup
-* guides on cheats/tips to make VFIO setup smooth as butter out-of-the-box (Virtual machine config (XML) files, Win 10 passthru, Windows XP passthru, VBIOS mods, etc.)
+* guides on cheats/tips to make VFIO setup smooth as butter out-of-the-box (Virtual machine config (XML) files, Win 10 passthru, Win XP passthru, VBIOS mods, etc.)
 * fix dependency for Hugepages logfile, ignore and continue without it for users who choose not to use it.
 * create logfiles for manual setup?
 
