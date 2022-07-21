@@ -1,14 +1,13 @@
-## Work-In-Progress
-
-### Working ###
-* Evdev setup
-* Hugepages setup
-* Zram-swap setup
-
-### TBD ###
+## To-Do
 * Multi-boot setup
 * Static-boot setup
 * fix dependency for Hugepages logfile, ignore and continue without it for users who choose not to use it.
+* create logfiles for manual setup?
+
+## Complete
+* Evdev setup
+* Hugepages setup
+* Zram-swap setup
 
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
@@ -48,7 +47,8 @@ In terminal, execute:
 * Checks for existing VFIO setup, asks user to uninstall setup and restart machine to Continue.
 
 ## DISCLAIMER
-**Work in progress.**
+**Work-in-progress**
+
 Use script at your own risk!
 
 Please refer and review community guides for any help. Script is not guaranteed to work with Laptop machines, host machines with less-than-favorable IOMMU groups, etc.
