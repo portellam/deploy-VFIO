@@ -37,7 +37,7 @@ In terminal, execute:
 * Prompt user for VFIO passthrough setup:
     * Dynamic/Multi-Boot setup **(RECOMMENDED)**
         * Adds multiple GRUB menu entries for all IOMMU groups with an external VGA device, minus a given VGA's IOMMU group.
-        * Executes Static setup.
+        * also executes Static setup.
     * Static setup
         * Asks user to VFIO passthrough any IOMMU groups (with external PCI devices including VGA devices).
         * with Multi-boot setup: Asks user to VFIO passthrough any IOMMU groups (excluding external VGA devices).
