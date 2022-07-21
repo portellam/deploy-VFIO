@@ -1,6 +1,6 @@
 ## To-Do
-* Multi-boot setup
-* Static-boot setup
+* Multi-boot VFIO setup
+* Static-boot VFIO setup
 * fix dependency for Hugepages logfile, ignore and continue without it for users who choose not to use it.
 * create logfiles for manual setup?
 
