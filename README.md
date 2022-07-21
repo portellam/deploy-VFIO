@@ -26,7 +26,7 @@ In terminal, execute:
     * Restarts related system service.
 * **setup Hugepages**
     * Static allocation of RAM for zero memory fragmentation and reduced memory latency (best to use multiples of each Memory channel/stick).
-* **setup Zram swapfile**                                                              *(depends on logfile from 'Hugepages' setup)*
+* **setup Zram swapfile**
     * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
     * Restarts related system service.
 * **VFIO setup.**
