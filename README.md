@@ -11,19 +11,19 @@ In terminal, execute:
         sudo bash install.sh
 
 ## Functions
-* setup Evdev (Event devices)
+* **setup Evdev (Event devices)**
     * Virtual Keyboard-Mouse switch (best to have physical KVM and multiple PCI USB devices, better than nothing).
     * Restarts related system service.
-* setup Hugepages
+* **setup Hugepages**
     * Static allocation of RAM for zero memory fragmentation and reduced memory latency (best to use multiples of each Memory channel/stick).
-* setup Zram swapfile                                                               **depends on logfile from 'Hugepages' setup**
+* **setup Zram swapfile**                                                              *(depends on logfile from 'Hugepages' setup)*
     * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
     * Restarts related system service.
-* Automated VFIO passthrough setup. Setup dynamically (Multi-Boot) or statically.   **depends on logfile from 'Hugepages' setup**
+* **Automated VFIO passthrough setup.** Setup dynamically (Multi-Boot) or statically.   *(depends on logfile from 'Hugepages' setup)*
     * Run at first-time setup (of Linux host machine) or new / re-do VFIO setup.
 
 ## Auto-VFIO
-* Main features:
+* **Main features:**
     * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups (see **guide** above) of devices.
         * Saves lists of external PCI devices, by order of IOMMU groups.
     * Prompt user for VFIO passthrough setup:
