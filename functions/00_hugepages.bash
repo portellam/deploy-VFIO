@@ -1,5 +1,11 @@
 #!/bin/bash sh
 
+# function steps #
+# 1. parse system memory.
+# 2. ask user for input (hugepage size and num pages), continue if user input is valid.
+# 3. save output to log, to be used for manual VFIO setup (executing this script alone) or in automated VFIO setup.
+#
+
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then
     echo -e "$0: WARNING: Script must be run as Sudo or Root! Exiting."
