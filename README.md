@@ -21,7 +21,7 @@ In terminal, execute:
 
 ## Functions
 * **setup Evdev (Event devices)**
-    * Virtual Keyboard-Mouse switch (best to have physical KVM and multiple PCI USB devices, better than nothing).
+    * Virtual Keyboard-Mouse switch (better than nothing, best to have physical KVM and multiple PCI USB devices).
     * Restarts related system service.
 * **setup Hugepages**
     * Static allocation of RAM for zero memory fragmentation and reduced memory latency (best to use multiples of each Memory channel/stick).
@@ -29,7 +29,7 @@ In terminal, execute:
     * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
     * Restarts related system service.
 * **VFIO setup.** Setup dynamically (Multi-Boot) or statically.
-    * Run at first-time setup (of Linux host machine) or new / re-do VFIO setup.
+    * *see below*
 
 ## VFIO setup
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups (see **guide** above) of devices.
