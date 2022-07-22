@@ -50,8 +50,10 @@ In terminal, execute:
 ## DISCLAIMER
 **Work-in-progress**
 
+Tested and performs on Debian Linux.
+
 Use script at your own risk!
 
 Please refer and review community guides for any help. Script is not guaranteed to work with Laptop machines, host machines with less-than-favorable IOMMU groups, etc.
 
-Please review host machine's system specifications and resources. Check your system's BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
+Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
