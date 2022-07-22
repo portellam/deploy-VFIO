@@ -142,11 +142,16 @@ function ParsePCI {
         if [[ $int_PCI_IOMMU_ID_last -lt ${arr_PCI_IOMMU_ID[$int_i]} ]]; then int_PCI_IOMMU_ID_last=${arr_PCI_IOMMU_ID[$int_i]}; fi       # update index
     done
     #
+
+    echo -e "$0: {#arr_PCI_IOMMU_ID[@]} == '${#arr_PCI_IOMMU_ID[@]}'"   # debug
+
 }
 ## end ParsePCI ##
 
 ## StaticSetup ##
 function StaticSetup {
+
+    echo -e "$0: {#arr_PCI_IOMMU_ID[@]} == '${#arr_PCI_IOMMU_ID[@]}'"   # debug
 
     ## NOTE:
     ##  i want to make the function parse all devices, and a given IOMMU group.
@@ -196,6 +201,8 @@ function StaticSetup {
     declare -a arr_PCI_Type
     declare -a arr_PCI_VendorName
     declare -i int_PCI_IOMMU_ID_last
+
+    declare -i int_PCI_IOMMU_ID_sum=$int_PCI_IOMMU_ID_last+1
     ##
 
     # call function #
@@ -203,10 +210,10 @@ function StaticSetup {
     #
         
     # list IOMMU groups #
-    echo -e "$0: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.\n\tDevices that share IOMMU groups must be passed-through as whole or none at all.\n\tNOTE 1: Evaluate order of PCI slots to have PCI devices in individual IOMMU groups.\n\tNOTE 2: It is possible to divide IOMMU groups, but the action creates an attack vector (breaches hypervisor layer) and is not recommended (for security reasons).\n\tNOTE 3: Some onboard PCI devices may NOT share IOMMU groups. Example: a USB controller.\n$0: Review the output below before choosing which IOMMU groups (groups of PCI devices) to pass-through or not."
+    echo -e "$0: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.\n\tDevices that share IOMMU groups must be passed-through as whole or none at all.\n\tNOTE 1: Evaluate order of PCI slots to have PCI devices in individual IOMMU groups.\n\tNOTE 2: A feature (ACS-Override patch) exists to divide IOMMU groups, but said feature creates an attack vector (cross-device read/write) and is not recommended (for security reasons).\n\tNOTE 3: Some onboard PCI devices may NOT share IOMMU groups. Example: a USB controller.\n$0: Review the output below before choosing which IOMMU groups (groups of PCI devices) to pass-through or not."
 
     # parse list of PCI devices, in order of IOMMU ID #
-    for (( int_i=0; int_i<=$int_PCI_IOMMU_ID_last; int_i++ )); do
+    for (( int_i=0; int_i<$int_PCI_IOMMU_ID_sum; int_i++ )); do
 
         bool_hasExternalPCI=false   # reset boolean
         bool_hasExternalVGA=false   # reset boolean
@@ -220,8 +227,8 @@ function StaticSetup {
         #
 
         ## window of PCI devices in given IOMMU group ##
-        echo -e "\tIOMMU ID:\t\t#$int_i"
-        bool_VGA_IOMMU_{$int_i}=false
+        echo -e "\tIOMMU ID: '$int_i'"
+        #bool_VGA_IOMMU_{$int_i}=false
 
         # parse list of PCI devices in given IOMMU group #
         for int_PCI_index in $arr_PCI_index_list; do
@@ -256,9 +263,9 @@ function StaticSetup {
             #
 
             # output #
-            echo -e "\n\tBus ID:\t\t${arr_PCI_BusID[$int_PCI_index]}"
-            echo -e "\tDeviceName:\t${arr_PCI_DeviceName[$int_PCI_index]}"
-            echo -e "\tType:\t\t${arr_PCI_Type[$int_PCI_index]}"
+            echo -e "\n\tBus ID: '${arr_PCI_BusID[$int_PCI_index]}'"
+            echo -e "\tDeviceName: '${arr_PCI_DeviceName[$int_PCI_index]}'"
+            echo -e "\tType: '${arr_PCI_Type[$int_PCI_index]}'"
         done
         ##
 
@@ -268,7 +275,7 @@ function StaticSetup {
         # match if list does not contain VGA #
         # do passthrough all devices #
         if [[ $bool_hasExternalVGA == false ]]; then
-            echo -e "$0: No external VGA device(s) found in IOMMU group ID #$int_i ."
+            echo -e "$0: IOMMU group ID '$int_i': no external VGA device(s) found."
             str_input1="Y"
         fi
         #
@@ -276,7 +283,7 @@ function StaticSetup {
         # match if list does NOT contain external PCI #
         # do NOT passthrough all devices #
         if [[ $bool_hasExternalPCI == false ]]; then
-            echo -e "$0: No external PCI device(s) found in IOMMU group ID #$int_i ."
+            echo -e "$0: IOMMU group ID '$int_i': no external PCI device(s) found."
             str_input1="N"
         fi
         #
@@ -284,7 +291,7 @@ function StaticSetup {
         # match if list does NOT contain external PCI #
         # do NOT passthrough all devices #
         if [[ $bool_hasExternalVGA == true ]]; then
-            echo -e "$0: External VGA device(s) found in IOMMU group ID #$int_i ."
+            echo -e "$0: IOMMU group ID '$int_i': external VGA device(s) found."
             str_input1="N"
         fi
         # 
@@ -295,14 +302,14 @@ function StaticSetup {
                 echo "$0: Exceeded max attempts."
                 str_input1="N"                      # default selection        
             else
-                echo -en "$0: Do you wish to pass-through IOMMU group ID #$int_i ? [ Y/n ]: "
+                echo -en "$0: Do you wish to pass-through IOMMU group ID '$int_i'? [Y/n]: "
                 read -r str_input1
                 str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
             fi
 
             case $str_input1 in
                 "Y")
-                    echo "$0: Passing-through IOMMU group ID #$int_i ..."
+                    echo "$0: Passing-through IOMMU group ID '$int_i'."
 
                     # add IOMMU group to VFIO pass-through lists #
                     arr_PCI_Driver_list+=($arr_PCI_IOMMU_{$int_i}_Driver_list)
@@ -311,7 +318,7 @@ function StaticSetup {
                     #
                     break;;
                 "N")
-                    echo "$0: Skipping IOMMU group ID #$int_i ..."
+                    echo "$0: Skipping IOMMU group ID '$int_i'."
                     break;;
                 *)
                     echo "$0: Invalid input.";;
