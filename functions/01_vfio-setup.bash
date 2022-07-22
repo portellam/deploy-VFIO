@@ -7,20 +7,13 @@ if [[ `whoami` != "root" ]]; then
 fi
 #
 
-# input variables #
-bool_isVFIOsetup=$2
-str_GRUB_CMDLINE_Hugepages=""
+# NOTE: necessary for newline preservation in arrays and files #
+SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
+IFS=$'\n'      # Change IFS to newline char
 
-str_file0=`ls $(pwd) | grep -i 'hugepages' | grep -i '.log'ls $(pwd) | grep -i 'hugepages' | grep -i '.log'`
-if [[ -z $str_file0 ]]; then
-    echo "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '"`ls $(pwd) | grep -i 'hugepages' | grep -i '.bash'`"' and '$0'."
-else
-    while read str_line1; do
-        if [[ $str_line1 == *"hugepagesz="* ]]; then str_GRUB_CMDLINE_Hugepages+="default_$str_line1 $str_line1"; fi    # parse hugepage size
-        if [[ $str_line1 == *"hugepages="* ]]; then str_GRUB_CMDLINE_Hugepages+=" $str_line1"; fi                       # parse hugepage num
-    done < $str_file0
-fi
-#
+# input variables #
+if [[ -e $2 ]]; then bool_isVFIOsetup=$2; fi
+str_GRUB_CMDLINE_Hugepages=""
 
 ## user input ##
 str_input1=""
@@ -152,18 +145,8 @@ function ParsePCI {
 }
 ## end ParsePCI ##
 
-# useful write to file, change to read file for vfio setup (hugepages cmd line)
-
-#str_GRUB_CMDLINE_Hugepages="default_hugepagesz=$str_HugePageSize hugepagesz=$str_HugePageSize hugepages=$int_HugePageNum"   # shared variable with other function
-#echo -e "$0: Writing logfile. Contents: partial text for GRUB menu entry."
-        
-#str_file1='~/'$(pwd)$0'.log'
-#echo $str_GRUB_CMDLINE_Hugepages >> $str_file1
-
-
-
-##### StaticSetup_new #####
-function StaticSetup_new {
+## StaticSetup ##
+function StaticSetup {
 
     ## NOTE:
     ##  i want to make the function parse all devices, and a given IOMMU group.
@@ -176,224 +159,213 @@ function StaticSetup_new {
 
     # match existing VFIO setup install, suggest uninstall or exit #
 
-        ## parameters ##
-        # files #
-        #str_file1="/etc/default/grub"
-        #str_file2="/etc/initramfs-tools/modules"
-        #str_file3="/etc/modules"
-        #str_file4="/etc/modprobe.d/pci-blacklists.conf"
-        #str_file5="/etc/modprobe.d/vfio.conf"
-        # logfiles #    # NOTE: keep?
-        str_file1=$(pwd)"grub.log"
-        str_file2=$(pwd)"initramfs-modules.log"
-        str_file3=$(pwd)"modules.log"
-        str_file4=$(pwd)"pci-blacklists.conf.log"
-        str_file5=$(pwd)"vfio.conf.log"
-        #
+    ## parameters ##
+    # files #
+    #str_file1="/etc/default/grub"
+    #str_file2="/etc/initramfs-tools/modules"
+    #str_file3="/etc/modules"
+    #str_file4="/etc/modprobe.d/pci-blacklists.conf"
+    #str_file5="/etc/modprobe.d/vfio.conf"
+    # logfiles #    # NOTE: keep?
+    str_file1=$(pwd)"/grub.log"
+    str_file2=$(pwd)"/initramfs-modules.log"
+    str_file3=$(pwd)"/modules.log"
+    str_file4=$(pwd)"/pci-blacklists.conf.log"
+    str_file5=$(pwd)"/vfio.conf.log"
+    #
 
-        # lists #
-        declare -a arr_PCI_Driver_list
-        str_PCI_Driver_list=""
-        str_PCI_HW_ID_list=""
-        #
+    # clear files #     # NOTE: do NOT delete GRUB
+    if [[ -e $str_file2 ]]; then rm $str_file2; fi
+    if [[ -e $str_file3 ]]; then rm $str_file3; fi
+    if [[ -e $str_file4 ]]; then rm $str_file4; fi
+    if [[ -e $str_file5 ]]; then rm $str_file5; fi
+    #
 
-        # dependencies #
-        declare -a arr_PCI_BusID
-        declare -a arr_PCI_DeviceName
-        declare -a arr_PCI_Driver
-        declare -a arr_PCI_HW_ID
-        declare -a arr_PCI_IOMMU_ID
-        declare -a arr_PCI_Type
-        declare -a arr_PCI_VendorName
-        declare -i int_PCI_IOMMU_ID_last
-        ##
+    # lists #
+    declare -a arr_PCI_Driver_list
+    str_PCI_Driver_list=""
+    str_PCI_HW_ID_list=""
+    #
 
-        # call function #
-        ParsePCI $bool_isVFIOsetup $arr_PCI_BusID $arr_PCI_DeviceName $arr_PCI_Driver $arr_PCI_HW_ID $arr_PCI_IOMMU_ID $int_PCI_IOMMU_ID_last $arr_PCI_Type $arr_PCI_VendorName
-        #
+    # dependencies #
+    declare -a arr_PCI_BusID
+    declare -a arr_PCI_DeviceName
+    declare -a arr_PCI_Driver
+    declare -a arr_PCI_HW_ID
+    declare -a arr_PCI_IOMMU_ID
+    declare -a arr_PCI_Type
+    declare -a arr_PCI_VendorName
+    declare -i int_PCI_IOMMU_ID_last
+    ##
+
+    # call function #
+    ParsePCI $bool_isVFIOsetup $arr_PCI_BusID $arr_PCI_DeviceName $arr_PCI_Driver $arr_PCI_HW_ID $arr_PCI_IOMMU_ID $int_PCI_IOMMU_ID_last $arr_PCI_Type $arr_PCI_VendorName
+    #
         
-        # list IOMMU groups #
-        echo -e "$0: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.\n\tDevices that share IOMMU groups must be passed-through as whole or none at all.\n\tNOTE 1: Evaluate order of PCI slots to have PCI devices in individual IOMMU groups.\n\tNOTE 2: It is possible to divide IOMMU groups, but the action creates an attack vector (breaches hypervisor layer) and is not recommended (for security reasons).\n\tNOTE 3: Some onboard PCI devices may NOT share IOMMU groups. Example: a USB controller.\n$0:Review the output below before choosing which IOMMU groups (groups of PCI devices) to pass-through or not."
+    # list IOMMU groups #
+    echo -e "$0: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.\n\tDevices that share IOMMU groups must be passed-through as whole or none at all.\n\tNOTE 1: Evaluate order of PCI slots to have PCI devices in individual IOMMU groups.\n\tNOTE 2: It is possible to divide IOMMU groups, but the action creates an attack vector (breaches hypervisor layer) and is not recommended (for security reasons).\n\tNOTE 3: Some onboard PCI devices may NOT share IOMMU groups. Example: a USB controller.\n$0: Review the output below before choosing which IOMMU groups (groups of PCI devices) to pass-through or not."
 
-        # parse list of PCI devices, in order of IOMMU ID #
-        for (( int_i=0; int_i<=$int_PCI_IOMMU_ID_last; int_i++ )); do
+    # parse list of PCI devices, in order of IOMMU ID #
+    for (( int_i=0; int_i<=$int_PCI_IOMMU_ID_last; int_i++ )); do
 
-            bool_hasExternalPCI=false   # reset boolean
-            bool_hasExternalVGA=false   # reset boolean
+        bool_hasExternalPCI=false   # reset boolean
+        bool_hasExternalVGA=false   # reset boolean
         
-            # parse list of IOMMU IDs (in no order) #
-            for (( int_j=0; int_j<${#arr_PCI_IOMMU_ID[@]}; int_j++ )); do
+        # parse list of IOMMU IDs (in no order) #
+        for (( int_j=0; int_j<${#arr_PCI_IOMMU_ID[@]}; int_j++ )); do
 
-                # match given IOMMU ID at given index #
-                if [[ "${arr_PCI_IOMMU_ID[$int_j]}" == "$int_i" ]]; then
-                    arr_PCI_index_list+=("$int_j")      # add new index to list
-                fi
-                #
+            # match given IOMMU ID at given index #
+            if [[ "${arr_PCI_IOMMU_ID[$int_j]}" == "$int_i" ]]; then arr_PCI_index_list+=("$int_j"); fi      # add new index to list
+        done
+        #
 
-            done
+        ## window of PCI devices in given IOMMU group ##
+        echo -e "\tIOMMU ID:\t\t#$int_i"
+        bool_VGA_IOMMU_{$int_i}=false
+
+        # parse list of PCI devices in given IOMMU group #
+        for int_PCI_index in $arr_PCI_index_list; do
+
+            str_thisPCI_BusID=${arr_PCI_BusID[$int_j]}
+                
+            # find Device Class ID, truncate first index if equal to zero (to convert to integer)
+            if [[ "${str_thisPCI_BusID:0:1}" == "0" ]]; then str_thisPCI_BusID=${str_thisPCI_BusID:1:1}
+            else str_thisPCI_BusID=${str_thisPCI_BusID:0:2}; fi
+            #
+                
+            # match greater/equal to Device Class ID #1
+            if [[ $str_thisPCI_BusID -ge 1 ]]; then
+                
+                # add IOMMU group information to lists #
+                str_PCI_IOMMU_Driver_list_{$int_i}+="${arr_PCI_Driver[$int_PCI_index]},"
+                str_PCI_IOMMU_HW_ID_list_{$int_i}+="${arr_PCI_HW_ID[$int_PCI_index]},"
+                bool_hasExternalPCI=true               # list contains external PCI
+            fi
             #
 
-            ## window of PCI devices in given IOMMU group ##
-            echo -e "\tIOMMU ID:\t\t#$int_i"
+            # is device external and is VGA #
+            #echo -e "$0: ${arr_PCI_Type[$int_PCI_index]} == '${arr_PCI_Type[$int_PCI_index]}'"
+            #echo -e "$0: $str_thisPCI_BusID == '$str_thisPCI_BusID'"
+            #str_index=$arr_index[$int_PCI_index]
 
-            bool_VGA_IOMMU_{$int_i}=false
+            if [[ $str_thisPCI_BusID -ge 1 && ${arr_PCI_Type[$int_PCI_index]} == *"VGA"* ]]; then  
+            #if [[ $str_thisPCI_BusID -ge 1 && $str_index == *"VGA"* ]]; then   
+                str_VGA_IOMMU_DeviceName_{$int_i}=${arr_PCI_DeviceName[$int_PCI_index]}
+                bool_hasExternalVGA=true               # list contains external VGA
+            fi;
+            #
 
-            # parse list of PCI devices in given IOMMU group #
-            for int_PCI_index in $arr_PCI_index_list; do
+            # output #
+            echo -e "\n\tBus ID:\t\t${arr_PCI_BusID[$int_PCI_index]}"
+            echo -e "\tDeviceName:\t${arr_PCI_DeviceName[$int_PCI_index]}"
+            echo -e "\tType:\t\t${arr_PCI_Type[$int_PCI_index]}"
+        done
+        ##
 
-                str_thisPCI_BusID=${arr_PCI_BusID[$int_j]}
-                
-                # find Device Class ID, truncate first index if equal to zero (to convert to integer)
-                if [[ "${str_thisPCI_BusID:0:1}" == "0" ]]; then              
-                    str_thisPCI_BusID=${str_thisPCI_BusID:1:1}
-                else    
-                    str_thisPCI_BusID=${str_thisPCI_BusID:0:2}
-                fi
-                #
-                
-                # match greater/equal to Device Class ID #1
-                if [[ $str_thisPCI_BusID -ge 1 ]]; then
-                
-                    # add IOMMU group information to lists #
-                    str_PCI_IOMMU_Driver_list_{$int_i}+="${arr_PCI_Driver[$int_PCI_index]},"
-                    str_PCI_IOMMU_HW_ID_list_{$int_i}+="${arr_PCI_HW_ID[$int_PCI_index]},"
+        ## prompt ##
+        declare -i int_count=0      # reset counter
+
+        # match if list does not contain VGA #
+        # do passthrough all devices #
+        if [[ $bool_hasExternalVGA == false ]]; then
+            echo -e "$0: No external VGA device(s) found in IOMMU group ID #$int_i ."
+            str_input1="Y"
+        fi
+        #
+
+        # match if list does NOT contain external PCI #
+        # do NOT passthrough all devices #
+        if [[ $bool_hasExternalPCI == false ]]; then
+            echo -e "$0: No external PCI device(s) found in IOMMU group ID #$int_i ."
+            str_input1="N"
+        fi
+        #
+
+        # match if list does NOT contain external PCI #
+        # do NOT passthrough all devices #
+        if [[ $bool_hasExternalVGA == true ]]; then
+            echo -e "$0: External VGA device(s) found in IOMMU group ID #$int_i ."
+            str_input1="N"
+        fi
+        # 
+
+        while true; do
+
+            if [[ $int_count -ge 3 ]]; then
+                echo "$0: Exceeded max attempts."
+                str_input1="N"                      # default selection        
+            else
+                echo -en "$0: Do you wish to pass-through IOMMU group ID #$int_i ? [ Y/n ]: "
+                read -r str_input1
+                str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
+            fi
+
+            case $str_input1 in
+                "Y")
+                    echo "$0: Passing-through IOMMU group ID #$int_i ..."
+
+                    # add IOMMU group to VFIO pass-through lists #
+                    arr_PCI_Driver_list+=($arr_PCI_IOMMU_{$int_i}_Driver_list)
+                    str_PCI_Driver_list+=$str_PCI_IOMMU_{$int_i}_Driver_list
+                    str_PCI_HW_ID_list+=$str_PCI_IOMMU_{$int_i}_HW_ID_list
                     #
+                    break;;
+                "N")
+                    echo "$0: Skipping IOMMU group ID #$int_i ..."
+                    break;;
+                *)
+                    echo "$0: Invalid input.";;
+            esac
 
-                    bool_hasExternalPCI=true               # list contains external PCI
-                fi
-                #
+            ((int_count++))     # increment counter
+        done  
+    done
+    #
 
-                # is device external and is VGA #
-                if [[ $str_thisPCI_BusID -ge 1 && ${arr_PCI_Type[$int_PCI_index]} == *"VGA"* ]]; then   
-                    str_VGA_IOMMU_DeviceName_{$int_i}=${arr_PCI_DeviceName[$int_PCI_index]}
-                    bool_hasExternalVGA=true               # list contains external VGA
-                fi
-                #
+    # remove last separator #
+    if [[ ${str_PCI_Driver_list: -1} == "," ]]; then str_PCI_Driver_list=${str_PCI_Driver_list::-1}; fi
 
-                # output #
-                echo -e "\n\tBus ID:\t\t${arr_PCI_BusID[$int_PCI_index]}"
-                echo -e "\tDeviceName:\t${arr_PCI_DeviceName[$int_PCI_index]}"
-                echo -e "\tType:\t\t${arr_PCI_Type[$int_PCI_index]}"
-                #
+    if [[ ${str_PCI_HW_ID_list: -1} == "," ]]; then str_PCI_HW_ID_list=${str_PCI_HW_ID_list::-1}; fi
+    #
 
-            done
-            ##
+    # VFIO soft dependencies #
+    for str_thisPCI_Driver in $arr_PCI_Driver_list; do
+        str_PCI_Driver_list_softdep="softdep $str_thisPCI_Driver pre: vfio-pci\n$str_thisPCI_Driver"
+    done
+    #
 
-            ## prompt ##
-            declare -i int_count=0      # reset counter
+    ## GRUB ##
+    bool_str_file1=false
+    str_GRUB="GRUB_CMDLINE_DEFAULT=\"acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_PCI_Driver_list vfio_pci.ids=$str_PCI_HW_ID_list\""
 
-            # match if list does not contain VGA #
-            # do passthrough all devices #
-            if [[ $bool_hasExternalVGA == false ]]; then
-                echo -e "$0: No external VGA device(s) found in IOMMU group ID #$int_i ."
-                str_input1="Y"
-            fi
-            #
+    # backup file
+    if [[ -z $str_file1"_old" ]]; then cp $str_file1 $str_file1"_old"; fi
+    #
 
-            # match if list does NOT contain external PCI #
-            # do NOT passthrough all devices #
-            if [[ $bool_hasExternalPCI == false ]]; then
-                echo -e "$0: No external PCI device(s) found in IOMMU group ID #$int_i ."
-                str_input1="N"
-            fi
-            #
+    # find GRUB line and comment out #
+    while read str_line_1; do
 
-            # match if list does NOT contain external PCI #
-            # do NOT passthrough all devices #
-            if [[ $bool_hasExternalVGA == true ]]; then
-                echo -e "$0: External VGA device(s) found in IOMMU group ID #$int_i ."
-                str_input1="N"
-            fi
-            # 
-
-            while true; do
-
-                if [[ $int_count -ge 3 ]]; then
-                    echo "$0: Exceeded max attempts."
-                    str_input1="N"                      # default selection        
-                else
-                    echo -en "$0: Do you wish to pass-through IOMMU group ID #$int_i ? [ Y/n ]: "
-                    read -r str_input1
-                    str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
-                fi
-
-                case $str_input1 in
-                    "Y")
-                        echo "$0: Passing-through IOMMU group ID #$int_i ..."
-
-                        # add IOMMU group to VFIO pass-through lists #
-                        arr_PCI_Driver_list+=($arr_PCI_IOMMU_{$int_i}_Driver_list)
-                        str_PCI_Driver_list+=$str_PCI_IOMMU_{$int_i}_Driver_list
-                        str_PCI_HW_ID_list+=$str_PCI_IOMMU_{$int_i}_HW_ID_list
-                        #
-
-                        break;;
-                    "N")
-                        echo "$0: Skipping IOMMU group ID #$int_i ..."
-                        break;;
-                    *)
-                        echo "$0: Invalid input.";;
-                esac
-
-                ((int_count++))     # increment counter
-            done
-            #   
-        done
-        #
-
-        # remove last separator #
-        if [[ ${str_PCI_Driver_list: -1} == "," ]]; then
-            str_PCI_Driver_list=${str_PCI_Driver_list::-1}
+        # match line #
+        if [[ $str_line_1 != *"GRUB_CMDLINE_DEFAULT"* && $str_line_1 != *"#GRUB_CMDLINE_DEFAULT"* ]]; then
+            bool_str_file1=true
+            str_line1=$str_GRUB                         # update line
         fi
 
-        if [[ ${str_PCI_HW_ID_list: -1} == "," ]]; then
-            str_PCI_HW_ID_list=${str_PCI_HW_ID_list::-1}
-        fi
-        #
+        echo -e $str_line_1  >> $str_file1"_new"        # append to new file
+    done < $str_file1
+    #
 
-        # VFIO soft dependencies #
-        for str_thisPCI_Driver in $arr_PCI_Driver_list; do
-            str_PCI_Driver_list_softdep="softdep $str_thisPCI_Driver pre: vfio-pci\n$str_thisPCI_Driver"
-        done
-        #
+    # no GRUB line found, append at end #
+    if [[ $bool_str_file1 == false ]]; then echo -e "\n$str_GRUB"  >> $str_file1"_new"; fi
+    #
 
-        ## GRUB ##
-        bool_str_file1=false
+    mv $str_file1"_new" $str_file1  # overwrite current file with new file
+    ##
 
-        str_GRUB="GRUB_CMDLINE_DEFAULT=\"acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_PCI_Driver_list vfio_pci.ids=$str_PCI_HW_ID_list\""
-
-        # backup file
-        if [[ -z $str_file1"_old" ]]; then
-            cp $str_file1 $str_file1"_old"
-        fi
-        #
-
-        # find GRUB line and comment out #
-        while read str_line_1; do
-
-            # match line #
-            if [[ $str_line_1 != *"GRUB_CMDLINE_DEFAULT"* && $str_line_1 != *"#GRUB_CMDLINE_DEFAULT"* ]]; then
-                bool_str_file1=true
-                str_line1=$str_GRUB                         # update line
-            fi
-
-            echo -e $str_line_1  >> $str_file1"_new"        # append to new file
-
-        done < $str_file_1
-        #
-
-        # no GRUB line found, append at end #
-        if [[ $bool_str_file1 == false ]]; then
-            echo -e "\n$str_GRUB"  >> $str_file1"_new"
-        fi
-        #
-
-        mv $str_file1"_new" $str_file1  # overwrite current file with new file
-        ##
-
-        ## initramfs-tools ##
-        declare -a arr_file2=(
-"# NOTE: Generated by 'portellam/VFIO-setup'  # START #
+    ## initramfs-tools ##
+    declare -a arr_file2=(
+"# NOTE: Generated by 'portellam/VFIO-setup'
+# START #
 # List of modules that you want to include in your initramfs.
 # They will be loaded at boot time in the order below.
 #
@@ -409,27 +381,25 @@ function StaticSetup_new {
 # NOTE: GRUB command line is an easier and cleaner method if vfio-pci grabs all hardware.
 # Example: Reboot hypervisor (Linux) to swap host graphics (Intel, AMD, NVIDIA) by use-case (AMD for Win XP, NVIDIA for Win 10).
 # NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
-
+\n
 # Soft dependencies and PCI kernel drivers:
 $str_PCI_Driver_list_softdep
-
-vfio
+\nvfio
 vfio_iommu_type1
 vfio_virqfd
-
-# GRUB command line and PCI hardware IDs:
+\n# GRUB command line and PCI hardware IDs:
 options vfio_pci ids=$str_PCI_HW_ID_list
 vfio_pci ids=$str_PCI_HW_ID_list
 vfio_pci
-# END #"
-)
-        #echo ${arr_file2[@]} > $str_file2
-        echo ${arr_file2[@]}
-        ##
+# END #")
 
-        ## /etc/modules ##
-        declare -a arr_file3=(
-"# NOTE: Generated by 'portellam/VFIO-setup'  # START #
+    for str_line1 in ${arr_file2[@]}; do echo -e $str_line1 >> $str_file2; done
+    ##
+
+    ## /etc/modules ##
+    declare -a arr_file3=(
+"# NOTE: Generated by 'portellam/VFIO-setup'
+# START #
 # /etc/modules: kernel modules to load at boot time.
 #
 # This file contains the names of kernel modules that should be loaded
@@ -446,111 +416,106 @@ vfio_virqfd
 kvm
 kvm_intel
 apm power_off=1
-
-# In terminal, execute \"lspci -nnk\".
-
-# GRUB kernel parameters:
+\n# In terminal, execute \"lspci -nnk\".
+\n# GRUB kernel parameters:
 vfio_pci ids=$str_PCI_HW_ID_list
-# END #"
-)
-        #echo ${arr_file3[@]} > $str_file3
-        echo ${arr_file3[@]}
-        ##
+# END #")
 
-        ## /etc/modprobe.d/pci-blacklist.conf ##
-        echo "# NOTE: Generated by 'portellam/VFIO-setup'  # START #" >> $str_file4
-        #for str_thisPCI_Driver in $arr_PCI_Driver_list[@]; do
-            #echo "blacklist $str_thisPCI_Driver" >> $str_file4
-        #done
-        echo "# END #" >> $str_file4
-        ##
+    for str_line1 in ${arr_file3[@]}; do echo -e $str_line1 >> $str_file3; done
+    ##
 
-        ## /etc/modprobe.d/vfio.conf ##
-        declare -a arr_file5=(
-"# NOTE: Generated by 'portellam/VFIO-setup'  # START #
+    ## /etc/modprobe.d/pci-blacklist.conf ##
+    echo -e "# NOTE: Generated by 'portellam/VFIO-setup'\n# START #" >> $str_file4
+    for str_thisPCI_Driver in $arr_PCI_Driver_list[@]; do
+        echo -e "blacklist $str_thisPCI_Driver" >> $str_file4
+    done
+    echo -e "# END #" >> $str_file4
+    ##
+
+    ## /etc/modprobe.d/vfio.conf ##
+    declare -a arr_file5=(
+"# NOTE: Generated by 'portellam/VFIO-setup'
+# START #
 # NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
 # Soft dependencies:
 $str_PCI_Driver_list_softdep
-
-# PCI hardware IDs:
+\n# PCI hardware IDs:
 options vfio_pci ids=$str_PCI_HW_ID_list
 # END #")
-        #echo ${arr_file5[@]} > $str_file5
-        echo ${arr_file5[@]}
-        ##
-
-    done
-    #
+    for str_line1 in ${arr_file5[@]}; do echo -e $str_line1 >> $str_file5; done
 
 }
-## end StaticSetup_new ##
+## end StaticSetup ##
 
+# check for hugepages logfile #
+str_file0=`ls $(pwd) | grep -i 'hugepages' | grep -i '.log'ls $(pwd) | grep -i 'hugepages' | grep -i '.log'`
+if [[ -z $str_file0 ]]; then
+    echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '"`ls $(pwd) | grep -i 'hugepages' | grep -i '.bash'`"' and '$0'."
+    str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages="
+else
+    while read str_line1; do
+        if [[ $str_line1 == *"hugepagesz="* ]]; then str_GRUB_CMDLINE_Hugepages+="default_$str_line1 $str_line1"; fi    # parse hugepage size
+        if [[ $str_line1 == *"hugepages="* ]]; then str_GRUB_CMDLINE_Hugepages+="$str_line1"; fi                       # parse hugepage num
+    done < $str_file0
+fi
 #
-while [[ $bool_isVFIOsetup == false ]]; do
 
-    ParsePCI $bool_isVFIOsetup
+# prompt #
+declare -i int_count=0      # reset counter
+str_prompt="$0: Setup VFIO by 'Multi-Boot' or Statically?\n\tMulti-Boot Setup includes adding GRUB boot options, each with one specific omitted VGA device.\n\tStatic Setup modifies '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*.\n\tMulti-boot is the more flexible choice."
 
-    # prompt #
-    declare -i int_count=0      # reset counter
+if [[ -z $str_input1 ]]; then echo -e $str_prompt; fi
 
-    str_prompt="$0: Setup VFIO by 'Multi-Boot' or Statically?\n\tMulti-Boot Setup includes adding GRUB boot options, each with one specific omitted VGA device.\n\tStatic Setup modifies '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*.\n\tMulti-boot is the more flexible choice."
+#while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
+while true; do
 
-    if [[ -z $str_input1 ]]; then echo -e $str_prompt; fi
+    if [[ $int_count -ge 3 ]]; then
+        echo "$0: Exceeded max attempts."
+        str_input1="N"                   # default selection
+    else
+        echo -en "$0: Setup VFIO? [ (M)ulti-Boot / (S)tatic / (N)one ]: "
+        read -r str_input1
+        str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
+        str_input1=${str_input1:0:1}
+    fi
 
-    while true; do
+    case $str_input1 in
+        "M")
+            echo -e "$0: Continuing with Multi-Boot setup...\n"
 
-        if [[ $int_count -ge 3 ]]; then
-            echo "$0: Exceeded max attempts."
-            str_input1="N"                   # default selection
-        else
-            echo -en "$0: Setup VFIO? [ (M)ulti-Boot / (S)tatic / (N)one ]: "
-            read -r str_input1
-            str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
-            str_input1=${str_input1:0:1}
-        fi
+            #MultiBootSetup $bool_isVFIOsetup $str_GRUB_CMDLINE_Hugepages
+            #StaticSetup $bool_isVFIOsetup $str_GRUB_CMDLINE_Hugepages
+            MultiBootSetup $str_GRUB_CMDLINE_Hugepages
+            StaticSetup $str_GRUB_CMDLINE_Hugepages
 
-        case $str_input1 in
-            "M")
-                echo -e "$0: Continuing with Multi-Boot setup...\n"
+            #sudo update-grub                    # update GRUB
+            #sudo update-initramfs -u -k all     # update INITRAMFS
 
-                #MultiBootSetup $bool_isVFIOsetup $str_GRUB_CMDLINE_Hugepages
-                #StaticSetup $bool_isVFIOsetup $str_GRUB_CMDLINE_Hugepages
-                MultiBootSetup $str_GRUB_CMDLINE_Hugepages
-                StaticSetup $str_GRUB_CMDLINE_Hugepages
+            echo -e "$0: NOTE: Review changes in:\n\t'/etc/default/grub'\n\t'/etc/initramfs-tools/modules'\n\t'/etc/modules'\n\t/etc/modprobe.d/*"
+            break;;
+        "S")
+            echo -e "$0: Continuing with Static setup...\n"
 
-                #sudo update-grub                    # update GRUB
-                #sudo update-initramfs -u -k all     # update INITRAMFS
+            #StaticSetup $bool_isVFIOsetup $str_GRUB_CMDLINE_Hugepages
+            StaticSetup $str_GRUB_CMDLINE_Hugepages
 
-                echo -e "$0: NOTE: Review changes in:\n\t'/etc/default/grub'\n\t'/etc/initramfs-tools/modules'\n\t'/etc/modules'\n\t/etc/modprobe.d/*"
-                break;;
+            #sudo update-grub                    # update GRUB
+            #sudo update-initramfs -u -k all     # update INITRAMFS
 
-            "S")
-                echo -e "$0: Continuing with Static setup...\n"
-
-                #StaticSetup $bool_isVFIOsetup $str_GRUB_CMDLINE_Hugepages
-                StaticSetup $str_GRUB_CMDLINE_Hugepages
-
-                #sudo update-grub                    # update GRUB
-                #sudo update-initramfs -u -k all     # update INITRAMFS
-
-                echo -e "$0: NOTE: Review changes in:\n\t'/etc/default/grub'\n\t'/etc/initramfs-tools/modules'\n\t'/etc/modules'\n\t/etc/modprobe.d/*"
-                break;;
-
-            "N")
-                echo -e "$0: Skipping...\n"
-                exit 0;;
-
-            *)
-                echo "$0: Invalid input.";;
-        esac
-        ((int_count++))     # increment counter
-    done
-    #
+            echo -e "$0: NOTE: Review changes in:\n\t'/etc/default/grub'\n\t'/etc/initramfs-tools/modules'\n\t'/etc/modules'\n\t/etc/modprobe.d/*"
+            break;;
+        "N")
+            #echo -e "$0: Skipping...\n"
+            break;;
+        *)
+            echo "$0: Invalid input.";;
+    esac
+    ((int_count++))     # increment counter
 done
-# 
+#
     
 # prompt uninstall setup or exit #
-if [[ $bool_isVFIOsetup == true ]]; then
+if [[ $bool_isVFIOsetup == true && -e $bool_isVFIOsetup ]]; then
 
     echo -e "$0: WARNING: System is already setup with VFIO Passthrough."
     #echo -e "$0: To continue with a new VFIO setup:\n\tExecute the 'Uninstall VFIO setup,'\n\tReboot the system,\n\tExecute '$0'."
@@ -564,11 +529,9 @@ if [[ $bool_isVFIOsetup == true ]]; then
             #UninstallMultiBootSetup
             #UninstallStaticSetup
             break;;
-
         "N")
-            echo -e "$0: Skipping...\n"
-            exit 0;;
-
+            #echo -e "$0: Skipping...\n"
+            break;;
         *)
             echo "$0: Invalid input.";;
     esac
@@ -577,5 +540,6 @@ if [[ $bool_isVFIOsetup == true ]]; then
 fi
 #
 
-
+IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
+echo "$0: Exiting."
 exit 0

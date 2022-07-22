@@ -7,6 +7,7 @@ if [[ `whoami` != "root" ]]; then
 fi
 #
 
+# NOTE: necessary for newline preservation in arrays and files #
 SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
@@ -103,6 +104,6 @@ while [[ $bool_isVFIOsetup == false ]]; do
 done
 #
 
-IFS=$SAVEIFS        # reset IFS
+IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 echo "$0: Exiting."
 exit 0
