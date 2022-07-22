@@ -50,7 +50,7 @@ In terminal, execute:
 ## DISCLAIMER
 **Work-in-progress**
 
-Tested and performs on Debian Linux.
+Tested on Debian Linux.
 
 Use script at your own risk!
 
