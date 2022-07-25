@@ -1,0 +1,2 @@
+
+GRUB_CMDLINE_DEFAULT="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist= vfio_pci.ids="

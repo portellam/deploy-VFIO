@@ -16,14 +16,14 @@ if [[ -e $2 ]]; then bool_isVFIOsetup=$2; fi
 str_GRUB_CMDLINE_Hugepages=""
 
 # dependencies #
-declare -a arr_PCI_BusID
-declare -a arr_PCI_DeviceName
-declare -a arr_PCI_Driver
-declare -a arr_PCI_HW_ID
-declare -a arr_PCI_IOMMU_ID
-declare -a arr_PCI_Type
-declare -a arr_PCI_VendorName
-declare -i int_PCI_IOMMU_ID_last
+declare -a arr_lspci_busID
+declare -a arr_lspci_deviceName
+declare -a arr_lspci_driver
+declare -a arr_lspci_HWID
+declare -a arr_lspci_IOMMUID
+declare -a arr_lspci_type
+declare -a arr_lspci_vendorName
+declare -i int_compgen_IOMMUID_lastIndex
 #
 
 ## user input ##
@@ -78,51 +78,203 @@ function ValidInput {
 }
 ##
 
-## ParsePCI ##
 function ParsePCI {
+
+    ## parameters ##
+    declare -a arr_compgen_IOMMUID=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | cut -d '/' -f5 | sort -h`)                         # IOMMU ID, sorted
+    declare -i int_compgen_IOMMUID_lastIndex=`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | cut -d '/' -f5 | sort -hr | head -n1`     # IOMMU ID, sorted
+    declare -a arr_compgen_busID=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | sort -h | cut -d '/' -f7`)                           # Bus ID, sorted by IOMMU ID    (ex '0001:00.0')
+
+    declare -a arr_lspci=(`lspci -k | grep -Eiv 'DeviceName|Subsystem|modules'`)        # dev name, Bus ID, and (sometimes) driver
+    declare -a arr_lspci_busID=(`lspci -m | cut -d '"' -f 1`)                           # Bus ID, sorted        (ex '01:00.0')                     # same length as 'arr_compgen_busID'
+    declare -a arr_lspci_deviceName=(`lspci -m | cut -d '"' -f 6`)                      # dev name, sorted      (ex 'GP104 [GeForce GTX 1070]')
+    declare -a arr_lspci_HWID=(`lspci -n | cut -d ' ' -f 3`)                            # HW ID, sorted         (ex '10de:1b81')
+    declare -a arr_lspci_type=(`lspci -m | cut -d '"' -f 2`)                            # dev type, sorted      (ex 'VGA compatible controller')
+    declare -a arr_lspci_vendorName=(`lspci -m | cut -d '"' -f 4`)                      # ven name, sorted      (ex 'NVIDIA Corporation')
+    ##
+
+    ## create arrays (with name suffix of IOMMU group ID) with 'lspci' indexes of matching devices ##
+    # parse IOMMU ID #
+    for (( int_i=0; int_i<${#arr_compgen_IOMMUID[@]}; int_i++ )); do
+
+        # parse Bus ID #
+        for (( int_j=0; int_j<${#arr_lspci_busID[@]}; int_j++ )); do
+
+            # match Bus ID, add 'lspci' index as element of list #
+            if [[ ${arr_compgen_busID[$int_i]} == *{$arr_lspci_busID[$int_j]}* ]]; then
+                arr_IOMMUID_[$int_i]+=($int_j)
+            fi
+            #
+
+        done
+        #
+
+    done
+    ##
+
+    ## create arrays (with suffix of 'lspci' index) with drivers of matching Bus IDs ##
+    # parse Bus ID #
+    for (( int_i=0; int_i<${#arr_lspci_busID[@]}; int_i++ )); do
+
+        bool_readNextLine=false
+        str_thisbusID=${arr_lspci_busID[$int_i]}
+
+        # parse info #
+        for (( int_j=0; int_j<${#arr_lspci[@]}; int_j++ )); do
+
+            # false match boolean, match Bus ID, set boolean #
+            if [[ $bool_readNextLine == false && ${arr_lspci[$int_j]} == *$str_thisbusID* ]]; then
+                bool_readNextLine=true
+            fi
+            #
+
+            # match boolean and driver, add to list #
+            if [[ $bool_readNextLine == true && ${arr_lspci[$int_j]} == *"driver"* ]]; then
+
+                str_driverName=`echo ${arr_lspci[$int_j]} | grep 'driver' | cut -d ' ' -f 5`    # valid element
+
+                # valid driver found, add to list #
+                if [[ -e $str_driverName && $str_driverName != 'vfio-pci' ]]; then
+                    arr_lspci_driverName_[$int_i]+=("$str_PCI_Driver")
+                fi
+                #   
+
+                # driver is null, note input, add to list #
+                if [[ -z $str_driverName && $str_PCI_Driver != 'vfio-pci' ]]; then
+                    arr_lspci_driverName_[$int_i]+=("NO_DRIVER_FOUND")
+                fi
+                #
+
+                # vfio driver found, note input, add to list and update boolean #
+                if [[ $str_driverName == 'vfio-pci' ]]; then
+                    arr_lspci_driverName_[$int_i]+=("VFIO_DRIVER_FOUND")
+                    bool_isVFIOsetup=true
+                fi
+                #
+
+            fi
+            #
+
+            # match boolean, false match Bus ID and false match driver, reset boolean, exit loop #
+            if [[ $bool_readNextLine == true && ${arr_lspci[$int_j]} != *$str_thisbusID* && ${arr_lspci[$int_j]} != *"driver"* ]]; then
+                bool_readNextLine=false
+                #((int_j={#arr_lspci[@]}))      # NOTE: test, I want to kill this loop to save cycles!
+            fi  
+            #
+
+        done
+        #
+
+    done
+    ##
+
+}
+
+function StaticSetup {
+
+    ## parameters ##
+    # files #
+    #str_file1="/etc/default/grub"
+    #str_file2="/etc/initramfs-tools/modules"
+    #str_file3="/etc/modules"
+    #str_file4="/etc/modprobe.d/pci-blacklists.conf"
+    #str_file5="/etc/modprobe.d/vfio.conf"
+    #
+
+    # debug logfiles #    
+    str_file1=$(pwd)"/grub.log"
+    str_file2=$(pwd)"/initramfs-modules.log"
+    str_file3=$(pwd)"/modules.log"
+    str_file4=$(pwd)"/pci-blacklists.conf.log"
+    str_file5=$(pwd)"/vfio.conf.log"
+    ##
+
+    # clear files #     # NOTE: do NOT delete GRUB
+    if [[ -e $str_file2 ]]; then rm $str_file2; fi
+    if [[ -e $str_file3 ]]; then rm $str_file3; fi
+    if [[ -e $str_file4 ]]; then rm $str_file4; fi
+    if [[ -e $str_file5 ]]; then rm $str_file5; fi
+    #
+
+    # call function #
+    ParsePCI $bool_isVFIOsetup $arr_lspci_busID $arr_lspci_deviceName $arr_lspci_driver $arr_lspci_HWID $arr_lspci_IOMMUID $int_compgen_IOMMUID_lastIndex $arr_lspci_type $arr_lspci_vendorName
+    #
+
+    # list IOMMU groups #
+    str_output1="$0: PLEASE READ: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.
+    \n\tPLEASE READ: Devices that share IOMMU groups must be passed-through as whole or none at all.
+    \n\tPLEASE READ: Evaluate order of PCI slots to have PCI devices in individual IOMMU groups.
+    \n\tPLEASE READ: A feature (ACS-Override patch) exists to divide IOMMU groups, but said feature creates an attack vector (memory read/write across PCI devices) and is not recommended (for security reasons).
+    \n\tPLEASE READ: Some onboard PCI devices may NOT share IOMMU groups. Example: a USB controller.\n\n$0: Review the output below before choosing which IOMMU groups (groups of PCI devices) to pass-through or not."
+
+    echo -e $str_output1
+
+    # parse list of PCI devices, in order of IOMMU ID #
+    declare -i int_i=0      # reset counter
+
+    exit 0
+
+
+    # -parse by IOMMU group
+    # -each device that exists in said group
+    #   -hw id, driver name, device type
+    #   -if driver name is invalid (null or vfio), note on screen (also boolean will notify user to quit script, undo vfio auto or later time)
+    #   -if driver is valid, note vga
+    #   -once group parse is complete, ask user if they wish to make (at the end) GRUB entries that include and one entry that excludes said group (if vga exists)
+    # that should be it
+    # also test ParsePCI
+    # -shall i compare 'compgen' and 'lspci' by bus id, and save indexes from lspci to iommu groups?
+    # -then reference all info from said indexes?
+
+}
+
+
+## ParsePCI ##
+function ParsePCI_old {
  
     # parameters #
     # same-size parsed lists #                                    # NOTE: all parsed lists should be same size/length, for easy recall
-    declare -a arr_PCI_BusID=(`lspci -m | cut -d '"' -f 1`)       # ex '01:00.0'
-    declare -a arr_PCI_DeviceName=(`lspci -m | cut -d '"' -f 6`)  # ex 'GP104 [GeForce GTX 1070]''
-    declare -a arr_PCI_HW_ID=(`lspci -n | cut -d ' ' -f 3`)       # ex '10de:1b81'
-    declare -a arr_PCI_IOMMU_ID                                   # list of IOMMU IDs by order of Bus IDs
-    declare -a arr_PCI_Type=(`lspci -m | cut -d '"' -f 2`)        # ex 'VGA compatible controller'
-    declare -a arr_PCI_VendorName=(`lspci -m | cut -d '"' -f 4`)  # ex 'NVIDIA Corporation'
+    declare -a arr_lspci_busID=(`lspci -m | cut -d '"' -f 1`)       # ex '01:00.0'
+    declare -a arr_lspci_deviceName=(`lspci -m | cut -d '"' -f 6`)  # ex 'GP104 [GeForce GTX 1070]''
+    declare -a arr_lspci_HWID=(`lspci -n | cut -d ' ' -f 3`)       # ex '10de:1b81'
+    declare -a arr_lspci_IOMMUID                                   # list of IOMMU IDs by order of Bus IDs
+    declare -a arr_lspci_type=(`lspci -m | cut -d '"' -f 2`)        # ex 'VGA compatible controller'
+    declare -a arr_lspci_vendorName=(`lspci -m | cut -d '"' -f 4`)  # ex 'NVIDIA Corporation'
 
     # add empty values to pad out and make it easier for parse/recall #
-    declare -a arr_PCI_Driver                                     # ex 'nouveau' or 'nvidia'
+    declare -a arr_lspci_driverName                                     # ex 'nouveau' or 'nvidia'
     ##
 
     # unparsed lists #
     declare -a arr_lspci_k=(`lspci -k | grep -Eiv 'DeviceName|Subsystem|modules'`)      # PCI device list with Bus ID, name, and (likely) kernel driver
-    declare -a arr_compgen_G=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*"`)      # IOMMU group IDs in no order
+    #declare -a arr_compgen_G=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*"`)      # IOMMU group IDs in no order
+    declare -a arr_compgen_G=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | cut -d '/' -f5 | sort -h`)   # IOMMU group IDs in order
     #
 
     # greatest index of IOMMU groups #
-    int_PCI_IOMMU_ID_last=`dmesg | grep 'iommu group' | sort -hr | head -n1 | cut -d 'p' -f3 | cut -d ' ' -f2`       # NOTE: expected output last group integer
+    int_compgen_IOMMUID_lastIndex=`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | cut -d '/' -f5 | sort -hr | head -n1`       # NOTE: expected output last group integer
 
-    #echo -e "$0: int_PCI_IOMMU_ID_last == '$int_PCI_IOMMU_ID_last'"    # debug output
+    #echo -e "$0: int_compgen_IOMMUID_lastIndex == '$int_compgen_IOMMUID_lastIndex'"    # debug output
 
     # reformat input #
     # parse list of Bus IDs
-    for (( int_i=0; int_i<${#arr_PCI_BusID[@]}; int_i++ )); do 
-        arr_PCI_BusID[$int_i]=${arr_PCI_BusID[$int_i]::-1}                  # reformat element
-        ##echo -e "$0: arr_PCI_BusID[$int_i] == '${arr_PCI_BusID[$int_i]}'"    # debug output
+    for (( int_i=0; int_i<${#arr_lspci_busID[@]}; int_i++ )); do 
+        arr_lspci_busID[$int_i]=${arr_lspci_busID[$int_i]::-1}                  # reformat element
+        ##echo -e "$0: arr_lspci_busID[$int_i] == '${arr_lspci_busID[$int_i]}'"    # debug output
     done
     #
 
     # parse output of IOMMU IDs # 
     # parse list of Bus IDs
-    for (( int_i=0; int_i<${#arr_PCI_BusID[@]}; int_i++ )); do
+    for (( int_i=0; int_i<${#arr_lspci_busID[@]}; int_i++ )); do
 
         # parse list of output (Bus IDs and IOMMU IDs) #
         for (( int_j=0; int_j<${#arr_compgen_G[@]}; int_j++ )); do
 
             # match output with Bus ID #
-            if [[ ${arr_compgen_G[$int_j]} == *"${arr_PCI_BusID[$int_i]}"* ]]; then
-                arr_PCI_IOMMU_ID[$int_i]=`echo ${arr_compgen_G[$int_j]} | cut -d '/' -f 5`      # save IOMMU ID at given index
-                #echo -e "$0: arr_PCI_IOMMU_ID[$int_i] == '${arr_PCI_IOMMU_ID[$int_i]}'"
+            if [[ ${arr_compgen_G[$int_j]} == *"${arr_lspci_busID[$int_i]}"* ]]; then
+                arr_lspci_IOMMUID[$int_i]=`echo ${arr_compgen_G[$int_j]} | cut -d '/' -f 5`      # save IOMMU ID at given index
+                #echo -e "$0: arr_lspci_IOMMUID[$int_i] == '${arr_lspci_IOMMUID[$int_i]}'"         # debug output
                 int_j=${#arr_compgen_G[@]}                                                      # break loop
             fi
         done
@@ -135,20 +287,20 @@ function ParsePCI {
     for (( int_i=0; int_i<${#arr_lspci_k[@]}; int_i++ )); do
 
         str_line1=${arr_lspci_k[$int_i]}                                    # current line
-        str_PCI_BusID=`echo $str_line1 | grep -Eiv 'driver'`                # valid element
+        str_PCI_busID=`echo $str_line1 | grep -Eiv 'driver'`                # valid element
         str_PCI_Driver=`echo $str_line1 | grep 'driver' | cut -d ' ' -f 5`  # valid element
 
         # driver is NOT null and Bus ID is null #
-        if [[ -z $str_PCI_BusID && -e $str_PCI_Driver && $str_PCI_Driver != 'vfio-pci' ]]; then arr_PCI_Driver+=("$str_PCI_Driver"); fi   # add to list
+        if [[ -z $str_PCI_busID && -e $str_PCI_Driver && $str_PCI_Driver != 'vfio-pci' ]]; then arr_lspci_driver+=("$str_PCI_Driver"); fi   # add to list
     
         # valid driver not found, note input # 
         if [[ -z $str_PCI_Driver && $str_PCI_Driver != 'vfio-pci' ]]; then
-            arr_PCI_Driver+=("NO_DRIVER_FOUND")
+            arr_lspci_driver+=("NO_DRIVER_FOUND")
         fi
 
         # valid driver not found, note input, stop setup # 
         if [[ $str_PCI_Driver == 'vfio-pci' ]]; then
-            arr_PCI_Driver+=("VFIO_DRIVER_FOUND")
+            arr_lspci_driver+=("VFIO_DRIVER_FOUND")
             #bool_isVFIOsetup=true                          # NOTE: use function?
         fi
     done
@@ -158,7 +310,7 @@ function ParsePCI {
 ## end ParsePCI ##
 
 ## StaticSetup ##
-function StaticSetup {
+function StaticSetup_old {
 
     ## NOTE:
     ##  i want to make the function parse all devices, and a given IOMMU group.
@@ -194,24 +346,24 @@ function StaticSetup {
     #
 
     # lists #
-    declare -a arr_PCI_Driver_list
+    declare -a arr_lspci_driver_list
     str_PCI_Driver_list=""
-    str_PCI_HW_ID_list=""
+    str_PCI_HWID_list=""
     #
 
     # dependencies #
-    #declare -a arr_PCI_BusID
-    #declare -a arr_PCI_DeviceName
-    #declare -a arr_PCI_Driver
-    #declare -a arr_PCI_HW_ID
-    #declare -a arr_PCI_IOMMU_ID
-    #declare -a arr_PCI_Type
-    #declare -a arr_PCI_VendorName
-    #declare -i int_PCI_IOMMU_ID_last
+    #declare -a arr_lspci_busID
+    #declare -a arr_lspci_deviceName
+    #declare -a arr_lspci_driver
+    #declare -a arr_lspci_HWID
+    #declare -a arr_lspci_IOMMUID
+    #declare -a arr_lspci_type
+    #declare -a arr_lspci_vendorName
+    #declare -i int_compgen_IOMMUID_lastIndex
     ##
 
     # call function #
-    ParsePCI $bool_isVFIOsetup $arr_PCI_BusID $arr_PCI_DeviceName $arr_PCI_Driver $arr_PCI_HW_ID $arr_PCI_IOMMU_ID $int_PCI_IOMMU_ID_last $arr_PCI_Type $arr_PCI_VendorName
+    ParsePCI $bool_isVFIOsetup $arr_lspci_busID $arr_lspci_deviceName $arr_lspci_driver $arr_lspci_HWID $arr_lspci_IOMMUID $int_compgen_IOMMUID_lastIndex $arr_lspci_type $arr_lspci_vendorName
     #
         
     # list IOMMU groups #
@@ -226,18 +378,27 @@ function StaticSetup {
     # parse list of PCI devices, in order of IOMMU ID #
     declare -i int_i=0      # reset counter
 
-    while [[ $int_i -le $int_PCI_IOMMU_ID_last ]]; do
+    while [[ $int_i -le $int_compgen_IOMMUID_lastIndex ]]; do
 
         echo -e
-        bool_hasExternalPCI=false   # reset boolean
-        bool_hasExternalVGA=false   # reset boolean
+        declare -a arr_lspci_index_list=()    # reset array
+        bool_hasExternalPCI=false           # reset boolean
+        bool_hasExternalVGA=false           # reset boolean
         
         # parse list of IOMMU IDs (in no order) #
         declare -i int_j=0      # reset counter
-        while [[ $int_j -le $int_PCI_IOMMU_ID_last ]]; do
+        while [[ $int_j -le $int_compgen_IOMMUID_lastIndex ]]; do
+
+            #echo -e "$0: int_j == '$int_j'"                                                 # debug output
+            #echo -e "$0: {arr_lspci_IOMMUID[$int_j]} == '"$arr_lspci_IOMMUID[$int_j]"'"       # debug output
 
             # match given IOMMU ID at given index #
-            if [[ "${arr_PCI_IOMMU_ID[$int_j]}" == "$int_i" ]]; then arr_PCI_index_list+=("$int_j"); fi      # add new index to list
+            if [[ "$arr_lspci_IOMMUID[$int_j]" == "$int_i" ]]; then arr_lspci_index_list+=("$int_j"); fi      # add new index to list
+
+
+            if [[ "$arr_lspci_IOMMUID[$int_j]" != "$int_i" && $int_j -gt $int_i ]]; then break; fi
+
+            echo -e "$0: {arr_lspci_index_list[$int_j]} == '"$arr_lspci_index_list[$int_j]"'"       # debug output
 
             ((int_j++))     # increment counter
         done
@@ -247,41 +408,48 @@ function StaticSetup {
         #bool_VGA_IOMMU_{$int_i}=false
 
         # parse list of PCI devices in given IOMMU group #
-        for int_PCI_index in $arr_PCI_index_list; do
+        for int_PCI_index in $arr_lspci_index_list; do
 
-            str_thisPCI_BusID=${arr_PCI_BusID[$int_j]}
+            #str_thisPCI_busID=${arr_lspci_busID[$int_j]}     # error?
+            str_thisPCI_busID=${arr_lspci_busID[$int_i]}
+
+            echo -e "$0: str_thisPCI_busID == '$str_thisPCI_busID'"     # debug output
                 
             # find Device Class ID, truncate first index if equal to zero (to convert to integer)
-            if [[ "${str_thisPCI_BusID:0:1}" == "0" ]]; then str_thisPCI_BusID=${str_thisPCI_BusID:1:1}
-            else str_thisPCI_BusID=${str_thisPCI_BusID:0:2}; fi
+            if [[ "${str_thisPCI_busID:0:1}" == "0" ]]; then str_thisPCI_busID=${str_thisPCI_busID:1:1}
+            else str_thisPCI_busID=${str_thisPCI_busID:0:2}; fi
             #
+
+            #echo -e "$0: str_thisPCI_busID == '$str_thisPCI_busID'"     # debug output
                 
             # match greater/equal to Device Class ID #1
-            if [[ $str_thisPCI_BusID -ge 1 ]]; then
+            if [[ $str_thisPCI_busID -ge 1 ]]; then
                 
                 # add IOMMU group information to lists #
-                str_PCI_IOMMU_Driver_list_{$int_i}+="${arr_PCI_Driver[$int_PCI_index]},"
-                str_PCI_IOMMU_HW_ID_list_{$int_i}+="${arr_PCI_HW_ID[$int_PCI_index]},"
+                str_PCI_IOMMU_Driver_list_{$int_i}+="${arr_lspci_driver[$int_PCI_index]},"
+                str_PCI_IOMMU_HWID_list_{$int_i}+="${arr_lspci_HWID[$int_PCI_index]},"
                 bool_hasExternalPCI=true               # list contains external PCI
             fi
             #
 
             # is device external and is VGA #
-            #echo -e "$0: ${arr_PCI_Type[$int_PCI_index]} == '${arr_PCI_Type[$int_PCI_index]}'"
-            #echo -e "$0: $str_thisPCI_BusID == '$str_thisPCI_BusID'"
-            #str_index=$arr_index[$int_PCI_index]
+            #echo -e "$0: ${arr_lspci_type[$int_PCI_index]} == '${arr_lspci_type[$int_PCI_index]}'"
+            #echo -e "$0: $str_thisPCI_busID == '$str_thisPCI_busID'"
+            str_index=$arr_index[$int_PCI_index]
+            
+            echo -e "$0: str_index == '$str_index'"
 
-            if [[ $str_thisPCI_BusID -ge 1 && ${arr_PCI_Type[$int_PCI_index]} == *"VGA"* ]]; then  
-            #if [[ $str_thisPCI_BusID -ge 1 && $str_index == *"VGA"* ]]; then   
-                str_VGA_IOMMU_DeviceName_{$int_i}=${arr_PCI_DeviceName[$int_PCI_index]}
+            #if [[ $str_thisPCI_busID -ge 1 && ${arr_lspci_type[$int_PCI_index]} == *"VGA"* ]]; then  
+            if [[ $str_thisPCI_busID -ge 1 && $str_index == *"VGA"* ]]; then   
+                str_VGA_IOMMU_DeviceName_{$int_i}=${arr_lspci_deviceName[$int_PCI_index]}
                 bool_hasExternalVGA=true               # list contains external VGA
             fi;
             #
 
             # output #
-            echo -e "\n\tBus ID: '${arr_PCI_BusID[$int_PCI_index]}'"
-            echo -e "\tDeviceName: '${arr_PCI_DeviceName[$int_PCI_index]}'"
-            echo -e "\tType: '${arr_PCI_Type[$int_PCI_index]}'"
+            echo -e "\n\tBus ID: '${arr_lspci_busID[$int_PCI_index]}'"
+            echo -e "\tDeviceName: '${arr_lspci_deviceName[$int_PCI_index]}'"
+            echo -e "\tType: '${arr_lspci_type[$int_PCI_index]}'"
         done
         ##
 
@@ -328,9 +496,9 @@ function StaticSetup {
                     echo "$0: Passing-through IOMMU group ID '$int_i'."
 
                     # add IOMMU group to VFIO pass-through lists #
-                    arr_PCI_Driver_list+=($arr_PCI_IOMMU_{$int_i}_Driver_list)
+                    arr_lspci_driver_list+=($arr_lspci_IOMMU_{$int_i}_Driver_list)
                     str_PCI_Driver_list+=$str_PCI_IOMMU_{$int_i}_Driver_list
-                    str_PCI_HW_ID_list+=$str_PCI_IOMMU_{$int_i}_HW_ID_list
+                    str_PCI_HWID_list+=$str_PCI_IOMMU_{$int_i}_HWID_list
                     #
                     break;;
                 "N")
@@ -350,18 +518,18 @@ function StaticSetup {
     # remove last separator #
     if [[ ${str_PCI_Driver_list: -1} == "," ]]; then str_PCI_Driver_list=${str_PCI_Driver_list::-1}; fi
 
-    if [[ ${str_PCI_HW_ID_list: -1} == "," ]]; then str_PCI_HW_ID_list=${str_PCI_HW_ID_list::-1}; fi
+    if [[ ${str_PCI_HWID_list: -1} == "," ]]; then str_PCI_HWID_list=${str_PCI_HWID_list::-1}; fi
     #
 
     # VFIO soft dependencies #
-    for str_thisPCI_Driver in $arr_PCI_Driver_list; do
+    for str_thisPCI_Driver in $arr_lspci_driver_list; do
         str_PCI_Driver_list_softdep="softdep $str_thisPCI_Driver pre: vfio-pci\n$str_thisPCI_Driver"
     done
     #
 
     ## GRUB ##
     bool_str_file1=false
-    str_GRUB="GRUB_CMDLINE_DEFAULT=\"acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_PCI_Driver_list vfio_pci.ids=$str_PCI_HW_ID_list\""
+    str_GRUB="GRUB_CMDLINE_DEFAULT=\"acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_PCI_Driver_list vfio_pci.ids=$str_PCI_HWID_list\""
 
     # backup file
     if [[ -z $str_file1"_old" ]]; then cp $str_file1 $str_file1"_old"; fi
@@ -413,8 +581,8 @@ $str_PCI_Driver_list_softdep
 vfio_iommu_type1
 vfio_virqfd
 \n# GRUB command line and PCI hardware IDs:
-options vfio_pci ids=$str_PCI_HW_ID_list
-vfio_pci ids=$str_PCI_HW_ID_list
+options vfio_pci ids=$str_PCI_HWID_list
+vfio_pci ids=$str_PCI_HWID_list
 vfio_pci
 # END #")
 
@@ -443,7 +611,7 @@ kvm_intel
 apm power_off=1
 \n# In terminal, execute \"lspci -nnk\".
 \n# GRUB kernel parameters:
-vfio_pci ids=$str_PCI_HW_ID_list
+vfio_pci ids=$str_PCI_HWID_list
 # END #")
 
     for str_line1 in ${arr_file3[@]}; do echo -e $str_line1 >> $str_file3; done
@@ -451,7 +619,7 @@ vfio_pci ids=$str_PCI_HW_ID_list
 
     ## /etc/modprobe.d/pci-blacklist.conf ##
     echo -e "# NOTE: Generated by 'portellam/VFIO-setup'\n# START #" >> $str_file4
-    for str_thisPCI_Driver in $arr_PCI_Driver_list[@]; do
+    for str_thisPCI_Driver in $arr_lspci_driver_list[@]; do
         echo -e "blacklist $str_thisPCI_Driver" >> $str_file4
     done
     echo -e "# END #" >> $str_file4
@@ -465,7 +633,7 @@ vfio_pci ids=$str_PCI_HW_ID_list
 # Soft dependencies:
 $str_PCI_Driver_list_softdep
 \n# PCI hardware IDs:
-options vfio_pci ids=$str_PCI_HW_ID_list
+options vfio_pci ids=$str_PCI_HWID_list
 # END #")
     for str_line1 in ${arr_file5[@]}; do echo -e $str_line1 >> $str_file5; done
 
