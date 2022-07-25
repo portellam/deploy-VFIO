@@ -15,6 +15,17 @@ IFS=$'\n'      # Change IFS to newline char
 if [[ -e $2 ]]; then bool_isVFIOsetup=$2; fi
 str_GRUB_CMDLINE_Hugepages=""
 
+# dependencies #
+declare -a arr_PCI_BusID
+declare -a arr_PCI_DeviceName
+declare -a arr_PCI_Driver
+declare -a arr_PCI_HW_ID
+declare -a arr_PCI_IOMMU_ID
+declare -a arr_PCI_Type
+declare -a arr_PCI_VendorName
+declare -i int_PCI_IOMMU_ID_last
+#
+
 ## user input ##
 str_input1=""
 
@@ -88,13 +99,16 @@ function ParsePCI {
     declare -a arr_compgen_G=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*"`)      # IOMMU group IDs in no order
     #
 
-    declare -i int_PCI_IOMMU_ID_last=0       # greatest value index of list
-    #
+    # greatest index of IOMMU groups #
+    int_PCI_IOMMU_ID_last=`dmesg | grep 'iommu group' | sort -hr | head -n1 | cut -d 'p' -f3 | cut -d ' ' -f2`       # NOTE: expected output last group integer
+
+    #echo -e "$0: int_PCI_IOMMU_ID_last == '$int_PCI_IOMMU_ID_last'"    # debug output
 
     # reformat input #
     # parse list of Bus IDs
     for (( int_i=0; int_i<${#arr_PCI_BusID[@]}; int_i++ )); do 
-        arr_PCI_BusID[$int_i]=${arr_PCI_BusID[$int_i]::-1}          # reformat element
+        arr_PCI_BusID[$int_i]=${arr_PCI_BusID[$int_i]::-1}                  # reformat element
+        ##echo -e "$0: arr_PCI_BusID[$int_i] == '${arr_PCI_BusID[$int_i]}'"    # debug output
     done
     #
 
@@ -108,6 +122,7 @@ function ParsePCI {
             # match output with Bus ID #
             if [[ ${arr_compgen_G[$int_j]} == *"${arr_PCI_BusID[$int_i]}"* ]]; then
                 arr_PCI_IOMMU_ID[$int_i]=`echo ${arr_compgen_G[$int_j]} | cut -d '/' -f 5`      # save IOMMU ID at given index
+                #echo -e "$0: arr_PCI_IOMMU_ID[$int_i] == '${arr_PCI_IOMMU_ID[$int_i]}'"
                 int_j=${#arr_compgen_G[@]}                                                      # break loop
             fi
         done
@@ -124,34 +139,26 @@ function ParsePCI {
         str_PCI_Driver=`echo $str_line1 | grep 'driver' | cut -d ' ' -f 5`  # valid element
 
         # driver is NOT null and Bus ID is null #
-        if [[ -z $str_PCI_BusID && ! -z $str_PCI_Driver && $str_PCI_Driver != 'vfio-pci' ]]; then arr_PCI_Driver+=("$str_PCI_Driver"); fi   # add to list
+        if [[ -z $str_PCI_BusID && -e $str_PCI_Driver && $str_PCI_Driver != 'vfio-pci' ]]; then arr_PCI_Driver+=("$str_PCI_Driver"); fi   # add to list
+    
+        # valid driver not found, note input # 
+        if [[ -z $str_PCI_Driver && $str_PCI_Driver != 'vfio-pci' ]]; then
+            arr_PCI_Driver+=("NO_DRIVER_FOUND")
+        fi
 
-        # stop setup # 
+        # valid driver not found, note input, stop setup # 
         if [[ $str_PCI_Driver == 'vfio-pci' ]]; then
-            #arr_PCI_Driver+=("")
-            bool_isVFIOsetup=true
+            arr_PCI_Driver+=("VFIO_DRIVER_FOUND")
+            #bool_isVFIOsetup=true                          # NOTE: use function?
         fi
     done
     #
-
-    # save greatest index of list #
-    # parse list of IOMMU IDs #
-    for (( int_i=0; int_i<${#arr_PCI_IOMMU_ID[@]}; int_i++ )); do
-
-        # match less than current index #
-        if [[ $int_PCI_IOMMU_ID_last -lt ${arr_PCI_IOMMU_ID[$int_i]} ]]; then int_PCI_IOMMU_ID_last=${arr_PCI_IOMMU_ID[$int_i]}; fi       # update index
-    done
-    #
-
-    echo -e "$0: {#arr_PCI_IOMMU_ID[@]} == '${#arr_PCI_IOMMU_ID[@]}'"   # debug
 
 }
 ## end ParsePCI ##
 
 ## StaticSetup ##
 function StaticSetup {
-
-    echo -e "$0: {#arr_PCI_IOMMU_ID[@]} == '${#arr_PCI_IOMMU_ID[@]}'"   # debug
 
     ## NOTE:
     ##  i want to make the function parse all devices, and a given IOMMU group.
@@ -193,16 +200,14 @@ function StaticSetup {
     #
 
     # dependencies #
-    declare -a arr_PCI_BusID
-    declare -a arr_PCI_DeviceName
-    declare -a arr_PCI_Driver
-    declare -a arr_PCI_HW_ID
-    declare -a arr_PCI_IOMMU_ID
-    declare -a arr_PCI_Type
-    declare -a arr_PCI_VendorName
-    declare -i int_PCI_IOMMU_ID_last
-
-    declare -i int_PCI_IOMMU_ID_sum=$int_PCI_IOMMU_ID_last+1
+    #declare -a arr_PCI_BusID
+    #declare -a arr_PCI_DeviceName
+    #declare -a arr_PCI_Driver
+    #declare -a arr_PCI_HW_ID
+    #declare -a arr_PCI_IOMMU_ID
+    #declare -a arr_PCI_Type
+    #declare -a arr_PCI_VendorName
+    #declare -i int_PCI_IOMMU_ID_last
     ##
 
     # call function #
@@ -210,24 +215,35 @@ function StaticSetup {
     #
         
     # list IOMMU groups #
-    echo -e "$0: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.\n\tDevices that share IOMMU groups must be passed-through as whole or none at all.\n\tNOTE 1: Evaluate order of PCI slots to have PCI devices in individual IOMMU groups.\n\tNOTE 2: A feature (ACS-Override patch) exists to divide IOMMU groups, but said feature creates an attack vector (cross-device read/write) and is not recommended (for security reasons).\n\tNOTE 3: Some onboard PCI devices may NOT share IOMMU groups. Example: a USB controller.\n$0: Review the output below before choosing which IOMMU groups (groups of PCI devices) to pass-through or not."
+    str_output1="$0: PLEASE READ: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.
+    \n\tPLEASE READ: Devices that share IOMMU groups must be passed-through as whole or none at all.
+    \n\tPLEASE READ: Evaluate order of PCI slots to have PCI devices in individual IOMMU groups.
+    \n\tPLEASE READ: A feature (ACS-Override patch) exists to divide IOMMU groups, but said feature creates an attack vector (memory read/write across PCI devices) and is not recommended (for security reasons).
+    \n\tPLEASE READ: Some onboard PCI devices may NOT share IOMMU groups. Example: a USB controller.\n\n$0: Review the output below before choosing which IOMMU groups (groups of PCI devices) to pass-through or not."
+
+    echo -e $str_output1
 
     # parse list of PCI devices, in order of IOMMU ID #
-    for (( int_i=0; int_i<$int_PCI_IOMMU_ID_sum; int_i++ )); do
+    declare -i int_i=0      # reset counter
 
+    while [[ $int_i -le $int_PCI_IOMMU_ID_last ]]; do
+
+        echo -e
         bool_hasExternalPCI=false   # reset boolean
         bool_hasExternalVGA=false   # reset boolean
         
         # parse list of IOMMU IDs (in no order) #
-        for (( int_j=0; int_j<${#arr_PCI_IOMMU_ID[@]}; int_j++ )); do
+        declare -i int_j=0      # reset counter
+        while [[ $int_j -le $int_PCI_IOMMU_ID_last ]]; do
 
             # match given IOMMU ID at given index #
             if [[ "${arr_PCI_IOMMU_ID[$int_j]}" == "$int_i" ]]; then arr_PCI_index_list+=("$int_j"); fi      # add new index to list
+
+            ((int_j++))     # increment counter
         done
         #
 
         ## window of PCI devices in given IOMMU group ##
-        echo -e "\tIOMMU ID: '$int_i'"
         #bool_VGA_IOMMU_{$int_i}=false
 
         # parse list of PCI devices in given IOMMU group #
@@ -325,7 +341,9 @@ function StaticSetup {
             esac
 
             ((int_count++))     # increment counter
-        done  
+        done
+
+        ((int_i++))     # increment counter
     done
     #
 
