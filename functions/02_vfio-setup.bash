@@ -67,7 +67,9 @@ function ValidInput {
 }
 ##
 
-function ParsePCI {
+function StaticSetup {
+
+    ## Parse PCI ##
 
     str_output1="$0: Parsing PCI device information... "
     echo -en $str_output1
@@ -217,14 +219,12 @@ function ParsePCI {
         #echo -e "$0: '$'""{#arr_lspci_vendorName[@]} = ${#arr_lspci_vendorName[@]}"        # debug output
         #echo -e "$0: '$'""{#arr_lspci_driverName[@]} = ${#arr_lspci_driverName[@]}"        # debug output
         echo -e "$0: '$'""{#arr_lspci_IOMMUID[@]} = ${#arr_lspci_IOMMUID[@]}"              # debug output
-
+    
     }
 
-    #debugOutput    # uncomment to debug    
+    #debugOutput    # uncomment to debug   
 
-}
-
-function StaticSetup {
+    ## end Parse PCI ##
 
     ## parameters ##
     # files #
@@ -250,10 +250,6 @@ function StaticSetup {
     if [[ -e $str_file5 ]]; then rm $str_file5; fi
     #
 
-    # call function #
-    ParsePCI $bool_isVFIOsetup $int_compgen_IOMMUID_lastIndex $arr_lspci_busID $arr_lspci_deviceName $arr_lspci_deviceName $arr_lspci_driverName $arr_lspci_HWID $arr_lspci_IOMMUID $arr_lspci_type $arr_lspci_type $arr_lspci_vendorName
-    #
-
     # list IOMMU groups #
     str_output1="$0: PLEASE READ: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.
     \n\tPLEASE READ: Devices that share IOMMU groups must be passed-through as whole or none at all.
@@ -264,6 +260,48 @@ function StaticSetup {
     echo -e $str_output1
 
     ## NOTE: fixed ParsePCI, left off here
+
+    echo -e "$0: '$'""int_compgen_IOMMUID_lastIndex = $int_compgen_IOMMUID_lastIndex"   # debug output
+    echo -e "$0: '$'""{arr_lspci_busID[1]} = ${arr_lspci_busID[1]}"                     # debug output
+
+    # how to pass through variables into another function
+
+    ##
+    # parse list of PCI devices, in order of IOMMU ID #
+    declare -i int_i=0          # reset counter
+    
+    while [[ $int_i -le $int_compgen_IOMMUID_lastIndex ]]; do
+
+        echo -e "\n\t IOMMU ID: '${arr_lspci_IOMMUID[$int_i]}'"
+
+        declare -i int_k=0      # reset counter
+
+        #
+        for (( int_j=0 ; int_j<${#arr_lspci_IOMMUID[@]} ; int_j++ )); do
+
+            #
+            if [[ $arr_lspci_IOMMUID[$int_j] == $int_i ]]; then
+
+                # output #
+                echo -e "\tDevice #1"
+                echo -e "\tDeviceName: '${arr_lspci_deviceName[$int_j]}'"
+                echo -e "\tType: '${arr_lspci_type[$int_j]}'"
+                echo -e "\n\tBus ID: '${arr_lspci_busID[$int_j]}'"
+                echo -e "\n\tHWID: '${arr_lspci_HWID[$int_j]}'"
+                #
+
+            fi
+            #
+
+            ((int_k++))         # increment counter
+
+        done
+        #
+
+        ((int_i++))         # increment counter
+
+    done
+    ##
 
     # pre-setup:    -check for package dependencies
     # -parse by IOMMU group
@@ -277,6 +315,8 @@ function StaticSetup {
     # -shall i compare 'compgen' and 'lspci' by bus id, and save indexes from lspci to iommu groups?
     # -then reference all info from said indexes?
     # MULTI BOOT - output cmd lines and GRUB menu titles to logfile and console output, directions on how to update grub
+
+    exit 0
 
     # parse list of PCI devices, in order of IOMMU ID #
     declare -i int_i=0      # reset counter
