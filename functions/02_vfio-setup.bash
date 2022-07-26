@@ -245,8 +245,8 @@ function StaticSetup {
         #for (( i=0 ; i<${#arr_lspci_HWID[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_HWID[$i]}' = ${arr_lspci_HWID[$i]}"; done                    # debug output
         #for (( i=0 ; i<${#arr_lspci_type[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_type[$i]}' = ${arr_lspci_type[$i]}"; done                    # debug output
         #for (( i=0 ; i<${#arr_lspci_vendorName[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_vendorName[$i]}' = ${arr_lspci_vendorName[$i]}"; done  # debug output
-        #for (( i=0 ; i<${#arr_lspci_driverName[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_driverName[$i]}' = ${arr_lspci_driverName[$i]}"; done  # debug output
-        for (( i=0 ; i<${#arr_lspci_IOMMUID[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_IOMMUID[$i]}' = ${arr_lspci_IOMMUID[$i]}"; done           # debug output
+        for (( i=0 ; i<${#arr_lspci_driverName[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_driverName[$i]}' = ${arr_lspci_driverName[$i]}"; done  # debug output
+        #for (( i=0 ; i<${#arr_lspci_IOMMUID[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_IOMMUID[$i]}' = ${arr_lspci_IOMMUID[$i]}"; done           # debug output
         #echo -e "$0: '$""int_compgen_IOMMUID_lastIndex' = $int_compgen_IOMMUID_lastIndex"  # debug output
         #echo -e "$0: '$'""{#arr_compgen[@]} = ${#arr_compgen[@]}"                          # debug output
         #echo -e "$0: '$'""{#arr_compgen_busID[@]} = ${#arr_compgen_busID[@]}"              # debug output
@@ -258,13 +258,15 @@ function StaticSetup {
         #echo -e "$0: '$'""{#arr_lspci_type[@]} = ${#arr_lspci_type[@]}"                    # debug output
         #echo -e "$0: '$'""{#arr_lspci_vendorName[@]} = ${#arr_lspci_vendorName[@]}"        # debug output
         #echo -e "$0: '$'""{#arr_lspci_driverName[@]} = ${#arr_lspci_driverName[@]}"        # debug output
-        echo -e "$0: '$'""{#arr_lspci_IOMMUID[@]} = ${#arr_lspci_IOMMUID[@]}"              # debug output
+        #echo -e "$0: '$'""{#arr_lspci_IOMMUID[@]} = ${#arr_lspci_IOMMUID[@]}"              # debug output
     }
 
     #debugOutput    # uncomment to debug   
     ## end Parse PCI ##
 
     ## parameters ##
+    #declare -a arr_driverName_list=()                      # list of all selected drivers
+    str_driverName_list_softdep=""                         # lines for softdep
     # files #
     #str_file1="/etc/default/grub"
     #str_file2="/etc/initramfs-tools/modules"
@@ -315,8 +317,11 @@ function StaticSetup {
             if [[ ${arr_lspci_IOMMUID[$int_j]} == $int_i ]]; then
 
                 str_thisBusID=${arr_lspci_busID[$int_j]}
-                str_thisBusID=${str_thisBusID::-1}          # valid element
+                str_thisBusID=${str_thisBusID::-1}                  # valid element
+                str_thisDriverName=${arr_lspci_driverName[$int_j]}  # valid element
+                str_thisHWID=${arr_lspci_HWID[$int_j]}              # valid element
 
+                ## checks ##
                 if [[ ${str_thisBusID:1:1} -ge 1 ]]; then
                     bool_hasExternalPCI=true
                 fi
@@ -325,15 +330,20 @@ function StaticSetup {
                     bool_hasExternalVGA=true
                 fi
 
-                if [[ ${arr_lspci_driverName[$int_j]} == "VFIO_DRIVER_FOUND" ]]; then
+                # if VFIO setup exists, clear strings and quit #
+                if [[ ${arr_lspci_driverName[$int_j]} == "VFIO_DRIVER_FOUND" || $bool_hasVFIODriver == true ]]; then
                     bool_hasVFIODriver=true
+                    ##str_driverName_tempList=""
+                    ##str_HWID_tempList=""
+                    ##arr_driverName_list=""
                 fi
 
                 #if [[ ${arr_lspci_driverName[$int_j]} == "NO_DRIVER_FOUND" ]]; then
-                    #bool_hasNoDriver=true
+                    ##bool_hasNoDriver=true
+                    ##str_thisDriverName=""
+                    ##str_thisHWID=""
                 #fi
-
-                str_HWID+="${arr_lspci_HWID[$int_j]} "
+                ##
 
                 # NOTE: last few IOMMU groups missing, otherwise data is correct
                 # output #
@@ -343,6 +353,16 @@ function StaticSetup {
                 echo -e "\tType:\t\t${arr_lspci_type[$int_j]}"
                 echo -e "\tBus ID:\t\t$str_thisBusID"
                 echo -e "\tHW ID:\t\t${arr_lspci_HWID[$int_j]}"
+                echo -e "\tHW ID:\t\t${arr_lspci_driverName[$int_j]}"
+                #
+
+                # add to list #
+
+                if [[ $str_thisDriverName != "" && $str_thisHWID != "" ]]; then
+                    str_driverName_tempList+="$str_thisDriverName,"
+                    str_HWID_tempList+="$str_thisHWID,"
+                    arr_driverName_list+=($str_thisDriverName)
+                fi
                 #
 
                 ((int_k++)) # increment counter
@@ -383,8 +403,8 @@ function StaticSetup {
         if [[ $bool_hasVFIODriver == true ]]; then
             echo -e "$0: WARNING: VFIO driver found."
             #str_input1="N"
-            bool_isVFIOsetup=true
-            UninstallPrompt $bool_isVFIOsetup
+            ##bool_isVFIOsetup=true
+            ##UninstallPrompt $bool_isVFIOsetup
         fi
         #
 
@@ -403,12 +423,11 @@ function StaticSetup {
 
             case $str_input1 in
                 "Y")
-                    echo "$0: Passing-through IOMMU group ID '$int_i'."
+                    echo "$0: Passing-through IOMMU group '$int_i'."
 
                     # add IOMMU group to VFIO pass-through lists #
-                    arr_lspci_driverName_list+=($arr_lspci_IOMMU_{$int_i}_Driver_list)
-                    str_PCI_Driver_list+=$str_PCI_IOMMU_{$int_i}_Driver_list
-                    str_PCI_HWID_list+=$str_PCI_IOMMU_{$int_i}_HWID_list
+                    str_driverName_list+=$str_driverName_tempList
+                    str_HWID_list+=$str_HWID_tempList
                     #
                     break;;
                 "N")
@@ -424,6 +443,9 @@ function StaticSetup {
         bool_hasExternalPCI=false               # reset boolean
         bool_hasExternalVGA=false               # reset boolean
         bool_hasNoDriver=false                  # reset boolean
+        bool_hasVFIODriver=false                # reset boolean
+        str_driverName_tempList=""              # reset list
+        str_HWID_tempList=""                    # reset list
         ((int_i++))                             # increment counter
     done
     ##
@@ -441,38 +463,37 @@ function StaticSetup {
     # -then reference all info from said indexes?
     # MULTI BOOT - output cmd lines and GRUB menu titles to logfile and console output, directions on how to update grub
 
-    exit 0
-
     # remove last separator #
-    if [[ ${str_PCI_Driver_list: -1} == "," ]]; then str_PCI_Driver_list=${str_PCI_Driver_list::-1}; fi
+    if [[ ${str_driverName_list: -1} == "," ]]; then str_driverName_list=${str_driverName_list::-1}; fi
 
-    if [[ ${str_PCI_HWID_list: -1} == "," ]]; then str_PCI_HWID_list=${str_PCI_HWID_list::-1}; fi
+    if [[ ${str_HWID_list: -1} == "," ]]; then str_HWID_list=${str_HWID_list::-1}; fi
     #
 
     # VFIO soft dependencies #
-    for str_thisPCI_Driver in $arr_lspci_driverName_list; do
-        str_PCI_Driver_list_softdep="softdep $str_thisPCI_Driver pre: vfio-pci\n$str_thisPCI_Driver"
+    for str_thisDriverName in $arr_driverName_list; do
+        echo "$0: 'str_thisDriverName' == $str_thisDriverName"
+        str_driverName_list_softdep+="softdep $str_thisDriverName pre: vfio-pci\n$str_thisDriverName\n"
     done
     #
 
     ## GRUB ##
     bool_str_file1=false
-    str_GRUB="GRUB_CMDLINE_DEFAULT=\"acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_PCI_Driver_list vfio_pci.ids=$str_PCI_HWID_list\""
+    str_GRUB="GRUB_CMDLINE_DEFAULT=\"acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driverName_list vfio_pci.ids=$str_HWID_list\""
 
     # backup file
     if [[ -z $str_file1"_old" ]]; then cp $str_file1 $str_file1"_old"; fi
     #
 
     # find GRUB line and comment out #
-    while read str_line_1; do
+    while read str_line1; do
 
         # match line #
-        if [[ $str_line_1 != *"GRUB_CMDLINE_DEFAULT"* && $str_line_1 != *"#GRUB_CMDLINE_DEFAULT"* ]]; then
+        if [[ $str_line1 != *"GRUB_CMDLINE_DEFAULT"* && $str_line1 != *"#GRUB_CMDLINE_DEFAULT"* ]]; then
             bool_str_file1=true
             str_line1=$str_GRUB                         # update line
         fi
 
-        echo -e $str_line_1  >> $str_file1"_new"        # append to new file
+        echo -e $str_line1  >> $str_file1"_new"        # append to new file
     done < $str_file1
     #
 
@@ -504,13 +525,13 @@ function StaticSetup {
 # NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
 \n
 # Soft dependencies and PCI kernel drivers:
-$str_PCI_Driver_list_softdep
+$str_driverName_list_softdep
 \nvfio
 vfio_iommu_type1
 vfio_virqfd
 \n# GRUB command line and PCI hardware IDs:
-options vfio_pci ids=$str_PCI_HWID_list
-vfio_pci ids=$str_PCI_HWID_list
+options vfio_pci ids=$str_HWID_list
+vfio_pci ids=$str_HWID_list
 vfio_pci
 # END #")
 
@@ -539,7 +560,7 @@ kvm_intel
 apm power_off=1
 \n# In terminal, execute \"lspci -nnk\".
 \n# GRUB kernel parameters:
-vfio_pci ids=$str_PCI_HWID_list
+vfio_pci ids=$str_HWID_list
 # END #")
 
     for str_line1 in ${arr_file3[@]}; do echo -e $str_line1 >> $str_file3; done
@@ -547,8 +568,8 @@ vfio_pci ids=$str_PCI_HWID_list
 
     ## /etc/modprobe.d/pci-blacklist.conf ##
     echo -e "# NOTE: Generated by 'portellam/VFIO-setup'\n# START #" >> $str_file4
-    for str_thisPCI_Driver in $arr_lspci_driverName_list[@]; do
-        echo -e "blacklist $str_thisPCI_Driver" >> $str_file4
+    for str_thisDriverName in $arr_lspci_driverName_list[@]; do
+        echo -e "blacklist $str_thisDriverName" >> $str_file4
     done
     echo -e "# END #" >> $str_file4
     ##
@@ -559,9 +580,9 @@ vfio_pci ids=$str_PCI_HWID_list
 # START #
 # NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
 # Soft dependencies:
-$str_PCI_Driver_list_softdep
+$str_driverName_list_softdep
 \n# PCI hardware IDs:
-options vfio_pci ids=$str_PCI_HWID_list
+options vfio_pci ids=$str_HWID_list
 # END #")
     for str_line1 in ${arr_file5[@]}; do echo -e $str_line1 >> $str_file5; done
 
@@ -617,7 +638,7 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
             #sudo update-grub                    # update GRUB
             #sudo update-initramfs -u -k all     # update INITRAMFS
 
-            echo -e "$0: NOTE: Review changes in:\n\t'/etc/default/grub'\n\t'/etc/initramfs-tools/modules'\n\t'/etc/modules'\n\t/etc/modprobe.d/*"
+            echo -e "\n$0: Review changes in:\n\t'/etc/default/grub'\n\t'/etc/initramfs-tools/modules'\n\t'/etc/modules'\n\t/etc/modprobe.d/*"
             break;;
 
         "S")
@@ -629,7 +650,7 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
             #sudo update-grub                    # update GRUB
             #sudo update-initramfs -u -k all     # update INITRAMFS
 
-            echo -e "$0: NOTE: Review changes in:\n\t'/etc/default/grub'\n\t'/etc/initramfs-tools/modules'\n\t'/etc/modules'\n\t/etc/modprobe.d/*"
+            echo -e "\n$0: Review changes in:\n\t'/etc/default/grub'\n\t'/etc/initramfs-tools/modules'\n\t'/etc/modules'\n\t/etc/modprobe.d/*"
             break;;
 
         "N")
@@ -644,4 +665,3 @@ done
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 echo -e "Exiting."
-exit 0
