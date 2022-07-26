@@ -1,9 +1,7 @@
 ## To-Do
 * Multi-boot VFIO setup
-* Static-boot VFIO setup
+* Static-boot VFIO setup (functionally complete, need to change pointers to files and comment out logfiles?)
 * guides on cheats/tips to make VFIO setup smooth as butter out-of-the-box (Virtual machine config (XML) files, Win 10 passthru, Win XP passthru, VBIOS mods, etc.)
-* fix dependency for Hugepages logfile, ignore and continue without it for users who choose not to use it.
-* create logfiles for manual setup?
 
 ## Complete
 * Evdev setup
@@ -25,7 +23,7 @@ In terminal, execute:
     * Virtual Keyboard-Mouse switch (better than nothing, best to have physical KVM and multiple PCI USB controllers).
     * Restarts related system service.
 * **setup Hugepages**
-    * Static allocation of RAM for zero memory fragmentation and reduced memory latency (best to use multiples of each Memory channel/stick).
+    * Static allocation of Host RAM to VMs for zero memory fragmentation and reduced memory latencies (best to use multiples of size of each Memory channel/stick).
 * **setup Zram swapfile**
     * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
     * Restarts related system service.
@@ -33,19 +31,19 @@ In terminal, execute:
     * Setup dynamically (Multi-Boot) or statically.
 
 ## VFIO setup
-* Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups (see **guide** above) of devices.
+* Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups of devices.
     * Saves lists of external PCI devices, by order of IOMMU groups.
 * Prompt user for VFIO passthrough setup:
     * Dynamic/Multi-Boot setup **(RECOMMENDED)**
-        * Adds multiple GRUB menu entries for all IOMMU groups with an external VGA device, minus a given VGA's IOMMU group.
+        * Adds multiple GRUB menu entries for all IOMMU groups with an external VGA device, minus a given VGA device's IOMMU group.
         * also executes Static setup.
     * Static setup
-        * Asks user to VFIO passthrough any IOMMU groups (with external PCI devices including VGA devices).
+        * Asks user to VFIO passthrough any IOMMU groups (with external PCI devices, including VGA devices).
         * with Multi-boot setup: Asks user to VFIO passthrough any IOMMU groups (excluding external VGA devices).
-        * Appends to "/etc/initramfs-tools/modules", "/etc/modules", " /etc/modprobe.d/* ".
-        * Also appends to "/etc/default/grub".         
+        * Appends to **'/etc/initramfs-tools/modules'**, **'/etc/modules'**, **'/etc/modprobe.d/*'**.
+        * Also appends to **'/etc/default/grub'**.         
 * Updates GRUB and INITRAMFS.
-* Checks for existing VFIO setup, asks user to uninstall setup and restart machine to Continue.
+* Checks for existing VFIO setup, asks user to uninstall setup and restart machine to continue, or exit.
 
 ## DISCLAIMER
 **Work-in-progress**
@@ -54,6 +52,6 @@ Tested on Debian Linux.
 
 Use script at your own risk!
 
-Please refer and review community guides for any help. Script is not guaranteed to work with Laptop machines, host machines with less-than-favorable IOMMU groups, etc.
+Please refer to and review community guides for any help. Script is not guaranteed to work with all machines, including Laptop PCs, or machines with less-than-favorable IOMMU groups, etc.
 
 Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
