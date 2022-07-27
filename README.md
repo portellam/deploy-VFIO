@@ -29,7 +29,7 @@ In terminal, execute:
 * **Post-install**
     * Deploy auto-generated Virtual machines (for every config, include Evdev and Hugepages).
 
-## VFIO setup
+## VFIO setup *(expanded)*
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups of devices.
     * Saves lists of external PCI devices, by order of IOMMU groups.
 * Prompt user for VFIO passthrough setup:
@@ -46,8 +46,8 @@ In terminal, execute:
 
 ## To-Do
 * Linux distro-agnostic setup
-* Multi-boot VFIO setup:    output to GRUB menu entries (currently only logfiles for manual setup)
-* Static VFIO setup:        fix driver parsing **make an array that saves which IOMMU group is passedthru, and which isn't**
+* Multi-boot VFIO setup:    output to GRUB menu entries automaticcaly (currently only outputs logfiles)
+* Static VFIO setup:        fix driver parsing => **make an array that saves which IOMMU group is passedthru, and which isn't**
 * post install setup
 
 ## Complete
