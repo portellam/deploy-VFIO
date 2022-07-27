@@ -52,6 +52,21 @@ readonly arr_lspci_vendorName
 
 declare -a arr_lspci_driverName     # driver name, sorted by Bus ID     (ex 'nouveau' or 'nvidia')
 declare -a arr_lspci_IOMMUID        # strings of index(es) of every Bus ID and entry, sorted by IOMMU ID
+
+# files #
+str_file1="/etc/default/grub"
+str_file2="/etc/initramfs-tools/modules"
+str_file3="/etc/modules"
+str_file4="/etc/modprobe.d/pci-blacklists.conf"
+str_file5="/etc/modprobe.d/vfio.conf"
+#
+
+# debug logfiles #    
+str_logFile1=$(pwd)"/grub.log"
+str_logFile2=$(pwd)"/initramfs-modules.log"
+str_logFile3=$(pwd)"/modules.log"
+str_logFile4=$(pwd)"/pci-blacklists.conf.log"
+str_logFile5=$(pwd)"/vfio.conf.log"
 ##
 
 ## find and sort drivers by Bus ID (lspci) ##
@@ -246,54 +261,6 @@ function ValidInput {
 }
 ##
 
-# prompt uninstall setup or exit #
-function UninstallPrompt {
-
-    declare -i int_count=0      # reset counter
-
-    while true; do
-
-        # manual prompt #
-        if [[ $int_count -ge 3 ]]; then     # auto answer
-
-            echo -e "$0: Exceeded max attempts."
-            str_input1="N"      # default input     # NOTE: change here
-
-        else
-
-            str_output1="$0: Uninstall to continue? [Y/n]: "
-            echo -en "\n$0: WARNING: Script has detected an existing VFIO Setup.\n$str_output1"
-            read str_input1
-            ReadInput $str_input1 $str_output1
-
-        fi
-
-        case $str_input1 in
-
-            "Y")
-
-                echo -en "$0: Uninstalling VFIO setup... "
-                #UninstallMultiBootSetup
-                #UninstallStaticSetup
-                echo -e "Complete.\n\n$0: Reboot machine and execute script again to continue. Exiting."
-                exit 0;;
-
-            "N")
-
-                echo -e "$0: Exiting."
-                exit 0;;
-
-            *)
-                echo -e "$0: Invalid input.";;
-
-        esac
-
-        ((int_count++))     # increment counter
-
-    done
-
-}
-
 function StaticSetup {
 
     ## parameters ##
@@ -337,7 +304,7 @@ function StaticSetup {
     # parse IOMMU IDs #
     while [[ $int_i -le $int_compgen_IOMMUID_lastIndex ]]; do
 
-        echo -e "$0: IOMMU Group ID: $int_i"
+        echo -e "\tIOMMU :\t\t$int_i"
         declare -i int_k=0                      # reset counter
         
         # parse IOMMU IDs #
@@ -385,13 +352,15 @@ function StaticSetup {
 
                 # NOTE: last few IOMMU groups missing, otherwise data is correct
                 # output #
-                echo -e "\tINDEX:\t\t$int_k"
+                echo
+                echo -e "\tINDEX :\t\t$int_k"
                 echo -e "\tVENDOR:\t\t${arr_lspci_vendorName[$int_j]}"
                 echo -e "\tDEVICE:\t\t${arr_lspci_deviceName[$int_j]}"
-                echo -e "\tTYPE:\t\t${arr_lspci_type[$int_j]}"
+                echo -e "\tTYPE  :\t\t${arr_lspci_type[$int_j]}"
                 echo -e "\tBUS ID:\t\t$str_thisBusID"
-                echo -e "\tHW ID:\t\t${arr_lspci_HWID[$int_j]}"
+                echo -e "\tHW ID :\t\t${arr_lspci_HWID[$int_j]}"
                 echo -e "\tDRIVER:\t\t${arr_lspci_driverName[$int_j]}"
+
                 #
 
                 # add to list #
@@ -454,6 +423,10 @@ function StaticSetup {
             str_input1="N"
             bool_isVFIOsetup=true
             UninstallPrompt $bool_isVFIOsetup
+            declare -a arr_driverName_list=()       # reset outputs
+            str_driverName_list=""                  # reset outputs
+            str_HWID_list=""                        # reset outputs
+            break
 
         fi
         #
@@ -528,7 +501,8 @@ function StaticSetup {
     for str_thisDriverName in ${arr_driverName_list[@]}; do
 
         echo "$0: 'str_thisDriverName' == $str_thisDriverName"
-        str_driverName_list_softdep+="\nsoftdep $str_thisDriverName pre: vfio-pci\n$str_thisDriverName"
+        str_driverName_list_softdep+="\nsoftdep $str_thisDriverName pre: vfio-pci"
+        str_driverName_list_softdep_drivers+="\nsoftdep $str_thisDriverName pre: vfio-pci\n$str_thisDriverName"
 
     done
     #
@@ -536,6 +510,7 @@ function StaticSetup {
     ## GRUB ##
     bool_str_file1=false
     str_GRUB="GRUB_CMDLINE_DEFAULT=\"acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driverName_list vfio_pci.ids=$str_HWID_list\""
+    echo $str_GRUB > $str_logFile1
 
     # backup file
     if [[ -z $str_file1"_old" ]]; then cp $str_file1 $str_file1"_old"; fi
@@ -553,7 +528,6 @@ function StaticSetup {
         fi
 
         echo -e $str_line1  >> $str_file1"_new"        # append to new file
-        echo -e $str_line1  >> $str_logFile1           # append to log file
 
     done < $str_file1
     #
@@ -566,7 +540,7 @@ function StaticSetup {
     fi
     #
 
-    mv $str_file1"_new" $str_file1  # overwrite current file with new file
+    #mv $str_file1"_new" $str_file1  # overwrite current file with new file       # NOTE: disabled to debug on current system
     ##
 
     ## initramfs-tools ##
@@ -589,7 +563,7 @@ function StaticSetup {
 # Example: Reboot hypervisor (Linux) to swap host graphics (Intel, AMD, NVIDIA) by use-case (AMD for Win XP, NVIDIA for Win 10).
 # NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
 # NOTE: In terminal, execute \"lspci -nnk\" or review the logfiles.
-\n# Soft dependencies and PCI kernel drivers:$str_driverName_list_softdep
+\n# Soft dependencies and PCI kernel drivers:\t(NOTE: repeat for each driver)\n# EXAMPLE:\n#\tsoftdep 'DRIVER_NAME' pre: vfio-pci\n#\t'DRIVER_NAME'\n$str_driverName_list_softdep_drivers
 #
 \n# NOTE: Do not change the following lines, unless you know what you are doing!
 vfio
@@ -605,7 +579,7 @@ vfio_pci
 
     for str_line1 in ${arr_file2[@]}; do
 
-        echo -e $str_line1 >> $str_file2
+        #echo -e $str_line1 >> $str_file2       # NOTE: disabled to debug on current system
         echo -e $str_line1 >> $str_logFile2
 
     done
@@ -641,23 +615,25 @@ vfio_pci ids=$str_HWID_list
 
     for str_line1 in ${arr_file3[@]}; do
 
-        echo -e $str_line1 >> $str_file3
+        #echo -e $str_line1 >> $str_file3       # NOTE: disabled to debug on current system
         echo -e $str_line1 >> $str_logFile3
 
     done
     ##
 
     ## /etc/modprobe.d/pci-blacklist.conf ##
-    echo -e "# NOTE: Generated by 'portellam/VFIO-setup'\n# START #" >> $str_file4
+    #echo -e "# NOTE: Generated by 'portellam/VFIO-setup'\n# START #\n# EXAMPLE:\tblacklist 'DRIVER_NAME'\n" >> $str_file4       # NOTE: disabled to debug on current system
+    echo -e "# NOTE: Generated by 'portellam/VFIO-setup'\n# START #\n# EXAMPLE:\n#\tblacklist 'DRIVER_NAME'\n" >> $str_logFile4
 
     for str_thisDriverName in ${arr_driverName_list[@]}; do
 
-        echo -e "blacklist $str_thisDriverName" >> $str_file4
+        #echo -e "blacklist $str_thisDriverName" >> $str_file4       # NOTE: disabled to debug on current system
         echo -e "blacklist $str_thisDriverName" >> $str_logFile4
 
     done
 
-    echo -e "# END #" >> $str_file4
+    #echo -e "# END #" >> $str_file4       # NOTE: disabled to debug on current system
+    echo -e "# END #" >> $str_logFile4
     ##
 
     ## /etc/modprobe.d/vfio.conf ##
@@ -666,7 +642,7 @@ vfio_pci ids=$str_HWID_list
 # START #
 # NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
 # NOTE: In terminal, execute \"lspci -nnk\" or review the logfiles.
-\n# Soft dependencies:$str_driverName_list_softdep
+\n# Soft dependencies:\t(NOTE: repeat for each driver)\n# EXAMPLE:\n#\tsoftdep 'DRIVER_NAME' pre: vfio-pci\n$str_driverName_list_softdep
 #
 \n# PCI hardware IDs:
 options vfio_pci ids=$str_HWID_list
@@ -674,13 +650,64 @@ options vfio_pci ids=$str_HWID_list
 
     for str_line1 in ${arr_file5[@]}; do
 
-        echo -e $str_line1 >> $str_file5
+        #echo -e $str_line1 >> $str_file5       # NOTE: disabled to debug on current system
         echo -e $str_line1 >> $str_logFile5
 
     done
 
+    echo -e "Complete."
+    
+    if [[ $bool_isVFIOsetup == true ]]; then
+        echo -e "\n$0: Reboot machine and execute script again to continue."
+    fi
+
 }
 ## end StaticSetup ##
+
+# prompt uninstall setup or exit #
+function UninstallPrompt {
+
+    declare -i int_count=0      # reset counter
+
+    while true; do
+
+        # manual prompt #
+        if [[ $int_count -ge 3 ]]; then     # auto answer
+
+            echo -e "$0: Exceeded max attempts."
+            str_input1="N"      # default input     # NOTE: change here
+
+        else
+
+            str_output1="$0: Uninstall to continue? [Y/n]: "
+            echo -en "\n$0: WARNING: Script has detected an existing VFIO Setup.\n$str_output1"
+            read str_input1
+            ReadInput $str_input1 $str_output1
+
+        fi
+
+        case $str_input1 in
+
+            "Y")
+
+                echo -en "$0: Uninstalling VFIO setup... "
+                break;;     # return to setup, will clear strings and output to files with default information
+
+            "N")
+
+                echo -e "$0: Exiting."
+                exit 0;;
+
+            *)
+                echo -e "$0: Invalid input.";;
+
+        esac
+
+        ((int_count++))     # increment counter
+
+    done
+
+}
 
 # check for hugepages logfile #
 str_file0=`ls $(pwd) | grep -i 'hugepages' | grep -i '.log'`
@@ -736,8 +763,8 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
             MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
 
-            #sudo update-grub                    # update GRUB
-            #sudo update-initramfs -u -k all     # update INITRAMFS
+            #sudo update-grub                    # update GRUB       # NOTE: disabled to debug on current system
+            #sudo update-initramfs -u -k all     # update INITRAMFS  # NOTE: disabled to debug on current system
 
             echo -e "\n$0: Review changes in:\n\t'/etc/default/grub'\n\t'/etc/initramfs-tools/modules'\n\t'/etc/modules'\n\t/etc/modprobe.d/*"
             break;;
@@ -749,8 +776,8 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
             #StaticSetup $bool_isVFIOsetup $str_GRUB_CMDLINE_Hugepages
             StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
 
-            #sudo update-grub                    # update GRUB
-            #sudo update-initramfs -u -k all     # update INITRAMFS
+            #sudo update-grub                    # update GRUB       # NOTE: disabled to debug on current system
+            #sudo update-initramfs -u -k all     # update INITRAMFS  # NOTE: disabled to debug on current system
 
             echo -e "\n$0: Review changes in:\n\t'/etc/default/grub'\n\t'/etc/initramfs-tools/modules'\n\t'/etc/modules'\n\t/etc/modprobe.d/*"
             break;;
