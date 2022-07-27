@@ -6,9 +6,15 @@ Ultimate collection of scripts for an Automated VFIO passthrough setup:
 * Deploy auto-generated Virtual machines.
 
 ## How-to
-In terminal, execute:
+For full setup, execute: *
 
         sudo bash install.sh
+
+* *You may execute functions individually.*
+
+Post-install, execute:
+
+        sudo bash post-install.sh
 
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
