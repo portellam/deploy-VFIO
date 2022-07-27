@@ -1,7 +1,8 @@
 ## To-Do
-* Multi-boot VFIO setup
-* Static-boot VFIO setup (functionally complete, need to change pointers to files and comment out logfiles?)
-* guides on cheats/tips to make VFIO setup smooth as butter out-of-the-box (Virtual machine config (XML) files, Win 10 passthru, Win XP passthru, VBIOS mods, etc.)
+* Multi-boot VFIO setup:    output to GRUB menu entries (currently only logfiles for manual setup)
+* Static VFIO setup:        fix driver parsing **make an array that saves WHICH IOMMU group is passedthru, and which isn't**
+* post install setup:       auto generate virtual machine XML/templates [a VM for every config, including single omitted IOMMU groups (with VGA)]
+* Linux distro-agnostic setup
 
 ## Complete
 * Evdev setup
