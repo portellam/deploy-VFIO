@@ -1,3 +1,6 @@
+## Description
+Ultimate collection of scripts for an Automated VFIO passthrough setup.Setup Multi-Boot or static VFIO passthrough, Evdev, Hugepages, ZRAM swap. Post-install, deploy auto-generated Virtual machines. Bash script.
+
 ## To-Do
 * Linux distro-agnostic setup
 * Multi-boot VFIO setup:    output to GRUB menu entries (currently only logfiles for manual setup)
