@@ -76,12 +76,13 @@ str_file4="/etc/modprobe.d/pci-blacklists.conf"
 str_file5="/etc/modprobe.d/vfio.conf"
 #
 
-# debug logfiles #    
+# debug logfiles #
 str_logFile1=$(pwd)"/grub.log"
 str_logFile2=$(pwd)"/initramfs-modules.log"
 str_logFile3=$(pwd)"/modules.log"
 str_logFile4=$(pwd)"/pci-blacklists.conf.log"
 str_logFile5=$(pwd)"/vfio.conf.log"
+str_GRUB_logFile=$(pwd)"/grub-menu.log"
 ##
 
 ## find and sort drivers by Bus ID (lspci) ##
@@ -298,51 +299,30 @@ function MultiBootSetup {
     echo -e "#!/bin/sh\nexec tail -n +3 \$0\n# This file provides an easy way to add custom menu entries. Simply type the\n# menu entries you want to add after this comment. Be careful not to change\n# the 'exec tail' line above." > $str_file1
     #
 
-    while [[]]
-    if [[ ${arr_VGA_IOMMU_DeviceName[$int_i]} != "" ]]; then
-            #if true; then
+    ##
+    # parse IOMMU IDs #
+    declare -i int_i=0      # reset counter
 
-                echo -e "CANARY2"
+    while [[ $int_i -le $int_compgen_IOMMUID_lastIndex ]]; do
 
-                str_thisVGA_IOMMU_DeviceName=${arr_VGA_IOMMU_DeviceName[$int_i]}     # save current VGA device name
-                echo -e "$0: str_thisVGA_IOMMU_DeviceName == '$str_thisVGA_IOMMU_DeviceName'"
+        declare -i int_j=0      # reset counter
 
-                # remove last separator #
-                if [[ ${str_VGA_IOMMU_Driver_tempList: -1} == "," ]]; then
-                    str_VGA_IOMMU_Driver_tempList=${str_VGA_IOMMU_Driver_tempList::-1}
-                fi
+        #
+        if [[ $int_i == ${arr_VGA_IOMMUID[$int_j]} ]]; then
 
-                if [[ ${str_VGA_IOMMU_HW_ID_tempList: -1} == "," ]]; then
-                    str_VGA_IOMMU_HW_ID_tempList=${str_VGA_IOMMU_HW_ID_tempList::-1}
-                fi
-                #
+            str_thisVGA_deviceName=${arr_VGA_deviceName[int_j]}
 
-                # GRUB command line #
-                str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_VGA_IOMMU_Driver_tempList vfio_pci.ids=$str_VGA_IOMMU_HW_ID_tempList"
-                #
+        fi
+        #
 
-                ### setup Boot menu entry ###           # TODO: fix automated menu entry setup!
+        #
+        for str_rootKernel in ${arr_rootKernel[@]}; do
 
-                # MANUAL setup Boot menu entry #        # NOTE: temporary
-                #echo -e "$0: Execute GRUB Customizer, Clone an existing, valid menu entry, Copy the fields 'Title' and 'Entry' below, and Paste the following output into a new menu entry, where appropriate.\n$0: DISCLAIMER: Automated GRUB menu entry feature not available yet."
+            str_rootKernel=${str_rootKernel:1:100}                                                                          # set Kernel (arbitrary length)
+            str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel (Xorg: $str_thisVGA_deviceName)'" # GRUB Menu Title
 
-                # parse Kernels #
-                for str_rootKernel in ${arr_rootKernel[@]}; do
-
-                    # set Kernel #
-                    str_rootKernel=${str_rootKernel:1:100}          # arbitrary length
-                    #
-
-                    # GRUB Menu Title #
-                    str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel (Xorg: $str_thisVGA_IOMMU_DeviceName)'"
-                    #
-
-                    # MANUAL setup Boot menu entry #        # NOTE: temporary
-                    echo -e "\n\tTitle: '$str_GRUBMenuTitle'\n\tEntry: '$str_GRUB_CMDLINE'\n"
-                    #
-
-                    # GRUB custom menu #
-                    declare -a arr_file_customGRUB=(
+            # GRUB custom menu #
+            declare -a arr_file_customGRUB=(
 "menuentry '$str_GRUBMenuTitle' {
     load_video
     insmod gzio
@@ -357,38 +337,24 @@ function MultiBootSetup {
 	  search --no-floppy --fs-uuid --set=root $str_rootUUID
 	fi
     echo    'Loading Linux $str_rootKernel ...'
-    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE
+    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB
     echo    'Loading initial ramdisk ...'
     initrd  /boot/initrd.img-$str_rootKernel
-
-
-"
-                    )
-
-                    # write to file
-                    #echo -e >> $str_file1    
-
-                    #for str_line in ${arr_file_customGRUB[@]}; do
-                        #echo -e $str_line >> $str_file1            # TODO: fix GRUB menu entries!
-                        #echo -e $str_line
-                    #done
-                
-                    #echo -e >> $str_file1 
-                    #
-
-                    # NOTE: manual GRUB menu entry
-                    echo -e "$0: GRUB menu entry:\n\t$str_GRUBMenuTitle\n\t$str_GRUB_CMDLINE"
-
-                done
-                #
-
-            fi
+\n
+\n")
             #
-
-            ((int_i++))
 
         done
         #
+
+            echo ${arr_file_customGRUB[@]} >> $str_GRUB_logFile
+
+        ((int_i++))
+
+    done
+    ##
+
+    echo -e "$0: DISCLAIMER: Automated GRUB menu entry feature not available yet.\n$0: Manual 'Multi-Boot' setup steps:\n\t1. Execute GRUB Customizer\n\t2. Clone an existing, valid menu entry\n\t3. Copy the fields in the logfile '$str_GRUB_logfile'\n\t4. Paste the output into a new menu entry, where appropriate."
 
 }
 
@@ -456,12 +422,21 @@ function StaticSetup {
 
                 fi
 
-                if [[ ${arr_lspci_type[$int_j]} == *"VGA"* ]]; then
+                ## NOTE: saves first found VGA device (in IOMMU group) name and IOMMU ID ##
+                # append device name to GRUB menu title later #
+                # Q: Why not save each VGA device name in IOMMU group?
+                # A: In 'portellam/Auto-Xorg', script will auto detect first valid (non VFIO) VGA device, and boot Xorg from that.
+                # A: It is possible to change the VGA device manually, however Auto-Xorg will override it at boot.
+
+                # match device type and false match boolean #
+                if [[ ${arr_lspci_type[$int_j]} == *"VGA"* && $bool_hasExternalVGA == false ]]; then
 
                     bool_hasExternalVGA=true
                     arr_VGA_IOMMUID+=($int_j)
+                    arr_VGA_deviceName+=(${arr_lspci_deviceName[$int_j]})
 
                 fi
+                #
 
                 # if VFIO setup exists, clear strings and quit #
                 if [[ ${arr_lspci_driverName[$int_j]} == "VFIO_DRIVER_FOUND" || $bool_hasVFIODriver == true ]]; then
@@ -889,14 +864,10 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
         "M")
 
             echo -e "$0: Executing Multi-Boot setup...\n"
-
-            #MultiBootSetup $bool_isVFIOsetup $str_GRUB_CMDLINE_Hugepages
-            #StaticSetup $bool_isVFIOsetup $str_GRUB_CMDLINE_Hugepages
-            MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
-
-            #sudo update-grub                    # update GRUB       # NOTE: disabled to debug on current system
-            #sudo update-initramfs -u -k all     # update INITRAMFS  # NOTE: disabled to debug on current system
+            MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
+            sudo update-grub                    # update GRUB       # NOTE: disabled to debug on current system
+            sudo update-initramfs -u -k all     # update INITRAMFS  # NOTE: disabled to debug on current system
 
             echo -e "\n$0: Review changes in:\n\t'/etc/default/grub'\n\t'/etc/initramfs-tools/modules'\n\t'/etc/modules'\n\t/etc/modprobe.d/*"
             break;;
@@ -904,12 +875,9 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
         "S")
 
             echo -e "$0: Executing Static setup...\n"
-
-            #StaticSetup $bool_isVFIOsetup $str_GRUB_CMDLINE_Hugepages
             StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
-
-            #sudo update-grub                    # update GRUB       # NOTE: disabled to debug on current system
-            #sudo update-initramfs -u -k all     # update INITRAMFS  # NOTE: disabled to debug on current system
+            sudo update-grub                    # update GRUB       # NOTE: disabled to debug on current system
+            sudo update-initramfs -u -k all     # update INITRAMFS  # NOTE: disabled to debug on current system
 
             echo -e "\n$0: Review changes in:\n\t'/etc/default/grub'\n\t'/etc/initramfs-tools/modules'\n\t'/etc/modules'\n\t/etc/modprobe.d/*"
             break;;
