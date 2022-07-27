@@ -1,5 +1,13 @@
 #!/bin/bash sh
 
+# TODO
+#
+# -save every iommu group id with a vga device
+# -multiboot setup, reference this array, cycle thru it, generate a GRUB CMDLINE for each possible VGA boot setup
+# -output to logfile (easy)
+# -output to grub menu entries (Debian or GRUB2 compatible) (harder)
+#
+
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then
 
@@ -52,8 +60,15 @@ readonly arr_lspci_vendorName
 
 declare -a arr_lspci_driverName     # driver name, sorted by Bus ID     (ex 'nouveau' or 'nvidia')
 declare -a arr_lspci_IOMMUID        # strings of index(es) of every Bus ID and entry, sorted by IOMMU ID
+declare -a arr_VGA_IOMMUID          # IOMMU groups with VGA devices
 
 # files #
+str_GRUB=""
+declare -a arr_file1
+declare -a arr_file2
+declare -a arr_file3
+declare -a arr_file4
+declare -a arr_file5
 str_file1="/etc/default/grub"
 str_file2="/etc/initramfs-tools/modules"
 str_file3="/etc/modules"
@@ -261,6 +276,122 @@ function ValidInput {
 }
 ##
 
+function MultiBootSetup {
+
+    ## parameters ##
+    str_Distribution=`lsb_release -i`   # Linux distro name
+    declare -i int_Distribution=${#str_Distribution}-16
+    str_Distribution=${str_Distribution:16:int_Distribution}
+    declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2`)                                # list of Kernels
+    #
+
+    # root Dev #
+    str_rootDiskInfo=`df -hT | grep /$`
+    #str_rootDev=${str_rootDiskInfo:5:4}                # example: "sda1"
+    str_rootDev=${str_rootDiskInfo:0:9}                 # example: "/dev/sda1"
+    str_rootUUID=`sudo lsblk -n $str_rootDev -o UUID`
+    #
+
+    # custom GRUB #
+    #str_file1="/etc/grub.d/proxifiedScripts/custom"
+    str_file1="/etc/grub.d/40_custom"
+    echo -e "#!/bin/sh\nexec tail -n +3 \$0\n# This file provides an easy way to add custom menu entries. Simply type the\n# menu entries you want to add after this comment. Be careful not to change\n# the 'exec tail' line above." > $str_file1
+    #
+
+    while [[]]
+    if [[ ${arr_VGA_IOMMU_DeviceName[$int_i]} != "" ]]; then
+            #if true; then
+
+                echo -e "CANARY2"
+
+                str_thisVGA_IOMMU_DeviceName=${arr_VGA_IOMMU_DeviceName[$int_i]}     # save current VGA device name
+                echo -e "$0: str_thisVGA_IOMMU_DeviceName == '$str_thisVGA_IOMMU_DeviceName'"
+
+                # remove last separator #
+                if [[ ${str_VGA_IOMMU_Driver_tempList: -1} == "," ]]; then
+                    str_VGA_IOMMU_Driver_tempList=${str_VGA_IOMMU_Driver_tempList::-1}
+                fi
+
+                if [[ ${str_VGA_IOMMU_HW_ID_tempList: -1} == "," ]]; then
+                    str_VGA_IOMMU_HW_ID_tempList=${str_VGA_IOMMU_HW_ID_tempList::-1}
+                fi
+                #
+
+                # GRUB command line #
+                str_GRUB_CMDLINE="acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_VGA_IOMMU_Driver_tempList vfio_pci.ids=$str_VGA_IOMMU_HW_ID_tempList"
+                #
+
+                ### setup Boot menu entry ###           # TODO: fix automated menu entry setup!
+
+                # MANUAL setup Boot menu entry #        # NOTE: temporary
+                #echo -e "$0: Execute GRUB Customizer, Clone an existing, valid menu entry, Copy the fields 'Title' and 'Entry' below, and Paste the following output into a new menu entry, where appropriate.\n$0: DISCLAIMER: Automated GRUB menu entry feature not available yet."
+
+                # parse Kernels #
+                for str_rootKernel in ${arr_rootKernel[@]}; do
+
+                    # set Kernel #
+                    str_rootKernel=${str_rootKernel:1:100}          # arbitrary length
+                    #
+
+                    # GRUB Menu Title #
+                    str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel (Xorg: $str_thisVGA_IOMMU_DeviceName)'"
+                    #
+
+                    # MANUAL setup Boot menu entry #        # NOTE: temporary
+                    echo -e "\n\tTitle: '$str_GRUBMenuTitle'\n\tEntry: '$str_GRUB_CMDLINE'\n"
+                    #
+
+                    # GRUB custom menu #
+                    declare -a arr_file_customGRUB=(
+"menuentry '$str_GRUBMenuTitle' {
+    load_video
+    insmod gzio
+    if [ x\$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/$str_rootUUID'
+    if [ x$feature_platform_search_hint = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  $str_rootUUID
+	else
+	  search --no-floppy --fs-uuid --set=root $str_rootUUID
+	fi
+    echo    'Loading Linux $str_rootKernel ...'
+    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-$str_rootKernel
+
+
+"
+                    )
+
+                    # write to file
+                    #echo -e >> $str_file1    
+
+                    #for str_line in ${arr_file_customGRUB[@]}; do
+                        #echo -e $str_line >> $str_file1            # TODO: fix GRUB menu entries!
+                        #echo -e $str_line
+                    #done
+                
+                    #echo -e >> $str_file1 
+                    #
+
+                    # NOTE: manual GRUB menu entry
+                    echo -e "$0: GRUB menu entry:\n\t$str_GRUBMenuTitle\n\t$str_GRUB_CMDLINE"
+
+                done
+                #
+
+            fi
+            #
+
+            ((int_i++))
+
+        done
+        #
+
+}
+
 function StaticSetup {
 
     ## parameters ##
@@ -328,6 +459,7 @@ function StaticSetup {
                 if [[ ${arr_lspci_type[$int_j]} == *"VGA"* ]]; then
 
                     bool_hasExternalVGA=true
+                    arr_VGA_IOMMUID+=($int_j)
 
                 fi
 
