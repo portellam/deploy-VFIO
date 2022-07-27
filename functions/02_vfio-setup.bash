@@ -9,6 +9,15 @@
 # -if subfunctions fail (ex: evdev), skip them!
 #
 
+# function steps #
+# 1a.   Parse PCI and IOMMU groups, sort information to be parsed again later
+# 2.    Choose setup. Existing VFIO setup, warn user, ask user to uninstall, and/or immediately exit.
+# 3.    Ask user which valid IOMMU group to passthrough.
+# 4a.   Static setup:       output to files and logfiles. No more input from user.
+# 4b.   Multi-boot setup:   output to logfiles. Direct user to setup GRUB entries manually (TO-DO: automated setup).
+# 5.    Update GRUB and INITRAMFS. Exit.
+#
+
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then
 
