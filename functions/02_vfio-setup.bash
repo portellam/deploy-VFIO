@@ -5,6 +5,7 @@
 # -output to grub menu entries (Debian or GRUB2 compatible) (harder)
 #
 # -driver list (for multiboot/static setup) output saves all drivers parsed, need to change to only save those 'selected'
+# -check static setup parse section and y/n prompt for changes
 # -if subfunctions fail (ex: evdev), skip them!
 
 # check if sudo/root #
@@ -33,7 +34,7 @@ echo -en "$0: Parsing PCI device information... "
 ## parameters ##
 bool_hasExternalPCI=false 
 bool_hasVGA=false
-bool_hasNoDriver=false
+#bool_hasNoDriver=false
 bool_hasVFIODriver=false
 
 readonly int_compgen_IOMMUID_lastIndex=`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | cut -d '/' -f5 | sort -hr | head -n1`       # IOMMU ID, sorted
@@ -315,7 +316,6 @@ function MultiBootSetup {
             if [[ $int_i == ${arr_lspci_IOMMUID[$int_j]} ]]; then
 
                 str_thisVGA_deviceName=${arr_VGA_deviceName[int_j]}
-                echo "$0: str_thisVGA_deviceName == $str_thisVGA_deviceName"
 
             fi
             #
@@ -381,7 +381,7 @@ function MultiBootSetup {
     done
     ##
 
-    echo -e "$0: DISCLAIMER: Automated GRUB menu entry feature not available yet.\n$0: Manual 'Multi-Boot' setup steps:\n\t1. Execute GRUB Customizer\n\t2. Clone an existing, valid menu entry\n\t3. Copy the fields in the logfile '$str_GRUB_logfile'\n\t4. Paste the output into a new menu entry, where appropriate."
+    echo -e "$0: DISCLAIMER: Automated GRUB menu entry feature not available yet.\n$0: Manual 'Multi-Boot' setup steps:\n\t1. Execute GRUB Customizer\n\t2. Clone an existing, valid menu entry\n\t3. Copy the fields in the logfile '$str_GRUB_logfile'\n\t4. Paste the output into a new menu entry, where appropriate.\n"
 
 }
 
@@ -485,15 +485,14 @@ function StaticSetup {
                     bool_hasVFIODriver=true
                     str_driverName_tempList=""
                     str_HWID_tempList=""
-                    arr_driverName_list=""
+                    arr_driverName_tempList=""
 
                 fi
 
                 if [[ ${arr_lspci_driverName[$int_j]} == "NO_DRIVER_FOUND" ]]; then
 
-                    bool_hasNoDriver=true
+                    #bool_hasNoDriver=true
                     str_thisDriverName=""
-                    str_thisHWID=""
 
                 fi
                 ##
@@ -512,11 +511,11 @@ function StaticSetup {
 
                 # add to list #
 
-                if [[ $str_thisDriverName != "" && $str_thisHWID != "" ]]; then
+                if [[ $str_thisHWID != "" && $bool_hasExternalPCI == true ]]; then
 
                     str_driverName_tempList+="$str_thisDriverName,"
                     str_HWID_tempList+="$str_thisHWID,"
-                    arr_driverName_list+=($str_thisDriverName)
+                    arr_driverName_templist+=($str_thisDriverName)
 
                 fi
                 #
@@ -553,7 +552,7 @@ function StaticSetup {
         # do NOT passthrough all devices #
         if [[ $bool_hasExternalPCI == false ]]; then
 
-            echo -e "$0: No external PCI devices found. Skipping prompt."
+            echo -e "$0: No external PCI devices found. Skipping."
             str_input1="N"
 
         # match if list does contain external PCI #
@@ -571,7 +570,7 @@ function StaticSetup {
             str_input1="N"
             bool_isVFIOsetup=true
             UninstallPrompt $bool_isVFIOsetup
-            declare -a arr_driverName_list=()       # reset outputs
+            declare -a arr_driverName_tempList=()   # reset outputs
             str_driverName_list=""                  # reset outputs
             str_HWID_list=""                        # reset outputs
             break
@@ -605,6 +604,13 @@ function StaticSetup {
                     # add IOMMU group to VFIO pass-through lists #
                     str_driverName_list+=$str_driverName_tempList
                     str_HWID_list+=$str_HWID_tempList
+                
+                    for i in $arr_driverName_tempList; do
+
+                        arr_driverName_list+=($i)
+
+                    done
+
                     #
                     break;;
 
@@ -620,8 +626,8 @@ function StaticSetup {
         done
 
         bool_hasExternalPCI=false               # reset boolean
-        #bool_hasVGA=false               # reset boolean
-        bool_hasNoDriver=false                  # reset boolean
+        bool_hasVGA=false                       # reset boolean
+        #bool_hasNoDriver=false                  # reset boolean
         bool_hasVFIODriver=false                # reset boolean
         str_driverName_tempList=""              # reset list
         str_HWID_tempList=""                    # reset list
@@ -629,6 +635,22 @@ function StaticSetup {
 
     done
     ##
+
+    # remove misplaced separator #
+    if [[ ${str_driverName_list:0:1} == "," ]]; then
+
+        int_len=${#str_driverName_list}-1
+        str_driverName_list=${str_driverName_list:1:int_len}
+
+    fi
+
+    if [[ ${str_HWID_list:0:1} == "," ]]; then
+
+        int_len=${#str_HWID_list}
+        str_HWID_list=${str_HWID_list:1:int_len}
+
+    fi
+    #
 
     # remove last separator #
     if [[ ${str_driverName_list: -1} == "," ]]; then
@@ -647,7 +669,6 @@ function StaticSetup {
     # VFIO soft dependencies #
     for str_thisDriverName in ${arr_driverName_list[@]}; do
 
-        echo "$0: 'str_thisDriverName' == $str_thisDriverName"
         str_driverName_list_softdep+="\nsoftdep $str_thisDriverName pre: vfio-pci"
         str_driverName_list_softdep_drivers+="\nsoftdep $str_thisDriverName pre: vfio-pci\n$str_thisDriverName"
 
@@ -804,7 +825,7 @@ options vfio_pci ids=$str_HWID_list
 
     done
 
-    echo -e "Complete."
+    #echo -e "Complete."
     
     if [[ $bool_isVFIOsetup == true ]]; then
         echo -e "\n$0: Reboot machine and execute script again to continue."
