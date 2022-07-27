@@ -37,7 +37,6 @@ str_GitHub_Repo="FoundObjects/zram-swap"
 
 # check for zram-utils #
 if [[ ! -z $str_file1 ]]; then
-    sudo apt install -y git zram-tools
     sudo systemctl stop zramswap
     sudo systemctl disable zramswap
 fi

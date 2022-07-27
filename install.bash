@@ -1,5 +1,10 @@
 #!/bin/bash sh
 
+# TODO
+# -install required packages for VFIO, and new features
+# -packages for major distros (Debian,Fedora,Arch)
+# -setup audio loopback for systems with soundcard passthrough (line-out to host line-in)
+
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then
     echo "$0: WARNING: Script must be run as Sudo or Root! Exiting."
@@ -65,11 +70,50 @@ function ValidInput {
 
 # check if system supports IOMMU #
 if [[ -z $(echo `compgen -G "/sys/kernel/iommu_groups/*/devices/*"`) ]]; then
+
     echo "$0: WARNING: Virtualization (AMD IOMMU or Intel VT-D) is NOT enabled or available in the BIOS/UEFI.\n$0: VFIO setup will continue, enable/review availability after execution."
+
 else
+
     echo "$0: NOTE: Virtualization is enabled in the BIOS/UEFI."
+
 fi
 #
+
+## install required packages ##
+
+# Arch
+if [[ `lsb_release -i | grep -Ei "arch"` ]]; then
+
+    echo -e "$0: Linux distribution found: `cat /etc/*-release | grep ID | sort -h | head -n1 | cut -d '=' -f2`\n"
+    sudo pacman -Syu && sudo pacman -Sy edk2-ovmf lgit ibvirt qemu-desktop virt-manager zramswap
+    # find same packages from Debian
+
+fi
+#
+
+# Debian/Ubuntu
+if [[ `lsb_release -i | grep -Ei "debian|ubuntu"` ]]; then
+
+    echo -e "$0: Linux distribution found: `cat /etc/*-release | grep ID | sort -h | head -n1 | cut -d '=' -f2`\n"
+    sudo apt update && sudo apt full-upgrade -y && sudo apt install -y git libvirt0 qemu virt-manager zram-tools
+
+fi
+#
+
+# Fedora/Redhat
+if [[ `lsb_release -i | grep -Ei "fedora|redhat"` ]]; then
+
+    echo -e "$0: Linux distribution found: `cat /etc/*-release | grep ID | sort -h | head -n1 | cut -d '=' -f2`\n"
+    sudo dnf check-update && sudo dnf upgrade -y && sudo dnf install -y @virtualization git zram-generator zram-generator-defaults
+    # find same packages from Debian    # is there a virtualization metapackage for Debian, Arch?
+
+fi
+#
+
+echo
+
+##
 
 # parse and execute functions #
 bool_isVFIOsetup=false          # a canary to check for previous VFIO setup installation

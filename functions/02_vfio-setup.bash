@@ -881,8 +881,8 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
             echo -e "$0: Executing Multi-Boot setup...\n"
             StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
-            #sudo update-grub                    # update GRUB       # NOTE: disabled to debug on current system
-            #sudo update-initramfs -u -k all     # update INITRAMFS  # NOTE: disabled to debug on current system
+            sudo update-grub                    # update GRUB       # NOTE: disabled to debug on current system
+            sudo update-initramfs -u -k all     # update INITRAMFS  # NOTE: disabled to debug on current system
 
             echo -e "\n$0: Review changes in:\n\t'/etc/default/grub'\n\t'/etc/initramfs-tools/modules'\n\t'/etc/modules'\n\t/etc/modprobe.d/*"
             break;;
@@ -891,8 +891,8 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
 
             echo -e "$0: Executing Static setup...\n"
             StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
-            #sudo update-grub                    # update GRUB       # NOTE: disabled to debug on current system
-            #sudo update-initramfs -u -k all     # update INITRAMFS  # NOTE: disabled to debug on current system
+            sudo update-grub                    # update GRUB       # NOTE: disabled to debug on current system
+            sudo update-initramfs -u -k all     # update INITRAMFS  # NOTE: disabled to debug on current system
 
             echo -e "\n$0: Review changes in:\n\t'/etc/default/grub'\n\t'/etc/initramfs-tools/modules'\n\t'/etc/modules'\n\t/etc/modprobe.d/*"
             break;;
