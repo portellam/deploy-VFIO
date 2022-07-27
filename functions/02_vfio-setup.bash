@@ -2,13 +2,9 @@
 
 # TODO
 #
-# -save every iommu group id with a vga device
-# -multiboot setup, reference this array, cycle thru it, generate a GRUB CMDLINE for each possible VGA boot setup
-# -output to logfile (easy)
 # -output to grub menu entries (Debian or GRUB2 compatible) (harder)
 #
 # -driver list (for multiboot/static setup) output saves all drivers parsed, need to change to only save those 'selected'
-# -fix string text formatting
 # -if subfunctions fail (ex: evdev), skip them!
 
 # check if sudo/root #
@@ -36,7 +32,7 @@ echo -en "$0: Parsing PCI device information... "
 
 ## parameters ##
 bool_hasExternalPCI=false 
-bool_hasExternalVGA=false
+bool_hasVGA=false
 bool_hasNoDriver=false
 bool_hasVFIODriver=false
 
@@ -301,9 +297,9 @@ function MultiBootSetup {
     #
 
     # custom GRUB #
-    #str_file1="/etc/grub.d/proxifiedScripts/custom"
-    str_file1="/etc/grub.d/40_custom"
-    echo -e "#!/bin/sh\nexec tail -n +3 \$0\n# This file provides an easy way to add custom menu entries. Simply type the\n# menu entries you want to add after this comment. Be careful not to change\n# the 'exec tail' line above." > $str_file1
+    #str_file6="/etc/grub.d/proxifiedScripts/custom"
+    #str_file6="/etc/grub.d/40_custom"
+    #echo -e "#!/bin/sh\nexec tail -n +3 \$0\n# This file provides an easy way to add custom menu entries. Simply type the\n# menu entries you want to add after this comment. Be careful not to change\n# the 'exec tail' line above." > $str_file6
     #
 
     ##
@@ -312,22 +308,40 @@ function MultiBootSetup {
 
     while [[ $int_i -le $int_compgen_IOMMUID_lastIndex ]]; do
 
-        declare -i int_j=0      # reset counter
+        # find boot VGA device name #
+        for (( int_j=0 ; int_j<${#arr_lspci_IOMMUID[@]} ; int_j++ )); do
+            
+            # match IOMMU ID #
+            if [[ $int_i == ${arr_lspci_IOMMUID[$int_j]} ]]; then
 
+                str_thisVGA_deviceName=${arr_VGA_deviceName[int_j]}
+                echo "$0: str_thisVGA_deviceName == $str_thisVGA_deviceName"
+
+            fi
+            #
+
+        done
         #
-        if [[ $int_i == ${arr_VGA_IOMMUID[$int_j]} ]]; then
 
-            str_thisVGA_deviceName=${arr_VGA_deviceName[int_j]}
-            echo "$0: str_thisVGA_deviceName == $str_thisVGA_deviceName"
+        ## check will assume system has passed through every VGA device, excluding integrated video (if enabled) ##
+        # match null and false match integrated video #
+        if [[ $str_thisVGA_deviceName == "" && $str_thisVGA_deviceName != `lspci -m | grep -Ei "graphics|VGA" | head -n1 | cut -d '"' -f6` ]]; then
+
+            str_thisVGA_deviceName="N/A"    # reset string
+
+        # match integrated video #
+        else
+
+            str_thisVGA_deviceName=`lspci -m | grep -Ei "graphics|VGA" | head -n1 | cut -d '"' -f6`
 
         fi
-        #
+        ##
 
-        #
+        # create GRUB menu entry #
         for str_rootKernel in ${arr_rootKernel[@]}; do
 
             str_rootKernel=${str_rootKernel:1:100}                                                                                  # set Kernel (arbitrary length)
-            str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel (Boot VGA: $str_thisVGA_deviceName)'"     # GRUB Menu Title
+            str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel (VGA: $str_thisVGA_deviceName)'"     # GRUB Menu Title
 
             # GRUB custom menu #
             declare -a arr_file_customGRUB=(
@@ -361,7 +375,8 @@ function MultiBootSetup {
             done
             #
 
-        ((int_i++))
+        ((int_i++))                     # increment counter
+        str_thisVGA_deviceName=""       # reset string
 
     done
     ##
@@ -414,7 +429,7 @@ function StaticSetup {
     while [[ $int_i -le $int_compgen_IOMMUID_lastIndex ]]; do
 
         echo -e "\tIOMMU :\t\t$int_i"
-        declare -i int_k=0                      # reset counter
+        declare -i int_k=1                      # reset counter
         
         # parse IOMMU IDs #
         for (( int_j=0 ; int_j<${#arr_lspci_IOMMUID[@]} ; int_j++ )); do
@@ -424,8 +439,10 @@ function StaticSetup {
 
                 str_thisBusID=${arr_lspci_busID[$int_j]}
                 str_thisBusID=${str_thisBusID::-1}                  # valid element
+                str_thisDeviceName=${arr_lspci_deviceName[$int_j]}  # valid element
                 str_thisDriverName=${arr_lspci_driverName[$int_j]}  # valid element
                 str_thisHWID=${arr_lspci_HWID[$int_j]}              # valid element
+                str_thisType=`echo ${arr_lspci_type[$int_j]} | tr '[:lower:]' '[:upper:]'`      # valid element
 
                 ## checks ##
                 if [[ ${str_thisBusID:1:1} -ge 1 ]]; then
@@ -440,13 +457,24 @@ function StaticSetup {
                 # A: In 'portellam/Auto-Xorg', script will auto detect first valid (non VFIO) VGA device, and boot Xorg from that.
                 # A: It is possible to change the VGA device manually, however Auto-Xorg will override it at boot.
 
-                # match device type and false match boolean #
-                if [[ ${arr_lspci_type[$int_j]} == *"VGA"* && $bool_hasExternalVGA == false ]]; then
+                # match device type #
+                if [[ $str_thisType == *"VGA"* || $str_thisType == *"GRAPHICS"* ]]; then
 
-                    echo "MATCH"
-                    bool_hasExternalVGA=true
-                    arr_VGA_IOMMUID+=($int_j)
-                    arr_VGA_deviceName+=(${arr_lspci_deviceName[$int_j]})
+                    arr_VGA_IOMMUID+=($int_j)                   # element is IOMMU ID, index is 'lspci' index
+                    arr_VGA_deviceName+=($str_thisDeviceName)
+
+                    # false match boolean #
+                    if [[ $bool_hasVGA == false ]]; then
+
+                        bool_hasVGA=true
+
+                    fi
+                    #
+
+                # false match type #
+                else
+
+                    arr_VGA_deviceName+=("NO_VGA_FOUND")
 
                 fi
                 #
@@ -480,7 +508,6 @@ function StaticSetup {
                 echo -e "\tBUS ID:\t\t$str_thisBusID"
                 echo -e "\tHW ID :\t\t${arr_lspci_HWID[$int_j]}"
                 echo -e "\tDRIVER:\t\t${arr_lspci_driverName[$int_j]}"
-
                 #
 
                 # add to list #
@@ -495,6 +522,7 @@ function StaticSetup {
                 #
 
                 ((int_k++)) # increment counter
+
             fi
             #
 
@@ -507,7 +535,7 @@ function StaticSetup {
 
         # match if list does not contain VGA #
         # do passthrough all devices #
-        if [[ $bool_hasExternalVGA == false ]]; then
+        if [[ $bool_hasVGA == false ]]; then
 
             echo -e "$0: No VGA devices found."
             str_input1="Y"
@@ -537,18 +565,18 @@ function StaticSetup {
         fi
         #
 
-        #if [[ $bool_hasVFIODriver == true ]]; then                     # NOTE: disabled to debug on current system
+        if [[ $bool_hasVFIODriver == true ]]; then                     # NOTE: disabled to debug on current system
 
-            #echo -e "$0: WARNING: VFIO driver found."
-            #str_input1="N"
-            #bool_isVFIOsetup=true
-            #UninstallPrompt $bool_isVFIOsetup
-            #declare -a arr_driverName_list=()       # reset outputs
-            #str_driverName_list=""                  # reset outputs
-            #str_HWID_list=""                        # reset outputs
-            #break
+            echo -e "$0: WARNING: VFIO driver found."
+            str_input1="N"
+            bool_isVFIOsetup=true
+            UninstallPrompt $bool_isVFIOsetup
+            declare -a arr_driverName_list=()       # reset outputs
+            str_driverName_list=""                  # reset outputs
+            str_HWID_list=""                        # reset outputs
+            break
 
-        #fi
+        fi
         #
 
         echo
@@ -582,7 +610,6 @@ function StaticSetup {
 
                 "N")
 
-                    #echo "$0: Skipping IOMMU group '$int_i'."
                     break;;
 
                 *)
@@ -593,7 +620,7 @@ function StaticSetup {
         done
 
         bool_hasExternalPCI=false               # reset boolean
-        #bool_hasExternalVGA=false               # reset boolean
+        #bool_hasVGA=false               # reset boolean
         bool_hasNoDriver=false                  # reset boolean
         bool_hasVFIODriver=false                # reset boolean
         str_driverName_tempList=""              # reset list
@@ -629,8 +656,8 @@ function StaticSetup {
 
     ## GRUB ##
     bool_str_file1=false
-    str_GRUB_MULTIBOOT="\"quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driverName_list vfio_pci.ids=$str_HWID_list\""
-    str_GRUB_STATIC="GRUB_CMDLINE_DEFAULT=$str_GRUB_MULTIBOOT"
+    str_GRUB_MULTIBOOT="quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driverName_list vfio_pci.ids=$str_HWID_list"
+    str_GRUB_STATIC="GRUB_CMDLINE_DEFAULT=\"$str_GRUB_MULTIBOOT\""
 
     echo $str_GRUB_STATIC > $str_logFile1
 
