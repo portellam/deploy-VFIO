@@ -64,8 +64,10 @@ function ValidInput {
 ##
 
 # check if system supports IOMMU #
-if [[ ! compgen -G "/sys/kernel/iommu_groups/*/devices/*" > /dev/null ]]; then
+if [[ -z $(echo `compgen -G "/sys/kernel/iommu_groups/*/devices/*"`) ]]; then
     echo "$0: WARNING: Virtualization (AMD IOMMU or Intel VT-D) is NOT enabled or available in the BIOS/UEFI.\n$0: VFIO setup will continue, enable/review availability after execution."
+else
+    echo "$0: NOTE: Virtualization is enabled in the BIOS/UEFI."
 fi
 #
 
@@ -88,13 +90,13 @@ while [[ $bool_isVFIOsetup == false ]]; do
         # execute sh/bash scripts in directory
         if [[ $str_line1 == *".sh"||*".bash" ]]; then
             echo -en "\n$0: Execute '$str_line1'? [Y/n]: "
-            UserInput_1 $str_input1
+            ReadInput $str_input1
             echo -e "\n$0: Executing '$str_line1'."
         fi
 
-        if [[ $str_input1 =="Y" && $str_line1 == *".bash" ]]; then sudo bash $str_dir1"/"$str_line1 $str_input1 $bool_isVFIOsetup; fi  
+        if [[ $str_input1 == "Y" && $str_line1 == *".bash" ]]; then sudo bash $str_dir1"/"$str_line1 $str_input1 $bool_isVFIOsetup; fi  
     
-        if [[ $str_input1 =="Y" && $str_line1 == *".sh" ]]; then sudo sh $str_dir1"/"$str_line1 $str_input1 $bool_isVFIOsetup; fi  
+        if [[ $str_input1 == "Y" && $str_line1 == *".sh" ]]; then sudo sh $str_dir1"/"$str_line1 $str_input1 $bool_isVFIOsetup; fi  
         #
 
     done

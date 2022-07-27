@@ -7,6 +7,9 @@
 # -output to logfile (easy)
 # -output to grub menu entries (Debian or GRUB2 compatible) (harder)
 #
+# -driver list (for multiboot/static setup) output saves all drivers parsed, need to change to only save those 'selected'
+# -fix string text formatting
+# -if subfunctions fail (ex: evdev), skip them!
 
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then
