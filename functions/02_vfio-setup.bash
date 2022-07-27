@@ -7,6 +7,7 @@
 # -driver list (for multiboot/static setup) output saves all drivers parsed, need to change to only save those 'selected'
 # -check static setup parse section and y/n prompt for changes
 # -if subfunctions fail (ex: evdev), skip them!
+#
 
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then
