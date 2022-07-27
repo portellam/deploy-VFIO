@@ -1,8 +1,8 @@
 ## To-Do
+* Linux distro-agnostic setup
 * Multi-boot VFIO setup:    output to GRUB menu entries (currently only logfiles for manual setup)
 * Static VFIO setup:        fix driver parsing **make an array that saves WHICH IOMMU group is passedthru, and which isn't**
-* post install setup:       auto generate virtual machine XML/templates [a VM for every config, including single omitted IOMMU groups (with VGA)]
-* Linux distro-agnostic setup
+* post install setup:       auto generate virtual machine XML/templates [a VM for every config, including single omitted IOMMU groups (with VGA)], edits for OS-specific and BIOS/UEFI setups, include evdev and hugepages
 
 ## Complete
 * Evdev setup
