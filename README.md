@@ -6,11 +6,11 @@ Ultimate collection of scripts for an Automated VFIO passthrough setup:
 * Deploy auto-generated Virtual machines.
 
 ## How-to
-For full setup, execute: *
+For full setup*, execute:
 
         sudo bash install.sh
 
-* *You may execute functions individually.*
+**[*] You may execute functions individually.**
 
 Post-install, execute:
 
