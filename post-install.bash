@@ -7,6 +7,17 @@
 # 2b.   Set qemu enlightenments: evdev, hostdev (given VGA).
 # 3.    Save VM templates to XML format, and output to directory. Restart libvirt to refresh.
 #
+# NOTE: worst comes to worst:
+# -I cannot easily append VFIO devices to an XML
+# -I cannot generate a valid XML
+# Instead:
+# -I generate as much useful output to a logfile, where the user may copy to his XML
+#
+
+# notify user to find or generate valid vbios (and patch if needed), and leave output for vbios string in XML 
+#
+#
+
 
 exit 0
 
@@ -23,9 +34,12 @@ IFS=$'\n'      # Change IFS to newline char
 #
 
 ## parameters ##
+declare -a arr_XML=()
+
 declare -i int_hostSocket=`echo $(lscpu | grep -Ei "socket" | grep -iv "core" | cut -d ':' -f2)`
 declare -i int_hostCore=`echo $(lscpu | grep -Ei "core" | grep -Eiv "name|thread" | cut -d ':' -f2)`
 declare -i int_hostThread=`echo $(lscpu | grep -Ei "thread" | cut -d ':' -f2)`
+declare -i int_vThreadSum=($int_vThread*$int_hostThread)-1
 
 str_dir1="/etc/libvirt/qemu"
 
@@ -50,10 +64,13 @@ str_machineName="template_VM_Q35_UEFI"
 
 # set vcore count #
 if [[ $int_hostCore -ge 4 ]]; then
-    int_vCore=$int_hostSocket*($int_hostCore-2)
+    declare -i int_vOffset=2
+    int_vCore=$int_hostSocket*($int_hostCore-$int_vOffset)
 else if [[ $int_hostCore == 3 ]]; then
+    declare -i int_vOffset=1
     int_vCore=$int_hostSocket*2
 else if [[ $int_hostCore == 2 ]]; then
+    declare -i int_vOffset=0
     int_vCore=$int_hostSocket
 else if [[ $int_hostCore == 2 ]]; then
     int_vCore=0
@@ -233,14 +250,396 @@ for (( int_i=0 ; int_i<${#arr_lscpi_IOMMUID[@]} ; int_i++ )); do
 done
 #
 
+
+WriteToXML {
+	
+	## cputune ##
+
+	str_XML_vcore_subtext="cpuset="
+	declare -i int_i=1
+
+	# setup vcpu placement #
+	while [[ int_i -le $int_hostThread ]]; do
+
+		declare -i int_vTemp=$int_hostThread*$int_i
+		str_XML_vcore_subtext+="$int_vOffset-$int_vTemp,"
+		((int_i++))
+
+	done
+
+	str_XML_vcore_subtext=${str_XML_vcore_subtext::-1}      # remove last delimiter
+	arr_XML_vcore+=("    <vcpu placement=\"static\" $str_XML_vcore_subtext</vcpu>")
+	#
+
+
+	# vcpupin #
+	# 1 #
+	for (( int_i=0 ; int_i<$int_vThread ; int_i++ )); do    
+
+		for (( int_j=0 ; int_j<$int_hostThread ; int_j++ )); do
+
+			int_vSet=($int_vOffset+$int_i)+($int_hostCore*$int_j)
+			arr_vcore+=("        <vcpupin vcpu=\"$int_i\" cpuset=\"$int_vSet\"/>")
+
+		done
+	done
+
+	# 2 #
+	arr_XML_vcore+=(
+	"        <iothreads>$int_hostThread</iothreads>
+			<iothreadids>")
+
+	# 3 #
+	for (( int_i=1 ; int_i<$int_vThread ; int_i++ )); do    
+
+		for (( int_j=0 ; int_j<$int_hostThread ; int_j++ )); do
+
+			int_vIO=$int_i+($int_hostCore*$int_j)
+
+			arr_XML_vcore+=("            <iothread id=\"$int_vIO\"/>")
+
+		done
+	done
+
+	# 4 #
+	arr_XML_vcore+=(
+	"        </iothreadids>
+			<cputune>")
+
+	# 5 #
+	for (( int_i=1 ; int_i<$int_vThread ; int_i++ )); do    
+
+		for (( int_j=0 ; int_j<$int_hostThread ; int_j++ )); do
+
+			int_vIO=$int_i+($int_hostCore*$int_j)
+			str_vIO+="$int_vIO,"
+
+		done
+
+		str_vIO=${str_vIO::-1}  # remove last delimiter     # NOTE: does this work?
+		arr_XML_vcore+=("            <emulatorpin cpuset=\"$str_vIO\"/>")
+
+	done
+
+	# 6 #
+	for (( int_i=1 ; int_i<$int_vThread ; int_i++ )); do    
+
+		for (( int_j=0 ; int_j<$int_hostThread ; int_j++ )); do
+
+			int_vIO=$int_i+($int_hostCore*$int_j)
+			arr_XML_vcore+=("            <iothreadpin iothread=\"$int_i\" cpuset=\"$int_vIO\"/>")
+
+		done
+	done
+
+	# 7 #
+	arr_XML_vcore+=("        </cputune>")
+
+	##
+
+	## Hugepages
+	# NOTE: copy check function for hugepages
+
+	declare -a arr_XML_hugepages=(
+	'        <hugepages/>
+			<nosharepages/>
+			<allocation mode="immediate"/>
+			<discard/>')
+	##
+
+	## QEMU enlightenments and EVDEV
+	# NOTE: parse evdev
+	declare -a arr_XML_QEMU=(
+	'    <qemu:commandline>
+			<qemu:arg value="-vga"/>
+			<qemu:arg value="none"/>
+			<qemu:arg value="-set"/>
+			<qemu:arg value="device.hostdev0.x-vga=on"/>
+			<qemu:arg value="-overcommit"/>
+			<qemu:arg value="cpu-pm=on"/>
+			<qemu:arg value="-object"/>
+			<qemu:arg value="input-linux,id=kbd1,evdev=/dev/input/by-id/usb-0d3d_USBPS2-event-if01,grab_all=on,repeat=on"/>
+			<qemu:arg value="-object"/>
+			<qemu:arg value="input-linux,id=kbd2,evdev=/dev/input/by-id/usb-0d3d_USBPS2-event-kbd,grab_all=on,repeat=on"/>
+			<qemu:arg value="-object"/>
+			<qemu:arg value="input-linux,id=mouse1,evdev=/dev/input/by-id/usb-Logitech_G_Pro_Wireless_Gaming_Mouse_56C4DE9FC0D9C37C-event-mouse"/>
+			<qemu:arg value="-object"/>
+			<qemu:arg value="input-linux,id=kbd3,evdev=/dev/input/by-id/usb-Logitech_G_Pro_Wireless_Gaming_Mouse_56C4DE9FC0D9C37C-if01-event-kbd,grab_all=on,repeat=on"/>
+		</qemu:commandline>')
+	##
+
+	## setup VFIO devices ##
+	declare -i int_vBusID=11        # NOTE: find below the last hexadecmial VFIO Bus ID     
+									# search:   '<address type="pci" domain="0x0000" bus="0x'   without ''
+
+	for (( int_i=0 ; int_i<${arr_lspci_VFIO[@]} ; int_i++ )); do
+
+		# find virtual Bus ID, convert string as base 16 #
+		declare int_vBusID=13+$int_i
+
+		if [[ $int_vBusID -lt 16 ]]; then
+			str_vBusID="00"
+		fi
+
+		if [[ $int_vBusID -le 127 && $int_vBusID -gt 16 ]]; then
+			str_vBusID="0"
+		fi
+
+		str_vBusID+=`printf '%x\n' $int_vBusID`
+		#
+
+		# find VFIO Bus ID #
+		int_lspci_VFIO=${arr_lspci_VFIO[$int_i]}
+		str_thisBusID=`echo $(${arr_lspci_busID[$int_i]}) | cut -d ':' -f1`
+		str_thisFuncID=`echo $(${arr_lspci_busID[$int_i]}) | cut -d '.' -f2`
+		#
+
+		declare -a arr_XML_VFIO+=(
+	"<hostdev mode=\"subsystem\" type=\"pci\" managed=\"yes\">
+		<driver name=\"vfio\"/> 
+		<source>
+			<address domain=\"0x0000\" bus=\"0x$str_thisBusID\" slot=\"0x00\" function=\"0x$str_thisFuncID\"/>
+		</source>
+		<address type=\"pci\" domain=\"0x0000\" bus=\"0x$str_vBusID\" slot=\"0x00\" function=\"0x0\"/> 
+	</hostdev>")
+
+	done
+	##
+
+	## VM template ##
+	# NOTE: need to generate UUID
+
+	declare -a arr_XML=(
+	"<domain xmlns:qemu=\"http://libvirt.org/schemas/domain/qemu/1.0\" type=\"kvm\">
+		<name>$str_newMachineName</name>
+		<uuid>7137e531-2a2b-4478-841a-2449d66b324f</uuid>
+		<title>$str_newMachineName</title>
+		<metadata>
+			<libosinfo:libosinfo xmlns:libosinfo=\"http://libosinfo.org/xmlns/libvirt/domain/1.0\">
+				<libosinfo:os id=\"http://microsoft.com/win/10\"/>
+			</libosinfo:libosinfo>
+		</metadata>
+		<memory unit=\"KiB\">$int_machineMem</memory>
+		<currentMemory unit=\"KiB\">$int_machineMem</currentMemory>
+		<memoryBacking>
+	$arr_XML_hugepages
+		</memoryBacking>
+	$arr_XML_vcore
+		<resource>
+			<partition>/machine</partition>
+		</resource>
+		<os>
+			<type arch=\"x86_64\" machine=\"pc-q35-5.2\">hvm</type>
+			<loader readonly=\"yes\" type=\"pflash\">/usr/share/OVMF/OVMF_CODE_4M.fd</loader>
+			<nvram>/var/lib/libvirt/qemu/nvram/$str_newMachineName_VARS.fd</nvram>
+			<boot dev=\"hd\"/>
+			<bootmenu enable=\"no\"/>
+		</os>
+		<features>
+			<acpi/>
+			<apic/>
+			<hyperv>
+				<relaxed state=\"on\"/>
+				<vapic state=\"on\"/>
+				<spinlocks state=\"on\" retries=\"8191\"/>
+				<vpindex state=\"on\"/>
+				<runtime state=\"on\"/>
+				<synic state=\"on\"/>
+				<stimer state=\"on\"/>
+				<reset state=\"on\"/>
+				<vendor_id state=\"on\" value=\"1234567890ab\"/>
+				<frequencies state=\"on\"/>
+			</hyperv>
+			<kvm>
+				<hidden state=\"on\"/>
+			</kvm>
+			<vmport state=\"off\"/>
+			<ioapic driver=\"kvm\"/>
+		</features>
+		<cpu mode=\"host-passthrough\" check=\"none\" migratable=\"on\">
+			<topology sockets=\"$int_hostSocket\" dies=\"1\" cores=\"$int_vCore\" threads=\"$int_vThread\"/>
+			<cache mode=\"passthrough\"/>
+		</cpu>
+		<clock offset=\"utc\">                                                                                          
+			<timer name=\"rtc\" tickpolicy=\"catchup\"/>
+			<timer name=\"pit\" tickpolicy=\"delay\"/>
+			<timer name=\"hpet\" present=\"no\"/>
+			<timer name=\"kvmclock\" present=\"no\"/>
+			<timer name=\"hypervclock\" present=\"yes\"/>
+			<timer name=\"tsc\" present=\"yes\" mode=\"native\"/>
+		</clock>
+		<on_poweroff>destroy</on_poweroff>
+		<on_reboot>restart</on_reboot>
+		<on_crash>destroy</on_crash>
+		<pm>
+			<suspend-to-mem enabled=\"yes\"/>
+			<suspend-to-disk enabled=\"yes\"/>
+		</pm>
+		<devices>
+			<emulator>/usr/bin/qemu-system-x86_64</emulator>
+			<controller type=\"usb\" index=\"0\" model=\"qemu-xhci\" ports=\"15\">
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x02\" slot=\"0x00\" function=\"0x0\"/>
+			</controller>
+			<controller type=\"sata\" index=\"0\">
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x1f\" function=\"0x2\"/>
+			</controller>
+			<controller type=\"pci\" index=\"0\" model=\"pcie-root\"/>
+			<controller type=\"pci\" index=\"1\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"1\" port=\"0x10\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x02\" function=\"0x0\" multifunction=\"on\"/>
+			</controller>
+			<controller type=\"pci\" index=\"2\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"2\" port=\"0x11\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x02\" function=\"0x1\"/>
+			</controller>
+			<controller type=\"pci\" index=\"3\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"3\" port=\"0x12\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x02\" function=\"0x2\"/>
+			</controller>
+			<controller type=\"pci\" index=\"4\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"4\" port=\"0x13\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x02\" function=\"0x3\"/>
+			</controller>
+			<controller type=\"pci\" index=\"5\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"5\" port=\"0x14\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x02\" function=\"0x4\"/>
+			</controller>
+			<controller type=\"pci\" index=\"6\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"6\" port=\"0x15\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x02\" function=\"0x5\"/>
+			</controller>
+			<controller type=\"pci\" index=\"7\" model=\"pcie-to-pci-bridge\">
+				<model name=\"pcie-pci-bridge\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x03\" slot=\"0x00\" function=\"0x0\"/>
+			</controller>
+			<controller type=\"pci\" index=\"8\" model=\"pci-bridge\">
+				<model name=\"pci-bridge\"/>
+				<target chassisNr=\"8\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x07\" slot=\"0x01\" function=\"0x0\"/>
+			</controller>
+			<controller type=\"pci\" index=\"9\" model=\"pci-bridge\">
+				<model name=\"pci-bridge\"/>
+				<target chassisNr=\"9\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x07\" slot=\"0x02\" function=\"0x0\"/>
+			</controller>
+			<controller type=\"pci\" index=\"10\" model=\"pci-bridge\">
+				<model name=\"pci-bridge\"/>
+				<target chassisNr=\"10\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x07\" slot=\"0x03\" function=\"0x0\"/>
+			</controller>
+			<controller type=\"pci\" index=\"11\" model=\"pci-bridge\">
+				<model name=\"pci-bridge\"/>
+				<target chassisNr=\"11\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x07\" slot=\"0x04\" function=\"0x0\"/>
+			</controller>
+			<controller type=\"pci\" index=\"12\" model=\"pci-bridge\">
+				<model name=\"pci-bridge\"/>
+				<target chassisNr=\"12\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x07\" slot=\"0x05\" function=\"0x0\"/>
+			</controller>
+			<controller type=\"pci\" index=\"13\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"13\" port=\"0x16\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x02\" function=\"0x6\"/>
+			</controller>
+			<controller type=\"pci\" index=\"14\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"14\" port=\"0x17\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x02\" function=\"0x7\"/>
+			</controller>
+			<controller type=\"pci\" index=\"15\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"15\" port=\"0x18\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x03\" function=\"0x0\" multifunction=\"on\"/>
+			</controller>
+			<controller type=\"pci\" index=\"16\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"16\" port=\"0x19\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x03\" function=\"0x1\"/>
+			</controller>
+			<controller type=\"pci\" index=\"17\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"17\" port=\"0x1a\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x03\" function=\"0x2\"/>
+			</controller>
+			<controller type=\"pci\" index=\"18\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"18\" port=\"0x1b\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x03\" function=\"0x3\"/>
+			</controller>
+			<controller type=\"pci\" index=\"19\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"19\" port=\"0x8\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x01\" function=\"0x0\" multifunction=\"on\"/>
+			</controller>
+			<controller type=\"pci\" index=\"20\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"20\" port=\"0x9\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x01\" function=\"0x1\"/>
+			</controller>
+			<controller type=\"pci\" index=\"21\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"21\" port=\"0xa\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x01\" function=\"0x2\"/>
+			</controller>
+			<controller type=\"pci\" index=\"22\" model=\"pcie-root-port\">
+				<model name=\"pcie-root-port\"/>
+				<target chassis=\"22\" port=\"0xb\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x00\" slot=\"0x01\" function=\"0x3\"/>
+			</controller>
+			<controller type=\"scsi\" index=\"0\" model=\"virtio-scsi\">
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x0a\" slot=\"0x00\" function=\"0x0\"/>
+			</controller>
+			<interface type=\"network\">
+				<mac address=\"52:54:00:e1:8a:73\"/>
+				<source network=\"default\"/>
+				<model type=\"virtio\"/>
+				<link state=\"up\"/>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x01\" slot=\"0x00\" function=\"0x0\"/>
+			</interface>
+			<input type=\"mouse\" bus=\"ps2\"/>
+			<input type=\"keyboard\" bus=\"ps2\"/>
+			<input type=\"keyboard\" bus=\"virtio\">
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x04\" slot=\"0x00\" function=\"0x0\"/>
+			</input>
+			<input type=\"mouse\" bus=\"virtio\">
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x05\" slot=\"0x00\" function=\"0x0\"/>
+			</input>
+	$arr_XML_VFIO
+			<memballoon model=\"virtio\">
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x06\" slot=\"0x00\" function=\"0x0\"/>
+			</memballoon>
+			<shmem name=\"looking-glass\">
+				<model type=\"ivshmem-plain\"/>
+				<size unit=\"M\">64</size>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x08\" slot=\"0x01\" function=\"0x0\"/>
+			</shmem>
+			<shmem name=\"scream-ivshmem\">
+				<model type=\"ivshmem-plain\"/> 
+				<size unit=\"M\">2</size>
+				<address type=\"pci\" domain=\"0x0000\" bus=\"0x09\" slot=\"0x07\" function=\"0x0\"/>
+			</shmem>
+		</devices>
+		<seclabel type=\"dynamic\" model=\"dac\" relabel=\"yes\"/>
+	$arr_XML_QEMU
+	</domain>")
+	##
+
+}
+
 # parse VFIO devices, create XML templates #
 if [[ -e $arr_lspci_VFIO ]]; then
 
     echo -e "$0: VFIO devices found."
 
     for int_lspci_VFIO in ${arr_lspci_VFIO[@]}; do
-        # write to XML here
-        break
+        WriteToXML $arr_XML
     done
 
     # parse VFIO VGA devices, create new XML for different primary VM boot VGA and append VM name #
@@ -249,7 +648,7 @@ if [[ -e $arr_lspci_VFIO ]]; then
         echo -e "$0: VFIO VGA devices found."
 
         for (( int_i=0 ; int_i<${#arr_lspci_VFIO_VGA[@]} ; int_i++ )); do
-            int_lspci_VFIO_VGA=${arr_lspci_VFIO_VGA[$int_i]}
+            int_lspci_VFIO_VGA=${arr_lspci_VFIO_VGA[$int_i]}                # currently, function WriteToXML does not respect the idea I have implemented here
             str_thisMachineName=$str_machineName"GPU"$int_lspci_VFIO_VGA
         done
 
