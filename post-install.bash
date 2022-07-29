@@ -23,20 +23,53 @@ IFS=$'\n'      # Change IFS to newline char
 #
 
 ## parameters ##
+declare -i int_hostSocket=`echo $(lscpu | grep -Ei "socket" | grep -iv "core" | cut -d ':' -f2)`
+declare -i int_hostCore=`echo $(lscpu | grep -Ei "core" | grep -Eiv "name|thread" | cut -d ':' -f2)`
+declare -i int_hostThread=`echo $(lscpu | grep -Ei "thread" | cut -d ':' -f2)`
+
 str_dir1="/etc/libvirt/qemu"
+
 declare -a arr_compgen=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | sort -h`)  # IOMMU ID and Bus ID, sorted by IOMMU ID (left-most digit)
 declare -a arr_lspci=(`lspci -k | grep -Eiv 'DeviceName|Subsystem|modules'`)            # dev name, Bus ID, and (sometimes) driver, sorted
 declare -a arr_lspci_busID=(`lspci -m | cut -d '"' -f 1`)                               # Bus ID, sorted        (ex '01:00.0') 
 declare -a arr_lspci_HWID=(`lspci -n | cut -d ' ' -f 3`)                                # HW ID, sorted         (ex '10de:1b81')
 declare -a arr_lspci_type=(`lspci -m | cut -d '"' -f 2 | tr '[:lower:]' '[:upper:]'`)   # dev type, sorted      (ex 'VGA', 'GRAPHICS')
+
 declare -a arr_lspci_driverName=()
-declare -a arr_lspci_IOMMUID                                                            # strings of index(es) of every Bus ID and entry, sorted by IOMMU ID
-declare -a arr_lspci_VFIO                                                               # strings of index(es) of every Bus ID and entry, sorted by IOMMU ID
-declare -a arr_evdev
+declare -a arr_lspci_IOMMUID=()                                                         # strings of index(es) of every Bus ID and entry, sorted by IOMMU ID
+declare -a arr_evdev=()
+
 declare -i int_hugepageNum=0
 str_hugepageSize=""
-str_VM_NAME="template_VM_Q35_UEFI"
+
+str_machineName="template_VM_Q35_UEFI"
 ##
+
+# add support for socket count #
+
+
+# set vcore count #
+if [[ $int_hostCore -ge 4 ]]; then
+    int_vCore=$int_hostSocket*($int_hostCore-2)
+else if [[ $int_hostCore == 3 ]]; then
+    int_vCore=$int_hostSocket*2
+else if [[ $int_hostCore == 2 ]]; then
+    int_vCore=$int_hostSocket
+else if [[ $int_hostCore == 2 ]]; then
+    int_vCore=0
+    echo "$0: Insufficient host resources (CPU cores). Exiting."
+    exit 0
+fi
+#
+
+declare -i int_vThread=$int_vCore*$int_hostThread
+
+# set vcpu placement as such #
+# save first two cores to host
+# use rest for VM #
+# start at core index '3' and add to vcpu placement
+# if smt enabled (threads > 1), alt between core and thread for vcpu placement
+
 
 ## check for hugepages logfile ##
 str_file1=`ls $(pwd)/functions | grep -i 'hugepages' | grep -i '.log'`
@@ -60,7 +93,7 @@ else
         #   
     done < $str_file1
 
-    str_VM_NAME+="_"$int_hugepageNum$str_hugepageSize
+    str_machineName+="_"$int_hugepageNum$str_hugepageSize
 fi
 ##
 
@@ -85,7 +118,7 @@ while read str_line1; do
 
     if [[ $str_line1 == *"cgroup_device_acl = ["* ]]; then
         bool_readNextLine=true
-        str_VM_NAME+="_EVDEV"
+        str_machineName+="_EVDEV"
     fi
 
     if [[ $str_line1 == *"/dev/null"*|*"/dev/full"*|*"/dev/zero"*|*"/dev/random"*|*"/dev/urandom"*|*"/dev/ptmx"*|*"/dev/kvm"*|*"/dev/rtc"*|*"/dev/hpet" ]]; then
@@ -182,34 +215,54 @@ for str_lspci_IOMMUID in ${arr_lspci_IOMMUID[@]}; do
 done
 
 
-# sort IOMMU groups, add devices to XML
+# sort IOMMU groups, add devices to list of vfio devices
 for (( int_i=0 ; int_i<${#arr_lscpi_IOMMUID[@]} ; int_i++ )); do
-
-    
 
     # match VFIO device #
     if [[ ${arr_lspci_driverName[$int_i]} == "vfio-pci" ]]; then
 
         # add to XML
+        arr_lspci_VFIO+=($int_i)
 
         # match VGA device #
         if [[ ${arr_lspci_type[$int_i]} == *"VGA"* && ${arr_lspci_type[$int_i]} == *"GRAPHICS"* ]]; then
-
-           
-           #arr_VFIO_VGA+=$int_i     # add to list
-
+           arr_lspci_VFIO_VGA+=($int_i)
         fi
-
     fi
     #
 done
 #
 
-# read hugepages from grub #
+# parse VFIO devices, create XML templates #
+if [[ -e $arr_lspci_VFIO ]]; then
 
-# read evdev from '/etc/libvirt/qemu.conf' or logfile
+    echo -e "$0: VFIO devices found."
 
-# name XML's as '0_template_VM_Q35_UEFI_[num_hugepages][hugepage_size]_[EVDEV]_GPU[num_index_of_hostdev_VGA]'
+    for int_lspci_VFIO in ${arr_lspci_VFIO[@]}; do
+        # write to XML here
+        break
+    done
+
+    # parse VFIO VGA devices, create new XML for different primary VM boot VGA and append VM name #
+    if [[ -e $arr_lspci_VFIO_VGA ]]; then
+
+        echo -e "$0: VFIO VGA devices found."
+
+        for (( int_i=0 ; int_i<${#arr_lspci_VFIO_VGA[@]} ; int_i++ )); do
+            int_lspci_VFIO_VGA=${arr_lspci_VFIO_VGA[$int_i]}
+            str_thisMachineName=$str_machineName"GPU"$int_lspci_VFIO_VGA
+        done
+
+        else
+
+        echo -e "$0: No VFIO VGA devices found."
+    fi
+    #
+
+else
+    echo -e "$0: No VFIO devices found."
+fi
+#
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 echo "$0: Exiting."
