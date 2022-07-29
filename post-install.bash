@@ -18,8 +18,6 @@
 #
 #
 
-exit 0
-
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then
     echo "$0: WARNING: Script must be run as Sudo or Root! Exiting."
@@ -33,12 +31,14 @@ IFS=$'\n'      # Change IFS to newline char
 #
 
 ## parameters ##
+str_UUID=`uuidgen`
 declare -a arr_XML=()
 
 declare -i int_hostSocket=`echo $(lscpu | grep -Ei "socket" | grep -iv "core" | cut -d ':' -f2)`
 declare -i int_hostCore=`echo $(lscpu | grep -Ei "core" | grep -Eiv "name|thread" | cut -d ':' -f2)`
 declare -i int_hostThread=`echo $(lscpu | grep -Ei "thread" | cut -d ':' -f2)`
-declare -i int_vThreadSum=($int_vThread*$int_hostThread)-1
+declare -i int_vThreadSum=$(( int_vThread * int_hostThread - 1))
+declare -i int_vOffset=0
 
 str_dir1="/etc/libvirt/qemu"
 
@@ -63,13 +63,13 @@ str_machineName="template_VM_Q35_UEFI"
 
 # set vcore count #
 if [[ $int_hostCore -ge 4 ]]; then
-    declare -i int_vOffset=2
-    int_vCore=$int_hostSocket*($int_hostCore-$int_vOffset)
+    int_vOffset=2
+    int_vCore=$(( int_hostSocket * ( $int_hostCore - $int_vOffset ) ))
 else if [[ $int_hostCore == 3 ]]; then
-    declare -i int_vOffset=1
-    int_vCore=$int_hostSocket*2
+    int_vOffset=1
+    int_vCore=$(( int_hostSocket * 2 ))
 else if [[ $int_hostCore == 2 ]]; then
-    declare -i int_vOffset=0
+    int_vOffset=0
     int_vCore=$int_hostSocket
 else if [[ $int_hostCore == 2 ]]; then
     int_vCore=0
@@ -77,6 +77,10 @@ else if [[ $int_hostCore == 2 ]]; then
     exit 0
 fi
 #
+
+echo $int_vCore
+
+exit 0
 
 declare -i int_vThread=$int_vCore*$int_hostThread
 
@@ -137,7 +141,7 @@ while read str_line1; do
         str_machineName+="_EVDEV"
     fi
 
-    if [[ $str_line1 == *"/dev/null"*|*"/dev/full"*|*"/dev/zero"*|*"/dev/random"*|*"/dev/urandom"*|*"/dev/ptmx"*|*"/dev/kvm"*|*"/dev/rtc"*|*"/dev/hpet" ]]; then
+    if [[ $str_line1 == *"/dev/null"*||*"/dev/full"*||*"/dev/zero"*||*"/dev/random"*||*"/dev/urandom"*||*"/dev/ptmx"*||*"/dev/kvm"*||*"/dev/rtc"*||*"/dev/hpet" ]]; then
         bool_readNextLine=false
         break
     fi    
@@ -279,7 +283,7 @@ WriteToXML {
 
 		for (( int_j=0 ; int_j<$int_hostThread ; int_j++ )); do
 
-			int_vSet=($int_vOffset+$int_i)+($int_hostCore*$int_j)
+			int_vSet=$(( $int_vOffset + $int_i + ( $int_hostCore*$int_j ) ))
 			arr_vcore+=("        <vcpupin vcpu=\"$int_i\" cpuset=\"$int_vSet\"/>")
 
 		done
@@ -295,7 +299,7 @@ WriteToXML {
 
 		for (( int_j=0 ; int_j<$int_hostThread ; int_j++ )); do
 
-			int_vIO=$int_i+($int_hostCore*$int_j)
+			int_vIO=$(( int_i + ( $int_hostCore * $int_j ) ))
 
 			arr_XML_vcore+=("            <iothread id=\"$int_vIO\"/>")
 
@@ -312,7 +316,7 @@ WriteToXML {
 
 		for (( int_j=0 ; int_j<$int_hostThread ; int_j++ )); do
 
-			int_vIO=$int_i+($int_hostCore*$int_j)
+			int_vIO=$(( int_i + ( $int_hostCore * $int_j ) ))
 			str_vIO+="$int_vIO,"
 
 		done
@@ -327,7 +331,7 @@ WriteToXML {
 
 		for (( int_j=0 ; int_j<$int_hostThread ; int_j++ )); do
 
-			int_vIO=$int_i+($int_hostCore*$int_j)
+			int_vIO=$(( int_i + ( $int_hostCore * $int_j ) ))
 			arr_XML_vcore+=("            <iothreadpin iothread=\"$int_i\" cpuset=\"$int_vIO\"/>")
 
 		done
@@ -350,23 +354,35 @@ WriteToXML {
 
 	## QEMU enlightenments and EVDEV
 	# NOTE: parse evdev
+
+	#echo "<qemu:arg value=\"-vga\"/>
+	#	<qemu:arg value=\"none\"/>
+	#	<qemu:arg value=\"-set\"/>
+	#	<qemu:arg value=\"device.hostdev0.x-vga=on\"/>"
+
 	declare -a arr_XML_QEMU=(
-	'    <qemu:commandline>
-			<qemu:arg value="-vga"/>
-			<qemu:arg value="none"/>
-			<qemu:arg value="-set"/>
-			<qemu:arg value="device.hostdev0.x-vga=on"/>
-			<qemu:arg value="-overcommit"/>
-			<qemu:arg value="cpu-pm=on"/>
-			<qemu:arg value="-object"/>
-			<qemu:arg value="input-linux,id=kbd1,evdev=/dev/input/by-id/usb-0d3d_USBPS2-event-if01,grab_all=on,repeat=on"/>
-			<qemu:arg value="-object"/>
-			<qemu:arg value="input-linux,id=kbd2,evdev=/dev/input/by-id/usb-0d3d_USBPS2-event-kbd,grab_all=on,repeat=on"/>
-			<qemu:arg value="-object"/>
-			<qemu:arg value="input-linux,id=mouse1,evdev=/dev/input/by-id/usb-Logitech_G_Pro_Wireless_Gaming_Mouse_56C4DE9FC0D9C37C-event-mouse"/>
-			<qemu:arg value="-object"/>
-			<qemu:arg value="input-linux,id=kbd3,evdev=/dev/input/by-id/usb-Logitech_G_Pro_Wireless_Gaming_Mouse_56C4DE9FC0D9C37C-if01-event-kbd,grab_all=on,repeat=on"/>
-		</qemu:commandline>')
+"    <qemu:commandline>
+		<qemu:arg value=\"-overcommit\"/>
+		<qemu:arg value=\"cpu-pm=on\"/>")
+
+	# parse input devices #
+	for (( int_i=0 ; int_i<${arr_evdev[@]} ; int_i++ )); do
+
+		str_inputSuffix=""
+		str_inputType=`echo ${arr_evdev[$int_i]} | grep -Ei "kbd|mouse" | cut -d '-' -f3`
+
+		if [[ $str_inputType == *"kbm"*||*"keyboard"* ]]; then 
+			str_inputSuffix=",grab_all=on,repeat=on"
+		fi
+
+		declare -a arr_XML_QEMU+=(			
+"		<qemu:arg value=\"-object\"/>
+		<qemu:arg value=\"input-linux,id=${str_inputType}${int_i},evdev=${str_inputDevice}${str_inputSuffix}\"/>")
+
+	done
+	#
+	
+	declare -a arr_XML_QEMU+=("    </qemu:commandline>")
 	##
 
 	## setup VFIO devices ##
@@ -376,7 +392,7 @@ WriteToXML {
 	for (( int_i=0 ; int_i<${arr_lspci_VFIO[@]} ; int_i++ )); do
 
 		# find virtual Bus ID, convert string as base 16 #
-		declare int_vBusID=13+$int_i
+		declare int_vBusID=$(( int_vBusID + int_i ))
 
 		if [[ $int_vBusID -lt 16 ]]; then
 			str_vBusID="00"
@@ -399,9 +415,9 @@ WriteToXML {
 	"<hostdev mode=\"subsystem\" type=\"pci\" managed=\"yes\">
 		<driver name=\"vfio\"/> 
 		<source>
-			<address domain=\"0x0000\" bus=\"0x$str_thisBusID\" slot=\"0x00\" function=\"0x$str_thisFuncID\"/>
+			<address domain=\"0x0000\" bus=\"0x${str_thisBusID}\" slot=\"0x00\" function=\"0x${str_thisFuncID}\"/>
 		</source>
-		<address type=\"pci\" domain=\"0x0000\" bus=\"0x$str_vBusID\" slot=\"0x00\" function=\"0x0\"/> 
+		<address type=\"pci\" domain=\"0x0000\" bus=\"0x${str_vBusID}\" slot=\"0x00\" function=\"0x0\"/> 
 	</hostdev>")
 
 	done
@@ -412,27 +428,27 @@ WriteToXML {
 
 	declare -a arr_XML=(
 	"<domain xmlns:qemu=\"http://libvirt.org/schemas/domain/qemu/1.0\" type=\"kvm\">
-		<name>$str_thisMachineName</name>
-		<uuid>7137e531-2a2b-4478-841a-2449d66b324f</uuid>
-		<title>$str_thisMachineName</title>
+		<name>${str_thisMachineName}</name>
+		<uuid></uuid>
+		<title>${str_thisMachineName}</title>
 		<metadata>
 			<libosinfo:libosinfo xmlns:libosinfo=\"http://libosinfo.org/xmlns/libvirt/domain/1.0\">
 				<libosinfo:os id=\"http://microsoft.com/win/10\"/>
 			</libosinfo:libosinfo>
 		</metadata>
-		<memory unit=\"KiB\">$int_machineMem</memory>
-		<currentMemory unit=\"KiB\">$int_machineMem</currentMemory>
+		<memory unit=\"KiB\">${int_machineMem}</memory>
+		<currentMemory unit=\"KiB\">${int_machineMem}</currentMemory>
 		<memoryBacking>
-	$arr_XML_hugepages
+${arr_XML_hugepages}
 		</memoryBacking>
-	$arr_XML_vcore
+${arr_XML_vcore}
 		<resource>
 			<partition>/machine</partition>
 		</resource>
 		<os>
 			<type arch=\"x86_64\" machine=\"pc-q35-5.2\">hvm</type>
 			<loader readonly=\"yes\" type=\"pflash\">/usr/share/OVMF/OVMF_CODE_4M.fd</loader>
-			<nvram>/var/lib/libvirt/qemu/nvram/$str_newMachineName_VARS.fd</nvram>
+			<nvram>/var/lib/libvirt/qemu/nvram/${str_newMachineName}_VARS.fd</nvram>
 			<boot dev=\"hd\"/>
 			<bootmenu enable=\"no\"/>
 		</os>
@@ -458,7 +474,7 @@ WriteToXML {
 			<ioapic driver=\"kvm\"/>
 		</features>
 		<cpu mode=\"host-passthrough\" check=\"none\" migratable=\"on\">
-			<topology sockets=\"$int_hostSocket\" dies=\"1\" cores=\"$int_vCore\" threads=\"$int_vThread\"/>
+			<topology sockets=\"${int_hostSocket}\" dies=\"1\" cores=\"${int_vCore}\" threads=\"${int_vThread}\"/>
 			<cache mode=\"passthrough\"/>
 		</cpu>
 		<clock offset=\"utc\">                                                                                          
@@ -612,7 +628,7 @@ WriteToXML {
 			<input type=\"mouse\" bus=\"virtio\">
 				<address type=\"pci\" domain=\"0x0000\" bus=\"0x05\" slot=\"0x00\" function=\"0x0\"/>
 			</input>
-	$arr_XML_VFIO
+${arr_XML_VFIO}
 			<memballoon model=\"virtio\">
 				<address type=\"pci\" domain=\"0x0000\" bus=\"0x06\" slot=\"0x00\" function=\"0x0\"/>
 			</memballoon>
@@ -628,7 +644,7 @@ WriteToXML {
 			</shmem>
 		</devices>
 		<seclabel type=\"dynamic\" model=\"dac\" relabel=\"yes\"/>
-	$arr_XML_QEMU
+${arr_XML_QEMU}
 	</domain>")
 	##
 
