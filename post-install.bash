@@ -18,7 +18,6 @@
 #
 #
 
-
 exit 0
 
 # check if sudo/root #
@@ -252,6 +251,8 @@ done
 
 
 WriteToXML {
+
+	echo -en "$0: Creating virtual machine XML file. "
 	
 	## cputune ##
 
@@ -411,9 +412,9 @@ WriteToXML {
 
 	declare -a arr_XML=(
 	"<domain xmlns:qemu=\"http://libvirt.org/schemas/domain/qemu/1.0\" type=\"kvm\">
-		<name>$str_newMachineName</name>
+		<name>$str_thisMachineName</name>
 		<uuid>7137e531-2a2b-4478-841a-2449d66b324f</uuid>
-		<title>$str_newMachineName</title>
+		<title>$str_thisMachineName</title>
 		<metadata>
 			<libosinfo:libosinfo xmlns:libosinfo=\"http://libosinfo.org/xmlns/libvirt/domain/1.0\">
 				<libosinfo:os id=\"http://microsoft.com/win/10\"/>
@@ -631,16 +632,15 @@ WriteToXML {
 	</domain>")
 	##
 
+	echo -e "Complete."
+
 }
 
 # parse VFIO devices, create XML templates #
 if [[ -e $arr_lspci_VFIO ]]; then
 
     echo -e "$0: VFIO devices found."
-
-    for int_lspci_VFIO in ${arr_lspci_VFIO[@]}; do
-        WriteToXML $arr_XML
-    done
+	str_thisMachineName=$str_machineName
 
     # parse VFIO VGA devices, create new XML for different primary VM boot VGA and append VM name #
     if [[ -e $arr_lspci_VFIO_VGA ]]; then
@@ -649,14 +649,24 @@ if [[ -e $arr_lspci_VFIO ]]; then
 
         for (( int_i=0 ; int_i<${#arr_lspci_VFIO_VGA[@]} ; int_i++ )); do
             int_lspci_VFIO_VGA=${arr_lspci_VFIO_VGA[$int_i]}                # currently, function WriteToXML does not respect the idea I have implemented here
-            str_thisMachineName=$str_machineName"GPU"$int_lspci_VFIO_VGA
-        done
+            str_thisMachineName="_GPU"$int_lspci_VFIO_VGA
 
-        else
+			# boolean or some thing here to say 'hey, when you get to given VGA, set it's hostdev index as the boot vga
+			# OR say 'set the given VGA as the first hostdev (hostdev0)'
 
-        echo -e "$0: No VFIO VGA devices found."
-    fi
-    #
+			WriteToXML	# call function
+        done   
+    
+	else
+
+		echo -e "$0: No VFIO VGA devices found."
+
+		for int_lspci_VFIO in ${arr_lspci_VFIO[@]}; do
+        	WriteToXML	# call function
+    	done
+
+	fi
+	#
 
 else
     echo -e "$0: No VFIO devices found."
