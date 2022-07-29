@@ -20,12 +20,10 @@ fi
 # NOTE: necessary for newline preservation in arrays and files #
 SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
-
-## user input ##
-str_input1=""
+#
 
 ## parameters ##
-bool_readNextLine=false
+str_dir1="/etc/libvirt/qemu"
 declare -a arr_compgen=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | sort -h`)  # IOMMU ID and Bus ID, sorted by IOMMU ID (left-most digit)
 declare -a arr_lspci=(`lspci -k | grep -Eiv 'DeviceName|Subsystem|modules'`)            # dev name, Bus ID, and (sometimes) driver, sorted
 declare -a arr_lspci_busID=(`lspci -m | cut -d '"' -f 1`)                               # Bus ID, sorted        (ex '01:00.0') 
@@ -34,7 +32,70 @@ declare -a arr_lspci_type=(`lspci -m | cut -d '"' -f 2 | tr '[:lower:]' '[:upper
 declare -a arr_lspci_driverName=()
 declare -a arr_lspci_IOMMUID                                                            # strings of index(es) of every Bus ID and entry, sorted by IOMMU ID
 declare -a arr_lspci_VFIO                                                               # strings of index(es) of every Bus ID and entry, sorted by IOMMU ID
+declare -a arr_evdev
+declare -i int_hugepageNum=0
+str_hugepageSize=""
+str_VM_NAME="template_VM_Q35_UEFI"
 ##
+
+## check for hugepages logfile ##
+str_file1=`ls $(pwd)/functions | grep -i 'hugepages' | grep -i '.log'`
+
+if [[ -z $str_file0 ]]; then
+    echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute "`ls $(pwd)/functions | grep -i 'hugepages' | grep -i '.bash'`"'.\n"
+
+else
+    while read str_line1; do
+
+        # parse hugepage size #
+        if [[ $str_line1 == *"hugepagesz="* ]]; then
+            str_hugepageSize=`echo $str_line1 | cut -d '=' -f2`
+        fi
+        #
+
+        # parse hugepage num #
+        if [[ $str_line1 == *"hugepages="* ]]; then
+            int_hugepageNum=`echo $str_line1 | cut -d '=' -f2`
+        fi
+        #   
+    done < $str_file1
+
+    str_VM_NAME+="_"$int_hugepageNum$str_hugepageSize
+fi
+##
+
+## check for EVDEV ##
+str_file2="/etc/libvirt/qemu.conf"
+bool_readNextLine=false
+
+while read str_line1; do
+
+    #if [[ $str_line1 == *"# END #"* ]]; then
+        #bool_readNextLine=false
+        #break
+    #fi
+
+    #if [[ $str_line1 == *"# START #"* ]]; then
+        #bool_readNextLine=true
+    #fi
+
+    if [[ $bool_readNextLine == true && $str_line1 == *"/dev/input/"* ]]; then
+        arr_evdev+=(`echo $str_line1 | cut -d ',' -f1 | cut -d '"' -f2`)
+    fi
+
+    if [[ $str_line1 == *"cgroup_device_acl = ["* ]]; then
+        bool_readNextLine=true
+        str_VM_NAME+="_EVDEV"
+    fi
+
+    if [[ $str_line1 == *"/dev/null"*|*"/dev/full"*|*"/dev/zero"*|*"/dev/random"*|*"/dev/urandom"*|*"/dev/ptmx"*|*"/dev/kvm"*|*"/dev/rtc"*|*"/dev/hpet" ]]; then
+        bool_readNextLine=false
+        break
+    fi    
+
+done < $str_file2
+##
+
 
 ## find and sort drivers by Bus ID (lspci) ##
 # parse Bus ID #
@@ -124,6 +185,8 @@ done
 # sort IOMMU groups, add devices to XML
 for (( int_i=0 ; int_i<${#arr_lscpi_IOMMUID[@]} ; int_i++ )); do
 
+    
+
     # match VFIO device #
     if [[ ${arr_lspci_driverName[$int_i]} == "vfio-pci" ]]; then
 
@@ -132,7 +195,8 @@ for (( int_i=0 ; int_i<${#arr_lscpi_IOMMUID[@]} ; int_i++ )); do
         # match VGA device #
         if [[ ${arr_lspci_type[$int_i]} == *"VGA"* && ${arr_lspci_type[$int_i]} == *"GRAPHICS"* ]]; then
 
-            # create new XML for each VGA, set each VGA as hostdev
+           
+           #arr_VFIO_VGA+=$int_i     # add to list
 
         fi
 
