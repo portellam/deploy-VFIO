@@ -1,22 +1,25 @@
-## To-Do
-* Multi-boot VFIO setup
-* Static-boot VFIO setup (functionally complete, need to change pointers to files and comment out logfiles?)
-* guides on cheats/tips to make VFIO setup smooth as butter out-of-the-box (Virtual machine config (XML) files, Win 10 passthru, Win XP passthru, VBIOS mods, etc.)
+*If you like this script, please favorite and share. Thank you.*
 
-## Complete
-* Evdev setup
-* Hugepages setup
-* Zram-swap setup
+## Description
+Ultimate collection of scripts for an Automated VFIO passthrough setup:
+* Setup Multi-Boot or static VFIO passthrough, Evdev, Hugepages, ZRAM swap.
+* Deploy auto-generated Virtual machines.
+
+## How-to
+For full setup*, execute:
+
+        sudo bash install.sh
+
+**[*] You may execute functions individually.**
+
+Post-install, execute:
+
+        sudo bash post-install.sh
 
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 * VFIO community:       https://old.reddit.com/r/VFIO
 * a useful guide:       https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
-
-## How-to
-In terminal, execute:
-
-        sudo bash install.sh
 
 ## Functions
 * **setup Evdev (Event devices)**
@@ -27,10 +30,12 @@ In terminal, execute:
 * **setup Zram swapfile**
     * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
     * Restarts related system service.
-* **VFIO setup.**
+* **VFIO setup**
     * Setup dynamically (Multi-Boot) or statically.
+* **Post-install**
+    * Deploy auto-generated Virtual machines (for every config, include Evdev and Hugepages).
 
-## VFIO setup
+## VFIO setup *(expanded)*
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups of devices.
     * Saves lists of external PCI devices, by order of IOMMU groups.
 * Prompt user for VFIO passthrough setup:
@@ -45,13 +50,25 @@ In terminal, execute:
 * Updates GRUB and INITRAMFS.
 * Checks for existing VFIO setup, asks user to uninstall setup and restart machine to continue, or exit.
 
+## To-Do
+* Linux distro-agnostic setup
+* Multi-boot VFIO setup:    output to GRUB menu entries automaticcaly (currently only outputs logfiles)
+* Static VFIO setup:        fix driver parsing => **make an array that saves which IOMMU group is passedthru, and which isn't**
+* post install setup
+
+## Complete
+* Evdev setup
+* Hugepages setup
+* Zram-swap setup
+
 ## DISCLAIMER
 **Work-in-progress**
 
 Tested on Debian Linux.
 
-Use script at your own risk!
-
-Please refer to and review community guides for any help. Script is not guaranteed to work with all machines, including Laptop PCs, or machines with less-than-favorable IOMMU groups, etc.
-
 Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
+
+**VFIO Setup** is not guaranteed to work with all machines, including Laptop PCs, or machines with less-than-favorable IOMMU groups, etc.
+Review logfiles for insight to complete your setup.
+
+I will try to answer any questions you may have here. Otherwise, please refer to community forums and guides for any help.

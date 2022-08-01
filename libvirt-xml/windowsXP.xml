@@ -1,0 +1,169 @@
+## using 'portellam/Auto-Xorg' and a Multi-boot VFIO setup (multi GRUB menu entries), I select a different OS boot GPU.
+## here, I passthrough an old AMD GPU, which has good Windows XP support (and modded drivers for CRT-EMU driver)
+
+## Windows XP does not support GPT-formatted disks nor 2-terabyte plus partitions (although they do support NTFS filesystems)
+# one of my disks is 5-terabytes, so I had to create a VM that uses turnkey Linux file server to host a samba connection
+# this file server resides on an isolated LAN, that which only the Windows XP VM connects to.
+# I am sure some people will argue against file servers for playing games, but this was the best solution for a seamless VFIO setup on my host.
+
+# WARNING: you do NOT want Windows XP to connect to the Internet!
+
+<domain xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0" type="kvm">
+  <name>WINXP_GAME_VM_I440FX_BIOS_2c2t_4G_EVDEV_GPU2</name>
+  <uuid>7574b24f-87d6-483b-9d0c-20f7dc6405ee</uuid>
+  <title>WINXP_GAME_VM_GPU2</title>
+  <metadata>
+    <libosinfo:libosinfo xmlns:libosinfo="http://libosinfo.org/xmlns/libvirt/domain/1.0">
+      <libosinfo:os id="http://microsoft.com/win/xp"/>
+    </libosinfo:libosinfo>
+  </metadata>
+  <memory unit="KiB">4194304</memory>
+  <currentMemory unit="KiB">4194304</currentMemory>
+  <memoryBacking>
+    <hugepages/>
+    <nosharepages/>
+    <allocation mode="immediate"/>
+    <discard/>
+  </memoryBacking>
+  <vcpu placement="static" cpuset="2-3,10-11">4</vcpu>
+  <iothreads>2</iothreads>
+  <iothreadids>
+    <iothread id="1"/>
+    <iothread id="2"/>
+  </iothreadids>
+  <cputune>
+    <vcpupin vcpu="0" cpuset="2"/>
+    <vcpupin vcpu="1" cpuset="10"/>
+    <vcpupin vcpu="2" cpuset="3"/>
+    <vcpupin vcpu="3" cpuset="11"/>
+    <emulatorpin cpuset="1,9"/>
+    <iothreadpin iothread="1" cpuset="1"/>
+    <iothreadpin iothread="2" cpuset="9"/>
+  </cputune>
+  <os>
+    <type arch="x86_64" machine="pc-i440fx-5.2">hvm</type>
+    <bootmenu enable="no"/>
+  </os>
+  <features>
+    <acpi/>
+    <apic/>
+    <kvm>
+      <hidden state="off"/>
+    </kvm>
+    <vmport state="off"/>
+    <ioapic driver="kvm"/>
+  </features>
+  <cpu mode="host-passthrough" check="none" migratable="on">
+    <topology sockets="1" dies="1" cores="2" threads="2"/>
+    <cache mode="passthrough"/>
+  </cpu>
+  <clock offset="localtime">
+    <timer name="rtc" tickpolicy="catchup"/>
+    <timer name="pit" tickpolicy="delay"/>
+    <timer name="hpet" present="no"/>
+    <timer name="kvmclock" present="no"/>
+    <timer name="hypervclock" present="yes"/>
+    <timer name="tsc" present="yes" mode="native"/>
+  </clock>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>destroy</on_crash>
+  <pm>
+    <suspend-to-mem enabled="no"/>
+    <suspend-to-disk enabled="no"/>
+  </pm>
+  <devices>
+    <emulator>/usr/bin/qemu-system-x86_64</emulator>
+    <disk type="file" device="disk">
+      <driver name="qemu" type="raw" cache="none" discard="ignore"/>
+      <source file="/mnt/local/256G-VM1/_MicrosoftWindows/RETROPC_winXP_pro_sp3_x86.img"/>
+      <target dev="vda" bus="virtio"/>
+      <boot order="1"/>
+      <address type="pci" domain="0x0000" bus="0x00" slot="0x03" function="0x0"/>
+    </disk>
+    <disk type="file" device="cdrom">
+      <driver name="qemu" type="raw"/>
+      <source file="/home/user/Downloads/SB_X-FI_INSTALL.ISO"/>
+      <target dev="hda" bus="ide"/>
+      <readonly/>
+      <address type="drive" controller="0" bus="0" target="0" unit="0"/>
+    </disk>
+    <controller type="pci" index="0" model="pci-root"/>
+    <controller type="virtio-serial" index="0">
+      <address type="pci" domain="0x0000" bus="0x00" slot="0x0b" function="0x0"/>
+    </controller>
+    <controller type="ide" index="0">
+      <address type="pci" domain="0x0000" bus="0x00" slot="0x01" function="0x1"/>
+    </controller>
+    <controller type="fdc" index="0"/>
+    <controller type="usb" index="0" model="ich9-ehci1">
+      <address type="pci" domain="0x0000" bus="0x00" slot="0x02" function="0x7"/>
+    </controller>
+    <controller type="usb" index="0" model="ich9-uhci1">
+      <master startport="0"/>
+      <address type="pci" domain="0x0000" bus="0x00" slot="0x02" function="0x0" multifunction="on"/>
+    </controller>
+    <controller type="usb" index="0" model="ich9-uhci2">
+      <master startport="2"/>
+      <address type="pci" domain="0x0000" bus="0x00" slot="0x02" function="0x1"/>
+    </controller>
+    <controller type="usb" index="0" model="ich9-uhci3">
+      <master startport="4"/>
+      <address type="pci" domain="0x0000" bus="0x00" slot="0x02" function="0x2"/>
+    </controller>
+    <interface type="network">
+      <mac address="52:54:00:07:e0:6a"/>
+      <source network="isolated"/>
+      <model type="virtio"/>
+      <link state="up"/>
+      <address type="pci" domain="0x0000" bus="0x00" slot="0x04" function="0x0"/>
+    </interface>
+    <input type="keyboard" bus="ps2"/>
+    <input type="mouse" bus="ps2"/>
+    <hostdev mode="subsystem" type="pci" managed="yes">
+      <source>
+        <address domain="0x0000" bus="0x04" slot="0x00" function="0x0"/>
+      </source>
+      <rom file="/usr/share/vgabios/MSI.HD6950.2048.220701_1.rom"/>
+      <address type="pci" domain="0x0000" bus="0x00" slot="0x06" function="0x0"/>
+    </hostdev>
+    <hostdev mode="subsystem" type="pci" managed="yes">
+      <source>
+        <address domain="0x0000" bus="0x04" slot="0x00" function="0x1"/>
+      </source>
+      <address type="pci" domain="0x0000" bus="0x00" slot="0x07" function="0x0"/>
+    </hostdev>
+    <hostdev mode="subsystem" type="pci" managed="yes">
+      <source>
+        <address domain="0x0000" bus="0x06" slot="0x00" function="0x0"/>
+      </source>
+      <address type="pci" domain="0x0000" bus="0x00" slot="0x08" function="0x0"/>
+    </hostdev>
+    <hostdev mode="subsystem" type="pci" managed="yes">
+      <source>
+        <address domain="0x0000" bus="0x07" slot="0x00" function="0x0"/>
+      </source>
+      <address type="pci" domain="0x0000" bus="0x00" slot="0x09" function="0x0"/>
+    </hostdev>
+    <memballoon model="virtio">
+      <address type="pci" domain="0x0000" bus="0x00" slot="0x05" function="0x0"/>
+    </memballoon>
+  </devices>
+  <seclabel type="dynamic" model="dac" relabel="yes"/>
+  <qemu:commandline>
+    <qemu:arg value="-vga"/>
+    <qemu:arg value="none"/>
+    <qemu:arg value="-set"/>
+    <qemu:arg value="device.hostdev0.x-vga=on"/>
+    <qemu:arg value="-overcommit"/>
+    <qemu:arg value="cpu-pm=on"/>
+    <qemu:arg value="-object"/>
+    <qemu:arg value="input-linux,id=kbd1,evdev=/dev/input/by-id/usb-0d3d_USBPS2-event-if01,grab_all=on,repeat=on"/>
+    <qemu:arg value="-object"/>
+    <qemu:arg value="input-linux,id=kbd2,evdev=/dev/input/by-id/usb-0d3d_USBPS2-event-kbd,grab_all=on,repeat=on"/>
+    <qemu:arg value="-object"/>
+    <qemu:arg value="input-linux,id=mouse1,evdev=/dev/input/by-id/usb-Logitech_G_Pro_Wireless_Gaming_Mouse_56C4DE9FC0D9C37C-event-mouse"/>
+    <qemu:arg value="-object"/>
+    <qemu:arg value="input-linux,id=kbd3,evdev=/dev/input/by-id/usb-Logitech_G_Pro_Wireless_Gaming_Mouse_56C4DE9FC0D9C37C-if01-event-kbd,grab_all=on,repeat=on"/>
+  </qemu:commandline>
+</domain>
