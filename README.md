@@ -63,7 +63,7 @@ Post-install, execute:
 * **(Optional)** VFIO Setup: Uninstaller
 
 ## DISCLAIMER
-**Work-in-progress** **Setup execution is successful, excluding planned features.**
+**Setup execution is successful, while project is Work-in-progress.**
 
 Tested on Debian Linux.
 
