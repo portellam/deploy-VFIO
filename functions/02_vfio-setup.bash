@@ -72,6 +72,7 @@ declare -a arr_lspci_driverName     # driver name, sorted by Bus ID     (ex 'nou
 declare -a arr_lspci_IOMMUID        # strings of index(es) of every Bus ID and entry, sorted by IOMMU ID
 declare -a arr_VGA_deviceName       # first VGA device's name of each IOMMU group
 declare -a arr_VGA_IOMMUID          # IOMMU groups with VGA devices
+declare -a arr_driverName_tempList
 
 # files #
 str_GRUB_MULTIBOOT=""
@@ -495,7 +496,6 @@ function StaticSetup {
                     bool_hasVFIODriver=true
                     str_driverName_tempList=""
                     str_HWID_tempList=""
-                    arr_driverName_tempList=""
 
                 fi
 
@@ -523,14 +523,25 @@ function StaticSetup {
 
                 if [[ $str_thisHWID != "" && $bool_hasExternalPCI == true ]]; then
 
+                    echo -e "$0: CANARY"
                     str_driverName_tempList+="$str_thisDriverName,"
                     str_HWID_tempList+="$str_thisHWID,"
-                    arr_driverName_templist+=($str_thisDriverName)
+                    arr_driverName_tempList+=$str_thisDriverName        # why does this not work, and the above does? test this statement!
+                    echo -e "$0: $""str_driverName_tempList == '$str_driverName_tempList'"
+                    echo -e "$0: $""str_HWID_tempList == '$str_HWID_tempList'"
 
                 fi
                 #
 
                 ((int_k++)) # increment counter
+                echo -e "$0: $""str_thisDriverName == '$str_thisDriverName'"
+                echo -e "$0: $""str_driverName_tempList == '$str_driverName_tempList'"
+
+                echo -e "\n\n\n\n\n"
+
+                for i in ${arr_driverName_tempList[@]}; do
+                    echo -e "$0: $""element == '$element'"
+                done
 
             fi
             #
@@ -580,7 +591,7 @@ function StaticSetup {
             str_input1="N"
             bool_isVFIOsetup=true
             UninstallPrompt $bool_isVFIOsetup
-            declare -a arr_driverName_tempList=()   # reset outputs
+            arr_driverName_tempList=()              # reset outputs
             str_driverName_list=""                  # reset outputs
             str_HWID_list=""                        # reset outputs
             break
@@ -615,11 +626,16 @@ function StaticSetup {
                     str_driverName_list+=$str_driverName_tempList
                     str_HWID_list+=$str_HWID_tempList
                 
-                    for i in $arr_driverName_tempList; do
+                    echo -e "$0: $""str_driverName_tempList == '$str_driverName_tempList'"
+                    echo -e "$0: START."
+                    while true; do
 
+                        i=echo `$str_driverName_tempList
+                        echo -e "$0: $""i == '$i'"
                         arr_driverName_list+=($i)
 
                     done
+                    echo -e "$0: END."                    
 
                     #
                     break;;
@@ -646,6 +662,8 @@ function StaticSetup {
     done
     ##
 
+    echo -e "$0: $""str_driverName_list == '$str_driverName_list'"
+
     # remove misplaced separator #
     if [[ ${str_driverName_list:0:1} == "," ]]; then
 
@@ -662,6 +680,8 @@ function StaticSetup {
     fi
     #
 
+    echo -e "$0: $""str_driverName_list == '$str_driverName_list'"
+
     # remove last separator #
     if [[ ${str_driverName_list: -1} == "," ]]; then
 
@@ -676,8 +696,11 @@ function StaticSetup {
     fi
     #
 
+    echo -e "$0: $""str_driverName_list == '$str_driverName_list'"
+
     # VFIO soft dependencies #
     for str_thisDriverName in ${arr_driverName_list[@]}; do
+
 
         str_driverName_list_softdep+="\nsoftdep $str_thisDriverName pre: vfio-pci"
         str_driverName_list_softdep_drivers+="\nsoftdep $str_thisDriverName pre: vfio-pci\n$str_thisDriverName"
