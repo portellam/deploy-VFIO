@@ -12,7 +12,7 @@ Post-install, execute:
 
         sudo bash post-install.sh
 
-For best results post-installation, use **'portellam/AutoXorg**:  https://github.com/portellam/Auto-Xorg
+For best results post-installation, use **'portellam/AutoXorg'**:  https://github.com/portellam/Auto-Xorg
 
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
