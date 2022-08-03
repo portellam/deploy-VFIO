@@ -29,17 +29,17 @@ Post-install, execute:
     * Virtual Keyboard-Mouse switch (better than nothing, best to have physical KVM and multiple PCI USB controllers).
     * Restarts related system service.
     * Executes post-setup given assuming user passthroughs a USB controller (not necessary to parse all USB input devices).
-* **Post-install: Auto VM Deployment**
+* **Post-install: Auto VM Deployment** **(NOT AVAILABLE)**
     * Deploy auto-generated Virtual machines (for every config, include Evdev and Hugepages).
 
 ## VFIO setup *(expanded)*
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups of devices.
     * Saves lists of external PCI devices, by order of IOMMU groups.
 * Prompt user for VFIO passthrough setup:
-    * Dynamic/Multi-Boot setup **(RECOMMENDED)**.
+    * Dynamic/Multi-Boot setup **(NOT COMPLETE, SEE NOTES)**
         * Outputs multiple GRUB menu entries for each permutation of one absent, passedthrough IOMMU group (with a VGA device).
             * In other words, select a host VGA boot device at GRUB menu (use 'portellam/Auto-Xorg' for best results).
-        * **NOTE** Currently outputs to logfile. Undetermined what system file to output to (**/etc/grub.d/40_custom**)?
+        * **NOTE:** Currently outputs to logfile. Undetermined what system file to output to (**'/etc/grub.d/40_custom'**)?
         * also executes Static setup.
     * Static setup
         * Asks user to VFIO passthrough any IOMMU groups (with external PCI devices, including VGA devices).
@@ -50,7 +50,7 @@ Post-install, execute:
 * Checks for existing VFIO setup, asks user to uninstall setup and restart machine to continue, or exit.
 
 ## Complete
-* VFIO Setup: Multi-boot (outputs to logfile)
+* VFIO Setup: Multi-boot (outputs to logfile, no system files)
 * VFIO Setup: Static Setup (outputs to system files and logfiles)
 * Evdev setup
 * Hugepages setup
@@ -63,7 +63,7 @@ Post-install, execute:
 * **(Optional)** VFIO Setup: Uninstaller
 
 ## DISCLAIMER
-**Work-in-progress**
+**Work-in-progress** **Setup execution is successful, excluding planned features.**
 
 Tested on Debian Linux.
 
