@@ -2,15 +2,13 @@
 
 ## Description
 Ultimate collection of scripts for an Automated VFIO passthrough setup:
-* Setup Multi-Boot or static VFIO passthrough, Evdev, Hugepages, ZRAM swap.
-* Deploy auto-generated Virtual machines.
+* Setup Multi-Boot or static VFIO passthrough, Hugepages, and ZRAM swap.
+* Setup Evdev, and Deploy auto-generated Virtual machines.
 
 ## How-to
-For full setup*, execute:
+To install, execute:
 
         sudo bash install.sh
-
-**[*] You may execute functions individually.**
 
 Post-install, execute:
 
@@ -22,9 +20,6 @@ Post-install, execute:
 * a useful guide:       https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 
 ## Functions
-* **setup Evdev (Event devices)**
-    * Virtual Keyboard-Mouse switch (better than nothing, best to have physical KVM and multiple PCI USB controllers).
-    * Restarts related system service.
 * **setup Hugepages**
     * Static allocation of Host RAM to VMs for zero memory fragmentation and reduced memory latencies (best to use multiples of size of each Memory channel/stick).
 * **setup Zram swapfile**
@@ -32,7 +27,10 @@ Post-install, execute:
     * Restarts related system service.
 * **VFIO setup**
     * Setup dynamically (Multi-Boot) or statically.
-* **Post-install**
+* **Post-install: setup Evdev (Event devices)**
+    * Virtual Keyboard-Mouse switch (better than nothing, best to have physical KVM and multiple PCI USB controllers).
+    * Restarts related system service.
+* **Post-install: Auto VM Deployment**
     * Deploy auto-generated Virtual machines (for every config, include Evdev and Hugepages).
 
 ## VFIO setup *(expanded)*
@@ -51,12 +49,14 @@ Post-install, execute:
 * Checks for existing VFIO setup, asks user to uninstall setup and restart machine to continue, or exit.
 
 ## To-Do
-* Linux distro-agnostic setup
-* Multi-boot VFIO setup:    output to GRUB menu entries automaticcaly (currently only outputs logfiles)
-* Static VFIO setup:        fix driver parsing => **make an array that saves which IOMMU group is passedthru, and which isn't**
-* post install setup
+* Linux distro-agnostic setup: test!
+* Multi-boot VFIO setup:    output to GRUB with multiple menu entries automatically (currently only outputs logfile)
+* post install setup:       auto VM deployment
+* VFIO setup Uninstaller
 
 ## Complete
+* VFIO Setup: Multi-boot (manual) setup (outputs to logfile)
+* VFIO Setup: Static Setup
 * Evdev setup
 * Hugepages setup
 * Zram-swap setup
