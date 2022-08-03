@@ -38,35 +38,33 @@ For best results post-installation, use **'portellam/AutoXorg**:  https://github
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups of devices.
     * Saves lists of external PCI devices, by order of IOMMU groups.
 * Prompt user for VFIO passthrough setup:
-    * Dynamic/Multi-Boot setup **(NOT COMPLETE, SEE NOTES)**
+    * Dynamic/Multi-Boot setup **(SEE NOTES)**
         * Outputs multiple GRUB menu entries for each permutation of one absent, passedthrough IOMMU group (with a VGA device).
             * In other words, select a host VGA boot device at GRUB menu (use **'portellam/Auto-Xorg'** for best results).
-        * **NOTE:** Currently outputs to logfile. Undetermined what system file to output to (**'/etc/grub.d/40_custom'**)?
+        * **NOTE:** Currently outputs to logfile. Undetermined what system file to output to?
         * also executes Static setup.
     * Static setup
         * Asks user to VFIO passthrough any IOMMU groups (with external PCI devices, including VGA devices).
         * with Multi-boot setup: Asks user to VFIO passthrough any IOMMU groups (excluding external VGA devices).
-        * Appends to **'/etc/initramfs-tools/modules'**, **'/etc/modules'**, **'/etc/modprobe.d/*'**.
-        * Also appends to **'/etc/default/grub'**.         
+        * Appends to system files: **'/etc/initramfs-tools/modules'**, **'/etc/modules'**, **'/etc/modprobe.d/*'**.
+        * Also appends to system file: **'/etc/default/grub'**.         
 * Updates GRUB and INITRAMFS.
 * Checks for existing VFIO setup, asks user to uninstall setup and restart machine to continue, or exit.
 
 ## Complete
-* VFIO Setup: Multi-boot (outputs to logfile, no system files)
-* VFIO Setup: Static Setup (outputs to system files and logfiles)
+* VFIO Setup: Multi-boot: outputs to logfile, no system file
+* VFIO Setup: Static Setup
 * Evdev setup
 * Hugepages setup
 * Zram-swap setup
 
 ## To-Do
-* **(Important)** VFIO Setup: Multi-boot:   output system file with contents of logfile
-* **(Optional)** Post-Install:       auto VM deployment
-* **(Optional)** VFIO Setup: Linux distro-agnostic setup: test!
-* **(Optional)** VFIO Setup: Uninstaller
+* **(Important)** VFIO Setup: Multi-boot:   locate system file (**'/etc/grub.d/40_custom'** ?)
+* **(Optional)** Post-Install:              auto VM deployment
+* **(Optional)** VFIO Setup:                Linux distro-agnostic setup: test!
+* **(Optional)** VFIO Setup:                Uninstaller
 
 ## DISCLAIMER
-**Setup execution is successful, while project is Work-in-progress.**
-
 Tested on Debian Linux.
 
 Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
