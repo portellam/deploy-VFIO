@@ -12,6 +12,8 @@ Post-install, execute:
 
         sudo bash post-install.sh
 
+For best results post-installation, use **'portellam/AutoXorg**:  https://github.com/portellam/Auto-Xorg
+
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 * VFIO community:       https://old.reddit.com/r/VFIO
@@ -38,7 +40,7 @@ Post-install, execute:
 * Prompt user for VFIO passthrough setup:
     * Dynamic/Multi-Boot setup **(NOT COMPLETE, SEE NOTES)**
         * Outputs multiple GRUB menu entries for each permutation of one absent, passedthrough IOMMU group (with a VGA device).
-            * In other words, select a host VGA boot device at GRUB menu (use 'portellam/Auto-Xorg' for best results).
+            * In other words, select a host VGA boot device at GRUB menu (use **'portellam/Auto-Xorg'** for best results).
         * **NOTE:** Currently outputs to logfile. Undetermined what system file to output to (**'/etc/grub.d/40_custom'**)?
         * also executes Static setup.
     * Static setup
