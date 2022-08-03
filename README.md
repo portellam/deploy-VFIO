@@ -1,9 +1,7 @@
 *If you like this script, please favorite and share. Thank you.*
 
 ## Description
-Ultimate collection of scripts for an Automated VFIO passthrough setup:
-* Setup Multi-Boot or static VFIO passthrough, Hugepages, and ZRAM swap.
-* Setup Evdev, and Deploy auto-generated Virtual machines.
+Ultimate collection of scripts for a seamless, automated VFIO passthrough setup.
 
 ## How-to
 To install, execute:
@@ -30,6 +28,7 @@ Post-install, execute:
 * **Post-install: setup Evdev (Event devices)**
     * Virtual Keyboard-Mouse switch (better than nothing, best to have physical KVM and multiple PCI USB controllers).
     * Restarts related system service.
+    * Executes post-setup given assuming user passthroughs a USB controller (not necessary to parse all USB input devices).
 * **Post-install: Auto VM Deployment**
     * Deploy auto-generated Virtual machines (for every config, include Evdev and Hugepages).
 
@@ -37,8 +36,10 @@ Post-install, execute:
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups of devices.
     * Saves lists of external PCI devices, by order of IOMMU groups.
 * Prompt user for VFIO passthrough setup:
-    * Dynamic/Multi-Boot setup **(RECOMMENDED)**
-        * Adds multiple GRUB menu entries for all IOMMU groups with an external VGA device, minus a given VGA device's IOMMU group.
+    * Dynamic/Multi-Boot setup **(RECOMMENDED)**.
+        * Outputs multiple GRUB menu entries for each permutation of one absent, passedthrough IOMMU group (with a VGA device).
+            * In other words, select a host VGA boot device at GRUB menu (use 'portellam/Auto-Xorg' for best results).
+        * **NOTE** Currently outputs to logfile. Undetermined what system file to output to (**/etc/grub.d/40_custom**)?
         * also executes Static setup.
     * Static setup
         * Asks user to VFIO passthrough any IOMMU groups (with external PCI devices, including VGA devices).
@@ -48,18 +49,18 @@ Post-install, execute:
 * Updates GRUB and INITRAMFS.
 * Checks for existing VFIO setup, asks user to uninstall setup and restart machine to continue, or exit.
 
-## To-Do
-* Linux distro-agnostic setup: test!
-* Multi-boot VFIO setup:    output to GRUB with multiple menu entries automatically (currently only outputs logfile)
-* post install setup:       auto VM deployment
-* VFIO setup Uninstaller
-
 ## Complete
-* VFIO Setup: Multi-boot (manual) setup (outputs to logfile)
-* VFIO Setup: Static Setup
+* VFIO Setup: Multi-boot (outputs to logfile)
+* VFIO Setup: Static Setup (outputs to system files and logfiles)
 * Evdev setup
 * Hugepages setup
 * Zram-swap setup
+
+## To-Do
+* **(Important)** VFIO Setup: Multi-boot:   output system file with contents of logfile
+* **(Optional)** Post-Install:       auto VM deployment
+* **(Optional)** VFIO Setup: Linux distro-agnostic setup: test!
+* **(Optional)** VFIO Setup: Uninstaller
 
 ## DISCLAIMER
 **Work-in-progress**
@@ -68,7 +69,6 @@ Tested on Debian Linux.
 
 Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
 
-**VFIO Setup** is not guaranteed to work with all machines, including Laptop PCs, or machines with less-than-favorable IOMMU groups, etc.
-Review logfiles for insight to complete your setup.
+Review logfiles for insight to complete your installation, should 'VFIO-Setup' or any components of 'VFIO-Setup' fail to complete installation.
 
 I will try to answer any questions you may have here. Otherwise, please refer to community forums and guides for any help.
