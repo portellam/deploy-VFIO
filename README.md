@@ -1,24 +1,18 @@
-## Description
-Ultimate scripts for a seamless, intuitive, and automated VFIO passthrough setup. Run any OS with real hardware, under a virtual machine, in a Linux desktop of your choice.
+*If you like this script, please favorite and share. Thank you.*
 
-Protect your desktop and files from untrusted hardware (webcam, microphone, etc.), software spyware/malware/abandonware (computer game Anti-cheat, Zoom, etc.), and OS (Windows 10/11 telemetry, Windows XP vulnerabilities). Seperate your workstation and gaming machine, from your personal computer.
+## Description
+Ultimate collection of scripts for a seamless, automated VFIO passthrough setup.
 
 ## How-to
-To install, execute:    
+To install, execute:
 
-(to install functions individually, omit input variable **'y'**)
+        sudo bash install.sh
 
-        sudo bash install.sh y
+Post-install, execute:
 
-Post-install, reboot successfully then execute:
+        sudo bash post-install.sh
 
-(for best results post-installation, use **'portellam/AutoXorg'**:  https://github.com/portellam/Auto-Xorg)
-
-        sudo bash post-install.sh y
-
-To uninstall, execute:
-
-        sudo bash uninstall.sh y
+For best results post-installation, use **'portellam/AutoXorg**:  https://github.com/portellam/Auto-Xorg
 
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
@@ -57,11 +51,18 @@ To uninstall, execute:
 * Updates GRUB and INITRAMFS.
 * Checks for existing VFIO setup, asks user to uninstall setup and restart machine to continue, or exit.
 
+## Complete
+* VFIO Setup: Multi-boot: outputs to logfile, no system file
+* VFIO Setup: Static Setup
+* Evdev setup
+* Hugepages setup
+* Zram-swap setup
+
 ## To-Do
 * **(Important)** VFIO Setup: Multi-boot:   locate system file (**'/etc/grub.d/40_custom'** ?)
 * **(Optional)** Post-Install:              auto VM deployment
 * **(Optional)** VFIO Setup:                Linux distro-agnostic setup: test!
-* **(Optional)** include QoL tricks (ex: Host suspend after VM suspend, Scream virtual audio cable, Looking glass, etc)
+* **(Optional)** VFIO Setup:                Uninstaller
 
 ## DISCLAIMER
 Tested on Debian Linux.
