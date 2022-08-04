@@ -4,16 +4,19 @@
 Ultimate collection of scripts for a seamless, automated VFIO passthrough setup.
 
 ## How-to
-To install, execute:
+To install, execute:    (to install functions individually, omit input variable **'y'**)
 
         sudo bash install.sh y
 
-Post-install, execute:
+* Reboot successfully for changes to take effect.
+Post-install, execute:  (for best results post-installation, use **'portellam/AutoXorg'**:  https://github.com/portellam/Auto-Xorg)
 
         sudo bash post-install.sh y
 
-To install functions individually, omit input variable **'y'**.
-For best results post-installation, use **'portellam/AutoXorg'**:  https://github.com/portellam/Auto-Xorg
+To uninstall, execute:
+
+        sudo bash uninstall.sh y
+* Reboot successfully for changes to take effect.
 
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
