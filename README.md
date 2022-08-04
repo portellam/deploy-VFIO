@@ -4,11 +4,15 @@
 Ultimate collection of scripts for a seamless, automated VFIO passthrough setup.
 
 ## How-to
-To install, execute:    (to install functions individually, omit input variable **'y'**)
+To install, execute:    
+
+(to install functions individually, omit input variable **'y'**)
 
         sudo bash install.sh y
 
-Post-install, reboot successfully then execute:  (for best results post-installation, use **'portellam/AutoXorg'**:  https://github.com/portellam/Auto-Xorg)
+Post-install, reboot successfully then execute:
+
+(for best results post-installation, use **'portellam/AutoXorg'**:  https://github.com/portellam/Auto-Xorg)
 
         sudo bash post-install.sh y
 
