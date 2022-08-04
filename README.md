@@ -6,12 +6,13 @@ Ultimate collection of scripts for a seamless, automated VFIO passthrough setup.
 ## How-to
 To install, execute:
 
-        sudo bash install.sh
+        sudo bash install.sh y
 
 Post-install, execute:
 
-        sudo bash post-install.sh
+        sudo bash post-install.sh y
 
+To install functions individually, omit input variable **'y'**.
 For best results post-installation, use **'portellam/AutoXorg'**:  https://github.com/portellam/Auto-Xorg
 
 ## What is VFIO?
