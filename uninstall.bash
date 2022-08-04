@@ -50,7 +50,7 @@ function ReadInput {
 
 # parse and execute functions #
 echo -e "$0: Executing functions..."
-str_dir1="post-install-functions"
+str_dir1="uninstall-functions"
 declare -a arr_dir1=`ls $str_dir1 | sort -h`
 
 # call functions #
@@ -81,5 +81,5 @@ for str_line1 in $arr_dir1; do
 done
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
-echo -e "$0: Review changes made. Exiting."
+echo -e "$0: Reboot system for changes to take effect. Exiting."
 exit 0

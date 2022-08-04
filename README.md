@@ -4,15 +4,21 @@
 Ultimate collection of scripts for a seamless, automated VFIO passthrough setup.
 
 ## How-to
-To install, execute:
+To install, execute:    
 
-        sudo bash install.sh
+(to install functions individually, omit input variable **'y'**)
 
-Post-install, execute:
+        sudo bash install.sh y
 
-        sudo bash post-install.sh
+Post-install, reboot successfully then execute:
 
-For best results post-installation, use **'portellam/AutoXorg'**:  https://github.com/portellam/Auto-Xorg
+(for best results post-installation, use **'portellam/AutoXorg'**:  https://github.com/portellam/Auto-Xorg)
+
+        sudo bash post-install.sh y
+
+To uninstall, execute:
+
+        sudo bash uninstall.sh y
 
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
@@ -51,18 +57,11 @@ For best results post-installation, use **'portellam/AutoXorg'**:  https://githu
 * Updates GRUB and INITRAMFS.
 * Checks for existing VFIO setup, asks user to uninstall setup and restart machine to continue, or exit.
 
-## Complete
-* VFIO Setup: Multi-boot: outputs to logfile, no system file
-* VFIO Setup: Static Setup
-* Evdev setup
-* Hugepages setup
-* Zram-swap setup
-
 ## To-Do
 * **(Important)** VFIO Setup: Multi-boot:   locate system file (**'/etc/grub.d/40_custom'** ?)
 * **(Optional)** Post-Install:              auto VM deployment
 * **(Optional)** VFIO Setup:                Linux distro-agnostic setup: test!
-* **(Optional)** VFIO Setup:                Uninstaller
+* **(Optional)** include QoL tricks (ex: Host suspend after VM suspend, Scream virtual audio cable, Looking glass, etc)
 
 ## DISCLAIMER
 Tested on Debian Linux.
