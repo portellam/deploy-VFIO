@@ -716,7 +716,7 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
             break;;
 
         "N")
-            echo -e "$0: Exiting."
+            echo -e "$0: Skipping."
             exit 0
 
         *)
