@@ -22,7 +22,7 @@ echo -en "$0: Uninstalling Evdev setup... "
 ## 1 ##     # /etc/libvirt/qemu.conf
 bool_readLine=true
 
-if [[ ! -e $str_oldFile1 ]]; then
+if [[ -e $str_file1 ]]; then
     mv $str_file1 $str_oldFile1
 
     while read -r str_line1; do
@@ -38,11 +38,9 @@ if [[ ! -e $str_oldFile1 ]]; then
             bool_readLine=true
         fi
     done < $str_oldFile1
-else
-    cp $str_oldFile1 $str_file1
 fi
-    
-rm $str_oldFile1
+
+if [[ -e $str_oldFile1 ]]; then rm $str_oldFile1; fi
 
 echo -e " Complete.\n"
 systemctl enable libvirtd

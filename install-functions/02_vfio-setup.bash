@@ -205,7 +205,6 @@ function ReadInput {
 }
 
 function MultiBootSetup {
-    if [[ ! -z $str_logFile0 ]]; then rm $str_logFile0; fi     # clear logfile
 
     ## parameters ##
     str_Distribution=`lsb_release -i`   # Linux distro name
@@ -279,7 +278,7 @@ function MultiBootSetup {
 
         # output to file #
         for str_line1 in ${arr_file_customGRUB[@]}; do
-            echo -e $str_line1 >> $str_logFile0
+            echo -e $str_line1 >> $str_logFile6         # NOTE: fix! add output to a system file!
         done
 
         ((int_i++))                     # increment counter
@@ -291,6 +290,9 @@ function MultiBootSetup {
 
 function StaticSetup {
     
+    # parameters #
+    declare -a arr_driverName_list
+
     # files #
     str_file1="/etc/default/grub"
     str_file2="/etc/initramfs-tools/modules"
@@ -304,17 +306,18 @@ function StaticSetup {
     str_oldFile3=$(pwd)"/etc_modules"
 
     # debug logfiles #
-    str_logFile0=`find . -name *hugepages*log`
+    str_logFile0=`find . -name *hugepages*log*`
     str_logFile1=$(pwd)"/grub.log"
     str_logFile2=$(pwd)"/initramfs-modules.log"
     str_logFile3=$(pwd)"/modules.log"
     str_logFile4=$(pwd)"/pci-blacklists.conf.log"
     str_logFile5=$(pwd)"/vfio.conf.log"
+    str_logFile6=$(pwd)"/grub-menus.log"
 
     # backup system files #
     bool_readLine=true
 
-    if [[ ! -e $str_oldFile2 ]]; then
+    if [[ -z $str_oldFile2 ]]; then
         mv $str_file2 $str_oldFile2
 
         while read -r str_line1; do
@@ -336,16 +339,16 @@ function StaticSetup {
 
     # clear files #
     # NOTE: do NOT delete GRUB !!!
-    if [[ ! -z $str_file2 ]]; then rm $str_file2; fi
-    if [[ ! -z $str_file3 ]]; then rm $str_file3; fi
-    if [[ ! -z $str_file4 ]]; then rm $str_file4; fi
-    if [[ ! -z $str_file5 ]]; then rm $str_file5; fi
+    if [[ -e $str_file2 ]]; then rm $str_file2; fi
+    if [[ -e $str_file3 ]]; then rm $str_file3; fi
+    if [[ -e $str_file4 ]]; then rm $str_file4; fi
+    if [[ -e $str_file5 ]]; then rm $str_file5; fi
 
-    if [[ ! -z $str_logFile1 ]]; then rm $str_logFile1; fi
-    if [[ ! -z $str_logFile2 ]]; then rm $str_logFile2; fi
-    if [[ ! -z $str_logFile3 ]]; then rm $str_logFile3; fi
-    if [[ ! -z $str_logFile4 ]]; then rm $str_logFile4; fi
-    if [[ ! -z $str_logFile5 ]]; then rm $str_logFile5; fi
+    if [[ -e $str_logFile1 ]]; then rm $str_logFile1; fi
+    if [[ -e $str_logFile2 ]]; then rm $str_logFile2; fi
+    if [[ -e $str_logFile3 ]]; then rm $str_logFile3; fi
+    if [[ -e $str_logFile4 ]]; then rm $str_logFile4; fi
+    if [[ -e $str_logFile5 ]]; then rm $str_logFile5; fi
 
     # list IOMMU groups #
     str_output1="$0: PLEASE READ: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.
@@ -460,7 +463,7 @@ function StaticSetup {
             str_input1="Y"
         fi
 
-        if [[ $bool_hasVFIODriver == true ]]; then                     # NOTE: disabled to debug on current system
+        if [[ $bool_hasVFIODriver == true ]]; then                     
             echo -e "$0: WARNING: VFIO driver found."
             str_input1="N"
             bool_isVFIOsetup=true
@@ -513,29 +516,24 @@ function StaticSetup {
     # parse list into new list #
     declare -i int_i=1
     str_count=`echo "$str_driverName_list" | awk -F "," '{print NF-1}'`
-    if ! [[ $str_count =~ ^[0-9]+$ ]]; then
-        declare -i int_delimiter=0
-    else
+    if [[ $str_count =~ ^[0-9]+$ ]]; then
         declare -i int_delimiter=$str_count
+    else
+        declare -i int_delimiter=0
     fi
+    echo -e '$int_delimiter == '"'$int_delimiter'"
 
     while [[ $int_i -le $int_delimiter ]]; do
         str_thisDriverName=`echo $str_driverName_list | cut -d ',' -f$int_i`
         
-        if [[ $str_thisDriverName != "" && -e $str_thisDriverName ]]; then
-            arr_driverName_list+=($str_thisDriverName)
+        if [[ $str_thisDriverName != "" ]]; then
+            arr_driverName_list+=("$str_thisDriverName")
             str_driverName_newList+="$str_thisDriverName,"
         fi
 
+        echo -e '$str_thisDriverName == '"'$str_thisDriverName'"
         ((int_i++))
     done
-
-
-    # remove misplaced separator #
-    #if [[ ${str_driverName_list:0:1} == "," ]]; then
-        #int_len=${#str_driverName_list}-1
-        #str_driverName_list=${str_driverName_list:1:int_len}
-    #fi
 
     if [[ ${str_HWID_list:0:1} == "," ]]; then
         int_len=${#str_HWID_list}
@@ -558,18 +556,18 @@ function StaticSetup {
     done
 
     ## GRUB ##
-    str_GRUB_MULTIBOOT="quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driverName_list vfio_pci.ids=$str_HWID_list"
+    str_GRUB_MULTIBOOT="quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driverName_newList vfio_pci.ids=$str_HWID_list"
     str_GRUB_STATIC="GRUB_CMDLINE_LINUX_DEFAULT=\"$str_GRUB_MULTIBOOT\""
 
     ## 1 ##     # /etc/default/grub
-    if [[ ! -e $str_oldFile1 ]]; then
+    if [[ -e $str_file1 ]]; then
         mv $str_file1 $str_oldFile1
 
         # find GRUB line and comment out #
         while read -r str_line1; do
 
             # match line #
-            if [[ $str_line1 == *"GRUB_CMDLINE_LINUX_DEFAULT"* && $str_line1 != "#GRUB_CMDLINE_LINUX_DEFAULT"* ]]; then
+            if [[ $str_line1 == *"GRUB_CMDLINE_LINUX_DEFAULT="* && $str_line1 != "#GRUB_CMDLINE_LINUX_DEFAULT="* ]]; then
                 str_line1="#"$str_line1             # update line
             fi
 
@@ -577,19 +575,13 @@ function StaticSetup {
 
         done < $str_oldFile1
 
-        echo -e "GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\"" >> $str_file1
-    else
-        cp $str_oldFile1 $str_file1
+        # no GRUB line found, append at end #
+        echo -e "\n$str_GRUB_STATIC"  >> $str_file1
+        echo $str_GRUB_STATIC > $str_logFile1
+    
+        rm $str_oldFile1
     fi
     
-    rm $str_oldFile1
-
-    # no GRUB line found, append at end #
-    echo -e "\n$str_GRUB_STATIC"  >> $str_file1
-    echo $str_GRUB_STATIC > $str_logFile1
-
-    echo -e "########## DEBUG EXIT ##########" && exit 0
-
     ## initramfs-tools ##
     declare -a arr_file2=(
 "# NOTE: Generated by 'portellam/VFIO-setup'
@@ -625,7 +617,7 @@ vfio_pci
 # END #")
 
     for str_line1 in ${arr_file2[@]}; do
-        echo -e $str_line1 >> $str_file2       # NOTE: disabled to debug on current system
+        echo -e $str_line1 >> $str_file2       
         echo -e $str_line1 >> $str_logFile2
     done
 
@@ -658,20 +650,20 @@ vfio_pci ids=$str_HWID_list
 # END #")
 
     for str_line1 in ${arr_file3[@]}; do
-        echo -e $str_line1 >> $str_file3       # NOTE: disabled to debug on current system
+        echo -e $str_line1 >> $str_file3       
         echo -e $str_line1 >> $str_logFile3
     done
 
     ## /etc/modprobe.d/pci-blacklist.conf ##
-    echo -e "# NOTE: Generated by 'portellam/VFIO-setup'\n#\n# START #\n# EXAMPLE:\tblacklist 'DRIVER_NAME'\n" >> $str_file4       # NOTE: disabled to debug on current system
+    echo -e "# NOTE: Generated by 'portellam/VFIO-setup'\n#\n# START #\n# EXAMPLE:\tblacklist 'DRIVER_NAME'\n" >> $str_file4       
     echo -e "# NOTE: Generated by 'portellam/VFIO-setup'\n#\n# START #\n# EXAMPLE:\n#\tblacklist 'DRIVER_NAME'\n" >> $str_logFile4
 
     for str_thisDriverName in ${arr_driverName_list[@]}; do
-        echo -e "blacklist $str_thisDriverName" >> $str_file4       # NOTE: disabled to debug on current system
+        echo -e "blacklist $str_thisDriverName" >> $str_file4       
         echo -e "blacklist $str_thisDriverName" >> $str_logFile4
     done
 
-    echo -e "# END #" >> $str_file4       # NOTE: disabled to debug on current system
+    echo -e "# END #" >> $str_file4       
     echo -e "# END #" >> $str_logFile4
 
     ## /etc/modprobe.d/vfio.conf ##
@@ -688,7 +680,7 @@ options vfio_pci ids=$str_HWID_list
 # END #")
 
     for str_line1 in ${arr_file5[@]}; do
-        echo -e $str_line1 >> $str_file5       # NOTE: disabled to debug on current system
+        echo -e $str_line1 >> $str_file5       
         echo -e $str_line1 >> $str_logFile5
     done
 
@@ -698,17 +690,16 @@ options vfio_pci ids=$str_HWID_list
 }
 
 # check for hugepages logfile #
-str_file0=`find . -name *hugepages*log*`
 str_hugepages=`find . -name *hugepages*bash`
 
-if [[ ! -e $str_file0 ]]; then
+if [[ -z $str_logFile0 ]]; then
     echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_hugepages' and '$0'.\n"
     str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages="
 else
     while read -r str_line1; do
         if [[ $str_line1 == *"hugepagesz="* ]]; then str_GRUB_CMDLINE_Hugepages+="default_$str_line1 $str_line1 "; fi    # parse hugepage size
         if [[ $str_line1 == *"hugepages="* ]]; then str_GRUB_CMDLINE_Hugepages+="$str_line1"; fi                       # parse hugepage num
-    done < $str_file0
+    done < $str_logFile0
 fi
 
 # prompt #

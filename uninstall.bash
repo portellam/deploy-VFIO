@@ -78,6 +78,7 @@ for str_line1 in $arr_dir1; do
     if [[ $str_input1 == "Y" && $str_line1 == *".sh" && $str_line1 != *".log" ]]; then
         sudo sh $str_dir1"/"$str_line1
     fi
+done
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 echo -e "$0: Reboot system for changes to take effect. Exiting."

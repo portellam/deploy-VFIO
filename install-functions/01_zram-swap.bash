@@ -41,12 +41,12 @@ int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k
 str_GitHub_Repo="FoundObjects/zram-swap"
 
 # check for zram-utils #
-if [[ ! -z $str_file1 ]]; then
+if [[ -e $str_file1 ]]; then
     sudo systemctl stop zramswap
     sudo systemctl disable zramswap
 fi
 
-if [[ ! -e "~/git/$str_GitHub_Repo" ]]; then
+if [[ -z "~/git/$str_GitHub_Repo" ]]; then
     sudo mkdir ~/git
     sudo mkdir ~/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`
     cd ~/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`
@@ -54,20 +54,20 @@ if [[ ! -e "~/git/$str_GitHub_Repo" ]]; then
 fi
 
 # check for zram-swap #
-if [[ ! -e $str_file2 ]]; then
+if [[ -z $str_file2 ]]; then
     cd ~/git/$str_GitHub_Repo
     sh ./install.sh
 fi
 
 if [[ `sudo swapon -v | grep /dev/zram*` == "/dev/zram"* ]]; then sudo swapoff /dev/zram*; fi   # disable ZRAM swap
-if [[ ! -e $str_oldFile2 ]]; then cp $str_file2 $str_oldFile2; fi                                 # backup config file
+if [[ -z $str_oldFile2 ]]; then cp $str_file2 $str_oldFile2; fi                                 # backup config file
 
 # find free memory #
 declare -i int_HostMemMaxG=$((int_HostMemMaxK/1048576))
 declare -i int_SysMemMaxG=$((int_HostMemMaxG+1))        # use modulus?
 
 # check #
-if [[ ! -e $str_file0 ]]; then
+if [[ -z $str_file0 ]]; then
     echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_hugepages' and '$0'.\n"
 
     declare -i int_HostMemFreeG=$int_SysMemMaxG
@@ -93,7 +93,6 @@ else
     # setup ZRAM #
     echo -e "$0: Free system memory after hugepages (${int_HugepagesMemG}G): <= ${int_HostMemFreeG}G."
 fi
-#
 
 str_output1="$0: Enter zram-swap size in G (0G < n < ${int_HostMemFreeG}G): "
 echo -en $str_output1
@@ -116,32 +115,34 @@ while true; do
     ((int_count++))     # increment counter
 done
 
+# NOTE: leave as "! -z" (IS 'NOT' NULL), integers do not work with "-e" (IS 'NOT-NULL') #
 if [[ ! -z $int_ZRAM_SizeG ]]; then declare -i int_denominator=$int_SysMemMaxG/$int_ZRAM_SizeG; fi
 
 ## 2 ##     # /etc/default/zram-swap
 # backup to file #
 bool_readLine=true
 
-if [[ ! -e $str_oldFile2 ]]; then
-    mv $str_file2 $str_oldFile2
+# if [[ -z $str_oldFile2 ]]; then
+#     mv $str_file2 $str_oldFile2
 
-    while read -r str_line1; do
-        if [[ $str_line1 == *"# START #"* || $str_line1 == *"portellam/VFIO-setup"* ]]; then
-            bool_readLine=false
-        fi
+#     while read -r str_line1; do
+#         if [[ $str_line1 == *"# START #"* || $str_line1 == *"portellam/VFIO-setup"* ]]; then
+#             bool_readLine=false
+#         fi
 
-        if [[ $bool_readLine == true ]]; then
-            echo -e $str_line1 >> $str_file2
-        fi
+#         if [[ $bool_readLine == true ]]; then
+#             echo -e $str_line1 >> $str_file2
+#         fi
 
-        if [[ $str_line1 == *"# END #"* ]]; then
-            bool_readLine=true
-        fi
-    done < $str_oldFile2
-else
-    cp $str_oldFile2 $str_file2
-fi
+#         if [[ $str_line1 == *"# END #"* ]]; then
+#             bool_readLine=true
+#         fi
+#     done < $str_oldFile2
+# else
+#     cp $str_oldFile2 $str_file2
+# fi
 
+# NOTE: leave as "! -z" (IS 'NOT' NULL), integers do not work with "-e" (IS 'NOT-NULL') #
 # if input is valid #
 if [[ ! -z $int_denominator ]]; then
 
@@ -185,7 +186,7 @@ _zram_fraction=\"1/$int_denominator\"
 # END #")
 
     # write to file #
-    if [[ ! -z $str_file2 ]]; then rm $str_file2; fi       # clear existing file
+    if [[ -e $str_file2 ]]; then rm $str_file2; fi       # clear existing file
 
     for str_line1 in ${arr_file_ZRAM[@]}; do echo -e $str_line1 >> $str_file2; done
     
@@ -196,5 +197,5 @@ fi
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 echo -e "$0: Executing ZRAM-swap setup... Complete.\n"
-echo -e "\n$0: Review changes:\n\t'$str_file2'"
+echo -e "$0: Review changes:\n\t'$str_file2'"
 exit 0

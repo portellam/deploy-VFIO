@@ -96,7 +96,7 @@ declare -i int_vThread=$int_vCore*$int_hostThread
 ## check for hugepages logfile ##
 str_file1=`ls $(pwd)/functions | grep -i 'hugepages' | grep -i '.log'`
 
-if [[ ! -e $str_file0 ]]; then
+if [[ -z $str_file0 ]]; then
     echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute "`ls $(pwd)/functions | grep -i 'hugepages' | grep -i '.bash'`"'.\n"
 
 else
@@ -655,13 +655,13 @@ ${arr_XML_QEMU}
 }
 
 # parse VFIO devices, create XML templates #
-if [[ ! -z $arr_lspci_VFIO ]]; then
+if [[ -e $arr_lspci_VFIO ]]; then
 
     echo -e "$0: VFIO devices found."
 	str_thisMachineName=$str_machineName
 
     # parse VFIO VGA devices, create new XML for different primary VM boot VGA and append VM name #
-    if [[ ! -z $arr_lspci_VFIO_VGA ]]; then
+    if [[ -e $arr_lspci_VFIO_VGA ]]; then
 
         echo -e "$0: VFIO VGA devices found."
 

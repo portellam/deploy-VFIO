@@ -37,7 +37,7 @@ for str_User in $arr_User; do
     sudo adduser $str_User libvirt  # add each normal user to libvirt group
 done  
 
-if [[ ! -e $arr_InputDeviceID ]]; then
+if [[ -z $arr_InputDeviceID ]]; then
     echo -e "$0: No input devices found. Skipping."
     exit 0
 else
@@ -84,7 +84,7 @@ cgroup_device_acl = [
     ## 1 ##     # /etc/libvirt/qemu.conf
     bool_readLine=true
 
-    if [[ ! -e $str_oldFile1 ]]; then
+    if [[ -z $str_oldFile1 ]]; then
         mv $str_file1 $str_oldFile1
 
         while read -r str_line1; do
