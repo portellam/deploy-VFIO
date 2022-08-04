@@ -61,6 +61,7 @@ To uninstall, execute:
 * **(Important)** VFIO Setup: Multi-boot:   locate system file (**'/etc/grub.d/40_custom'** ?)
 * **(Optional)** Post-Install:              auto VM deployment
 * **(Optional)** VFIO Setup:                Linux distro-agnostic setup: test!
+* **(Optional)** include QoL tricks (ex: Host suspend after VM suspend, Scream virtual audio cable, Looking glass, etc)
 
 ## DISCLAIMER
 Tested on Debian Linux.
