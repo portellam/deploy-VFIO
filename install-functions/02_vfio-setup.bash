@@ -65,24 +65,6 @@ declare -a arr_VGA_IOMMUID          # IOMMU groups with VGA devices
 # files #
 str_GRUB_MULTIBOOT=""
 str_GRUB_STATIC=""
-declare -a arr_file1
-declare -a arr_file2
-declare -a arr_file3
-declare -a arr_file4
-declare -a arr_file5
-str_file1="/etc/default/grub"
-str_file2="/etc/initramfs-tools/modules"
-str_file3="/etc/modules"
-str_file4="/etc/modprobe.d/pci-blacklists.conf"
-str_file5="/etc/modprobe.d/vfio.conf"
-
-# debug logfiles #
-str_logFile1=$(pwd)"/grub.log"
-str_logFile2=$(pwd)"/initramfs-modules.log"
-str_logFile3=$(pwd)"/modules.log"
-str_logFile4=$(pwd)"/pci-blacklists.conf.log"
-str_logFile5=$(pwd)"/vfio.conf.log"
-str_GRUB_logFile=$(pwd)"/grub-menu.log"
 
 ## find and sort drivers by Bus ID (lspci) ##
 # parse Bus ID #
@@ -190,45 +172,36 @@ str_input1=""
 # precede with echo prompt for input #
 # ask user for input then validate #
 function ReadInput {
-    str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
-    str_input1=${str_input1:0:1}
-    ValidInput $str_input1 $str_output1
-}
+    echo -en "$0: "
 
-# validate input, ask again, default answer NO #
-function ValidInput {
-    declare -i int_count=0    # reset counter
-    
-    while true; do
-        # passthru input variable if it is valid #
-        if [[ $str_input1 == * ]]; then
-            str_input1=$str_input1      # input variable
-            break
-        fi
+    if [[ $str_input1 == "Y" ]]; then
+        echo -en $str_output1$str_input1
+    else
+        declare -i int_count=0      # reset counter
 
-        # manual prompt #
-        if [[ $int_count -ge 3 ]]; then     # auto answer
-            echo -e "$0: Exceeded max attempts. "
-            str_input1="N"      # default input     # NOTE: change here
-        else
-            echo -en $str_output1
-            read str_input1
+        while true; do
+            # manual prompt #
+            if [[ $int_count -ge 3 ]]; then       # auto answer
+                echo "Exceeded max attempts."
+                str_input1="N"                    # default input     # NOTE: change here
+            else
+                echo -en $str_output1
+                read str_input1
 
-            # string to upper
-            str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
-            str_input1=${str_input1:0:1}
-        fi
+                str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
+                str_input1=${str_input1:0:1}
+            fi
 
-        case $str_input1 in
-            "Y"|"N")
-                break;;
+            case $str_input1 in
+                "Y"|"N")
+                    break;;
+                *)
+                    echo -en "$0: Invalid input. ";;
+            esac
 
-            *)
-                echo -e "$0: Invalid input.";;
-        esac
-
-        ((int_count++))   # increment counter
-    done
+            ((int_count++))         # increment counter
+        done
+    fi
 }
 
 function MultiBootSetup {
@@ -331,6 +304,29 @@ function StaticSetup {
     str_logFile3=$(pwd)"/modules.log"
     str_logFile4=$(pwd)"/pci-blacklists.conf.log"
     str_logFile5=$(pwd)"/vfio.conf.log"
+
+    # backup system files #
+    bool_readLine=true
+
+    if [[ -z $str_oldFile2 ]]; then
+        mv $str_file2 $str_oldFile2
+
+        while read -r str_line1; do
+            if [[ $str_line1 == *"# START #"* || $str_line1 == *"portellam/VFIO-setup"* ]]; then
+                bool_readLine=false
+            fi
+
+            if [[ $bool_readLine == true ]]; then
+                echo -e $str_line1 >> $str_file2
+            fi
+
+            if [[ $str_line1 == *"# END #"* ]]; then
+                bool_readLine=true
+            fi
+        done < $str_oldFile2
+    else
+        cp $str_oldFile2 $str_file2
+    fi
 
     # clear files #
     # NOTE: do NOT delete GRUB !!!
@@ -556,7 +552,7 @@ function StaticSetup {
 
     # find GRUB line and comment out #
     while read -r str_line1; do
-    
+
         # match line #
         if [[ $str_line1 == *"GRUB_CMDLINE_LINUX_DEFAULT"* && $str_line1 != "#GRUB_CMDLINE_LINUX_DEFAULT"* ]]; then
             str_line1="#"$str_line1             # update line
