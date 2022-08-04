@@ -26,7 +26,7 @@ echo -en "$0: Uninstalling ZRAM-swap setup... "
 ## 2 ##     # /etc/default/zram-swap
 bool_readLine=true
 
-if [[ -z $str_oldFile2 ]]; then
+if [[ ! -e $str_oldFile2 && -e $str_file2 ]]; then
     mv $str_file2 $str_oldFile2
 
     while read -r str_line1; do

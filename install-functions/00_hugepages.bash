@@ -102,7 +102,7 @@ hugepages=$int_HugePageNum
         str_file1=$(pwd)'/'$0'.log'
         echo -e "$0: Writing logfile. Contents: partial text for GRUB menu entry."
         
-        if [[ -e $str_file1 ]]; then rm $str_file1; fi                          # clear existing file
+        if [[ ! -z $str_file1 ]]; then rm $str_file1; fi                          # clear existing file
         for str_line1 in $arr_output1; do echo $str_line1 >> $str_file1; done   # write to file
 
         break

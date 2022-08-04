@@ -22,7 +22,7 @@ echo -en "$0: Uninstalling Evdev setup... "
 ## 1 ##     # /etc/libvirt/qemu.conf
 bool_readLine=true
 
-if [[ -z $str_oldFile1 ]]; then
+if [[ ! -e $str_oldFile1 ]]; then
     mv $str_file1 $str_oldFile1
 
     while read -r str_line1; do

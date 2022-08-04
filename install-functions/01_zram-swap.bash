@@ -17,6 +17,7 @@ SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
 # parameters #
+str_hugepages=`find . -name *hugepages*bash* | grep -v log`
 declare -i int_count=0      # reset counter
 
 # system files #
@@ -45,7 +46,7 @@ if [[ ! -z $str_file1 ]]; then
     sudo systemctl disable zramswap
 fi
 
-if [[ -z "~/git/$str_GitHub_Repo" ]]; then
+if [[ ! -e "~/git/$str_GitHub_Repo" ]]; then
     sudo mkdir ~/git
     sudo mkdir ~/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`
     cd ~/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`
@@ -53,20 +54,20 @@ if [[ -z "~/git/$str_GitHub_Repo" ]]; then
 fi
 
 # check for zram-swap #
-if [[ -z $str_file2 ]]; then
+if [[ ! -e $str_file2 ]]; then
     cd ~/git/$str_GitHub_Repo
     sh ./install.sh
 fi
 
 if [[ `sudo swapon -v | grep /dev/zram*` == "/dev/zram"* ]]; then sudo swapoff /dev/zram*; fi   # disable ZRAM swap
-if [[ -z $str_oldFile2 ]]; then cp $str_file2 $str_oldFile2; fi                                 # backup config file
+if [[ ! -e $str_oldFile2 ]]; then cp $str_file2 $str_oldFile2; fi                                 # backup config file
 
 # find free memory #
 declare -i int_HostMemMaxG=$((int_HostMemMaxK/1048576))
 declare -i int_SysMemMaxG=$((int_HostMemMaxG+1))        # use modulus?
 
 # check #
-if [[ -z $str_file0 ]]; then
+if [[ ! -e $str_file0 ]]; then
     echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_hugepages' and '$0'.\n"
 
     declare -i int_HostMemFreeG=$int_SysMemMaxG
@@ -121,7 +122,7 @@ if [[ ! -z $int_ZRAM_SizeG ]]; then declare -i int_denominator=$int_SysMemMaxG/$
 # backup to file #
 bool_readLine=true
 
-if [[ -z $str_oldFile2 ]]; then
+if [[ ! -e $str_oldFile2 ]]; then
     mv $str_file2 $str_oldFile2
 
     while read -r str_line1; do
@@ -184,7 +185,7 @@ _zram_fraction=\"1/$int_denominator\"
 # END #")
 
     # write to file #
-    if [[ -e $str_file2 ]]; then rm $str_file2; fi       # clear existing file
+    if [[ ! -z $str_file2 ]]; then rm $str_file2; fi       # clear existing file
 
     for str_line1 in ${arr_file_ZRAM[@]}; do echo -e $str_line1 >> $str_file2; done
     
@@ -195,4 +196,5 @@ fi
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 echo -e "$0: Executing ZRAM-swap setup... Complete.\n"
+echo -e "\n$0: Review changes:\n\t'$str_file2'"
 exit 0

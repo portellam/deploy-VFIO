@@ -75,7 +75,7 @@ else if [[ $int_hostCore == 2 ]]; then
     int_vCore=$int_hostSocket
 else if [[ $int_hostCore == 2 ]]; then
     int_vCore=0
-    echo "$0: Insufficient host resources (CPU cores). Exiting."
+    echo "$0: Insufficient host resources (CPU cores). Skipping."
     exit 0
 fi
 #
@@ -96,7 +96,7 @@ declare -i int_vThread=$int_vCore*$int_hostThread
 ## check for hugepages logfile ##
 str_file1=`ls $(pwd)/functions | grep -i 'hugepages' | grep -i '.log'`
 
-if [[ -z $str_file0 ]]; then
+if [[ ! -e $str_file0 ]]; then
     echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute "`ls $(pwd)/functions | grep -i 'hugepages' | grep -i '.bash'`"'.\n"
 
 else
@@ -655,13 +655,13 @@ ${arr_XML_QEMU}
 }
 
 # parse VFIO devices, create XML templates #
-if [[ -e $arr_lspci_VFIO ]]; then
+if [[ ! -z $arr_lspci_VFIO ]]; then
 
     echo -e "$0: VFIO devices found."
 	str_thisMachineName=$str_machineName
 
     # parse VFIO VGA devices, create new XML for different primary VM boot VGA and append VM name #
-    if [[ -e $arr_lspci_VFIO_VGA ]]; then
+    if [[ ! -z $arr_lspci_VFIO_VGA ]]; then
 
         echo -e "$0: VFIO VGA devices found."
 
@@ -692,5 +692,5 @@ fi
 #
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
-echo "$0: Exiting."
+echo "$0: Skipping."
 exit 0

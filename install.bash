@@ -16,13 +16,6 @@ SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
 ## user input ##
-# input variable auto executes functions #
-if [[ `echo $1 | tr '[:lower:]' '[:upper:]'` == "Y"* ]]; then
-    str_input1="Y"
-else
-    str_input1=""
-fi
-
 str_output1=""
 
 # precede with echo prompt for input #
@@ -108,19 +101,27 @@ declare -a arr_dir1=`ls $str_dir1 | sort -h`
 
 # call functions #
 for str_line1 in $arr_dir1; do
+
+    # input variable auto executes functions #
+    if [[ `echo $1 | tr '[:lower:]' '[:upper:]'` == "Y"* ]]; then
+        str_input1="Y"
+    else
+        str_input1=""
+    fi
+    
     str_output1="Execute '$str_line1'? [Y/n]: "
 
     # execute sh/bash scripts in directory
-    if [[ $str_line1 == *".bash"||*".sh" ]]; then
+    if [[ $str_line1 == *".bash"||*".sh" && $str_line1 != *".log" ]]; then
         ReadInput $str_input1
         echo
     fi
 
-    if [[ $str_input1 == "Y" && $str_line1 == *".bash" ]]; then
+    if [[ $str_input1 == "Y" && $str_line1 == *".bash" && $str_line1 != *".log" ]]; then
         sudo bash $str_dir1"/"$str_line1
     fi
 
-    if [[ $str_input1 == "Y" && $str_line1 == *".sh" ]]; then
+    if [[ $str_input1 == "Y" && $str_line1 == *".sh" && $str_line1 != *".log" ]]; then
         sudo sh $str_dir1"/"$str_line1
     fi
 done

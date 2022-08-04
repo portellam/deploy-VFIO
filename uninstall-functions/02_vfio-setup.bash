@@ -35,16 +35,16 @@ str_logFile6=`find . -name grub-menu.log`
 echo -en "$0: Uninstalling VFIO setup... "
 
 # clear logfiles #
-if [[ -e $str_logFile0 ]]; then rm $str_logFile0; fi
-if [[ -e $str_logFile1 ]]; then rm $str_logFile1; fi
-if [[ -e $str_logFile2 ]]; then rm $str_logFile2; fi
-if [[ -e $str_logFile3 ]]; then rm $str_logFile3; fi
-if [[ -e $str_logFile4 ]]; then rm $str_logFile4; fi
-if [[ -e $str_logFile5 ]]; then rm $str_logFile5; fi
-if [[ -e $str_logFile6 ]]; then rm $str_logFile6; fi
+if [[ ! -z $str_logFile0 ]]; then rm $str_logFile0; fi
+if [[ ! -z $str_logFile1 ]]; then rm $str_logFile1; fi
+if [[ ! -z $str_logFile2 ]]; then rm $str_logFile2; fi
+if [[ ! -z $str_logFile3 ]]; then rm $str_logFile3; fi
+if [[ ! -z $str_logFile4 ]]; then rm $str_logFile4; fi
+if [[ ! -z $str_logFile5 ]]; then rm $str_logFile5; fi
+if [[ ! -z $str_logFile6 ]]; then rm $str_logFile6; fi
 
 ## 1 ##     # /etc/default/grub
-if [[ -z $str_oldFile1 ]]; then
+if [[ ! -e $str_oldFile1 ]]; then
     mv $str_file1 $str_oldFile1
 
     # find GRUB line and comment out #
@@ -69,7 +69,7 @@ rm $str_oldFile1
 ## 2 ##     # initramfs-tools
 bool_readLine=true
 
-if [[ -z $str_oldFile2 ]]; then
+if [[ ! -e $str_oldFile2 ]]; then
     mv $str_file2 $str_oldFile2
 
     while read -r str_line1; do
@@ -94,7 +94,7 @@ rm $str_oldFile2
 ## 3 ##     # /etc/modules
 bool_readLine=true
 
-if [[ -z $str_oldFile3 ]]; then
+if [[ ! -e $str_oldFile3 ]]; then
     mv $str_file3 $str_oldFile3
 
     while read -r str_line1; do
@@ -117,10 +117,10 @@ fi
 rm $str_oldFile3
 
 ## 4 ##     # /etc/modprobe.d/pci-blacklist.conf
-rm $str_file4
+if [[ ! -z $str_file4 ]]; then rm $str_file4; fi
 
 ## 5 ##     # /etc/modprobe.d/vfio.conf
-rm $str_file5
+if [[ ! -z $str_file5 ]]; then rm $str_file5; fi
 
 echo -e " Complete.\n"
 sudo update-grub                    # update GRUB
