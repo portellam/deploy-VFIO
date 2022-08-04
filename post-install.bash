@@ -50,7 +50,7 @@ function ReadInput {
                     echo -en "$0: Invalid input. ";;
             esac
 
-            ((int_count++))         # incremeent counter
+            ((int_count++))         # increment counter
         done
     fi
 }
@@ -67,7 +67,7 @@ for str_line1 in $arr_dir1; do
     # execute sh/bash scripts in directory
     if [[ $str_line1 == *".bash"||*".sh" ]]; then
         ReadInput $str_input1
-        echo -e
+        echo
     fi
 
     if [[ $str_input1 == "Y" && $str_line1 == *".bash" ]]; then

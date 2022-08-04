@@ -11,22 +11,21 @@ if [[ `whoami` != "root" ]]; then
     echo -e "$0: WARNING: Script must be run as Sudo or Root! Exiting."
     exit 0
 fi
-#
 
 # NOTE: necessary for newline preservation in arrays and files #
 SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
-# parameters #
+# system files #
 str_file1="/etc/libvirt/qemu.conf"
-#
+
+# system file backups #
+str_oldFile1=$(pwd)"/etc_libvirt_qemu.conf.old"
 
 # prompt #
 str_output1="$0: Evdev (Event Devices) is a method that assigns input devices to a Virtual KVM (Keyboard-Video-Mouse) switch.\n\tEvdev is recommended for setups without an external KVM switch and passed-through USB controller(s).\n\tNOTE: View '/etc/libvirt/qemu.conf' to review changes, and append to a Virtual machine's configuration file."
 
 echo -e $str_output1
-echo -e "$0: Executing Evdev setup... "
-#
 
 str_UID1000=`cat /etc/passwd | grep 1000 | cut -d ":" -f 1`             # find first normal user
 
@@ -37,7 +36,8 @@ for str_User in $arr_User; do
     sudo adduser $str_User input    # add each normal user to input group
     sudo adduser $str_User libvirt  # add each normal user to libvirt group
 done  
-#
+
+echo -e "$0: Executing Evdev setup... "
 
 declare -a arr_InputDeviceID=`ls /dev/input/by-id`  # list of input devices
 declare -a arr_InputDeviceEventID=`ls -l /dev/input/by-id | cut -d '/' -f2 | grep -v 'total 0'` # list of event IDs for input devices
@@ -76,40 +76,37 @@ arr_file_QEMU+=("    \"/dev/null\", \"/dev/full\", \"/dev/zero\",
     \"/dev/rtc\", \"/dev/hpet\"
 ]
 # END #")
-#
 
-# backup config file #
+## 1 ##     # /etc/libvirt/qemu.conf
 bool_readLine=true
-mv $str_file1 $str_file1"_old"
 
-while read -r str_line1; do
-    if [[ $str_line1 == *"# START #"* || $str_line1 == *"portellam/VFIO-setup"* ]]; then
-        bool_readLine=false
-    fi
+if [[ -z $str_oldFile1 ]]; then
+    mv $str_file1 $str_oldFile1
 
-    if [[ $bool_readLine == true ]]; then
-        echo -e $str_line1 >> $str_file1
-    fi
+    while read -r str_line1; do
+        if [[ $str_line1 == *"# START #"* || $str_line1 == *"portellam/VFIO-setup"* ]]; then
+            bool_readLine=false
+        fi
 
-    if [[ $str_line1 == *"# END #"* ]]; then
-        bool_readLine=true
-    fi
-done < $str_file1"_old"
-#
+        if [[ $bool_readLine == true ]]; then
+            echo -e $str_line1 >> $str_file1
+        fi
 
-rm $str_file1"_old"
+        if [[ $str_line1 == *"# END #"* ]]; then
+            bool_readLine=true
+        fi
+    done < $str_oldFile1
+else
+    cp $str_oldFile1 $str_file1
+fi
 
 # write to file #
 for str_line1 in ${arr_file_QEMU[@]}; do
     echo -e $str_line1 >> $str_file1
 done
-#
 
-# restart service #
+echo -e "Complete.\n"
 systemctl enable libvirtd
 systemctl restart libvirtd
-#
-
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
-echo -e "$0: Executing Evdev setup... Complete.\n"
 exit 0

@@ -50,7 +50,7 @@ function ReadInput {
                     echo -en "$0: Invalid input. ";;
             esac
 
-            ((int_count++))         # incremeent counter
+            ((int_count++))         # increment counter
         done
     fi
 }

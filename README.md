@@ -53,18 +53,10 @@ To uninstall, execute:
 * Updates GRUB and INITRAMFS.
 * Checks for existing VFIO setup, asks user to uninstall setup and restart machine to continue, or exit.
 
-## Complete
-* VFIO Setup: Multi-boot: outputs to logfile, no system file
-* VFIO Setup: Static Setup
-* Evdev setup
-* Hugepages setup
-* Zram-swap setup
-
 ## To-Do
 * **(Important)** VFIO Setup: Multi-boot:   locate system file (**'/etc/grub.d/40_custom'** ?)
 * **(Optional)** Post-Install:              auto VM deployment
 * **(Optional)** VFIO Setup:                Linux distro-agnostic setup: test!
-* **(Optional)** VFIO Setup:                Uninstaller
 
 ## DISCLAIMER
 Tested on Debian Linux.
