@@ -11,23 +11,33 @@ if [[ `whoami` != "root" ]]; then
     echo -e "$0: WARNING: Script must be run as Sudo or Root! Exiting."
     exit 0
 fi
-#
 
 # NOTE: necessary for newline preservation in arrays and files #
 SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
 # parameters #
+bool_missingFiles=false
 str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                # default output
 int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
-#
+
+# system files #
+str_outFile1="/etc/libvirt/qemu.conf"
+
+# input files #
+str_inFile1=`find . -name *etc_libvirt_qemu.conf*`
+
+# system file backups #
+str_oldFile1=$str_outFile1"_old"
+
+# debug logfiles #
+str_logFile1=$(pwd)'/'$0'.log'
 
 # prompt #
 str_output1="$0: HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and lower overhead of memory-access (memory latency).\n"
 
 echo -e $str_output1
 echo -e "$0: Executing Hugepages setup..."
-#
 
 # Hugepage size: validate input #
 declare -i int_count=0      # reset counter
@@ -55,12 +65,12 @@ while true; do
 
     ((int_count++))     # increment counter
 done
-#
 
 # Hugepage sum: validate input #
 declare -i int_count=0      # reset counter
 
 while true; do
+
     # attempt #
     if [[ $int_count -ge 3 ]]; then
         int_HugePageNum=$int_HugePageMax        # default selection
@@ -85,9 +95,7 @@ while true; do
 
         echo -en "$0: Enter number of HugePages (n * $str_HugePageSize). [$int_HugePageMin <= n <= $int_HugePageMax pages]: "
         read -r int_HugePageNum
-        #
     fi
-    #
 
     # check input #
     if [[ $int_HugePageNum -lt $int_HugePageMin || $int_HugePageNum -gt $int_HugePageMax ]]; then
@@ -99,18 +107,62 @@ while true; do
 hugepagesz=$str_HugePageSize
 hugepages=$int_HugePageNum
 ")
-        str_file1=$(pwd)'/'$0'.log'
-        echo -e "$0: Writing logfile. Contents: partial text for GRUB menu entry."
         
-        if [[ -e $str_file1 ]]; then rm $str_file1; fi                          # clear existing file
-        for str_line1 in $arr_output1; do echo $str_line1 >> $str_file1; done   # write to file
+        # clear existing file #
+        if [[ -e $str_logFile1 ]]; then
+            rm $str_logFile1
+        fi
+
+        # write to file #
+        for str_line1 in $arr_output1; do
+            echo $str_line1 >> $str_logFile1
+        done
+
+        ## /etc/libvirt/qemu.conf ## 
+        str_output1="user = \"user\"\ngroup = \"user\""
+        str_output2="hugetlbfs_mount = \"/dev/hugepages\""
+        str_output3="cgroup_device_acl = [\n    \"/dev/null\", \"/dev/full\", \"/dev/zero\",\n    \"/dev/random\", \"/dev/urandom\",\n    \"/dev/ptmx\", \"/dev/kvm\",\n    \"/dev/rtc\",\"/dev/hpet\"\n]"
+
+        for str_thisDriverName in ${arr_driverName_list[@]}; do
+            str_output1+="blacklist $str_thisDriverName\n"
+        done
+
+            if [[ -e $str_inFile1 ]]; then
+                cp $str_outFile1 $str_oldFile2      # create backup
+                cp $str_inFile1 $str_outFile1       # copy from template
+
+                # write to file #
+                read -r str_line1; do
+                if [[ $str_line1 == '#$str_output1'* ]]; then
+                    str_line1=$str_output1
+                fi
+
+                if [[ $str_line1 == '#$str_output2'* ]]; then
+                    str_line1=$str_output2
+                fi
+
+                if [[ $str_line1 == '#$str_output3'* ]]; then
+                    str_line1=$str_output3
+                fi
+
+                echo -e $str_line1 >> $str_outFile1
+            done < $str_inFile1
+        else
+            bool_missingFiles=true
+            echo -e "$0: File missing: '$str_inFile1'. Skipping."
+        fi
 
         break
     fi
-    #
 done
-#
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
-echo -e "$0: Executing Hugepages setup... Complete.\n"
+# warn user of missing files #
+if [[ $bool_missingFiles == true ]]; then
+    echo -e "$0: Executing Hugepages setup... Failed.\n$0: Files missing. Setup installation is incomplete. Clone or re-download 'portellam/VFIO-setup' to continue."
+else
+    echo -e "$0: Executing Hugepages setup... Complete.\n"
+    systemctl enable libvirtd
+    systemctl restart libvirtd
+fi
 exit 0

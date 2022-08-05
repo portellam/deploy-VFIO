@@ -3,7 +3,6 @@
 # TODO
 #
 # -output to grub menu entries automatically (no logfiles) (Debian or GRUB2 compatible)
-# -output to blacklists not working all of a sudden
 
 # function steps #
 # 1a.   Parse PCI and IOMMU groups, sort information to be parsed again later
@@ -24,13 +23,13 @@ fi
 SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
-bool_isVFIOsetup=false
-str_GRUB_CMDLINE_Hugepages=""
-
 ## Parse PCI ##
 echo -en "$0: Parsing PCI device information... "
 
 ## parameters ##
+bool_isVFIOsetup=false
+bool_missingFiles=false
+str_GRUB_CMDLINE_Hugepages=""
 bool_hasExternalPCI=false 
 bool_hasVGA=false
 #bool_hasNoDriver=false
@@ -162,9 +161,8 @@ function debugOutput {
 }
 
 #debugOutput    # uncomment to debug here
-## end Parse PCI ##
-
 #exit 0         # uncomment to debug here
+## end Parse PCI ##
 
 ## user input ##
 str_input1=""
@@ -219,9 +217,9 @@ function MultiBootSetup {
     str_rootUUID=`sudo lsblk -n $str_rootDev -o UUID`
 
     # custom GRUB #
-    #str_file6="/etc/grub.d/proxifiedScripts/custom"
-    #str_file6="/etc/grub.d/40_custom"
-    #echo -e "#!/bin/sh\nexec tail -n +3 \$0\n# This file provides an easy way to add custom menu entries. Simply type the\n# menu entries you want to add after this comment. Be careful not to change\n# the 'exec tail' line above." > $str_file6
+    #str_outFile6="/etc/grub.d/proxifiedScripts/custom"
+    #str_outFile6="/etc/grub.d/40_custom"
+    #echo -e "#!/bin/sh\nexec tail -n +3 \$0\n# This file provides an easy way to add custom menu entries. Simply type the\n# menu entries you want to add after this comment. Be careful not to change\n# the 'exec tail' line above." > $str_outFile6
     #
 
     # parse IOMMU IDs #
@@ -293,62 +291,37 @@ function StaticSetup {
     # parameters #
     declare -a arr_driverName_list
 
-    # files #
-    str_file1="/etc/default/grub"
-    str_file2="/etc/initramfs-tools/modules"
-    str_file3="/etc/modules"
-    str_file4="/etc/modprobe.d/pci-blacklists.conf"
-    str_file5="/etc/modprobe.d/vfio.conf"
+    # system files #
+    str_outFile1="/etc/default/grub"
+    str_outFile2="/etc/initramfs-tools/modules"
+    str_outFile3="/etc/modules"
+    str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
+    str_outFile5="/etc/modprobe.d/vfio.conf"
+
+    # input files #
+    # none for file1
+    str_inFile2=`find . -name *etc_initramfs-tools_modules*`
+    str_inFile3=`find . -name *etc_modules*`
+    str_inFile4=`find . -name *etc_modprobe.d_pci-blacklists*`
+    str_inFile5=`find . -name *etc_modprobe.d_vfio-pci*`
+    # none for file6
 
     # system file backups #
-    str_oldFile1=$(pwd)"/etc_default_grub.old"
-    str_oldFile2=$(pwd)"/etc_initramfs-tools_modules.old"
-    str_oldFile3=$(pwd)"/etc_modules"
+    str_oldFile1=$str_outFile1"_old"
+    str_oldFile2=$str_outFile2"_old"
+    str_oldFile3=$str_outFile3"_old"
 
     # debug logfiles #
     str_logFile0=`find . -name *hugepages*log*`
     str_logFile1=$(pwd)"/grub.log"
-    #str_logFile2=$(pwd)"/initramfs-modules.log"
-    #str_logFile3=$(pwd)"/modules.log"
-    #str_logFile4=$(pwd)"/pci-blacklists.conf.log"
-    #str_logFile5=$(pwd)"/vfio.conf.log"
+    # none for file2-file5
     str_logFile6=$(pwd)"/grub-menus.log"
-
-    # backup system files #
-    bool_readLine=true
-
-    if [[ -z $str_oldFile2 ]]; then
-        mv $str_file2 $str_oldFile2
-
-        while read -r str_line1; do
-            if [[ $str_line1 == *"# START #"* || $str_line1 == *"portellam/VFIO-setup"* ]]; then
-                bool_readLine=false
-            fi
-
-            if [[ $bool_readLine == true ]]; then
-                echo -e $str_line1 >> $str_file2
-            fi
-
-            if [[ $str_line1 == *"# END #"* ]]; then
-                bool_readLine=true
-            fi
-        done < $str_oldFile2
-    else
-        cp $str_oldFile2 $str_file2
-    fi
 
     # clear files #
     # NOTE: do NOT delete GRUB !!!
-    if [[ -e $str_file2 ]]; then rm $str_file2; fi
-    if [[ -e $str_file3 ]]; then rm $str_file3; fi
-    if [[ -e $str_file4 ]]; then rm $str_file4; fi
-    if [[ -e $str_file5 ]]; then rm $str_file5; fi
-
     if [[ -e $str_logFile1 ]]; then rm $str_logFile1; fi
-    if [[ -e $str_logFile2 ]]; then rm $str_logFile2; fi
-    if [[ -e $str_logFile3 ]]; then rm $str_logFile3; fi
-    if [[ -e $str_logFile4 ]]; then rm $str_logFile4; fi
     if [[ -e $str_logFile5 ]]; then rm $str_logFile5; fi
+    if [[ -e $str_logFile6 ]]; then rm $str_logFile6; fi
 
     # list IOMMU groups #
     str_output1="$0: PLEASE READ: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.
@@ -521,7 +494,6 @@ function StaticSetup {
     else
         declare -i int_delimiter=0
     fi
-    echo -e '$int_delimiter == '"'$int_delimiter'"
 
     while [[ $int_i -le $int_delimiter ]]; do
         str_thisDriverName=`echo $str_driverName_list | cut -d ',' -f$int_i`
@@ -531,7 +503,6 @@ function StaticSetup {
             str_driverName_newList+="$str_thisDriverName,"
         fi
 
-        echo -e '$str_thisDriverName == '"'$str_thisDriverName'"
         ((int_i++))
     done
 
@@ -555,13 +526,12 @@ function StaticSetup {
         str_driverName_list_softdep_drivers+="\nsoftdep $str_thisDriverName pre: vfio-pci\n$str_thisDriverName"
     done
 
-    ## GRUB ##
+    ## /etc/default/grub ##
     str_GRUB_MULTIBOOT="quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driverName_newList vfio_pci.ids=$str_HWID_list"
     str_GRUB_STATIC="GRUB_CMDLINE_LINUX_DEFAULT=\"$str_GRUB_MULTIBOOT\""
 
-    ## 1 ##     # /etc/default/grub
-    if [[ -e $str_file1 ]]; then
-        mv $str_file1 $str_oldFile1
+    if [[ -e $str_outFile1 ]]; then
+        mv $str_outFile1 $str_oldFile1
 
         # find GRUB line and comment out #
         while read -r str_line1; do
@@ -571,121 +541,118 @@ function StaticSetup {
                 str_line1="#"$str_line1             # update line
             fi
 
-            echo -e $str_line1  >> $str_file1       # append to new file
+            echo -e $str_line1  >> $str_outFile1       # append to new file
 
         done < $str_oldFile1
 
         # no GRUB line found, append at end #
-        echo -e "\n$str_GRUB_STATIC"  >> $str_file1
+        echo -e "\n$str_GRUB_STATIC"  >> $str_outFile1
         echo $str_GRUB_STATIC > $str_logFile1
     
         rm $str_oldFile1
     fi
     
-    ## initramfs-tools ##
-    declare -a arr_file2=(
-"# NOTE: Generated by 'portellam/VFIO-setup'
-# START #
-#
-# List of modules that you want to include in your initramfs.
-# They will be loaded at boot time in the order below.
-#
-# Syntax:  module_name [args ...]
-#
-# You must run update-initramfs(8) to effect this change.
-#
-# Examples:
-#
-# raid1
-# sd_mod
-#
-# Example: Reboot hypervisor (Linux) to swap host graphics (Intel, AMD, NVIDIA) by use-case (AMD for Win XP, NVIDIA for Win 10).
-# NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
-# NOTE: In terminal, execute \"lspci -nnk\" or review the logfiles.
-\n# Soft dependencies and PCI kernel drivers:\t(NOTE: repeat for each driver)\n# EXAMPLE:\n#\tsoftdep 'DRIVER_NAME' pre: vfio-pci\n#\t'DRIVER_NAME'\n$str_driverName_list_softdep_drivers
-#
-\n# NOTE: Do not change the following lines, unless you know what you are doing!
-vfio
-vfio_iommu_type1
-vfio_virqfd
-#
-\n# GRUB command line and PCI hardware IDs:
-options vfio_pci ids=$str_HWID_list
-vfio_pci ids=$str_HWID_list
-vfio_pci
-#
-# END #")
-
-    for str_line1 in ${arr_file2[@]}; do
-        echo -e $str_line1 >> $str_file2       
-        echo -e $str_line1 >> $str_logFile2
-    done
-
     ## /etc/modules ##
-    declare -a arr_file3=(
-"# NOTE: Generated by 'portellam/VFIO-setup'
-# START #
-#
-# /etc/modules: kernel modules to load at boot time.
-#
-# This file contains the names of kernel modules that should be loaded
-# at boot time, one per line. Lines beginning with \"#\" are ignored.
-#
-# Example: Reboot hypervisor (Linux) to swap host graphics (Intel, AMD, NVIDIA) by use-case (AMD for Win XP, NVIDIA for Win 10).
-# NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
-# NOTE: In terminal, execute \"lspci -nnk\" or review the logfiles.
-#
-\n# NOTE: Do not change the following lines, unless you know what you are doing!
-vfio
-vfio_iommu_type1
-vfio_pci
-vfio_virqfd
-kvm
-kvm_intel
-apm power_off=1
-#
-\n# GRUB kernel parameters:
-vfio_pci ids=$str_HWID_list
-#
-# END #")
+    str_output1="vfio_pci ids=$str_HWID_list"
 
-    for str_line1 in ${arr_file3[@]}; do
-        echo -e $str_line1 >> $str_file3       
-        echo -e $str_line1 >> $str_logFile3
-    done
+    if [[ -e $str_inFile2 ]]; then
+        cp $str_outFile2 $str_oldFile2      # create backup
+        cp $str_inFile2 $str_outFile2       # copy from template
+
+        # write to file #
+        read -r str_line1; do
+            if [[ $str_line1 == '#$str_output1'* ]]; then
+                str_line1=$str_output1
+            fi
+
+            echo -e $str_line1 >> $str_outFile2
+        done < $str_inFile2
+    else
+        bool_missingFiles=true
+        echo -e "$0: File missing: '$str_inFile2'. Skipping."
+    fi
+
+    ## /etc/initramfs-tools/modules ##
+    str_output1=$str_driverName_list_softdep_drivers
+    str_output2="options vfio_pci ids=$str_HWID_list\nvfio_pci ids=$str_HWID_list"
+
+    if [[ -e $str_inFile3 ]]; then
+        cp $str_outFile3 $str_oldFile3      # create backup
+        cp $str_inFile3 $str_outFile3       # copy from template
+
+        # write to file #
+        read -r str_line1; do
+            if [[ $str_line1 == '#$str_output1'* ]]; then
+                str_line1=$str_output1
+            fi
+
+            if [[ $str_line1 == '#$str_output2'* ]]; then
+                str_line1=$str_output2
+            fi
+
+            echo -e $str_line1 >> $str_outFile3
+        done < $str_inFile3
+    else
+        bool_missingFiles=true
+        echo -e "$0: File missing: '$str_inFile3'. Skipping."
+    fi
 
     ## /etc/modprobe.d/pci-blacklist.conf ##
-    echo -e "# NOTE: Generated by 'portellam/VFIO-setup'\n#\n# START #\n# EXAMPLE:\tblacklist 'DRIVER_NAME'\n" >> $str_file4       
-    echo -e "# NOTE: Generated by 'portellam/VFIO-setup'\n#\n# START #\n# EXAMPLE:\n#\tblacklist 'DRIVER_NAME'\n" >> $str_logFile4
+    str_output1=""                          # re-initialize string as blank
 
     for str_thisDriverName in ${arr_driverName_list[@]}; do
-        echo -e "blacklist $str_thisDriverName" >> $str_file4       
-        echo -e "blacklist $str_thisDriverName" >> $str_logFile4
+        str_output1+="blacklist $str_thisDriverName\n"
     done
 
-    echo -e "# END #" >> $str_file4       
-    echo -e "# END #" >> $str_logFile4
+    if [[ -e $str_inFile4 ]]; then
+        cp $str_outFile4 $str_oldFile4      # create backup
+        cp $str_inFile4 $str_outFile4       # copy from template
+
+        # write to file #
+        read -r str_line1; do
+            if [[ $str_line1 == '#$str_output1'* ]]; then
+                str_line1=$str_output1
+            fi
+
+            echo -e $str_line1 >> $str_outFile4
+        done < $str_inFile4
+    else
+        bool_missingFiles=true
+        echo -e "$0: File missing: '$str_inFile4'. Skipping."
+    fi
 
     ## /etc/modprobe.d/vfio.conf ##
-    declare -a arr_file5=(
-"# NOTE: Generated by 'portellam/VFIO-setup'
-# START #
-#
-# NOTE: If you change this file, run 'update-initramfs -u -k all' afterwards to update.
-# NOTE: In terminal, execute \"lspci -nnk\" or review the logfiles.
-\n# Soft dependencies:\t(NOTE: repeat for each driver)\n# EXAMPLE:\n#\tsoftdep 'DRIVER_NAME' pre: vfio-pci\n$str_driverName_list_softdep
-#
-\n# PCI hardware IDs:
-options vfio_pci ids=$str_HWID_list
-# END #")
+    str_output1="$str_driverName_list_softdep"
+    str_output2=""                          # re-initialize string as blank
+    str_output3="vfio_pci ids=$str_HWID_list"
 
-    for str_line1 in ${arr_file5[@]}; do
-        echo -e $str_line1 >> $str_file5       
-        echo -e $str_line1 >> $str_logFile5
+    for str_thisDriverName in ${arr_driverName_list[@]}; do
+        str_output1+="blacklist $str_thisDriverName\n"
     done
 
-    if [[ $bool_isVFIOsetup == true ]]; then
-        echo -e "\n$0: Reboot machine and execute script again to continue."
+    if [[ -e $str_inFile5 ]]; then
+        cp $str_outFile5 $str_oldFile5      # create backup
+        cp $str_inFile5 $str_outFile5       # copy from template
+
+        # write to file #
+        read -r str_line1; do
+            if [[ $str_line1 == '#$str_output1'* ]]; then
+                str_line1=$str_output1
+            fi
+
+            if [[ $str_line1 == '#$str_output2'* ]]; then
+                str_line1=$str_output2
+            fi
+
+            if [[ $str_line1 == '#$str_output3'* ]]; then
+                str_line1=$str_output3
+            fi
+
+            echo -e $str_line1 >> $str_outFile5
+        done < $str_inFile5
+    else
+        bool_missingFiles=true
+        echo -e "$0: File missing: '$str_inFile5'. Skipping."
     fi
 }
 
@@ -723,19 +690,16 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
     case $str_input1 in
         "M")
             echo -e "$0: Executing Multi-Boot setup...\n"
-            StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
-            MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
+            StaticSetup #$str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
+            MultiBootSetup #$str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             break;;
-
         "S")
             echo -e "$0: Executing Static setup...\n"
-            StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
+            StaticSetup #$str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             break;;
-
         "N")
             echo -e "$0: Skipping."
             exit 0;;
-
         *)
             echo -en "$0: Invalid input.";;
     esac
@@ -743,12 +707,23 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
     ((int_count++))     # increment counter
 done
 
-if [[ $bool_isVFIOsetup == true ]]; then
+# warn user to delete existing setup and reboot to continue #
+if [[ $bool_isVFIOsetup == true && $bool_missingFiles == false ]]; then
     echo -e "$0: Existing VFIO setup installation detected. Execute `find . -name *uninstall.bash*` and reboot system, to continue."
-else
+fi
+
+# notify setup is complete #
+if [[ $bool_isVFIOsetup == false && $bool_missingFiles == false ]]
     sudo update-grub                    # update GRUB
     sudo update-initramfs -u -k all     # update INITRAMFS
-    echo -e "\n$0: Review changes:\n\t'$str_file1'\n\t'$str_file2'\n\t'$str_file3'\n\t'$str_file4'\n\t'$str_file5'"
+    echo -e "\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'"
 fi
+
+# warn user of missing files #
+if [[ $bool_missingFiles == true ]]; then
+    echo -e "$0: Files missing. Setup installation is incomplete. Clone or re-download 'portellam/VFIO-setup' to continue."
+
+fi
+
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 exit 0
