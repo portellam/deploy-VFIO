@@ -1,0 +1,43 @@
+files dir
+-templates
+-output files
+
+backups dir
+-backup system files here
+-or in same dir as original
+
+uninstallers
+-restore backups if available
+-otherwise copy templates over
+
+libvirt hooks
+-create hook to dynamically set cpu isolation
+-or ask user to set isolation manually in GRUB
+-for this task, find best cpu pin layout
+-for this task, run before vfio-setup and append to GRUB logfile for output (like hugepages)
+
+redo filenames
+preserve numerical orders for functions
+reduce redundancies
+
+review ArchWiki
+    -there likely exists parsing functions that achieve what I do, but better and with more low-level commands (nice)
+    -ex: parse sort and list pci dev's by IOMMU group
+
+review r/VFIO
+    -tips tricks and other user improvements
+
+auto VM deployment
+-reference cpu isolation/optimal cpu pin layout
+
+audio reverse passthrough (speaker no mic), Scream or Jack+PulseWire (?)
+Looking Glass
+
+setup Auto-Xorg, perhaps update
+
+issue:      virt-manager GUI does not support wakeup suspended domains (sleeping VMs)
+solution:   system service that will detect asleep VMs, and activate them only after host wakeup
+another:    create GUI app that pops up around 2 sec after host wake and user relogin
+
+vfio setup multi-boot
+-find system files and output to them!

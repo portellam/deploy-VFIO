@@ -308,10 +308,10 @@ function StaticSetup {
     # debug logfiles #
     str_logFile0=`find . -name *hugepages*log*`
     str_logFile1=$(pwd)"/grub.log"
-    str_logFile2=$(pwd)"/initramfs-modules.log"
-    str_logFile3=$(pwd)"/modules.log"
-    str_logFile4=$(pwd)"/pci-blacklists.conf.log"
-    str_logFile5=$(pwd)"/vfio.conf.log"
+    #str_logFile2=$(pwd)"/initramfs-modules.log"
+    #str_logFile3=$(pwd)"/modules.log"
+    #str_logFile4=$(pwd)"/pci-blacklists.conf.log"
+    #str_logFile5=$(pwd)"/vfio.conf.log"
     str_logFile6=$(pwd)"/grub-menus.log"
 
     # backup system files #

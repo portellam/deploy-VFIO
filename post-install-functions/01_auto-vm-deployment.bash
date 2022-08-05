@@ -39,7 +39,7 @@ declare -a arr_XML=()
 declare -i int_hostSocket=`echo $(lscpu | grep -Ei "socket" | grep -iv "core" | cut -d ':' -f2)`
 declare -i int_hostCore=`echo $(lscpu | grep -Ei "core" | grep -Eiv "name|thread" | cut -d ':' -f2)`
 declare -i int_hostThread=`echo $(lscpu | grep -Ei "thread" | cut -d ':' -f2)`
-declare -i int_vThreadSum=$(( int_vThread * int_hostThread - 1))
+
 declare -i int_vOffset=0
 
 str_dir1="/etc/libvirt/qemu"
@@ -49,7 +49,6 @@ declare -a arr_lspci=(`lspci -k | grep -Eiv 'DeviceName|Subsystem|modules'`)    
 declare -a arr_lspci_busID=(`lspci -m | cut -d '"' -f 1`)                               # Bus ID, sorted        (ex '01:00.0') 
 declare -a arr_lspci_HWID=(`lspci -n | cut -d ' ' -f 3`)                                # HW ID, sorted         (ex '10de:1b81')
 declare -a arr_lspci_type=(`lspci -m | cut -d '"' -f 2 | tr '[:lower:]' '[:upper:]'`)   # dev type, sorted      (ex 'VGA', 'GRAPHICS')
-
 declare -a arr_lspci_driverName=()
 declare -a arr_lspci_IOMMUID=()                                                         # strings of index(es) of every Bus ID and entry, sorted by IOMMU ID
 declare -a arr_evdev=()
@@ -80,11 +79,14 @@ else if [[ $int_hostCore == 2 ]]; then
 fi
 #
 
+declare -i int_vThread=$int_vCore*$int_hostThread
+declare -i int_vThreadSum=$(( int_vThread * int_hostThread - 1))
+
 echo $int_vCore
 
 exit 0
 
-declare -i int_vThread=$int_vCore*$int_hostThread
+
 
 # set vcpu placement as such #
 # save first two cores to host

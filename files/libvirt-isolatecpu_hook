@@ -1,0 +1,64 @@
+#!/bin/sh
+
+exit 0
+
+# WARNING: untested! NOT FINISHED
+# criteria: allocate at first active domain, release after last domain stops.
+
+# DESCRIPTION: allocate and release CPU threads given prescence of an active domain.
+# NOTE: adds functionality to 'libvirt-nosleep'
+
+# parameters #
+OBJECT="$1"
+OPERATION="$2"
+SUBOPERATION="$3"
+EXTRA_ARG="$4"
+#declare -i INT_NUM_SOCKET=`echo $(lscpu | grep -i 'socket' | grep -iv 'core' | cut -d ':' -f2)`
+declare -i INT_CORE_SUM=`cat /proc/cpuinfo | grep 'cpu cores' | uniq`
+declare -i INT_THREAD_SUM=`cat /proc/cpuinfo | grep 'processor'`
+declare -i INT_THREAD_LAST_ID=$(( $INT_THREAD_SUM - 1 ))
+declare -i INT_THREAD_MULT=$(( $INT_THREAD_SUM / $INT_CORE_SUM ))
+declare -i INT_CORE_FREE=1
+
+# assume max. 2 cores free to host 
+if [[ $INT_CORE_SUM -ge 4 ]]; then
+    INT_CORE_FREE=2
+
+# dual-core
+else if [[ $INT_CORE_SUM -ge 2 ]]; then
+    INT_CORE_FREE=1
+
+# single-core
+else if [[ $INT_CORE_SUM == 1 ]]; then
+    INT_CORE_FREE=$INT_CORE_SUM
+fi
+
+# NOTE: allocate by core ID, not thread, for best performance. #
+for (( INT_CORE_ID=0 ; INT_CORE_ID<$INT_CORE_FREE ; INT_CORE_ID++ )); do
+    for (( INT_SMT_ID=0 ; INT_SMT_ID<$INT_THREAD_MULT ; INT_SMT_ID++ )); do
+        INT_THREAD_ID=$(( $INT_CORE_ID + ( $INT_CORE_SUM * $INT_SMT_ID ))
+        STR_ALLOC_THREADS+="$INT_THREAD_ID,"
+    done
+done
+
+# remove last separator #
+if [[ ${STR_ALLOC_THREADS: -1} == "," ]]; then
+    STR_ALLOC_THREADS=${STR_ALLOC_THREADS::-1}
+fi
+
+case "$OPERATION" in
+        # allocate given threads at VM start #
+        "prepare")
+                #systemctl start libvirt-nosleep@"$OBJECT"
+                systemctl set-property --runtime -- user.slice AllowedCPUs=$STR_ALLOC_THREADS
+                systemctl set-property --runtime -- system.slice AllowedCPUs=$STR_ALLOC_THREADS
+                systemctl set-property --runtime -- init.scope AllowedCPUs=$STR_ALLOC_THREADS
+                ;;
+        # release all threads after all VMs stopped #
+        "release")
+                #systemctl stop libvirt-nosleep@"$OBJECT"
+                systemctl set-property --runtime -- user.slice AllowedCPUs=0-$INT_THREAD_LAST_ID
+                systemctl set-property --runtime -- system.slice AllowedCPUs=0-$INT_THREAD_LAST_ID
+                systemctl set-property --runtime -- init.scope AllowedCPUs=0-$INT_THREAD_LAST_ID
+                ;;
+esac
