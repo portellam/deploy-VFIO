@@ -1,0 +1,24 @@
+#$str_output1       # Do not change this placeholder
+  load_video
+  insmod gzio
+  if [ x\$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+
+  insmod part_gpt
+  # set root fstype #
+  #   insmod ext2
+  #$str_output2       # Do not change this placeholder
+
+  # set root by UUID #
+  # Run 'df /' and 'blkid'
+  #    set root='/dev/disk/by-uuid/*'
+  #$str_output3       # Do not change this placeholder
+
+  if [ x$feature_platform_search_hint = xy ]; then
+	  #$str_output4       # Do not change this placeholder
+	fi
+  
+  #$str_output5       # Do not change this placeholder
+  #$str_output6       # Do not change this placeholder
+  echo    'Loading initial ramdisk ...'
+  #$str_output7       # Do not change this placeholder
+}

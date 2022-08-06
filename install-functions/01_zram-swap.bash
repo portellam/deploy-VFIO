@@ -29,8 +29,8 @@ str_outFile2="/etc/default/zram-swap"
 str_inFile2=`find . -name *etc_default_zram-swap*`
 
 # system file backups #
-str_oldFile1=$str_outFile1"_old"
-str_oldFile2=$str_outFile2"_old"
+str_oldFile1=$str_outFile1".old"
+str_oldFile2=$str_outFile2".old"
 
 # debug logfiles #
 str_logFile0=`find . -name *hugepages*log*`
@@ -135,8 +135,9 @@ fi
 str_output1="_zram_fraction=\"1/2\""
 
 if [[ -e $str_inFile2 ]]; then
-    cp $str_outFile2 $str_oldFile      # create backup
-    cp $str_inFile2 $str_outFile2       # copy from template
+    if [[ -e $str_outFile2 ]]; then
+        mv $str_outFile2 $str_oldFile2      # create backup
+    fi
 
     # write to file #
     while read -r str_line1; do

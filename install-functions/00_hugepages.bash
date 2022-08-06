@@ -25,10 +25,10 @@ int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k
 str_outFile1="/etc/libvirt/qemu.conf"
 
 # input files #
-str_inFile1=`find . -name *etc_libvirt_qemu.conf*`
+str_inFile1=`find . -name *etc_libvirt_qemu.conf`
 
 # system file backups #
-str_oldFile1=$str_outFile1"_old"
+str_oldFile1=$str_outFile1".old"
 
 # debug logfiles #
 str_logFile1=$(pwd)'/'$0'.log'
@@ -70,6 +70,8 @@ done
 declare -i int_count=0      # reset counter
 
 while true; do
+
+    echo "int_count == $int_count"
 
     # attempt #
     if [[ $int_count -ge 3 ]]; then
@@ -127,12 +129,13 @@ hugepages=$int_HugePageNum
             str_output1+="blacklist $str_thisDriverName\n"
         done
 
-            if [[ -e $str_inFile1 ]]; then
-                cp $str_outFile1 $str_oldFile2      # create backup
-                cp $str_inFile1 $str_outFile1       # copy from template
+        if [[ -e $str_inFile1 ]]; then
+            if [[ -e $str_outFile1 ]]; then
+                mv $str_outFile1 $str_oldFile1      # create backup
+            fi
 
-                # write to file #
-                while read -r str_line1; do
+            # write to file #
+            while read -r str_line1; do
                 if [[ $str_line1 == '#$str_output1'* ]]; then
                     str_line1=$str_output1
                 fi

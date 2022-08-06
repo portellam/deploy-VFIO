@@ -205,27 +205,28 @@ function ReadInput {
 function MultiBootSetup {
 
     ## parameters ##
-    str_Distribution=`lsb_release -i`   # Linux distro name
-    declare -i int_Distribution=${#str_Distribution}-16
-    str_Distribution=${str_Distribution:16:int_Distribution}
-    declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2`)                                # list of Kernels
+    str_rootDistro=`lsb_release -i -s`                                              # Linux distro name
+    #declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2`)             # all kernels
+    str_rootKernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`       # latest kernel
+    str_rootDisk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
+    str_rootUUID=`blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2`
+    str_rootFSTYPE=`blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2`
 
-    # root Dev #
-    str_rootDiskInfo=`df -hT | grep /$`
-    #str_rootDev=${str_rootDiskInfo:5:4}                # example: "sda1"
-    str_rootDev=${str_rootDiskInfo:0:9}                 # example: "/dev/sda1"
-    str_rootUUID=`sudo lsblk -n $str_rootDev -o UUID`
+    # input files #
+    str_inFile7=`find . -name *etc_grub.d_proxifiedScripts_custom`
+    str_inFile7b=`find . -name *custom_grub_template`
 
-    # custom GRUB #
-    #str_outFile6="/etc/grub.d/proxifiedScripts/custom"
-    #str_outFile6="/etc/grub.d/40_custom"
-    #echo -e "#!/bin/sh\nexec tail -n +3 \$0\n# This file provides an easy way to add custom menu entries. Simply type the\n# menu entries you want to add after this comment. Be careful not to change\n# the 'exec tail' line above." > $str_outFile6
-    #
+    # system files #
+    str_outFile7="/etc/grub.d/proxifiedScripts/custom"
+
+    # system file backups #
+    str_oldFile7=$str_oldFile7".old"
+    str_oldFile8=$str_oldFile8".old"
 
     # parse IOMMU IDs #
     declare -i int_i=0      # reset counter
 
-    while [[ $int_i -le $int_compgen_IOMMUID_lastIndex ]]; do
+    while [[ $int_i -le $int_compgen_IOMMUID_lastIndex && $bool_missingFiles == false ]]; do
 
         # find boot VGA device name #
         for (( int_j=0 ; int_j<${#arr_lspci_IOMMUID[@]} ; int_j++ )); do
@@ -246,44 +247,65 @@ function MultiBootSetup {
             str_thisVGA_deviceName=`lspci -m | grep -Ei "graphics|VGA" | head -n1 | cut -d '"' -f6`
         fi
 
-        # create GRUB menu entry #
-        for str_rootKernel in ${arr_rootKernel[@]}; do
-            str_rootKernel=${str_rootKernel:1:100}                                                                                  # set Kernel (arbitrary length)
-            str_GRUBMenuTitle="$str_Distribution `uname -o`, with `uname` $str_rootKernel (VGA: $str_thisVGA_deviceName)'"     # GRUB Menu Title
+        ## /etc/grub.d/proxifiedScripts/custom ##
+        str_GRUBtitle="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO, VGA: $str_thisVGA_deviceName)" 
+        str_output1="menuentry \"$str_GRUBtitle\"{"
+        str_output2="insmod $str_rootFSTYPE"
+        str_output3="set root='/dev/disk/by-uuid/$str_rootUUID'"
+        str_output4="search --no-floppy --fs-uuid --set=root $str_rootUUID"
+        str_output5="echo    'Loading Linux $str_rootKernel ...'"
+        str_output6="linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_MULTIBOOT"
+        str_output7="initrd  /boot/initrd.img-$str_rootKernel"
 
-            # GRUB custom menu #
-            declare -a arr_file_customGRUB=(
-"menuentry '$str_GRUBMenuTitle' {
-    load_video
-    insmod gzio
-    if [ x\$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
-	insmod part_gpt
-	insmod ext2
-    set root='hd2,gpt4'
-    set root='/dev/disk/by-uuid/$str_rootUUID'
-    if [ x$feature_platform_search_hint = xy ]; then
-	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  $str_rootUUID
-	else
-	  search --no-floppy --fs-uuid --set=root $str_rootUUID
-	fi
-    echo    'Loading Linux $str_rootKernel ...'
-    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID ro $str_GRUB_MULTIBOOT
-    echo    'Loading initial ramdisk ...'
-    initrd  /boot/initrd.img-$str_rootKernel
-\n
-\n")
-        done
+        if [[ -e $str_inFile7 && -e $str_inFile7b ]]; then
+            if [[ -e $str_outFile7 ]]; then
+                mv $str_outFile7 $str_oldFile7      # create backup
+            fi
 
-        # output to file #
-        for str_line1 in ${arr_file_customGRUB[@]}; do
-            echo -e $str_line1 >> $str_logFile6         # NOTE: fix! add output to a system file!
-        done
+            cp $str_inFile7 $str_outFile7           # copy over blank
+
+            # write to file #
+            while read -r str_line1; do
+                if [[ $str_line1 == '#$str_output1'* ]]; then
+                    str_line1=$str_output1
+                fi
+
+                if [[ $str_line1 == '#$str_output2'* ]]; then
+                    str_line1=$str_output2
+                fi
+
+                if [[ $str_line1 == '#$str_output3'* ]]; then
+                    str_line1=$str_output3
+                fi
+
+                if [[ $str_line1 == '#$str_output4'* ]]; then
+                    str_line1=$str_output4
+                fi
+
+                if [[ $str_line1 == '#$str_output5'* ]]; then
+                    str_line1=$str_output5
+                fi
+
+                if [[ $str_line1 == '#$str_output6'* ]]; then
+                    str_line1=$str_output6
+                fi
+
+                if [[ $str_line1 == '#$str_output7'* ]]; then
+                    str_line1=$str_output7
+                fi
+
+                echo -e $str_line1 >> $str_outFile7
+            done < $str_inFile7b    # read from template
+        else
+            bool_missingFiles=true
+            echo -e "$0: File missing: '$str_inFile7'. Skipping."
+        fi
 
         ((int_i++))                     # increment counter
         str_thisVGA_deviceName=""       # reset string
     done
 
-    echo -e "$0: DISCLAIMER: Automated GRUB menu entry feature not available yet.\n$0: Manual 'Multi-Boot' setup steps:\n\t1. Execute GRUB Customizer\n\t2. Clone an existing, valid menu entry\n\t3. Copy the fields in the logfile:\n\t\t'$str_logFile6'\n\t4. Paste the output into a new menu entry, where appropriate.\n"
+    #echo -e "$0: DISCLAIMER: Automated GRUB menu entry feature not available yet.\n$0: Manual 'Multi-Boot' setup steps:\n\t1. Execute GRUB Customizer\n\t2. Clone an existing, valid menu entry\n\t3. Copy the fields in the logfile:\n\t\t'$str_logFile6'\n\t4. Paste the output into a new menu entry, where appropriate.\n"
 }
 
 function StaticSetup {
@@ -292,24 +314,33 @@ function StaticSetup {
     declare -a arr_driverName_list
 
     # system files #
-    str_outFile1="/etc/default/grub"
-    str_outFile2="/etc/initramfs-tools/modules"
-    str_outFile3="/etc/modules"
-    str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
-    str_outFile5="/etc/modprobe.d/vfio.conf"
+    #str_outFile1="/etc/default/grub"
+    #str_outFile2="/etc/modules"
+    #str_outFile3="/etc/initramfs-tools/modules"
+    #str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
+    #str_outFile5="/etc/modprobe.d/vfio.conf"
 
     # input files #
-    str_inFile1=`find . -name *etc_default_grub*`
-    str_inFile2=`find . -name *etc_initramfs-tools_modules*`
-    str_inFile3=`find . -name *etc_modules*`
-    str_inFile4=`find . -name *etc_modprobe.d_pci-blacklists*`
-    str_inFile5=`find . -name *etc_modprobe.d_vfio-pci*`
+    str_inFile1=`find . -name *etc_default_grub`
+    str_inFile2=`find . -name *etc_modules`
+    str_inFile3=`find . -name *etc_initramfs-tools_modules`
+    str_inFile4=`find . -name *etc_modprobe.d_pci-blacklists.conf`
+    str_inFile5=`find . -name *etc_modprobe.d_vfio.conf`
     # none for file6
 
+    # debug
+    str_outFile1=$str_inFile1".old"
+    str_outFile2=$str_inFile2".old"
+    str_outFile3=$str_inFile3".old"
+    str_outFile4=$str_inFile4".old"
+    str_outFile5=$str_inFile5".old"
+
     # system file backups #
-    str_oldFile1=$str_outFile1"_old"
-    str_oldFile2=$str_outFile2"_old"
-    str_oldFile3=$str_outFile3"_old"
+    str_oldFile1=$str_outFile1".old"
+    str_oldFile2=$str_outFile2".old"
+    str_oldFile3=$str_outFile3".old"
+    str_oldFile4=$str_outFile4".old"
+    str_oldFile5=$str_oldFile5".old"
 
     # debug logfiles #
     str_logFile0=`find . -name *hugepages*log*`
@@ -438,12 +469,11 @@ function StaticSetup {
 
         if [[ $bool_hasVFIODriver == true ]]; then                     
             echo -e "$0: WARNING: VFIO driver found."
-            str_input1="N"
+            #str_input1="N"
             bool_isVFIOsetup=true
-            UninstallPrompt $bool_isVFIOsetup
             str_driverName_list=""                  # reset outputs
             str_HWID_list=""                        # reset outputs
-            break
+            #break
         fi
 
         echo
@@ -528,15 +558,15 @@ function StaticSetup {
 
     ## /etc/default/grub ##
     str_GRUB_MULTIBOOT="quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driverName_newList vfio_pci.ids=$str_HWID_list"
-    str_output1="\`lsb_release -i -s 2> /dev/null || echo "`lsb_release -i -s`"\`"
+    str_output1="GRUB_DISTRIBUTOR=\`lsb_release -i -s 2> /dev/null || echo "`lsb_release -i -s`"\`"
     str_output2="GRUB_CMDLINE_LINUX_DEFAULT=\"$str_GRUB_MULTIBOOT\""
 
     if [[ -e $str_inFile1 ]]; then
         if [[ -e $str_outFile1 ]]; then
-            cp $str_outFile1 $str_oldFile1      # create backup
+            mv $str_outFile1 $str_oldFile1      # create backup
         fi
 
-        cp $str_inFile1 $str_outFile1       # copy from template
+        touch $str_outFile1
 
         # write to file #
         while read -r str_line1; do
@@ -560,10 +590,10 @@ function StaticSetup {
 
     if [[ -e $str_inFile2 ]]; then
         if [[ -e $str_outFile2 ]]; then
-            cp $str_outFile2 $str_oldFile2      # create backup
+            mv $str_outFile2 $str_oldFile2      # create backup
         fi
 
-        cp $str_inFile2 $str_outFile2       # copy from template
+        touch $str_outFile2
 
         # write to file #
         while read -r str_line1; do
@@ -580,14 +610,14 @@ function StaticSetup {
 
     ## /etc/initramfs-tools/modules ##
     str_output1=$str_driverName_list_softdep_drivers
-    str_output2="options vfio_pci ids=$str_HWID_list\nvfio_pci ids=$str_HWID_list"
+    str_output2="options vfio_pci ids=$str_HWID_list\nvfio_pci ids=$str_HWID_list\nvfio-pci"
 
     if [[ -e $str_inFile3 ]]; then
         if [[ -e $str_outFile3 ]]; then
-            cp $str_outFile3 $str_oldFile3      # create backup
+            mv $str_outFile3 $str_oldFile3      # create backup
         fi
 
-        cp $str_inFile3 $str_outFile3       # copy from template
+        touch $str_outFile3
 
         # write to file #
         while read -r str_line1; do
@@ -606,7 +636,7 @@ function StaticSetup {
         echo -e "$0: File missing: '$str_inFile3'. Skipping."
     fi
 
-    ## /etc/modprobe.d/pci-blacklist.conf ##
+    ## /etc/modprobe.d/pci-blacklists.conf ##
     str_output1=""                          # re-initialize string as blank
 
     for str_thisDriverName in ${arr_driverName_list[@]}; do
@@ -615,10 +645,10 @@ function StaticSetup {
 
     if [[ -e $str_inFile4 ]]; then
         if [[ -e $str_outFile4 ]]; then
-            cp $str_outFile4 $str_oldFile4      # create backup
+            mv $str_outFile4 $str_oldFile4      # create backup
         fi
 
-        cp $str_inFile4 $str_outFile4       # copy from template
+        touch $str_outFile4
 
         # write to file #
         while read -r str_line1; do
@@ -635,15 +665,14 @@ function StaticSetup {
 
     ## /etc/modprobe.d/vfio.conf ##
     str_output1="$str_driverName_list_softdep"
-    str_output2=""                          # re-initialize string as blank
-    str_output3="vfio_pci ids=$str_HWID_list"
+    str_output2="options vfio_pci ids=$str_HWID_list\nvfio_pci ids=$str_HWID_list"
 
     if [[ -e $str_inFile5 ]]; then
         if [[ -e $str_outFile5 ]]; then
-            cp $str_outFile5 $str_oldFile5      # create backup
+            mv $str_outFile5 $str_oldFile5      # create backup
         fi
 
-        cp $str_inFile5 $str_outFile5       # copy from template
+        touch $str_outFile5
 
         # write to file #
         while read -r str_line1; do
@@ -701,12 +730,12 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
     case $str_input1 in
         "M")
             echo -e "$0: Executing Multi-Boot setup...\n"
-            StaticSetup #$str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
-            MultiBootSetup #$str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
+            StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
+            MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             break;;
         "S")
             echo -e "$0: Executing Static setup...\n"
-            StaticSetup #$str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
+            StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             break;;
         "N")
             echo -e "$0: Skipping."
@@ -734,7 +763,6 @@ fi
 # warn user of missing files #
 if [[ $bool_missingFiles == true ]]; then
     echo -e "$0: Files missing. Setup installation is incomplete. Clone or re-download 'portellam/VFIO-setup' to continue."
-
 fi
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files

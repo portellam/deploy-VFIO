@@ -21,13 +21,12 @@ vfio_iommu_type1
 vfio_virqfd
 
 # Soft dependencies and PCI kernel drivers:     (NOTE: repeat for each driver)
-# EXAMPLE:
-#       softdep 'DRIVER_NAME' pre: vfio-pci
-#       'DRIVER_NAME'
+#   softdep 'DRIVER_NAME' pre: vfio-pci
+#   'DRIVER_NAME'
 #$str_output1       # Do not change this placeholder
 
 # GRUB command line and PCI hardware IDs:
-# options vfio_pci ids=
-# vfio_pci ids=
+#   options vfio_pci ids=
+#   vfio_pci ids=
+#   vfio_pci
 #$str_output2       # Do not change this placeholder
-vfio_pci

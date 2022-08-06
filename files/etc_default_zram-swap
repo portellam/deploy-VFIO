@@ -8,7 +8,7 @@ _zram_algorithm="lz4"
 
 # portion of system ram to use as zram swap (expression: 1/2, 2/3, 0.5, etc)
 # default: 1/2"
-# _zram_fraction="1/2"
+#   _zram_fraction="1/2"
 #$str_output1       # Do not change this placeholder
 
 # setting _zram_swap_debugging to any non-zero value enables debugging

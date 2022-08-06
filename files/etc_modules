@@ -20,5 +20,5 @@ kvm_intel
 apm power_off=1
 
 # PCI hardware IDs:
-# vfio_pci ids=
+#   vfio_pci ids=
 #$str_output1       # Do not change this placeholder
