@@ -62,7 +62,7 @@ declare -a arr_VGA_deviceName       # first VGA device's name of each IOMMU grou
 declare -a arr_VGA_IOMMUID          # IOMMU groups with VGA devices
 
 # files #
-str_GRUB_MULTIBOOT=""
+str_GRUB_CMDLINE=""
 str_GRUB_STATIC=""
 
 ## find and sort drivers by Bus ID (lspci) ##
@@ -204,24 +204,29 @@ function ReadInput {
 
 function MultiBootSetup {
 
+    echo -e "$0: Executing Multi-boot setup..."
+
     ## parameters ##
-    str_rootDistro=`lsb_release -i -s`                                              # Linux distro name
+    str_root_Distro=`lsb_release -i -s`                                              # Linux distro name
     #declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2`)             # all kernels
-    str_rootKernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`       # latest kernel
-    str_rootDisk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
-    str_rootUUID=`blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2`
-    str_rootFSTYPE=`blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2`
+    str_root_Kernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`       # latest kernel
+    str_root_Disk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
+    str_root_UUID=`blkid -s TYPE | grep $str_root_Disk | cut -d '"' -f2`
+    str_root_FSTYPE=`blkid -s TYPE | grep $str_root_Disk | cut -d '"' -f2`
 
     # input files #
     str_inFile7=`find . -name *etc_grub.d_proxifiedScripts_custom`
     str_inFile7b=`find . -name *custom_grub_template`
 
     # system files #
-    str_outFile7="/etc/grub.d/proxifiedScripts/custom"
+    #str_outFile7="/etc/grub.d/proxifiedScripts/custom"
+
+    # debug system files #
+    str_outFile7=$str_inFile7".old"
 
     # system file backups #
-    str_oldFile7=$str_oldFile7".old"
-    str_oldFile8=$str_oldFile8".old"
+    str_oldFile7=$str_outFile7".old"
+    str_oldFile7b=$str_outFile7b".old"    
 
     # parse IOMMU IDs #
     declare -i int_i=0      # reset counter
@@ -248,14 +253,14 @@ function MultiBootSetup {
         fi
 
         ## /etc/grub.d/proxifiedScripts/custom ##
-        str_GRUBtitle="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO, VGA: $str_thisVGA_deviceName)" 
-        str_output1="menuentry \"$str_GRUBtitle\"{"
-        str_output2="insmod $str_rootFSTYPE"
-        str_output3="set root='/dev/disk/by-uuid/$str_rootUUID'"
-        str_output4="search --no-floppy --fs-uuid --set=root $str_rootUUID"
-        str_output5="echo    'Loading Linux $str_rootKernel ...'"
-        str_output6="linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_MULTIBOOT"
-        str_output7="initrd  /boot/initrd.img-$str_rootKernel"
+        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_root_Kernel (VFIO, VGA: $str_thisVGA_deviceName)" 
+        str_output1="menuentry \"$str_GRUB_title\"{"
+        str_output2="insmod $str_root_FSTYPE"
+        str_output3="set root='/dev/disk/by-uuid/$str_root_UUID'"
+        str_output4="search --no-floppy --fs-uuid --set=root $str_root_UUID"
+        str_output5="echo    'Loading Linux $str_root_Kernel ...'"
+        str_output6="linux   /boot/vmlinuz-$str_root_Kernel root=UUID=$str_root_UUID $str_GRUB_CMDLINE"
+        str_output7="initrd  /boot/initrd.img-$str_root_Kernel"
 
         if [[ -e $str_inFile7 && -e $str_inFile7b ]]; then
             if [[ -e $str_outFile7 ]]; then
@@ -298,7 +303,22 @@ function MultiBootSetup {
             done < $str_inFile7b    # read from template
         else
             bool_missingFiles=true
-            echo -e "$0: File missing: '$str_inFile7'. Skipping."
+        fi
+
+        if [[ $bool_missingFiles == true ]]; then
+            echo -e "$0: File(s) missing:"
+            
+            if [[ -z $str_inFile7 ]]; then 
+                echo -e "\t'$str_inFile7'"
+            fi
+
+            if [[ -z $str_inFile7b ]]; then 
+                echo -e "\t'$str_inFile7b'"
+            fi
+            
+            echo -e "$0: Executing Multi-boot setup... Failed."
+        else
+            echo -e "$0: Executing Multi-boot setup... Complete."
         fi
 
         ((int_i++))                     # increment counter
@@ -310,15 +330,10 @@ function MultiBootSetup {
 
 function StaticSetup {
     
+    echo -e "$0: Executing Static setup..."
+
     # parameters #
     declare -a arr_driverName_list
-
-    # system files #
-    #str_outFile1="/etc/default/grub"
-    #str_outFile2="/etc/modules"
-    #str_outFile3="/etc/initramfs-tools/modules"
-    #str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
-    #str_outFile5="/etc/modprobe.d/vfio.conf"
 
     # input files #
     str_inFile1=`find . -name *etc_default_grub`
@@ -328,7 +343,14 @@ function StaticSetup {
     str_inFile5=`find . -name *etc_modprobe.d_vfio.conf`
     # none for file6
 
-    # debug
+    # system files #
+    #str_outFile1="/etc/default/grub"
+    #str_outFile2="/etc/modules"
+    #str_outFile3="/etc/initramfs-tools/modules"
+    #str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
+    #str_outFile5="/etc/modprobe.d/vfio.conf"
+
+    # debug system files #
     str_outFile1=$str_inFile1".old"
     str_outFile2=$str_inFile2".old"
     str_outFile3=$str_inFile3".old"
@@ -342,7 +364,7 @@ function StaticSetup {
     str_oldFile4=$str_outFile4".old"
     str_oldFile5=$str_oldFile5".old"
 
-    # debug logfiles #
+    # logfiles #
     str_logFile0=`find . -name *hugepages*log*`
     str_logFile1=$(pwd)"/grub.log"
     # none for file2-file5
@@ -557,9 +579,9 @@ function StaticSetup {
     done
 
     ## /etc/default/grub ##
-    str_GRUB_MULTIBOOT="quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driverName_newList vfio_pci.ids=$str_HWID_list"
+    str_GRUB_CMDLINE="quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driverName_newList vfio_pci.ids=$str_HWID_list"
     str_output1="GRUB_DISTRIBUTOR=\`lsb_release -i -s 2> /dev/null || echo "`lsb_release -i -s`"\`"
-    str_output2="GRUB_CMDLINE_LINUX_DEFAULT=\"$str_GRUB_MULTIBOOT\""
+    str_output2="GRUB_CMDLINE_LINUX_DEFAULT=\"$str_GRUB_CMDLINE\""
 
     if [[ -e $str_inFile1 ]]; then
         if [[ -e $str_outFile1 ]]; then
@@ -582,7 +604,6 @@ function StaticSetup {
         done < $str_inFile1
     else
         bool_missingFiles=true
-        echo -e "$0: File missing: '$str_inFile1'. Skipping."
     fi
     
     ## /etc/modules ##
@@ -605,7 +626,6 @@ function StaticSetup {
         done < $str_inFile2
     else
         bool_missingFiles=true
-        echo -e "$0: File missing: '$str_inFile2'. Skipping."
     fi
 
     ## /etc/initramfs-tools/modules ##
@@ -633,7 +653,6 @@ function StaticSetup {
         done < $str_inFile3
     else
         bool_missingFiles=true
-        echo -e "$0: File missing: '$str_inFile3'. Skipping."
     fi
 
     ## /etc/modprobe.d/pci-blacklists.conf ##
@@ -660,7 +679,6 @@ function StaticSetup {
         done < $str_inFile4
     else
         bool_missingFiles=true
-        echo -e "$0: File missing: '$str_inFile4'. Skipping."
     fi
 
     ## /etc/modprobe.d/vfio.conf ##
@@ -692,8 +710,37 @@ function StaticSetup {
         done < $str_inFile5
     else
         bool_missingFiles=true
-        echo -e "$0: File missing: '$str_inFile5'. Skipping."
     fi
+
+    if [[ $bool_missingFiles == true ]]; then
+            bool_missingFiles=true
+            echo -e "$0: File(s) missing:"
+            
+            if [[ -z $str_inFile1 ]]; then 
+                echo -e "\t'$str_inFile1'"
+            fi
+
+            if [[ -z $str_inFile2 ]]; then 
+                echo -e "\t'$str_inFile2'"
+            fi
+            
+            if [[ -z $str_inFile3 ]]; then 
+                echo -e "\t'$str_inFile3'"
+            fi
+
+            if [[ -z $str_inFile4 ]]; then 
+                echo -e "\t'$str_inFile4'"
+            fi
+
+            if [[ -z $str_inFile5 ]]; then 
+                echo -e "\t'$str_inFile5'"
+            fi
+
+            echo -e "$0: Executing Static setup... Failed."
+        else
+            echo -e "$0: Executing Static setup... Complete."
+        fi
+
 }
 
 # check for hugepages logfile #
@@ -729,12 +776,10 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
 
     case $str_input1 in
         "M")
-            echo -e "$0: Executing Multi-Boot setup...\n"
             StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             break;;
         "S")
-            echo -e "$0: Executing Static setup...\n"
             StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             break;;
         "N")
