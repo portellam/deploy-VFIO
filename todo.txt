@@ -41,3 +41,7 @@ another:    create GUI app that pops up around 2 sec after host wake and user re
 
 vfio setup multi-boot
 -find system files and output to them!
+
+
+-install-functions/
+    -set cpu pins static or dynamically

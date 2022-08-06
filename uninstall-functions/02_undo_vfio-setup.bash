@@ -11,45 +11,32 @@ SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
 # input files #
-    str_inFile1=`find . -name *etc_default_grub`
-    str_inFile2=`find . -name *etc_modules`
-    str_inFile3=`find . -name *etc_initramfs-tools_modules`
-    str_inFile4=`find . -name *etc_modprobe.d_pci-blacklists.conf`
-    str_inFile5=`find . -name *etc_modprobe.d_vfio.conf`
-    # none for file6
-
-    # system files #
-    #str_outFile1="/etc/default/grub"
-    #str_outFile2="/etc/modules"
-    #str_outFile3="/etc/initramfs-tools/modules"
-    #str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
-    #str_outFile5="/etc/modprobe.d/vfio.conf"
-
-    # debug system files #
-    str_outFile1=$str_inFile1".old"
-    str_outFile2=$str_inFile2".old"
-    str_outFile3=$str_inFile3".old"
-    str_outFile4=$str_inFile4".old"
-    str_outFile5=$str_inFile5".old"
-
-    # system file backups #
-    str_oldFile1=$str_outFile1".old"
-    str_oldFile2=$str_outFile2".old"
-    str_oldFile3=$str_outFile3".old"
-    str_oldFile4=$str_outFile4".old"
-    str_oldFile5=$str_oldFile5".old"
+str_inFile1=`find . -name *etc_default_grub`
+str_inFile2=`find . -name *etc_modules`
+str_inFile3=`find . -name *etc_initramfs-tools_modules`
+str_inFile4=`find . -name *etc_modprobe.d_pci-blacklists.conf`
+str_inFile5=`find . -name *etc_modprobe.d_vfio.conf`
 
 # system files #
-str_outFile1="/etc/default/grub"
-str_outFile2="/etc/initramfs-tools/modules"
-str_outFile3="/etc/modules"
-str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
-str_outFile5="/etc/modprobe.d/vfio.conf"
+#str_outFile1="/etc/default/grub"
+#str_outFile2="/etc/initramfs-tools/modules"
+#str_outFile3="/etc/modules"
+#str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
+#str_outFile5="/etc/modprobe.d/vfio.conf"
+
+# debug system files #
+str_outFile1=$str_inFile1".old"
+str_outFile2=$str_inFile2".old"
+str_outFile3=$str_inFile3".old"
+str_outFile4=$str_inFile4".old"
+str_outFile5=$str_inFile5".old"
 
 # system file backups #
-str_oldFile1=$(pwd)"/etc_default_grub.old"
-str_oldFile2=$(pwd)"/etc_initramfs-tools_modules.old"
-str_oldFile3=$(pwd)"/etc_modules"
+str_oldFile1=$str_outFile1".old"
+str_oldFile2=$str_outFile2".old"
+str_oldFile3=$str_outFile3".old"
+str_oldFile4=$str_outFile4".old"
+str_oldFile5=$str_oldFile5".old"
 
 # debug logfiles #
 str_logFile0=`find . -name *hugepages*log*`
@@ -59,6 +46,20 @@ str_logFile3=`find . -name etc_modules.log`
 str_logFile4=`find . -name etc_modprobe.d_pci-blacklists.conf.log`
 str_logFile5=`find . -name etc_modprobe.d_vfio.conf.log`
 str_logFile6=`find . -name grub-menu.log`
+
+# input files #
+    str_inFile7=`find . -name *etc_grub.d_proxifiedScripts_custom`
+    str_inFile7b=`find . -name *custom_grub_template`
+
+    # system files #
+    #str_outFile7="/etc/grub.d/proxifiedScripts/custom"
+
+    # debug system files #
+    str_outFile7=$str_inFile7".old"
+
+    # system file backups #
+    str_oldFile7=$str_outFile7".old"
+
 
 # prompt #
 echo -en "$0: Uninstalling VFIO setup... "
