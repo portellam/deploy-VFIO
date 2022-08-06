@@ -80,7 +80,7 @@ else
         cp $str_inFile1 $str_outFile1       # copy from template
 
         # write to file #
-        read -r str_line1; do
+        while read -r str_line1; do
             if [[ $str_line1 == '#$str_output1'* ]]; then
             str_line1=$str_output1
             fi

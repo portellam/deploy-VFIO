@@ -139,7 +139,7 @@ if [[ -e $str_inFile2 ]]; then
     cp $str_inFile2 $str_outFile2       # copy from template
 
     # write to file #
-    read -r str_line1; do
+    while read -r str_line1; do
         if [[ $str_line1 == '#$str_output1'* ]]; then
             str_line1=$str_output1
         fi
@@ -151,7 +151,7 @@ else
     echo -e "$0: File missing: '$str_inFile2'. Skipping."
 fi
 
-IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 echo -e "$0: Executing ZRAM-swap setup... Complete.\n"
 echo -e "$0: Review changes:\n\t'$str_outFile2'"
+IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 exit 0

@@ -283,7 +283,7 @@ function MultiBootSetup {
         str_thisVGA_deviceName=""       # reset string
     done
 
-    echo -e "$0: DISCLAIMER: Automated GRUB menu entry feature not available yet.\n$0: Manual 'Multi-Boot' setup steps:\n\t1. Execute GRUB Customizer\n\t2. Clone an existing, valid menu entry\n\t3. Copy the fields in the logfile '$str_GRUB_logfile'\n\t4. Paste the output into a new menu entry, where appropriate.\n"
+    echo -e "$0: DISCLAIMER: Automated GRUB menu entry feature not available yet.\n$0: Manual 'Multi-Boot' setup steps:\n\t1. Execute GRUB Customizer\n\t2. Clone an existing, valid menu entry\n\t3. Copy the fields in the logfile:\n\t\t'$str_logFile6'\n\t4. Paste the output into a new menu entry, where appropriate.\n"
 }
 
 function StaticSetup {
@@ -299,7 +299,7 @@ function StaticSetup {
     str_outFile5="/etc/modprobe.d/vfio.conf"
 
     # input files #
-    # none for file1
+    str_inFile1=`find . -name *etc_default_grub*`
     str_inFile2=`find . -name *etc_initramfs-tools_modules*`
     str_inFile3=`find . -name *etc_modules*`
     str_inFile4=`find . -name *etc_modprobe.d_pci-blacklists*`
@@ -528,39 +528,45 @@ function StaticSetup {
 
     ## /etc/default/grub ##
     str_GRUB_MULTIBOOT="quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driverName_newList vfio_pci.ids=$str_HWID_list"
-    str_GRUB_STATIC="GRUB_CMDLINE_LINUX_DEFAULT=\"$str_GRUB_MULTIBOOT\""
+    str_output1="\`lsb_release -i -s 2> /dev/null || echo "`lsb_release -i -s`"\`"
+    str_output2="GRUB_CMDLINE_LINUX_DEFAULT=\"$str_GRUB_MULTIBOOT\""
 
-    if [[ -e $str_outFile1 ]]; then
-        mv $str_outFile1 $str_oldFile1
+    if [[ -e $str_inFile1 ]]; then
+        if [[ -e $str_outFile1 ]]; then
+            cp $str_outFile1 $str_oldFile1      # create backup
+        fi
 
-        # find GRUB line and comment out #
+        cp $str_inFile1 $str_outFile1       # copy from template
+
+        # write to file #
         while read -r str_line1; do
-
-            # match line #
-            if [[ $str_line1 == *"GRUB_CMDLINE_LINUX_DEFAULT="* && $str_line1 != "#GRUB_CMDLINE_LINUX_DEFAULT="* ]]; then
-                str_line1="#"$str_line1             # update line
+            if [[ $str_line1 == '#$str_output1'* ]]; then
+                str_line1=$str_output1
             fi
 
-            echo -e $str_line1  >> $str_outFile1       # append to new file
+            if [[ $str_line1 == '#$str_output2'* ]]; then
+                str_line1=$str_output2
+            fi
 
-        done < $str_oldFile1
-
-        # no GRUB line found, append at end #
-        echo -e "\n$str_GRUB_STATIC"  >> $str_outFile1
-        echo $str_GRUB_STATIC > $str_logFile1
-    
-        rm $str_oldFile1
+            echo -e $str_line1 >> $str_outFile1
+        done < $str_inFile1
+    else
+        bool_missingFiles=true
+        echo -e "$0: File missing: '$str_inFile1'. Skipping."
     fi
     
     ## /etc/modules ##
     str_output1="vfio_pci ids=$str_HWID_list"
 
     if [[ -e $str_inFile2 ]]; then
-        cp $str_outFile2 $str_oldFile2      # create backup
+        if [[ -e $str_outFile2 ]]; then
+            cp $str_outFile2 $str_oldFile2      # create backup
+        fi
+
         cp $str_inFile2 $str_outFile2       # copy from template
 
         # write to file #
-        read -r str_line1; do
+        while read -r str_line1; do
             if [[ $str_line1 == '#$str_output1'* ]]; then
                 str_line1=$str_output1
             fi
@@ -577,11 +583,14 @@ function StaticSetup {
     str_output2="options vfio_pci ids=$str_HWID_list\nvfio_pci ids=$str_HWID_list"
 
     if [[ -e $str_inFile3 ]]; then
-        cp $str_outFile3 $str_oldFile3      # create backup
+        if [[ -e $str_outFile3 ]]; then
+            cp $str_outFile3 $str_oldFile3      # create backup
+        fi
+
         cp $str_inFile3 $str_outFile3       # copy from template
 
         # write to file #
-        read -r str_line1; do
+        while read -r str_line1; do
             if [[ $str_line1 == '#$str_output1'* ]]; then
                 str_line1=$str_output1
             fi
@@ -605,11 +614,14 @@ function StaticSetup {
     done
 
     if [[ -e $str_inFile4 ]]; then
-        cp $str_outFile4 $str_oldFile4      # create backup
+        if [[ -e $str_outFile4 ]]; then
+            cp $str_outFile4 $str_oldFile4      # create backup
+        fi
+
         cp $str_inFile4 $str_outFile4       # copy from template
 
         # write to file #
-        read -r str_line1; do
+        while read -r str_line1; do
             if [[ $str_line1 == '#$str_output1'* ]]; then
                 str_line1=$str_output1
             fi
@@ -626,16 +638,15 @@ function StaticSetup {
     str_output2=""                          # re-initialize string as blank
     str_output3="vfio_pci ids=$str_HWID_list"
 
-    for str_thisDriverName in ${arr_driverName_list[@]}; do
-        str_output1+="blacklist $str_thisDriverName\n"
-    done
-
     if [[ -e $str_inFile5 ]]; then
-        cp $str_outFile5 $str_oldFile5      # create backup
+        if [[ -e $str_outFile5 ]]; then
+            cp $str_outFile5 $str_oldFile5      # create backup
+        fi
+
         cp $str_inFile5 $str_outFile5       # copy from template
 
         # write to file #
-        read -r str_line1; do
+        while read -r str_line1; do
             if [[ $str_line1 == '#$str_output1'* ]]; then
                 str_line1=$str_output1
             fi
@@ -699,6 +710,7 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
             break;;
         "N")
             echo -e "$0: Skipping."
+            IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
             exit 0;;
         *)
             echo -en "$0: Invalid input.";;
@@ -713,7 +725,7 @@ if [[ $bool_isVFIOsetup == true && $bool_missingFiles == false ]]; then
 fi
 
 # notify setup is complete #
-if [[ $bool_isVFIOsetup == false && $bool_missingFiles == false ]]
+if [[ $bool_isVFIOsetup == false && $bool_missingFiles == false ]]; then
     sudo update-grub                    # update GRUB
     sudo update-initramfs -u -k all     # update INITRAMFS
     echo -e "\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'"

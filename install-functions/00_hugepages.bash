@@ -132,7 +132,7 @@ hugepages=$int_HugePageNum
                 cp $str_inFile1 $str_outFile1       # copy from template
 
                 # write to file #
-                read -r str_line1; do
+                while read -r str_line1; do
                 if [[ $str_line1 == '#$str_output1'* ]]; then
                     str_line1=$str_output1
                 fi
@@ -156,7 +156,6 @@ hugepages=$int_HugePageNum
     fi
 done
 
-IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 # warn user of missing files #
 if [[ $bool_missingFiles == true ]]; then
     echo -e "$0: Executing Hugepages setup... Failed.\n$0: Files missing. Setup installation is incomplete. Clone or re-download 'portellam/VFIO-setup' to continue."
@@ -165,4 +164,5 @@ else
     systemctl enable libvirtd
     systemctl restart libvirtd
 fi
+IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 exit 0

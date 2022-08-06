@@ -1,0 +1,315 @@
+menuentry 'Debian GNU/Linux, with Linux 5.10.0-9-amd64 (VGA: 2nd Generation Core Processor Family Integrated Graphics Controller)'' {
+    load_video
+    insmod gzio
+    if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/319a5e63-a898-42f2-8de9-48833f55966b'
+    if [ x = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  319a5e63-a898-42f2-8de9-48833f55966b
+	else
+	  search --no-floppy --fs-uuid --set=root 319a5e63-a898-42f2-8de9-48833f55966b
+	fi
+    echo    'Loading Linux 5.10.0-9-amd64 ...'
+    linux   /boot/vmlinuz-5.10.0-9-amd64 root=UUID=319a5e63-a898-42f2-8de9-48833f55966b ro quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist=ath9k vfio_pci.ids=168c:002a
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-5.10.0-9-amd64
+
+
+
+
+menuentry 'Debian GNU/Linux, with Linux 5.10.0-9-amd64 (VGA: 2nd Generation Core Processor Family Integrated Graphics Controller)'' {
+    load_video
+    insmod gzio
+    if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/319a5e63-a898-42f2-8de9-48833f55966b'
+    if [ x = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  319a5e63-a898-42f2-8de9-48833f55966b
+	else
+	  search --no-floppy --fs-uuid --set=root 319a5e63-a898-42f2-8de9-48833f55966b
+	fi
+    echo    'Loading Linux 5.10.0-9-amd64 ...'
+    linux   /boot/vmlinuz-5.10.0-9-amd64 root=UUID=319a5e63-a898-42f2-8de9-48833f55966b ro quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist=ath9k vfio_pci.ids=168c:002a
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-5.10.0-9-amd64
+
+
+
+
+menuentry 'Debian GNU/Linux, with Linux 5.10.0-9-amd64 (VGA: 2nd Generation Core Processor Family Integrated Graphics Controller)'' {
+    load_video
+    insmod gzio
+    if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/319a5e63-a898-42f2-8de9-48833f55966b'
+    if [ x = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  319a5e63-a898-42f2-8de9-48833f55966b
+	else
+	  search --no-floppy --fs-uuid --set=root 319a5e63-a898-42f2-8de9-48833f55966b
+	fi
+    echo    'Loading Linux 5.10.0-9-amd64 ...'
+    linux   /boot/vmlinuz-5.10.0-9-amd64 root=UUID=319a5e63-a898-42f2-8de9-48833f55966b ro quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist=ath9k vfio_pci.ids=168c:002a
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-5.10.0-9-amd64
+
+
+
+
+menuentry 'Debian GNU/Linux, with Linux 5.10.0-9-amd64 (VGA: 2nd Generation Core Processor Family Integrated Graphics Controller)'' {
+    load_video
+    insmod gzio
+    if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/319a5e63-a898-42f2-8de9-48833f55966b'
+    if [ x = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  319a5e63-a898-42f2-8de9-48833f55966b
+	else
+	  search --no-floppy --fs-uuid --set=root 319a5e63-a898-42f2-8de9-48833f55966b
+	fi
+    echo    'Loading Linux 5.10.0-9-amd64 ...'
+    linux   /boot/vmlinuz-5.10.0-9-amd64 root=UUID=319a5e63-a898-42f2-8de9-48833f55966b ro quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist=ath9k vfio_pci.ids=168c:002a
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-5.10.0-9-amd64
+
+
+
+
+menuentry 'Debian GNU/Linux, with Linux 5.10.0-9-amd64 (VGA: 2nd Generation Core Processor Family Integrated Graphics Controller)'' {
+    load_video
+    insmod gzio
+    if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/319a5e63-a898-42f2-8de9-48833f55966b'
+    if [ x = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  319a5e63-a898-42f2-8de9-48833f55966b
+	else
+	  search --no-floppy --fs-uuid --set=root 319a5e63-a898-42f2-8de9-48833f55966b
+	fi
+    echo    'Loading Linux 5.10.0-9-amd64 ...'
+    linux   /boot/vmlinuz-5.10.0-9-amd64 root=UUID=319a5e63-a898-42f2-8de9-48833f55966b ro quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist=ath9k vfio_pci.ids=168c:002a
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-5.10.0-9-amd64
+
+
+
+
+menuentry 'Debian GNU/Linux, with Linux 5.10.0-9-amd64 (VGA: 2nd Generation Core Processor Family Integrated Graphics Controller)'' {
+    load_video
+    insmod gzio
+    if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/319a5e63-a898-42f2-8de9-48833f55966b'
+    if [ x = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  319a5e63-a898-42f2-8de9-48833f55966b
+	else
+	  search --no-floppy --fs-uuid --set=root 319a5e63-a898-42f2-8de9-48833f55966b
+	fi
+    echo    'Loading Linux 5.10.0-9-amd64 ...'
+    linux   /boot/vmlinuz-5.10.0-9-amd64 root=UUID=319a5e63-a898-42f2-8de9-48833f55966b ro quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist=ath9k vfio_pci.ids=168c:002a
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-5.10.0-9-amd64
+
+
+
+
+menuentry 'Debian GNU/Linux, with Linux 5.10.0-9-amd64 (VGA: 2nd Generation Core Processor Family Integrated Graphics Controller)'' {
+    load_video
+    insmod gzio
+    if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/319a5e63-a898-42f2-8de9-48833f55966b'
+    if [ x = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  319a5e63-a898-42f2-8de9-48833f55966b
+	else
+	  search --no-floppy --fs-uuid --set=root 319a5e63-a898-42f2-8de9-48833f55966b
+	fi
+    echo    'Loading Linux 5.10.0-9-amd64 ...'
+    linux   /boot/vmlinuz-5.10.0-9-amd64 root=UUID=319a5e63-a898-42f2-8de9-48833f55966b ro quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist=ath9k vfio_pci.ids=168c:002a
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-5.10.0-9-amd64
+
+
+
+
+menuentry 'Debian GNU/Linux, with Linux 5.10.0-9-amd64 (VGA: 2nd Generation Core Processor Family Integrated Graphics Controller)'' {
+    load_video
+    insmod gzio
+    if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/319a5e63-a898-42f2-8de9-48833f55966b'
+    if [ x = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  319a5e63-a898-42f2-8de9-48833f55966b
+	else
+	  search --no-floppy --fs-uuid --set=root 319a5e63-a898-42f2-8de9-48833f55966b
+	fi
+    echo    'Loading Linux 5.10.0-9-amd64 ...'
+    linux   /boot/vmlinuz-5.10.0-9-amd64 root=UUID=319a5e63-a898-42f2-8de9-48833f55966b ro quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist=ath9k vfio_pci.ids=168c:002a
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-5.10.0-9-amd64
+
+
+
+
+menuentry 'Debian GNU/Linux, with Linux 5.10.0-9-amd64 (VGA: 2nd Generation Core Processor Family Integrated Graphics Controller)'' {
+    load_video
+    insmod gzio
+    if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/319a5e63-a898-42f2-8de9-48833f55966b'
+    if [ x = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  319a5e63-a898-42f2-8de9-48833f55966b
+	else
+	  search --no-floppy --fs-uuid --set=root 319a5e63-a898-42f2-8de9-48833f55966b
+	fi
+    echo    'Loading Linux 5.10.0-9-amd64 ...'
+    linux   /boot/vmlinuz-5.10.0-9-amd64 root=UUID=319a5e63-a898-42f2-8de9-48833f55966b ro quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist=ath9k vfio_pci.ids=168c:002a
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-5.10.0-9-amd64
+
+
+
+
+menuentry 'Debian GNU/Linux, with Linux 5.10.0-9-amd64 (VGA: 2nd Generation Core Processor Family Integrated Graphics Controller)'' {
+    load_video
+    insmod gzio
+    if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/319a5e63-a898-42f2-8de9-48833f55966b'
+    if [ x = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  319a5e63-a898-42f2-8de9-48833f55966b
+	else
+	  search --no-floppy --fs-uuid --set=root 319a5e63-a898-42f2-8de9-48833f55966b
+	fi
+    echo    'Loading Linux 5.10.0-9-amd64 ...'
+    linux   /boot/vmlinuz-5.10.0-9-amd64 root=UUID=319a5e63-a898-42f2-8de9-48833f55966b ro quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist=ath9k vfio_pci.ids=168c:002a
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-5.10.0-9-amd64
+
+
+
+
+menuentry 'Debian GNU/Linux, with Linux 5.10.0-9-amd64 (VGA: 2nd Generation Core Processor Family Integrated Graphics Controller)'' {
+    load_video
+    insmod gzio
+    if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/319a5e63-a898-42f2-8de9-48833f55966b'
+    if [ x = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  319a5e63-a898-42f2-8de9-48833f55966b
+	else
+	  search --no-floppy --fs-uuid --set=root 319a5e63-a898-42f2-8de9-48833f55966b
+	fi
+    echo    'Loading Linux 5.10.0-9-amd64 ...'
+    linux   /boot/vmlinuz-5.10.0-9-amd64 root=UUID=319a5e63-a898-42f2-8de9-48833f55966b ro quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist=ath9k vfio_pci.ids=168c:002a
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-5.10.0-9-amd64
+
+
+
+
+menuentry 'Debian GNU/Linux, with Linux 5.10.0-9-amd64 (VGA: 2nd Generation Core Processor Family Integrated Graphics Controller)'' {
+    load_video
+    insmod gzio
+    if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/319a5e63-a898-42f2-8de9-48833f55966b'
+    if [ x = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  319a5e63-a898-42f2-8de9-48833f55966b
+	else
+	  search --no-floppy --fs-uuid --set=root 319a5e63-a898-42f2-8de9-48833f55966b
+	fi
+    echo    'Loading Linux 5.10.0-9-amd64 ...'
+    linux   /boot/vmlinuz-5.10.0-9-amd64 root=UUID=319a5e63-a898-42f2-8de9-48833f55966b ro quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist=ath9k vfio_pci.ids=168c:002a
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-5.10.0-9-amd64
+
+
+
+
+menuentry 'Debian GNU/Linux, with Linux 5.10.0-9-amd64 (VGA: 2nd Generation Core Processor Family Integrated Graphics Controller)'' {
+    load_video
+    insmod gzio
+    if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/319a5e63-a898-42f2-8de9-48833f55966b'
+    if [ x = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  319a5e63-a898-42f2-8de9-48833f55966b
+	else
+	  search --no-floppy --fs-uuid --set=root 319a5e63-a898-42f2-8de9-48833f55966b
+	fi
+    echo    'Loading Linux 5.10.0-9-amd64 ...'
+    linux   /boot/vmlinuz-5.10.0-9-amd64 root=UUID=319a5e63-a898-42f2-8de9-48833f55966b ro quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist=ath9k vfio_pci.ids=168c:002a
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-5.10.0-9-amd64
+
+
+
+
+menuentry 'Debian GNU/Linux, with Linux 5.10.0-9-amd64 (VGA: 2nd Generation Core Processor Family Integrated Graphics Controller)'' {
+    load_video
+    insmod gzio
+    if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/319a5e63-a898-42f2-8de9-48833f55966b'
+    if [ x = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  319a5e63-a898-42f2-8de9-48833f55966b
+	else
+	  search --no-floppy --fs-uuid --set=root 319a5e63-a898-42f2-8de9-48833f55966b
+	fi
+    echo    'Loading Linux 5.10.0-9-amd64 ...'
+    linux   /boot/vmlinuz-5.10.0-9-amd64 root=UUID=319a5e63-a898-42f2-8de9-48833f55966b ro quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist=ath9k vfio_pci.ids=168c:002a
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-5.10.0-9-amd64
+
+
+
+
+menuentry 'Debian GNU/Linux, with Linux 5.10.0-9-amd64 (VGA: 2nd Generation Core Processor Family Integrated Graphics Controller)'' {
+    load_video
+    insmod gzio
+    if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
+	insmod part_gpt
+	insmod ext2
+    set root='hd2,gpt4'
+    set root='/dev/disk/by-uuid/319a5e63-a898-42f2-8de9-48833f55966b'
+    if [ x = xy ]; then
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd2,gpt4 --hint-efi=hd2,gpt4 --hint-baremetal=ahci2,gpt4  319a5e63-a898-42f2-8de9-48833f55966b
+	else
+	  search --no-floppy --fs-uuid --set=root 319a5e63-a898-42f2-8de9-48833f55966b
+	fi
+    echo    'Loading Linux 5.10.0-9-amd64 ...'
+    linux   /boot/vmlinuz-5.10.0-9-amd64 root=UUID=319a5e63-a898-42f2-8de9-48833f55966b ro quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist=ath9k vfio_pci.ids=168c:002a
+    echo    'Loading initial ramdisk ...'
+    initrd  /boot/initrd.img-5.10.0-9-amd64
+
+
+
+

@@ -66,30 +66,38 @@ fi
 
 ## install required packages ##
 
-# Arch
-if [[ `lsb_release -i | grep -Ei "arch"` ]]; then
+echo -en "$0: Linux distribution found: `lsb_release -i -s`\n$0: Checking for updates... "
 
-    echo -e "$0: Linux distribution found: `cat /etc/*-release | grep ID | sort -h | head -n1 | cut -d '=' -f2`\n"
+# Arch
+if [[ `lsb_release -i -s | grep -Ei "arch"` ]]; then
     sudo pacman -Syu && sudo pacman -Sy edk2-ovmf lgit ibvirt qemu-desktop virt-manager zramswap
     # NOTE: find same packages from Debian
 
-fi
-
 # Debian/Ubuntu
-if [[ `lsb_release -i | grep -Ei "debian|ubuntu"` ]]; then
-
-    echo -e "$0: Linux distribution found: `cat /etc/*-release | grep ID | sort -h | head -n1 | cut -d '=' -f2`\n"
+elif [[ `lsb_release -i -s | grep -Ei "debian|ubuntu"` ]]; then
     sudo apt update && sudo apt full-upgrade -y && sudo apt install -y git libvirt0 qemu virt-manager zram-tools
 
-fi
-
 # Fedora/Redhat
-if [[ `lsb_release -i | grep -Ei "fedora|redhat"` ]]; then
-
-    echo -e "$0: Linux distribution found: `cat /etc/*-release | grep ID | sort -h | head -n1 | cut -d '=' -f2`\n"
+elif [[ `lsb_release -i -s | grep -Ei "fedora|redhat"` ]]; then
     sudo dnf check-update && sudo dnf upgrade -y && sudo dnf install -y @virtualization git zram-generator zram-generator-defaults
     # NOTE: find same packages from Debian    # is there a virtualization metapackage for Debian, Arch?
 
+else
+    echo -e "Failed.\n$0: Linux distibution is not recognized for or compatible with 'VFIO-setup'."
+    str_output1="Continue? [Y/n]: "
+    ReadInput $str_input1
+    
+    if [[ $str_input1 == "Y" ]]; then
+        echo -e "$0: Continuing."
+    fi
+
+    if [[ $str_input1 == "N" ]]; then
+        echo -e "$0: Exiting."
+        IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
+        exit 0
+    fi
+
+    # NOTE: test!
 fi
 
 echo
@@ -126,6 +134,6 @@ for str_line1 in $arr_dir1; do
     fi
 done
 
-IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 echo -e "$0: Reboot system for changes to take effect. Exiting."
+IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 exit 0
