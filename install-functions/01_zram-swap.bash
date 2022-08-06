@@ -147,12 +147,13 @@ if [[ -e $str_inFile2 ]]; then
 
         echo -e $str_line1 >> $str_outFile2
     done < $str_inFile2
+
+    echo -e "$0: Executing ZRAM-swap setup... Complete.\n"
+    echo -e "$0: Review changes:\n\t'$str_outFile2'"
 else
-    bool_missingFiles=true
-    echo -e "$0: File missing: '$str_inFile2'. Skipping."
+    echo -e "Failed. File(s) missing:"
+    echo -e "\t'$str_inFile2'"
 fi
 
-echo -e "$0: Executing ZRAM-swap setup... Complete.\n"
-echo -e "$0: Review changes:\n\t'$str_outFile2'"
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 exit 0

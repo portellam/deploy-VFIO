@@ -150,22 +150,19 @@ hugepages=$int_HugePageNum
 
                 echo -e $str_line1 >> $str_outFile1
             done < $str_inFile1
+
+            echo -e "$0: Executing Hugepages setup... Complete.\n"
+            systemctl enable libvirtd
+            systemctl restart libvirtd
+            echo -e "\n$0: Review changes:\n\t'$str_outFile1'"
         else
-            bool_missingFiles=true
-            echo -e "$0: File missing: '$str_inFile1'. Skipping."
+            echo -e "Failed. File(s) missing:"
+            echo -e "\t'$str_inFile1'"
         fi
 
         break
     fi
 done
 
-# warn user of missing files #
-if [[ $bool_missingFiles == true ]]; then
-    echo -e "$0: Executing Hugepages setup... Failed.\n$0: Files missing. Setup installation is incomplete. Clone or re-download 'portellam/VFIO-setup' to continue."
-else
-    echo -e "$0: Executing Hugepages setup... Complete.\n"
-    systemctl enable libvirtd
-    systemctl restart libvirtd
-fi
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 exit 0

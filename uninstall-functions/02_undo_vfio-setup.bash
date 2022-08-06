@@ -10,12 +10,41 @@ fi
 SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
+# input files #
+    str_inFile1=`find . -name *etc_default_grub`
+    str_inFile2=`find . -name *etc_modules`
+    str_inFile3=`find . -name *etc_initramfs-tools_modules`
+    str_inFile4=`find . -name *etc_modprobe.d_pci-blacklists.conf`
+    str_inFile5=`find . -name *etc_modprobe.d_vfio.conf`
+    # none for file6
+
+    # system files #
+    #str_outFile1="/etc/default/grub"
+    #str_outFile2="/etc/modules"
+    #str_outFile3="/etc/initramfs-tools/modules"
+    #str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
+    #str_outFile5="/etc/modprobe.d/vfio.conf"
+
+    # debug system files #
+    str_outFile1=$str_inFile1".old"
+    str_outFile2=$str_inFile2".old"
+    str_outFile3=$str_inFile3".old"
+    str_outFile4=$str_inFile4".old"
+    str_outFile5=$str_inFile5".old"
+
+    # system file backups #
+    str_oldFile1=$str_outFile1".old"
+    str_oldFile2=$str_outFile2".old"
+    str_oldFile3=$str_outFile3".old"
+    str_oldFile4=$str_outFile4".old"
+    str_oldFile5=$str_oldFile5".old"
+
 # system files #
-str_file1="/etc/default/grub"
-str_file2="/etc/initramfs-tools/modules"
-str_file3="/etc/modules"
-str_file4="/etc/modprobe.d/pci-blacklists.conf"
-str_file5="/etc/modprobe.d/vfio.conf"
+str_outFile1="/etc/default/grub"
+str_outFile2="/etc/initramfs-tools/modules"
+str_outFile3="/etc/modules"
+str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
+str_outFile5="/etc/modprobe.d/vfio.conf"
 
 # system file backups #
 str_oldFile1=$(pwd)"/etc_default_grub.old"
@@ -44,8 +73,8 @@ if [[ -e $str_logFile5 ]]; then rm $str_logFile5; fi
 if [[ -e $str_logFile6 ]]; then rm $str_logFile6; fi
 
 ## 1 ##     # /etc/default/grub
-if [[ -e $str_file1 ]]; then
-    mv $str_file1 $str_oldFile1
+if [[ -e $str_outFile1 ]]; then
+    mv $str_outFile1 $str_oldFile1
 
     # find GRUB line and comment out #
     while read -r str_line1; do
@@ -55,12 +84,12 @@ if [[ -e $str_file1 ]]; then
             str_line1="#"$str_line1             # update line
         fi
 
-        echo -e $str_line1  >> $str_file1       # append to new file
+        echo -e $str_line1  >> $str_outFile1       # append to new file
 
     done < $str_oldFile1
 
-    #echo -e "GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\"" >> $str_file1
-    echo -e "GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist= vfio_pci.ids=\"" >> $str_file1
+    #echo -e "GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\"" >> $str_outFile1
+    echo -e "GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist= vfio_pci.ids=\"" >> $str_outFile1
 fi
 
 if [[ -e $str_oldFile1 ]]; then rm $str_oldFile1; fi
@@ -68,8 +97,8 @@ if [[ -e $str_oldFile1 ]]; then rm $str_oldFile1; fi
 ## 2 ##     # initramfs-tools
 #bool_readLine=true
 
-# if [[ -e $str_file2 ]]; then
-#     mv $str_file2 $str_oldFile2
+# if [[ -e $str_outFile2 ]]; then
+#     mv $str_outFile2 $str_oldFile2
 
 #     while read -r str_line1; do
 #         if [[ $str_line1 == *"# START #"* || $str_line1 == *"portellam/VFIO-setup"* ]]; then
@@ -77,7 +106,7 @@ if [[ -e $str_oldFile1 ]]; then rm $str_oldFile1; fi
 #         fi
 
 #         if [[ $bool_readLine == true ]]; then
-#             echo -e $str_line1 >> $str_file2
+#             echo -e $str_line1 >> $str_outFile2
 #         fi
 
 #         if [[ $str_line1 == *"# END #"* ]]; then
@@ -86,7 +115,7 @@ if [[ -e $str_oldFile1 ]]; then rm $str_oldFile1; fi
 #     done < $str_oldFile2
 # fi
 
-if [[ -e $str_file2 ]]; then rm $str_file2; fi
+if [[ -e $str_outFile2 ]]; then rm $str_outFile2; fi
 if [[ -e $str_oldFile2 ]]; then rm $str_oldFile2; fi
 
 declare -a arr_file2=(
@@ -123,14 +152,14 @@ vfio_pci
 # END #")
 
 for str_line1 in ${arr_file2[@]}; do
-    echo -e $str_line1 >> $str_file2
+    echo -e $str_line1 >> $str_outFile2
 done
 
 ## 3 ##     # /etc/modules
 # bool_readLine=true
 
-# if [[ -e $str_file3 ]]; then
-#     mv $str_file3 $str_oldFile3
+# if [[ -e $str_outFile3 ]]; then
+#     mv $str_outFile3 $str_oldFile3
 
 #     while read -r str_line1; do
 #         if [[ $str_line1 == *"# START #"* || $str_line1 == *"portellam/VFIO-setup"* ]]; then
@@ -138,7 +167,7 @@ done
 #         fi
 
 #         if [[ $bool_readLine == true ]]; then
-#             echo -e $str_line1 >> $str_file3
+#             echo -e $str_line1 >> $str_outFile3
 #         fi
 
 #         if [[ $str_line1 == *"# END #"* ]]; then
@@ -147,7 +176,7 @@ done
 #     done < $str_oldFile3
 # fi
 
-if [[ -e $str_file3 ]]; then rm $str_file3; fi
+if [[ -e $str_outFile3 ]]; then rm $str_outFile3; fi
 if [[ -e $str_oldFile3 ]]; then rm $str_oldFile3; fi
 
 declare -a arr_file3=(
@@ -178,16 +207,16 @@ vfio_pci ids=
 # END #")
 
 for str_line1 in ${arr_file3[@]}; do
-    echo -e $str_line1 >> $str_file3
+    echo -e $str_line1 >> $str_outFile3
 done
 
 ## 4 ##     # /etc/modprobe.d/pci-blacklist.conf
-if [[ -e $str_file4 ]]; then rm $str_file4; fi
+if [[ -e $str_outFile4 ]]; then rm $str_outFile4; fi
 if [[ -e $str_oldFile4 ]]; then rm $str_oldFile4; fi
-echo -e "# NOTE: Generated by 'portellam/VFIO-setup'\n#\n# START #\n# EXAMPLE:\tblacklist 'DRIVER_NAME'\n\n# END #" >> $str_file4       
+echo -e "# NOTE: Generated by 'portellam/VFIO-setup'\n#\n# START #\n# EXAMPLE:\tblacklist 'DRIVER_NAME'\n\n# END #" >> $str_outFile4       
 
 ## 5 ##     # /etc/modprobe.d/vfio.conf
-if [[ -e $str_file5 ]]; then rm $str_file5; fi
+if [[ -e $str_outFile5 ]]; then rm $str_outFile5; fi
 
 declare -a arr_file5=(
 "# NOTE: Generated by 'portellam/VFIO-setup'
@@ -202,7 +231,7 @@ options vfio_pci ids=
 # END #")
 
     for str_line1 in ${arr_file5[@]}; do
-        echo -e $str_line1 >> $str_file5       
+        echo -e $str_line1 >> $str_outFile5       
     done
 
 if [[ -e $str_oldFile5 ]]; then rm $str_oldFile5; fi

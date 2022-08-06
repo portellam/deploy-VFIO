@@ -95,20 +95,23 @@ else
 
             echo -e $str_line1 >> $str_outFile1
         done < $str_inFile1
-    else
-        bool_missingFiles=true
-    fi
 
-    # warn user of missing files #
-    if [[ $bool_missingFiles == true ]]; then
-        echo -e "Failed.\n$0: Files missing. Setup installation is incomplete. Clone or re-download 'portellam/VFIO-setup' to continue."
-    else
         echo -e "Complete.\n"
         systemctl enable libvirtd
         systemctl restart libvirtd
+        echo -e "\n$0: Review changes:\n\t'$str_outFile1'"
+    else
+        echo -e "Failed. File(s) missing:"
+
+        if [[ -z $str_inFile1 ]]; then 
+            echo -e "\t'$str_inFile1'"
+        fi
+
+        if [[ -z $str_inFile2 ]]; then 
+            echo -e "\t'$str_inFile2'"
+        fi
     fi
 fi
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
-echo -e "\n$0: Review changes:\n\t'$str_file1'"
 exit 0

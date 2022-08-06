@@ -10,6 +10,8 @@ fi
 SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
+echo -en "$0: Executing... "
+
 # parameters #
 str_inFile1=`find . -name *libvirt-nosleep_hook*`
 str_outFile1="/etc/libvirt/hooks/qemu"
@@ -28,8 +30,18 @@ if [[ -e $str_inFile1 && -e $str_inFile2 ]]; then
     read -r str_line; do
         echo $str_line >> $str_outFile2
     done < $str_inFile2
+
+    echo -e "Complete."
 else
-    echo -e "$0: libvirt-nosleep: File(s) missing. Skipping."
+    echo -e "Failed. File(s) missing:"
+
+    if [[ -z $str_inFile1 ]]; then 
+        echo -e "\t'$str_inFile1'"
+    fi
+
+    if [[ -z $str_inFile2 ]]; then 
+        echo -e "\t'$str_inFile2'"
+    fi
 fi
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files

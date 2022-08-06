@@ -226,7 +226,6 @@ function MultiBootSetup {
 
     # system file backups #
     str_oldFile7=$str_outFile7".old"
-    str_oldFile7b=$str_outFile7b".old"    
 
     # parse IOMMU IDs #
     declare -i int_i=0      # reset counter
@@ -763,7 +762,7 @@ str_prompt="$0: Setup VFIO by 'Multi-Boot' or Statically?\n\tMulti-Boot Setup in
 
 if [[ -z $str_input1 ]]; then echo -e $str_prompt; fi
 
-while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
+while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup || $bool_missingFiles == false]]; do
     if [[ $int_count -ge 3 ]]; then
         echo -en "Exceeded max attempts."
         str_input1="N"                   # default selection
@@ -778,9 +777,15 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup ]]; do
         "M")
             StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
+            sudo update-grub                    # update GRUB
+            sudo update-initramfs -u -k all     # update INITRAMFS
+            echo -e "\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'\n\t'$str_outFile7'"
             break;;
         "S")
             StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
+            sudo update-grub                    # update GRUB
+            sudo update-initramfs -u -k all     # update INITRAMFS
+            echo -e "\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'"
             break;;
         "N")
             echo -e "$0: Skipping."
@@ -798,16 +803,9 @@ if [[ $bool_isVFIOsetup == true && $bool_missingFiles == false ]]; then
     echo -e "$0: Existing VFIO setup installation detected. Execute `find . -name *uninstall.bash*` and reboot system, to continue."
 fi
 
-# notify setup is complete #
-if [[ $bool_isVFIOsetup == false && $bool_missingFiles == false ]]; then
-    sudo update-grub                    # update GRUB
-    sudo update-initramfs -u -k all     # update INITRAMFS
-    echo -e "\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'"
-fi
-
 # warn user of missing files #
 if [[ $bool_missingFiles == true ]]; then
-    echo -e "$0: Files missing. Setup installation is incomplete. Clone or re-download 'portellam/VFIO-setup' to continue."
+    echo -e "$0: Setup installation is incomplete. Clone or re-download 'portellam/VFIO-setup' to continue."
 fi
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
