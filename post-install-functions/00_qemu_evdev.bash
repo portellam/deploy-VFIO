@@ -23,14 +23,14 @@ bool_missingFiles=false
 str_outFile1="/etc/libvirt/qemu.conf"
 
 # input files #
-str_inFile1=`../files/*etc_libvirt_qemu.conf*`
+str_inFile1=`find . -name *etc_libvirt_qemu.conf*`
 echo $str_inFile1
 
 # system file backups #
-str_oldFile1=$str_outFile1"_old"
+str_oldFile1=$str_outFile1".old"
 
 # debug logfiles #
-str_logFile0=`../files/*hugepages*log*`
+str_logFile0=`find . -name *hugepages*log*`
 echo $str_logFile0
 
 # prompt #
@@ -51,10 +51,11 @@ done
 declare -a arr_InputDeviceID=`ls /dev/input/by-id`  # list of input devices
 declare -a arr_InputDeviceEventID=`ls -l /dev/input/by-id | cut -d '/' -f2 | grep -v 'total 0'` # list of event IDs for input devices
 
-if [[ -z $arr_InputDeviceID ]]; then
-    echo -e "$0: No input devices found. Skipping."
-    exit 0
-else    
+#if [[ -z $arr_InputDeviceID ]]; then
+#    echo -e "$0: No input devices found. Skipping."
+#    exit 0
+#else    
+if [[ true ]]; then
     echo -en "$0: Executing Evdev setup... "
 
     # /etc/libvirt/qemu.conf #
@@ -79,7 +80,9 @@ else
 
     if [[ -e $str_inFile1 ]]; then
         mv $str_outFile1 $str_oldFile2      # create backup
-        cp $str_inFile1 $str_outFile1       # copy from template
+        if [[ -e $str_outFile1 ]]; then
+            rm $str_outFile1
+        fi
 
         # write to file #
         while read -r str_line1; do
