@@ -11,10 +11,10 @@ SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
 # system files #
-str_outFile1="/etc/default/zram-swap"
+str_outFile1="/etc/grub.d/proxifiedScripts/custom"
 
 # input files #
-str_inFile1=`find . -name *etc_default_zram-swap*`
+str_inFile1=`find . -name *etc_grub.d_proxifiedScripts_custom`
 
 if [[ -e $str_inFile1 ]]; then
     cp $str_inFile1 $str_outFile1       # copy from template
