@@ -25,7 +25,7 @@ For best results post-installation, use **'portellam/AutoXorg'**:  https://githu
         * Static allocation of Host RAM to VMs for zero memory fragmentation and reduced memory latencies (best to use whole Memory channels/sticks, if possible).
     * **setup Zram swapfile**
         * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
-    * **static/dynamic CPU thread allocation:** **(work-in-progress)**
+    * **static/dynamic CPU thread allocation** (work-in-progress)
 * **VFIO setup:**
     * Setup dynamically (Multi-Boot) or statically.
 * **Post-install:**
@@ -33,7 +33,7 @@ For best results post-installation, use **'portellam/AutoXorg'**:  https://githu
         * Virtual Keyboard-Mouse switch (better than nothing, best to have physical KVM and multiple PCI USB controllers).
         * Executes post-setup given assuming user passthroughs a USB controller (not necessary to parse all USB input devices).
     * **Libvirt-nosleep** system service to prevent Host sleep while virtual machine(s) are active (see credits in file)
-    * **Auto VM Deployment** **(work-in-progress)**
+    * **Auto VM Deployment** (work-in-progress)
 
 * work-in-progress; more features to be added, as needed.
 
@@ -41,7 +41,7 @@ For best results post-installation, use **'portellam/AutoXorg'**:  https://githu
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups of devices.
     * Saves lists of external PCI devices, by order of IOMMU groups.
 * Prompt user for VFIO passthrough setup:
-    * **Multi-Boot setup** **(work-in-progress: currently outputs only one valid boot entry, not all)**
+    * **Multi-Boot setup** (disclaimer: currently outputs only one valid boot entry, not all)
         * Select a host VGA boot device at GRUB menu.
         * Appends to system file: **'/etc/grub.d/proxifiedScripts/custom'**
     * **Static setup**
@@ -50,6 +50,6 @@ For best results post-installation, use **'portellam/AutoXorg'**:  https://githu
 * Checks for existing VFIO setup, prompt user to uninstall setup, reboot, and try again to continue.
 
 ## DISCLAIMER
-Tested on Debian Linux.
+Tested on Debian Linux. Works on my machine!
 
 Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
