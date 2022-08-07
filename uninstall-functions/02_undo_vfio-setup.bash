@@ -48,15 +48,35 @@ if [[ -e $str_inFile1 ]]; then
 
         echo $str_line1 >> $str_outFile1
     done < $str_inFile1
-elif [[ -e $str_inFile2 ]]; then
+else
+    bool_missingFiles=true
+fi
+
+if [[ -e $str_inFile2 ]]; then
     cp $str_inFile2 $str_outFile2       # copy from template
-elif [[ -e $str_inFile3 ]]; then
+else
+    bool_missingFiles=true
+fi
+
+if [[ -e $str_inFile3 ]]; then
     cp $str_inFile3 $str_outFile3       # copy from template
-elif [[ -e $str_inFile4 ]]; then
+else
+    bool_missingFiles=true
+fi
+
+if [[ -e $str_inFile4 ]]; then
     cp $str_inFile4 $str_outFile4       # copy from template
-elif [[ -e $str_inFile5 ]]; then
+else
+    bool_missingFiles=true
+fi
+
+if [[ -e $str_inFile5 ]]; then
     cp $str_inFile5 $str_outFile5       # copy from template
-elif [[ -e $str_inFile7 ]]; then
+else
+    bool_missingFiles=true
+fi
+
+if [[ -e $str_inFile7 ]]; then
     cp $str_inFile7 $str_outFile7       # copy from template
 else
     bool_missingFiles=true
@@ -72,7 +92,7 @@ if [[ $bool_missingFiles == true ]]; then
     if [[ -z $str_inFile2 ]]; then 
         echo -e "\t'$str_inFile2'"
     fi
-    
+
     if [[ -z $str_inFile3 ]]; then 
         echo -e "\t'$str_inFile3'"
     fi

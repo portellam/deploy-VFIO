@@ -3,8 +3,7 @@
 # TODO
 #
 # -fix MultiBoot file output (new entry for each boot VGA)
-# -use master arrays that save every driver (valid/invalid), every hwid, for a given IOMMU group
-# -reference these arrays for MultiBoot output
+#
 
 # function steps #
 # 1a.   Parse PCI and IOMMU groups, sort information to be parsed again later
@@ -240,16 +239,8 @@ function MultiBootSetup {
     # system file backups #
     str_oldFile7=$str_outFile7".old"
 
-    # temp file #
-    str_tempFile7=$str_inFile7b"_temp"
-
-    # clear tempfile #
-    if [[ -e $str_tempFile7 ]]; then
-        rm $str_tempFile7
-    fi
-
     # parse list of VGA IOMMU groups #
-    for (( int_i=0 ; int_i < ${#arr_IOMMUID_VGAlist[@]} ; int_i++ )); do
+    for int_IOMMUID_VGAlist in ${arr_IOMMUID_VGAlist[@]}; do
 
         # reset vars #
         str_thisVGA_deviceName=""
@@ -257,153 +248,44 @@ function MultiBootSetup {
         str_HWID_thisList=""
         
         # parse list of VGA IOMMU groups #
-        for (( int_j=0 ; int_j < ${#arr_IOMMUID_VGAlist[@]} ; int_j++ )); do
-            
-            # false match, add all VGA IOMMU groups minus current boot VGA group #
-            if [[ ${arr_IOMMUID_VGAlist[int_j]} != ${arr_IOMMUID_VGAlist[int_i]} ]]; then
-                str_driverName_thisList+=${arr_driverName_VGAlist[$int_j]}
-                str_HWID_thisList+=${arr_HWID_VGAlist[$int_j]}
-            fi
-        done
+        for (( int_i=0 ; int_i < ${#arr_IOMMUID_VGAlist[@]} ; int_i++ )); do
 
-        # find boot VGA device name #
-        for (( int_j=0 ; int_j<${#arr_lspci_IOMMUID[@]} ; int_j++ )); do
-            
-            # match IOMMU ID #
-            if [[ ${arr_lspci_IOMMUID[$int_j]} == ${arr_IOMMUID_VGAlist[int_i]} ]]; then
-                
-                if [[ ${arr_VGA_deviceName[$int_j]} == "graphics" || ${arr_VGA_deviceName[$int_j]} == "VGA" ]]; then
+            echo '$int_i == '"'$int_i'"
+
+            # find boot VGA device name #
+            for (( int_j=0 ; int_j<${#arr_lspci_IOMMUID[@]} ; int_j++ )); do
+
+                echo '$int_j == '"'$int_j'"
+
+                if [[ ${arr_VGA_deviceName[$int_j]} != "NO_VGA_FOUND" ]]; then
                     str_thisVGA_deviceName=${arr_VGA_deviceName[$int_j]}
-                    break
-                fi
-                str_thisVGA_deviceName="N/A"
-            fi
-        done
-
-        ## check will assume system has passed through every VGA device, excluding integrated video (if enabled) ##
-        # match null and false match integrated video #
-        #if [[ $str_thisVGA_deviceName == "" && $str_thisVGA_deviceName != `lspci -m | grep -Ei "graphics|VGA" | head -n1 | cut -d '"' -f6` ]]; then
-            #str_thisVGA_deviceName="N/A"    # reset string
-
-        # match integrated video #
-        #else
-            #str_thisVGA_deviceName=`lspci -m | grep -Ei "graphics|VGA" | head -n1 | cut -d '"' -f6`
-        #fi
-
-        str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} ${str_GRUB_CMDLINE_Hugepages} modprobe.blacklist=${str_driverName_thisList}${str_driverName_newList} vfio_pci.ids=${str_HWID_thisList}${str_HWID_list}"
-
-        ## /etc/grub.d/proxifiedScripts/custom ##
-        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_root_Kernel (VFIO, Boot VGA: '$str_thisVGA_deviceName')" 
-        str_output1="menuentry \"$str_GRUB_title\"{"
-        str_output2="    insmod $str_root_FSTYPE"
-        str_output3="    set root='/dev/disk/by-uuid/$str_root_UUID'"
-        str_output4="        search --no-floppy --fs-uuid --set=root $str_root_UUID"
-        str_output5="    echo    'Loading Linux $str_root_Kernel ...'"
-        str_output6="    linux   /boot/vmlinuz-$str_root_Kernel root=UUID=$str_root_UUID $str_GRUB_CMDLINE"
-        str_output7="    initrd  /boot/initrd.img-$str_root_Kernel"
-
-        if [[ -e $str_inFile7 && -e $str_inFile7b ]]; then
-            if [[ -e $str_outFile7 ]]; then
-                mv $str_outFile7 $str_oldFile7      # create backup
-            fi
-
-            cp $str_inFile7 $str_outFile7           # copy over blank
-
-            # write to tempfile #
-            while read -r str_line1; do
-                if [[ $str_line1 == *'#$str_output1'* ]]; then
-                    str_line1=$str_output1
                 fi
 
-                if [[ $str_line1 == *'#$str_output2'* ]]; then
-                    str_line1=$str_output2
-                fi
-
-                if [[ $str_line1 == *'#$str_output3'* ]]; then
-                    str_line1=$str_output3
-                fi
-
-                if [[ $str_line1 == *'#$str_output4'* ]]; then
-                    str_line1=$str_output4
-                fi
-
-                if [[ $str_line1 == *'#$str_output5'* ]]; then
-                    str_line1=$str_output5
-                fi
-
-                if [[ $str_line1 == *'#$str_output6'* ]]; then
-                    str_line1=$str_output6
-                fi
-
-                if [[ $str_line1 == *'#$str_output7'* ]]; then
-                    str_line1=$str_output7
-                fi
-
-                echo -e $str_line1 >> $str_tempFile7
-            done < $str_inFile7b    # read from template
-
-            # write to system file #
-            echo >> $str_outFile7
-            echo >> $str_outFile7
-            echo >> $str_outFile7
-
-            while read -r str_line1; do
-                echo -e $str_line1 >> $str_outFile7
-            done < $str_tempFile7    # read from tempfile
-
-            # clear tempfile #
-            if [[ -e $str_tempFile7 ]]; then
-                rm $str_tempFile7
-            fi
-
-            chmod 755 $str_outFile7     # set proper permissions
-        else
-            bool_missingFiles=true
-        fi
-
-        str_thisVGA_deviceName=""       # reset string
-    done
-
-    #while [[ $int_i -le $int_compgen_IOMMUID_lastIndex && $bool_missingFiles == false ]]; do
-    while false; do # debug
-
-        # find boot VGA device name #
-        for (( int_j=0 ; int_j<${#arr_lspci_IOMMUID[@]} ; int_j++ )); do
+                #echo '${arr_VGA_deviceName['$int_j']} == '"'${arr_VGA_deviceName[$int_j]}'"
             
-            # match IOMMU ID #
-            if [[ $int_i == ${arr_lspci_IOMMUID[$int_j]} ]]; then
-                str_thisVGA_deviceName=${arr_VGA_deviceName[int_j]}
-            fi
-        done
+                # match IOMMU ID #
+                #if [[ ${arr_lspci_IOMMUID[$int_j]} == $int_IOMMUID_VGAlist ]]; then
+                    #str_thisVGA_deviceName=${arr_VGA_deviceName[$int_j]}
+                    #echo '$str_thisVGA_deviceName == '"'$str_thisVGA_deviceName'"
+                    #int_j=${#arr_lspci_IOMMUID[@]}
+                #fi
+            done
 
-        ## check will assume system has passed through every VGA device, excluding integrated video (if enabled) ##
-        # match null and false match integrated video #
-        if [[ $str_thisVGA_deviceName == "" && $str_thisVGA_deviceName != `lspci -m | grep -Ei "graphics|VGA" | head -n1 | cut -d '"' -f6` ]]; then
-            str_thisVGA_deviceName="N/A"    # reset string
-
-        # match integrated video #
-        else
-            str_thisVGA_deviceName=`lspci -m | grep -Ei "graphics|VGA" | head -n1 | cut -d '"' -f6`
-        fi
-
-        # reset lists #
-        str_driverName_thisList=""
-        str_HWID_thisList=""
-
-        # parse list of VGA IOMMU groups #
-        for (( int_j=0 ; int_j < ${#arr_IOMMUID_VGAlist[@]} ; int_j++ )); do
-            
             # false match, add all VGA IOMMU groups minus current boot VGA group #
-            if [[ ${arr_IOMMUID_VGAlist[int_j]} != $int_i ]]; then
-                str_driverName_thisList+=${arr_driverName_VGAlist[$int_j]}
-                str_HWID_thisList+=${arr_HWID_VGAlist[$int_j]}
+            if [[ ${arr_IOMMUID_VGAlist[int_i]} != $int_IOMMUID_VGAlist ]]; then
+                str_driverName_thisList+=${arr_driverName_VGAlist[$int_i]}
+                str_HWID_thisList+=${arr_HWID_VGAlist[$int_i]}
             fi
         done
+
+        echo '$str_thisVGA_deviceName == '"'$str_thisVGA_deviceName'"
+        echo '$str_driverName_thisList == '"'$str_driverName_thisList'"
+        echo '$str_HWID_thisList == '"'$str_HWID_thisList'"
 
         str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} ${str_GRUB_CMDLINE_Hugepages} modprobe.blacklist=${str_driverName_thisList}${str_driverName_newList} vfio_pci.ids=${str_HWID_thisList}${str_HWID_list}"
 
         ## /etc/grub.d/proxifiedScripts/custom ##
-        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_root_Kernel (VFIO, Boot VGA: '$str_thisVGA_deviceName')" 
+        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_root_Kernel (VFIO w/ Boot VGA: '$str_thisVGA_deviceName')" 
         str_output1="menuentry \"$str_GRUB_title\"{"
         str_output2="    insmod $str_root_FSTYPE"
         str_output3="    set root='/dev/disk/by-uuid/$str_root_UUID'"
@@ -420,6 +302,8 @@ function MultiBootSetup {
             cp $str_inFile7 $str_outFile7           # copy over blank
 
             # write to tempfile #
+            echo >> $str_outFile7
+            echo >> $str_outFile7
             while read -r str_line1; do
                 if [[ $str_line1 == *'#$str_output1'* ]]; then
                     str_line1=$str_output1
@@ -449,29 +333,12 @@ function MultiBootSetup {
                     str_line1=$str_output7
                 fi
 
-                echo -e $str_line1 >> $str_tempFile7
-            done < $str_inFile7b    # read from template
-
-            # write to system file #
-            echo >> $str_outFile7
-            echo >> $str_outFile7
-            echo >> $str_outFile7
-
-            while read -r str_line1; do
                 echo -e $str_line1 >> $str_outFile7
-            done < $str_tempFile7    # read from tempfile
-
-            # clear tempfile #
-            if [[ -e $str_tempFile7 ]]; then
-                rm $str_tempFile7
-            fi
-
-            chmod 755 $str_outFile7     # set proper permissions
+            done < $str_inFile7b    # read from template
         else
             bool_missingFiles=true
         fi
 
-        ((int_i++))                     # increment counter
         str_thisVGA_deviceName=""       # reset string
     done
 
@@ -488,7 +355,10 @@ function MultiBootSetup {
         fi
          
         echo -e "$0: Executing Multi-boot setup... Failed."
+    elif [[ ${#arr_IOMMUID_VGAlist[@]} -le 0 ]]; then
+        echo -e "$0: Executing Multi-boot setup... Cancelled. No IOMMU groups with VGA devices passed-through."
     else
+        chmod 755 $str_outFile7     # set proper permissions
         echo -e "$0: Executing Multi-boot setup... Complete."
     fi
 }
