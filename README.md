@@ -1,5 +1,7 @@
 ## Description
-Ultimate collection of scripts for a seamless, intuitive, and automated VFIO (hardware) passthrough setup. Run incompatible or untrusted hardware/software/OS inside a virtual machine, under the Linux Desktop of your choice. 
+Ultimate scripts for a seamless, intuitive, and automated VFIO passthrough setup. Run any OS with real hardware under a virtual machine, in the Linux desktop of choice.
+
+Protect your desktop and files from spyware (computer game Anti-cheat, Windows telemetry) and abandonware (Windows XP).
 
 ## How-to
 To install, execute:    
