@@ -71,8 +71,6 @@ declare -i int_count=0      # reset counter
 
 while true; do
 
-    echo "int_count == $int_count"
-
     # attempt #
     if [[ $int_count -ge 3 ]]; then
         int_HugePageNum=$int_HugePageMax        # default selection
@@ -104,65 +102,55 @@ while true; do
         echo "$0: Invalid input."
         ((int_count++))     # increment counter
     else    
-        #str_GRUB_CMDLINE_Hugepages="default_hugepagesz=$str_HugePageSize hugepagesz=$str_HugePageSize hugepages=$int_HugePageNum"   # shared variable with other function
-        arr_output1=("
-hugepagesz=$str_HugePageSize
-hugepages=$int_HugePageNum
-")
-        
-        # clear existing file #
-        if [[ -e $str_logFile1 ]]; then
-            rm $str_logFile1
-        fi
-
-        # write to file #
-        for str_line1 in $arr_output1; do
-            echo $str_line1 >> $str_logFile1
-        done
-
-        ## /etc/libvirt/qemu.conf ## 
-        str_output1="user = \"user\"\ngroup = \"user\""
-        str_output2="hugetlbfs_mount = \"/dev/hugepages\""
-        str_output3="cgroup_device_acl = [\n    \"/dev/null\", \"/dev/full\", \"/dev/zero\",\n    \"/dev/random\", \"/dev/urandom\",\n    \"/dev/ptmx\", \"/dev/kvm\",\n    \"/dev/rtc\",\"/dev/hpet\"\n]"
-
-        for str_thisDriverName in ${arr_driverName_list[@]}; do
-            str_output1+="blacklist $str_thisDriverName\n"
-        done
-
-        if [[ -e $str_inFile1 ]]; then
-            if [[ -e $str_outFile1 ]]; then
-                mv $str_outFile1 $str_oldFile1      # create backup
-            fi
-
-            # write to file #
-            while read -r str_line1; do
-                if [[ $str_line1 == '#$str_output1'* ]]; then
-                    str_line1=$str_output1
-                fi
-
-                if [[ $str_line1 == '#$str_output2'* ]]; then
-                    str_line1=$str_output2
-                fi
-
-                if [[ $str_line1 == '#$str_output3'* ]]; then
-                    str_line1=$str_output3
-                fi
-
-                echo -e $str_line1 >> $str_outFile1
-            done < $str_inFile1
-
-            echo -e "$0: Executing Hugepages setup... Complete.\n"
-            systemctl enable libvirtd
-            systemctl restart libvirtd
-            echo -e "\n$0: Review changes:\n\t'$str_outFile1'"
-        else
-            echo -e "Failed. File(s) missing:"
-            echo -e "\t'$str_inFile1'"
-        fi
-
-        break
+        str_output1="default_hugepagesz=$str_HugePageSize hugepagesz=$str_HugePageSize hugepages=$int_HugePageNum"   # shared variable with other function   
     fi
+
+    break
 done
+
+# clear existing file #
+if [[ -e $str_logFile1 ]]; then
+    rm $str_logFile1
+fi
+
+# write to file #
+echo $str_output1 >> $str_logFile1
+
+## /etc/libvirt/qemu.conf ## 
+str_output1="user = \"user\"\ngroup = \"user\""
+str_output2="hugetlbfs_mount = \"/dev/hugepages\""
+str_output3="cgroup_device_acl = [\n    \"/dev/null\", \"/dev/full\", \"/dev/zero\",\n    \"/dev/random\", \"/dev/urandom\",\n    \"/dev/ptmx\", \"/dev/kvm\",\n    \"/dev/rtc\",\"/dev/hpet\"\n]"
+
+if [[ -e $str_inFile1 ]]; then
+    if [[ -e $str_outFile1 ]]; then
+        mv $str_outFile1 $str_oldFile1      # create backup
+    fi
+
+    # write to file #
+    while read -r str_line1; do
+        if [[ $str_line1 == '#$str_output1'* ]]; then
+            str_line1=$str_output1
+        fi
+
+        if [[ $str_line1 == '#$str_output2'* ]]; then
+            str_line1=$str_output2
+        fi
+
+        if [[ $str_line1 == '#$str_output3'* ]]; then
+            str_line1=$str_output3
+        fi
+
+        echo -e $str_line1 >> $str_outFile1
+    done < $str_inFile1
+
+    echo -e "$0: Executing Hugepages setup... Complete.\n"
+    systemctl enable libvirtd
+    systemctl restart libvirtd
+    echo -e "$0: Review changes:\n\t'$str_outFile1'"
+else
+    echo -e "Failed. File(s) missing:"
+    echo -e "\t'$str_inFile1'"
+fi
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 exit 0

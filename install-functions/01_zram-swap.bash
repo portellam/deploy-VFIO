@@ -17,7 +17,7 @@ SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
 # parameters #
-str_hugepages=`find . -name *hugepages*bash* | grep -v log`
+str_logFile0=`find . -name *hugepages*bash* | grep -v log`
 declare -i int_count=0      # reset counter
 
 # system files #
@@ -72,8 +72,8 @@ declare -i int_HostMemMaxG=$((int_HostMemMaxK/1048576))
 declare -i int_SysMemMaxG=$((int_HostMemMaxG+1))        # use modulus?
 
 # check #
-if [[ -z $str_file0 ]]; then
-    echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_hugepages' and '$0'.\n"
+if [[ -z $str_logFile0 ]]; then
+    echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_logFile0' and '$0'.\n"
 
     declare -i int_HostMemFreeG=$int_SysMemMaxG
 
@@ -81,10 +81,10 @@ if [[ -z $str_file0 ]]; then
     echo -e "$0: Total system memory: <= ${int_SysMemMaxG}G.\n$0: If 'Z == ${int_SysMemMaxG}G - (V + X)', where ('Z' == ZRAM, 'V' == VM(s), and 'X' == remainder for Host machine).\n\tCalculate 'Z'."
 else
 
-    while read str_line1; do
-        if [[ $str_line1 == *"hugepagesz="* ]]; then str_HugePageSize=`echo $str_line1 | cut -d '=' -f2`; fi      # parse hugepage size
-        if [[ $str_line1 == *"hugepages="* ]]; then str_HugePageNum=`echo $str_line1 | cut -d '=' -f2`; fi        # parse hugepage num
-    done < $str_file0
+    while read -r str_line1; do
+        if [[ $str_line1 == *"hugepagesz="* ]]; then str_HugePageSize=`echo $str_line1 | cut -d '=' -f2 | cut -d ' ' -f1`; fi       # parse hugepage size
+        if [[ $str_line1 == *"hugepages="* ]]; then str_HugePageNum=`echo $str_line1 | cut -d '=' -f4`; fi                          # parse hugepage num
+    done < $str_logFile0
 
     if [[ $str_HugePageSize == "2M" ]]; then declare -i int_HugePageSizeK=2048; fi
     if [[ $str_HugePageSize == "1G" ]]; then declare -i int_HugePageSizeK=1048576; fi
@@ -152,7 +152,14 @@ if [[ -e $str_inFile2 ]]; then
     echo -e "$0: Review changes:\n\t'$str_outFile2'"
 else
     echo -e "Failed. File(s) missing:"
-    echo -e "\t'$str_inFile2'"
+
+    if [[ -z $str_inFile2 ]]; then
+        echo -e "\t'$str_inFile2'"
+    fi
+
+    if [[ -z $str_logFile0 ]]; then
+        echo -e "\t'$str_logFile0'"
+    fi
 fi
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files

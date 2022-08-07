@@ -2,9 +2,9 @@
 
 # TODO
 #
-# -multiboot output to file is working, but not each new entry
-# -parse hugepages not working, again, for some reason
-# 
+# -fix MultiBoot file output (new entry for each boot VGA)
+# -use master arrays that save every driver (valid/invalid), every hwid, for a given IOMMU group
+# -reference these arrays for MultiBoot output
 
 # function steps #
 # 1a.   Parse PCI and IOMMU groups, sort information to be parsed again later
@@ -248,10 +248,124 @@ function MultiBootSetup {
         rm $str_tempFile7
     fi
 
-    # parse IOMMU IDs #
-    declare -i int_i=0      # reset counter
+    # parse list of VGA IOMMU groups #
+    for (( int_i=0 ; int_i < ${#arr_IOMMUID_VGAlist[@]} ; int_i++ )); do
 
-    while [[ $int_i -le $int_compgen_IOMMUID_lastIndex && $bool_missingFiles == false ]]; do
+        # reset vars #
+        str_thisVGA_deviceName=""
+        str_driverName_thisList=""
+        str_HWID_thisList=""
+        
+        # parse list of VGA IOMMU groups #
+        for (( int_j=0 ; int_j < ${#arr_IOMMUID_VGAlist[@]} ; int_j++ )); do
+            
+            # false match, add all VGA IOMMU groups minus current boot VGA group #
+            if [[ ${arr_IOMMUID_VGAlist[int_j]} != ${arr_IOMMUID_VGAlist[int_i]} ]]; then
+                str_driverName_thisList+=${arr_driverName_VGAlist[$int_j]}
+                str_HWID_thisList+=${arr_HWID_VGAlist[$int_j]}
+            fi
+        done
+
+        # find boot VGA device name #
+        for (( int_j=0 ; int_j<${#arr_lspci_IOMMUID[@]} ; int_j++ )); do
+            
+            # match IOMMU ID #
+            if [[ ${arr_lspci_IOMMUID[$int_j]} == ${arr_IOMMUID_VGAlist[int_i]} ]]; then
+                
+                if [[ ${arr_VGA_deviceName[$int_j]} == "graphics" || ${arr_VGA_deviceName[$int_j]} == "VGA" ]]; then
+                    str_thisVGA_deviceName=${arr_VGA_deviceName[$int_j]}
+                    break
+                fi
+                str_thisVGA_deviceName="N/A"
+            fi
+        done
+
+        ## check will assume system has passed through every VGA device, excluding integrated video (if enabled) ##
+        # match null and false match integrated video #
+        #if [[ $str_thisVGA_deviceName == "" && $str_thisVGA_deviceName != `lspci -m | grep -Ei "graphics|VGA" | head -n1 | cut -d '"' -f6` ]]; then
+            #str_thisVGA_deviceName="N/A"    # reset string
+
+        # match integrated video #
+        #else
+            #str_thisVGA_deviceName=`lspci -m | grep -Ei "graphics|VGA" | head -n1 | cut -d '"' -f6`
+        #fi
+
+        str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} ${str_GRUB_CMDLINE_Hugepages} modprobe.blacklist=${str_driverName_thisList}${str_driverName_newList} vfio_pci.ids=${str_HWID_thisList}${str_HWID_list}"
+
+        ## /etc/grub.d/proxifiedScripts/custom ##
+        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_root_Kernel (VFIO, Boot VGA: '$str_thisVGA_deviceName')" 
+        str_output1="menuentry \"$str_GRUB_title\"{"
+        str_output2="    insmod $str_root_FSTYPE"
+        str_output3="    set root='/dev/disk/by-uuid/$str_root_UUID'"
+        str_output4="        search --no-floppy --fs-uuid --set=root $str_root_UUID"
+        str_output5="    echo    'Loading Linux $str_root_Kernel ...'"
+        str_output6="    linux   /boot/vmlinuz-$str_root_Kernel root=UUID=$str_root_UUID $str_GRUB_CMDLINE"
+        str_output7="    initrd  /boot/initrd.img-$str_root_Kernel"
+
+        if [[ -e $str_inFile7 && -e $str_inFile7b ]]; then
+            if [[ -e $str_outFile7 ]]; then
+                mv $str_outFile7 $str_oldFile7      # create backup
+            fi
+
+            cp $str_inFile7 $str_outFile7           # copy over blank
+
+            # write to tempfile #
+            while read -r str_line1; do
+                if [[ $str_line1 == *'#$str_output1'* ]]; then
+                    str_line1=$str_output1
+                fi
+
+                if [[ $str_line1 == *'#$str_output2'* ]]; then
+                    str_line1=$str_output2
+                fi
+
+                if [[ $str_line1 == *'#$str_output3'* ]]; then
+                    str_line1=$str_output3
+                fi
+
+                if [[ $str_line1 == *'#$str_output4'* ]]; then
+                    str_line1=$str_output4
+                fi
+
+                if [[ $str_line1 == *'#$str_output5'* ]]; then
+                    str_line1=$str_output5
+                fi
+
+                if [[ $str_line1 == *'#$str_output6'* ]]; then
+                    str_line1=$str_output6
+                fi
+
+                if [[ $str_line1 == *'#$str_output7'* ]]; then
+                    str_line1=$str_output7
+                fi
+
+                echo -e $str_line1 >> $str_tempFile7
+            done < $str_inFile7b    # read from template
+
+            # write to system file #
+            echo >> $str_outFile7
+            echo >> $str_outFile7
+            echo >> $str_outFile7
+
+            while read -r str_line1; do
+                echo -e $str_line1 >> $str_outFile7
+            done < $str_tempFile7    # read from tempfile
+
+            # clear tempfile #
+            if [[ -e $str_tempFile7 ]]; then
+                rm $str_tempFile7
+            fi
+
+            chmod 755 $str_outFile7     # set proper permissions
+        else
+            bool_missingFiles=true
+        fi
+
+        str_thisVGA_deviceName=""       # reset string
+    done
+
+    #while [[ $int_i -le $int_compgen_IOMMUID_lastIndex && $bool_missingFiles == false ]]; do
+    while false; do # debug
 
         # find boot VGA device name #
         for (( int_j=0 ; int_j<${#arr_lspci_IOMMUID[@]} ; int_j++ )); do
@@ -286,7 +400,7 @@ function MultiBootSetup {
             fi
         done
 
-        str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} modprobe.blacklist=${str_driverName_thisList}${str_driverName_newList} vfio_pci.ids=${str_HWID_thisList}${str_HWID_list}"
+        str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} ${str_GRUB_CMDLINE_Hugepages} modprobe.blacklist=${str_driverName_thisList}${str_driverName_newList} vfio_pci.ids=${str_HWID_thisList}${str_HWID_list}"
 
         ## /etc/grub.d/proxifiedScripts/custom ##
         str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_root_Kernel (VFIO, Boot VGA: '$str_thisVGA_deviceName')" 
@@ -409,7 +523,7 @@ function StaticSetup {
     str_oldFile5=$str_outFile5".old"
 
     # logfiles #
-    str_logFile0=`find . -name *hugepages*log*`
+    str_logFile0=`find $(pwd) -name *hugepages*log*`
     str_logFile1=$(pwd)"/grub.log"
     # none for file2-file5
     str_logFile6=$(pwd)"/grub-menus.log"
@@ -641,8 +755,21 @@ function StaticSetup {
     done
 
     ## /etc/default/grub ##
-    str_GRUB_CMDLINE_prefix="quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages"
-    str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_driverName_newList vfio_pci.ids=$str_HWID_list"
+    # check for hugepages logfile #
+    if [[ -z $str_logFile0 ]]; then
+        echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_logFile0' and '$0'.\n"
+        str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages="
+    else
+        str_GRUB_CMDLINE_Hugepages=`cat $str_logFile0`
+    fi
+
+    str_GRUB_CMDLINE_prefix="quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1"
+    
+    if [[ $bool_MultiBoot == true ]]; then
+        str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist= vfio_pci.ids="
+    else
+        str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driverName_newList vfio_pci.ids=$str_HWID_list"
+    fi
     
     str_output1="GRUB_DISTRIBUTOR=\`lsb_release -i -s 2> /dev/null || echo "`lsb_release -i -s`"\`"
     str_output2="GRUB_CMDLINE_LINUX_DEFAULT=\"$str_GRUB_CMDLINE\""
@@ -807,17 +934,6 @@ function StaticSetup {
 
 }
 
-# check for hugepages logfile #
-if [[ ! -e $str_logFile0 ]]; then
-    echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_logFile0' and '$0'.\n"
-    str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages="
-else
-    while read -r str_line1; do
-        if [[ $str_line1 == *"hugepagesz="* ]]; then str_GRUB_CMDLINE_Hugepages+="default_$str_line1 $str_line1 "; fi    # parse hugepage size
-        if [[ $str_line1 == *"hugepages="* ]]; then str_GRUB_CMDLINE_Hugepages+="$str_line1"; fi                       # parse hugepage num
-    done < $str_logFile0
-fi
-
 # prompt #
 echo -en "$0: "
 declare -i int_count=0      # reset counter
@@ -877,6 +993,5 @@ if [[ $bool_missingFiles == true ]]; then
     echo -e "$0: Setup installation is incomplete. Clone or re-download 'portellam/VFIO-setup' to continue."
 fi
 
-echo
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 exit 0
