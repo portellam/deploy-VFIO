@@ -20,55 +20,37 @@ For best results post-installation, use **'portellam/AutoXorg'**:  https://githu
 * a useful guide:       https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 
 ## Functions
-* **setup Hugepages**
-    * Static allocation of Host RAM to VMs for zero memory fragmentation and reduced memory latencies (best to use multiples of size of each Memory channel/stick).
-* **setup Zram swapfile**
-    * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
-    * Restarts related system service.
+* **Pre-install**
+    * **setup Hugepages**
+        * Static allocation of Host RAM to VMs for zero memory fragmentation and reduced memory latencies (best to use whole Memory channels/sticks, if possible).
+    * **setup Zram swapfile**
+        * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
+    * **static/dynamic CPU thread allocation:** **(work-in-progress)**
 * **VFIO setup**
     * Setup dynamically (Multi-Boot) or statically.
-* **Post-install: setup Evdev (Event devices)**
-    * Virtual Keyboard-Mouse switch (better than nothing, best to have physical KVM and multiple PCI USB controllers).
-    * Restarts related system service.
-    * Executes post-setup given assuming user passthroughs a USB controller (not necessary to parse all USB input devices).
-* **Post-install: Auto VM Deployment** **(NOT AVAILABLE)**
-    * Deploy auto-generated Virtual machines (for every config, include Evdev and Hugepages).
+* **Post-install:**
+    * **setup Evdev (Event devices)**
+        * Virtual Keyboard-Mouse switch (better than nothing, best to have physical KVM and multiple PCI USB controllers).
+        * Executes post-setup given assuming user passthroughs a USB controller (not necessary to parse all USB input devices).
+    * **Libvirt-nosleep:** system service to prevent Host sleep while virtual machine(s) are active (see credits in file)
+    * **Auto VM Deployment:** **(work-in-progress)**
+
+* work-in-progress; more features to be added, as needed.
 
 ## VFIO setup *(expanded)*
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups of devices.
     * Saves lists of external PCI devices, by order of IOMMU groups.
 * Prompt user for VFIO passthrough setup:
-    * Dynamic/Multi-Boot setup **(SEE NOTES)**
-        * Outputs multiple GRUB menu entries for each permutation of one absent, passedthrough IOMMU group (with a VGA device).
-            * In other words, select a host VGA boot device at GRUB menu (use **'portellam/Auto-Xorg'** for best results).
-        * **NOTE:** Currently outputs to logfile. Undetermined what system file to output to?
-        * also executes Static setup.
+    * Multi-Boot (Dynamic) setup **(SEE NOTES)**
+        * Select a host VGA boot device at GRUB menu.
+        * use **'portellam/Auto-Xorg'** for best results).
+        * Appends to system file: **'/etc/grub.d/proxifiedScripts/custom'**
     * Static setup
         * Asks user to VFIO passthrough any IOMMU groups (with external PCI devices, including VGA devices).
-        * with Multi-boot setup: Asks user to VFIO passthrough any IOMMU groups (excluding external VGA devices).
-        * Appends to system files: **'/etc/initramfs-tools/modules'**, **'/etc/modules'**, **'/etc/modprobe.d/*'**.
-        * Also appends to system file: **'/etc/default/grub'**.         
-* Updates GRUB and INITRAMFS.
-* Checks for existing VFIO setup, asks user to uninstall setup and restart machine to continue, or exit.
-
-## Complete
-* VFIO Setup: Multi-boot: outputs to logfile, no system file
-* VFIO Setup: Static Setup
-* Evdev setup
-* Hugepages setup
-* Zram-swap setup
-
-## To-Do
-* **(Important)** VFIO Setup: Multi-boot:   locate system file (**'/etc/grub.d/40_custom'** ?)
-* **(Optional)** Post-Install:              auto VM deployment
-* **(Optional)** VFIO Setup:                Linux distro-agnostic setup: test!
-* **(Optional)** VFIO Setup:                Uninstaller
+        * Appends to system file(s): **'/etc/initramfs-tools/modules'**, **'/etc/modules'**, **'/etc/modprobe.d/*'**, **'/etc/default/grub'**.         
+* Checks for existing VFIO setup, prompt user to uninstall setup, reboot, and try again to continue.
 
 ## DISCLAIMER
 Tested on Debian Linux.
 
 Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
-
-Review logfiles for insight to complete your installation, should 'VFIO-Setup' or any components of 'VFIO-Setup' fail to complete installation.
-
-I will try to answer any questions you may have here. Otherwise, please refer to community forums and guides for any help.
