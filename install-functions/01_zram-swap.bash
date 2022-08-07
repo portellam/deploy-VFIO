@@ -125,15 +125,13 @@ if [[ ! -z $int_ZRAM_SizeG ]]; then declare -i int_denominator=$int_SysMemMaxG/$
 
 # NOTE: leave as "! -z" (IS 'NOT' NULL), integers do not work with "-e" (IS 'NOT-NULL') #
 # if input is valid #
-if [[ ! -z $int_denominator ]]; then    
-    sudo systemctl restart zram-swap     # restart service   # NOTE: do not enable/start zramswap.service?  # NOTE: test!
-    # NOTE: in my setup, I prefer the git repo. I currently do not understand zram setup using the debian package/config file (zram pages are exact sizes compressed, not uncompressed as above).
+if [[ ! -z $int_denominator ]]; then
+    str_output1="_zram_fraction=\"1/$int_denominator\""
+else
+    str_output1=""
 fi
-#
 
 # /etc/default/zram-swap #
-str_output1="_zram_fraction=\"1/2\""
-
 if [[ -e $str_inFile2 ]]; then
     if [[ -e $str_outFile2 ]]; then
         mv $str_outFile2 $str_oldFile2      # create backup
@@ -141,13 +139,15 @@ if [[ -e $str_inFile2 ]]; then
 
     # write to file #
     while read -r str_line1; do
-        if [[ $str_line1 == '#$str_output1'* ]]; then
+        if [[ $str_line1 == '#$str_output1'* && $str_output1 != "" ]]; then
             str_line1=$str_output1
         fi
 
         echo -e $str_line1 >> $str_outFile2
     done < $str_inFile2
 
+    sudo systemctl restart zram-swap     # restart service   # NOTE: do not enable/start zramswap.service?  # NOTE: test!
+    # NOTE: in my setup, I prefer the git repo. I currently do not understand zram setup using the debian package/config file (zram pages are exact sizes compressed, not uncompressed as above).
     echo -e "$0: Executing ZRAM-swap setup... Complete.\n"
     echo -e "$0: Review changes:\n\t'$str_outFile2'"
 else

@@ -18,13 +18,11 @@ str_inFile1=`find . -name *etc_grub.d_proxifiedScripts_custom`
 
 if [[ -e $str_inFile1 ]]; then
     cp $str_inFile1 $str_outFile1       # copy from template
+else
+    echo -e "Failed. File(s) missing:"
 
-    else
-        echo -e "Failed. File(s) missing:"
-
-        if [[ -z $str_inFile1 ]]; then 
-            echo -e "\t'$str_inFile1'"
-        fi
+    if [[ -z $str_inFile1 ]]; then 
+        echo -e "\t'$str_inFile1'"
     fi
 fi
 

@@ -304,27 +304,26 @@ function MultiBootSetup {
             bool_missingFiles=true
         fi
 
-        if [[ $bool_missingFiles == true ]]; then
-            echo -e "$0: File(s) missing:"
-            
-            if [[ -z $str_inFile7 ]]; then 
-                echo -e "\t'$str_inFile7'"
-            fi
-
-            if [[ -z $str_inFile7b ]]; then 
-                echo -e "\t'$str_inFile7b'"
-            fi
-            
-            echo -e "$0: Executing Multi-boot setup... Failed."
-        else
-            echo -e "$0: Executing Multi-boot setup... Complete."
-        fi
-
         ((int_i++))                     # increment counter
         str_thisVGA_deviceName=""       # reset string
     done
 
     #echo -e "$0: DISCLAIMER: Automated GRUB menu entry feature not available yet.\n$0: Manual 'Multi-Boot' setup steps:\n\t1. Execute GRUB Customizer\n\t2. Clone an existing, valid menu entry\n\t3. Copy the fields in the logfile:\n\t\t'$str_logFile6'\n\t4. Paste the output into a new menu entry, where appropriate.\n"
+    if [[ $bool_missingFiles == true ]]; then
+        echo -e "$0: File(s) missing:"
+            
+        if [[ -z $str_inFile7 ]]; then 
+            echo -e "\t'$str_inFile7'"
+        fi
+
+        if [[ -z $str_inFile7b ]]; then 
+            echo -e "\t'$str_inFile7b'"
+        fi
+         
+        echo -e "$0: Executing Multi-boot setup... Failed."
+    else
+        echo -e "$0: Executing Multi-boot setup... Complete."
+    fi
 }
 
 function StaticSetup {
@@ -762,7 +761,7 @@ str_prompt="$0: Setup VFIO by 'Multi-Boot' or Statically?\n\tMulti-Boot Setup in
 
 if [[ -z $str_input1 ]]; then echo -e $str_prompt; fi
 
-while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup || $bool_missingFiles == false]]; do
+while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup || $bool_missingFiles == false ]]; do
     if [[ $int_count -ge 3 ]]; then
         echo -en "Exceeded max attempts."
         str_input1="N"                   # default selection

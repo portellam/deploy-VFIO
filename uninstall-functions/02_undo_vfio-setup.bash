@@ -29,8 +29,25 @@ str_inFile4=`find . -name *etc_modprobe.d_pci-blacklists.conf`
 str_inFile5=`find . -name *etc_modprobe.d_vfio.conf`
 str_inFile7=`find . -name *etc_grub.d_proxifiedScripts_custom`
 
+str_output1="GRUB_DISTRIBUTOR=\`lsb_release -i -s 2> /dev/null || echo "`lsb_release -i -s`"\`"
+str_output2="GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\""
+
 if [[ -e $str_inFile1 ]]; then
-    cp $str_inFile1 $str_outFile1       # copy from template
+    if [[ -e $str_outFile1 ]]; then
+        rm $str_outFile1
+    fi
+
+    while read -r str_line1; do
+        if [[ $str_line1 == '#$str_output1'* ]]; then
+            str_line1=$str_output1
+        fi
+
+        if [[ $str_line1 == '#$str_output2'* ]]; then
+            str_line1=$str_output2
+        fi
+
+        echo $str_line1 >> $str_outFile1
+    done < $str_inFile1
 elif [[ -e $str_inFile2 ]]; then
     cp $str_inFile2 $str_outFile2       # copy from template
 elif [[ -e $str_inFile3 ]]; then
