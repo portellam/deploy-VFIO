@@ -1,7 +1,5 @@
-*If you like this script, please favorite and share. Thank you.*
-
 ## Description
-Ultimate collection of scripts for a seamless, automated VFIO passthrough setup.
+Ultimate collection of scripts for a seamless, intuitive, and automated VFIO (hardware) passthrough setup. Run incompatible or untrusted hardware/software/OS inside a virtual machine, under the Linux Desktop of your choice. 
 
 ## How-to
 To install, execute:    
