@@ -250,12 +250,12 @@ function MultiBootSetup {
         # parse list of VGA IOMMU groups #
         for (( int_i=0 ; int_i < ${#arr_IOMMUID_VGAlist[@]} ; int_i++ )); do
 
-            echo '$int_i == '"'$int_i'"
+            #echo '$int_i == '"'$int_i'"
 
             # find boot VGA device name #
             for (( int_j=0 ; int_j<${#arr_lspci_IOMMUID[@]} ; int_j++ )); do
 
-                echo '$int_j == '"'$int_j'"
+                #echo '$int_j == '"'$int_j'"
 
                 if [[ ${arr_VGA_deviceName[$int_j]} != "NO_VGA_FOUND" ]]; then
                     str_thisVGA_deviceName=${arr_VGA_deviceName[$int_j]}
@@ -278,9 +278,9 @@ function MultiBootSetup {
             fi
         done
 
-        echo '$str_thisVGA_deviceName == '"'$str_thisVGA_deviceName'"
-        echo '$str_driverName_thisList == '"'$str_driverName_thisList'"
-        echo '$str_HWID_thisList == '"'$str_HWID_thisList'"
+        #echo '$str_thisVGA_deviceName == '"'$str_thisVGA_deviceName'"
+        #echo '$str_driverName_thisList == '"'$str_driverName_thisList'"
+        #echo '$str_HWID_thisList == '"'$str_HWID_thisList'"
 
         str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} ${str_GRUB_CMDLINE_Hugepages} modprobe.blacklist=${str_driverName_thisList}${str_driverName_newList} vfio_pci.ids=${str_HWID_thisList}${str_HWID_list}"
 
