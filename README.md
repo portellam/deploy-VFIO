@@ -43,7 +43,6 @@ For best results post-installation, use **'portellam/AutoXorg'**:  https://githu
 * Prompt user for VFIO passthrough setup:
     * **Multi-Boot setup** **(work-in-progress: currently outputs only one valid boot entry, not all)**
         * Select a host VGA boot device at GRUB menu.
-        * use **'portellam/Auto-Xorg'** for best results).
         * Appends to system file: **'/etc/grub.d/proxifiedScripts/custom'**
     * **Static setup**
         * Asks user to VFIO passthrough any IOMMU groups (with external PCI devices, including VGA devices).
