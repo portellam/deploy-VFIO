@@ -33,3 +33,5 @@ GRUB_CMDLINE_LINUX=""
 
 # Uncomment to get a beep at grub start
 #GRUB_INIT_TUNE="480 440 1"
+#
+#

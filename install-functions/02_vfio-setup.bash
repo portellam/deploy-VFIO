@@ -29,11 +29,13 @@ echo -en "$0: Parsing PCI device information... "
 ## parameters ##
 bool_isVFIOsetup=false
 bool_missingFiles=false
-str_GRUB_CMDLINE_Hugepages=""
+bool_MultiBoot=false
 bool_hasExternalPCI=false 
 bool_hasVGA=false
 #bool_hasNoDriver=false
 bool_hasVFIODriver=false
+str_GRUB_CMDLINE=""
+str_GRUB_CMDLINE_Hugepages=""
 
 readonly int_compgen_IOMMUID_lastIndex=`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | cut -d '/' -f5 | sort -hr | head -n1`       # IOMMU ID, sorted
 declare -a arr_compgen=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | sort -h`)                                                  # IOMMU ID and Bus ID, sorted by IOMMU ID (left-most digit)
@@ -56,14 +58,12 @@ readonly arr_lspci_HWID
 readonly arr_lspci_type
 readonly arr_lspci_vendorName
 
+declare -a arr_driverName_VGAlist
+declare -a arr_HWID_VGAlist
 declare -a arr_lspci_driverName     # driver name, sorted by Bus ID     (ex 'nouveau' or 'nvidia')
 declare -a arr_lspci_IOMMUID        # strings of index(es) of every Bus ID and entry, sorted by IOMMU ID
 declare -a arr_VGA_deviceName       # first VGA device's name of each IOMMU group
 declare -a arr_VGA_IOMMUID          # IOMMU groups with VGA devices
-
-# files #
-str_GRUB_CMDLINE=""
-str_GRUB_STATIC=""
 
 ## find and sort drivers by Bus ID (lspci) ##
 # parse Bus ID #
@@ -219,10 +219,7 @@ function MultiBootSetup {
     str_inFile7b=`find . -name *custom_grub_template`
 
     # system files #
-    #str_outFile7="/etc/grub.d/proxifiedScripts/custom"
-
-    # debug system files #
-    str_outFile7=$str_inFile7".old"
+    str_outFile7="/etc/grub.d/proxifiedScripts/custom"
 
     # system file backups #
     str_oldFile7=$str_outFile7".old"
@@ -250,6 +247,28 @@ function MultiBootSetup {
         else
             str_thisVGA_deviceName=`lspci -m | grep -Ei "graphics|VGA" | head -n1 | cut -d '"' -f6`
         fi
+
+        # parse list of VGA IOMMU groups #
+        for (( int_j=0 ; int_j -lt ${#arr_IOMMUID_VGAlist[@]} ; int_j++ )); do
+            
+            # false match, add all VGA IOMMU groups minus current boot VGA group #
+            if [[ ${arr_IOMMUID_VGAlist[int_j]} != $int_i ]]; then
+                str_driverName_thisList+=${arr_driverName_VGAlist[$int_j]}
+                str_HWID_thisList+=${arr_HWID_VGAlist[$int_j]}
+            fi
+        done
+
+        # remove last delimiter #
+        if [[ ${str_driverName_thisList: -1} == "," ]]; then
+            str_driverName_thisList=${str_driverName_thisList::-1}
+        fi
+
+        # remove last delimiter #
+        if [[ ${str_HWID_thisList: -1} == "," ]]; then
+            str_HWID_thisList=${str_HWID_thisList::-1}
+        fi
+
+        str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_driverName_thisList vfio_pci.ids=$str_HWID_thisList"
 
         ## /etc/grub.d/proxifiedScripts/custom ##
         str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_root_Kernel (VFIO, VGA: $str_thisVGA_deviceName)" 
@@ -342,18 +361,11 @@ function StaticSetup {
     # none for file6
 
     # system files #
-    #str_outFile1="/etc/default/grub"
-    #str_outFile2="/etc/modules"
-    #str_outFile3="/etc/initramfs-tools/modules"
-    #str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
-    #str_outFile5="/etc/modprobe.d/vfio.conf"
-
-    # debug system files #
-    str_outFile1=$str_inFile1".old"
-    str_outFile2=$str_inFile2".old"
-    str_outFile3=$str_inFile3".old"
-    str_outFile4=$str_inFile4".old"
-    str_outFile5=$str_inFile5".old"
+    str_outFile1="/etc/default/grub"
+    str_outFile2="/etc/modules"
+    str_outFile3="/etc/initramfs-tools/modules"
+    str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
+    str_outFile5="/etc/modprobe.d/vfio.conf"
 
     # system file backups #
     str_oldFile1=$str_outFile1".old"
@@ -512,9 +524,27 @@ function StaticSetup {
                 "Y")
                     echo "$0: Passing-through IOMMU group '$int_i'."
 
-                    # add IOMMU group to VFIO pass-through lists #
-                    str_driverName_list+=$str_driverName_tempList
-                    str_HWID_list+=$str_HWID_tempList
+                    ## add IOMMU group to VFIO pass-through lists ##
+
+                    # add VGA IOMMU group to list, output to GRUB menu entries #
+                    if [[ $bool_MultiBoot == true && $bool_hasVGA == true ]]; then
+                        arr_IOMMUID_VGAlist+=($int_i)
+                        arr_driverName_VGAlist+=($str_driverName_tempList)
+                        arr_HWID_VGAlist+=($str_HWID_tempList)
+                    fi
+
+                    # add non VGA IOMMU group to list, output to static files #
+                    if [[ $bool_MultiBoot == true && $bool_hasVGA == false ]]; then
+                        str_driverName_list+=$str_driverName_tempList
+                        str_HWID_list+=$str_HWID_tempList
+                    fi
+
+                    # static boot #
+                    if [[ $bool_MultiBoot == false && $bool_hasVGA == false ]]; then
+                        str_driverName_list+=$str_driverName_tempList
+                        str_HWID_list+=$str_HWID_tempList
+                    fi
+                    
                     break;;
 
                 "N")
@@ -577,7 +607,9 @@ function StaticSetup {
     done
 
     ## /etc/default/grub ##
-    str_GRUB_CMDLINE="quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driverName_newList vfio_pci.ids=$str_HWID_list"
+    str_GRUB_CMDLINE_prefix="quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages"
+    str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_driverName_newList vfio_pci.ids=$str_HWID_list"
+    
     str_output1="GRUB_DISTRIBUTOR=\`lsb_release -i -s 2> /dev/null || echo "`lsb_release -i -s`"\`"
     str_output2="GRUB_CMDLINE_LINUX_DEFAULT=\"$str_GRUB_CMDLINE\""
 
@@ -681,7 +713,7 @@ function StaticSetup {
 
     ## /etc/modprobe.d/vfio.conf ##
     str_output1="$str_driverName_list_softdep"
-    str_output2="options vfio_pci ids=$str_HWID_list\nvfio_pci ids=$str_HWID_list"
+    str_output2="options vfio_pci ids=$str_HWID_list"
 
     if [[ -e $str_inFile5 ]]; then
         if [[ -e $str_outFile5 ]]; then
@@ -759,7 +791,9 @@ echo -en "$0: "
 declare -i int_count=0      # reset counter
 str_prompt="$0: Setup VFIO by 'Multi-Boot' or Statically?\n\tMulti-Boot Setup includes adding GRUB boot options, each with one specific omitted VGA device.\n\tStatic Setup modifies '/etc/initramfs-tools/modules', '/etc/modules', and '/etc/modprobe.d/*.\n\tMulti-boot is the more flexible choice.\n"
 
-if [[ -z $str_input1 ]]; then echo -e $str_prompt; fi
+if [[ -z $str_input1 ]]; then
+    echo -e $str_prompt
+fi
 
 while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup || $bool_missingFiles == false ]]; do
     if [[ $int_count -ge 3 ]]; then
@@ -774,6 +808,7 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup || $bool_missingFile
 
     case $str_input1 in
         "M")
+            bool_MultiBoot=true     # boolean to set static setup with all but groups with VGA devices, multi boot setup with only vga devices
             StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             sudo update-grub                    # update GRUB

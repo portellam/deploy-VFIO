@@ -22,3 +22,5 @@
   echo    'Loading initial ramdisk ...'
   #$str_output7       # Do not change this placeholder
 }
+#
+#
