@@ -216,12 +216,17 @@ function MultiBootSetup {
     echo -e "$0: Executing Multi-boot setup..."
 
     ## parameters ##
-    str_root_Distro=`lsb_release -i -s`                                              # Linux distro name
+    str_root_Distro=`lsb_release -i -s`                                             # Linux distro name
     #declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2`)             # all kernels
-    str_root_Kernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`       # latest kernel
+    str_root_Kernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`      # latest kernel
+    str_root_Kernel=${str_root_Kernel: 1}
     str_root_Disk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
-    str_root_UUID=`blkid -s TYPE | grep $str_root_Disk | cut -d '"' -f2`
+    str_root_UUID=`blkid -s UUID | grep $str_root_Disk | cut -d '"' -f2`
     str_root_FSTYPE=`blkid -s TYPE | grep $str_root_Disk | cut -d '"' -f2`
+
+    if [[ $str_root_FSTYPE == "ext4" || $str_root_FSTYPE == "ext3" ]]; then
+        str_root_FSTYPE="ext2"
+    fi
 
     # input files #
     str_inFile7=`find . -name *etc_grub.d_proxifiedScripts_custom`
@@ -235,7 +240,11 @@ function MultiBootSetup {
 
     # temp file #
     str_tempFile7=$str_inFile7b"_temp"
-    rm $str_tempFile7        # clear tempfile
+
+    # clear tempfile #
+    if [[ -e $str_tempFile7 ]]; then
+        rm $str_tempFile7
+    fi
 
     # parse IOMMU IDs #
     declare -i int_i=0      # reset counter
@@ -261,6 +270,10 @@ function MultiBootSetup {
             str_thisVGA_deviceName=`lspci -m | grep -Ei "graphics|VGA" | head -n1 | cut -d '"' -f6`
         fi
 
+        # reset lists #
+        str_driverName_thisList=""
+        str_HWID_thisList=""
+
         # parse list of VGA IOMMU groups #
         for (( int_j=0 ; int_j < ${#arr_IOMMUID_VGAlist[@]} ; int_j++ )); do
             
@@ -271,27 +284,17 @@ function MultiBootSetup {
             fi
         done
 
-        # remove last delimiter #
-        if [[ ${str_driverName_thisList: -1} == "," ]]; then
-            str_driverName_thisList=${str_driverName_thisList::-1}
-        fi
-
-        # remove last delimiter #
-        if [[ ${str_HWID_thisList: -1} == "," ]]; then
-            str_HWID_thisList=${str_HWID_thisList::-1}
-        fi
-
-        str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_driverName_thisList vfio_pci.ids=$str_HWID_thisList"
+        str_GRUB_CMDLINE="$str_GRUB_CMDLINE_prefix modprobe.blacklist=${str_driverName_thisList}${str_driverName_newList} vfio_pci.ids=${str_HWID_thisList}${str_HWID_list}"
 
         ## /etc/grub.d/proxifiedScripts/custom ##
         str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_root_Kernel (VFIO, Boot VGA: '$str_thisVGA_deviceName')" 
         str_output1="menuentry \"$str_GRUB_title\"{"
-        str_output2="insmod $str_root_FSTYPE"
-        str_output3="set root='/dev/disk/by-uuid/$str_root_UUID'"
-        str_output4="search --no-floppy --fs-uuid --set=root $str_root_UUID"
-        str_output5="echo    'Loading Linux $str_root_Kernel ...'"
-        str_output6="linux   /boot/vmlinuz-$str_root_Kernel root=UUID=$str_root_UUID $str_GRUB_CMDLINE"
-        str_output7="initrd  /boot/initrd.img-$str_root_Kernel"
+        str_output2="    insmod $str_root_FSTYPE"
+        str_output3="        set root='/dev/disk/by-uuid/$str_root_UUID'"
+        str_output4="    search --no-floppy --fs-uuid --set=root $str_root_UUID"
+        str_output5="    echo    'Loading Linux $str_root_Kernel ...'"
+        str_output6="    linux   /boot/vmlinuz-$str_root_Kernel root=UUID=$str_root_UUID $str_GRUB_CMDLINE"
+        str_output7="    initrd  /boot/initrd.img-$str_root_Kernel"
 
         if [[ -e $str_inFile7 && -e $str_inFile7b ]]; then
             if [[ -e $str_outFile7 ]]; then
@@ -342,7 +345,12 @@ function MultiBootSetup {
                 echo -e $str_line1 >> $str_outFile7
             done < $str_tempFile7    # read from tempfile
 
-            rm $str_tempFile7        # clear tempfile
+            # clear tempfile #
+            if [[ -e $str_tempFile7 ]]; then
+                rm $str_tempFile7
+            fi
+
+            chmod 755 $str_outFile7     # set proper permissions
         else
             bool_missingFiles=true
         fi
@@ -835,20 +843,23 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup || $bool_missingFile
             bool_MultiBoot=true     # boolean to set static setup with all but groups with VGA devices, multi boot setup with only vga devices
             StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
+            echo
             sudo update-grub                    # update GRUB
             sudo update-initramfs -u -k all     # update INITRAMFS
-            echo -e "\n\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'\n\t'$str_outFile7'"
+            echo -e "\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'\n\t'$str_outFile7'"
             break;;
         "S")
             StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
+            echo
             sudo update-grub                    # update GRUB
             sudo update-initramfs -u -k all     # update INITRAMFS
-            echo -e "\n\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'"
+            echo -e "\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'"
             break;;
         "N")
             echo -e "$0: Skipping."
             IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
-            exit 0;;
+            exit 0
+            ;;
         *)
             echo -en "$0: Invalid input.";;
     esac
@@ -866,5 +877,6 @@ if [[ $bool_missingFiles == true ]]; then
     echo -e "$0: Setup installation is incomplete. Clone or re-download 'portellam/VFIO-setup' to continue."
 fi
 
+echo
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 exit 0

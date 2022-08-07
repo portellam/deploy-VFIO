@@ -55,18 +55,15 @@ function ReadInput {
 
 # check if system supports IOMMU #
 if [[ -z $(echo `compgen -G "/sys/kernel/iommu_groups/*/devices/*"`) ]]; then
-
     echo "$0: WARNING: Virtualization (AMD IOMMU or Intel VT-D) is NOT enabled or available in the BIOS/UEFI.\n$0: VFIO setup will continue, enable/review availability after execution."
 
 else
-
-    echo "$0: NOTE: Virtualization is enabled in the BIOS/UEFI."
-
+    echo "$0: Virtualization is enabled in the BIOS/UEFI."
 fi
 
 ## install required packages ##
 
-echo -en "$0: Linux distribution found: `lsb_release -i -s`\n$0: Checking for updates... "
+echo -e "$0: Linux distribution found: `lsb_release -i -s`\n$0: Checking for updates...\n"
 
 # Arch
 if [[ `lsb_release -i -s | grep -Ei "arch"` ]]; then
@@ -83,7 +80,7 @@ elif [[ `lsb_release -i -s | grep -Ei "fedora|redhat"` ]]; then
     # NOTE: find same packages from Debian    # is there a virtualization metapackage for Debian, Arch?
 
 else
-    echo -e "Failed.\n$0: Linux distibution is not recognized for or compatible with 'VFIO-setup'."
+    echo -e "Checking for updates... Failed.\n$0: Linux distibution is not recognized for or compatible with 'VFIO-setup'."
     str_output1="Continue? [Y/n]: "
     ReadInput $str_input1
     
