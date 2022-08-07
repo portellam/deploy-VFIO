@@ -249,7 +249,7 @@ function MultiBootSetup {
         fi
 
         # parse list of VGA IOMMU groups #
-        for (( int_j=0 ; int_j -lt ${#arr_IOMMUID_VGAlist[@]} ; int_j++ )); do
+        for (( int_j=0 ; int_j < ${#arr_IOMMUID_VGAlist[@]} ; int_j++ )); do
             
             # false match, add all VGA IOMMU groups minus current boot VGA group #
             if [[ ${arr_IOMMUID_VGAlist[int_j]} != $int_i ]]; then
