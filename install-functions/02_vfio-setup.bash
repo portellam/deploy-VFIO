@@ -381,7 +381,7 @@ function StaticSetup {
     str_oldFile2=$str_outFile2".old"
     str_oldFile3=$str_outFile3".old"
     str_oldFile4=$str_outFile4".old"
-    str_oldFile5=$str_oldFile5".old"
+    str_oldFile5=$str_outFile5".old"
 
     # logfiles #
     str_logFile0=`find . -name *hugepages*log*`
