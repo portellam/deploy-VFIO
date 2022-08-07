@@ -204,6 +204,15 @@ function ReadInput {
 
 function MultiBootSetup {
 
+    # NOTES:
+    # copy first output file to system file
+    # for each new grub menu entry, do
+    #   -copy second output file to temp file
+    #   -copy each new grub menu entry to a temp file
+    #   -append temp file system file
+    # end
+    #
+
     echo -e "$0: Executing Multi-boot setup..."
 
     ## parameters ##
@@ -813,13 +822,13 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup || $bool_missingFile
             MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             sudo update-grub                    # update GRUB
             sudo update-initramfs -u -k all     # update INITRAMFS
-            echo -e "\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'\n\t'$str_outFile7'"
+            echo -e "\n\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'\n\t'$str_outFile7'"
             break;;
         "S")
             StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
             sudo update-grub                    # update GRUB
             sudo update-initramfs -u -k all     # update INITRAMFS
-            echo -e "\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'"
+            echo -e "\n\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'"
             break;;
         "N")
             echo -e "$0: Skipping."
