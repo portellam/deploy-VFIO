@@ -358,7 +358,8 @@ function MultiBootSetup {
     elif [[ ${#arr_IOMMUID_VGAlist[@]} -le 0 ]]; then
         echo -e "$0: Executing Multi-boot setup... Cancelled. No IOMMU groups with VGA devices passed-through."
     else
-        chmod 755 $str_outFile7     # set proper permissions
+        #chmod 755 $str_outFile7                     # set proper permissions
+        chmod 755 /etc/grub.d/proxifiedScripts/*     # set proper permissions
         echo -e "$0: Executing Multi-boot setup... Complete."
     fi
 }
