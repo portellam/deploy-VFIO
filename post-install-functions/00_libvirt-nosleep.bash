@@ -22,13 +22,13 @@ if [[ -e $str_inFile1 && -e $str_inFile2 ]]; then
     touch $str_outFile1 $str_outFile2
 
     # write to file #
-    read -r str_line; do
-        echo $str_line >> $str_outFile1
+    while read -r str_line1; do
+        echo $str_line1 >> $str_outFile1
     done < $str_inFile1
 
     # write to file #
-    read -r str_line; do
-        echo $str_line >> $str_outFile2
+    while read -r str_line1; do
+        echo $str_line1 >> $str_outFile2
     done < $str_inFile2
 
     echo -e "Complete."
