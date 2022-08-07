@@ -233,6 +233,10 @@ function MultiBootSetup {
     # system file backups #
     str_oldFile7=$str_outFile7".old"
 
+    # temp file #
+    str_tempFile7=$str_inFile7b"_temp"
+    rm $str_tempFile7        # clear tempfile
+
     # parse IOMMU IDs #
     declare -i int_i=0      # reset counter
 
@@ -280,7 +284,7 @@ function MultiBootSetup {
         str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_driverName_thisList vfio_pci.ids=$str_HWID_thisList"
 
         ## /etc/grub.d/proxifiedScripts/custom ##
-        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_root_Kernel (VFIO, VGA: $str_thisVGA_deviceName)" 
+        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_root_Kernel (VFIO, Boot VGA: '$str_thisVGA_deviceName')" 
         str_output1="menuentry \"$str_GRUB_title\"{"
         str_output2="insmod $str_root_FSTYPE"
         str_output3="set root='/dev/disk/by-uuid/$str_root_UUID'"
@@ -296,38 +300,49 @@ function MultiBootSetup {
 
             cp $str_inFile7 $str_outFile7           # copy over blank
 
-            # write to file #
+            # write to tempfile #
             while read -r str_line1; do
-                if [[ $str_line1 == '#$str_output1'* ]]; then
+                if [[ $str_line1 == *'#$str_output1'* ]]; then
                     str_line1=$str_output1
                 fi
 
-                if [[ $str_line1 == '#$str_output2'* ]]; then
+                if [[ $str_line1 == *'#$str_output2'* ]]; then
                     str_line1=$str_output2
                 fi
 
-                if [[ $str_line1 == '#$str_output3'* ]]; then
+                if [[ $str_line1 == *'#$str_output3'* ]]; then
                     str_line1=$str_output3
                 fi
 
-                if [[ $str_line1 == '#$str_output4'* ]]; then
+                if [[ $str_line1 == *'#$str_output4'* ]]; then
                     str_line1=$str_output4
                 fi
 
-                if [[ $str_line1 == '#$str_output5'* ]]; then
+                if [[ $str_line1 == *'#$str_output5'* ]]; then
                     str_line1=$str_output5
                 fi
 
-                if [[ $str_line1 == '#$str_output6'* ]]; then
+                if [[ $str_line1 == *'#$str_output6'* ]]; then
                     str_line1=$str_output6
                 fi
 
-                if [[ $str_line1 == '#$str_output7'* ]]; then
+                if [[ $str_line1 == *'#$str_output7'* ]]; then
                     str_line1=$str_output7
                 fi
 
-                echo -e $str_line1 >> $str_outFile7
+                echo -e $str_line1 >> $str_tempFile7
             done < $str_inFile7b    # read from template
+
+            # write to system file #
+            echo >> $str_outFile7
+            echo >> $str_outFile7
+            echo >> $str_outFile7
+
+            while read -r str_line1; do
+                echo -e $str_line1 >> $str_outFile7
+            done < $str_tempFile7    # read from tempfile
+
+            rm $str_tempFile7        # clear tempfile
         else
             bool_missingFiles=true
         fi
