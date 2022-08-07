@@ -2,7 +2,9 @@
 
 # TODO
 #
-# -output to grub menu entries automatically (no logfiles) (Debian or GRUB2 compatible)
+# -multiboot output to file is working, but not each new entry
+# -parse hugepages not working, again, for some reason
+# 
 
 # function steps #
 # 1a.   Parse PCI and IOMMU groups, sort information to be parsed again later
@@ -284,14 +286,14 @@ function MultiBootSetup {
             fi
         done
 
-        str_GRUB_CMDLINE="$str_GRUB_CMDLINE_prefix modprobe.blacklist=${str_driverName_thisList}${str_driverName_newList} vfio_pci.ids=${str_HWID_thisList}${str_HWID_list}"
+        str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} modprobe.blacklist=${str_driverName_thisList}${str_driverName_newList} vfio_pci.ids=${str_HWID_thisList}${str_HWID_list}"
 
         ## /etc/grub.d/proxifiedScripts/custom ##
         str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_root_Kernel (VFIO, Boot VGA: '$str_thisVGA_deviceName')" 
         str_output1="menuentry \"$str_GRUB_title\"{"
         str_output2="    insmod $str_root_FSTYPE"
-        str_output3="        set root='/dev/disk/by-uuid/$str_root_UUID'"
-        str_output4="    search --no-floppy --fs-uuid --set=root $str_root_UUID"
+        str_output3="    set root='/dev/disk/by-uuid/$str_root_UUID'"
+        str_output4="        search --no-floppy --fs-uuid --set=root $str_root_UUID"
         str_output5="    echo    'Loading Linux $str_root_Kernel ...'"
         str_output6="    linux   /boot/vmlinuz-$str_root_Kernel root=UUID=$str_root_UUID $str_GRUB_CMDLINE"
         str_output7="    initrd  /boot/initrd.img-$str_root_Kernel"
@@ -806,10 +808,8 @@ function StaticSetup {
 }
 
 # check for hugepages logfile #
-str_hugepages=`find . -name *hugepages*bash`
-
-if [[ -z $str_logFile0 ]]; then
-    echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_hugepages' and '$0'.\n"
+if [[ ! -e $str_logFile0 ]]; then
+    echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_logFile0' and '$0'.\n"
     str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages="
 else
     while read -r str_line1; do
