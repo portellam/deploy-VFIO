@@ -19,16 +19,17 @@ Post-install, execute:
 
 ## Functions
 * **Pre-install:**
-    * **setup Hugepages**
+    * **Hugepages**
         * Static allocation of Host RAM to VMs for zero memory fragmentation and reduced memory latencies (best to use whole Memory channels/sticks, if possible).
-    * **setup Zram swapfile**
+    * **Zram swapfile**
         * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
     * **static/dynamic CPU thread allocation** (work-in-progress)
+    * **Auto-Xorg** system service to find and set a valid host boot VGA device for Xorg. [1]
 * **VFIO setup:**
     * Setup dynamically (Multi-Boot) or statically.
 * **Post-install:**
-    * **Auto-Xorg** system service to find first active, non-VFIO VGA device for Xorg [1]
-    * **setup Evdev (Event devices)**
+    * **update Multi-Boot** with latest Linux kernel.
+    * **Evdev (Event devices)**
         * Virtual Keyboard-Mouse switch (better than nothing, best to have physical KVM and multiple PCI USB controllers).
         * Parses all non-VFIO input devices.
     * **Libvirt hooks**
@@ -42,10 +43,10 @@ Post-install, execute:
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups of devices.
     * Saves lists of external PCI devices, by order of IOMMU groups.
 * Prompt user for VFIO passthrough setup:
-    * **Multi-Boot setup** (disclaimer: currently outputs only one valid boot entry, not all)
-        * Select a host VGA boot device at GRUB menu.
+    * **Multi-Boot** (disclaimer: currently outputs only one valid boot entry, not all)
+        * Select a host VGA boot device at GRUB menu.   (**Auto-Xorg** is recommended)
         * Appends to system file: **'/etc/grub.d/proxifiedScripts/custom'**
-    * **Static setup**
+    * **Static**
         * Asks user to VFIO passthrough any IOMMU groups (with external PCI devices, including VGA devices).
         * Appends to system file(s): **'/etc/initramfs-tools/modules'**, **'/etc/modules'**, **'/etc/modprobe.d/*'**, **'/etc/default/grub'**.         
 * Checks for existing VFIO setup, prompt user to uninstall setup, reboot, and try again to continue.

@@ -230,14 +230,21 @@ function MultiBootSetup {
     fi
 
     # input files #
-    str_inFile7=`find . -name *etc_grub.d_proxifiedScripts_custom`
-    str_inFile7b=`find . -name *custom_grub_template`
+    str_inFile6=`find . -name *etc_grub.d_proxifiedScripts_custom`
+    str_inFile6b=`find . -name *custom_grub_template`
 
     # system files #
-    str_outFile7="/etc/grub.d/proxifiedScripts/custom"
+    str_outFile6="/etc/grub.d/proxifiedScripts/custom"
 
     # system file backups #
-    str_oldFile7=$str_outFile7".old"
+    str_oldFile6=$str_outFile6".old"
+
+    # debug logfiles #
+    str_logFile6=$(pwd)"/custom-grub.log"
+
+    if [[ -z $str_logFile6 ]]; then
+        touch $str_logFile6
+    fi
 
     # parse list of VGA IOMMU groups #
     for int_IOMMUID_VGAlist in ${arr_IOMMUID_VGAlist[@]}; do
@@ -285,28 +292,35 @@ function MultiBootSetup {
         str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} ${str_GRUB_CMDLINE_Hugepages} modprobe.blacklist=${str_driverName_thisList}${str_driverName_newList} vfio_pci.ids=${str_HWID_thisList}${str_HWID_list}"
 
         ## /etc/grub.d/proxifiedScripts/custom ##
-        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_root_Kernel (VFIO w/ Boot VGA: '$str_thisVGA_deviceName')" 
+        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_root_Kernel (VFIO w/ Boot VGA: '$str_thisVGA_deviceName')"
         str_output1="menuentry \"$str_GRUB_title\"{"
         str_output2="    insmod $str_root_FSTYPE"
         str_output3="    set root='/dev/disk/by-uuid/$str_root_UUID'"
         str_output4="        search --no-floppy --fs-uuid --set=root $str_root_UUID"
         str_output5="    echo    'Loading Linux $str_root_Kernel ...'"
-        str_output6="    linux   /boot/vmlinuz-$str_root_Kernel root=UUID=$str_root_UUID $str_GRUB_CMDLINE"
+        str_output6="    linux   /boot/vmlinuz-$str_root_Kernel root=UUID=$str_root_UUID $str_GRUB_CMDLINE"   
         str_output7="    initrd  /boot/initrd.img-$str_root_Kernel"
 
-        if [[ -e $str_inFile7 && -e $str_inFile7b ]]; then
-            if [[ -e $str_outFile7 ]]; then
-                mv $str_outFile7 $str_oldFile7      # create backup
+        # output to logfile, to update kernel at a later time
+        str_GRUB_title_log="`lsb_release -i -s` `uname -o`, with `uname`"'#$str_root_Kernel#'"(VFIO w/ Boot VGA: '$str_thisVGA_deviceName')"
+        str_output1_log="menuentry \"$str_GRUB_title_log\"{"
+        str_output5_log="    echo    'Loading Linux "'#$str_root_Kernel#'" ...'"
+        str_output6_log="    linux   /boot/vmlinuz-"'#$str_root_Kernel#'" root=UUID=$str_root_UUID $str_GRUB_CMDLINE"
+        str_output7_log="    initrd  /boot/initrd.img-"'#$str_root_Kernel#'
+
+        if [[ -e $str_inFile6 && -e $str_inFile6b ]]; then
+            if [[ -e $str_outFile6 ]]; then
+                mv $str_outFile6 $str_oldFile6      # create backup
             fi
 
-            cp $str_inFile7 $str_outFile7           # copy over blank
+            cp $str_inFile6 $str_outFile6           # copy over blank
 
             # write to tempfile #
-            echo >> $str_outFile7
-            echo >> $str_outFile7
+            echo -e \n\n >> $str_outFile6 $str_logFile6
             while read -r str_line1; do
                 if [[ $str_line1 == *'#$str_output1'* ]]; then
                     str_line1=$str_output1
+                    echo -e $str_output1_log >> $str_logFile6
                 fi
 
                 if [[ $str_line1 == *'#$str_output2'* ]]; then
@@ -323,18 +337,21 @@ function MultiBootSetup {
 
                 if [[ $str_line1 == *'#$str_output5'* ]]; then
                     str_line1=$str_output5
+                    echo -e $str_output5_log >> $str_logFile6
                 fi
 
                 if [[ $str_line1 == *'#$str_output6'* ]]; then
                     str_line1=$str_output6
+                    echo -e $str_output6_log >> $str_logFile6
                 fi
 
                 if [[ $str_line1 == *'#$str_output7'* ]]; then
                     str_line1=$str_output7
+                    echo -e $str_output7_log >> $str_logFile6
                 fi
 
-                echo -e $str_line1 >> $str_outFile7
-            done < $str_inFile7b    # read from template
+                echo -e $str_line1 >> $str_outFile6 $str_logFile6
+            done < $str_inFile6b    # read from template
         else
             bool_missingFiles=true
         fi
@@ -346,19 +363,19 @@ function MultiBootSetup {
     if [[ $bool_missingFiles == true ]]; then
         echo -e "$0: File(s) missing:"
             
-        if [[ -z $str_inFile7 ]]; then 
-            echo -e "\t'$str_inFile7'"
+        if [[ -z $str_inFile6 ]]; then 
+            echo -e "\t'$str_inFile6'"
         fi
 
-        if [[ -z $str_inFile7b ]]; then 
-            echo -e "\t'$str_inFile7b'"
+        if [[ -z $str_inFile6b ]]; then 
+            echo -e "\t'$str_inFile6b'"
         fi
          
         echo -e "$0: Executing Multi-boot setup... Failed."
     elif [[ ${#arr_IOMMUID_VGAlist[@]} -le 0 ]]; then
         echo -e "$0: Executing Multi-boot setup... Cancelled. No IOMMU groups with VGA devices passed-through."
     else
-        chmod 755 $str_outFile7 $str_oldFile7                   # set proper permissions
+        chmod 755 $str_outFile6 $str_oldFile6                   # set proper permissions
         echo -e "$0: Executing Multi-boot setup... Complete."
     fi
 }
@@ -396,13 +413,11 @@ function StaticSetup {
     str_logFile0=`find $(pwd) -name *hugepages*log*`
     str_logFile1=$(pwd)"/grub.log"
     # none for file2-file5
-    str_logFile6=$(pwd)"/grub-menus.log"
 
     # clear files #
     # NOTE: do NOT delete GRUB !!!
     if [[ -e $str_logFile1 ]]; then rm $str_logFile1; fi
     if [[ -e $str_logFile5 ]]; then rm $str_logFile5; fi
-    if [[ -e $str_logFile6 ]]; then rm $str_logFile6; fi
 
     # list IOMMU groups #
     str_output1="$0: PLEASE READ: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.
@@ -839,7 +854,7 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup || $bool_missingFile
             echo
             sudo update-grub                    # update GRUB
             sudo update-initramfs -u -k all     # update INITRAMFS
-            echo -e "\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'\n\t'$str_outFile7'"
+            echo -e "\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'\n\t'$str_outFile6'"
             break;;
         "S")
             StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup

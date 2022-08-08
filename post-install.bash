@@ -50,7 +50,7 @@ function ReadInput {
 
 # parse and execute functions #
 echo -e "$0: Executing functions..."
-str_dir1="post-install-functions"
+str_dir1="post-install"
 declare -a arr_dir1=`ls $str_dir1 | sort -h`
 
 # call functions #

@@ -50,7 +50,7 @@ function ReadInput {
 
 # parse and execute functions #
 echo -e "$0: Executing functions..."
-str_dir1="uninstall-functions"
+str_dir1="uninstall"
 declare -a arr_dir1=`ls $str_dir1 | sort -h`
 
 # call functions #
