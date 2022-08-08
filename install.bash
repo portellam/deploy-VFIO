@@ -101,7 +101,7 @@ echo
 
 # parse and execute functions #
 echo -e "$0: Executing functions..."
-str_dir1="install-functions"
+str_dir1="install"
 declare -a arr_dir1=`ls $str_dir1 | sort -h`
 
 # call functions #
