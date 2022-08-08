@@ -358,8 +358,7 @@ function MultiBootSetup {
     elif [[ ${#arr_IOMMUID_VGAlist[@]} -le 0 ]]; then
         echo -e "$0: Executing Multi-boot setup... Cancelled. No IOMMU groups with VGA devices passed-through."
     else
-        #chmod 755 $str_outFile7                     # set proper permissions
-        chmod 755 /etc/grub.d/proxifiedScripts/*     # set proper permissions
+        chmod 755 $str_outFile7 $str_oldFile7                   # set proper permissions
         echo -e "$0: Executing Multi-boot setup... Complete."
     fi
 }
@@ -480,6 +479,13 @@ function StaticSetup {
                 echo -e "\tBUS ID:\t\t$str_thisBusID"
                 echo -e "\tHW ID :\t\t${arr_lspci_HWID[$int_j]}"
                 echo -e "\tDRIVER:\t\t${arr_lspci_driverName[$int_j]}"
+
+                # match common audio driver, and ignore #
+                # NOTE: why? because most audio devices, including onboard and VGA devices, use this driver
+                # it is acceptable to omit this driver for passthrough of a multi-function device (VGA device with Audio)
+                if [[ ${arr_lspci_driverName[$int_j]} == "snd_hda_intel" ]]; then
+                    str_thisDriverName=""
+                fi
 
                 # add to list #
                 if [[ $str_thisHWID != "" && $bool_hasExternalPCI == true ]]; then

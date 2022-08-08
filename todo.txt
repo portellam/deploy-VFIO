@@ -1,5 +1,10 @@
 MultiBoot
 -at kernel update, parse system file and change kernel string to latest/current
+-create a generated file for grub boot proxies, and create shebang for it
+-leave 'custom' file for system
+
+VFIO setup
+-ignore snd_hda_intel driver, as it is necessary for most/all audio devices 
 
 -libvirt hooks
 	-create hook to dynamically set cpu isolation
