@@ -21,6 +21,7 @@ bool_missingFiles=false
 
 # system files #
 str_outFile1="/etc/libvirt/qemu.conf"
+str_outFile2="/etc/apparmor.d/abstractions/libvirt-qemu"
 
 # input files #
 str_inFile1=`find . -name *etc_libvirt_qemu.conf*`
@@ -28,6 +29,7 @@ echo $str_inFile1
 
 # system file backups #
 str_oldFile1=$str_outFile1".old"
+str_oldFile2=$str_outFile2".old"
 
 # debug logfiles #
 str_logFile0=`find . -name *hugepages*log*`
@@ -102,10 +104,40 @@ if [[ true ]]; then
         done < $str_inFile1
     fi
 
-    echo -e "Complete."
-    systemctl enable libvirtd
-    systemctl restart libvirtd
-    echo -e "\n$0: Review changes:\n\t'$str_outFile1'"
+    # /etc/apparmor.d/abstractions/libvirt-qemu # 
+    if [[ -e $str_outFile2 ]]; then
+
+        # backup file #
+        if [[ -z $str_oldFile2 ]]; then
+            cp $str_outFile2 $str_oldFile2
+        
+        # restore from backup
+        else
+            cp $str_oldFile2 $str_outFile2
+        fi
+
+        # write to file #
+        echo -e "\n\t# Evdev #\n/dev/input/* rw,\n\t/dev/input/by-id/* rw," >> $str_outFile2
+        echo -e "\n\t# Looking glass #\n\t/{dev,run}/shm/lookingglass rw," >> $str_outFile2
+        echo -e "\n\t# Scream #\n\t/dev/shm/scream-ivshmem rw," >> $str_outFile2
+    fi
+
+    if [[ -e $str_inFile1 && -e $str_outFile2 ]]; then
+        echo -e "Complete."
+        systemctl enable libvirtd apparmor
+        systemctl restart libvirtd apparmor
+        echo -e "\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'"
+    else
+        echo -e "Failed. File(s) missing:"
+
+        if [[ -z $str_inFile1 ]]; then 
+            echo -e "\t'$str_inFile1'"
+        fi
+
+        if [[ -z $str_outFile2 ]]; then 
+            echo -e "\t'$str_outFile2'"
+        fi
+    fi
 fi
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
