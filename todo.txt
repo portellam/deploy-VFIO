@@ -4,7 +4,8 @@ MultiBoot
 -leave 'custom' file for system
 
 VFIO setup
--ignore snd_hda_intel driver, as it is necessary for most/all audio devices 
+-ignore snd_hda_intel driver, as it is necessary for most/all audio devices
+-warn user if update-initramfs take too long, given number of available kernels (n >= 2 or 3)
 
 -libvirt hooks
 	-create hook to dynamically set cpu isolation

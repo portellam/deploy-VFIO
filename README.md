@@ -12,8 +12,6 @@ Post-install, execute:
 
         sudo bash post-install.sh
 
-For best results post-installation, use **'portellam/AutoXorg'**:  https://github.com/portellam/Auto-Xorg
-
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 * VFIO community:       https://old.reddit.com/r/VFIO
@@ -53,7 +51,7 @@ For best results post-installation, use **'portellam/AutoXorg'**:  https://githu
 * Checks for existing VFIO setup, prompt user to uninstall setup, reboot, and try again to continue.
 
 ## Credits
-**[1]** (https://github.com/portellam/Auto-Xorg)
+**[1]:** (https://github.com/portellam/Auto-Xorg)
 
 **[2]:** inspiration (https://github.com/PassthroughPOST/VFIO-Tools)
 
