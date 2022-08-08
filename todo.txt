@@ -1,10 +1,7 @@
 MultiBoot
--at kernel update, parse system file and change kernel string to latest/current
--create a generated file for grub boot proxies, and create shebang for it
--leave 'custom' file for system
+-fix
 
 VFIO setup
--ignore snd_hda_intel driver, as it is necessary for most/all audio devices
 -warn user if update-initramfs take too long, given number of available kernels (n >= 2 or 3)
 
 -libvirt hooks
@@ -15,8 +12,6 @@ VFIO setup
 
 -audio reverse passthrough (speaker no mic), Scream or Jack+PulseWire (?)
 -Looking Glass
-
--setup Auto-Xorg, perhaps update
 
 issue:      virt-manager GUI does not support wakeup suspended domains (sleeping VMs)
 solution:   system service that will detect asleep VMs, and activate them only after host wakeup
