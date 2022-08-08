@@ -29,13 +29,16 @@ For best results post-installation, use **'portellam/AutoXorg'**:  https://githu
 * **VFIO setup:**
     * Setup dynamically (Multi-Boot) or statically.
 * **Post-install:**
+    * **Auto-Xorg** system service to find first active, non-VFIO VGA device for Xorg [1]
     * **setup Evdev (Event devices)**
         * Virtual Keyboard-Mouse switch (better than nothing, best to have physical KVM and multiple PCI USB controllers).
-        * Executes post-setup given assuming user passthroughs a USB controller (not necessary to parse all USB input devices).
-    * **Libvirt-nosleep** system service to prevent Host sleep while virtual machine(s) are active (see credits in file)
+        * Parses all non-VFIO input devices.
+    * **Libvirt hooks**
+        * Prompt user to set/allocate system resources dynamically. (work-in-progress) [2] 
+        * **Libvirt-nosleep** system service to prevent Host sleep while virtual machine(s) are active. [3]
     * **Auto VM Deployment** (work-in-progress)
 
-* work-in-progress; more features to be added, as needed.
+* work-in-progress; more features to be added, as discovered and needed.
 
 ## VFIO setup *(expanded)*
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups of devices.
@@ -48,6 +51,13 @@ For best results post-installation, use **'portellam/AutoXorg'**:  https://githu
         * Asks user to VFIO passthrough any IOMMU groups (with external PCI devices, including VGA devices).
         * Appends to system file(s): **'/etc/initramfs-tools/modules'**, **'/etc/modules'**, **'/etc/modprobe.d/*'**, **'/etc/default/grub'**.         
 * Checks for existing VFIO setup, prompt user to uninstall setup, reboot, and try again to continue.
+
+## Credits
+**[1]** (https://github.com/portellam/Auto-Xorg)
+
+**[2]:** inspiration (https://github.com/PassthroughPOST/VFIO-Tools)
+
+**[3]:** /u/sm-Fifteen (https://old.reddit.com/r/VFIO/comments/8ypedp/for_anyone_getting_issues_with_their_guest_when/), ArchWiki
 
 ## DISCLAIMER
 Tested on Debian Linux. Works on my machine!

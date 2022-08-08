@@ -640,7 +640,7 @@ function StaticSetup {
         str_GRUB_CMDLINE_Hugepages=`cat $str_logFile0`
     fi
 
-    str_GRUB_CMDLINE_prefix="quiet splash acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1"
+    str_GRUB_CMDLINE_prefix="quiet splash video=efifb:off acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1"
     
     if [[ $bool_MultiBoot == true ]]; then
         str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist= vfio_pci.ids="
