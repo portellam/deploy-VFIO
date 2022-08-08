@@ -1,7 +1,7 @@
 ## Description
 Ultimate scripts for a seamless, intuitive, and automated VFIO passthrough setup. Run any OS with real hardware, under a virtual machine, in the Linux desktop of choice. 
 
-Protect your desktop and files from untrusted hardware (webcam, microphone, etc.), software spyware/malware/abandonware (computer game Anti-cheat, Zoom, etc.), and OS (Windows 10/11 telemetry, Windows XP vulnerabilities). Seperate your workstation and gaming machine, from your personal computer.
+Protect your files and desktop from untrusted hardware, unknown software (spyware/malware/abandonware), and other security vulnerabilities (modern Windows telemetry or legacy, unsupported OS).
 
 ## How-to
 To install, execute:
