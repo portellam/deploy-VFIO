@@ -1,8 +1,9 @@
-#!/usr/bin/env bash
+#!/bin/bash sh
 
-#
-# Original author: Alex Portell <github.com/portellam>
-#
+# TODO
+# -install required packages for VFIO, and new features
+# -packages for major distros (Debian,Fedora,Arch)
+# -setup audio loopback for systems with soundcard passthrough (line-out to host line-in)
 
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then
@@ -52,9 +53,55 @@ function ReadInput {
     fi
 }
 
+# check if system supports IOMMU #
+if [[ -z $(echo `compgen -G "/sys/kernel/iommu_groups/*/devices/*"`) ]]; then
+    echo "$0: WARNING: Virtualization (AMD IOMMU or Intel VT-D) is NOT enabled or available in the BIOS/UEFI.\n$0: VFIO setup will continue, enable/review availability after execution."
+
+else
+    echo "$0: Virtualization is enabled in the BIOS/UEFI."
+fi
+
+## install required packages ##
+
+echo -e "$0: Linux distribution found: `lsb_release -i -s`\n$0: Checking for updates...\n"
+
+# Arch
+if [[ `lsb_release -i -s | grep -Ei "arch"` ]]; then
+    sudo pacman -Syu && sudo pacman -Sy edk2-ovmf lgit ibvirt qemu-desktop virt-manager zramswap
+    # NOTE: find same packages from Debian
+
+# Debian/Ubuntu
+elif [[ `lsb_release -i -s | grep -Ei "debian|ubuntu"` ]]; then
+    sudo apt update && sudo apt full-upgrade -y && sudo apt install -y git libvirt0 qemu virt-manager zram-tools
+
+# Fedora/Redhat
+elif [[ `lsb_release -i -s | grep -Ei "fedora|redhat"` ]]; then
+    sudo dnf check-update && sudo dnf upgrade -y && sudo dnf install -y @virtualization git zram-generator zram-generator-defaults
+    # NOTE: find same packages from Debian    # is there a virtualization metapackage for Debian, Arch?
+
+else
+    echo -e "Checking for updates... Failed.\n$0: Linux distibution is not recognized for or compatible with 'VFIO-setup'."
+    str_output1="Continue? [Y/n]: "
+    ReadInput $str_input1
+    
+    if [[ $str_input1 == "Y" ]]; then
+        echo -e "$0: Continuing."
+    fi
+
+    if [[ $str_input1 == "N" ]]; then
+        echo -e "$0: Exiting."
+        IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
+        exit 0
+    fi
+
+    # NOTE: test!
+fi
+
+echo
+
 # parse and execute functions #
 echo -e "$0: Executing functions..."
-str_dir1="uninstall"
+str_dir1="install"
 declare -a arr_dir1=`ls $str_dir1 | sort -h`
 
 # call functions #
@@ -66,7 +113,7 @@ for str_line1 in $arr_dir1; do
     else
         str_input1=""
     fi
-
+    
     str_output1="Execute '$str_line1'? [Y/n]: "
 
     # execute sh/bash scripts in directory
@@ -77,13 +124,15 @@ for str_line1 in $arr_dir1; do
 
     if [[ $str_input1 == "Y" && $str_line1 == *".bash" && $str_line1 != *".log" ]]; then
         sudo bash $str_dir1"/"$str_line1
+        echo
     fi
 
     if [[ $str_input1 == "Y" && $str_line1 == *".sh" && $str_line1 != *".log" ]]; then
         sudo sh $str_dir1"/"$str_line1
+        echo
     fi
 done
 
-IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 echo -e "$0: Reboot system for changes to take effect. Exiting."
+IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 exit 0

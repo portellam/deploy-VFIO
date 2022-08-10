@@ -1,8 +1,4 @@
-#!/usr/bin/env bash
-
-#
-# Original author: Alex Portell <github.com/portellam>
-#
+#!/bin/bash sh
 
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then
@@ -54,7 +50,7 @@ function ReadInput {
 
 # parse and execute functions #
 echo -e "$0: Executing functions..."
-str_dir1="post-install"
+str_dir1="uninstall"
 declare -a arr_dir1=`ls $str_dir1 | sort -h`
 
 # call functions #
@@ -77,15 +73,13 @@ for str_line1 in $arr_dir1; do
 
     if [[ $str_input1 == "Y" && $str_line1 == *".bash" && $str_line1 != *".log" ]]; then
         sudo bash $str_dir1"/"$str_line1
-	echo
     fi
 
     if [[ $str_input1 == "Y" && $str_line1 == *".sh" && $str_line1 != *".log" ]]; then
         sudo sh $str_dir1"/"$str_line1
-	echo
     fi
 done
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
-echo -e "$0: Review changes made. Exiting."
+echo -e "$0: Reboot system for changes to take effect. Exiting."
 exit 0
