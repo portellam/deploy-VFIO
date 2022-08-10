@@ -6,11 +6,11 @@ Protect your files and desktop from untrusted hardware, unknown software (spywar
 ## How-to
 To install, execute:
 
-        sudo bash install.sh
+        sudo bash install.bash
 
 Post-install, execute:
 
-        sudo bash post-install.sh
+        sudo bash post-install.bash
 
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
