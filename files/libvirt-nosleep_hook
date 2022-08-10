@@ -1,12 +1,9 @@
 #!/bin/sh
 
-#
-# Source:               https://wiki.archlinux.org/index.php?title=PCI_passthrough_via_OVMF#Host_lockup_if_guest_is_left_running_during_sleep
-# Original author(s):   reddit.com/u/sm-Fifteen
-# Current author(s):    Alex Portell <github.com/portellam>
-#
+## Suspend Host after Suspended VM(s) ##
+# Source:   https://wiki.archlinux.org/index.php?title=PCI_passthrough_via_OVMF#Host_lockup_if_guest_is_left_running_during_sleep
+# Credit:   /u/sm-Fifteen
 # DESCRIPTION: create nosleep service for each active domain (wake VM).
-#
 
 # parameters #
 OBJECT="$1"

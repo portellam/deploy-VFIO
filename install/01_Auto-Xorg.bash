@@ -1,8 +1,5 @@
-#!/usr/bin/env bash
+#!/bin/bash sh
 
-#
-# Original author: Alex Portell <github.com/portellam>
-#
 # function steps #
 # 1. check if it repo exists, continue.
 # 2. install
