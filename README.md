@@ -1,7 +1,5 @@
 ## Description
-Ultimate scripts for a seamless, intuitive, and automated VFIO passthrough setup. Run any OS with real hardware, under a virtual machine, in the Linux desktop of choice. 
-
-Protect your files and desktop from untrusted hardware, unknown software (spyware/malware/abandonware), and other security vulnerabilities (modern Windows telemetry or legacy, unsupported OS).
+Ultimate scripts for a seamless and automated VFIO (PCI passthrough) setup. Run any OS with real hardware, under a virtual machine, in the Linux desktop of your choice.
 
 ## How-to
 To install, execute:
@@ -30,9 +28,10 @@ Post-install, execute:
 * **Post-install:**
     * **update Multi-Boot** with latest Linux kernel.
     * **Evdev (Event devices)**
-        * Virtual Keyboard-Mouse switch (better than nothing, best to have physical KVM and multiple PCI USB controllers).
+        * Virtual Keyboard-Mouse (KVM) switch (good fall-back, better to have physical KVM, multiple PCI USBs).
         * Parses all non-VFIO input devices.
-    * **Libvirt hooks**
+    * **Libvirt hooks** include
+        * Switch display input (video output) at VM start. [2]
         * Prompt user to set/allocate system resources (CPU, memory) dynamically. (work-in-progress) [2] 
         * **Libvirt-nosleep** system service to prevent Host sleep while virtual machine(s) are active. [3]
     * **Auto VM Deployment** (work-in-progress)
@@ -54,7 +53,7 @@ Post-install, execute:
 ## Credits
 **[1]:** (https://github.com/portellam/Auto-Xorg)
 
-**[2]:** inspiration (https://github.com/PassthroughPOST/VFIO-Tools)
+**[2]:** modifications of (https://github.com/PassthroughPOST/VFIO-Tools)
 
 **[3]:** /u/sm-Fifteen (https://old.reddit.com/r/VFIO/comments/8ypedp/for_anyone_getting_issues_with_their_guest_when/), ArchWiki
 

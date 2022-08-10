@@ -111,16 +111,16 @@ if [[ ${str_virt_threads: -1} == "," ]]; then
 fi
 
 # find cpu mask #
-int_total_threads_mask=$(( ( 2 ** $int_total_threads ) - 1 ))
+readonly declare -i int_total_threads_mask=$(( ( 2 ** $int_total_threads ) - 1 ))
 
-declare -i int_temp1=0
+declare -i int_host_threads_mask=0
 for int_thread in ${arr_host_threads[@]}; do
     int_host_threads_mask+=$(( 2 ** $int_thread ))
 done
 
 # int to hex #
-hex_total_threads_mask=`printf '%x\n' $int_total_threads_mask`
-hex_host_threads_mask=`printf '%x\n' $int_host_threads_mask`
+readonly hex_total_threads_mask=`printf '%x\n' $int_total_threads_mask`
+readonly hex_host_threads_mask=`printf '%x\n' $int_host_threads_mask`
 
 #
 # host 0-1,8-9

@@ -1,5 +1,10 @@
 #!/bin/bash sh
 
+exit 0
+# todo
+# redo with hooks and make an updater script that copies hooks to individual domain/vm folders
+
+
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then
     echo -e "$0: WARNING: Script must be run as Sudo or Root! Exiting."
