@@ -1,4 +1,10 @@
-#!/bin/bash sh
+#!/usr/bin/env bash
+
+#
+# Original author: Alex Portell <github.com/portellam>
+#
+# function updates logfile with latest kernel, outputs to system file
+#
 
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then

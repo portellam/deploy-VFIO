@@ -1,10 +1,8 @@
-#!/bin/bash sh
+#!/usr/bin/env bash
 
-# TODO
 #
-# -fix MultiBoot file output (new entry for each boot VGA)
+# Original author: Alex Portell <github.com/portellam>
 #
-
 # function steps #
 # 1a.   Parse PCI and IOMMU groups, sort information to be parsed again later
 # 2.    Choose setup. Existing VFIO setup, warn user, ask user to uninstall, and/or immediately exit.

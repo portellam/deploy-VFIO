@@ -1,5 +1,8 @@
-#!/bin/bash sh
+#!/usr/bin/env bash
 
+#
+# Original author: Alex Portell <github.com/portellam>
+#
 # function steps #
 # 1. add users with UID 1000+ to groups input (evdev), libvirt (evdev and execute VMs).
 # 2. parse current USB input devices and event devices.

@@ -1,4 +1,8 @@
-#!/bin/bash sh
+#!/usr/bin/env bash
+
+#
+# Original author: Alex Portell <github.com/portellam>
+#
 
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then
