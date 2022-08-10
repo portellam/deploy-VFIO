@@ -43,7 +43,7 @@ echo -e "$0: Executing ZRAM-swap setup. Calculating..."
 
 # parameters #
 int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
-str_GitHub_Repo="FoundObjects/zram-swap"
+str_gitRepo="FoundObjects/zram-swap"
 
 # check for zram-utils #
 if [[ -e $str_outFile1 ]]; then
@@ -51,16 +51,16 @@ if [[ -e $str_outFile1 ]]; then
     sudo systemctl disable zramswap
 fi
 
-if [[ -z "~/git/$str_GitHub_Repo" ]]; then
+if [[ -z "~/git/$str_gitRepo" ]]; then
     sudo mkdir ~/git
-    sudo mkdir ~/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`
-    cd ~/git/`echo $str_GitHub_Repo | cut -d '/' -f 1`
-    git clone https://www.github.com/$str_GitHub_Repo
+    sudo mkdir ~/git/`echo $str_gitRepo | cut -d '/' -f 1`
+    cd ~/git/`echo $str_gitRepo | cut -d '/' -f 1`
+    git clone https://www.github.com/$str_gitRepo
 fi
 
 # check for zram-swap #
 if [[ -z $str_outFile2 ]]; then
-    cd ~/git/$str_GitHub_Repo
+    cd ~/git/$str_gitRepo
     sh ./install.sh
 fi
 
@@ -68,52 +68,52 @@ if [[ `sudo swapon -v | grep /dev/zram*` == "/dev/zram"* ]]; then sudo swapoff /
 if [[ -z $str_oldFile2 ]]; then cp $str_outFile2 $str_oldFile2; fi                                 # backup config file
 
 # find free memory #
-declare -i int_HostMemMaxG=$((int_HostMemMaxK/1048576))
-declare -i int_SysMemMaxG=$((int_HostMemMaxG+1))        # use modulus?
+declare -i int_hostMemMaxG=$((int_HostMemMaxK/1048576))
+declare -i int_sysMemMaxG=$((int_hostMemMaxG+1))        # use modulus?
 
 # check #
 if [[ -z $str_logFile0 ]]; then
     echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_logFile0' and '$0'.\n"
 
-    declare -i int_HostMemFreeG=$int_SysMemMaxG
+    declare -i int_hostMemFreeG=$int_sysMemMaxG
 
     # setup ZRAM #
-    echo -e "$0: Total system memory: <= ${int_SysMemMaxG}G.\n$0: If 'Z == ${int_SysMemMaxG}G - (V + X)', where ('Z' == ZRAM, 'V' == VM(s), and 'X' == remainder for Host machine).\n\tCalculate 'Z'."
+    echo -e "$0: Total system memory: <= ${int_sysMemMaxG}G.\n$0: If 'Z == ${int_sysMemMaxG}G - (V + X)', where ('Z' == ZRAM, 'V' == VM(s), and 'X' == remainder for Host machine).\n\tCalculate 'Z'."
 else
 
     while read -r str_line1; do
-        if [[ $str_line1 == *"hugepagesz="* ]]; then str_HugePageSize=`echo $str_line1 | cut -d '=' -f2 | cut -d ' ' -f1`; fi       # parse hugepage size
+        if [[ $str_line1 == *"hugepagesz="* ]]; then str_hugePageSize=`echo $str_line1 | cut -d '=' -f2 | cut -d ' ' -f1`; fi       # parse hugepage size
         if [[ $str_line1 == *"hugepages="* ]]; then str_HugePageNum=`echo $str_line1 | cut -d '=' -f4`; fi                          # parse hugepage num
     done < $str_logFile0
 
-    if [[ $str_HugePageSize == "2M" ]]; then declare -i int_HugePageSizeK=2048; fi
-    if [[ $str_HugePageSize == "1G" ]]; then declare -i int_HugePageSizeK=1048576; fi
+    if [[ $str_hugePageSize == "2M" ]]; then declare -i int_hugePageSizeK=2048; fi
+    if [[ $str_hugePageSize == "1G" ]]; then declare -i int_hugePageSizeK=1048576; fi
 
     int_HugePageNum=$str_HugePageNum
 
     # free memory #
-    declare -i int_HugepagesMemG=$int_HugePageNum*$int_HugePageSizeK/1048576
-    declare -i int_HostMemFreeG=$int_SysMemMaxG-$int_HugepagesMemG
+    declare -i int_hugepagesMemG=$int_HugePageNum*$int_hugePageSizeK/1048576
+    declare -i int_hostMemFreeG=$int_sysMemMaxG-$int_hugepagesMemG
 
     # setup ZRAM #
-    echo -e "$0: Free system memory after hugepages (${int_HugepagesMemG}G): <= ${int_HostMemFreeG}G."
+    echo -e "$0: Free system memory after hugepages (${int_hugepagesMemG}G): <= ${int_hostMemFreeG}G."
 fi
 
-str_output1="$0: Enter zram-swap size in G (0G < n < ${int_HostMemFreeG}G): "
+str_output1="$0: Enter zram-swap size in G (0G < n < ${int_hostMemFreeG}G): "
 echo -en $str_output1
-read -r int_ZRAM_SizeG
+read -r int_ZRAM_sizeG
 
 while true; do
 
     # attempt #
     if [[ $int_count -ge 2 ]]; then
-        ((int_ZRAM_SizeG=int_HostMemFreeG/2))      # default selection
-        echo -e "$0: Exceeded max attempts. Default selection: ${int_ZRAM_SizeG}G"
+        ((int_ZRAM_sizeG=int_hostMemFreeG/2))      # default selection
+        echo -e "$0: Exceeded max attempts. Default selection: ${int_ZRAM_sizeG}G"
         break
     else
-        if [[ -z $int_ZRAM_SizeG || $int_ZRAM_SizeG -lt 0 || $int_ZRAM_SizeG -ge $int_HostMemFreeG ]]; then
+        if [[ -z $int_ZRAM_sizeG || $int_ZRAM_sizeG -lt 0 || $int_ZRAM_sizeG -ge $int_hostMemFreeG ]]; then
             echo -en "$0: Invalid input.\n$str_output1"
-            read -r int_ZRAM_SizeG
+            read -r int_ZRAM_sizeG
         else break; fi
     fi
 
@@ -121,7 +121,7 @@ while true; do
 done
 
 # NOTE: leave as "! -z" (IS 'NOT' NULL), integers do not work with "-e" (IS 'NOT-NULL') #
-if [[ ! -z $int_ZRAM_SizeG ]]; then declare -i int_denominator=$int_SysMemMaxG/$int_ZRAM_SizeG; fi
+if [[ ! -z $int_ZRAM_sizeG ]]; then declare -i int_denominator=$int_sysMemMaxG/$int_ZRAM_sizeG; fi
 
 # NOTE: leave as "! -z" (IS 'NOT' NULL), integers do not work with "-e" (IS 'NOT-NULL') #
 # if input is valid #

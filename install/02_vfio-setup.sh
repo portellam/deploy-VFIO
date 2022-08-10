@@ -28,10 +28,10 @@ IFS=$'\n'      # Change IFS to newline char
 echo -en "$0: Parsing PCI device information... "
 
 ## parameters ##
-bool_isVFIOsetup=false
+bool_existingSetup=false
 bool_missingFiles=false
-bool_MultiBoot=false
-bool_hasExternalPCI=false 
+bool_execMultiBoot=false
+bool_hasExtPCI=false 
 bool_hasVGA=false
 #bool_hasNoDriver=false
 bool_hasVFIODriver=false
@@ -83,7 +83,7 @@ for (( int_i=0 ; int_i<${#arr_lspci_busID[@]} ; int_i++ )); do
             # vfio driver found, note input, add to list and update boolean #
             if [[ $str_thisDriverName == 'vfio-pci' ]]; then
                 str_thisDriverName="VFIO_DRIVER_FOUND"
-                #bool_isVFIOsetup=true
+                #bool_existingSetup=true
             fi
 
             arr_lspci_driverName+=($str_thisDriverName)
@@ -217,16 +217,16 @@ function MultiBootSetup {
     echo -e "$0: Executing Multi-boot setup..."
 
     ## parameters ##
-    str_root_Distro=`lsb_release -i -s`                                             # Linux distro name
+    str_rootDistro=`lsb_release -i -s`                                             # Linux distro name
     #declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2`)             # all kernels
-    str_root_Kernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`      # latest kernel
-    str_root_Kernel=${str_root_Kernel: 1}
-    str_root_Disk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
-    str_root_UUID=`blkid -s UUID | grep $str_root_Disk | cut -d '"' -f2`
-    str_root_FSTYPE=`blkid -s TYPE | grep $str_root_Disk | cut -d '"' -f2`
+    str_rootKernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`      # latest kernel
+    str_rootKernel=${str_rootKernel: 1}
+    str_rootDisk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
+    str_rootUUID=`blkid -s UUID | grep $str_rootDisk | cut -d '"' -f2`
+    str_rootFSTYPE=`blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2`
 
-    if [[ $str_root_FSTYPE == "ext4" || $str_root_FSTYPE == "ext3" ]]; then
-        str_root_FSTYPE="ext2"
+    if [[ $str_rootFSTYPE == "ext4" || $str_rootFSTYPE == "ext3" ]]; then
+        str_rootFSTYPE="ext2"
     fi
 
     # input files #
@@ -292,21 +292,21 @@ function MultiBootSetup {
         str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} ${str_GRUB_CMDLINE_Hugepages} modprobe.blacklist=${str_driverName_thisList}${str_driverName_newList} vfio_pci.ids=${str_HWID_thisList}${str_HWID_list}"
 
         ## /etc/grub.d/proxifiedScripts/custom ##
-        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_root_Kernel (VFIO w/ Boot VGA: '$str_thisVGA_deviceName')"
+        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO w/ Boot VGA: '$str_thisVGA_deviceName')"
         str_output1="menuentry \"$str_GRUB_title\"{"
-        str_output2="    insmod $str_root_FSTYPE"
-        str_output3="    set root='/dev/disk/by-uuid/$str_root_UUID'"
-        str_output4="        search --no-floppy --fs-uuid --set=root $str_root_UUID"
-        str_output5="    echo    'Loading Linux $str_root_Kernel ...'"
-        str_output6="    linux   /boot/vmlinuz-$str_root_Kernel root=UUID=$str_root_UUID $str_GRUB_CMDLINE"   
-        str_output7="    initrd  /boot/initrd.img-$str_root_Kernel"
+        str_output2="    insmod $str_rootFSTYPE"
+        str_output3="    set root='/dev/disk/by-uuid/$str_rootUUID'"
+        str_output4="        search --no-floppy --fs-uuid --set=root $str_rootUUID"
+        str_output5="    echo    'Loading Linux $str_rootKernel ...'"
+        str_output6="    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"   
+        str_output7="    initrd  /boot/initrd.img-$str_rootKernel"
 
         # output to logfile, to update kernel at a later time
-        str_GRUB_title_log="`lsb_release -i -s` `uname -o`, with `uname`"'#$str_root_Kernel#'"(VFIO w/ Boot VGA: '$str_thisVGA_deviceName')"
+        str_GRUB_title_log="`lsb_release -i -s` `uname -o`, with `uname`"'#$str_rootKernel#'"(VFIO w/ Boot VGA: '$str_thisVGA_deviceName')"
         str_output1_log="menuentry \"$str_GRUB_title_log\"{"
-        str_output5_log="    echo    'Loading Linux "'#$str_root_Kernel#'" ...'"
-        str_output6_log="    linux   /boot/vmlinuz-"'#$str_root_Kernel#'" root=UUID=$str_root_UUID $str_GRUB_CMDLINE"
-        str_output7_log="    initrd  /boot/initrd.img-"'#$str_root_Kernel#'
+        str_output5_log="    echo    'Loading Linux "'#$str_rootKernel#'" ...'"
+        str_output6_log="    linux   /boot/vmlinuz-"'#$str_rootKernel#'" root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
+        str_output7_log="    initrd  /boot/initrd.img-"'#$str_rootKernel#'
 
         if [[ -e $str_inFile6 && -e $str_inFile6b ]]; then
             if [[ -e $str_outFile6 ]]; then
@@ -448,7 +448,7 @@ function StaticSetup {
 
                 ## checks ##
                 if [[ ${str_thisBusID:1:1} -ge 1 ]]; then
-                    bool_hasExternalPCI=true
+                    bool_hasExtPCI=true
                 fi
 
                 ## NOTE: saves first found VGA device (in IOMMU group) name and IOMMU ID ##
@@ -503,7 +503,7 @@ function StaticSetup {
                 fi
 
                 # add to list #
-                if [[ $str_thisHWID != "" && $bool_hasExternalPCI == true ]]; then
+                if [[ $str_thisHWID != "" && $bool_hasExtPCI == true ]]; then
                     str_driverName_tempList+="$str_thisDriverName,"
                     str_HWID_tempList+="$str_thisHWID,"
                 fi
@@ -530,7 +530,7 @@ function StaticSetup {
 
         # match if list does NOT contain external PCI #
         # do NOT passthrough all devices #
-        if [[ $bool_hasExternalPCI == false ]]; then
+        if [[ $bool_hasExtPCI == false ]]; then
             echo -e "$0: No external PCI devices found. Skipping."
             str_input1="N"
         # match if list does contain external PCI #
@@ -542,7 +542,7 @@ function StaticSetup {
         if [[ $bool_hasVFIODriver == true ]]; then                     
             echo -e "$0: WARNING: VFIO driver found."
             #str_input1="N"
-            bool_isVFIOsetup=true
+            bool_existingSetup=true
             str_driverName_list=""                  # reset outputs
             str_HWID_list=""                        # reset outputs
             #break
@@ -550,7 +550,7 @@ function StaticSetup {
 
         echo
 
-        while [[ $bool_hasExternalPCI == true ]]; do
+        while [[ $bool_hasExtPCI == true ]]; do
             if [[ $int_count -ge 3 ]]; then
                 echo "$0: Exceeded max attempts."
                 str_input1="N"                      # default selection
@@ -567,20 +567,20 @@ function StaticSetup {
                     ## add IOMMU group to VFIO pass-through lists ##
 
                     # add VGA IOMMU group to list, output to GRUB menu entries #
-                    if [[ $bool_MultiBoot == true && $bool_hasVGA == true ]]; then
+                    if [[ $bool_execMultiBoot == true && $bool_hasVGA == true ]]; then
                         arr_IOMMUID_VGAlist+=($int_i)
                         arr_driverName_VGAlist+=($str_driverName_tempList)
                         arr_HWID_VGAlist+=($str_HWID_tempList)
                     fi
 
                     # add non VGA IOMMU group to list, output to static files #
-                    if [[ $bool_MultiBoot == true && $bool_hasVGA == false ]]; then
+                    if [[ $bool_execMultiBoot == true && $bool_hasVGA == false ]]; then
                         str_driverName_list+=$str_driverName_tempList
                         str_HWID_list+=$str_HWID_tempList
                     fi
 
                     # static boot #
-                    if [[ $bool_MultiBoot == false && $bool_hasVGA == false ]]; then
+                    if [[ $bool_execMultiBoot == false && $bool_hasVGA == false ]]; then
                         str_driverName_list+=$str_driverName_tempList
                         str_HWID_list+=$str_HWID_tempList
                     fi
@@ -597,7 +597,7 @@ function StaticSetup {
             ((int_count++))                     # increment counter
         done
 
-        bool_hasExternalPCI=false               # reset boolean
+        bool_hasExtPCI=false               # reset boolean
         bool_hasVGA=false                       # reset boolean
         #bool_hasNoDriver=false                  # reset boolean
         bool_hasVFIODriver=false                # reset boolean
@@ -657,7 +657,7 @@ function StaticSetup {
 
     str_GRUB_CMDLINE_prefix="quiet splash video=efifb:off acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1"
     
-    if [[ $bool_MultiBoot == true ]]; then
+    if [[ $bool_execMultiBoot == true ]]; then
         str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix default_hugepagesz=1G hugepagesz=1G hugepages= modprobe.blacklist= vfio_pci.ids="
     else
         str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix $str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driverName_newList vfio_pci.ids=$str_HWID_list"
@@ -835,7 +835,7 @@ if [[ -z $str_input1 ]]; then
     echo -e $str_prompt
 fi
 
-while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup || $bool_missingFiles == false ]]; do
+while [[ $bool_existingSetup == false || -z $bool_existingSetup || $bool_missingFiles == false ]]; do
     if [[ $int_count -ge 3 ]]; then
         echo -en "Exceeded max attempts."
         str_input1="N"                   # default selection
@@ -848,16 +848,16 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup || $bool_missingFile
 
     case $str_input1 in
         "M")
-            bool_MultiBoot=true     # boolean to set static setup with all but groups with VGA devices, multi boot setup with only vga devices
-            StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
-            MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
+            bool_execMultiBoot=true     # boolean to set static setup with all but groups with VGA devices, multi boot setup with only vga devices
+            StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_existingSetup
+            MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_existingSetup
             echo
             sudo update-grub                    # update GRUB
             sudo update-initramfs -u -k all     # update INITRAMFS
             echo -e "\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'\n\t'$str_outFile6'"
             break;;
         "S")
-            StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_isVFIOsetup
+            StaticSetup $str_GRUB_CMDLINE_Hugepages $bool_existingSetup
             echo
             sudo update-grub                    # update GRUB
             sudo update-initramfs -u -k all     # update INITRAMFS
@@ -876,7 +876,7 @@ while [[ $bool_isVFIOsetup == false || -z $bool_isVFIOsetup || $bool_missingFile
 done
 
 # warn user to delete existing setup and reboot to continue #
-if [[ $bool_isVFIOsetup == true && $bool_missingFiles == false ]]; then
+if [[ $bool_existingSetup == true && $bool_missingFiles == false ]]; then
     echo -e "$0: Existing VFIO setup installation detected. Execute `find . -name *uninstall.bash*` and reboot system, to continue."
 fi
 

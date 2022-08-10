@@ -118,8 +118,8 @@ if [[ true ]]; then
 
         # write to file #
         echo -e "\n\t# Evdev #\n/dev/input/* rw,\n\t/dev/input/by-id/* rw," >> $str_outFile2
-        echo -e "\n\t# Looking glass #\n\t/{dev,run}/shm/lookingglass rw," >> $str_outFile2
-        echo -e "\n\t# Scream #\n\t/dev/shm/scream-ivshmem rw," >> $str_outFile2
+        #echo -e "\n\t# Looking glass #\n\t/{dev,run}/shm/lookingglass rw," >> $str_outFile2
+        #echo -e "\n\t# Scream #\n\t/dev/shm/scream-ivshmem rw," >> $str_outFile2
     fi
 
     if [[ -e $str_inFile1 && -e $str_outFile2 ]]; then

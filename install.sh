@@ -15,9 +15,6 @@ fi
 SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
-## user input ##
-str_output1=""
-
 # precede with echo prompt for input #
 # ask user for input then validate #
 function ReadInput {
@@ -101,6 +98,7 @@ echo
 
 # parse and execute functions #
 echo -e "$0: Executing functions..."
+str_output1=""
 str_dir1="install"
 declare -a arr_dir1=`ls $str_dir1 | sort -h`
 
@@ -113,11 +111,10 @@ for str_line1 in $arr_dir1; do
     else
         str_input1=""
     fi
-    
-    str_output1="Execute '$str_line1'? [Y/n]: "
 
-    # execute sh/bash scripts in directory
+   # execute sh/bash scripts in directory
     if [[ $str_line1 == *".bash"||*".sh" && $str_line1 != *".log" ]]; then
+        str_output1="Execute '$str_line1'? [Y/n]: "
         ReadInput $str_input1
         echo
     fi

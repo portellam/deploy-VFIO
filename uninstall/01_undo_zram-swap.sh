@@ -18,7 +18,6 @@ str_inFile1=`find . -name *etc_default_zram-swap*`
 
 if [[ -e $str_inFile1 ]]; then
     cp $str_inFile1 $str_outFile1       # copy from template
-
 else
     echo -e "Failed. File(s) missing:"
 
