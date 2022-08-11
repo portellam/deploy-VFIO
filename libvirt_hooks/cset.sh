@@ -25,8 +25,11 @@ exit 0
 #
 
 # parameters #
-str_domainName="$1"
-str_domainAction="$2/$3"
+str_object="$1"
+str_operation="$2"
+str_subOperation="$3"
+str_objectAction="$2/$3"
+str_extraArg="$4"
 readonly declare -i int_totalCores=`cat /proc/cpuinfo | grep 'cpu cores' | uniq`
 readonly declare -i int_totalThreads=`cat /proc/cpuinfo | grep 'processor'`
 readonly declare -i int_multiThread=$(( $int_totalThreads / $int_totalCores ))
@@ -147,16 +150,32 @@ function unshield_vm() {
 }
 
 # For convenient manual invocation #
-if [[ "$str_domainName" == "shield" ]]; then
+if [[ "$str_object" == "shield" ]]; then
     shield_vm
     exit
-elif [[ "$str_domainName" == "unshield" ]]; then
+elif [[ "$str_object" == "unshield" ]]; then
     unshield_vm
     exit
 fi
 
-if [[ "$str_domainAction" == "prepare/begin" ]]; then
-    echo "libvirt-qemu cset: Reserving CPUs $str_virtThreads for VM $str_domainName" > /dev/kmsg 2>&1
+# allocate/release threads to host after VM start/stop #
+case "$str_operation" in
+        # allocate #
+        "prepare")
+                systemctl set-property --runtime -- user.slice AllowedCPUs=$str_hostThreads
+                systemctl set-property --runtime -- system.slice AllowedCPUs=$str_hostThreads
+                systemctl set-property --runtime -- init.scope AllowedCPUs=$str_hostThreads
+                ;;
+        # release #
+        "release")
+                systemctl set-property --runtime -- user.slice AllowedCPUs=0-$int_lastThread
+                systemctl set-property --runtime -- system.slice AllowedCPUs=0-$int_lastThread
+                systemctl set-property --runtime -- init.scope AllowedCPUs=0-$int_lastThread
+                ;;
+esac
+
+if [[ "$str_objectAction" == "prepare/begin" ]]; then
+    echo "libvirt-qemu cset: Reserving CPUs $str_virtThreads for VM $str_object" > /dev/kmsg 2>&1
     shield_vm > /dev/kmsg 2>&1
 
     # the kernel's dirty page writeback mechanism uses kthread workers. They introduce
@@ -166,8 +185,8 @@ if [[ "$str_domainAction" == "prepare/begin" ]]; then
     echo 0 > /sys/bus/workqueue/devices/writeback/numa
 
     echo "libvirt-qemu cset: Successfully reserved CPUs $str_virtThreads" > /dev/kmsg 2>&1
-elif [[ "$str_domainAction" == "release/end" ]]; then
-    echo "libvirt-qemu cset: Releasing CPUs $str_virtThreads from VM $str_domainName" > /dev/kmsg 2>&1
+elif [[ "$str_objectAction" == "release/end" ]]; then
+    echo "libvirt-qemu cset: Releasing CPUs $str_virtThreads from VM $str_object" > /dev/kmsg 2>&1
     unshield_vm > /dev/kmsg 2>&1
 
     # Revert changes made to the writeback workqueue

@@ -10,6 +10,9 @@ fi
 SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
+# prompt #
+echo -en "$0: Uninstalling ZRAM swap... "
+
 # system files #
 str_outFile1="/etc/default/zram-swap"
 

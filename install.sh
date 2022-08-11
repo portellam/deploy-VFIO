@@ -97,39 +97,44 @@ fi
 echo
 
 # parse and execute functions #
-echo -e "$0: Executing functions..."
 str_output1=""
-str_dir1="install"
-declare -a arr_dir1=`ls $str_dir1 | sort -h`
+str_dir1="install.d"
 
-# call functions #
-for str_line1 in $arr_dir1; do
+if [[ -z `find . -name *$str_dir1*` ]]; then
+    echo -e "$0: Executing functions... Failed. Missing files."
+else
+    echo -e "$0: Executing functions..."
 
-    # input variable auto executes functions #
-    if [[ `echo $1 | tr '[:lower:]' '[:upper:]'` == "Y"* ]]; then
-        str_input1="Y"
-    else
-        str_input1=""
-    fi
+    declare -a arr_dir1=`ls $str_dir1 | sort -h`
+    # call functions #
+    for str_line1 in $arr_dir1; do
 
-   # execute sh/bash scripts in directory
-    if [[ $str_line1 == *".bash"||*".sh" && $str_line1 != *".log" ]]; then
-        str_output1="Execute '$str_line1'? [Y/n]: "
-        ReadInput $str_input1
-        echo
-    fi
+        # input variable auto executes functions #
+        if [[ `echo $1 | tr '[:lower:]' '[:upper:]'` == "Y"* ]]; then
+            str_input1="Y"
+        else
+            str_input1=""
+        fi
 
-    if [[ $str_input1 == "Y" && $str_line1 == *".bash" && $str_line1 != *".log" ]]; then
-        sudo bash $str_dir1"/"$str_line1
-        echo
-    fi
+        # execute sh/bash scripts in directory
+        if [[ $str_line1 == *".bash"||*".sh" && $str_line1 != *".log" ]]; then
+            str_output1="Execute '$str_line1'? [Y/n]: "
+            ReadInput $str_input1
+            echo
+        fi
 
-    if [[ $str_input1 == "Y" && $str_line1 == *".sh" && $str_line1 != *".log" ]]; then
-        sudo sh $str_dir1"/"$str_line1
-        echo
-    fi
-done
+        if [[ $str_input1 == "Y" && $str_line1 == *".bash" && $str_line1 != *".log" ]]; then
+            sudo bash $str_dir1"/"$str_line1
+	        echo
+        fi
 
-echo -e "$0: Reboot system for changes to take effect. Exiting."
+        if [[ $str_input1 == "Y" && $str_line1 == *".sh" && $str_line1 != *".log" ]]; then
+            sudo sh $str_dir1"/"$str_line1
+	        echo
+        fi
+    done
+
+    echo -e "$0: Review changes made. Exiting."
+fi
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 exit 0

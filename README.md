@@ -30,7 +30,7 @@ Post-install, execute:
     * **Evdev (Event devices)**
         * Virtual Keyboard-Mouse (KVM) switch (good fall-back, better to have physical KVM, multiple PCI USBs).
         * Parses all non-VFIO input devices.
-    * **Libvirt hooks** include
+    * **Libvirt hooks** include (per VM or combined)
         * Switch display input (video output) at VM start. [2]
         * Prompt user to set/allocate system resources (CPU, memory) dynamically. (work-in-progress) [2] 
         * **Libvirt-nosleep** system service to prevent Host sleep while virtual machine(s) are active. [3]
