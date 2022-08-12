@@ -26,15 +26,16 @@ Post-install, execute:
 * **VFIO setup:**
     * Setup dynamically (Multi-Boot) or statically.
 * **Post-install:**
-    * **Loopback audio** user service to allow host (ex: from PCI Line-out to Host Line-in) to output audio from VM.
-    * **update Multi-Boot** with latest Linux kernel.
-    * **Evdev (Event devices)**
-        * Virtual Keyboard-Mouse (KVM) switch (good fall-back, better to have physical KVM, multiple PCI USBs).
-        * Parses all non-VFIO input devices.
-    * **Libvirt hooks** include (per VM or combined) **(work-in-progress)**
-        * Switch display input (video output) at VM start. [2]
-        * Prompt user to set/allocate system resources (CPU, memory) dynamically. (work-in-progress) [2] 
-        * **Libvirt-nosleep** system service to prevent Host sleep while virtual machine(s) are active. [3]
+    * **update Multi-Boot** with latest installed Linux kernel.
+    * **Loopback audio** user service, audio-capture of VM audio to host (ex: Line-out to Line-in/Mic).
+    * IVSHMEM (Inter-VM Shared Memory Device):
+        * **Evdev (Event devices)** is a Virtual Keyboard-Video-Mouse switch (KVM w/o video). (good fall-back) **(works)**
+        * **Looking Glass** is a video-capture (framebuffer) of the VM GPU to host. **(work-in-progress)** [2] 
+        * **Scream** is a audio-capture over virtual network of the VM to host. **(work-in-progress)** [3]    
+    * **Libvirt hooks** include (per VM or combined) [4] **(work-in-progress)**
+        * Switch display input (video output) at VM start. 
+        * Prompt user to set/allocate system resources (CPU, memory) dynamically.
+        * **Libvirt-nosleep** system service to prevent Host sleep while virtual machine(s) are active. **(works)** [5]
     * **Auto VM Deployment** **(work-in-progress)**
 
 * work-in-progress; more features to be added, as discovered and needed.
@@ -52,11 +53,15 @@ Post-install, execute:
 * Checks for existing VFIO setup, prompt user to uninstall setup, reboot, and try again to continue.
 
 ## Credits
-**[1]:** (https://github.com/portellam/Auto-Xorg)
+**[1]:** https://github.com/portellam/Auto-Xorg
 
-**[2]:** modifications of (https://github.com/PassthroughPOST/VFIO-Tools)
+**[2]:** https://looking-glass.io/docs/B5.0.1/
 
-**[3]:** /u/sm-Fifteen (https://old.reddit.com/r/VFIO/comments/8ypedp/for_anyone_getting_issues_with_their_guest_when/), ArchWiki
+**[3]:** https://github.com/duncanthrax/scream
+
+**[4]:** modified, https://github.com/PassthroughPOST/VFIO-Tools
+
+**[5]:** https://old.reddit.com/r/VFIO/comments/8ypedp/for_anyone_getting_issues_with_their_guest_when/ (ArchWiki, /u/sm-Fifteen)
 
 ## DISCLAIMER
 Tested on Debian Linux. Works on my machine!
