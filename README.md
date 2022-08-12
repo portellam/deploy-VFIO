@@ -1,14 +1,14 @@
 ## Description
-Ultimate scripts for a seamless and automated VFIO (PCI passthrough) setup. Run any OS with real hardware, under a virtual machine, in the Linux desktop of your choice.
+Ultimate scripts for a seamless and automated VFIO (PCI passthrough) setup. Run any OS with real hardware, under a virtual machine (VM), in the Linux desktop of your choice.
 
 ## How-to
 To install, execute:
 
-        sudo bash install.sh
+        sudo bash install.bash
 
 Post-install, execute:
 
-        sudo bash post-install.sh
+        sudo bash post-install.bash
 
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
@@ -21,21 +21,21 @@ Post-install, execute:
         * Static allocation of Host RAM to VMs for zero memory fragmentation and reduced memory latencies (best to use whole Memory channels/sticks, if possible).
     * **Zram swapfile**
         * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
-    * **static/dynamic CPU thread allocation** (work-in-progress)
+    * **static/dynamic CPU thread allocation** **(work-in-progress)**
     * **Auto-Xorg** system service to find and set a valid host boot VGA device for Xorg. [1]
 * **VFIO setup:**
     * Setup dynamically (Multi-Boot) or statically.
 * **Post-install:**
-    * **Loopback audio** user service to allow host audio Line-in (ex: from PCI Line out) to output audio.
+    * **Loopback audio** user service to allow host audio Line-in (ex: from sound card Line-out) to output audio from VM.
     * **update Multi-Boot** with latest Linux kernel.
     * **Evdev (Event devices)**
         * Virtual Keyboard-Mouse (KVM) switch (good fall-back, better to have physical KVM, multiple PCI USBs).
         * Parses all non-VFIO input devices.
-    * **Libvirt hooks** include (per VM or combined)
+    * **Libvirt hooks** include (per VM or combined) **(work-in-progress)**
         * Switch display input (video output) at VM start. [2]
         * Prompt user to set/allocate system resources (CPU, memory) dynamically. (work-in-progress) [2] 
         * **Libvirt-nosleep** system service to prevent Host sleep while virtual machine(s) are active. [3]
-    * **Auto VM Deployment** (work-in-progress)
+    * **Auto VM Deployment** **(work-in-progress)**
 
 * work-in-progress; more features to be added, as discovered and needed.
 
