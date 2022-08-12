@@ -26,6 +26,7 @@ Post-install, execute:
 * **VFIO setup:**
     * Setup dynamically (Multi-Boot) or statically.
 * **Post-install:**
+    * **Loopback audio** user service to allow host audio Line-in (ex: from PCI Line out) to output audio.
     * **update Multi-Boot** with latest Linux kernel.
     * **Evdev (Event devices)**
         * Virtual Keyboard-Mouse (KVM) switch (good fall-back, better to have physical KVM, multiple PCI USBs).
