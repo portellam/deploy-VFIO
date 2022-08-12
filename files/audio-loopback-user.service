@@ -1,0 +1,12 @@
+[Unit]
+Description=Load audio loopback module
+After=pulseaudio.service
+
+[Service]
+Type=simple
+ExecStart=pactl load-module module-loopback
+ExecStop=pactl unload-module module-loopback
+RemainAfterExit=yes
+
+[Install]
+WantedBy=default.target

@@ -78,13 +78,11 @@ while true; do
     else
         # Hugepage Size #
         if [[ $str_HugePageSize == "2M" ]]; then
-            #str_prefixMem="M"
             declare -i int_HugePageK=2048       # Hugepage size
             declare -i int_HugePageMin=2        # min HugePages
         fi
 
         if [[ $str_HugePageSize == "1G" ]]; then
-            #str_prefixMem="G"
             declare -i int_HugePageK=1048576    # Hugepage size
             declare -i int_HugePageMin=1        # min HugePages
         fi

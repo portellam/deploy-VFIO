@@ -10,21 +10,20 @@ fi
 SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
 IFS=$'\n'      # Change IFS to newline char
 
-# system files #
-str_outFile1="/etc/default/zram-swap"
+echo -en "$0: Executing... "
 
-# input files #
-str_inFile1=`find . -name *etc_default_zram-swap*`
+# parameters #
+str_outDir1="/etc/systemd/system/"
+str_outFile1="audio-loopback-user.service"
+str_inFile1=`find .. -name *audio-loopback-user.service*`
 
 if [[ -e $str_inFile1 ]]; then
-    cp $str_inFile1 $str_outFile1       # copy from template
-
+    cp -r $str_inFile1 $str_outDir1$str_outFile1
+    chmod +x $str_outDir1$str_outFile1
+    echo -e "Complete.\n$0: To finish, execute as User (not Root):\n\tsystemctl --user daemon-reload\n\tsystemctl enable $str_outFile1\n\tsystemctl start $str_outFile1"
 else
     echo -e "Failed. File(s) missing:"
-
-    if [[ -z $str_inFile1 ]]; then 
-        echo -e "\t'$str_inFile1'"
-    fi
+    echo -e "\t$str_inFile1"
 fi
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files

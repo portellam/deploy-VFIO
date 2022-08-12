@@ -9,8 +9,8 @@ fi
 echo -en "$0: Updating Multi-boot setup... "
 
 ## parameters ##
-str_root_Kernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`      # latest kernel
-str_root_Kernel=${str_root_Kernel: 1}
+str_rootKernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`      # latest kernel
+str_rootKernel=${str_rootKernel: 1}
 
 # input files #
 str_inFile6=`find . -name *etc_grub.d_proxifiedScripts_custom`
@@ -23,7 +23,7 @@ str_outFile6="/etc/grub.d/proxifiedScripts/custom"
 str_oldFile7=$str_outFile6".old"
 
 ## /etc/grub.d/proxifiedScripts/custom ##
-str_orig1='#$str_root_Kernel#'
+str_orig1='#$str_rootKernel#'
 str_prefix=""
 
 if [[ -e $str_inFile6 && -e $str_logFile6 ]]; then
@@ -43,7 +43,7 @@ if [[ -e $str_inFile6 && -e $str_logFile6 ]]; then
 
         # update kernel #
         if [[ $str_line1 == *$str_orig1* ]]; then
-            str_line1="${str_line1/"$str_orig1"/"$str_root_Kernel"}"
+            str_line1="${str_line1/"$str_orig1"/"$str_rootKernel"}"
         fi
 
         echo -e $str_prefix$str_line1 >> $str_outFile6

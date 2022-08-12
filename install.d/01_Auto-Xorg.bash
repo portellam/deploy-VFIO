@@ -18,21 +18,21 @@ IFS=$'\n'      # Change IFS to newline char
 echo -e "$0: Executing...\n"
 
 # parameters #
-str_repo="portellam/Auto-Xorg"
-str_repoName=`echo $str_repo | cut -d '/' -f2`
-str_userName=`echo $str_repo | cut -d '/' -f1`
+str_gitRepo="portellam/Auto-Xorg"
+str_gitRepoName=`echo $str_gitRepo | cut -d '/' -f2`
+str_gitUserName=`echo $str_gitRepo | cut -d '/' -f1`
 cd /root
 
-if [[ ! `find -wholename *$str_repo*` ]]; then
-    mkdir /root/git /root/git/$str_userName
-    cd /root/git/$str_userName
-    git clone https://www.github.com/$str_repo
+if [[ ! `find -wholename *$str_gitRepo*` ]]; then
+    mkdir /root/git /root/git/$str_gitUserName
+    cd /root/git/$str_gitUserName
+    git clone https://www.github.com/$str_gitRepo
 else
-    cd /root/git/$str_userName
+    cd /root/git/$str_gitUserName
 fi
 
-if [[ ! -z "/root/git/$str_repo" ]]; then
-    cd /root/git/$str_repo
+if [[ ! -z "/root/git/$str_gitRepo" ]]; then
+    cd /root/git/$str_gitRepo
     bash ./installer.sh
     echo -e "\n$0: Executing... Complete."
 else
