@@ -93,6 +93,8 @@ ReadInput $str_input1
 
 if [[ $str_input1 == "Y"* ]]; then
     str_output4+="\n  # Looking Glass #\n  /{dev,run}/shm/lookingglass rw,\n"
+    touch /dev/shm/lookingglass
+    chmod 666 /dev/shm/lookingglass
     bool_lookingGlass=true
 fi
 
@@ -102,6 +104,8 @@ ReadInput $str_input1
 
 if [[ $str_input1 == "Y"* ]]; then
     str_output4+="\n  # Scream #\n  /dev/shm/scream-ivshmem rw,\n"
+    touch /dev/shm/scream-ivshmem
+    chmod 666 /dev/shm/scream-ivshmem
     bool_scream=true
 fi
 
@@ -194,6 +198,12 @@ if [[ -e $str_inFile1 && -e $str_outFile2 ]]; then
     if [[ $str_output4 != "" ]]; then
         systemctl enable libvirtd apparmor
         systemctl restart libvirtd apparmor
+
+        # TODO: copy clients to /bin to be executed as a systemd service? user service?
+        # perhaps a shortcut or even a libvirt hook?
+        #
+        # *** create a libvirt hook for scream and looking glass?
+        #
 
         # parse repos #
         for str_gitRepo in $arr_gitRepo; do
