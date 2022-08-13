@@ -19,24 +19,18 @@ echo -e "$0: Executing...\n"
 
 # parameters #
 str_gitRepo="portellam/Auto-Xorg"
-str_gitRepoName=`echo $str_gitRepo | cut -d '/' -f2`
 str_gitUserName=`echo $str_gitRepo | cut -d '/' -f1`
-cd /root
 
-if [[ ! `find -wholename *$str_gitRepo*` ]]; then
-    mkdir /root/git /root/git/$str_gitUserName
-    cd /root/git/$str_gitUserName
-    git clone https://www.github.com/$str_gitRepo
-else
-    cd /root/git/$str_gitUserName
+# clone repo #
+if [[ ! `find -wholename *./git/$str_gitRepo*` ]]; then
+    mkdir ./git/$str_gitUserName
+    git clone https://www.github.com/$str_gitRepo ./git/$str_gitRepo
 fi
 
-if [[ ! -z "/root/git/$str_gitRepo" ]]; then
-    cd /root/git/$str_gitRepo
-    bash ./installer.sh
-    echo -e "\n$0: Executing... Complete."
-else
-    echo -e "\n$0: Executing... Failed."
+# execute repo #
+if [[ ! -z "./git/$str_gitRepo" ]]; then
+    cd ./git/$str_gitRepo
+    sudo bash ./installer.bash
 fi
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files

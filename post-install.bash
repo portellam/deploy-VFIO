@@ -49,7 +49,7 @@ function ReadInput {
 str_output1=""
 str_dir1="post-install.d"
 
-if [[ -z `find . -name *$str_dir1*` ]]; then
+if [[ -z `find . -name $str_dir1*` ]]; then
     echo -e "$0: Executing functions... Failed. Missing files."
 else
     echo -e "$0: Executing functions..."

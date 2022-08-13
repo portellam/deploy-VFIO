@@ -1,5 +1,7 @@
 #!/bin/bash sh
 
+exit 0
+
 # todo
 # redo with hooks and make an updater script that copies hooks to individual domain/vm folders
 # create sym link to each VM from template hook scripts
