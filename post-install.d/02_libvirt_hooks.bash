@@ -1,10 +1,9 @@
 #!/bin/bash sh
 
-exit 0
-
-# todo
-# redo with hooks and make an updater script that copies hooks to individual domain/vm folders
-# create sym link to each VM from template hook scripts
+# TO-DO:
+# -merge libvirt-nosleep with invoke hooks
+# -redo with hooks and make an updater script that copies hooks to individual domain/vm folders
+# -create sym link to each VM from template hook scripts
 
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then
@@ -23,14 +22,17 @@ str_outDir1="/etc/libvirt/hooks/"
 str_inDir1=`find .. -name *libvirt_hooks*`
 arr_domains=( `ls /etc/libvirt/qemu | grep -iv 'networks' | sort -h | grep '.xml'` )
 
-if [[ -e $str_inDir1"/*" ]]; then
-    cp -r $str_inDir1/* $str_outDir1
+if [[ -e $str_inDir1"/qemu" ]]; then
+    cp $str_inDir1"/qemu" $str_outDir1"/qemu"
 
-    if [[ ${#arr_domains[@]} -gt 0 ]]; then
-        for str_element in ${arr_domains[@]}; do
-            
-        done
-    fi
+#if [[ -e $str_inDir1"/*" ]]; then
+    #cp -r $str_inDir1/* $str_outDir1
+
+    #if [[ ${#arr_domains[@]} -gt 0 ]]; then
+        #for str_element in ${arr_domains[@]}; do
+            # NOTE: do something here 
+        #done
+    #fi
     echo -e "Complete."
 else
     echo -e "Failed. File(s) missing:"
