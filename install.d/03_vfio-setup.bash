@@ -33,7 +33,6 @@ bool_missingFiles=false
 bool_execMultiBoot=false
 bool_hasExtPCI=false 
 bool_hasVGA=false
-#bool_hasNoDriver=false
 bool_hasVFIODriver=false
 str_GRUB_CMDLINE=""
 str_GRUB_CMDLINE_Hugepages=""
@@ -140,12 +139,12 @@ function debugOutput {
     #for (( i=0 ; i<${#arr_compgen_IOMMUID[@]} ; i++ )); do echo -e "$0: '$""{arr_compgen_IOMMUID[$i]}' = ${arr_compgen_IOMMUID[$i]}"; done
     #for (( i=0 ; i<${#arr_lspci[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci[$i]}' = ${arr_lspci[$i]}"; done
     #for (( i=0 ; i<${#arr_lspci_busID[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_busID[$i]}' = ${arr_lspci_busID[$i]}"; done
-    #for (( i=0 ; i<${#arr_lspci_deviceName[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_deviceName[$i]}' = ${arr_lspci_deviceName[$i]}"; done
+    for (( i=0 ; i<${#arr_lspci_deviceName[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_deviceName[$i]}' = ${arr_lspci_deviceName[$i]}"; done
     #for (( i=0 ; i<${#arr_lspci_HWID[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_HWID[$i]}' = ${arr_lspci_HWID[$i]}"; done
     #for (( i=0 ; i<${#arr_lspci_type[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_type[$i]}' = ${arr_lspci_type[$i]}"; done
     #for (( i=0 ; i<${#arr_lspci_vendorName[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_vendorName[$i]}' = ${arr_lspci_vendorName[$i]}"; done
-    for (( i=0 ; i<${#arr_lspci_driverName[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_driverName[$i]}' = ${arr_lspci_driverName[$i]}"; done
-    #for (( i=0 ; i<${#arr_lspci_IOMMUID[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_IOMMUID[$i]}' = ${arr_lspci_IOMMUID[$i]}"; done
+    #for (( i=0 ; i<${#arr_lspci_driverName[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_driverName[$i]}' = ${arr_lspci_driverName[$i]}"; done
+    for (( i=0 ; i<${#arr_lspci_IOMMUID[@]} ; i++ )); do echo -e "$0: '$""{arr_lspci_IOMMUID[$i]}' = ${arr_lspci_IOMMUID[$i]}"; done
     #echo -e "$0: '$""int_compgen_IOMMUID_lastIndex' = $int_compgen_IOMMUID_lastIndex"
     #echo -e "$0: '$'""{#arr_compgen[@]} = ${#arr_compgen[@]}"
     #echo -e "$0: '$'""{#arr_compgen_busID[@]} = ${#arr_compgen_busID[@]}"
@@ -161,8 +160,8 @@ function debugOutput {
 
 }
 
-#debugOutput    # uncomment to debug here
-#exit 0         # uncomment to debug here
+debugOutput    # uncomment to debug here
+exit 0         # uncomment to debug here
 ## end Parse PCI ##
 
 ## user input ##
@@ -217,9 +216,9 @@ function MultiBootSetup {
     echo -e "$0: Executing Multi-boot setup..."
 
     ## parameters ##
-    str_rootDistro=`lsb_release -i -s`                                             # Linux distro name
-    #declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2`)             # all kernels
-    str_rootKernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`      # latest kernel
+    str_rootDistro=`lsb_release -i -s`                                                          # Linux distro name
+    #declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`)    # all kernels
+    str_rootKernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`                   # latest kernel
     str_rootKernel=${str_rootKernel: 1}
     str_rootDisk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
     str_rootUUID=`blkid -s UUID | grep $str_rootDisk | cut -d '"' -f2`
@@ -234,20 +233,35 @@ function MultiBootSetup {
     str_inFile6b=`find . -name *custom_grub_template`
 
     # system files #
-    str_outFile6="/etc/grub.d/proxifiedScripts/custom"
+    #str_outFile6="/etc/grub.d/proxifiedScripts/custom"
+    str_outFile6="custom.log"   # debug
 
     # system file backups #
     str_oldFile6=$str_outFile6".old"
 
     # debug logfiles #
-    str_logFile6=$(pwd)"/custom-grub.log"
+    #str_logFile6=$(pwd)"/custom-grub.log"
+    str_logFile6=$(pwd)"/custom-grub.log.log"   # debug
 
+    # create logfile #
     if [[ -z $str_logFile6 ]]; then
         touch $str_logFile6
     fi
 
+    # create backup #
+    if [[ -e $str_outFile6 ]]; then
+        mv $str_outFile6 $str_oldFile6
+    fi
+
+    # copy over blank #
+    if [[ -e $str_inFile6 ]]; then
+        cp $str_inFile6 $str_outFile6           
+    fi
+
     # parse list of VGA IOMMU groups #
     for int_IOMMUID_VGAlist in ${arr_IOMMUID_VGAlist[@]}; do
+
+        echo -e '$int_IOMMUID_VGAlist == '"'$int_IOMMUID_VGAlist'"
 
         # reset vars #
         str_thisVGA_deviceName=""
@@ -256,26 +270,14 @@ function MultiBootSetup {
         
         # parse list of VGA IOMMU groups #
         for (( int_i=0 ; int_i < ${#arr_IOMMUID_VGAlist[@]} ; int_i++ )); do
-
-            #echo '$int_i == '"'$int_i'"
-
             # find boot VGA device name #
             for (( int_j=0 ; int_j<${#arr_lspci_IOMMUID[@]} ; int_j++ )); do
-
-                #echo '$int_j == '"'$int_j'"
-
                 if [[ ${arr_VGA_deviceName[$int_j]} != "NO_VGA_FOUND" ]]; then
+                    echo -e '${arr_VGA_deviceName['$int_j']} == '"'${arr_VGA_deviceName[$int_j]}'"      # AMD GPU IOMMU matches
+                    echo -e '${arr_lspci_IOMMUID['$int_j']} == '"'${arr_lspci_IOMMUID[$int_j]}'"        # but NV GPU IOMMU no match, why?
+
                     str_thisVGA_deviceName=${arr_VGA_deviceName[$int_j]}
                 fi
-
-                #echo '${arr_VGA_deviceName['$int_j']} == '"'${arr_VGA_deviceName[$int_j]}'"
-            
-                # match IOMMU ID #
-                #if [[ ${arr_lspci_IOMMUID[$int_j]} == $int_IOMMUID_VGAlist ]]; then
-                    #str_thisVGA_deviceName=${arr_VGA_deviceName[$int_j]}
-                    #echo '$str_thisVGA_deviceName == '"'$str_thisVGA_deviceName'"
-                    #int_j=${#arr_lspci_IOMMUID[@]}
-                #fi
             done
 
             # false match, add all VGA IOMMU groups minus current boot VGA group #
@@ -285,9 +287,7 @@ function MultiBootSetup {
             fi
         done
 
-        #echo '$str_thisVGA_deviceName == '"'$str_thisVGA_deviceName'"
-        #echo '$str_driverName_thisList == '"'$str_driverName_thisList'"
-        #echo '$str_HWID_thisList == '"'$str_HWID_thisList'"
+        echo -e '$str_thisVGA_deviceName == '"'$str_thisVGA_deviceName'"
 
         str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} ${str_GRUB_CMDLINE_Hugepages} modprobe.blacklist=${str_driverName_thisList}${str_driverName_newList} vfio_pci.ids=${str_HWID_thisList}${str_HWID_list}"
 
@@ -309,11 +309,6 @@ function MultiBootSetup {
         str_output7_log="    initrd  /boot/initrd.img-"'#$str_rootKernel#'
 
         if [[ -e $str_inFile6 && -e $str_inFile6b ]]; then
-            if [[ -e $str_outFile6 ]]; then
-                mv $str_outFile6 $str_oldFile6      # create backup
-            fi
-
-            cp $str_inFile6 $str_outFile6           # copy over blank
 
             # write to tempfile #
             echo -e \n\n >> $str_outFile6 $str_logFile6
@@ -351,7 +346,7 @@ function MultiBootSetup {
                 fi
 
                 echo -e $str_line1 >> $str_outFile6 $str_logFile6
-            done < $str_inFile6b    # read from template
+            done < $str_inFile6b        # read from template
         else
             bool_missingFiles=true
         fi
@@ -396,11 +391,18 @@ function StaticSetup {
     # none for file6
 
     # system files #
-    str_outFile1="/etc/default/grub"
-    str_outFile2="/etc/modules"
-    str_outFile3="/etc/initramfs-tools/modules"
-    str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
-    str_outFile5="/etc/modprobe.d/vfio.conf"
+    #str_outFile1="/etc/default/grub"
+    #str_outFile2="/etc/modules"
+    #str_outFile3="/etc/initramfs-tools/modules"
+    #str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
+    #str_outFile5="/etc/modprobe.d/vfio.conf"
+    
+    # debug files #
+    str_outFile1="grub.log"
+    str_outFile2="modules.log"
+    str_outFile3="initramfs_tools_modules.log"
+    str_outFile4="pci-blacklists.conf.log"
+    str_outFile5="vfio.conf.log"
 
     # system file backups #
     str_oldFile1=$str_outFile1".old"
@@ -480,7 +482,6 @@ function StaticSetup {
                 fi
 
                 if [[ ${arr_lspci_driverName[$int_j]} == "NO_DRIVER_FOUND" ]]; then
-                    #bool_hasNoDriver=true
                     str_thisDriverName=""
                 fi
 
@@ -540,11 +541,13 @@ function StaticSetup {
         fi
 
         if [[ $bool_hasVFIODriver == true ]]; then                     
-            echo -e "$0: WARNING: VFIO driver found."
-            #str_input1="N"
+            echo -e "$0: WARNING: VFIO driver found."  
             bool_existingSetup=true
             str_driverName_list=""                  # reset outputs
             str_HWID_list=""                        # reset outputs
+
+            # quit setup immediately #
+            #str_input1="N"
             #break
         fi
 
@@ -597,9 +600,8 @@ function StaticSetup {
             ((int_count++))                     # increment counter
         done
 
-        bool_hasExtPCI=false               # reset boolean
+        bool_hasExtPCI=false                    # reset boolean
         bool_hasVGA=false                       # reset boolean
-        #bool_hasNoDriver=false                  # reset boolean
         bool_hasVFIODriver=false                # reset boolean
         str_driverName_tempList=""              # reset list
         str_HWID_tempList=""                    # reset list
