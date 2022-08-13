@@ -29,14 +29,15 @@ Post-install, execute:
     * **update Multi-Boot** with latest installed Linux kernel.
     * **Loopback audio** user service, audio-capture of VM audio to host (ex: Line-out to Line-in/Mic).
     * IVSHMEM (Inter-VM Shared Memory Device):
-        * **Evdev (Event devices)** is a Virtual Keyboard-Video-Mouse switch (KVM w/o video). (good fall-back) **(works)**
-        * **Looking Glass** is a video-capture (framebuffer) of the VM GPU to host. **(work-in-progress)** [2] 
-        * **Scream** is a audio-capture over virtual network of the VM to host. **(work-in-progress)** [3]    
-    * **Libvirt hooks** include (per VM or combined) [4] **(work-in-progress)**
-        * Switch display input (video output) at VM start. 
-        * Prompt user to set/allocate system resources (CPU, memory) dynamically.
-        * **Libvirt-nosleep** system service to prevent Host sleep while virtual machine(s) are active. **(works)** [5]
-    * **Auto VM Deployment** **(work-in-progress)**
+        * **Evdev (Event devices)** is a Virtual Keyboard-Video-Mouse switch (KVM w/o video). (good fall-back)
+        * **Looking Glass** is a video-capture (framebuffer) of the VM GPU to host. [2] 
+        * **Scream** is a audio-capture over virtual network of the VM to host. [3]    
+    * **Libvirt hooks** [4]
+        * Invoke 'hooks' for individual VMs. **(w-i-p)** [4]
+        * Switch display input (video output) at VM start. **(w-i-p)**
+        * Prompt user to set/allocate system resources (CPU, memory) dynamically. **(w-i-p)**
+        * **Libvirt-nosleep** system service to prevent Host sleep while virtual machine(s) are active. **(works standalone)** [5]
+    * **Auto VM Deployment** **(w-i-p)**
 
 * work-in-progress; more features to be added, as discovered and needed.
 
