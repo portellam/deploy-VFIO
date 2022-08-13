@@ -45,6 +45,7 @@ echo -e "$0: Executing ZRAM-swap setup. Calculating..."
 int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
 str_gitRepo="FoundObjects/zram-swap"
 str_gitUserName=`echo $str_gitRepo | cut -d '/' -f1`
+mkdir ./git
 
 # check for zram-utils #
 if [[ -e $str_outFile1 ]]; then

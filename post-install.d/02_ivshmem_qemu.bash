@@ -61,6 +61,7 @@ declare -a arr_gitRepo=(
 "duncanthrax/scream
 gnif/LookingGlass"
 )
+mkdir ./git
 
 # system files #
 str_outFile1="/etc/libvirt/qemu.conf"
