@@ -20,6 +20,7 @@ echo -e "$0: Executing...\n"
 # parameters #
 str_gitRepo="portellam/Auto-Xorg"
 str_gitUserName=`echo $str_gitRepo | cut -d '/' -f1`
+mkdir ./git
 
 # clone repo #
 if [[ ! `find -wholename *./git/$str_gitRepo*` ]]; then
