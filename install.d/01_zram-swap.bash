@@ -44,24 +44,23 @@ echo -e "$0: Executing ZRAM-swap setup. Calculating..."
 # parameters #
 int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
 str_gitRepo="FoundObjects/zram-swap"
+str_gitUserName=`echo $str_gitRepo | cut -d '/' -f1`
 
 # check for zram-utils #
 if [[ -e $str_outFile1 ]]; then
-    sudo systemctl stop zramswap
-    sudo systemctl disable zramswap
+    systemctl stop zramswap
+    systemctl disable zramswap
 fi
 
-if [[ -z "~/git/$str_gitRepo" ]]; then
-    sudo mkdir ~/git
-    sudo mkdir ~/git/`echo $str_gitRepo | cut -d '/' -f 1`
-    cd ~/git/`echo $str_gitRepo | cut -d '/' -f 1`
-    git clone https://www.github.com/$str_gitRepo
+# clone repo #
+if [[ ! `find -wholename *./git/$str_gitRepo*` ]]; then
+    mkdir ./git/$str_gitUserName
+    git clone https://www.github.com/$str_gitRepo ./git/$str_gitRepo
 fi
 
-# check for zram-swap #
-if [[ -z $str_outFile2 ]]; then
-    cd ~/git/$str_gitRepo
-    sh ./install.sh
+# execute repo #
+if [[ ! -z "./git/$str_gitRepo" ]]; then
+    sh ./git/$str_gitRepo/install.sh
 fi
 
 if [[ `sudo swapon -v | grep /dev/zram*` == "/dev/zram"* ]]; then sudo swapoff /dev/zram*; fi   # disable ZRAM swap
@@ -146,7 +145,7 @@ if [[ -e $str_inFile2 ]]; then
         echo -e $str_line1 >> $str_outFile2
     done < $str_inFile2
 
-    sudo systemctl restart zram-swap     # restart service   # NOTE: do not enable/start zramswap.service?  # NOTE: test!
+    systemctl restart zram-swap     # restart service   # NOTE: do not enable/start zramswap.service?  # NOTE: test!
     # NOTE: in my setup, I prefer the git repo. I currently do not understand zram setup using the debian package/config file (zram pages are exact sizes compressed, not uncompressed as above).
     echo -e "$0: Executing ZRAM-swap setup... Complete.\n"
     echo -e "$0: Review changes:\n\t'$str_outFile2'"

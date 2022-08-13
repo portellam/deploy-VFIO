@@ -13,9 +13,9 @@
 #
 # Make sure you specify the right settings for your setup below or it won't work.
 
-hex_domainDisplay="0"    # The display shown in `ddcutil detect`
-hex_domainInput="12"     # The input the VM is connected to (without 0x, but with leading zeroes, if any. See `ddcutil capabilities`)
-hex_hostInput="0f"   # The input the host is connected to (without 0x, but with leading zeroes, if any. See `ddcutil capabilities`)
+hex_domainDisplay="0"   # The display shown in `ddcutil detect`
+hex_domainInput="12"    # The input the VM is connected to (without 0x, but with leading zeroes, if any. See `ddcutil capabilities`)
+hex_hostInput="0f"      # The input the host is connected to (without 0x, but with leading zeroes, if any. See `ddcutil capabilities`)
 
 if [[ "$2/$3" == "started/begin" ]]; then
     hex_input="$hex_domainInput"

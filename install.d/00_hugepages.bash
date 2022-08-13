@@ -52,7 +52,6 @@ while true; do
         read -r str_HugePageSize
         str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
     fi
-    #
 
     # check input #
     case $str_HugePageSize in
@@ -61,7 +60,6 @@ while true; do
         *)
             echo "$0: Invalid input.";;
     esac
-    #
 
     ((int_count++))     # increment counter
 done
