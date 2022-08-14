@@ -27,16 +27,16 @@ Post-install, execute:
     * Setup dynamically (Multi-Boot) or statically.
 * **Post-install:**
     * **update Multi-Boot** with latest installed Linux kernel.
-    * **Loopback audio** user service, audio-capture of VM audio to host (ex: Line-out to Line-in/Mic).
+    * **Loopback audio** user service, audio capture from VM to host (ex: PCI Line-out to on-board Line-in/Mic).
     * IVSHMEM (Inter-VM Shared Memory Device):
-        * **Evdev (Event devices)** is a Virtual Keyboard-Video-Mouse switch (KVM w/o video). (good fall-back)
-        * **Looking Glass** is a video-capture (framebuffer) of the VM GPU to host. [2] 
-        * **Scream** is a audio-capture over virtual network of the VM to host. [3]    
+        * **Evdev (Event devices)** is a Virtual Keyboard-Video-Mouse switch (K.V.M w/o video). (good fall-back)
+        * **Looking Glass** is a video capture of the VM GPU primary output, to host. [2] 
+        * **Scream** is audio capture (virtual audio cable) over virtual network bridge, from VM to host. [3]    
     * **Libvirt hooks** [4]
         * Invoke 'hooks' for individual VMs. **(w-i-p)** [4]
         * Switch display input (video output) at VM start. **(w-i-p)**
         * Prompt user to set/allocate system resources (CPU, memory) dynamically. **(w-i-p)**
-        * **Libvirt-nosleep** system service to prevent Host sleep while virtual machine(s) are active. **(works standalone)** [5]
+        * **Libvirt-nosleep** system service to prevent Host sleep while VM(s) are active. **(works standalone)** [5]
     * **Auto VM Deployment** **(w-i-p)**
 
 * work-in-progress; more features to be added, as discovered and needed.
@@ -46,7 +46,7 @@ Post-install, execute:
     * Saves lists of external PCI devices, by order of IOMMU groups.
 * Prompt user for VFIO passthrough setup:
     * **Multi-Boot** (disclaimer: currently outputs only one valid boot entry, not all)
-        * Select a host VGA boot device at GRUB menu.   (**Auto-Xorg** is recommended)
+        * Select a host VGA boot device at GRUB menu.   (**Auto-Xorg** [1] is recommended)
         * Appends to system file: **'/etc/grub.d/proxifiedScripts/custom'**
     * **Static**
         * Asks user to VFIO passthrough any IOMMU groups (with external PCI devices, including VGA devices).
