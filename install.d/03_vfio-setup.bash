@@ -161,7 +161,7 @@ function debugOutput {
 }
 
 debugOutput    # uncomment to debug here
-exit 0         # uncomment to debug here
+#exit 0         # uncomment to debug here
 ## end Parse PCI ##
 
 ## user input ##
@@ -258,30 +258,59 @@ function MultiBootSetup {
         cp $str_inFile6 $str_outFile6           
     fi
 
-    # parse list of VGA IOMMU groups #
-    for int_IOMMUID_VGAlist in ${arr_IOMMUID_VGAlist[@]}; do
+    # debug #
+    #for (( i=0 ; i<${#arr_VGA_deviceName[@]} ; i++ )); do echo -e "$0: '$""{arr_VGA_deviceName[$i]}' = ${arr_VGA_deviceName[$i]}"; done
 
-        echo -e '$int_IOMMUID_VGAlist == '"'$int_IOMMUID_VGAlist'"
+    declare -i int_nextIndex=0  ## NOTE: there has to be a better way of parsing each VGA device!!!
+
+    # parse list of VGA IOMMU groups #
+    for int_IOMMUID in ${arr_IOMMUID_VGAlist[@]}; do
+
+        echo -e '$int_IOMMUID == '"'$int_IOMMUID'"
 
         # reset vars #
         str_thisVGA_deviceName=""
         str_driverName_thisList=""
         str_HWID_thisList=""
-        
+
+        ##if [[ ${arr_VGA_deviceName[$int_IOMMUID]} != "NO_VGA_FOUND" ]]; then        # finds correct iommu id, but not pulling info
+            ##echo -e '${arr_VGA_deviceName['$int_IOMMUID']} == '"'${arr_VGA_deviceName[$int_IOMMUID]}'"      # AMD GPU IOMMU matches
+            ##echo -e '${arr_lspci_IOMMUID['$int_IOMMUID']} == '"'${arr_lspci_IOMMUID[$int_IOMMUID]}'"        # but NV GPU IOMMU no match, why?
+            ##   
+            ##str_thisVGA_deviceName=${arr_VGA_deviceName[$int_IOMMUID]}
+        ##fi
+
         # parse list of VGA IOMMU groups #
         for (( int_i=0 ; int_i < ${#arr_IOMMUID_VGAlist[@]} ; int_i++ )); do
-            # find boot VGA device name #
-            for (( int_j=0 ; int_j<${#arr_lspci_IOMMUID[@]} ; int_j++ )); do
-                if [[ ${arr_VGA_deviceName[$int_j]} != "NO_VGA_FOUND" ]]; then
-                    echo -e '${arr_VGA_deviceName['$int_j']} == '"'${arr_VGA_deviceName[$int_j]}'"      # AMD GPU IOMMU matches
-                    echo -e '${arr_lspci_IOMMUID['$int_j']} == '"'${arr_lspci_IOMMUID[$int_j]}'"        # but NV GPU IOMMU no match, why?
+        
+            ### find boot VGA device name #
+            ##for (( int_j=$int_nextIndex ; int_j<${#arr_lspci_IOMMUID[@]} ; int_j++ )); do
+                ##if [[ ${arr_VGA_deviceName[$int_j]} != "NO_VGA_FOUND" ]]; then
+                    ##echo -e '${arr_VGA_deviceName['$int_j']} == '"'${arr_VGA_deviceName[$int_j]}'"      # AMD GPU IOMMU matches
+                    ##echo -e '${arr_lspci_IOMMUID['$int_j']} == '"'${arr_lspci_IOMMUID[$int_j]}'"        # but NV GPU IOMMU no match, why?
+                    ##
+                    ##str_thisVGA_deviceName=${arr_VGA_deviceName[$int_j]}
+                    ##int_nextIndex=$(( $int_j + 1 ))
+                    ##int_j=${#arr_lspci_IOMMUID[@]}
+                ##else
+                    ##int_nextIndex=$int_j
+                ##fi
+            ##done
 
-                    str_thisVGA_deviceName=${arr_VGA_deviceName[$int_j]}
-                fi
-            done
+            ## ...What am I doing here?...
+
+            str_thisVGA_deviceName=${arr_VGA_deviceName[$int_i]}
+
+            if [[ ${arr_VGA_deviceName[$int_IOMMUID]} != "NO_VGA_FOUND" ]]; then        # finds correct iommu id, but not pulling info
+                echo -e '${arr_VGA_deviceName['$int_i']} == '"'${arr_VGA_deviceName[$int_i]}'"      # AMD GPU IOMMU matches
+                echo -e '${arr_lspci_IOMMUID['$int_i']} == '"'${arr_lspci_IOMMUID[$int_i]}'"        # but NV GPU IOMMU no match, why?
+            else
+                str_thisVGA_deviceName=""
+            fi
+
 
             # false match, add all VGA IOMMU groups minus current boot VGA group #
-            if [[ ${arr_IOMMUID_VGAlist[int_i]} != $int_IOMMUID_VGAlist ]]; then
+            if [[ ${arr_IOMMUID_VGAlist[int_i]} != $int_IOMMUID ]]; then
                 str_driverName_thisList+=${arr_driverName_VGAlist[$int_i]}
                 str_HWID_thisList+=${arr_HWID_VGAlist[$int_i]}
             fi
