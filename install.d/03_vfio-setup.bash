@@ -160,8 +160,8 @@ function debugOutput {
 
 }
 
-debugOutput    # uncomment to debug here
-exit 0         # uncomment to debug here
+#debugOutput    # uncomment to debug here
+#exit 0         # uncomment to debug here
 ## end Parse PCI ##
 
 ## user input ##
@@ -240,8 +240,7 @@ function MultiBootSetup {
     str_oldFile6=$str_outFile6".old"
 
     # debug logfiles #
-    #str_logFile6=$(pwd)"/custom-grub.log"
-    str_logFile6=$(pwd)"/custom-grub.log.log"   # debug
+    str_logFile6=$(pwd)"/custom-grub.log"
 
     # create logfile #
     if [[ -z $str_logFile6 ]]; then
@@ -259,40 +258,40 @@ function MultiBootSetup {
     fi
 
     # parse list of VGA IOMMU groups #
-    for int_IOMMUID_VGAlist in ${arr_IOMMUID_VGAlist[@]}; do
+    for int_IOMMUID in ${arr_IOMMUID_VGAlist[@]}; do
 
-        echo -e '$int_IOMMUID_VGAlist == '"'$int_IOMMUID_VGAlist'"
+        echo -e '$int_IOMMUID == '"'$int_IOMMUID'"
 
         # reset vars #
-        str_thisVGA_deviceName=""
+        str_thisVGA_DeviceName=""
         str_driverName_thisList=""
         str_HWID_thisList=""
         
-        # parse list of VGA IOMMU groups #
-        for (( int_i=0 ; int_i < ${#arr_IOMMUID_VGAlist[@]} ; int_i++ )); do
-            # find boot VGA device name #
-            for (( int_j=0 ; int_j<${#arr_lspci_IOMMUID[@]} ; int_j++ )); do
-                if [[ ${arr_VGA_deviceName[$int_j]} != "NO_VGA_FOUND" ]]; then
-                    echo -e '${arr_VGA_deviceName['$int_j']} == '"'${arr_VGA_deviceName[$int_j]}'"      # AMD GPU IOMMU matches
-                    echo -e '${arr_lspci_IOMMUID['$int_j']} == '"'${arr_lspci_IOMMUID[$int_j]}'"        # but NV GPU IOMMU no match, why?
-
-                    str_thisVGA_deviceName=${arr_VGA_deviceName[$int_j]}
-                fi
-            done
+        # find boot VGA device name #
+        for (( int_i=0 ; int_i<${#arr_lspci_IOMMUID[@]} ; int_i++ )); do
+            int_thisIOMMUID=${arr_lspci_IOMMUID[$int_i]}
 
             # false match, add all VGA IOMMU groups minus current boot VGA group #
-            if [[ ${arr_IOMMUID_VGAlist[int_i]} != $int_IOMMUID_VGAlist ]]; then
+            if [[ ${arr_IOMMUID_VGAlist[int_i]} != $int_IOMMUID ]]; then
                 str_driverName_thisList+=${arr_driverName_VGAlist[$int_i]}
                 str_HWID_thisList+=${arr_HWID_VGAlist[$int_i]}
             fi
+
+            # match IOMMU ID, save device name of first match #
+            if [[ $int_thisIOMMUID == $int_IOMMUID && $str_thisVGA_DeviceName != "" ]]; then
+                str_thisVGA_DeviceName=${arr_VGA_deviceName[$int_thisIOMMUID]}
+            fi
         done
 
-        echo -e '$str_thisVGA_deviceName == '"'$str_thisVGA_deviceName'"
+        echo -e '$str_thisVGA_DeviceName == '"'$str_thisVGA_DeviceName'"
 
-        str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} ${str_GRUB_CMDLINE_Hugepages} modprobe.blacklist=${str_driverName_thisList}${str_driverName_newList} vfio_pci.ids=${str_HWID_thisList}${str_HWID_list}"
+        # new parameters #
+        str_driverName_thisList+=$str_driverName_newList
+        str_HWID_thisList+=$str_HWID_list
+        str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} ${str_GRUB_CMDLINE_Hugepages} modprobe.blacklist=${str_driverName_thisList} vfio_pci.ids=${str_HWID_thisList}"
 
         ## /etc/grub.d/proxifiedScripts/custom ##
-        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO w/ Boot VGA: '$str_thisVGA_deviceName')"
+        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO w/ Boot VGA: '$str_thisVGA_DeviceName')"
         str_output1="menuentry \"$str_GRUB_title\"{"
         str_output2="    insmod $str_rootFSTYPE"
         str_output3="    set root='/dev/disk/by-uuid/$str_rootUUID'"
@@ -302,7 +301,7 @@ function MultiBootSetup {
         str_output7="    initrd  /boot/initrd.img-$str_rootKernel"
 
         # output to logfile, to update kernel at a later time
-        str_GRUB_title_log="`lsb_release -i -s` `uname -o`, with `uname`"'#$str_rootKernel#'"(VFIO w/ Boot VGA: '$str_thisVGA_deviceName')"
+        str_GRUB_title_log="`lsb_release -i -s` `uname -o`, with `uname`"'#$str_rootKernel#'"(VFIO w/ Boot VGA: '$str_thisVGA_DeviceName')"
         str_output1_log="menuentry \"$str_GRUB_title_log\"{"
         str_output5_log="    echo    'Loading Linux "'#$str_rootKernel#'" ...'"
         str_output6_log="    linux   /boot/vmlinuz-"'#$str_rootKernel#'" root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
@@ -311,7 +310,8 @@ function MultiBootSetup {
         if [[ -e $str_inFile6 && -e $str_inFile6b ]]; then
 
             # write to tempfile #
-            echo -e \n\n >> $str_outFile6 $str_logFile6
+            echo -e \n\n $str_line1 >> $str_outFile6
+            echo -e \n\n $str_line1 >> $str_logFile6
             while read -r str_line1; do
                 if [[ $str_line1 == *'#$str_output1'* ]]; then
                     str_line1=$str_output1
@@ -345,13 +345,14 @@ function MultiBootSetup {
                     echo -e $str_output7_log >> $str_logFile6
                 fi
 
-                echo -e $str_line1 >> $str_outFile6 $str_logFile6
+                echo -e $str_line1 >> $str_outFile6
+                echo -e $str_line1 >> $str_logFile6
             done < $str_inFile6b        # read from template
         else
             bool_missingFiles=true
         fi
 
-        str_thisVGA_deviceName=""       # reset string
+        str_thisVGA_DeviceName=""       # reset string
     done
 
     #echo -e "$0: DISCLAIMER: Automated GRUB menu entry feature not available yet.\n$0: Manual 'Multi-Boot' setup steps:\n\t1. Execute GRUB Customizer\n\t2. Clone an existing, valid menu entry\n\t3. Copy the fields in the logfile:\n\t\t'$str_logFile6'\n\t4. Paste the output into a new menu entry, where appropriate.\n"
@@ -443,7 +444,7 @@ function StaticSetup {
             if [[ ${arr_lspci_IOMMUID[$int_j]} == $int_i ]]; then
                 str_thisBusID=${arr_lspci_busID[$int_j]}
                 str_thisBusID=${str_thisBusID::-1}                  # valid element
-                str_thisDeviceName=${arr_lspci_deviceName[$int_j]}  # valid element
+                str_thisVGA_DeviceName=${arr_lspci_deviceName[$int_j]}  # valid element
                 str_thisDriverName=${arr_lspci_driverName[$int_j]}  # valid element
                 str_thisHWID=${arr_lspci_HWID[$int_j]}              # valid element
                 str_thisType=`echo ${arr_lspci_type[$int_j]} | tr '[:lower:]' '[:upper:]'`      # valid element
@@ -462,7 +463,7 @@ function StaticSetup {
                 # match device type #
                 if [[ $str_thisType == *"VGA"* || $str_thisType == *"GRAPHICS"* ]]; then
                     arr_VGA_IOMMUID+=($int_j)                   # element is IOMMU ID, index is 'lspci' index
-                    arr_VGA_deviceName+=($str_thisDeviceName)
+                    arr_VGA_deviceName+=($str_thisVGA_DeviceName)
 
                     # false match boolean #
                     if [[ $bool_hasVGA == false ]]; then
@@ -884,7 +885,7 @@ fi
 
 # warn user of missing files #
 if [[ $bool_missingFiles == true ]]; then
-    echo -e "$0: Setup installation is incomplete. Clone or re-download 'portellam/VFIO-setup' to continue."
+    echo -e "$0: Setup installation is incomplete. Clone or re-download 'portellam/deploy-VFIO-setup' to continue."
 fi
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files

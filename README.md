@@ -1,5 +1,5 @@
 ## Description
-Ultimate scripts for a seamless and automated VFIO (PCI passthrough) setup. Run any OS with real hardware, under a virtual machine (VM), in the Linux desktop of your choice.
+Ultimate scripts to seamlessly deploy a VFIO setup (PCI passthrough). Run any OS with real hardware, under a virtual machine (VM), in the Linux desktop of your choice.
 
 ## How-to
 To install, execute:
