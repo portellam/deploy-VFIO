@@ -13,14 +13,14 @@
 #
 
 # check if sudo/root #
-if [[ `whoami` != "root" ]]; then
-    echo -e "$0: WARNING: Script must be run as Sudo or Root! Exiting."
-    exit 0
-fi
+    if [[ `whoami` != "root" ]]; then
+        echo -e "$0: WARNING: Script must be run as Sudo or Root! Exiting."
+        exit 0
+    fi
 
 # NOTE: necessary for newline preservation in arrays and files #
-SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
-IFS=$'\n'      # Change IFS to newline char
+    SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
+    IFS=$'\n'      # Change IFS to newline char
 
 ## Parse PCI ##
     echo -en "$0: Parsing PCI device information... "
