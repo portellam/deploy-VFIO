@@ -1,5 +1,8 @@
 #!/bin/bash sh
 
+#
+# Author(s):    Alex Portell <github.com/portellam>
+#
 # function steps #
 # 1. check if it repo exists, continue.
 # 2. install
