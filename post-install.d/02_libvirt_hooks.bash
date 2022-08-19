@@ -5,10 +5,6 @@
 # -redo with hooks and make an updater script that copies hooks to individual domain/vm folders
 # -create sym link to each VM from template hook scripts
 
-#
-# Author(s):    Alex Portell <github.com/portellam>
-#
-
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then
     echo -e "$0: WARNING: Script must be run as Sudo or Root! Exiting."

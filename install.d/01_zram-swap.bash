@@ -1,8 +1,5 @@
 #!/bin/bash sh
 
-#
-# Author(s):    Alex Portell <github.com/portellam>
-#
 # function steps #
 # 1. check if related packages are installed, git repo exists, continue.
 # 2. read hugepages logfile for vars, ask user input and calculate reasonable zram swap size.

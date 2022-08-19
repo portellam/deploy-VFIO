@@ -77,7 +77,7 @@ elif [[ `lsb_release -i -s | grep -Ei "fedora|redhat"` ]]; then
     # NOTE: find same packages from Debian    # is there a virtualization metapackage for Debian, Arch?
 
 else
-    echo -e "Checking for updates... Failed.\n$0: Linux distibution is not recognized for or compatible with 'deploy-VFIO-setup'."
+    echo -e "Checking for updates... Failed.\n$0: Linux distibution is not recognized for or compatible with 'VFIO-setup'."
     str_output1="Continue? [Y/n]: "
     ReadInput $str_input1
     

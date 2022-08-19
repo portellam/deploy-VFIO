@@ -1,8 +1,5 @@
 #!/bin/bash sh
 
-#
-# Author(s):    Alex Portell <github.com/portellam>
-#
 # function steps #
 # 1. parse system memory.
 # 2. ask user for input (hugepage size and num pages), continue if user input is valid.

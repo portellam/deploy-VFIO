@@ -1,9 +1,5 @@
 #!/bin/bash sh
 
-#
-# Author(s):    Alex Portell <github.com/portellam>
-#
-
 # check if sudo/root #
 if [[ `whoami` != "root" ]]; then
     echo -e "$0: WARNING: Script must be run as Sudo or Root! Exiting."
