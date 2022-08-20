@@ -106,7 +106,7 @@
     if [[ -z `find . -name $str_dir1*` ]]; then
         echo -e "$0: Executing functions... Failed. Missing files."
     else
-        echo -e "$0: Executing functions..."
+        echo -e "$0: Executing functions...\n"
 
         declare -a arr_dir1=`ls $str_dir1 | sort -h`
         # call functions #

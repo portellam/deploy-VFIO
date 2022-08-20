@@ -56,7 +56,7 @@
     if [[ -z `find . -name $str_dir1*` ]]; then
         echo -e "$0: Executing functions... Failed. Missing files."
     else
-        echo -e "$0: Executing functions..."
+        echo -e "$0: Executing functions...\n"
 
         declare -a arr_dir1=`ls $str_dir1 | sort -h`
         # call functions #
@@ -73,18 +73,20 @@
             if [[ $str_line1 == *".bash"||*".sh" && $str_line1 != *".log" ]]; then
                 str_output1="Execute '$str_line1'? [Y/n]: "
                 ReadInput $str_input1
-                echo
+                echo -e "\n"
             fi
 
             if [[ $str_input1 == "Y" && $str_line1 == *".bash" && $str_line1 != *".log" ]]; then
                 sudo bash $str_dir1"/"$str_line1
-                echo
+                echo -e "\n"
             fi
 
             if [[ $str_input1 == "Y" && $str_line1 == *".sh" && $str_line1 != *".log" ]]; then
                 sudo sh $str_dir1"/"$str_line1
-                echo
+                echo -e "\n"
             fi
+
+            echo
         done
 
         echo -e "$0: Review changes made. Exiting."

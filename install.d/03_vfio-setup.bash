@@ -39,6 +39,7 @@
     str_driver_VFIO_list=""
     str_HWID_VFIO_list=""
     str_GRUB_CMDLINE=""
+    readonly str_logFile0=`find $(pwd) -name *hugepages*log*`
 
 # sort Bus ID by IOMMU group ID #
     for element1 in ${arr_devices1[@]}; do
@@ -222,7 +223,7 @@
                     fi
 
                     # show only IOMMU groups with external PCI #
-                    if [[ `echo ${arr_busID_sum[$int_i]} | cut -d ':' -f2` -ge 1 ]]; then
+                    if [[ `echo ${#arr_busID_sum[$int_i]} | cut -d ':' -f2` -ge 1 ]]; then
                         bool_hasExternalPCI=true
                     fi
 
@@ -404,7 +405,7 @@
                     if [[ $str_thisVGA_DeviceName != "" ]]; then
 
                     # Write to file #
-                            WriteToFile {
+                            function WriteToFile {
 
                                 if [[ -e $str_inFile1 && -e $str_inFile1b ]]; then
 
@@ -528,7 +529,6 @@
                 str_oldFile3=$str_outFile3".old"
                 str_oldFile4=$str_outFile4".old"
                 str_oldFile5=$str_outFile5".old"
-                str_logFile0=`find $(pwd) -name *hugepages*log*`
                 str_logFile1=$(pwd)"/grub.log"
                 # none for file2-file5
 
@@ -714,20 +714,20 @@
     }
 
 # prompt #
-    echo -en "$0: "
     declare -i int_count=0                  # reset counter
-    str_prompt="$0: Deploy VFIO setup: Multi-Boot or Static?\n\t'Multi-Boot' is more flexible; adds multiple GRUB boot menu entries (each with one different, omitted IOMMU group).\n\t'Static', for unchanging setups.\n\t'Multi-Boot' is the recommended choice.\n"
+    str_prompt="Deploy VFIO setup: Multi-Boot or Static?\n\t'Multi-Boot' is more flexible; adds multiple GRUB boot menu entries (each with one different, omitted IOMMU group).\n\t'Static', for unchanging setups.\n\t'Multi-Boot' is the recommended choice.\n"
 
     if [[ -z $str_input1 ]]; then
-        echo -e $str_prompt
+        echo -en "$0: $str_prompt"
     fi
 
     while [[ $bool_existingSetup == false || -z $bool_existingSetup || $bool_missingFiles == false ]]; do
+
         if [[ $int_count -ge 3 ]]; then
-            echo -en "Exceeded max attempts."
+            echo -e "$0: Exceeded max attempts."
             str_input1="N"                  # default selection
         else
-            echo -en "Deploy VFIO setup? [ (M)ulti-Boot / (S)tatic / (N)one ]: "
+            echo -en "\n$0: Deploy VFIO setup? [ (M)ulti-Boot / (S)tatic / (N)one ]: "
             read -r str_input1
             str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
             str_input1=${str_input1:0:1}
@@ -751,10 +751,9 @@
             "N")
                 echo -e "$0: Skipping."
                 IFS=$SAVEIFS                # reset IFS     # NOTE: necessary for newline preservation in arrays and files
-                exit 0
-                ;;
+                exit 0;;
             *)
-                echo -en "$0: Invalid input.";;
+                echo -e "$0: Invalid input.";;
         esac
 
         ((int_count++))                     # increment counter
