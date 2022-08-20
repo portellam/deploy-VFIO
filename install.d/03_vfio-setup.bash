@@ -39,7 +39,8 @@
     declare -a arr_compgen=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | sort -h`)                                                  # IOMMU ID and Bus ID, sorted by IOMMU ID (left-most digit)
     declare -a arr_compgen_busID=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | sort -h | cut -d '/' -f7`)                           # Bus ID, sorted by IOMMU ID (left-most digit) (ex '0001:00.0')
     declare -a arr_compgen_IOMMU=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | sort -h | cut -d '/' -f5`)                         # IOMMU ID, sorted by IOMMU ID (left-most digit)
-    declare -a arr_lspci=(`lspci -k | grep -Eiv 'DeviceName|Subsystem|modules'`)        # dev name, Bus ID, and (sometimes) driver, sorted
+    #declare -a arr_lspci=(`lspci -k | grep -Eiv 'DeviceName|Subsystem|modules'`)        # dev name, Bus ID, and (sometimes) driver, sorted
+    declare -a arr_lspci=(`lspci -m`)
     declare -a arr_lspci_busID=(`lspci -m | cut -d '"' -f 1`)                           # Bus ID, sorted        (ex '01:00.0')              # same length as 'arr_compgen_busID'
     declare -a arr_lspci_deviceName=(`lspci -m | cut -d '"' -f 6`)                      # dev name, sorted      (ex 'GP104 [GeForce GTX 1070]')
     declare -a arr_lspci_HWID=(`lspci -n | cut -d ' ' -f 3`)                            # HW ID, sorted         (ex '10de:1b81')
@@ -260,7 +261,7 @@ function MultiBootSetup {
     fi
 
     # parse list of VGA IOMMU groups #
-    for int_IOMMU in ${arr_IOMMU_VGAlist[@]}; do
+    for str_IOMMU in ${arr_IOMMU_VGAlist[@]}; do
 
         echo -e '$int_IOMMU == '"'$int_IOMMU'"
 
@@ -272,21 +273,53 @@ function MultiBootSetup {
         # TO-DO: clean this up. I think this code is unnecessarily complex.
         # what the hell am i doing here
 
-        for (( int_i=0 ; int_i<${#arr_IOMMU_lspci_index[@]} ; int_i++ )); do
-            int_thisIOMMU=${arr_lspci_IOMMU[$int_i]}
+        declare -a arr_compgen=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | sort -h`)                                                  # IOMMU ID and Bus ID, sorted by IOMMU ID (left-most digit)
+        declare -a arr_compgen_busID=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | sort -h | cut -d '/' -f7`)                           # Bus ID, sorted by IOMMU ID (left-most digit) (ex '0001:00.0')
+        declare -a arr_compgen_IOMMU=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | sort -h | cut -d '/' -f5`)                         # IOMMU ID, sorted by IOMMU ID (left-most digit)
 
-            # match IOMMU ID, save device name of first match #
-            if [[ $int_thisIOMMU == $int_IOMMU && ${arr_IOMMU_lspci_deviceName[$int_i]} != "NO_VGA_FOUND" ]]; then
-                str_thisVGA_DeviceName=${arr_IOMMU_lspci_deviceName[$int_i]}
-                break
+        ## find device name of first found VGA device ##
+        # parse devices #
+        for str_element1 in ${arr_compgen[@]}; do
+
+            # new parameters #
+            str_thisBusID=`echo $str_element1 | sort -h | cut -d '/' -f7`
+            str_thisIOMMU=`echo $str_element1 | sort -h | cut -d '/' -f5`
+
+            # match IOMMU ID #
+            if [[ $str_thisIOMMU == $str_IOMMU ]]; then
+
+                # parse lspci #
+                for str_element2 in ${arr_lspci[@]}; do
+
+                    # new parameters #
+                    str_thisDeviceType=`echo $str_element2 | cut -d '"' -f2 | tr '[:lower:]' '[:upper:]'`
+
+                    # match Bus ID #
+                    if [[ $str_element2 == *$str_thisBusID* ]]; then
+
+                        # match VGA device, save device name #
+                        if [[ $str_thisDeviceType == *"VGA"* || $str_thisDeviceType == *"GRAPHICS"* ]]; then
+                            str_thisDeviceName=`echo $str_element2 | cut -d '"' -f6`
+                            break
+                        fi
+                    fi
+                done
+            else
+
+                str_driverName_thisList+=${arr_driverName_VGAlist[$int_i]}
+                str_HWID_thisList+=${arr_HWID_VGAlist[$int_i]}
+
             fi
+
+
         done
 
+
+        # match valid device name #
         if [[ $str_thisVGA_DeviceName != "" ]]; then
 
-            # find boot VGA device name #
+            # parse lspci IOMMU #
             for (( int_i=0 ; int_i<${#arr_lspci_IOMMU[@]} ; int_i++ )); do
-                int_thisIOMMU=${arr_lspci_IOMMU[$int_i]}
 
                 # false match, add all VGA IOMMU groups minus current boot VGA group #
                 if [[ ${arr_IOMMU_VGAlist[int_i]} != $int_IOMMU ]]; then
