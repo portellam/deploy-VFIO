@@ -1,21 +1,7 @@
 #!/bin/bash sh
 
-exit 0
-
 #
 # Author(s):    Alex Portell <github.com/portellam>
-#
-# function steps #
-# 1a.   Parse PCI and IOMMU groups, sort information to be parsed again later
-# 2.    Choose setup. Existing VFIO setup, warn user, ask user to uninstall, and/or immediately exit.
-# 3.    Ask user which valid IOMMU group to passthrough.
-# 4a.   Static setup:       output to files and logfiles. No more input from user.
-# 4b.   Multi-boot setup:   output to logfiles. Direct user to setup GRUB entries automaticcally.
-# 5.    Update GRUB and INITRAMFS. Exit.
-#
-# NOTES:
-# this is a rewrite of vfio-setup
-# less convoluted, I bet it will be fewer lines when done too
 #
 
 # check if sudo/root #
@@ -484,7 +470,7 @@ exit 0
                                 str_output6="    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
                                 str_output7="    initrd  /boot/initrd.img-$str_rootKernel"
 
-                            WriteToFile     # call function
+                            WriteToFile         # call function
                         fi
                     fi
             done
