@@ -15,10 +15,10 @@
     IFS=$'\n'      # Change IFS to newline char
 
 # parameters #
-    readonly declare -a arr_devices1=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*"`)
-    readonly declare -a arr_devices2=(`lspci -m`)
-    readonly declare -a arr_devices3=(`lspci -nk`)
-    readonly declare -a arr_IOMMU_sum=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | cut -d '/' -f5 | sort -h`)
+    readonly arr_devices1=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*"`)
+    readonly arr_devices2=(`lspci -m`)
+    readonly arr_devices3=(`lspci -nk`)
+    readonly arr_IOMMU_sum=(`compgen -G "/sys/kernel/iommu_groups/*/devices/*" | cut -d '/' -f5 | sort -h`)
     declare -a arr_busID_sum
     declare -a arr_deviceName_sum
     declare -a arr_deviceType_sum
@@ -41,8 +41,8 @@
     str_GRUB_CMDLINE=""
 
 # sort Bus ID by IOMMU group ID #
-    for $element1 in ${arr_devices1[@]}; do
-        for $str_IOMMU in ${arr_IOMMU_sum[@]}; do
+    for element1 in ${arr_devices1[@]}; do
+        for str_IOMMU in ${arr_IOMMU_sum[@]}; do
 
             # match IOMMU group ID, save Bus ID #
             if [[ *$str_IOMMU* == $element1 ]]; then
@@ -52,8 +52,8 @@
     done
 
 # sort devices' names and types by Bus ID and IOMMU group ID #
-    for $element1 in ${arr_devices1[@]}; do
-        for $str_BusID in ${arr_busID_sum[@]}; do
+    for element1 in ${arr_devices1[@]}; do
+        for str_BusID in ${arr_busID_sum[@]}; do
             str_thisBusID=`echo $element1 | cut -d ' ' -f1`
 
             # match #
@@ -72,7 +72,7 @@
     done
 
 # sort devices' drivers and vendors by Bus ID and IOMMU group ID #
-    for $str_BusID in ${arr_busID_sum[@]}; do
+    for str_BusID in ${arr_busID_sum[@]}; do
         bool_readNextLine=false
 
         for element1 in ${arr_devices3[@]}; do
@@ -189,7 +189,7 @@
     }
 
 # Parse and Prompt PCI devices #
-    ParsePCI {
+    function ParsePCI {
 
         # list IOMMU groups #
             str_output1="$0: PLEASE READ: PCI expansion slots may share 'IOMMU' groups. Therefore, PCI devices may share IOMMU groups.
@@ -299,7 +299,7 @@
     readonly str_GRUB_CMDLINE_prefix="quiet splash video=efifb:off acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages"
 
 # Multi boot setup #
-    MultiBootSetup {
+    function MultiBootSetup {
 
         echo -e "$0: Executing Multi-boot setup..."
         ParsePCI                                        # call function
@@ -499,7 +499,7 @@
     }
 
 # Static setup #
-    StaticSetup {
+    function StaticSetup {
 
         echo -e "$0: Executing Static setup..."
         ParsePCI                                        #call function
