@@ -53,7 +53,6 @@ exit 0
     str_driver_VFIO_list=""
     str_HWID_VFIO_list=""
     str_GRUB_CMDLINE=""
-    str_GRUB_CMDLINE_Hugepages=""
 
 # sort Bus ID by IOMMU group ID #
     for $element1 in ${arr_devices1[@]}; do
@@ -204,16 +203,6 @@ exit 0
     }
 
 # Parse and Prompt PCI devices #
-    #
-    # TODO:
-    #
-    #   -prompt user with warning
-    #   -parse all IOMMU groups
-    #   -ask user to passthrough a IOMMU group, at each
-    #   -save output
-    #   -
-    #
-    #
     ParsePCI {
 
         # list IOMMU groups #
@@ -241,15 +230,18 @@ exit 0
                 for (( int_i=0 ; int_i<${#arr_thisIOMMU[@]} ; int_i++ )); do
                     str_thisDeviceType=`echo $str_element2 | cut -d '"' -f2 | tr '[:lower:]' '[:upper:]'`
 
+                    # save IOMMU group in separate list #
                     if [[ $str_thisDeviceType == *"VGA"* && $str_thisDeviceType == *"GRAPHICS"* ]]; then
                         bool_hasVGA=true
                     fi
 
+                    # show only IOMMU groups with external PCI #
                     if [[ `echo ${arr_busID_sum[$int_i]} | cut -d ':' -f2` -ge 1 ]]; then
                         bool_hasExternalPCI=true
                     fi
 
-                    if [[ $bool_hasVGA == true && $bool_hasExternalPCI == true ]]; then
+                    # save first found internal VGA device #
+                    if [[ $bool_hasVGA == true && $bool_hasExternalPCI == false ]]; then
                         str_bootVGA_deviceName=${arr_deviceName_sum[$int_i]}
                     fi
                 done
@@ -271,34 +263,54 @@ exit 0
                         echo
                     done
 
-                    echo -en "Select IOMMU group ID '$str_IOMMU'? [Y/n]: "
-                    read str_input1
+                    str_output1="Select IOMMU group ID '$str_IOMMU'? [Y/n]: "
+                    ReadInput $str_output1
 
-                    if [[ $str_input1 == "Y"* && $bool_hasVGA == false ]]; then
-                        arr_IOMMU_VFIO+=$str_IOMMU
-                        echo "Selected IOMMU group ID '$str_IOMMU'."
-                    fi
-
-                    if [[ $str_input1 == "Y"* && $bool_hasVGA == true ]]; then
-                        echo "Selected IOMMU group ID '$str_IOMMU'."
-                        arr_IOMMU_VGA_VFIO+=$str_IOMMU
-                    fi
-
-                    if [[ $str_input1 == "N"* && $bool_hasVGA == false ]]; then
-                        arr_IOMMU_host+=$str_IOMMU
-                    fi
-
-                    if [[ $str_input1 == "N"* && $bool_hasVGA == true ]]; then
-                        arr_IOMMU_VGA_host+=$str_IOMMU
+                    if [[ $bool_hasVGA == false ]]; then
+                        case $str_input1 in
+                            "Y")
+                                arr_IOMMU_VFIO+=$str_IOMMU
+                                echo "Selected IOMMU group ID '$str_IOMMU'."
+                                ;;
+                            "N")
+                                arr_IOMMU_host+=$str_IOMMU
+                                ;;
+                            *)
+                                echo -en "$0: Invalid input."
+                                ;;
+                        esac
+                    else
+                        case $str_input1 in
+                            "Y")
+                                arr_IOMMU_VGA_VFIO+=$str_IOMMU
+                                echo "Selected IOMMU group ID '$str_IOMMU'."
+                                ;;
+                            "N")
+                                arr_IOMMU_VGA_host+=$str_IOMMU
+                                ;;
+                            *)
+                                echo -en "$0: Invalid input."
+                                ;;
+                        esac
                     fi
                 else
-                    echo -e "IOMMU group ID '$str_IOMMU' has no External PCI devices. Skipping."
+                    echo -e "IOMMU group ID '$str_IOMMU' has no external PCI devices. Skipping."
                 fi
 
                 bool_hasVGA=false
                 bool_hasExternalPCI=false
             done
     }
+
+# GRUB and hugepages check #
+    if [[ -z $str_logFile0 ]]; then
+        echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_logFile0' and '$0'.\n"
+        readonly str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages="
+    else
+        readonly str_GRUB_CMDLINE_Hugepages=`cat $str_logFile0`
+    fi
+
+    readonly str_GRUB_CMDLINE_prefix="quiet splash video=efifb:off acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages"
 
 # Multi boot setup #
     MultiBootSetup {
@@ -413,37 +425,28 @@ exit 0
                                     echo -e \n\n $str_line1 >> $str_outFile1
                                     echo -e \n\n $str_line1 >> $str_logFile1
                                     while read -r str_line1; do
-                                        if [[ $str_line1 == *'#$str_output1'* ]]; then
-                                            str_line1=$str_output1
-                                            echo -e $str_output1_log >> $str_logFile1
-                                        fi
-
-                                        if [[ $str_line1 == *'#$str_output2'* ]]; then
-                                            str_line1=$str_output2
-                                        fi
-
-                                        if [[ $str_line1 == *'#$str_output3'* ]]; then
-                                            str_line1=$str_output3
-                                        fi
-
-                                        if [[ $str_line1 == *'#$str_output4'* ]]; then
-                                            str_line1=$str_output4
-                                        fi
-
-                                        if [[ $str_line1 == *'#$str_output5'* ]]; then
-                                            str_line1=$str_output5
-                                            echo -e $str_output5_log >> $str_logFile1
-                                        fi
-
-                                        if [[ $str_line1 == *'#$str_output6'* ]]; then
-                                            str_line1=$str_output6
-                                            echo -e $str_output6_log >> $str_logFile1
-                                        fi
-
-                                        if [[ $str_line1 == *'#$str_output7'* ]]; then
-                                            str_line1=$str_output7
-                                            echo -e $str_output7_log >> $str_logFile1
-                                        fi
+                                        case $str_line1 in
+                                            *'#$str_output1'*)
+                                                str_line1=$str_output1
+                                                echo -e $str_output1_log >> $str_logFile1;;
+                                            *'#$str_output2'*)
+                                                str_line1=$str_output2;;
+                                            *'#$str_output3'*)
+                                                str_line1=$str_output3;;
+                                            *'#$str_output4'*)
+                                                str_line1=$str_output4;;
+                                            *'#$str_output5'*)
+                                                str_line1=$str_output5
+                                                echo -e $str_output5_log >> $str_logFile1;;
+                                            *'#$str_output6'*)
+                                                str_line1=$str_output6
+                                                echo -e $str_output6_log >> $str_logFile1;;
+                                            *'#$str_output7'*)
+                                                str_line1=$str_output7
+                                                echo -e $str_output7_log >> $str_logFile1;;
+                                            *)
+                                                break;;
+                                        esac
 
                                         echo -e $str_line1 >> $str_outFile1
                                         echo -e $str_line1 >> $str_logFile1
@@ -454,7 +457,7 @@ exit 0
                         }
 
                     # new parameters #
-                        str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} ${str_GRUB_CMDLINE_Hugepages} modprobe.blacklist=${str_driver_VFIO_thisList} vfio_pci.ids=${str_HWID_VFIO_thisList}"
+                        str_GRUB_CMDLINE="$str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driver_VFIO_thisList vfio_pci.ids=$str_HWID_VFIO_thisList"
 
                     ## /etc/grub.d/proxifiedScripts/custom ##
                         if [[ ${#arr_GRUB_title[@]} -gt 1 ]]; then
@@ -498,8 +501,10 @@ exit 0
                 fi
 
                 echo -e "$0: Executing Multi-boot setup... Failed."
-            elif [[ ${#arr_IOMMU_VGAlist[@]} -le 0 ]]; then
-                echo -e "$0: Executing Multi-boot setup... Cancelled. No IOMMU groups with VGA devices passed-through."
+            elif [[ ${#arr_IOMMU_VFIO[@]} -eq 0 && ${#arr_IOMMU_VGA_VFIO[@]} -ge 1 ]]; then
+                echo -e "$0: Executing Multi-boot setup... Cancelled. No IOMMU groups (with VGA devices) selected."
+            elif [[ ${#arr_IOMMU_VFIO[@]} -eq 0 && ${#arr_IOMMU_VGA_VFIO[@]} -eq 0 ]]; then
+                echo -e "$0: Executing Multi-boot setup... Cancelled. No IOMMU groups selected."
             else
                 chmod 755 $str_outFile1 $str_oldFile1                   # set proper permissions
                 echo -e "$0: Executing Multi-boot setup... Complete."
@@ -510,7 +515,7 @@ exit 0
     StaticSetup {
 
         echo -e "$0: Executing Static setup..."
-        ParsePCI                                 call function
+        ParsePCI                                        #call function
 
         # parameters #
             declare -a arr_driverName_list
@@ -543,6 +548,186 @@ exit 0
             # clear files #     # NOTE: do NOT delete GRUB !!!
                 if [[ -e $str_logFile1 ]]; then rm $str_logFile1; fi
                 if [[ -e $str_logFile5 ]]; then rm $str_logFile5; fi
+
+        # VFIO soft dependencies #
+            for str_thisDriverName in ${arr_driverName_list[@]}; do
+                str_driverName_list_softdep+="\nsoftdep $str_thisDriverName pre: vfio-pci"
+                str_driverName_list_softdep_drivers+="\nsoftdep $str_thisDriverName pre: vfio-pci\n$str_thisDriverName"
+            done
+
+        # /etc/default/grub #
+            if [[ $bool_execMultiBoot == true ]]; then
+                str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist= vfio_pci.ids="
+            else
+                str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_driverName_newList vfio_pci.ids=$str_HWID_list"
+            fi
+
+            str_output1="GRUB_DISTRIBUTOR=\`lsb_release -i -s 2> /dev/null || echo "`lsb_release -i -s`"\`"
+            str_output2="GRUB_CMDLINE_LINUX_DEFAULT=\"$str_GRUB_CMDLINE\""
+
+            if [[ -e $str_inFile1 ]]; then
+                if [[ -e $str_outFile1 ]]; then
+                    mv $str_outFile1 $str_oldFile1      # create backup
+                fi
+
+                touch $str_outFile1
+
+                # write to file #
+                while read -r str_line1; do
+                    case $str_line1 in
+                        *'#$str_output1'*)
+                            str_line1=$str_output1;;
+                        *'#$str_output2'*)
+                            str_line1=$str_output2;;
+                        *)
+                            break;;
+                    esac
+
+                    echo -e $str_line1 >> $str_outFile1
+                done < $str_inFile1
+            else
+                bool_missingFiles=true
+            fi
+
+
+        # /etc/modules #
+            str_output1="vfio_pci ids=$str_HWID_list"
+
+            if [[ -e $str_inFile2 ]]; then
+                if [[ -e $str_outFile2 ]]; then
+                    mv $str_outFile2 $str_oldFile2      # create backup
+                fi
+
+                touch $str_outFile2
+
+                # write to file #
+                while read -r str_line1; do
+                    if [[ $str_line1 == '#$str_output1'* ]]; then
+                        str_line1=$str_output1
+                    fi
+
+                    echo -e $str_line1 >> $str_outFile2
+                done < $str_inFile2
+            else
+                bool_missingFiles=true
+            fi
+
+        # /etc/initramfs-tools/modules #
+            str_output1=$str_driverName_list_softdep_drivers
+            str_output2="options vfio_pci ids=$str_HWID_list\nvfio_pci ids=$str_HWID_list\nvfio-pci"
+
+            if [[ -e $str_inFile3 ]]; then
+                if [[ -e $str_outFile3 ]]; then
+                    mv $str_outFile3 $str_oldFile3      # create backup
+                fi
+
+                touch $str_outFile3
+
+                # write to file #
+                while read -r str_line1; do
+                    case $str_line1 in
+                        *'#$str_output1'*)
+                            str_line1=$str_output1;;
+                        *'#$str_output2'*)
+                            str_line1=$str_output2;;
+                        *)
+                            break;;
+                    esac
+
+                    echo -e $str_line1 >> $str_outFile3
+                done < $str_inFile3
+            else
+                bool_missingFiles=true
+            fi
+
+        # /etc/modprobe.d/pci-blacklists.conf #
+            str_output1=""
+
+            for str_thisDriverName in ${arr_driverName_list[@]}; do
+                str_output1+="blacklist $str_thisDriverName\n"
+            done
+
+            if [[ -e $str_inFile4 ]]; then
+                if [[ -e $str_outFile4 ]]; then
+                    mv $str_outFile4 $str_oldFile4      # create backup
+                fi
+
+                touch $str_outFile4
+
+                # write to file #
+                while read -r str_line1; do
+                    if [[ $str_line1 == '#$str_output1'* ]]; then
+                        str_line1=$str_output1
+                    fi
+
+                    echo -e $str_line1 >> $str_outFile4
+                done < $str_inFile4
+            else
+                bool_missingFiles=true
+            fi
+
+        # /etc/modprobe.d/vfio.conf #
+            str_output1="$str_driverName_list_softdep"
+            str_output2="options vfio_pci ids=$str_HWID_list"
+
+            if [[ -e $str_inFile5 ]]; then
+                if [[ -e $str_outFile5 ]]; then
+                    mv $str_outFile5 $str_oldFile5      # create backup
+                fi
+
+                touch $str_outFile5
+
+                # write to file #
+                while read -r str_line1; do
+                    case $str_line1 in
+                        *'#$str_output1'*)
+                            str_line1=$str_output1;;
+                        *'#$str_output2'*)
+                            str_line1=$str_output2;;
+                        *'#$str_output3'*)
+                            str_line1=$str_output3;;
+                        *)
+                            break;;
+                    esac
+
+                    echo -e $str_line1 >> $str_outFile5
+                done < $str_inFile5
+            else
+                bool_missingFiles=true
+            fi
+
+        # file check #
+            if [[ $bool_missingFiles == true ]]; then
+                bool_missingFiles=true
+                echo -e "$0: File(s) missing:"
+
+                if [[ -z $str_inFile1 ]]; then
+                    echo -e "\t'$str_inFile1'"
+                fi
+
+                if [[ -z $str_inFile2 ]]; then
+                    echo -e "\t'$str_inFile2'"
+                fi
+
+                if [[ -z $str_inFile3 ]]; then
+                    echo -e "\t'$str_inFile3'"
+                fi
+
+                if [[ -z $str_inFile4 ]]; then
+                    echo -e "\t'$str_inFile4'"
+                fi
+
+                if [[ -z $str_inFile5 ]]; then
+                    echo -e "\t'$str_inFile5'"
+                fi
+
+                echo -e "$0: Executing Static setup... Failed."
+            elif [[ ${#arr_IOMMU_VFIO[@]} -eq 0 && ${#arr_IOMMU_VGA_VFIO[@]} -eq 0 ]]; then
+                echo -e "$0: Executing Static setup... Cancelled. No IOMMU groups selected."
+            else
+                chmod 755 $str_outFile1 $str_oldFile1                   # set proper permissions
+                echo -e "$0: Executing Static setup... Complete."
+            fi
     }
 
 # prompt #
