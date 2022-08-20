@@ -241,7 +241,8 @@ MultiBoot {
     # parameters #
         bool_hasInternalVGA=false
         readonly str_rootDistro=`lsb_release -i -s`                                                 # Linux distro name
-        #declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`)    # all kernels
+        declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n2`)     # all kernels       # NOTE: create boot menu entries for first two kernels.
+                                                                                                    #                           any more is overkill!
         str_rootKernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`                   # latest kernel
         readonly str_rootKernel=${str_rootKernel: 1}
         readonly str_rootDisk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
@@ -253,35 +254,35 @@ MultiBoot {
         fi
 
         # files #
-            readonly str_inFile6=`find . -name *etc_grub.d_proxifiedScripts_custom`
-            readonly str_inFile6b=`find . -name *custom_grub_template`
-            #readonly str_outFile6="/etc/grub.d/proxifiedScripts/custom"
-            readonly str_outFile6="custom.log"   # debug
-            readonly str_oldFile6=$str_outFile6".old"
-            readonly str_logFile6=$(pwd)"/custom-grub.log"
+            readonly str_inFile1=`find . -name *etc_grub.d_proxifiedScripts_custom`
+            readonly str_inFile1b=`find . -name *custom_grub_template`
+            #readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"                # DEBUG
+            readonly str_outFile1="custom.log"                                          # DEBUG
+            readonly str_oldFile1=$str_outFile1".old"
+            readonly str_logFile1=$(pwd)"/custom-grub.log"
 
         # create logfile #
-        if [[ -z $str_logFile6 ]]; then
-            touch $str_logFile6
+        if [[ -z $str_logFile1 ]]; then
+            touch $str_logFile1
         fi
 
         # create backup #
-        if [[ -e $str_outFile6 ]]; then
-            mv $str_outFile6 $str_oldFile6
+        if [[ -e $str_outFile1 ]]; then
+            mv $str_outFile1 $str_oldFile1
         fi
 
         # restore backup #
-        if [[ -e $str_inFile6 ]]; then
-            cp $str_inFile6 $str_outFile6
+        if [[ -e $str_inFile1 ]]; then
+            cp $str_inFile1 $str_outFile1
         fi
 
     # parse list of VGA IOMMU groups, output to file #
         for str_IOMMU in ${arr_IOMMU_VGA_VFIO[@]}; do
 
             # reset parameters #
+                declare -a arr_GRUB_title
                 str_driver_VFIO_thisList=""
                 str_HWID_VFIO_thisList=""
-                str_thisDeviceName=""
 
             # find device name of first found VGA device #
                 for (( int_i=0 ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do
@@ -296,7 +297,7 @@ MultiBoot {
 
                         # false match device type, reset #
                         if [[ $bool_hasInternalVGA == false && $str_thisDeviceType != *"VGA"* && $str_thisDeviceType != *"GRAPHICS"* ]]; then
-                            str_thisDeviceName=""
+                            str_thisDeviceName="N/A"
                         fi
                     else
                         str_driver_VFIO_thisList+=$str_thisDriver","
@@ -309,79 +310,110 @@ MultiBoot {
                 str_HWID_VFIO_thisList+=$str_HWID_VFIO_list
 
                 # remove last separator #
-                if [[ ${str_driver_VFIO_thisList: -1} == "," ]]; then
-                    str_driver_VFIO_thisList=${str_driver_VFIO_thisList::-1}
-                fi
+                    if [[ ${str_driver_VFIO_thisList: -1} == "," ]]; then
+                        str_driver_VFIO_thisList=${str_driver_VFIO_thisList::-1}
+                    fi
 
-                if [[ ${str_HWID_VFIO_thisList: -1} == "," ]]; then
-                    str_HWID_VFIO_thisList=${str_HWID_VFIO_thisList::-1}
-                fi
+                    if [[ ${str_HWID_VFIO_thisList: -1} == "," ]]; then
+                        str_HWID_VFIO_thisList=${str_HWID_VFIO_thisList::-1}
+                    fi
 
-            if [[ $str_bootVGA_deviceName == "" ]]; then
-                str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO, boot VGA: '$str_bootVGA_deviceName')"
-            else
-                str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO, boot VGA: '$str_thisDeviceName', w/o IOMMU group '$str_IOMMU')"
-            fi
+            # update GRUB title with kernel(s) #
+                if [[ $str_bootVGA_deviceName == "" ]]; then
+                    str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO IOMMU group '$str_IOMMU', boot VGA '$str_bootVGA_deviceName')"
+
+                    for $str_rootKernel in ${arr_rootKernel[@]}; do
+                        arr_GRUB_title+=("`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO IOMMU group '$str_IOMMU', boot VGA '$str_bootVGA_deviceName')")
+                    done
+                else
+                    str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO IOMMU group '$str_IOMMU', boot VGA '$str_thisDeviceName')"
+
+                    for $str_rootKernel in ${arr_rootKernel[@]}; do
+                        arr_GRUB_title+=("`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO IOMMU group '$str_IOMMU', boot VGA '$str_thisDeviceName')")
+                    done
+                fi
 
             # match valid device name #
                 if [[ $str_thisVGA_DeviceName != "" ]]; then
+
+                # Write to file #
+                        WriteToFile {
+
+                            if [[ -e $str_inFile1 && -e $str_inFile1b ]]; then
+
+                                # write to tempfile #
+                                echo -e \n\n $str_line1 >> $str_outFile1
+                                echo -e \n\n $str_line1 >> $str_logFile1
+                                while read -r str_line1; do
+                                    if [[ $str_line1 == *'#$str_output1'* ]]; then
+                                        str_line1=$str_output1
+                                        echo -e $str_output1_log >> $str_logFile1
+                                    fi
+
+                                    if [[ $str_line1 == *'#$str_output2'* ]]; then
+                                        str_line1=$str_output2
+                                    fi
+
+                                    if [[ $str_line1 == *'#$str_output3'* ]]; then
+                                        str_line1=$str_output3
+                                    fi
+
+                                    if [[ $str_line1 == *'#$str_output4'* ]]; then
+                                        str_line1=$str_output4
+                                    fi
+
+                                    if [[ $str_line1 == *'#$str_output5'* ]]; then
+                                        str_line1=$str_output5
+                                        echo -e $str_output5_log >> $str_logFile1
+                                    fi
+
+                                    if [[ $str_line1 == *'#$str_output6'* ]]; then
+                                        str_line1=$str_output6
+                                        echo -e $str_output6_log >> $str_logFile1
+                                    fi
+
+                                    if [[ $str_line1 == *'#$str_output7'* ]]; then
+                                        str_line1=$str_output7
+                                        echo -e $str_output7_log >> $str_logFile1
+                                    fi
+
+                                    echo -e $str_line1 >> $str_outFile1
+                                    echo -e $str_line1 >> $str_logFile1
+                                done < $str_inFile1b        # read from template
+                            else
+                                bool_missingFiles=true
+                            fi
+                    }
+
+                # new parameters #
                     str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} ${str_GRUB_CMDLINE_Hugepages} modprobe.blacklist=${str_driver_VFIO_thisList} vfio_pci.ids=${str_HWID_VFIO_thisList}"
 
-                    ## /etc/grub.d/proxifiedScripts/custom ##
-                    str_output1="menuentry \"$str_GRUB_title\"{"
-                    str_output2="    insmod $str_rootFSTYPE"
-                    str_output3="    set root='/dev/disk/by-uuid/$str_rootUUID'"
-                    str_output4="        search --no-floppy --fs-uuid --set=root $str_rootUUID"
-                    str_output5="    echo    'Loading Linux $str_rootKernel ...'"
-                    str_output6="    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
-                    str_output7="    initrd  /boot/initrd.img-$str_rootKernel"
+                ## /etc/grub.d/proxifiedScripts/custom ##
+                    if [[ ${#arr_GRUB_title[@]} -gt 1 ]]; then
+                        for str_GRUB_title in ${arr_GRUB_title[@]}; do
+                            # new parameters #
+                                str_output1="menuentry \"$str_GRUB_title\"{"
+                                str_output2="    insmod $str_rootFSTYPE"
+                                str_output3="    set root='/dev/disk/by-uuid/$str_rootUUID'"
+                                str_output4="        search --no-floppy --fs-uuid --set=root $str_rootUUID"
+                                str_output5="    echo    'Loading Linux $str_rootKernel ...'"
+                                str_output6="    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
+                                str_output7="    initrd  /boot/initrd.img-$str_rootKernel"
 
-                    if [[ -e $str_inFile6 && -e $str_inFile6b ]]; then
-
-                        # write to tempfile #
-                        echo -e \n\n $str_line1 >> $str_outFile6
-                        echo -e \n\n $str_line1 >> $str_logFile6
-                        while read -r str_line1; do
-                            if [[ $str_line1 == *'#$str_output1'* ]]; then
-                                str_line1=$str_output1
-                                echo -e $str_output1_log >> $str_logFile6
-                            fi
-
-                            if [[ $str_line1 == *'#$str_output2'* ]]; then
-                                str_line1=$str_output2
-                            fi
-
-                            if [[ $str_line1 == *'#$str_output3'* ]]; then
-                                str_line1=$str_output3
-                            fi
-
-                            if [[ $str_line1 == *'#$str_output4'* ]]; then
-                                str_line1=$str_output4
-                            fi
-
-                            if [[ $str_line1 == *'#$str_output5'* ]]; then
-                                str_line1=$str_output5
-                                echo -e $str_output5_log >> $str_logFile6
-                            fi
-
-                            if [[ $str_line1 == *'#$str_output6'* ]]; then
-                                str_line1=$str_output6
-                                echo -e $str_output6_log >> $str_logFile6
-                            fi
-
-                            if [[ $str_line1 == *'#$str_output7'* ]]; then
-                                str_line1=$str_output7
-                                echo -e $str_output7_log >> $str_logFile6
-                            fi
-
-                            echo -e $str_line1 >> $str_outFile6
-                            echo -e $str_line1 >> $str_logFile6
-                        done < $str_inFile6b        # read from template
+                            WriteToFile     # call function
+                        done
                     else
-                        bool_missingFiles=true
-                    fi
+                        # new parameters #
+                            str_output1="menuentry \"$str_GRUB_title\"{"
+                            str_output2="    insmod $str_rootFSTYPE"
+                            str_output3="    set root='/dev/disk/by-uuid/$str_rootUUID'"
+                            str_output4="        search --no-floppy --fs-uuid --set=root $str_rootUUID"
+                            str_output5="    echo    'Loading Linux $str_rootKernel ...'"
+                            str_output6="    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
+                            str_output7="    initrd  /boot/initrd.img-$str_rootKernel"
 
-                    str_thisDeviceName=""       # reset string
+                        WriteToFile     # call function
+                    fi
                 fi
         done
 
@@ -389,19 +421,19 @@ MultiBoot {
         if [[ $bool_missingFiles == true ]]; then
             echo -e "$0: File(s) missing:"
 
-            if [[ -z $str_inFile6 ]]; then
-                echo -e "\t'$str_inFile6'"
+            if [[ -z $str_inFile1 ]]; then
+                echo -e "\t'$str_inFile1'"
             fi
 
-            if [[ -z $str_inFile6b ]]; then
-                echo -e "\t'$str_inFile6b'"
+            if [[ -z $str_inFile1b ]]; then
+                echo -e "\t'$str_inFile1b'"
             fi
 
             echo -e "$0: Executing Multi-boot setup... Failed."
         elif [[ ${#arr_IOMMU_VGAlist[@]} -le 0 ]]; then
             echo -e "$0: Executing Multi-boot setup... Cancelled. No IOMMU groups with VGA devices passed-through."
         else
-            chmod 755 $str_outFile6 $str_oldFile6                   # set proper permissions
+            chmod 755 $str_outFile1 $str_oldFile1                   # set proper permissions
             echo -e "$0: Executing Multi-boot setup... Complete."
         fi
 }
