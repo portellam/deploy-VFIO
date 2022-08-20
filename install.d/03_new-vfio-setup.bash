@@ -233,32 +233,32 @@ exit 0
     readonly str_driver_VFIO_list
     readonly str_HWID_VFIO_list
 
-# MultiBoot
+# MultiBoot #
 MultiBoot {
 
     echo -e "$0: Executing Multi-boot setup..."
 
     # parameters #
         bool_hasInternalVGA=false
-        str_rootDistro=`lsb_release -i -s`                                                          # Linux distro name
+        readonly str_rootDistro=`lsb_release -i -s`                                                 # Linux distro name
         #declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`)    # all kernels
         str_rootKernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`                   # latest kernel
-        str_rootKernel=${str_rootKernel: 1}
-        str_rootDisk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
-        str_rootUUID=`blkid -s UUID | grep $str_rootDisk | cut -d '"' -f2`
-        str_rootFSTYPE=`blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2`
+        readonly str_rootKernel=${str_rootKernel: 1}
+        readonly str_rootDisk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
+        readonly str_rootUUID=`blkid -s UUID | grep $str_rootDisk | cut -d '"' -f2`
+        readonly str_rootFSTYPE=`blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2`
 
         if [[ $str_rootFSTYPE == "ext4" || $str_rootFSTYPE == "ext3" ]]; then
-            str_rootFSTYPE="ext2"
+            readonly str_rootFSTYPE="ext2"
         fi
 
         # files #
-            str_inFile6=`find . -name *etc_grub.d_proxifiedScripts_custom`
-            str_inFile6b=`find . -name *custom_grub_template`
-            #str_outFile6="/etc/grub.d/proxifiedScripts/custom"
-            str_outFile6="custom.log"   # debug
-            str_oldFile6=$str_outFile6".old"
-            str_logFile6=$(pwd)"/custom-grub.log"
+            readonly str_inFile6=`find . -name *etc_grub.d_proxifiedScripts_custom`
+            readonly str_inFile6b=`find . -name *custom_grub_template`
+            #readonly str_outFile6="/etc/grub.d/proxifiedScripts/custom"
+            readonly str_outFile6="custom.log"   # debug
+            readonly str_oldFile6=$str_outFile6".old"
+            readonly str_logFile6=$(pwd)"/custom-grub.log"
 
         # create logfile #
         if [[ -z $str_logFile6 ]]; then
