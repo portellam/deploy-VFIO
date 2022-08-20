@@ -363,6 +363,7 @@ exit 0
                     declare -a arr_GRUB_title
                     str_driver_VFIO_thisList=""
                     str_HWID_VFIO_thisList=""
+                    str_GRUB_CMDLINE=""
 
                 # find device name of first found VGA device #
                     for (( int_i=0 ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do
@@ -457,7 +458,7 @@ exit 0
                         }
 
                     # new parameters #
-                        str_GRUB_CMDLINE="$str_GRUB_CMDLINE_Hugepages modprobe.blacklist=$str_driver_VFIO_thisList vfio_pci.ids=$str_HWID_VFIO_thisList"
+                        str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_driver_VFIO_thisList vfio_pci.ids=$str_HWID_VFIO_thisList"
 
                     ## /etc/grub.d/proxifiedScripts/custom ##
                         if [[ ${#arr_GRUB_title[@]} -gt 1 ]]; then
@@ -556,11 +557,7 @@ exit 0
             done
 
         # /etc/default/grub #
-            if [[ $bool_execMultiBoot == true ]]; then
-                str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist= vfio_pci.ids="
-            else
-                str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_driverName_newList vfio_pci.ids=$str_HWID_list"
-            fi
+            str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_driverName_newList vfio_pci.ids=$str_HWID_list"
 
             str_output1="GRUB_DISTRIBUTOR=\`lsb_release -i -s 2> /dev/null || echo "`lsb_release -i -s`"\`"
             str_output2="GRUB_CMDLINE_LINUX_DEFAULT=\"$str_GRUB_CMDLINE\""
