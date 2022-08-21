@@ -45,6 +45,7 @@
     bool_hasVGA=false
     bool_hasExternalPCI=false
     bool_missingFiles=false
+    readonly int_lastIOMMU=${arr_IOMMU_sum[-1]}
     str_bootVGA_deviceName=""
     str_driver_VFIO_list=""
     str_HWID_VFIO_list=""
@@ -65,11 +66,13 @@
 # sort devices' names and types by Bus ID and IOMMU group ID #
     for element1 in ${arr_devices1[@]}; do
         for str_BusID in ${arr_busID_sum[@]}; do
-            str_thisBusID=`echo $element1 | cut -d ' ' -f1`
+            str_thisIOMMU=`echo $element1 | cut -d '/' -f5`
+            str_thisBusID=`echo $element1 | cut -d '/' -f7 | cut -d ' ' -f1`
 
-            # match #
-            if [[ *$str_thisBusID* == $element1 ]]; then
-                for $element2 in ${arr_devices2[@]}; do
+            # NOTE: IOMMU array repeats numbers!!!
+            for str_IOMMU in ${arr_IOMMU_sum[@]}; do
+                if [[ $str_IOMMU == $str_thisIOMMU ]]; then
+                    for $element2 in ${arr_devices2[@]}; do
 
                     # match #
                     if [[ $element2 == *$str_thisBusID* ]]; then
@@ -78,7 +81,21 @@
                         arr_vendorName_sum+=(`echo $element2 | cut -d '"' -f4`)
                     fi
                 done
-            fi
+                fi
+            done
+
+            # # match #
+            # if [[ *$str_thisBusID* == $element1 ]]; then
+            #     for $element2 in ${arr_devices2[@]}; do
+
+            #         # match #
+            #         if [[ $element2 == *$str_thisBusID* ]]; then
+            #             arr_deviceName_sum+=(`echo $element2 | cut -d '"' -f6`)
+            #             arr_deviceType_sum+=(`echo $element2 | cut -d '"' -f2`)
+            #             arr_vendorName_sum+=(`echo $element2 | cut -d '"' -f4`)
+            #         fi
+            #     done
+            # fi
         done
     done
 
@@ -729,14 +746,14 @@
         ## lists ##
         # for (( i=0 ; i<${#arr_devices1[@]} ; i++ )); do echo -e "$0: '$""{arr_devices1[$i]}'\t= ${arr_devices1[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_devices2[@]} ; i++ )); do echo -e "$0: '$""{arr_devices2[$i]}'\t= ${arr_devices2[$i]}"; done && echo
-        for (( i=0 ; i<${#arr_devices3[@]} ; i++ )); do echo -e "$0: '$""{arr_devices3[$i]}'\t= ${arr_devices3[$i]}"; done && echo
+        # for (( i=0 ; i<${#arr_devices3[@]} ; i++ )); do echo -e "$0: '$""{arr_devices3[$i]}'\t= ${arr_devices3[$i]}"; done && echo
         for (( i=0 ; i<${#arr_IOMMU_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_sum[$i]}'\t= ${arr_IOMMU_sum[$i]}"; done && echo
         for (( i=0 ; i<${#arr_busID_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_busID_sum[$i]}'\t= ${arr_busID_sum[$i]}"; done && echo
-        for (( i=0 ; i<${#arr_deviceName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_deviceName_sum[$i]}'\t= ${arr_deviceName_sum[$i]}"; done && echo
-        for (( i=0 ; i<${#arr_deviceType_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_deviceType_sum[$i]}'\t= ${arr_deviceType_sum[$i]}"; done && echo
-        for (( i=0 ; i<${#arr_driver_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_driver_sum[$i]}'\t= ${arr_driver_sum[$i]}"; done && echo
-        for (( i=0 ; i<${#arr_HWID_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_HWID_sum[$i]}'\t= ${arr_HWID_sum[$i]}"; done && echo
-        for (( i=0 ; i<${#arr_vendorName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_vendorName_sum[$i]}'\t= ${arr_vendorName_sum[$i]}"; done && echo
+        # for (( i=0 ; i<${#arr_deviceName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_deviceName_sum[$i]}'\t= ${arr_deviceName_sum[$i]}"; done && echo
+        # for (( i=0 ; i<${#arr_deviceType_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_deviceType_sum[$i]}'\t= ${arr_deviceType_sum[$i]}"; done && echo
+        # for (( i=0 ; i<${#arr_driver_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_driver_sum[$i]}'\t= ${arr_driver_sum[$i]}"; done && echo
+        # for (( i=0 ; i<${#arr_HWID_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_HWID_sum[$i]}'\t= ${arr_HWID_sum[$i]}"; done && echo
+        # for (( i=0 ; i<${#arr_vendorName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_vendorName_sum[$i]}'\t= ${arr_vendorName_sum[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_IOMMU_host[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_host[$i]}'\t= ${arr_IOMMU_host[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_IOMMU_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VFIO[$i]}'\t= ${arr_IOMMU_VFIO[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_IOMMU_VGA_host[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VGA_host[$i]}'\t= ${arr_IOMMU_VGA_host[$i]}"; done && echo
@@ -750,11 +767,11 @@
         # echo -e "$0: '$'""{#arr_devices3[@]}\t= ${#arr_devices3[@]}"
         echo -e "$0: '$'""{#arr_IOMMU_sum[@]}\t= ${#arr_IOMMU_sum[@]}"
         echo -e "$0: '$'""{#arr_busID_sum[@]}\t= ${#arr_busID_sum[@]}"
-        echo -e "$0: '$'""{#arr_deviceName_sum[@]}\t= ${#arr_deviceName_sum[@]}"
-        echo -e "$0: '$'""{#arr_deviceType_sum[@]}\t= ${#arr_deviceType_sum[@]}"
-        echo -e "$0: '$'""{#arr_driver_sum[@]}\t= ${#arr_driver_sum[@]}"
-        echo -e "$0: '$'""{#arr_HWID_sum[@]}\t= ${#arr_HWID_sum[@]}"
-        echo -e "$0: '$'""{#arr_vendorName_sum[@]}\t= ${#arr_vendorName_sum[@]}"
+        # echo -e "$0: '$'""{#arr_deviceName_sum[@]}\t= ${#arr_deviceName_sum[@]}"
+        # echo -e "$0: '$'""{#arr_deviceType_sum[@]}\t= ${#arr_deviceType_sum[@]}"
+        # echo -e "$0: '$'""{#arr_driver_sum[@]}\t= ${#arr_driver_sum[@]}"
+        # echo -e "$0: '$'""{#arr_HWID_sum[@]}\t= ${#arr_HWID_sum[@]}"
+        # echo -e "$0: '$'""{#arr_vendorName_sum[@]}\t= ${#arr_vendorName_sum[@]}"
         # echo -e "$0: '$'""{#arr_IOMMU_host[@]}\t= ${#arr_IOMMU_host[@]}"
         # echo -e "$0: '$'""{#arr_IOMMU_VFIO[@]}\t= ${#arr_IOMMU_VFIO[@]}"
         # echo -e "$0: '$'""{#arr_IOMMU_VGA_host[@]}\t= ${#arr_IOMMU_VGA_host[@]}"
@@ -762,16 +779,17 @@
         # echo -e "$0: '$'""{#arr_driver_VFIO[@]}\t= ${#arr_driver_VFIO[@]}"
         # echo -e "$0: '$'""{#arr_HWID_VFIO[@]}\t= ${#arr_HWID_VFIO[@]}"
 
-        # echo -e "$0: '$""bool_existingSetup'\t= $bool_existingSetup"
-        # echo -e "$0: '$""bool_hasVGA'\t= $bool_hasVGA"
-        # echo -e "$0: '$""bool_hasExternalPCI'\t= $bool_hasExternalPCI"
-        # echo -e "$0: '$""bool_missingFiles'\t= $bool_missingFiles"
-        # echo -e "$0: '$""str_bootVGA_deviceName'\t= $str_bootVGA_deviceName"
-        # echo -e "$0: '$""str_driver_VFIO_list'\t= $str_driver_VFIO_list"
-        # echo -e "$0: '$""str_HWID_VFIO_list'\t= $str_HWID_VFIO_list"
-        # echo -e "$0: '$""str_GRUB_CMDLINE'\t= $str_GRUB_CMDLINE"
-        # echo -e "$0: '$""str_logFile0'\t= $str_logFile0"
-        # echo -e "$0: '$""str_HWID_VFIO_list'\t= $str_HWID_VFIO_list"
+        # echo -e "$0: '$""bool_existingSetup'\t\t= $bool_existingSetup"
+        # echo -e "$0: '$""bool_hasVGA'\t\t= $bool_hasVGA"
+        # echo -e "$0: '$""bool_hasExternalPCI'\t\t= $bool_hasExternalPCI"
+        # echo -e "$0: '$""bool_missingFiles'\t\t= $bool_missingFiles"
+        echo -e "$0: '$""int_lastIOMMU'\t\t= $int_lastIOMMU"
+        # echo -e "$0: '$""str_bootVGA_deviceName'\t\t= $str_bootVGA_deviceName"
+        # echo -e "$0: '$""str_driver_VFIO_list'\t\t= $str_driver_VFIO_list"
+        # echo -e "$0: '$""str_HWID_VFIO_list'\t\t= $str_HWID_VFIO_list"
+        # echo -e "$0: '$""str_GRUB_CMDLINE'\t\t= $str_GRUB_CMDLINE"
+        # echo -e "$0: '$""str_logFile0'\t\t= $str_logFile0"
+        # echo -e "$0: '$""str_HWID_VFIO_list'\t\t= $str_HWID_VFIO_list"
 
         echo -e "\n$0: ========== DEBUG PROMPT =========="
         exit 0
