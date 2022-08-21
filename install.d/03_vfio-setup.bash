@@ -15,13 +15,7 @@
     IFS=$'\n'      # Change IFS to newline char
 
 # prompt #
-    str_output1="\n$0: PLEASE READ:
-    \n\t\tSome PCI devices present may share IOMMU groups.
-    \n\t\tDevices that share IOMMU groups must be passed-through as all or none.
-    \n\t\tEvaluate order of PCI slots (devices) to for optimal IOMMU groups.
-    \n\n$0: WARNING:
-    \n\t\t'ACS-Override patch' exists to divide IOMMU groups, but said patch creates an attack vector (memory read/write across PCI devices) and is not recommended (for security reasons).\n"
-
+    str_output1="\n$0: Please wait. Calculating..."
     echo -e $str_output1
 
 # parameters #
@@ -53,106 +47,87 @@
     readonly str_logFile0=`find $(pwd) -name *hugepages*log*`
 
 # sort Bus ID by IOMMU group ID #
-    for element1 in ${arr_devices1[@]}; do
-        for str_IOMMU in ${arr_IOMMU_sum[@]}; do
+    for (( int_i=0 ; int_i < ${#arr_IOMMU_sum[@]} ; int_i++ )); do
+        for str_element1 in ${arr_devices1[@]}; do
+            str_thisIOMMU=`echo $str_element1 | cut -d '/' -f5`
+            str_thisBusID=`echo $str_element1 | cut -d '/' -f7 | cut -d ' ' -f1`
 
             # match IOMMU group ID, save Bus ID #
-            if [[ *$str_IOMMU* == $element1 ]]; then
-                arr_busID_sum+=(`echo $element1 | cut -d '/' -f7`)
+            if [[ $str_thisIOMMU == $int_i ]]; then
+                arr_busID_sum+=($str_thisBusID)
             fi
         done
     done
 
 # sort devices' names and types by Bus ID and IOMMU group ID #
-    for element1 in ${arr_devices1[@]}; do
-        for str_BusID in ${arr_busID_sum[@]}; do
-            str_thisIOMMU=`echo $element1 | cut -d '/' -f5`
-            str_thisBusID=`echo $element1 | cut -d '/' -f7 | cut -d ' ' -f1`
-
-            # NOTE: IOMMU array repeats numbers!!!
-            for str_IOMMU in ${arr_IOMMU_sum[@]}; do
-                if [[ $str_IOMMU == $str_thisIOMMU ]]; then
-                    for $element2 in ${arr_devices2[@]}; do
-
-                    # match #
-                    if [[ $element2 == *$str_thisBusID* ]]; then
-                        arr_deviceName_sum+=(`echo $element2 | cut -d '"' -f6`)
-                        arr_deviceType_sum+=(`echo $element2 | cut -d '"' -f2`)
-                        arr_vendorName_sum+=(`echo $element2 | cut -d '"' -f4`)
-                    fi
-                done
-                fi
-            done
-
-            # # match #
-            # if [[ *$str_thisBusID* == $element1 ]]; then
-            #     for $element2 in ${arr_devices2[@]}; do
-
-            #         # match #
-            #         if [[ $element2 == *$str_thisBusID* ]]; then
-            #             arr_deviceName_sum+=(`echo $element2 | cut -d '"' -f6`)
-            #             arr_deviceType_sum+=(`echo $element2 | cut -d '"' -f2`)
-            #             arr_vendorName_sum+=(`echo $element2 | cut -d '"' -f4`)
-            #         fi
-            #     done
-            # fi
-        done
-    done
-
-# sort devices' drivers and vendors by Bus ID and IOMMU group ID #
     for str_BusID in ${arr_busID_sum[@]}; do
-        bool_readNextLine=false
+        for str_element1 in ${arr_devices1[@]}; do
 
-        for element1 in ${arr_devices3[@]}; do
-
-            # false match driver, add HW ID to list #
-            if [[ $bool_readNextLine == false && $element1 != *"driver"* ]]; then
-                arr_vendorName_sum+=(`echo $element1 | grep "driver" | cut -d '"' -f1`)
-            fi
-
-            # match driver, add to list #
-            if [[ $bool_readNextLine == true && $element1 == *"driver"* ]]; then
-
-                # vfio driver found, exit #
-                if [[ $str_thisDriver == 'vfio-pci' ]]; then
-                    bool_existingSetup=true
-                fi
-
-                arr_driver_sum+=(str_thisDriver=`echo $element1 | grep "driver" | cut -d ' ' -f5`)
-                bool_readNextLine=false
-            fi
-
-            # false match driver, add null to list #
-            if [[ $bool_readNextLine == true && $element1 != *"driver"* ]]; then
-                arr_driver_sum+=("NULL")
-                bool_readNextLine=false
+            # match Bus ID #
+            if [[ ${str_BusID:5} == `echo $str_element1 | cut -d ' ' -f1` ]]; then
+                echo -e "$0: MATCH!"
+                arr_deviceName_sum+=(`echo $str_element1 | cut -d '"' -f6`)
+                arr_deviceType_sum+=(`echo $str_element1 | cut -d '"' -f2`)
+                arr_vendorName_sum+=(`echo $str_element1 | cut -d '"' -f4`)
                 break
             fi
-
-            # match Bus ID, update boolean #
-            if [[ $element1 == *$str_BusID* ]]; then
-                bool_readNextLine=true
-            fi
         done
     done
 
-# add VFIO groups' w/o VGA (drivers and HWIDs) to lists #
-    # MultiBoot, parse each VGA VFIO group for individual boot entries
-    # Static, add all groups to new list
-    for str_IOMMU in ${arr_IOMMU_VFIO[@]}; do
-        for (( int_i=0 ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do
+# # sort devices' drivers and HWIDs by Bus ID and IOMMU group ID #
+#     for str_BusID in ${arr_busID_sum[@]}; do
+#         bool_readNextLine=false
 
-            # match IOMMU group ID #
-            if [[ $str_IOMMU == ${arr_IOMMU_sum[$int_i]} ]]; then
-                arr_driver_VFIO+=(${arr_driver_sum[$int_i]})
-                arr_HWID_VFIO+=(${arr_HWID_sum[$int_i]})
-                str_driver_VFIO_list+=(${arr_driver_sum[$int_i]})","
-                str_HWID_VFIO_list+=(${arr_HWID_sum[$int_i]})","
-            fi
-        done
-    done
+#         for element1 in ${arr_devices3[@]}; do
 
-# change parameters #
+#             # false match driver, add HW ID to list #
+#             if [[ $bool_readNextLine == false && $element1 != *"driver"* ]]; then
+#                 arr_HWID_sum+=(`echo $element1 | grep "driver" | cut -d '"' -f1`)
+#             fi
+
+#             # match driver, add to list #
+#             if [[ $bool_readNextLine == true && $element1 == *"driver"* ]]; then
+
+#                 # vfio driver found, exit #
+#                 if [[ $str_thisDriver == 'vfio-pci' ]]; then
+#                     bool_existingSetup=true
+#                 fi
+
+#                 arr_driver_sum+=(str_thisDriver=`echo $element1 | grep "driver" | cut -d ' ' -f5`)
+#                 bool_readNextLine=false
+#             fi
+
+#             # false match driver, add null to list #
+#             if [[ $bool_readNextLine == true && $element1 != *"driver"* ]]; then
+#                 arr_driver_sum+=("NULL")
+#                 bool_readNextLine=false
+#                 break
+#             fi
+
+#             # match Bus ID, update boolean #
+#             if [[ $element1 == *$str_BusID* ]]; then
+#                 bool_readNextLine=true
+#             fi
+#         done
+#     done
+
+# # add VFIO groups' w/o VGA (drivers and HWIDs) to lists #
+#     # MultiBoot, parse each VGA VFIO group for individual boot entries
+#     # Static, add all groups to new list
+#     for str_IOMMU in ${arr_IOMMU_VFIO[@]}; do
+#         for (( int_i=0 ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do
+
+#             # match IOMMU group ID #
+#             if [[ $str_IOMMU == ${arr_IOMMU_sum[$int_i]} ]]; then
+#                 arr_driver_VFIO+=(${arr_driver_sum[$int_i]})
+#                 arr_HWID_VFIO+=(${arr_HWID_sum[$int_i]})
+#                 str_driver_VFIO_list+=(${arr_driver_sum[$int_i]})","
+#                 str_HWID_VFIO_list+=(${arr_HWID_sum[$int_i]})","
+#             fi
+#         done
+#     done
+
+# # change parameters #
     # remove last separator #
     if [[ ${str_driver_VFIO_list: -1} == "," ]]; then
         str_driver_VFIO_list=${str_driver_VFIO_list::-1}
@@ -215,6 +190,16 @@
             done
         fi
     }
+
+# prompt #
+    str_output1="\n$0: PLEASE READ:
+    \n\t\tSome PCI devices present may share IOMMU groups.
+    \n\t\tDevices that share IOMMU groups must be passed-through as all or none.
+    \n\t\tEvaluate order of PCI slots (devices) to for optimal IOMMU groups.
+    \n\n$0: WARNING:
+    \n\t\t'ACS-Override patch' exists to divide IOMMU groups, but said patch creates an attack vector (memory read/write across PCI devices) and is not recommended (for security reasons).\n"
+
+    echo -e $str_output1
 
 # Parse and Prompt PCI devices #
     function ParsePCI {
@@ -748,11 +733,11 @@
         # for (( i=0 ; i<${#arr_devices2[@]} ; i++ )); do echo -e "$0: '$""{arr_devices2[$i]}'\t= ${arr_devices2[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_devices3[@]} ; i++ )); do echo -e "$0: '$""{arr_devices3[$i]}'\t= ${arr_devices3[$i]}"; done && echo
         for (( i=0 ; i<${#arr_IOMMU_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_sum[$i]}'\t= ${arr_IOMMU_sum[$i]}"; done && echo
-        for (( i=0 ; i<${#arr_busID_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_busID_sum[$i]}'\t= ${arr_busID_sum[$i]}"; done && echo
+        # for (( i=0 ; i<${#arr_busID_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_busID_sum[$i]}'\t= ${arr_busID_sum[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_deviceName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_deviceName_sum[$i]}'\t= ${arr_deviceName_sum[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_deviceType_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_deviceType_sum[$i]}'\t= ${arr_deviceType_sum[$i]}"; done && echo
-        # for (( i=0 ; i<${#arr_driver_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_driver_sum[$i]}'\t= ${arr_driver_sum[$i]}"; done && echo
-        # for (( i=0 ; i<${#arr_HWID_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_HWID_sum[$i]}'\t= ${arr_HWID_sum[$i]}"; done && echo
+        for (( i=0 ; i<${#arr_driver_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_driver_sum[$i]}'\t= ${arr_driver_sum[$i]}"; done && echo
+        for (( i=0 ; i<${#arr_HWID_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_HWID_sum[$i]}'\t= ${arr_HWID_sum[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_vendorName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_vendorName_sum[$i]}'\t= ${arr_vendorName_sum[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_IOMMU_host[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_host[$i]}'\t= ${arr_IOMMU_host[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_IOMMU_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VFIO[$i]}'\t= ${arr_IOMMU_VFIO[$i]}"; done && echo
@@ -766,11 +751,11 @@
         # echo -e "$0: '$'""{#arr_devices2[@]}\t= ${#arr_devices2[@]}"
         # echo -e "$0: '$'""{#arr_devices3[@]}\t= ${#arr_devices3[@]}"
         echo -e "$0: '$'""{#arr_IOMMU_sum[@]}\t= ${#arr_IOMMU_sum[@]}"
-        echo -e "$0: '$'""{#arr_busID_sum[@]}\t= ${#arr_busID_sum[@]}"
+        # echo -e "$0: '$'""{#arr_busID_sum[@]}\t= ${#arr_busID_sum[@]}"
         # echo -e "$0: '$'""{#arr_deviceName_sum[@]}\t= ${#arr_deviceName_sum[@]}"
         # echo -e "$0: '$'""{#arr_deviceType_sum[@]}\t= ${#arr_deviceType_sum[@]}"
-        # echo -e "$0: '$'""{#arr_driver_sum[@]}\t= ${#arr_driver_sum[@]}"
-        # echo -e "$0: '$'""{#arr_HWID_sum[@]}\t= ${#arr_HWID_sum[@]}"
+        echo -e "$0: '$'""{#arr_driver_sum[@]}\t= ${#arr_driver_sum[@]}"
+        echo -e "$0: '$'""{#arr_HWID_sum[@]}\t= ${#arr_HWID_sum[@]}"
         # echo -e "$0: '$'""{#arr_vendorName_sum[@]}\t= ${#arr_vendorName_sum[@]}"
         # echo -e "$0: '$'""{#arr_IOMMU_host[@]}\t= ${#arr_IOMMU_host[@]}"
         # echo -e "$0: '$'""{#arr_IOMMU_VFIO[@]}\t= ${#arr_IOMMU_VFIO[@]}"
