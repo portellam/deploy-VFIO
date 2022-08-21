@@ -115,7 +115,7 @@
 # write to file #
     echo $str_output1 >> $str_logFile1
 
-## /etc/libvirt/qemu.conf ## 
+## /etc/libvirt/qemu.conf ##
     str_output1="user = \"user\"\ngroup = \"user\""
     str_output2="hugetlbfs_mount = \"/dev/hugepages\""
     str_output3="cgroup_device_acl = [\n    \"/dev/null\", \"/dev/full\", \"/dev/zero\",\n    \"/dev/random\", \"/dev/urandom\",\n    \"/dev/ptmx\", \"/dev/kvm\",\n    \"/dev/rtc\",\"/dev/hpet\"\n]"
