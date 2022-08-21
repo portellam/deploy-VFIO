@@ -62,9 +62,8 @@
 
 # sort devices' names and types by Bus ID and IOMMU group ID #
     for str_BusID in ${arr_busID_sum[@]}; do
-        for str_element1 in ${arr_devices1[@]}; do
-            str_thisBusID=`echo $str_element1 | cut -d '/' -f7 | cut -d ' ' -f1`
-            str_thisBusID=${str_thisBusID:5}
+        for str_element1 in ${arr_devices2[@]}; do
+            str_thisBusID=`echo $str_element1 | cut -d ' ' -f1`
 
             # match Bus ID #
             if [[ $str_BusID == $str_thisBusID ]]; then
@@ -130,30 +129,30 @@
 #     done
 
 # # change parameters #
-    # remove last separator #
-    if [[ ${str_driver_VFIO_list: -1} == "," ]]; then
-        str_driver_VFIO_list=${str_driver_VFIO_list::-1}
-    fi
+    # # remove last separator #
+    # if [[ ${str_driver_VFIO_list: -1} == "," ]]; then
+    #     str_driver_VFIO_list=${str_driver_VFIO_list::-1}
+    # fi
 
-    if [[ ${str_HWID_VFIO_list: -1} == "," ]]; then
-        str_HWID_VFIO_list=${str_HWID_VFIO_list::-1}
-    fi
+    # if [[ ${str_HWID_VFIO_list: -1} == "," ]]; then
+    #     str_HWID_VFIO_list=${str_HWID_VFIO_list::-1}
+    # fi
 
-    readonly arr_busID_sum
-    readonly arr_deviceName_sum
-    readonly arr_deviceType_sum
-    readonly arr_deviceName_sum
-    readonly arr_HWID_sum
-    readonly arr_vendorName_sum
-    readonly arr_IOMMU_host
-    readonly arr_IOMMU_VFIO
-    readonly arr_IOMMU_VGA_host
-    readonly arr_IOMMU_VGA_VFIO
-    readonly arr_driver_VFIO
-    readonly arr_HWID_VFIO
-    readonly str_bootVGA_deviceName
-    readonly str_driver_VFIO_list
-    readonly str_HWID_VFIO_list
+    # readonly arr_busID_sum
+    # readonly arr_deviceName_sum
+    # readonly arr_deviceType_sum
+    # readonly arr_deviceName_sum
+    # readonly arr_HWID_sum
+    # readonly arr_vendorName_sum
+    # readonly arr_IOMMU_host
+    # readonly arr_IOMMU_VFIO
+    # readonly arr_IOMMU_VGA_host
+    # readonly arr_IOMMU_VGA_VFIO
+    # readonly arr_driver_VFIO
+    # readonly arr_HWID_VFIO
+    # readonly str_bootVGA_deviceName
+    # readonly str_driver_VFIO_list
+    # readonly str_HWID_VFIO_list
 
 # user input prompt #
     str_input1=""
@@ -207,46 +206,75 @@
     function ParsePCI {
 
         # passthrough IOMMU group ID by user descretion #
-            declare int_IOMMU=0
+            declare -a arr_IOMMU_externalPCI
+            declare -i int_IOMMU=0
+            declare -i int_lastIndex=0
 
             while [[ $int_IOMMU -le ${arr_IOMMU_sum[-1]} ]]; do
+                bool_hasVGA=false
+                bool_hasExternalPCI=false
 
                 # match Bus ID and device type #
-                for (( int_i=0 ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do
-                    str_IOMMU=${arr_IOMMU_sum[$int_i]}
-                    str_thisBusID=`echo ${arr_busID_sum[$int_i]} | cut -d ':' -f2`
-                    declare -i int_thisBusID=$((str_thisBusID))
-                    str_thisDeviceType=`echo $str_element2 | cut -d '"' -f2 | tr '[:lower:]' '[:upper:]'`
+                for (( int_i=$int_lastIndex ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do
+                    echo -e '$int_i == '$int_i
+                    # echo -e '$int_lastIndex == '$int_lastIndex
+
+                    int_thisIOMMU=${arr_IOMMU_sum[$int_i]}
+                    str_thisBusID=`echo ${arr_busID_sum[$int_i]} | cut -d ':' -f1`
+
+                    if [[ ${str_thisBusID:0:1} == "0" ]]; then
+                        declare -i int_thisBusID=${str_thisBusID:1}
+                    else
+                        declare -i int_thisBusID=$str_thisBusID
+                    fi
+
+                    str_thisDeviceType=${arr_deviceType_sum[$int_i]}
 
                     # save IOMMU group in separate list #
-                    if [[ $str_IOMMU == $int_IOMMU && $str_thisDeviceType == *"VGA"* && $str_thisDeviceType == *"GRAPHICS"* ]]; then
+                    if [[ $int_thisIOMMU == $int_IOMMU && $str_thisDeviceType == *"VGA"* && $str_thisDeviceType == *"GRAPHICS"* ]]; then
                         bool_hasVGA=true
                     fi
 
                     # show only IOMMU groups with external PCI #
-                    if [[ $str_IOMMU == $int_IOMMU && `echo ${#arr_busID_sum[$int_i]} | cut -d ':' -f2` -ge 1 ]]; then
+                    if [[ $int_thisIOMMU == $int_IOMMU && `echo ${#arr_busID_sum[$int_i]} | cut -d ':' -f2` -ge 1 ]]; then
                         bool_hasExternalPCI=true
+                        arr_IOMMU_externalPCI+=($int_i)
+                        int_lastIndex=$int_i
                     fi
 
                     # save first found internal VGA device #
-                    if [[ $str_IOMMU == $int_IOMMU && $bool_hasVGA == true && $bool_hasExternalPCI == false ]]; then
+                    if [[ $int_thisIOMMU == $int_IOMMU && $bool_hasVGA == true && $bool_hasExternalPCI == false ]]; then
                         str_bootVGA_deviceName=${arr_deviceName_sum[$int_i]}
                     fi
 
-                    echo -e '$str_IOMMU == '$str_IOMMU
-                    echo -e '${arr_busID_sum['$int_i']} == '${arr_busID_sum[$int_i]}
-                    echo -e '$str_thisBusID == '$str_thisBusID
-                    echo -e '$int_thisBusID == '$int_thisBusID
-                    echo -e '$str_thisDeviceType == '$str_thisDeviceType
-                    echo -e '$bool_hasVGA == '$bool_hasVGA
-                    echo -e '$bool_hasExternalPCI == '$bool_hasExternalPCI
-                    echo -e '$str_bootVGA_deviceName == '$str_bootVGA_deviceName
+                    # echo -e '$int_thisIOMMU == '$int_thisIOMMU
+                    # echo -e '${arr_busID_sum['$int_i']} == '${arr_busID_sum[$int_i]}
+                    # echo -e '$str_thisBusID == '$str_thisBusID
+                    # echo -e '$int_thisBusID == '$int_thisBusID
+                    # echo -e '$str_thisDeviceType == '$str_thisDeviceType
+                    # echo -e '$bool_hasVGA == '$bool_hasVGA
+                    # echo -e '$bool_hasExternalPCI == '$bool_hasExternalPCI
+                    # echo -e '$str_bootVGA_deviceName == '$str_bootVGA_deviceName
 
+                    if [[ $int_thisIOMMU == $int_IOMMU ]]; then
+                        echo -e '${arr_busID_sum['$int_i']} == '${arr_busID_sum[$int_i]}
+                        # echo -e '$str_thisBusID == '$str_thisBusID
+                        # echo -e '$int_thisBusID == '$int_thisBusID
+                        echo -e '$str_thisDeviceType == '$str_thisDeviceType
+                        echo -e '$bool_hasVGA == '$bool_hasVGA
+                        # echo -e '$bool_hasExternalPCI == '$bool_hasExternalPCI
+                        echo -e '$str_bootVGA_deviceName == '$str_bootVGA_deviceName
+                    fi
                 done
 
-                # prompt #
-                echo
+                ((int_IOMMU++))
+            done
 
+            exit 0
+            # prompt #
+            echo
+
+            for int_IOMMU in ${arr_IOMMU_externalPCI[@]}; do
                 if [[ $bool_hasExternalPCI == true ]]; then
                     echo -e "\tIOMMU:\t\t$int_IOMMU"
 
@@ -294,10 +322,6 @@
                 else
                     echo -e "IOMMU group ID '$int_IOMMU' has no external PCI devices. Skipping."
                 fi
-
-                bool_hasVGA=false
-                bool_hasExternalPCI=false
-                ((int_IOMMU++))
             done
     }
 
@@ -400,16 +424,16 @@
 
                 # update GRUB title with kernel(s) #
                     if [[ $str_bootVGA_deviceName == "" ]]; then
-                        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO IOMMU group '$str_IOMMU', boot VGA '$str_bootVGA_deviceName')"
+                        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO, w/o IOMMU '$str_IOMMU', w/ boot VGA '$str_bootVGA_deviceName')"
 
                         for $str_rootKernel in ${arr_rootKernel[@]}; do
-                            arr_GRUB_title+=("`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO IOMMU group '$str_IOMMU', boot VGA '$str_bootVGA_deviceName')")
+                            arr_GRUB_title+=("`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO, w/o IOMMU '$str_IOMMU', w/ boot VGA '$str_bootVGA_deviceName')")
                         done
                     else
-                        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO IOMMU group '$str_IOMMU', boot VGA '$str_thisDeviceName')"
+                        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO, w/o IOMMU '$str_IOMMU', w/ boot VGA '$str_thisDeviceName')"
 
                         for $str_rootKernel in ${arr_rootKernel[@]}; do
-                            arr_GRUB_title+=("`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO IOMMU group '$str_IOMMU', boot VGA '$str_thisDeviceName')")
+                            arr_GRUB_title+=("`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO, w/o IOMMU '$str_IOMMU', w/ boot VGA '$str_thisDeviceName')")
                         done
                     fi
 
@@ -733,14 +757,14 @@
         ## lists ##
         # for (( i=0 ; i<${#arr_devices1[@]} ; i++ )); do echo -e "$0: '$""{arr_devices1[$i]}'\t= ${arr_devices1[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_devices2[@]} ; i++ )); do echo -e "$0: '$""{arr_devices2[$i]}'\t= ${arr_devices2[$i]}"; done && echo
-        for (( i=0 ; i<${#arr_devices3[@]} ; i++ )); do echo -e "$0: '$""{arr_devices3[$i]}'\t= ${arr_devices3[$i]}"; done && echo
-        #for (( i=0 ; i<${#arr_IOMMU_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_sum[$i]}'\t= ${arr_IOMMU_sum[$i]}"; done && echo
+        #for (( i=0 ; i<${#arr_devices3[@]} ; i++ )); do echo -e "$0: '$""{arr_devices3[$i]}'\t= ${arr_devices3[$i]}"; done && echo
+        # for (( i=0 ; i<${#arr_IOMMU_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_sum[$i]}'\t= ${arr_IOMMU_sum[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_busID_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_busID_sum[$i]}'\t= ${arr_busID_sum[$i]}"; done && echo
-        # for (( i=0 ; i<${#arr_deviceName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_deviceName_sum[$i]}'\t= ${arr_deviceName_sum[$i]}"; done && echo
-        # for (( i=0 ; i<${#arr_deviceType_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_deviceType_sum[$i]}'\t= ${arr_deviceType_sum[$i]}"; done && echo
-        #for (( i=0 ; i<${#arr_driver_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_driver_sum[$i]}'\t= ${arr_driver_sum[$i]}"; done && echo
-        #for (( i=0 ; i<${#arr_HWID_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_HWID_sum[$i]}'\t= ${arr_HWID_sum[$i]}"; done && echo
-        # for (( i=0 ; i<${#arr_vendorName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_vendorName_sum[$i]}'\t= ${arr_vendorName_sum[$i]}"; done && echo
+        for (( i=0 ; i<${#arr_deviceName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_deviceName_sum[$i]}'\t= ${arr_deviceName_sum[$i]}"; done && echo
+        for (( i=0 ; i<${#arr_deviceType_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_deviceType_sum[$i]}'\t= ${arr_deviceType_sum[$i]}"; done && echo
+        # for (( i=0 ; i<${#arr_driver_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_driver_sum[$i]}'\t= ${arr_driver_sum[$i]}"; done && echo
+        # for (( i=0 ; i<${#arr_HWID_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_HWID_sum[$i]}'\t= ${arr_HWID_sum[$i]}"; done && echo
+        for (( i=0 ; i<${#arr_vendorName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_vendorName_sum[$i]}'\t= ${arr_vendorName_sum[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_IOMMU_host[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_host[$i]}'\t= ${arr_IOMMU_host[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_IOMMU_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VFIO[$i]}'\t= ${arr_IOMMU_VFIO[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_IOMMU_VGA_host[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VGA_host[$i]}'\t= ${arr_IOMMU_VGA_host[$i]}"; done && echo
@@ -754,11 +778,11 @@
         # echo -e "$0: '$'""{#arr_devices3[@]}\t= ${#arr_devices3[@]}"
         # echo -e "$0: '$'""{#arr_IOMMU_sum[@]}\t= ${#arr_IOMMU_sum[@]}"
         # echo -e "$0: '$'""{#arr_busID_sum[@]}\t= ${#arr_busID_sum[@]}"
-        # echo -e "$0: '$'""{#arr_deviceName_sum[@]}\t= ${#arr_deviceName_sum[@]}"
-        # echo -e "$0: '$'""{#arr_deviceType_sum[@]}\t= ${#arr_deviceType_sum[@]}"
+        echo -e "$0: '$'""{#arr_deviceName_sum[@]}\t= ${#arr_deviceName_sum[@]}"
+        echo -e "$0: '$'""{#arr_deviceType_sum[@]}\t= ${#arr_deviceType_sum[@]}"
         # echo -e "$0: '$'""{#arr_driver_sum[@]}\t= ${#arr_driver_sum[@]}"
         # echo -e "$0: '$'""{#arr_HWID_sum[@]}\t= ${#arr_HWID_sum[@]}"
-        # echo -e "$0: '$'""{#arr_vendorName_sum[@]}\t= ${#arr_vendorName_sum[@]}"
+        echo -e "$0: '$'""{#arr_vendorName_sum[@]}\t= ${#arr_vendorName_sum[@]}"
         # echo -e "$0: '$'""{#arr_IOMMU_host[@]}\t= ${#arr_IOMMU_host[@]}"
         # echo -e "$0: '$'""{#arr_IOMMU_VFIO[@]}\t= ${#arr_IOMMU_VFIO[@]}"
         # echo -e "$0: '$'""{#arr_IOMMU_VGA_host[@]}\t= ${#arr_IOMMU_VGA_host[@]}"

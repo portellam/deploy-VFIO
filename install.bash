@@ -132,6 +132,8 @@
             if [[ $str_input1 == "Y" && $str_line1 == *".sh" && $str_line1 != *".log" ]]; then
                 sudo sh $str_dir1"/"$str_line1
             fi
+
+            echo
         done
 
         echo -e "$0: Review changes made. Exiting."
