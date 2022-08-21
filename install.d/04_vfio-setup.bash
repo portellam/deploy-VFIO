@@ -112,38 +112,13 @@
         done
     done
 
-# # add VFIO groups' w/o VGA (drivers and HWIDs) to lists #
-#     # MultiBoot, parse each VGA VFIO group for individual boot entries
-#     # Static, add all groups to new list
-#     for str_IOMMU in ${arr_IOMMU_VFIO[@]}; do
-#         for (( int_i=0 ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do
-
-#             # match IOMMU group ID #
-#             if [[ $str_IOMMU == ${arr_IOMMU_sum[$int_i]} ]]; then
-#                 arr_driver_VFIO+=(${arr_driver_sum[$int_i]})
-#                 arr_HWID_VFIO+=(${arr_HWID_sum[$int_i]})
-#                 str_driver_VFIO_list+=(${arr_driver_sum[$int_i]})","
-#                 str_HWID_VFIO_list+=(${arr_HWID_sum[$int_i]})","
-#             fi
-#         done
-#     done
-
-# # change parameters #
-    # # remove last separator #
-    # if [[ ${str_driver_VFIO_list: -1} == "," ]]; then
-    #     str_driver_VFIO_list=${str_driver_VFIO_list::-1}
-    # fi
-
-    # if [[ ${str_HWID_VFIO_list: -1} == "," ]]; then
-    #     str_HWID_VFIO_list=${str_HWID_VFIO_list::-1}
-    # fi
-
-    # readonly arr_busID_sum
-    # readonly arr_deviceName_sum
-    # readonly arr_deviceType_sum
-    # readonly arr_deviceName_sum
-    # readonly arr_HWID_sum
-    # readonly arr_vendorName_sum
+# readonly parameters #
+    readonly arr_busID_sum
+    readonly arr_deviceName_sum
+    readonly arr_deviceType_sum
+    readonly arr_deviceName_sum
+    readonly arr_HWID_sum
+    readonly arr_vendorName_sum
 
 # user input prompt #
     str_input1=""
@@ -260,6 +235,7 @@
                 exit 0
             else
                 for int_thisIOMMU in ${arr_validIOMMU[@]}; do
+                    str_input1=""
 
                     # new prompt #
                     for (( int_i=0 ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do
@@ -281,7 +257,7 @@
                         case $str_input1 in
                             "Y")
                                 arr_IOMMU_VFIO+=$int_thisIOMMU
-                                echo "Selected IOMMU group ID '$int_thisIOMMU'.";;
+                                echo -e "$0: Selected IOMMU group ID '$int_thisIOMMU'.";;
                             "N")
                                 arr_IOMMU_host+=$int_thisIOMMU;;
                             *)
@@ -291,7 +267,7 @@
                         case $str_input1 in
                             "Y")
                                 arr_IOMMU_VGA_VFIO+=$int_thisIOMMU
-                                echo "Selected IOMMU group ID '$int_thisIOMMU'.";;
+                                echo -e "$0: Selected IOMMU group ID '$int_thisIOMMU'.";;
                             "N")
                                 arr_IOMMU_VGA_host+=$int_thisIOMMU;;
                             *)
@@ -304,6 +280,33 @@
             if [[ ${#arr_IOMMU_VFIO[@]} -eq 0 && ${#arr_IOMMU_VGA_VFIO[@]} -eq 0 ]]; then
                 echo -e "$0: No valid IOMMU groups selected. Exiting."
                 exit 0
+            else
+
+                # add VFIO groups' w/o VGA (drivers and HWIDs) to lists #
+                    # MultiBoot, parse each VGA VFIO group for individual boot entries
+                    # Static, add all groups to new list
+                    for str_IOMMU in ${arr_IOMMU_VFIO[@]}; do
+                        for (( int_i=0 ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do
+
+                            # match IOMMU group ID #
+                            if [[ $str_IOMMU == ${arr_IOMMU_sum[$int_i]} ]]; then
+                                arr_driver_VFIO+=(${arr_driver_sum[$int_i]})
+                                arr_HWID_VFIO+=(${arr_HWID_sum[$int_i]})
+                                str_driver_VFIO_list+=(${arr_driver_sum[$int_i]})","
+                                str_HWID_VFIO_list+=(${arr_HWID_sum[$int_i]})","
+                            fi
+                        done
+                    done
+
+                # change parameters #
+                    # remove last separator #
+                    if [[ ${str_driver_VFIO_list: -1} == "," ]]; then
+                        str_driver_VFIO_list=${str_driver_VFIO_list::-1}
+                    fi
+
+                    if [[ ${str_HWID_VFIO_list: -1} == "," ]]; then
+                        str_HWID_VFIO_list=${str_HWID_VFIO_list::-1}
+                    fi
             fi
     }
 
