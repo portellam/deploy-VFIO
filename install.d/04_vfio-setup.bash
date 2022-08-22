@@ -277,7 +277,7 @@
                 done
             fi
 
-            if [[ ${#arr_IOMMU_VFIO[@]} -eq 0 && ${#arr_IOMMU_VGA_VFIO[@]} -eq 0 ]]; then
+            if [[ ${#arr_IOMMU_VFIO[@]} == 0 && ${#arr_IOMMU_VGA_VFIO[@]} == 0 ]]; then
                 echo -e "$0: No valid IOMMU groups selected. Exiting."
                 exit 0
             else
@@ -325,6 +325,46 @@
 
         echo -e "$0: Executing Multi-boot setup..."
         ParsePCI                                        # call function
+
+        # function #
+            function WriteToFile {
+
+                if [[ -e $str_inFile1 && -e $str_inFile1b ]]; then
+
+                    # write to tempfile #
+                    echo -e \n\n $str_line1 >> $str_outFile1
+                    echo -e \n\n $str_line1 >> $str_logFile1
+                    while read -r str_line1; do
+                        case $str_line1 in
+                            *'#$str_output1'*)
+                                str_line1=$str_output1
+                                echo -e $str_output1_log >> $str_logFile1;;
+                            *'#$str_output2'*)
+                                str_line1=$str_output2;;
+                            *'#$str_output3'*)
+                                str_line1=$str_output3;;
+                            *'#$str_output4'*)
+                                str_line1=$str_output4;;
+                            *'#$str_output5'*)
+                                str_line1=$str_output5
+                                echo -e $str_output5_log >> $str_logFile1;;
+                            *'#$str_output6'*)
+                                str_line1=$str_output6
+                                echo -e $str_output6_log >> $str_logFile1;;
+                            *'#$str_output7'*)
+                                str_line1=$str_output7
+                                echo -e $str_output7_log >> $str_logFile1;;
+                            *)
+                                break;;
+                        esac
+
+                        echo -e $str_line1 >> $str_outFile1
+                        echo -e $str_line1 >> $str_logFile1
+                    done < $str_inFile1b        # read from template
+                else
+                    bool_missingFiles=true
+                fi
+            }
 
         # parameters #
             bool_hasInternalVGA=false
@@ -422,55 +462,13 @@
                         done
                     fi
 
-                # match valid device name #
-                    if [[ $str_thisVGA_DeviceName != "" ]]; then
-
-                    # Write to file #
-                            function WriteToFile {
-
-                                if [[ -e $str_inFile1 && -e $str_inFile1b ]]; then
-
-                                    # write to tempfile #
-                                    echo -e \n\n $str_line1 >> $str_outFile1
-                                    echo -e \n\n $str_line1 >> $str_logFile1
-                                    while read -r str_line1; do
-                                        case $str_line1 in
-                                            *'#$str_output1'*)
-                                                str_line1=$str_output1
-                                                echo -e $str_output1_log >> $str_logFile1;;
-                                            *'#$str_output2'*)
-                                                str_line1=$str_output2;;
-                                            *'#$str_output3'*)
-                                                str_line1=$str_output3;;
-                                            *'#$str_output4'*)
-                                                str_line1=$str_output4;;
-                                            *'#$str_output5'*)
-                                                str_line1=$str_output5
-                                                echo -e $str_output5_log >> $str_logFile1;;
-                                            *'#$str_output6'*)
-                                                str_line1=$str_output6
-                                                echo -e $str_output6_log >> $str_logFile1;;
-                                            *'#$str_output7'*)
-                                                str_line1=$str_output7
-                                                echo -e $str_output7_log >> $str_logFile1;;
-                                            *)
-                                                break;;
-                                        esac
-
-                                        echo -e $str_line1 >> $str_outFile1
-                                        echo -e $str_line1 >> $str_logFile1
-                                    done < $str_inFile1b        # read from template
-                                else
-                                    bool_missingFiles=true
-                                fi
-                        }
-
+                # Write to file #
                     # new parameters #
                         str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_driver_VFIO_thisList vfio_pci.ids=$str_HWID_VFIO_thisList"
 
                     ## /etc/grub.d/proxifiedScripts/custom ##
                         if [[ ${#arr_GRUB_title[@]} -gt 1 ]]; then
-                            for str_GRUB_title in ${arr_GRUB_title[@]}; do
+                            for str_GRUB_title in ${arr_GRUB_title[@]}; do                  ### TO-DO: change here! what is the function of this here?
                                 # new parameters #
                                     str_output1="menuentry \"$str_GRUB_title\"{"
                                     str_output2="    insmod $str_rootFSTYPE"
@@ -494,7 +492,14 @@
 
                             WriteToFile         # call function
                         fi
-                    fi
+
+                    echo -e "$0: '$""str_output1'\t\t= $str_output1"
+                    echo -e "$0: '$""str_output2'\t\t= $str_output2"
+                    echo -e "$0: '$""str_output3'\t\t= $str_output3"
+                    echo -e "$0: '$""str_output4'\t\t= $str_output4"
+                    echo -e "$0: '$""str_output5'\t\t= $str_output5"
+                    echo -e "$0: '$""str_output6'\t\t= $str_output6"
+                    echo -e "$0: '$""str_output7'\t\t= $str_output7"
             done
 
         # file check #
