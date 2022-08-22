@@ -468,7 +468,9 @@
 
                     ## /etc/grub.d/proxifiedScripts/custom ##
                         if [[ ${#arr_GRUB_title[@]} -gt 1 ]]; then
-                            for str_GRUB_title in ${arr_GRUB_title[@]}; do                  ### TO-DO: change here! what is the function of this here?
+
+                            # parse every kernel/new GRUB title #
+                            for str_GRUB_title in ${arr_GRUB_title[@]}; do
                                 # new parameters #
                                     str_output1="menuentry \"$str_GRUB_title\"{"
                                     str_output2="    insmod $str_rootFSTYPE"
@@ -478,7 +480,42 @@
                                     str_output6="    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
                                     str_output7="    initrd  /boot/initrd.img-$str_rootKernel"
 
-                                WriteToFile     # call function
+                                # WriteToFile     # call function
+
+                                if [[ -e $str_inFile1 && -e $str_inFile1b ]]; then
+                                    # write to tempfile #
+                                    echo -e \n\n $str_line1 >> $str_outFile1
+                                    echo -e \n\n $str_line1 >> $str_logFile1
+                                    while read -r str_line1; do
+                                        case $str_line1 in
+                                            *'#$str_output1'*)
+                                                str_line1=$str_output1
+                                                echo -e $str_output1_log >> $str_logFile1;;
+                                            *'#$str_output2'*)
+                                                str_line1=$str_output2;;
+                                            *'#$str_output3'*)
+                                                str_line1=$str_output3;;
+                                            *'#$str_output4'*)
+                                                str_line1=$str_output4;;
+                                            *'#$str_output5'*)
+                                                str_line1=$str_output5
+                                                echo -e $str_output5_log >> $str_logFile1;;
+                                            *'#$str_output6'*)
+                                                str_line1=$str_output6
+                                                echo -e $str_output6_log >> $str_logFile1;;
+                                            *'#$str_output7'*)
+                                                str_line1=$str_output7
+                                                echo -e $str_output7_log >> $str_logFile1;;
+                                            *)
+                                                break;;
+                                        esac
+
+                                        echo -e $str_line1 >> $str_outFile1
+                                        echo -e $str_line1 >> $str_logFile1
+                                    done < $str_inFile1b        # read from template
+                                else
+                                    bool_missingFiles=true
+                                fi
                             done
                         else
                             # new parameters #
@@ -490,7 +527,42 @@
                                 str_output6="    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
                                 str_output7="    initrd  /boot/initrd.img-$str_rootKernel"
 
-                            WriteToFile         # call function
+                            # WriteToFile         # call function
+
+                            if [[ -e $str_inFile1 && -e $str_inFile1b ]]; then
+                                    # write to tempfile #
+                                    echo -e \n\n $str_line1 >> $str_outFile1
+                                    echo -e \n\n $str_line1 >> $str_logFile1
+                                    while read -r str_line1; do
+                                        case $str_line1 in
+                                            *'#$str_output1'*)
+                                                str_line1=$str_output1
+                                                echo -e $str_output1_log >> $str_logFile1;;
+                                            *'#$str_output2'*)
+                                                str_line1=$str_output2;;
+                                            *'#$str_output3'*)
+                                                str_line1=$str_output3;;
+                                            *'#$str_output4'*)
+                                                str_line1=$str_output4;;
+                                            *'#$str_output5'*)
+                                                str_line1=$str_output5
+                                                echo -e $str_output5_log >> $str_logFile1;;
+                                            *'#$str_output6'*)
+                                                str_line1=$str_output6
+                                                echo -e $str_output6_log >> $str_logFile1;;
+                                            *'#$str_output7'*)
+                                                str_line1=$str_output7
+                                                echo -e $str_output7_log >> $str_logFile1;;
+                                            *)
+                                                break;;
+                                        esac
+
+                                        echo -e $str_line1 >> $str_outFile1
+                                        echo -e $str_line1 >> $str_logFile1
+                                    done < $str_inFile1b        # read from template
+                                else
+                                    bool_missingFiles=true
+                            fi
                         fi
 
                     echo -e "$0: '$""str_output1'\t\t= $str_output1"
