@@ -171,6 +171,11 @@
 # Parse and Prompt PCI devices #
     function ParsePCI {
 
+        # TO-DO:
+        # implement way to separate selected VFIO IOMMU groups by VGA and non-VGA in first nested loop
+        # multi boot depends on this functionality
+        #
+
         # passthrough IOMMU group ID by user descretion #
             declare -a arr_validDevice
             declare -a arr_validIOMMU
@@ -353,8 +358,7 @@
                     exit 0
                 }
 
-            #DebugOutput    # uncomment to debug here
-            # return $arr_driver_VFIO $arr_IOMMU_VGA_VFIO $str_driver_VFIO_list $str_HWID_VFIO_list $str_GRUB_CMDLINE $str_GRUB_CMDLINE_prefix $str_IGPU_deviceName
+            DebugOutput    # uncomment to debug here
     }
 
 # GRUB and hugepages check #
@@ -415,7 +419,6 @@
             # }
 
         # parameters #
-            bool_hasInternalVGA=false
             readonly str_rootDistro=`lsb_release -i -s`                                                 # Linux distro name
             declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n2`)     # all kernels       # NOTE: create boot menu entries for first two kernels.
                                                                                                         #                           any more is overkill!
@@ -432,10 +435,24 @@
             # files #
                 readonly str_inFile1=`find . -name *etc_grub.d_proxifiedScripts_custom`
                 readonly str_inFile1b=`find . -name *custom_grub_template`
-                readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"                # DEBUG
-                # readonly str_outFile1="custom.log"                                          # DEBUG
+                # readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"                # DEBUG
+                readonly str_outFile1="custom.log"                                          # DEBUG
                 readonly str_oldFile1=$str_outFile1".old"
                 readonly str_logFile1=$(pwd)"/custom-grub.log"
+
+            echo -e "$0: '$""str_IGPU_deviceName'\t\t= $str_IGPU_deviceName"
+            echo -e "$0: '$""str_rootDistro'\t\t= $str_rootDistro"
+            echo -e "$0: '$""str_rootKernel'\t\t= $str_rootKernel"
+            echo -e "$0: '$""{#arr_rootKernel[@]}'\t\t= ${#arr_rootKernel[@]}"
+            echo -e "$0: '$""str_rootDisk'\t\t= $str_rootDisk"
+            echo -e "$0: '$""str_rootUUID'\t\t= $str_rootUUID"
+            echo -e "$0: '$""str_rootFSTYPE'\t\t= $str_rootFSTYPE"
+            echo -e "$0: '$""str_inFile1'\t\t= $str_inFile1"
+            echo -e "$0: '$""str_inFile1b'\t\t= $str_inFile1b"
+            echo -e "$0: '$""str_outFile1'\t\t= $str_outFile1"
+            echo -e "$0: '$""str_oldFile1'\t\t= $str_oldFile1"
+            echo -e "$0: '$""str_logFile1'\t\t= $str_logFile1"
+            echo -e "$0: '$""{#arr_IOMMU_VGA_VFIO[@]}'\t\t= ${#arr_IOMMU_VGA_VFIO[@]}"
 
             # create logfile #
             if [[ -z $str_logFile1 ]]; then
@@ -473,7 +490,7 @@
                         if [[ $str_thisIOMMU == $str_IOMMU ]]; then
 
                             # false match device type, reset #
-                            if [[ $bool_hasInternalVGA == false && $str_thisDeviceType != *"VGA"* && $str_thisDeviceType != *"GRAPHICS"* ]]; then
+                            if [[ $str_thisDeviceType != *"VGA"* && $str_thisDeviceType != *"GRAPHICS"* ]]; then
                                 str_thisDeviceName="N/A"
                             fi
                         else
@@ -514,6 +531,10 @@
                     # new parameters #
                         str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_driver_VFIO_thisList vfio_pci.ids=$str_HWID_VFIO_thisList"
 
+                        echo -e "$0: '$""str_driver_VFIO_thisList'\t\t= $str_driver_VFIO_thisList"
+                        echo -e "$0: '$""str_HWID_VFIO_thisList'\t\t= $str_HWID_VFIO_thisList"
+                        echo -e "$0: '$""str_GRUB_CMDLINE'\t\t= $str_GRUB_CMDLINE"
+
                     ## /etc/grub.d/proxifiedScripts/custom ##
                         if [[ ${#arr_GRUB_title[@]} -gt 1 ]]; then
 
@@ -528,6 +549,14 @@
                                     str_output6="    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
                                     str_output7="    initrd  /boot/initrd.img-$str_rootKernel"
 
+                                    echo -e "$0: '$""str_output1'\t\t= $str_output1"
+                                    echo -e "$0: '$""str_output2'\t\t= $str_output2"
+                                    echo -e "$0: '$""str_output3'\t\t= $str_output3"
+                                    echo -e "$0: '$""str_output4'\t\t= $str_output4"
+                                    echo -e "$0: '$""str_output5'\t\t= $str_output5"
+                                    echo -e "$0: '$""str_output6'\t\t= $str_output6"
+                                    echo -e "$0: '$""str_output7'\t\t= $str_output7"
+
                                 # WriteToFile     # call function
 
                                 if [[ -e $str_inFile1 && -e $str_inFile1b ]]; then
@@ -535,28 +564,37 @@
                                     echo -e \n\n $str_line1 >> $str_outFile1
                                     echo -e \n\n $str_line1 >> $str_logFile1
                                     while read -r str_line1; do
-                                        case $str_line1 in
-                                            *'#$str_output1'*)
-                                                str_line1=$str_output1
-                                                echo -e $str_output1_log >> $str_logFile1;;
-                                            *'#$str_output2'*)
-                                                str_line1=$str_output2;;
-                                            *'#$str_output3'*)
-                                                str_line1=$str_output3;;
-                                            *'#$str_output4'*)
-                                                str_line1=$str_output4;;
-                                            *'#$str_output5'*)
-                                                str_line1=$str_output5
-                                                echo -e $str_output5_log >> $str_logFile1;;
-                                            *'#$str_output6'*)
-                                                str_line1=$str_output6
-                                                echo -e $str_output6_log >> $str_logFile1;;
-                                            *'#$str_output7'*)
-                                                str_line1=$str_output7
-                                                echo -e $str_output7_log >> $str_logFile1;;
-                                            *)
-                                                break;;
-                                        esac
+                                        if [[ $str_line1 == '#$str_output1'* ]]; then
+                                            str_line1=$str_output1
+                                            # echo -e $str_output1_log >> $str_logFile1
+                                        fi
+
+                                        if [[ $str_line1 == '#$str_output2'* ]]; then
+                                            str_line1=$str_output2
+                                        fi
+
+                                        if [[ $str_line1 == '#$str_output3'* ]]; then
+                                            str_line1=$str_output3
+                                        fi
+
+                                        if [[ $str_line1 == '#$str_output4'* ]]; then
+                                            str_line1=$str_output4
+                                        fi
+
+                                        if [[ $str_line1 == '#$str_output5'* ]]; then
+                                            str_line1=$str_output5
+                                            # echo -e $str_output5_log >> $str_logFile1
+                                        fi
+
+                                        if [[ $str_line1 == '#$str_output6'* ]]; then
+                                            str_line1=$str_output6
+                                            # echo -e $str_output6_log >> $str_logFile1
+                                        fi
+
+                                        if [[ $str_line1 == '#$str_output7'* ]]; then
+                                            str_line1=$str_output7
+                                            # echo -e $str_output7_log >> $str_logFile1
+                                        fi
 
                                         echo -e $str_line1 >> $str_outFile1
                                         echo -e $str_line1 >> $str_logFile1
@@ -575,6 +613,14 @@
                                 str_output6="    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
                                 str_output7="    initrd  /boot/initrd.img-$str_rootKernel"
 
+                                echo -e "$0: '$""str_output1'\t\t= $str_output1"
+                                echo -e "$0: '$""str_output2'\t\t= $str_output2"
+                                echo -e "$0: '$""str_output3'\t\t= $str_output3"
+                                echo -e "$0: '$""str_output4'\t\t= $str_output4"
+                                echo -e "$0: '$""str_output5'\t\t= $str_output5"
+                                echo -e "$0: '$""str_output6'\t\t= $str_output6"
+                                echo -e "$0: '$""str_output7'\t\t= $str_output7"
+
                             # WriteToFile         # call function
 
                             if [[ -e $str_inFile1 && -e $str_inFile1b ]]; then
@@ -584,7 +630,7 @@
                                     while read -r str_line1; do
                                         if [[ $str_line1 == '#$str_output1'* ]]; then
                                             str_line1=$str_output1
-                                            echo -e $str_output1_log >> $str_logFile1
+                                            # echo -e $str_output1_log >> $str_logFile1
                                         fi
 
                                         if [[ $str_line1 == '#$str_output2'* ]]; then
@@ -601,17 +647,17 @@
 
                                         if [[ $str_line1 == '#$str_output5'* ]]; then
                                             str_line1=$str_output5
-                                            echo -e $str_output5_log >> $str_logFile1
+                                            # echo -e $str_output5_log >> $str_logFile1
                                         fi
 
                                         if [[ $str_line1 == '#$str_output6'* ]]; then
                                             str_line1=$str_output6
-                                            echo -e $str_output6_log >> $str_logFile1
+                                            # echo -e $str_output6_log >> $str_logFile1
                                         fi
 
                                         if [[ $str_line1 == '#$str_output7'* ]]; then
                                             str_line1=$str_output7
-                                            echo -e $str_output7_log >> $str_logFile1
+                                            # echo -e $str_output7_log >> $str_logFile1
                                         fi
 
                                         echo -e $str_line1 >> $str_outFile1
@@ -621,14 +667,6 @@
                                     bool_missingFiles=true
                             fi
                         fi
-
-                    echo -e "$0: '$""str_output1'\t\t= $str_output1"
-                    echo -e "$0: '$""str_output2'\t\t= $str_output2"
-                    echo -e "$0: '$""str_output3'\t\t= $str_output3"
-                    echo -e "$0: '$""str_output4'\t\t= $str_output4"
-                    echo -e "$0: '$""str_output5'\t\t= $str_output5"
-                    echo -e "$0: '$""str_output6'\t\t= $str_output6"
-                    echo -e "$0: '$""str_output7'\t\t= $str_output7"
             done
 
         # file check #

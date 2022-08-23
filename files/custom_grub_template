@@ -16,7 +16,7 @@
     if [ x$feature_platform_search_hint = xy ]; then
     #$str_output4       # Do not change this placeholder
     fi
-  
+
     #$str_output5       # Do not change this placeholder
     #$str_output6       # Do not change this placeholder
     echo    'Loading initial ramdisk ...'
