@@ -174,10 +174,10 @@
         # passthrough IOMMU group ID by user descretion #
             declare -a arr_validDevice
             declare -a arr_validIOMMU
+            declare -a arr_validVGA
             declare -i int_lastIndex=0
 
             for (( int_i=0 ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do
-                bool_hasVGA=false
                 bool_hasExternalPCI=false
 
                 # match Bus ID and device type #
@@ -194,37 +194,33 @@
                         break
                     fi
 
-                    # echo -e "$0: '$'""int_i\t= $int_i"
-                    # echo -e "$0: '$'""int_thisBusID\t= $int_thisBusID"
+                    str_thisDeviceType=`echo ${arr_deviceType_sum[$int_j]} | tr '[:lower:]' '[:upper:]'`
 
-                    str_thisDeviceType=${arr_deviceType_sum[$int_j]}
+                    # match index #
+                    if [[ $int_j == $int_i ]]; then
 
-                    # save IOMMU group in separate list #
-                    if [[ $int_j == $int_i && $str_thisDeviceType == *"VGA"* || $str_thisDeviceType == *"GRAPHICS"* ]]; then
-                        bool_hasVGA=true
-                    fi
+                        # show only IOMMU groups with external PCI #
+                        if [[ $int_thisBusID -gt 0 ]]; then
+                            bool_hasExternalPCI=true
+                            arr_validDevice+=($int_j)
+                            int_lastIndex=$int_j
 
-                    # show only IOMMU groups with external PCI #
-                    if [[ $int_j == $int_i && $int_thisBusID -gt 0 ]]; then
-                        bool_hasExternalPCI=true
-                        arr_validDevice+=($int_j)
-                        int_lastIndex=$int_j
-                    fi
+                            # add IOMMU groups to list #
+                            if [[ ${#arr_validIOMMU[@]} == 0 ]]; then
+                                arr_validIOMMU+=(${arr_IOMMU_sum[$int_i]})
+                            fi
 
-                    # save first found internal VGA device #
-                    if [[ $int_j == $int_i && $bool_hasVGA == true && $bool_hasExternalPCI == false ]]; then
-                        str_IGPU_deviceName=${arr_deviceName_sum[$int_j]}
+                            if [[ ${#arr_validIOMMU[@]} != 0 && ${arr_validIOMMU[-1]} != ${arr_IOMMU_sum[$int_i]} ]]; then
+                                arr_validIOMMU+=(${arr_IOMMU_sum[$int_i]})
+                            fi
+                        else
+                            # save first found internal VGA device #
+                            if [[ $str_IGPU_deviceName == "" && $str_thisDeviceType == *"VGA"* || $str_thisDeviceType == *"GRAPHICS"* ]]; then
+                                str_IGPU_deviceName=${arr_deviceName_sum[$int_j]}
+                            fi
+                        fi
                     fi
                 done
-
-                # add IOMMU groups to list #
-                if [[ ${#arr_validIOMMU[@]} == 0 && $bool_hasExternalPCI == true ]]; then
-                    arr_validIOMMU+=(${arr_IOMMU_sum[$int_i]})
-                fi
-
-                if [[ ${#arr_validIOMMU[@]} != 0 && ${arr_validIOMMU[-1]} != ${arr_IOMMU_sum[$int_i]} && $bool_hasExternalPCI == true ]]; then
-                    arr_validIOMMU+=(${arr_IOMMU_sum[$int_i]})
-                fi
             done
 
             # prompt #
@@ -235,11 +231,20 @@
                 exit 0
             else
                 for int_thisIOMMU in ${arr_validIOMMU[@]}; do
+                    bool_hasVGA=false
                     str_input1=""
 
                     # new prompt #
                     for (( int_i=0 ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do
                         if [[ ${arr_IOMMU_sum[$int_i]} == $int_thisIOMMU ]]; then
+
+                            str_thisDeviceType=`echo ${arr_deviceType_sum[$int_j]} | tr '[:lower:]' '[:upper:]'`
+
+                            # IOMMU group contains VGA #
+                            if [[ $str_thisDeviceType == *"VGA"* || $str_thisDeviceType == *"GRAPHICS"* ]]; then
+                                bool_hasVGA=true
+                            fi
+
                             echo -e "\tVENDOR:\t\t${arr_vendorName_sum[$int_i]}"
                             echo -e "\tNAME:\t\t${arr_deviceName_sum[$int_i]}"
                             echo -e "\tTYPE  :\t\t${arr_deviceType_sum[$int_i]}"
@@ -256,20 +261,20 @@
                     if [[ $bool_hasVGA == false ]]; then
                         case $str_input1 in
                             "Y")
-                                arr_IOMMU_VFIO+=$int_thisIOMMU
+                                arr_IOMMU_VFIO+=("$int_thisIOMMU")
                                 echo -e "$0: Selected IOMMU group ID '$int_thisIOMMU'.";;
                             "N")
-                                arr_IOMMU_host+=$int_thisIOMMU;;
+                                arr_IOMMU_host+=("$int_thisIOMMU");;
                             *)
                                 echo -en "$0: Invalid input.";;
                         esac
                     else
                         case $str_input1 in
                             "Y")
-                                arr_IOMMU_VGA_VFIO+=$int_thisIOMMU
+                                arr_IOMMU_VGA_VFIO+=("$int_thisIOMMU")
                                 echo -e "$0: Selected IOMMU group ID '$int_thisIOMMU'.";;
                             "N")
-                                arr_IOMMU_VGA_host+=$int_thisIOMMU;;
+                                arr_IOMMU_VGA_host+=("$int_thisIOMMU");;
                             *)
                                 echo -en "$0: Invalid input.";;
                         esac
@@ -290,10 +295,29 @@
 
                             # match IOMMU group ID #
                             if [[ $str_IOMMU == ${arr_IOMMU_sum[$int_i]} ]]; then
-                                arr_driver_VFIO+=(${arr_driver_sum[$int_i]})
+
+                                # match common audio driver, and ignore #
+                                # NOTE: why? because most audio devices, including onboard and VGA devices, use this driver
+                                # it is acceptable to omit this driver for passthrough of a multi-function device (VGA device with Audio)
+                                if [[ ${arr_driver_sum[$int_i]} != "snd_hda_intel" ]]; then
+                                    arr_driver_VFIO+=(${arr_driver_sum[$int_i]})
+                                    str_driver_VFIO_list+=${arr_driver_sum[$int_i]}","
+                                fi
+
                                 arr_HWID_VFIO+=(${arr_HWID_sum[$int_i]})
-                                str_driver_VFIO_list+=(${arr_driver_sum[$int_i]})","
-                                str_HWID_VFIO_list+=(${arr_HWID_sum[$int_i]})","
+                                str_HWID_VFIO_list+=${arr_HWID_sum[$int_i]}","
+                            fi
+                        done
+                    done
+
+                    # Static, add all VGA groups to new list
+                    for str_IOMMU in ${arr_IOMMU_VGA_VFIO[@]}; do
+                        for (( int_i=0 ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do
+
+                            # match IOMMU group ID #
+                            if [[ $str_IOMMU == ${arr_IOMMU_sum[$int_i]} ]]; then
+                                str_driver_VFIO_VGA_list+=${arr_driver_sum[$int_i]}","
+                                str_HWID_VFIO_VGA_list+=${arr_HWID_sum[$int_i]}","
                             fi
                         done
                     done
@@ -308,17 +332,41 @@
                         str_HWID_VFIO_list=${str_HWID_VFIO_list::-1}
                     fi
             fi
+
+            # debug prompt #
+                # uncomment lines below #
+                function DebugOutput {
+                    echo -e "$0: ========== DEBUG PROMPT ==========\n"
+
+                    echo -e "$0: '$""str_IGPU_deviceName'\t\t= $str_IGPU_deviceName"
+                    echo -e "$0: '$""str_driver_VFIO_list'\t\t= $str_driver_VFIO_list"
+                    echo -e "$0: '$""str_HWID_VFIO_list'\t\t= $str_HWID_VFIO_list"
+
+                    for (( i=0 ; i<${#arr_IOMMU_host[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_host[$i]}'\t= ${arr_IOMMU_host[$i]}"; done && echo
+                    for (( i=0 ; i<${#arr_IOMMU_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VFIO[$i]}'\t= ${arr_IOMMU_VFIO[$i]}"; done && echo
+                    for (( i=0 ; i<${#arr_IOMMU_VGA_host[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VGA_host[$i]}'\t= ${arr_IOMMU_VGA_host[$i]}"; done && echo
+                    for (( i=0 ; i<${#arr_IOMMU_VGA_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VGA_VFIO[$i]}'\t= ${arr_IOMMU_VGA_VFIO[$i]}"; done && echo
+                    for (( i=0 ; i<${#arr_driver_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_driver_VFIO[$i]}'\t= ${arr_driver_VFIO[$i]}"; done && echo
+                    for (( i=0 ; i<${#arr_HWID_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_HWID_VFIO[$i]}'\t= ${arr_HWID_VFIO[$i]}"; done && echo
+
+                    echo -e "\n$0: ========== DEBUG PROMPT =========="
+                    exit 0
+                }
+
+            #DebugOutput    # uncomment to debug here
+            # return $arr_driver_VFIO $arr_IOMMU_VGA_VFIO $str_driver_VFIO_list $str_HWID_VFIO_list $str_GRUB_CMDLINE $str_GRUB_CMDLINE_prefix $str_IGPU_deviceName
     }
 
 # GRUB and hugepages check #
     if [[ -z $str_logFile0 ]]; then
         echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_logFile0' and '$0'.\n"
-        readonly str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages="
+        str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages="
     else
-        readonly str_GRUB_CMDLINE_Hugepages=`cat $str_logFile0`
+        str_GRUB_CMDLINE_Hugepages=`cat $str_logFile0`
     fi
 
-    readonly str_GRUB_CMDLINE_prefix="quiet splash video=efifb:off acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages"
+    str_GRUB_CMDLINE_prefix="quiet splash video=efifb:off acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages"
+
 
 # Multi boot setup #
     function MultiBootSetup {
@@ -327,44 +375,44 @@
         ParsePCI                                        # call function
 
         # function #
-            function WriteToFile {
+            # function WriteToFile {
 
-                if [[ -e $str_inFile1 && -e $str_inFile1b ]]; then
+            #     if [[ -e $str_inFile1 && -e $str_inFile1b ]]; then
 
-                    # write to tempfile #
-                    echo -e \n\n $str_line1 >> $str_outFile1
-                    echo -e \n\n $str_line1 >> $str_logFile1
-                    while read -r str_line1; do
-                        case $str_line1 in
-                            *'#$str_output1'*)
-                                str_line1=$str_output1
-                                echo -e $str_output1_log >> $str_logFile1;;
-                            *'#$str_output2'*)
-                                str_line1=$str_output2;;
-                            *'#$str_output3'*)
-                                str_line1=$str_output3;;
-                            *'#$str_output4'*)
-                                str_line1=$str_output4;;
-                            *'#$str_output5'*)
-                                str_line1=$str_output5
-                                echo -e $str_output5_log >> $str_logFile1;;
-                            *'#$str_output6'*)
-                                str_line1=$str_output6
-                                echo -e $str_output6_log >> $str_logFile1;;
-                            *'#$str_output7'*)
-                                str_line1=$str_output7
-                                echo -e $str_output7_log >> $str_logFile1;;
-                            *)
-                                break;;
-                        esac
+            #         # write to tempfile #
+            #         echo -e \n\n $str_line1 >> $str_outFile1
+            #         echo -e \n\n $str_line1 >> $str_logFile1
+            #         while read -r str_line1; do
+            #             case $str_line1 in
+            #                 *'#$str_output1'*)
+            #                     str_line1=$str_output1
+            #                     echo -e $str_output1_log >> $str_logFile1;;
+            #                 *'#$str_output2'*)
+            #                     str_line1=$str_output2;;
+            #                 *'#$str_output3'*)
+            #                     str_line1=$str_output3;;
+            #                 *'#$str_output4'*)
+            #                     str_line1=$str_output4;;
+            #                 *'#$str_output5'*)
+            #                     str_line1=$str_output5
+            #                     echo -e $str_output5_log >> $str_logFile1;;
+            #                 *'#$str_output6'*)
+            #                     str_line1=$str_output6
+            #                     echo -e $str_output6_log >> $str_logFile1;;
+            #                 *'#$str_output7'*)
+            #                     str_line1=$str_output7
+            #                     echo -e $str_output7_log >> $str_logFile1;;
+            #                 *)
+            #                     break;;
+            #             esac
 
-                        echo -e $str_line1 >> $str_outFile1
-                        echo -e $str_line1 >> $str_logFile1
-                    done < $str_inFile1b        # read from template
-                else
-                    bool_missingFiles=true
-                fi
-            }
+            #             echo -e $str_line1 >> $str_outFile1
+            #             echo -e $str_line1 >> $str_logFile1
+            #         done < $str_inFile1b        # read from template
+            #     else
+            #         bool_missingFiles=true
+            #     fi
+            # }
 
         # parameters #
             bool_hasInternalVGA=false
@@ -534,28 +582,37 @@
                                     echo -e \n\n $str_line1 >> $str_outFile1
                                     echo -e \n\n $str_line1 >> $str_logFile1
                                     while read -r str_line1; do
-                                        case $str_line1 in
-                                            *'#$str_output1'*)
-                                                str_line1=$str_output1
-                                                echo -e $str_output1_log >> $str_logFile1;;
-                                            *'#$str_output2'*)
-                                                str_line1=$str_output2;;
-                                            *'#$str_output3'*)
-                                                str_line1=$str_output3;;
-                                            *'#$str_output4'*)
-                                                str_line1=$str_output4;;
-                                            *'#$str_output5'*)
-                                                str_line1=$str_output5
-                                                echo -e $str_output5_log >> $str_logFile1;;
-                                            *'#$str_output6'*)
-                                                str_line1=$str_output6
-                                                echo -e $str_output6_log >> $str_logFile1;;
-                                            *'#$str_output7'*)
-                                                str_line1=$str_output7
-                                                echo -e $str_output7_log >> $str_logFile1;;
-                                            *)
-                                                break;;
-                                        esac
+                                        if [[ $str_line1 == '#$str_output1'* ]]; then
+                                            str_line1=$str_output1
+                                            echo -e $str_output1_log >> $str_logFile1;;
+                                        fi
+
+                                        if [[ $str_line1 == '#$str_output2'* ]]; then
+                                            str_line1=$str_output2
+                                        fi
+
+                                        if [[ $str_line1 == '#$str_output3'* ]]; then
+                                            str_line1=$str_output3
+                                        fi
+
+                                        if [[ $str_line1 == '#$str_output4'* ]]; then
+                                            str_line1=$str_output4
+                                        fi
+
+                                        if [[ $str_line1 == '#$str_output5'* ]]; then
+                                            str_line1=$str_output5
+                                            echo -e $str_output5_log >> $str_logFile1;;
+                                        fi
+
+                                        if [[ $str_line1 == '#$str_output6'* ]]; then
+                                            str_line1=$str_output6
+                                            echo -e $str_output6_log >> $str_logFile1;;
+                                        fi
+
+                                        if [[ $str_line1 == '#$str_output7'* ]]; then
+                                            str_line1=$str_output7
+                                            echo -e $str_output7_log >> $str_logFile1;;
+                                        fi
 
                                         echo -e $str_line1 >> $str_outFile1
                                         echo -e $str_line1 >> $str_logFile1
@@ -607,24 +664,22 @@
         ParsePCI                                        #call function
 
         # parameters #
-            declare -a arr_driverName_list
-
             # files #
                 str_inFile1=`find . -name *etc_default_grub`
                 str_inFile2=`find . -name *etc_modules`
                 str_inFile3=`find . -name *etc_initramfs-tools_modules`
                 str_inFile4=`find . -name *etc_modprobe.d_pci-blacklists.conf`
                 str_inFile5=`find . -name *etc_modprobe.d_vfio.conf`
-                #str_outFile1="/etc/default/grub"
-                #str_outFile2="/etc/modules"
-                #str_outFile3="/etc/initramfs-tools/modules"
-                #str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
-                #str_outFile5="/etc/modprobe.d/vfio.conf"
-                str_outFile1="grub.log"
-                str_outFile2="modules.log"
-                str_outFile3="initramfs_tools_modules.log"
-                str_outFile4="pci-blacklists.conf.log"
-                str_outFile5="vfio.conf.log"
+                str_outFile1="/etc/default/grub"
+                str_outFile2="/etc/modules"
+                str_outFile3="/etc/initramfs-tools/modules"
+                str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
+                str_outFile5="/etc/modprobe.d/vfio.conf"
+                # str_outFile1="grub.log"
+                # str_outFile2="modules.log"
+                # str_outFile3="initramfs_tools_modules.log"
+                # str_outFile4="pci-blacklists.conf.log"
+                # str_outFile5="vfio.conf.log"
                 str_oldFile1=$str_outFile1".old"
                 str_oldFile2=$str_outFile2".old"
                 str_oldFile3=$str_outFile3".old"
@@ -638,13 +693,18 @@
                 if [[ -e $str_logFile5 ]]; then rm $str_logFile5; fi
 
         # VFIO soft dependencies #
-            for str_thisDriverName in ${arr_driverName_list[@]}; do
-                str_driverName_list_softdep+="\nsoftdep $str_thisDriverName pre: vfio-pci"
-                str_driverName_list_softdep_drivers+="\nsoftdep $str_thisDriverName pre: vfio-pci\n$str_thisDriverName"
+            for str_thisDriver in ${arr_IOMMU_VGA_VFIO[@]}; do
+                str_driverName_list_softdep+="\nsoftdep $str_thisDriver pre: vfio-pci"
+                str_driverName_list_softdep_drivers+="\nsoftdep $str_thisDriver pre: vfio-pci\n$str_thisDriver"
+            done
+
+            for str_thisDriver in ${arr_driver_VFIO[@]}; do
+                str_driverName_list_softdep+="\nsoftdep $str_thisDriver pre: vfio-pci"
+                str_driverName_list_softdep_drivers+="\nsoftdep $str_thisDriver pre: vfio-pci\n$str_thisDriver"
             done
 
         # /etc/default/grub #
-            str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_driverName_newList vfio_pci.ids=$str_HWID_list"
+            str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_driver_VFIO_VGA_list$str_driver_VFIO_list vfio_pci.ids=$str_HWID_VFIO_VGA_list$str_HWID_VFIO_list"
 
             str_output1="GRUB_DISTRIBUTOR=\`lsb_release -i -s 2> /dev/null || echo "`lsb_release -i -s`"\`"
             str_output2="GRUB_CMDLINE_LINUX_DEFAULT=\"$str_GRUB_CMDLINE\""
@@ -658,14 +718,13 @@
 
                 # write to file #
                 while read -r str_line1; do
-                    case $str_line1 in
-                        *'#$str_output1'*)
-                            str_line1=$str_output1;;
-                        *'#$str_output2'*)
-                            str_line1=$str_output2;;
-                        *)
-                            break;;
-                    esac
+                    if [[ $str_line1 == '#$str_output1'* ]]; then
+                        str_line1=$str_output1
+                    fi
+
+                    if [[ $str_line1 == '#$str_output2'* ]]; then
+                        str_line1=$str_output2
+                    fi
 
                     echo -e $str_line1 >> $str_outFile1
                 done < $str_inFile1
@@ -675,7 +734,7 @@
 
 
         # /etc/modules #
-            str_output1="vfio_pci ids=$str_HWID_list"
+            str_output1="vfio_pci ids=$str_HWID_VFIO_VGA_list$str_HWID_VFIO_list"
 
             if [[ -e $str_inFile2 ]]; then
                 if [[ -e $str_outFile2 ]]; then
@@ -698,7 +757,7 @@
 
         # /etc/initramfs-tools/modules #
             str_output1=$str_driverName_list_softdep_drivers
-            str_output2="options vfio_pci ids=$str_HWID_list\nvfio_pci ids=$str_HWID_list\nvfio-pci"
+            str_output2="options vfio_pci ids=$str_HWID_VFIO_VGA_list$str_HWID_VFIO_list\nvfio_pci ids=$str_HWID_VFIO_VGA_list$str_HWID_VFIO_list\nvfio-pci"
 
             if [[ -e $str_inFile3 ]]; then
                 if [[ -e $str_outFile3 ]]; then
@@ -709,14 +768,13 @@
 
                 # write to file #
                 while read -r str_line1; do
-                    case $str_line1 in
-                        *'#$str_output1'*)
-                            str_line1=$str_output1;;
-                        *'#$str_output2'*)
-                            str_line1=$str_output2;;
-                        *)
-                            break;;
-                    esac
+                    if [[ $str_line1 == '#$str_output1'* ]]; then
+                        str_line1=$str_output1
+                    fi
+
+                    if [[ $str_line1 == '#$str_output2'* ]]; then
+                        str_line1=$str_output2
+                    fi
 
                     echo -e $str_line1 >> $str_outFile3
                 done < $str_inFile3
@@ -727,8 +785,12 @@
         # /etc/modprobe.d/pci-blacklists.conf #
             str_output1=""
 
-            for str_thisDriverName in ${arr_driverName_list[@]}; do
-                str_output1+="blacklist $str_thisDriverName\n"
+            for str_thisDriver in ${arr_IOMMU_VGA_VFIO[@]}; do
+                str_output1+="blacklist $str_thisDriver\n"
+            done
+
+            for str_thisDriver in ${arr_driver_VFIO[@]}; do
+                str_output1+="blacklist $str_thisDriver\n"
             done
 
             if [[ -e $str_inFile4 ]]; then
@@ -752,7 +814,7 @@
 
         # /etc/modprobe.d/vfio.conf #
             str_output1="$str_driverName_list_softdep"
-            str_output2="options vfio_pci ids=$str_HWID_list"
+            str_output2="options vfio_pci ids=$str_HWID_VFIO_VGA_list$str_HWID_VFIO_list"
 
             if [[ -e $str_inFile5 ]]; then
                 if [[ -e $str_outFile5 ]]; then
@@ -763,16 +825,17 @@
 
                 # write to file #
                 while read -r str_line1; do
-                    case $str_line1 in
-                        *'#$str_output1'*)
-                            str_line1=$str_output1;;
-                        *'#$str_output2'*)
-                            str_line1=$str_output2;;
-                        *'#$str_output3'*)
-                            str_line1=$str_output3;;
-                        *)
-                            break;;
-                    esac
+                    if [[ $str_line1 == '#$str_output1'* ]]; then
+                        str_line1=$str_output1
+                    fi
+
+                    if [[ $str_line1 == '#$str_output2'* ]]; then
+                        str_line1=$str_output2
+                    fi
+
+                    if [[ $str_line1 == '#$str_output3'* ]]; then
+                        str_line1=$str_output3
+                    fi
 
                     echo -e $str_line1 >> $str_outFile5
                 done < $str_inFile5
@@ -824,14 +887,14 @@
         ## lists ##
         # for (( i=0 ; i<${#arr_devices1[@]} ; i++ )); do echo -e "$0: '$""{arr_devices1[$i]}'\t= ${arr_devices1[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_devices2[@]} ; i++ )); do echo -e "$0: '$""{arr_devices2[$i]}'\t= ${arr_devices2[$i]}"; done && echo
-        #for (( i=0 ; i<${#arr_devices3[@]} ; i++ )); do echo -e "$0: '$""{arr_devices3[$i]}'\t= ${arr_devices3[$i]}"; done && echo
-        # for (( i=0 ; i<${#arr_IOMMU_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_sum[$i]}'\t= ${arr_IOMMU_sum[$i]}"; done && echo
+        # for (( i=0 ; i<${#arr_devices3[@]} ; i++ )); do echo -e "$0: '$""{arr_devices3[$i]}'\t= ${arr_devices3[$i]}"; done && echo
+        for (( i=0 ; i<${#arr_IOMMU_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_sum[$i]}'\t= ${arr_IOMMU_sum[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_busID_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_busID_sum[$i]}'\t= ${arr_busID_sum[$i]}"; done && echo
-        for (( i=0 ; i<${#arr_deviceName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_deviceName_sum[$i]}'\t= ${arr_deviceName_sum[$i]}"; done && echo
-        for (( i=0 ; i<${#arr_deviceType_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_deviceType_sum[$i]}'\t= ${arr_deviceType_sum[$i]}"; done && echo
+        # for (( i=0 ; i<${#arr_deviceName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_deviceName_sum[$i]}'\t= ${arr_deviceName_sum[$i]}"; done && echo
+        # for (( i=0 ; i<${#arr_deviceType_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_deviceType_sum[$i]}'\t= ${arr_deviceType_sum[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_driver_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_driver_sum[$i]}'\t= ${arr_driver_sum[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_HWID_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_HWID_sum[$i]}'\t= ${arr_HWID_sum[$i]}"; done && echo
-        for (( i=0 ; i<${#arr_vendorName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_vendorName_sum[$i]}'\t= ${arr_vendorName_sum[$i]}"; done && echo
+        # for (( i=0 ; i<${#arr_vendorName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_vendorName_sum[$i]}'\t= ${arr_vendorName_sum[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_IOMMU_host[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_host[$i]}'\t= ${arr_IOMMU_host[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_IOMMU_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VFIO[$i]}'\t= ${arr_IOMMU_VFIO[$i]}"; done && echo
         # for (( i=0 ; i<${#arr_IOMMU_VGA_host[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VGA_host[$i]}'\t= ${arr_IOMMU_VGA_host[$i]}"; done && echo
@@ -843,13 +906,13 @@
         # echo -e "$0: '$'""{#arr_devices1[@]}\t= ${#arr_devices1[@]}"
         # echo -e "$0: '$'""{#arr_devices2[@]}\t= ${#arr_devices2[@]}"
         # echo -e "$0: '$'""{#arr_devices3[@]}\t= ${#arr_devices3[@]}"
-        # echo -e "$0: '$'""{#arr_IOMMU_sum[@]}\t= ${#arr_IOMMU_sum[@]}"
+        echo -e "$0: '$'""{#arr_IOMMU_sum[@]}\t= ${#arr_IOMMU_sum[@]}"
         # echo -e "$0: '$'""{#arr_busID_sum[@]}\t= ${#arr_busID_sum[@]}"
-        echo -e "$0: '$'""{#arr_deviceName_sum[@]}\t= ${#arr_deviceName_sum[@]}"
-        echo -e "$0: '$'""{#arr_deviceType_sum[@]}\t= ${#arr_deviceType_sum[@]}"
+        # echo -e "$0: '$'""{#arr_deviceName_sum[@]}\t= ${#arr_deviceName_sum[@]}"
+        # echo -e "$0: '$'""{#arr_deviceType_sum[@]}\t= ${#arr_deviceType_sum[@]}"
         # echo -e "$0: '$'""{#arr_driver_sum[@]}\t= ${#arr_driver_sum[@]}"
         # echo -e "$0: '$'""{#arr_HWID_sum[@]}\t= ${#arr_HWID_sum[@]}"
-        echo -e "$0: '$'""{#arr_vendorName_sum[@]}\t= ${#arr_vendorName_sum[@]}"
+        # echo -e "$0: '$'""{#arr_vendorName_sum[@]}\t= ${#arr_vendorName_sum[@]}"
         # echo -e "$0: '$'""{#arr_IOMMU_host[@]}\t= ${#arr_IOMMU_host[@]}"
         # echo -e "$0: '$'""{#arr_IOMMU_VFIO[@]}\t= ${#arr_IOMMU_VFIO[@]}"
         # echo -e "$0: '$'""{#arr_IOMMU_VGA_host[@]}\t= ${#arr_IOMMU_VGA_host[@]}"

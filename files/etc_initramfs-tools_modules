@@ -9,7 +9,7 @@
 #
 # Run lspci to view hardware information.
 # You must run update-initramfs(8) to effect this change.
-# 
+#
 # Examples:
 #
 # raid1
