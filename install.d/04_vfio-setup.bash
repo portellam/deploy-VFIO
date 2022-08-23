@@ -432,8 +432,8 @@
             # files #
                 readonly str_inFile1=`find . -name *etc_grub.d_proxifiedScripts_custom`
                 readonly str_inFile1b=`find . -name *custom_grub_template`
-                #readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"                # DEBUG
-                readonly str_outFile1="custom.log"                                          # DEBUG
+                readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"                # DEBUG
+                # readonly str_outFile1="custom.log"                                          # DEBUG
                 readonly str_oldFile1=$str_outFile1".old"
                 readonly str_logFile1=$(pwd)"/custom-grub.log"
 
@@ -584,7 +584,7 @@
                                     while read -r str_line1; do
                                         if [[ $str_line1 == '#$str_output1'* ]]; then
                                             str_line1=$str_output1
-                                            echo -e $str_output1_log >> $str_logFile1;;
+                                            echo -e $str_output1_log >> $str_logFile1
                                         fi
 
                                         if [[ $str_line1 == '#$str_output2'* ]]; then
@@ -601,17 +601,17 @@
 
                                         if [[ $str_line1 == '#$str_output5'* ]]; then
                                             str_line1=$str_output5
-                                            echo -e $str_output5_log >> $str_logFile1;;
+                                            echo -e $str_output5_log >> $str_logFile1
                                         fi
 
                                         if [[ $str_line1 == '#$str_output6'* ]]; then
                                             str_line1=$str_output6
-                                            echo -e $str_output6_log >> $str_logFile1;;
+                                            echo -e $str_output6_log >> $str_logFile1
                                         fi
 
                                         if [[ $str_line1 == '#$str_output7'* ]]; then
                                             str_line1=$str_output7
-                                            echo -e $str_output7_log >> $str_logFile1;;
+                                            echo -e $str_output7_log >> $str_logFile1
                                         fi
 
                                         echo -e $str_line1 >> $str_outFile1
@@ -959,7 +959,7 @@
                 echo
                 MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_existingSetup
                 echo
-                sudo update-GRUB
+                sudo update-grub
                 sudo update-initramfs -u -k all
                 echo -e "\n$0: Review changes:\n\t'$str_outFile1'"
                 break;;
