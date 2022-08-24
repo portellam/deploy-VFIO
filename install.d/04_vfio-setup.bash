@@ -239,11 +239,12 @@
                     bool_hasVGA=false
                     str_input1=""
 
+                    echo -e "\tIOMMU :\t\t$int_thisIOMMU\n"
+
                     # new prompt #
                     for (( int_i=0 ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do
                         if [[ ${arr_IOMMU_sum[$int_i]} == $int_thisIOMMU ]]; then
-
-                            str_thisDeviceType=`echo ${arr_deviceType_sum[$int_j]} | tr '[:lower:]' '[:upper:]'`
+                            str_thisDeviceType=`echo ${arr_deviceType_sum[$int_i]} | tr '[:lower:]' '[:upper:]'`
 
                             # IOMMU group contains VGA #
                             if [[ $str_thisDeviceType == *"VGA"* || $str_thisDeviceType == *"GRAPHICS"* ]]; then
@@ -251,7 +252,7 @@
                             fi
 
                             echo -e "\tVENDOR:\t\t${arr_vendorName_sum[$int_i]}"
-                            echo -e "\tNAME:\t\t${arr_deviceName_sum[$int_i]}"
+                            echo -e "\tNAME  :\t\t${arr_deviceName_sum[$int_i]}"
                             echo -e "\tTYPE  :\t\t${arr_deviceType_sum[$int_i]}"
                             echo -e "\tBUS ID:\t\t${arr_busID_sum[$int_i]}"
                             echo -e "\tHW ID :\t\t${arr_HWID_sum[$int_i]}"
@@ -284,6 +285,8 @@
                                 echo -en "$0: Invalid input.";;
                         esac
                     fi
+
+                    echo
                 done
             fi
 
@@ -338,6 +341,17 @@
                     fi
             fi
 
+            # save the index of each device of each VFIO VGA IOMMU group #
+            # TO-DO: this should work! if I parse the groups for GTX 1070 and AMD, it only saves the GTX 1070 group. Why???
+                for str_IOMMU_VGA_VFIO in ${arr_IOMMU_VGA_VFIO[@]}; do
+                    for (( int_i=0 ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do
+                        if [[ ${arr_IOMMU_sum[$int_i]} == $str_IOMMU_VGA_VFIO ]]; then
+                            arr_IOMMU_VFIO_temp+=($int_i)
+                            echo -e "$0: '$""int_i'\t\t= $int_i"
+                        fi
+                    done
+                done
+
             # debug prompt #
                 # uncomment lines below #
                 function DebugOutput {
@@ -353,6 +367,16 @@
                     for (( i=0 ; i<${#arr_IOMMU_VGA_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VGA_VFIO[$i]}'\t= ${arr_IOMMU_VGA_VFIO[$i]}"; done && echo
                     for (( i=0 ; i<${#arr_driver_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_driver_VFIO[$i]}'\t= ${arr_driver_VFIO[$i]}"; done && echo
                     for (( i=0 ; i<${#arr_HWID_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_HWID_VFIO[$i]}'\t= ${arr_HWID_VFIO[$i]}"; done && echo
+                    for (( i=0 ; i<${#arr_IOMMU_VFIO_temp[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VFIO_temp[$i]}'\t= ${arr_IOMMU_VFIO_temp[$i]}"; done && echo
+                    for (( i=0 ; i<${#arr_IOMMU_VFIO_temp[@]} ; i++ )); do echo -e "$0: '$""{arr_busID_sum[$i]}'\t= ${arr_busID_sum[$i]}"; done && echo
+
+                    echo -e "$0: '$""{#arr_IOMMU_host[@]}'\t\t= ${#arr_IOMMU_host[@]}"
+                    echo -e "$0: '$""{#arr_IOMMU_VFIO[@]}'\t\t= ${#arr_IOMMU_host[@]}"
+                    echo -e "$0: '$""{#arr_IOMMU_VGA_host[@]}'\t\t= ${#arr_IOMMU_VGA_host[@]}"
+                    echo -e "$0: '$""{#arr_IOMMU_VGA_VFIO[@]}'\t\t= ${#arr_IOMMU_VGA_VFIO[@]}"
+                    echo -e "$0: '$""{#arr_driver_VFIO[@]}'\t\t= ${#arr_driver_VFIO[@]}"
+                    echo -e "$0: '$""{#arr_HWID_VFIO[@]}'\t\t= ${#arr_HWID_VFIO[@]}"
+                    echo -e "$0: '$""{#arr_IOMMU_VFIO_temp[@]}'\t\t= ${#arr_IOMMU_VFIO_temp[@]}"
 
                     echo -e "\n$0: ========== DEBUG PROMPT =========="
                     exit 0
@@ -420,10 +444,9 @@
 
         # parameters #
             readonly str_rootDistro=`lsb_release -i -s`                                                 # Linux distro name
-            declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n2`)     # all kernels       # NOTE: create boot menu entries for first two kernels.
-                                                                                                        #                           any more is overkill!
-            str_rootKernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`                   # latest kernel
-            readonly str_rootKernel=${str_rootKernel: 1}
+            declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n2`)     # all kernels       # NOTE: create boot menu entries for first two kernels.                        any more is overkill!
+            #str_rootKernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`                   # latest kernel
+            #readonly str_rootKernel=${str_rootKernel: 1}
             readonly str_rootDisk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
             readonly str_rootUUID=`blkid -s UUID | grep $str_rootDisk | cut -d '"' -f2`
             str_rootFSTYPE=`blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2`
@@ -453,6 +476,7 @@
             echo -e "$0: '$""str_oldFile1'\t\t= $str_oldFile1"
             echo -e "$0: '$""str_logFile1'\t\t= $str_logFile1"
             echo -e "$0: '$""{#arr_IOMMU_VGA_VFIO[@]}'\t\t= ${#arr_IOMMU_VGA_VFIO[@]}"
+            echo
 
             # create logfile #
             if [[ -z $str_logFile1 ]]; then
@@ -469,71 +493,78 @@
                 cp $str_inFile1 $str_outFile1
             fi
 
-        # parse list of VGA IOMMU groups, output to file #
-            for str_IOMMU in ${arr_IOMMU_VGA_VFIO[@]}; do
-
-                # reset parameters #
-                    declare -a arr_GRUB_title
-                    str_driver_VFIO_thisList=""
-                    str_HWID_VFIO_thisList=""
-                    str_GRUB_CMDLINE=""
-
-                # find device name of first found VGA device #
+            # save the index of each device of each VFIO VGA IOMMU group #
+                for str_IOMMU_VFIO in ${arr_IOMMU_VFIO[@]}; do
                     for (( int_i=0 ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do
-                        str_thisIOMMU=${arr_IOMMU_sum[$int_i]}arr_deviceName_sum
-                        str_thisDeviceType=`echo ${arr_deviceType_sum[$int_i]} | tr '[:lower:]' '[:upper:]'`
-                        str_thisDeviceName=${arr_deviceName_sum[$int_i]}
-                        str_thisDriver=${arr_driver_sum[$int_i]}
-                        str_thisHWID=${arr_HWID_sum[$int_i]}
+                        if [[ $str_IOMMU_VFIO == ${arr_IOMMU_sum[$int_i]} ]]; then
+                            arr_IOMMU_VFIO_temp+=($int_i)
+                        fi
+                    done
+                done
 
-                        # match IOMMU ID #
-                        if [[ $str_thisIOMMU == $str_IOMMU ]]; then
+            # parse list of VGA IOMMU groups, output to file #
+                for str_IOMMU_VGA_VFIO in ${arr_IOMMU_VGA_VFIO[@]}; do
 
-                            # false match device type, reset #
-                            if [[ $str_thisDeviceType != *"VGA"* && $str_thisDeviceType != *"GRAPHICS"* ]]; then
-                                str_thisDeviceName="N/A"
-                            fi
+                    # reset parameters #
+                        declare -a arr_GRUB_title
+                        declare -a arr_IOMMU_VFIO_temp
+                        str_deviceName="N/A"
+                        str_driver_VFIO_thisList=""
+                        str_driver_VFIO_thisList=""
+                        str_GRUB_CMDLINE=""
+                        str_thisIOMMU=
+
+                    # for (( int_i=0 ; int_i<${#arr_IOMMU_sum[@]} ; int_i++ )); do                # this is working, I get device names properly
+                    for (( int_i=0 ; int_i<${#arr_IOMMU_VFIO_temp[@]} ; int_i++ )); do        # this isn't. it should tho...
+
+                        # parameters #
+                            str_IOMMU=${arr_IOMMU_sum[$int_i]}
+                            str_deviceType=`echo ${arr_deviceType_sum[$int_i]} | tr '[:lower:]' '[:upper:]'`
+                            str_driver=${arr_driver_sum[$int_i]}
+                            str_HWID=${arr_HWID_sum[$int_i]}
+
+                        # false match IOMMU, add to list #
+                        if [[ $str_IOMMU != $str_IOMMU_VGA_VFIO ]]; then
+                            str_driver_VFIO_thisList+=$str_driver","
+                            str_HWID_VFIO_thisList+=$str_HWID","
                         else
-                            str_driver_VFIO_thisList+=$str_thisDriver","
-                            str_HWID_VFIO_thisList+=$str_thisHWID","
+                            # match device type #
+                            if [[ $str_deviceType == *"VGA"* || $str_deviceType == *"GRAPHICS"* ]]; then
+                                str_thisIOMMU=$str_IOMMU_VGA_VFIO
+                                str_deviceName=${arr_deviceName_sum[$int_i]}
+                            fi
                         fi
                     done
 
-                # change parameters #
-                    str_driver_VFIO_thisList+=$str_driver_VFIO_list
-                    str_HWID_VFIO_thisList+=$str_HWID_VFIO_list
-
-                    # remove last separator #
-                        if [[ ${str_driver_VFIO_thisList: -1} == "," ]]; then
-                            str_driver_VFIO_thisList=${str_driver_VFIO_thisList::-1}
-                        fi
-
-                        if [[ ${str_HWID_VFIO_thisList: -1} == "," ]]; then
-                            str_HWID_VFIO_thisList=${str_HWID_VFIO_thisList::-1}
-                        fi
-
                 # update GRUB title with kernel(s) #
                     if [[ $str_IGPU_deviceName == "" ]]; then
-                        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO, w/o IOMMU '$str_IOMMU', w/ boot VGA '$str_IGPU_deviceName')"
+                        #str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO, w/o IOMMU '$str_thisIOMMU', w/ boot VGA '$str_IGPU_deviceName')"
 
-                        for $str_rootKernel in ${arr_rootKernel[@]}; do
-                            arr_GRUB_title+=("`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO, w/o IOMMU '$str_IOMMU', w/ boot VGA '$str_IGPU_deviceName')")
+                        for str_thisRootKernel in ${arr_rootKernel[@]}; do
+                            arr_GRUB_title+=("`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$str_thisIOMMU', w/ boot VGA '$str_IGPU_deviceName')")
                         done
                     else
-                        str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO, w/o IOMMU '$str_IOMMU', w/ boot VGA '$str_thisDeviceName')"
+                        #str_GRUB_title="`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO, w/o IOMMU '$str_thisIOMMU', w/ boot VGA '$str_deviceName')"
 
-                        for $str_rootKernel in ${arr_rootKernel[@]}; do
-                            arr_GRUB_title+=("`lsb_release -i -s` `uname -o`, with `uname` $str_rootKernel (VFIO, w/o IOMMU '$str_IOMMU', w/ boot VGA '$str_thisDeviceName')")
+                        for str_thisRootKernel in ${arr_rootKernel[@]}; do
+                            arr_GRUB_title+=("`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$str_thisIOMMU', w/ boot VGA '$str_deviceName')")
                         done
                     fi
 
                 # Write to file #
                     # new parameters #
-                        str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_driver_VFIO_thisList vfio_pci.ids=$str_HWID_VFIO_thisList"
+                        str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=${str_driver_VFIO_thisList}${str_driver_VFIO_list} vfio_pci.ids=${str_HWID_VFIO_thisList}${str_HWID_VFIO_list}"
 
+                        echo -e "$0: '$""str_thisIOMMU'\t\t= $str_thisIOMMU"
+                        echo
                         echo -e "$0: '$""str_driver_VFIO_thisList'\t\t= $str_driver_VFIO_thisList"
+                        echo
                         echo -e "$0: '$""str_HWID_VFIO_thisList'\t\t= $str_HWID_VFIO_thisList"
-                        echo -e "$0: '$""str_GRUB_CMDLINE'\t\t= $str_GRUB_CMDLINE"
+                        echo
+                        #echo -e "$0: '$""str_GRUB_CMDLINE'\t\t= $str_GRUB_CMDLINE"
+                        #echo
+                        echo -e "$0: '$""str_deviceName'\t\t= $str_deviceName"
+                        echo
 
                     ## /etc/grub.d/proxifiedScripts/custom ##
                         if [[ ${#arr_GRUB_title[@]} -gt 1 ]]; then
@@ -549,13 +580,14 @@
                                     str_output6="    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
                                     str_output7="    initrd  /boot/initrd.img-$str_rootKernel"
 
-                                    echo -e "$0: '$""str_output1'\t\t= $str_output1"
-                                    echo -e "$0: '$""str_output2'\t\t= $str_output2"
-                                    echo -e "$0: '$""str_output3'\t\t= $str_output3"
-                                    echo -e "$0: '$""str_output4'\t\t= $str_output4"
-                                    echo -e "$0: '$""str_output5'\t\t= $str_output5"
-                                    echo -e "$0: '$""str_output6'\t\t= $str_output6"
-                                    echo -e "$0: '$""str_output7'\t\t= $str_output7"
+                                    # echo -e "$0: '$""str_output1'\t\t= $str_output1"
+                                    # echo -e "$0: '$""str_output2'\t\t= $str_output2"
+                                    # echo -e "$0: '$""str_output3'\t\t= $str_output3"
+                                    # echo -e "$0: '$""str_output4'\t\t= $str_output4"
+                                    # echo -e "$0: '$""str_output5'\t\t= $str_output5"
+                                    # echo -e "$0: '$""str_output6'\t\t= $str_output6"
+                                    # echo -e "$0: '$""str_output7'\t\t= $str_output7"
+                                    # echo
 
                                 # WriteToFile     # call function
 
@@ -613,13 +645,13 @@
                                 str_output6="    linux   /boot/vmlinuz-$str_rootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
                                 str_output7="    initrd  /boot/initrd.img-$str_rootKernel"
 
-                                echo -e "$0: '$""str_output1'\t\t= $str_output1"
-                                echo -e "$0: '$""str_output2'\t\t= $str_output2"
-                                echo -e "$0: '$""str_output3'\t\t= $str_output3"
-                                echo -e "$0: '$""str_output4'\t\t= $str_output4"
-                                echo -e "$0: '$""str_output5'\t\t= $str_output5"
-                                echo -e "$0: '$""str_output6'\t\t= $str_output6"
-                                echo -e "$0: '$""str_output7'\t\t= $str_output7"
+                                # echo -e "$0: '$""str_output1'\t\t= $str_output1"
+                                # echo -e "$0: '$""str_output2'\t\t= $str_output2"
+                                # echo -e "$0: '$""str_output3'\t\t= $str_output3"
+                                # echo -e "$0: '$""str_output4'\t\t= $str_output4"
+                                # echo -e "$0: '$""str_output5'\t\t= $str_output5"
+                                # echo -e "$0: '$""str_output6'\t\t= $str_output6"
+                                # echo -e "$0: '$""str_output7'\t\t= $str_output7"
 
                             # WriteToFile         # call function
 
