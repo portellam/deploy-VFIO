@@ -188,16 +188,22 @@
         # generate output for system files #
             for str_IOMMU in ${arr_IOMMU_VFIO[@]}; do
                 for (( int_IOMMU=0 ; int_IOMMU<${#arr_devIndex_sum[@]} ; int_IOMMU++ )); do
-                    declare -i int_index=${arr_devIndex_sum[$int_IOMMU]}
+                    int_index=${arr_devIndex_sum[$int_IOMMU]}
+
+                    echo -e "$0: '$""str_IOMMU'= $str_IOMMU"
+                    echo -e "$0: \t'$""int_IOMMU'= $int_IOMMU"
 
                     # match IOMMU #
-                        if [[ "$int_IOMMU" == $str_IOMMU ]]; then
-                            arr_driver_VFIO+=(${arr_devDriver_sum[$int_index]})
+                        if [[ "$int_IOMMU" == "$str_IOMMU" ]]; then
+                            arr_driver_VFIO+=("${arr_devDriver_sum[$int_index]}")
                             str_driver_VFIO_list+=${arr_devDriver_sum[$int_index]}","
                             str_HWID_VFIO_list+=${arr_devHWID_sum[$int_index]}","
+                            break
                         fi
                 done
             done
+
+            exit 0
 
         # debug prompt #
             # uncomment lines below #
@@ -344,7 +350,7 @@
                     str_IOMMU=
 
                 for (( int_IOMMU=0 ; int_IOMMU<${#arr_devIndex_sum[@]} ; int_IOMMU++ )); do
-                    declare -i int_index=${arr_devIndex_sum[$int_IOMMU]}
+                    int_index=${arr_devIndex_sum[$int_IOMMU]}
 
                     # false match IOMMU #
                         if [[ "$int_IOMMU" != $str_IOMMU ]]; then
@@ -575,16 +581,16 @@
                 str_inFile3=`find . -name *etc_initramfs-tools_modules`
                 str_inFile4=`find . -name *etc_modprobe.d_pci-blacklists.conf`
                 str_inFile5=`find . -name *etc_modprobe.d_vfio.conf`
-                str_outFile1="/etc/default/grub"
-                str_outFile2="/etc/modules"
-                str_outFile3="/etc/initramfs-tools/modules"
-                str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
-                str_outFile5="/etc/modprobe.d/vfio.conf"
-                # str_outFile1="grub.log"
-                # str_outFile2="modules.log"
-                # str_outFile3="initramfs_tools_modules.log"
-                # str_outFile4="pci-blacklists.conf.log"
-                # str_outFile5="vfio.conf.log"
+                # str_outFile1="/etc/default/grub"
+                # str_outFile2="/etc/modules"
+                # str_outFile3="/etc/initramfs-tools/modules"
+                # str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
+                # str_outFile5="/etc/modprobe.d/vfio.conf"
+                str_outFile1="grub.log"
+                str_outFile2="modules.log"
+                str_outFile3="initramfs_tools_modules.log"
+                str_outFile4="pci-blacklists.conf.log"
+                str_outFile5="vfio.conf.log"
                 str_oldFile1=$str_outFile1".old"
                 str_oldFile2=$str_outFile2".old"
                 str_oldFile3=$str_outFile3".old"
@@ -600,13 +606,14 @@
         # generate output for system files #
             for str_IOMMU in ${arr_IOMMU_VGA_VFIO[@]}; do
                 for (( int_IOMMU=0 ; int_IOMMU<${#arr_devIndex_sum[@]} ; int_IOMMU++ )); do
-                    declare -i int_index=${arr_devIndex_sum[$int_IOMMU]}
+                    int_index=${arr_devIndex_sum[$int_IOMMU]}
 
                     # match IOMMU #
                         if [[ "$int_IOMMU" == $str_IOMMU ]]; then
                             arr_driver_VFIO_VGA+=(${arr_devDriver_sum[$int_index]})
                             str_driver_VFIO_VGA_list+=${arr_devDriver_sum[$int_index]}","
                             str_HWID_VFIO_VGA_list+=${arr_devHWID_sum[$int_index]}","
+                            break
                         fi
                 done
             done

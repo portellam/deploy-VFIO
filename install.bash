@@ -63,41 +63,47 @@
     fi
 
 ## install required packages ##
-    echo -e "$0: Linux distribution found: `lsb_release -i -s`\n$0: Checking for updates...\n"
+    function CheckDistro
+    {
 
-    # Arch
-    if [[ `lsb_release -i -s | grep -Ei "arch"` ]]; then
-        sudo pacman -Syu && sudo pacman -Sy edk2-ovmf lgit ibvirt qemu-desktop virt-manager zramswap
-        # NOTE: find same packages from Debian
+        echo -e "$0: Linux distribution found: `lsb_release -i -s`\n$0: Checking for updates...\n"
 
-    # Debian/Ubuntu
-    elif [[ `lsb_release -i -s | grep -Ei "debian|ubuntu"` ]]; then
-        sudo apt update && sudo apt full-upgrade -y && sudo apt install -y git libvirt0 qemu virt-manager zram-tools
+        # Arch
+        if [[ `lsb_release -i -s | grep -Ei "arch"` ]]; then
+            sudo pacman -Syu && sudo pacman -Sy edk2-ovmf lgit ibvirt qemu-desktop virt-manager zramswap
+            # NOTE: find same packages from Debian
 
-    # Fedora/Redhat
-    elif [[ `lsb_release -i -s | grep -Ei "fedora|redhat"` ]]; then
-        sudo dnf check-update && sudo dnf upgrade -y && sudo dnf install -y @virtualization git zram-generator zram-generator-defaults
-        # NOTE: find same packages from Debian    # is there a virtualization metapackage for Debian, Arch?
+        # Debian/Ubuntu
+        elif [[ `lsb_release -i -s | grep -Ei "debian|ubuntu"` ]]; then
+            sudo apt update && sudo apt full-upgrade -y && sudo apt install -y git libvirt0 qemu virt-manager zram-tools
 
-    else
-        echo -e "Checking for updates... Failed.\n$0: Linux distibution is not recognized for or compatible with 'deploy-VFIO-setup'."
-        str_output1="Continue? [Y/n]: "
-        ReadInput $str_input1
+        # Fedora/Redhat
+        elif [[ `lsb_release -i -s | grep -Ei "fedora|redhat"` ]]; then
+            sudo dnf check-update && sudo dnf upgrade -y && sudo dnf install -y @virtualization git zram-generator zram-generator-defaults
+            # NOTE: find same packages from Debian    # is there a virtualization metapackage for Debian, Arch?
 
-        if [[ $str_input1 == "Y" ]]; then
-            echo -e "$0: Continuing."
+        else
+            echo -e "Checking for updates... Failed.\n$0: Linux distibution is not recognized for or compatible with 'deploy-VFIO-setup'."
+            str_output1="Continue? [Y/n]: "
+            ReadInput $str_input1
+
+            if [[ $str_input1 == "Y" ]]; then
+                echo -e "$0: Continuing."
+            fi
+
+            if [[ $str_input1 == "N" ]]; then
+                echo -e "$0: Exiting."
+                IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
+                exit 0
+            fi
+
+            # NOTE: test!
         fi
 
-        if [[ $str_input1 == "N" ]]; then
-            echo -e "$0: Exiting."
-            IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
-            exit 0
-        fi
+        echo
+    }
 
-        # NOTE: test!
-    fi
-
-    echo
+    CheckDistro       # call function
 
 # parse and execute functions #
     str_output1=""
