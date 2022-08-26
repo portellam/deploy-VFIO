@@ -199,18 +199,13 @@
                     str_thisDevDriver=${arr_devDriver_sum[$int_index]}
                     str_thisDevHWID=${arr_devHWID_sum[$int_index]}
 
-                    echo -e "$0: '$""int_IOMMU'\t= '$int_IOMMU'"
-                    echo -e "$0: '$""int_thisIOMMU'\t= '$int_thisIOMMU'"
-                    echo -e "$0: '$""str_thisDevDriver'\t= $str_thisDevDriver"
-                    echo -e "$0: '$""str_thisDevHWID'\t= $str_thisDevHWID"
-
                     # match IOMMU #
                         if [[ "$int_thisIOMMU" == "$int_IOMMU" ]]; then
-                            str_HWID_VFIO_list=$str_HWID_VFIO_list"$str_thisDevHWID,"
+                            str_HWID_VFIO_list+="$str_thisDevHWID,"
 
                             if [[ $str_thisDevDriver != "" || $str_thisDevDriver != "NULL" ]]; then
                                 arr_driver_VFIO+=("$str_thisDevDriver")
-                                str_driver_VFIO_list=$str_driver_VFIO_list"$str_thisDevDriver,"
+                                str_driver_VFIO_list+="$str_thisDevDriver,"
                             fi
 
                             break
@@ -229,10 +224,10 @@
                 # for (( i=0 ; i<${#arr_devHWID_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_devHWID_sum[$i]}'\t= ${arr_devHWID_sum[$i]}"; done && echo
                 # for (( i=0 ; i<${#arr_devName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_devName_sum[$i]}'\t= ${arr_devName_sum[$i]}"; done && echo
                 # for (( i=0 ; i<${#arr_driver_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_driver_VFIO[$i]}'\t= ${arr_driver_VFIO[$i]}"; done && echo
-                # for (( i=0 ; i<${#arr_IOMMU_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VFIO[$i]}'\t= ${arr_IOMMU_VFIO[$i]}"; done && echo
-                # for (( i=0 ; i<${#arr_IOMMU_host[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_host[$i]}'\t= ${arr_IOMMU_host[$i]}"; done && echo
-                # for (( i=0 ; i<${#arr_IOMMU_VGA_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VGA_VFIO[$i]}'\t= ${arr_IOMMU_VGA_VFIO[$i]}"; done && echo
-                # for (( i=0 ; i<${#arr_IOMMU_VGA_host[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VGA_host[$i]}'\t= ${arr_IOMMU_VGA_host[$i]}"; done && echo
+                for (( i=0 ; i<${#arr_IOMMU_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VFIO[$i]}'\t= ${arr_IOMMU_VFIO[$i]}"; done && echo
+                for (( i=0 ; i<${#arr_IOMMU_host[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_host[$i]}'\t= ${arr_IOMMU_host[$i]}"; done && echo
+                for (( i=0 ; i<${#arr_IOMMU_VGA_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VGA_VFIO[$i]}'\t= ${arr_IOMMU_VGA_VFIO[$i]}"; done && echo
+                for (( i=0 ; i<${#arr_IOMMU_VGA_host[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VGA_host[$i]}'\t= ${arr_IOMMU_VGA_host[$i]}"; done && echo
 
 
                 echo -e "$0: '$""{#arr_devIndex_sum[@]}'\t= ${#arr_devIndex_sum[@]}"
@@ -252,7 +247,7 @@
                 exit 0
             }
 
-        DebugOutput    # uncomment to debug here
+        # DebugOutput    # uncomment to debug here
     }
 
 # Multi boot setup #
@@ -590,11 +585,17 @@
 
         # parameters #
             # files #
-                str_inFile1=`find . -name *etc_default_grub`
-                str_inFile2=`find . -name *etc_modules`
-                str_inFile3=`find . -name *etc_initramfs-tools_modules`
-                str_inFile4=`find . -name *etc_modprobe.d_pci-blacklists.conf`
-                str_inFile5=`find . -name *etc_modprobe.d_vfio.conf`
+                cd `pwd`"/files"
+                str_inFile1="etc_default_grub"
+                str_inFile2="etc_modules"
+                str_inFile3="etc_initramfs-tools_modules"
+                str_inFile4="etc_modprobe.d_pci-blacklists.conf"
+                str_inFile5="etc_modprobe.d_vfio.conf"
+                # str_inFile1=`find . -name *etc_default_grub`
+                # str_inFile2=`find . -name *etc_modules`
+                # str_inFile3=`find . -name *etc_initramfs-tools_modules`
+                # str_inFile4=`find . -name *etc_modprobe.d_pci-blacklists.conf`
+                # str_inFile5=`find . -name *etc_modprobe.d_vfio.conf`
                 # str_outFile1="/etc/default/grub"
                 # str_outFile2="/etc/modules"
                 # str_outFile3="/etc/initramfs-tools/modules"
@@ -617,20 +618,36 @@
                 if [[ -e $str_logFile1 ]]; then rm $str_logFile1; fi
                 if [[ -e $str_logFile5 ]]; then rm $str_logFile5; fi
 
+        echo -e "$0: '$""{#arr_IOMMU_VGA_VFIO[@]}'\t= ${#arr_IOMMU_VGA_VFIO[@]}"
+        echo -e "$0: '$""{#arr_devIndex_sum[@]}'\t= ${#arr_devIndex_sum[@]}"
+
         # generate output for system files #
             for int_IOMMU in ${arr_IOMMU_VGA_VFIO[@]}; do
                 for (( int_index=0 ; int_index<${#arr_devIndex_sum[@]} ; int_index++ )); do
-                    int_thisIOMMU=${arr_devIndex_sum[$int_IOMMU]}
+                    int_thisIOMMU=${arr_devIOMMU_sum[$int_index]}
+                    str_thisDevDriver=${arr_devDriver_sum[$int_index]}
+                    str_thisDevHWID=${arr_devHWID_sum[$int_index]}
+
+                    echo -e "$0: '$""{int_IOMMU}'\t= ${int_IOMMU}"
+                    echo -e "$0: '$""{int_thisIOMMU}'\t= ${int_thisIOMMU}"
+                    echo -e "$0: '$""{str_thisDevDriver}'\t= ${int_thisIOMMU}"
+                    echo -e "$0: '$""{str_thisDevHWID}'\t= ${int_thisIOMMU}"
 
                     # match IOMMU #
-                        if [[ "$int_thisIOMMU" == $int_IOMMU ]]; then
-                            arr_driver_VFIO_VGA+=(${arr_devDriver_sum[$int_index]})
-                            str_driver_VFIO_VGA_list+=${arr_devDriver_sum[$int_index]}","
-                            str_HWID_VFIO_VGA_list+=${arr_devHWID_sum[$int_index]}","
-                            break
+                        if [[ "$int_thisIOMMU" == "$int_IOMMU" ]]; then
+                            str_HWID_VFIO_VGA_list+="$str_thisDevHWID,"
+
+                            if [[ $str_thisDevDriver != "" || $str_thisDevDriver != "NULL" ]]; then
+                                arr_driver_VFIO_VGA+=("$str_thisDevDriver")
+                                str_driver_VFIO_VGA_list+="$str_thisDevDriver,"
+                            fi
+
+                            # break
                         fi
                 done
             done
+
+            exit 0
 
         # VFIO soft dependencies #
             for str_driver in ${arr_driver_VFIO_VGA[@]}; do
