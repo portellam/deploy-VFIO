@@ -103,7 +103,7 @@
         echo
     }
 
-    CheckDistro       # call function
+    # CheckDistro       # call function
 
 # parse and execute functions #
     str_output1=""
