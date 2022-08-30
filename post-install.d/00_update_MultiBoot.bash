@@ -6,8 +6,22 @@
 
 # check if sudo/root #
     if [[ `whoami` != "root" ]]; then
-        echo -e "$0: WARNING: Script must be run as Sudo or Root! Exiting."
+        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $0'\n\tor\n\t'su' and 'bash $0'.\n$0: Exiting."
         exit 0
+    fi
+
+# check if in correct dir #
+    str_pwd=`pwd`
+
+    if [[ `echo ${str_pwd##*/}` != "post-install.d" ]]; then
+        if [[ -e `find . -name post-install.d` ]]; then
+            # echo -e "$0: Script located the correct working directory."
+            cd `find . -name post-install.d`
+        else
+            echo -e "$0: WARNING: Script cannot locate the correct working directory. Exiting."
+        fi
+    # else
+    #     echo -e "$0: Script is in the correct working directory."
     fi
 
 echo -en "$0: Updating Multi-boot setup... "
@@ -17,6 +31,11 @@ echo -en "$0: Updating Multi-boot setup... "
     str_rootKernel=${str_rootKernel: 1}
 
 # input files #
+    readonly str_dir1=`find .. -name files`
+    if [[ -e $str_dir1 ]]; then
+        cd $str_dir1
+    fi
+
     str_inFile6=`find . -name *etc_grub.d_proxifiedScripts_custom`
     str_logFile6=`find . -name *custom_grub.log*`
 

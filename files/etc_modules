@@ -6,7 +6,7 @@
 #
 # This file contains the names of kernel modules that should be loaded
 # at boot time, one per line. Lines beginning with \"#\" are ignored.
-# 
+#
 # Run lspci to view hardware information.
 # You must run update-initramfs(8) to effect this change.
 #
