@@ -6,8 +6,22 @@
 
 # check if sudo/root #
     if [[ `whoami` != "root" ]]; then
-        echo -e "$0: WARNING: Script must be run as Sudo or Root! Exiting."
+        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $0'\n\tor\n\t'su' and 'bash $0'.\n$0: Exiting."
         exit 0
+    fi
+
+# check if in correct dir #
+    str_pwd=`pwd`
+
+    if [[ `echo ${str_pwd##*/}` != "install.d" ]]; then
+        if [[ -e `find . -name install.d` ]]; then
+            echo -e "$0: Script located the correct working directory."
+            cd `find . -name install.d`
+        else
+            echo -e "$0: WARNING: Script cannot locate the correct working directory. Exiting."
+        fi
+    else
+        echo -e "$0: Script is in the correct working directory."
     fi
 
 # NOTE: necessary for newline preservation in arrays and files #
@@ -310,6 +324,11 @@
             fi
 
             # files #
+                readonly str_dir1=`find .. -name files`
+                if [[ -e $str_dir1 ]]; then
+                    cd $str_dir1
+                fi
+
                 readonly str_inFile1=`find . -name *etc_grub.d_proxifiedScripts_custom`
                 readonly str_inFile1b=`find . -name *custom_grub_template`
                 # readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"                # DEBUG
@@ -585,17 +604,22 @@
 
         # parameters #
             # files #
-                cd `pwd`"/files"
-                str_inFile1="etc_default_grub"
-                str_inFile2="etc_modules"
-                str_inFile3="etc_initramfs-tools_modules"
-                str_inFile4="etc_modprobe.d_pci-blacklists.conf"
-                str_inFile5="etc_modprobe.d_vfio.conf"
-                # str_inFile1=`find . -name *etc_default_grub`
-                # str_inFile2=`find . -name *etc_modules`
-                # str_inFile3=`find . -name *etc_initramfs-tools_modules`
-                # str_inFile4=`find . -name *etc_modprobe.d_pci-blacklists.conf`
-                # str_inFile5=`find . -name *etc_modprobe.d_vfio.conf`
+                readonly str_dir1=`find .. -name files`
+                if [[ -e $str_dir1 ]]; then
+                    cd $str_dir1
+                fi
+
+                str_inFile1=`find . -name *etc_default_grub`
+                str_inFile2=`find . -name *etc_modules`
+                str_inFile3=`find . -name *etc_initramfs-tools_modules`
+                str_inFile4=`find . -name *etc_modprobe.d_pci-blacklists.conf`
+                str_inFile5=`find . -name *etc_modprobe.d_vfio.conf`
+                echo -e "$0: '$""{str_inFile1}'\t= ${str_inFile1}"
+                echo -e "$0: '$""{str_inFile2}'\t= ${str_inFile2}"
+                echo -e "$0: '$""{str_inFile3}'\t= ${str_inFile3}"
+                echo -e "$0: '$""{str_inFile4}'\t= ${str_inFile4}"
+                echo -e "$0: '$""{str_inFile5}'\t= ${str_inFile5}"
+
                 # str_outFile1="/etc/default/grub"
                 # str_outFile2="/etc/modules"
                 # str_outFile3="/etc/initramfs-tools/modules"
@@ -612,7 +636,7 @@
                 str_oldFile4=$str_outFile4".old"
                 str_oldFile5=$str_outFile5".old"
                 str_logFile1=$(pwd)"/grub.log"
-                # none for file2-file5
+                # none for file2-files5
 
             # clear files #     # NOTE: do NOT delete GRUB !!!
                 if [[ -e $str_logFile1 ]]; then rm $str_logFile1; fi
@@ -647,7 +671,7 @@
                 done
             done
 
-            exit 0
+            # exit 0
 
         # VFIO soft dependencies #
             for str_driver in ${arr_driver_VFIO_VGA[@]}; do
@@ -898,8 +922,8 @@
     if [[ $bool_dev_isVFIO == true && $bool_missingFiles == false ]]; then
         echo -en "$0: Existing VFIO setup detected. "
 
-        if [[ -e `find . -name *uninstall.bash*` ]]; then
-            echo -e "To continue, execute `find . -name *uninstall.bash*` and reboot system."
+        if [[ -e `find .. -name *uninstall.bash*` ]]; then
+            echo -e "To continue, execute `find .. -name *uninstall.bash*` and reboot system."
         else
             echo -e "To continue, uninstall setup and reboot system."
         fi
