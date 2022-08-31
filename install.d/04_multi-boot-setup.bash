@@ -4,6 +4,12 @@
 # Author(s):    Alex Portell <github.com/portellam>
 #
 
+#
+# TO-DO:
+#   -multi-boot vfio works on all pci except usb pci, why?
+#
+#
+
 # check if sudo/root #
     if [[ `whoami` != "root" ]]; then
         echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $0'\n\tor\n\t'su' and 'bash $0'.\n$0: Exiting."
