@@ -305,10 +305,12 @@
 
                 readonly str_inFile1=`find . -name *etc_grub.d_proxifiedScripts_custom`
                 readonly str_inFile1b=`find . -name *custom_grub_template`
-                # readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"
 
-                # DEBUG #
-                readonly str_outFile1="custom.log"
+                # comment to debug here #
+                readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"
+
+                # uncomment to debug here #
+                # readonly str_outFile1="custom.log"
                 readonly str_oldFile1=$str_outFile1".old"
                 readonly str_logFile1=$(pwd)"/custom-grub.log"
 
