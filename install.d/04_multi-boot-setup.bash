@@ -566,7 +566,6 @@ echo -e "$0: 'Multi-boot' is a flexible VFIO setup, adding multiple GRUB boot me
                 echo
                 MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_dev_isVFIO
                 echo
-                exit 0              # debug
                 sudo update-grub
                 sudo update-initramfs -u -k all
                 echo -e "\n$0: Review changes:\n\t'$str_outFile1'"
