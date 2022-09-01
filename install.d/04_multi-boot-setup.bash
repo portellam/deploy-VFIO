@@ -4,12 +4,6 @@
 # Author(s):    Alex Portell <github.com/portellam>
 #
 
-#
-# TO-DO:
-#   -multi-boot vfio works on all pci except usb pci, why?
-#
-#
-
 # check if sudo/root #
     if [[ `whoami` != "root" ]]; then
         echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $0'\n\tor\n\t'su' and 'bash $0'.\n$0: Exiting."
@@ -95,7 +89,7 @@
 
         # Parse IOMMU #
             # shell option #
-                shopt -s nullglob
+            shopt -s nullglob
 
             # parameters #
                 declare -a arr_IOMMU_sum=(`find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V`)
@@ -105,7 +99,10 @@
                 declare -a arr_devName_sum=()
                 declare -a arr_devVendor_sum=()
                 declare -a arr_IOMMU_VFIO_VGA=()
-                declare -i int_index=0
+                declare -i int_i=0
+                str_devDriver_host_list=""
+                str_devDriver_VFIO_list=""
+                str_devHWID_VFIO_list=""
 
             # parse IOMMU groups #
                 for str_line1 in $(find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V); do
@@ -117,7 +114,7 @@
                         str_input1=""
 
                     # prompt #
-                        echo -e "\n\tIOMMU :\t\t${int_IOMMU##*/}"
+                    echo -e "\n\tIOMMU :\t\t${int_IOMMU##*/}"
 
                     # parse devices #
                         for str_line2 in $str_line1/devices/*; do
@@ -155,22 +152,22 @@
                                 fi
 
                             # match type #
-                                if [[ $str_devType == *"VGA"* || $str_devType == *"GRAPHICS"* ]]; then
-                                    bool_isVGA=true
-                                fi
+                            if [[ $str_devType == *"VGA"* || $str_devType == *"GRAPHICS"* ]]; then
+                                bool_isVGA=true
+                            fi
 
                             # match vfio, set boolean #
-                                if [[ $str_devDriver == *"vfio-pci"* ]]; then
-                                    bool_isVFIO=true
-                                fi
+                            if [[ $str_devDriver == *"vfio-pci"* ]]; then
+                                bool_isVFIO=true
+                            fi
 
-                            # match problem driver #
-                                if [[ $str_devDriver == *"snd_hda_intel"* ]]; then
-                                    str_devDriver="N/A"
-                                fi
+                            # # match problem driver #
+                            # if [[ $str_devDriver == *"snd_hda_intel"* ]]; then
+                            #     str_devDriver="N/A"
+                            # fi
 
                             # lists #
-                                arr_devIndex_sum+=("$int_index")
+                                arr_devIndex_sum+=("$int_i")
                                 arr_devIOMMU_sum+=("$int_thisIOMMU")
                                 arr_devHWID_sum+=("$str_devHWID")
                                 arr_devName_sum+=("$str_devName")
@@ -179,22 +176,22 @@
                                 arr_devDriver_sum+=("$str_devDriver")
 
                             # update parameters #
-                                str_devType=`echo $str_devType | tr '[:lower:]' '[:upper:]'`
+                            str_devType=`echo $str_devType | tr '[:lower:]' '[:upper:]'`
 
                             # update parameters #
-                                str_devBusID=`echo $str_devBusID | cut -d ':' -f1`
+                            str_devBusID=`echo $str_devBusID | cut -d ':' -f1`
 
                             # checks #
-                                # set flag for external groups #
-                                if [[ ${str_devBusID:1} != 0 || ${str_devBusID::2} -gt 0 ]]; then
-                                    bool_isExt=true
-                                else
-                                    if [[ $bool_isVGA == true ]]; then
-                                        readonly str_IGPU_devFullName="$str_devVendor $str_devName"
-                                    fi
+                            # set flag for external groups #
+                            if [[ ${str_devBusID:1} != 0 || ${str_devBusID::2} -gt 0 ]]; then
+                                bool_isExt=true
+                            else
+                                if [[ $bool_isVGA == true ]]; then
+                                    readonly str_IGPU_devFullName="$str_devVendor $str_devName"
                                 fi
+                            fi
 
-                            ((int_index++))
+                            ((int_i++))
                         done
 
                     # prompt #
@@ -230,22 +227,37 @@
                         fi
                 done
 
-            # generate output for system files #
-                for int_IOMMU in ${arr_IOMMU_VFIO[@]}; do
-                    for (( int_index=0 ; int_index<${#arr_devIndex_sum[@]} ; int_index++ )); do
-                        int_thisIOMMU=${arr_devIOMMU_sum[$int_index]}
-                        str_thisDevDriver=${arr_devDriver_sum[$int_index]}
-                        str_thisDevHWID=${arr_devHWID_sum[$int_index]}
+                # ignore matching host drivers for VFIO setup #
+                    # parse host drivers #
+                    for int_IOMMU_host in ${arr_IOMMU_host[@]}; do
+                        for (( int_i=0 ; int_i<${#arr_devIndex_sum[@]} ; int_i++ )); do
+                            int_thisIOMMU=${arr_devIOMMU_sum[$int_i]}
+                            str_thisDevDriver=${arr_devDriver_sum[$int_i]}
 
-                        # match IOMMU #
-                            if [[ "$int_thisIOMMU" == "$int_IOMMU" ]]; then
-                                str_HWID_VFIO_list+="$str_thisDevHWID,"
-
-                                if [[ $str_thisDevDriver != "" || $str_thisDevDriver != "N/A" ]]; then
-                                    arr_driver_VFIO+=("$str_thisDevDriver")
-                                    str_driver_VFIO_list+="$str_thisDevDriver,"
-                                fi
+                            # match IOMMU and valid driver, false match existing element in list #
+                            if [[ "$int_thisIOMMU" == "$int_IOMMU_host" && $str_thisDevDriver != "" && $str_thisDevDriver != "N/A" && $str_devDriver_host_list != *$str_thisDevDriver* ]]; then
+                                str_devDriver_host_list+="$str_thisDevDriver,"
                             fi
+                        done
+                    done
+
+            # generate output for system files #
+                for int_IOMMU_VFIO in ${arr_IOMMU_VFIO[@]}; do
+                    for (( int_i=0 ; int_i<${#arr_devIndex_sum[@]} ; int_i++ )); do
+                        int_thisIOMMU=${arr_devIOMMU_sum[$int_i]}
+                        str_thisDevDriver=${arr_devDriver_sum[$int_i]}
+                        str_thisDevHWID=${arr_devHWID_sum[$int_i]}
+
+                        # match IOMMU and false match existing element in list #
+                        if [[ "$int_thisIOMMU" == "$int_IOMMU_VFIO" && $str_devHWID_VFIO_list != *$str_thisDevHWID* ]]; then
+                            str_devHWID_VFIO_list+="$str_thisDevHWID,"
+
+                            # valid driver and false match existing element in list(s) #
+                            if [[ $str_thisDevDriver != "" && $str_thisDevDriver != "N/A" && $str_devDriver_VFIO_list != *$str_thisDevDriver* && $str_devDriver_VFIO_list != *$str_devDriver_host_list* ]]; then
+                                arr_devDriver_VFIO+=("$str_thisDevDriver")
+                                str_devDriver_VFIO_list+="$str_thisDevDriver,"
+                            fi
+                        fi
                     done
                 done
 
@@ -257,38 +269,39 @@
                     for (( i=0 ; i<${#arr_devIndex_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_devIndex_sum[$i]}'\t= '${arr_devIndex_sum[$i]}'"; done && echo
                     for (( i=0 ; i<${#arr_devIOMMU_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_devIOMMU_sum[$i]}'\t= '${arr_devIOMMU_sum[$i]}'"; done && echo
                     for (( i=0 ; i<${#arr_devDriver_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_devDriver_sum[$i]}'\t= '${arr_devDriver_sum[$i]}'"; done && echo
+                    for (( i=0 ; i<${#arr_devDriver_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_devDriver_VFIO[$i]}'\t= '${arr_devDriver_VFIO[$i]}'"; done && echo
                     for (( i=0 ; i<${#arr_devHWID_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_devHWID_sum[$i]}'\t= '${arr_devHWID_sum[$i]}'"; done && echo
-                    for (( i=0 ; i<${#arr_driver_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_driver_VFIO[$i]}'\t= '${arr_driver_VFIO[$i]}'"; done && echo
                     for (( i=0 ; i<${#arr_devName_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_devName_sum[$i]}'\t= '${arr_devName_sum[$i]}'"; done && echo
                     for (( i=0 ; i<${#arr_devType_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_devType_sum[$i]}'\t= '${arr_devType_sum[$i]}'"; done && echo
                     for (( i=0 ; i<${#arr_devVendor_sum[@]} ; i++ )); do echo -e "$0: '$""{arr_devVendor_sum[$i]}'\t= '${arr_devVendor_sum[$i]}'"; done && echo
-                    for (( i=0 ; i<${#arr_IOMMU_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VFIO[$i]}'\t= '${arr_IOMMU_VFIO[$i]}'"; done && echo
                     for (( i=0 ; i<${#arr_IOMMU_host[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_host[$i]}'\t= '${arr_IOMMU_host[$i]}'"; done && echo
-                    for (( i=0 ; i<${#arr_IOMMU_VFIO_VGA[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VFIO_VGA[$i]}'\t= '${arr_IOMMU_VFIO_VGA[$i]}'"; done && echo
                     for (( i=0 ; i<${#arr_IOMMU_host_VGA[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_host_VGA[$i]}'\t= '${arr_IOMMU_host_VGA[$i]}'"; done && echo
+                    for (( i=0 ; i<${#arr_IOMMU_VFIO[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VFIO[$i]}'\t= '${arr_IOMMU_VFIO[$i]}'"; done && echo
+                    for (( i=0 ; i<${#arr_IOMMU_VFIO_VGA[@]} ; i++ )); do echo -e "$0: '$""{arr_IOMMU_VFIO_VGA[$i]}'\t= '${arr_IOMMU_VFIO_VGA[$i]}'"; done && echo
 
                     echo -e "$0: '$""{#arr_devIndex_sum[@]}'\t= ${#arr_devIndex_sum[@]}"
                     echo -e "$0: '$""{#arr_devIOMMU_sum[@]}'\t= ${#arr_devIOMMU_sum[@]}"
                     echo -e "$0: '$""{#arr_devDriver_sum[@]}'\t= ${#arr_devDriver_sum[@]}"
+                    echo -e "$0: '$""{#arr_devDriver_VFIO[@]}'\t= ${#arr_devDriver_VFIO[@]}"
                     echo -e "$0: '$""{#arr_devHWID_sum[@]}'\t= ${#arr_devHWID_sum[@]}"
-                    echo -e "$0: '$""{#arr_driver_VFIO[@]}'\t= ${#arr_driver_VFIO[@]}"
                     echo -e "$0: '$""{#arr_devName_sum[@]}'\t= ${#arr_devName_sum[@]}"
                     echo -e "$0: '$""{#arr_devType_sum[@]}'\t= ${#arr_devType_sum[@]}"
                     echo -e "$0: '$""{#arr_devVendor_sum[@]}'\t= ${#arr_devVendor_sum[@]}"
-                    echo -e "$0: '$""{#arr_IOMMU_VFIO[@]}'\t= ${#arr_IOMMU_VFIO[@]}"
                     echo -e "$0: '$""{#arr_IOMMU_host[@]}'\t= ${#arr_IOMMU_host[@]}"
-                    echo -e "$0: '$""{#arr_IOMMU_VFIO_VGA[@]}'\t= ${#arr_IOMMU_VFIO_VGA[@]}"
+                    echo -e "$0: '$""{#arr_IOMMU_VFIO[@]}'\t= ${#arr_IOMMU_VFIO[@]}"
                     echo -e "$0: '$""{#arr_IOMMU_host_VGA[@]}'\t= ${#arr_IOMMU_host_VGA[@]}"
-                    echo -e "$0: '$""str_driver_VFIO_list'\t= $str_driver_VFIO_list"
-                    echo -e "$0: '$""str_HWID_VFIO_list'\t= $str_HWID_VFIO_list"
-                    echo -e "$0: '$""str_driver_VFIO_VGA_list'\t= $str_driver_VFIO_VGA_list"
-                    echo -e "$0: '$""str_HWID_VFIO_VGA_list'\t= $str_HWID_VFIO_VGA_list"
+                    echo -e "$0: '$""{#arr_IOMMU_VFIO_VGA[@]}'\t= ${#arr_IOMMU_VFIO_VGA[@]}"
+                    echo -e "$0: '$""str_devDriver_host_list'\t= $str_devDriver_host_list"
+                    echo -e "$0: '$""str_devDriver_VFIO_list'\t= $str_devDriver_VFIO_list"
+                    echo -e "$0: '$""str_devDriver_VFIO_VGA_list'\t= $str_devDriver_VFIO_VGA_list"
+                    echo -e "$0: '$""str_devHWID_VFIO_list'\t= $str_devHWID_VFIO_list"
+                    echo -e "$0: '$""str_devHWID_VFIO_VGA_list'\t= $str_devHWID_VFIO_VGA_list"
 
                     echo -e "\n$0: ========== DEBUG PROMPT =========="
                     exit 0
                 }
 
-            # DebugOutput    # uncomment to debug here
+            DebugOutput    # uncomment to debug here
 
         # parameters #
             readonly str_rootDistro=`lsb_release -i -s`                                                 # Linux distro name
@@ -304,23 +317,23 @@
             fi
 
             # files #
-                readonly str_dir1=`find .. -name files`
-                if [[ -e $str_dir1 ]]; then
-                    cd $str_dir1
-                fi
+            readonly str_dir1=`find .. -name files`
+            if [[ -e $str_dir1 ]]; then
+                cd $str_dir1
+            fi
 
-                readonly str_inFile1=`find . -name *etc_grub.d_proxifiedScripts_custom`
-                readonly str_inFile1b=`find . -name *custom_grub_template`
+            readonly str_inFile1=`find . -name *etc_grub.d_proxifiedScripts_custom`
+            readonly str_inFile1b=`find . -name *custom_grub_template`
 
-                # comment to debug here #
-                readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"
+            # comment to debug here #
+            readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"
 
-                # uncomment to debug here #
-                # readonly str_outFile1="custom.log"
-                readonly str_oldFile1=$str_outFile1".old"
-                readonly str_logFile1=$(pwd)"/custom-grub.log"
+            # uncomment to debug here #
+            # readonly str_outFile1="custom.log"
+            readonly str_oldFile1=$str_outFile1".old"
+            readonly str_logFile1=$(pwd)"/custom-grub.log"
 
-            # DEBUG #
+            # debug prompt #
                 # echo -e "$0: '$""str_IGPU_devFullName'\t\t= $str_IGPU_devFullName"
                 # echo -e "$0: '$""str_rootDistro'\t\t= $str_rootDistro"
                 # echo -e "$0: '$""str_rootKernel'\t\t= $str_rootKernel"
@@ -355,48 +368,48 @@
             for int_IOMMU_VFIO_VGA in ${arr_IOMMU_VFIO_VGA[@]}; do
 
                 # reset parameters #
-                    declare -a arr_GRUB_title=()
-                    str_devFullName_VGA="N/A"
-                    str_driver_VFIO_VGA_list=""
-                    str_HWID_VFIO_VGA_list=""
-                    str_GRUB_CMDLINE=""
+                declare -a arr_GRUB_title=()
+                str_devFullName_VGA="N/A"
+                str_devDriver_VFIO_VGA_list=""
+                str_devHWID_VFIO_VGA_list=""
+                str_GRUB_CMDLINE=""
 
                 for int_IOMMU_VFIO in ${arr_IOMMU_VFIO_VGA[@]}; do
-                    for (( int_index=0 ; int_index<${#arr_devIndex_sum[@]} ; int_index++ )); do
-                        int_thisIOMMU=${arr_devIOMMU_sum[$int_index]}
-                        str_thisDevDriver=${arr_devDriver_sum[$int_index]}
-                        str_thisDevHWID=${arr_devHWID_sum[$int_index]}
-                        str_thisDevName=${arr_devName_sum[$int_index]}
-                        str_thisDevType=`echo ${arr_devType_sum[$int_index]} | tr '[:lower:]' '[:upper:]'`
-                        str_thisDevVendor=${arr_devVendor_sum[$int_index]}
+                    for (( int_i=0 ; int_i<${#arr_devIndex_sum[@]} ; int_i++ )); do
+                        int_thisIOMMU=${arr_devIOMMU_sum[$int_i]}
+                        str_thisDevDriver=${arr_devDriver_sum[$int_i]}
+                        str_thisDevHWID=${arr_devHWID_sum[$int_i]}
+                        str_thisDevName=${arr_devName_sum[$int_i]}
+                        str_thisDevType=`echo ${arr_devType_sum[$int_i]} | tr '[:lower:]' '[:upper:]'`
+                        str_thisDevVendor=${arr_devVendor_sum[$int_i]}
 
                         # match VFIO IOMMU and false match VGA IOMMU #
-                            if [[ $int_thisIOMMU == $int_IOMMU_VFIO && $int_IOMMU_VFIO != $int_IOMMU_VFIO_VGA ]]; then
-                                if [[ $str_HWID_VFIO_list != *$str_thisDevHWID* ]]; then
-                                    str_HWID_VFIO_VGA_list+="$str_thisDevHWID,"
-                                fi
-
-                                if [[ $str_driver_VFIO_list != *$str_thisDevDriver* && $str_thisDevDriver != *"N/A"* ]]; then
-                                    str_driver_VFIO_VGA_list+="$str_thisDevDriver,"
-                                fi
+                        if [[ $int_thisIOMMU == $int_IOMMU_VFIO && $int_IOMMU_VFIO != $int_IOMMU_VFIO_VGA ]]; then
+                            if [[ $str_devHWID_VFIO_list != *$str_thisDevHWID* ]]; then
+                                str_devHWID_VFIO_VGA_list+="$str_thisDevHWID,"
                             fi
+
+                            if [[ $str_devDriver_VFIO_list != *$str_thisDevDriver* && $str_thisDevDriver != *"N/A"* ]]; then
+                                str_devDriver_VFIO_VGA_list+="$str_thisDevDriver,"
+                            fi
+                        fi
                     done
                 done
 
-                for (( int_index=0 ; int_index<${#arr_devIndex_sum[@]} ; int_index++ )); do
-                    int_thisIOMMU=${arr_devIOMMU_sum[$int_index]}
-                    str_thisDevDriver=${arr_devDriver_sum[$int_index]}
-                    str_thisDevHWID=${arr_devHWID_sum[$int_index]}
-                    str_thisDevName=${arr_devName_sum[$int_index]}
-                    str_thisDevType=`echo ${arr_devType_sum[$int_index]} | tr '[:lower:]' '[:upper:]'`
-                    str_thisDevVendor=${arr_devVendor_sum[$int_index]}
+                for (( int_i=0 ; int_i<${#arr_devIndex_sum[@]} ; int_i++ )); do
+                    int_thisIOMMU=${arr_devIOMMU_sum[$int_i]}
+                    str_thisDevDriver=${arr_devDriver_sum[$int_i]}
+                    str_thisDevHWID=${arr_devHWID_sum[$int_i]}
+                    str_thisDevName=${arr_devName_sum[$int_i]}
+                    str_thisDevType=`echo ${arr_devType_sum[$int_i]} | tr '[:lower:]' '[:upper:]'`
+                    str_thisDevVendor=${arr_devVendor_sum[$int_i]}
 
                     # match IOMMU #
-                        if [[ $int_thisIOMMU == $int_IOMMU_VFIO_VGA && $str_thisDevType == *"VGA"* || $str_thisDevType == *"GRAPHICS"* ]]; then
-                            str_devFullName_VGA="$str_thisDevVendor $str_thisDevName"
-                            break;
-                            int_index=${#arr_devIndex_sum[@]}
-                        fi
+                    if [[ $int_thisIOMMU == $int_IOMMU_VFIO_VGA && $str_thisDevType == *"VGA"* || $str_thisDevType == *"GRAPHICS"* ]]; then
+                        str_devFullName_VGA="$str_thisDevVendor $str_thisDevName"
+                        # int_i=${#arr_devIndex_sum[@]}
+                        break;
+                    fi
                 done
 
                 # update GRUB title with kernel(s) #
@@ -418,29 +431,29 @@
                     #     done
                     # fi
 
-                    # debug #
-                        # for (( i=0 ; i<${#arr_rootKernel[@]} ; i++ )); do echo -e "$0: '$""{arr_rootKernel[$i]}'\t= '${arr_rootKernel[$i]}'"; done && echo
-                        # echo -e "$0: '$""{#arr_rootKernel[@]}'\t= ${#arr_rootKernel[@]}"
+                    # debug prompt #
+                    # for (( i=0 ; i<${#arr_rootKernel[@]} ; i++ )); do echo -e "$0: '$""{arr_rootKernel[$i]}'\t= '${arr_rootKernel[$i]}'"; done && echo
+                    # echo -e "$0: '$""{#arr_rootKernel[@]}'\t= ${#arr_rootKernel[@]}"
 
-                        # for (( i=0 ; i<${#arr_GRUB_title[@]} ; i++ )); do echo -e "$0: '$""{arr_GRUB_title[$i]}'\t= '${arr_GRUB_title[$i]}'"; done && echo
-                        # echo -e "$0: '$""{#arr_GRUB_title[@]}'\t= ${#arr_GRUB_title[@]}"
+                    # for (( i=0 ; i<${#arr_GRUB_title[@]} ; i++ )); do echo -e "$0: '$""{arr_GRUB_title[$i]}'\t= '${arr_GRUB_title[$i]}'"; done && echo
+                    # echo -e "$0: '$""{#arr_GRUB_title[@]}'\t= ${#arr_GRUB_title[@]}"
 
                 # update parameters #
-                    str_driver_VFIO_thisList=${str_driver_VFIO_list}${str_driver_VFIO_VGA_list}
-                    str_HWID_VFIO_thislist=${str_HWID_VFIO_list}${str_HWID_VFIO_VGA_list}
+                str_devDriver_VFIO_thisList=${str_devDriver_VFIO_list}${str_devDriver_VFIO_VGA_list}
+                str_devHWID_VFIO_thislist=${str_devHWID_VFIO_list}${str_devHWID_VFIO_VGA_list}
 
-                    # remove last separator #
-                        if [[ ${str_driver_VFIO_thisList: -1} == "," ]]; then
-                            str_driver_VFIO_thisList=${str_driver_VFIO_thisList::-1}
-                        fi
+                # remove last separator #
+                if [[ ${str_devDriver_VFIO_thisList: -1} == "," ]]; then
+                    str_devDriver_VFIO_thisList=${str_devDriver_VFIO_thisList::-1}
+                fi
 
-                        if [[ ${str_HWID_VFIO_thislist: -1} == "," ]]; then
-                            str_HWID_VFIO_thislist=${str_HWID_VFIO_thislist::-1}
-                        fi
+                if [[ ${str_devHWID_VFIO_thislist: -1} == "," ]]; then
+                    str_devHWID_VFIO_thislist=${str_devHWID_VFIO_thislist::-1}
+                fi
 
                 # Write to file #
                     # new parameters #
-                        str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_driver_VFIO_thisList vfio_pci.ids=$str_HWID_VFIO_thislist"
+                    str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_devDriver_VFIO_thisList vfio_pci.ids=$str_devHWID_VFIO_thislist"
 
                     ## /etc/grub.d/proxifiedScripts/custom ##
 
@@ -462,25 +475,25 @@
                                 fi
 
                                 # new parameters #
-                                    # str_output0='menuentry "'$str_GRUB_title'" {'
-                                    # str_output1="\t"'if [ x\$grub_platform = xxen ];'"\n\t\tthen insmod xzio; insmod lzopio;""\n\tfi"
-                                    str_output2="\tinsmod $str_rootFSTYPE"
-                                    str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
-                                    # str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\tsearch --no-floppy --fs-uuid --set=root $str_rootUUID\n\tfi"
-                                    str_output5="\techo    'Loading Linux $str_thisRootKernel ...'"
-                                    str_output6="\tlinux   /boot/vmlinuz-$str_thisRootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
-                                    str_output7="\tinitrd  /boot/initrd.img-$str_thisRootKernel"
+                                # str_output0='menuentry "'$str_GRUB_title'" {'
+                                # str_output1="\t"'if [ x\$grub_platform = xxen ];'"\n\t\tthen insmod xzio; insmod lzopio;""\n\tfi"
+                                str_output2="\tinsmod $str_rootFSTYPE"
+                                str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
+                                # str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\tsearch --no-floppy --fs-uuid --set=root $str_rootUUID\n\tfi"
+                                str_output5="\techo    'Loading Linux $str_thisRootKernel ...'"
+                                str_output6="\tlinux   /boot/vmlinuz-$str_thisRootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
+                                str_output7="\tinitrd  /boot/initrd.img-$str_thisRootKernel"
 
-                                    # debug #
-                                        # echo -e "$0: '$""str_output0'\t\t= $str_output0"
-                                        # echo -e "$0: '$""str_output1'\t\t= $str_output1"
-                                        # echo -e "$0: '$""str_output2'\t\t= $str_output2"
-                                        # echo -e "$0: '$""str_output3'\t\t= $str_output3"
-                                        # echo -e "$0: '$""str_output4'\t\t= $str_output4"
-                                        # echo -e "$0: '$""str_output5'\t\t= $str_output5"
-                                        # echo -e "$0: '$""str_output6'\t\t= $str_output6"
-                                        # echo -e "$0: '$""str_output7'\t\t= $str_output7"
-                                        # echo
+                                # debug prompt #
+                                # echo -e "$0: '$""str_output0'\t\t= $str_output0"
+                                # echo -e "$0: '$""str_output1'\t\t= $str_output1"
+                                # echo -e "$0: '$""str_output2'\t\t= $str_output2"
+                                # echo -e "$0: '$""str_output3'\t\t= $str_output3"
+                                # echo -e "$0: '$""str_output4'\t\t= $str_output4"
+                                # echo -e "$0: '$""str_output5'\t\t= $str_output5"
+                                # echo -e "$0: '$""str_output6'\t\t= $str_output6"
+                                # echo -e "$0: '$""str_output7'\t\t= $str_output7"
+                                # echo
 
                                 if [[ -e $str_inFile1 && -e $str_inFile1b ]]; then
                                     # write to tempfile #
