@@ -11,7 +11,9 @@
 
 # check if sudo/root #
     if [[ `whoami` != "root" ]]; then
-        echo -e "$0: WARNING: Script must be run as Sudo or Root! Exiting."
+        str_file=`echo ${0##/*}`
+        str_file=`echo $str_file | cut -d '/' -f2`
+        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
         exit 0
     fi
 
@@ -36,7 +38,7 @@
     str_oldFile2=$str_outFile2".old"
 
 # debug logfiles #
-    str_logFile0=`find . -name *hugepages*log*`
+    str_logFile0=`find . -name *Hugepages*log*`
 
 # prompt #
     str_output1="$0: ZRAM allocates RAM as a compressed swapfile.\n\tThe default compression method \"lz4\", at a ratio of 2:1 to 5:2, offers the greatest performance."
@@ -76,7 +78,10 @@
 
 # check #
     if [[ -z $str_logFile0 ]]; then
-        echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_logFile0' and '$0'.\n"
+        str_file=`find . -name *Hugepages*bash*`
+        str_file=`echo ${str_file##/*}`
+        str_file=`echo $str_file | cut -d '/' -f2`
+        echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_file' and '$0'.\n"
 
         declare -i int_hostMemFreeG=$int_sysMemMaxG
 

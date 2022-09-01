@@ -4,9 +4,17 @@
 # Author(s):    Alex Portell <github.com/portellam>
 #
 
+#
+# TO-DO
+# -make parity with Multi-boot setup (var names, functions, etc.)
+#
+#
+
 # check if sudo/root #
     if [[ `whoami` != "root" ]]; then
-        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $0'\n\tor\n\t'su' and 'bash $0'.\n$0: Exiting."
+        str_file=`echo ${0##/*}`
+        str_file=`echo $str_file | cut -d '/' -f2`
+        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
         exit 0
     fi
 
@@ -63,20 +71,20 @@
         fi
     }
 
-
 # GRUB and hugepages check #
-    readonly str_logFile0=`find $(pwd) -name *hugepages*log*`
+    str_file=`find . -name *Hugepages*log*`
 
-    if [[ -z $str_logFile0 ]]; then
-        echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_logFile0' and '$0'.\n"
+    if [[ -z $str_file ]]; then
+        str_file=`find . -name *Hugepages*bash*`
+        str_file=`echo ${str_file##/*}`
+        str_file=`echo $str_file | cut -d '/' -f2`
+        echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_file' and '$0'.\n"
         str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages="
     else
-        str_GRUB_CMDLINE_Hugepages=`cat $str_logFile0`
+        str_GRUB_CMDLINE_Hugepages=`cat $str_file`
     fi
 
     str_GRUB_CMDLINE_prefix="quiet splash video=efifb:off acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages"
-
-
 
 # Static setup #
     function StaticSetup {

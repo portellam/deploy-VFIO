@@ -4,14 +4,17 @@
 # Author(s):    Alex Portell <github.com/portellam>
 #
 
-# TODO
+#
+# TO-DO
 # -install required packages for VFIO, and new features
 # -packages for major distros (Debian,Fedora,Arch)
-# -setup audio loopback for systems with soundcard passthrough (line-out to host line-in)
+#
 
 # check if sudo/root #
     if [[ `whoami` != "root" ]]; then
-        echo "$0: WARNING: Script must be run as Sudo or Root! Exiting."
+        str_file=`echo ${0##/*}`
+        str_file=`echo $str_file | cut -d '/' -f2`
+        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $0'\n\tor\n\t'su' and 'bash $0'.\n$0: Exiting."
         exit 0
     fi
 
@@ -103,7 +106,7 @@
         echo
     }
 
-    # CheckDistro       # call function
+    CheckDistro       # call function
 
 # parse and execute functions #
     str_output1=""
