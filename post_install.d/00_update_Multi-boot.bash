@@ -89,7 +89,7 @@ cp $str_inFile1 $str_outFile1          # copy over blank
                 str_thisRootKernel=${arr_rootKernel[$int_i]:1}
 
                 # new parameters #
-                str_output1='menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_devFullName_VGA'\""
+                str_output1='menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_devFullName_VGA'\" {"
                 str_output2="\tinsmod $str_rootFSTYPE"
                 str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
                 str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$str_rootUUID\n\t"'fi'
