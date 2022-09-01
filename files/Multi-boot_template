@@ -1,5 +1,4 @@
 #$str_output1       # Do not change this placeholder
-{
 \tload_video
 \tinsmod gzio
 \tif [ x\$grub_platform = xxen ];
