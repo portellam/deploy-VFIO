@@ -6,7 +6,9 @@
 
 # check if sudo/root #
     if [[ `whoami` != "root" ]]; then
-        echo "$0: WARNING: Script must be run as Sudo or Root! Exiting."
+        str_file=`echo ${0##/*}`
+        str_file=`echo $str_file | cut -d '/' -f2`
+        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
         exit 0
     fi
 
@@ -51,7 +53,7 @@
 
 # parse and execute functions #
     str_output1=""
-    str_dir1="post-install.d"
+    str_dir1="post_install.d"
 
     if [[ -z `find . -name $str_dir1*` ]]; then
         echo -e "$0: Executing functions... Failed. Missing files."

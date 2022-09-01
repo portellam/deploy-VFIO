@@ -1,5 +1,5 @@
 ## Description
-Ultimate scripts to seamlessly deploy a VFIO setup (PCI passthrough). Run any OS with real hardware, under a virtual machine (VM), in the Linux desktop of your choice.
+Ultimate scripts to seamlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Swap preferred host and VM graphics at GRUB boot menu. VFIO: Run any OS with real hardware, under a virtual machine (VM), in the Linux desktop of your choice.
 
 ## How-to
 To install, execute:
@@ -8,7 +8,7 @@ To install, execute:
 
 Post-install, execute:
 
-        sudo bash post-install.bash
+        sudo bash post_install.bash
 
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
@@ -19,19 +19,20 @@ Post-install, execute:
 * **Pre-install:**
     * **Hugepages**
         * Static allocation of Host RAM to VMs for zero memory fragmentation and reduced memory latencies (best to use whole Memory channels/sticks, if possible).
+        * Outputs to logfile, for future reference by updater.
     * **Zram swapfile**
         * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
     * **static/dynamic CPU thread allocation** **(work-in-progress)**
     * **Auto-Xorg** system service to find and set a valid host boot VGA device for Xorg. [1]
 * **VFIO setup:**
-    * Setup dynamically (Multi-Boot) or statically.
+    * Setup Multi-Boot or static. Swap preferred host and VM graphics at GRUB boot menu.
 * **Post-install:**
-    * **update Multi-Boot** with latest installed Linux kernel.
+    * **update Multi-Boot** with latest installed Linux kernels.
     * **Loopback audio** user service, audio capture from VM to host (ex: PCI Line-out to on-board Line-in/Mic).
     * IVSHMEM (Inter-VM Shared Memory Device):
         * **Evdev (Event devices)** is a Virtual Keyboard-Video-Mouse switch (K.V.M w/o video). (good fall-back)
-        * **Looking Glass** is a video capture of the VM GPU primary output, to host. [2] 
-        * **Scream** is audio capture (virtual audio cable) over virtual network bridge, from VM to host. [3]    
+        * **Looking Glass** is a video capture of the VM GPU primary output, to host. [2]
+        * **Scream** is audio capture (virtual audio cable) over virtual network bridge, from VM to host. [3]
     * **Libvirt hooks** [4]
         * Invoke 'hooks' for individual VMs. **(w-i-p)** [4]
         * Switch display input (video output) at VM start. **(w-i-p)**
@@ -45,12 +46,14 @@ Post-install, execute:
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups of devices.
     * Saves lists of external PCI devices, by order of IOMMU groups.
 * Prompt user for VFIO passthrough setup:
-    * **Multi-Boot** (disclaimer: currently outputs only one valid boot entry, not all)
+    * **Multi-Boot**
         * Select a host VGA boot device at GRUB menu.   (**Auto-Xorg** [1] is recommended)
+        * Creates up to three menu entries (for first three installed and latest Linux kernels).
         * Appends to system file: **'/etc/grub.d/proxifiedScripts/custom'**
+        * Outputs to logfile, for future reference by updater.
     * **Static**
         * Asks user to VFIO passthrough any IOMMU groups (with external PCI devices, including VGA devices).
-        * Appends to system file(s): **'/etc/initramfs-tools/modules'**, **'/etc/modules'**, **'/etc/modprobe.d/*'**, **'/etc/default/grub'**.         
+        * Appends to system file(s): **'/etc/initramfs-tools/modules'**, **'/etc/modules'**, **'/etc/modprobe.d/*'**, **'/etc/default/grub'**.
 * Checks for existing VFIO setup, prompt user to uninstall setup, reboot, and try again to continue.
 
 ## Credits

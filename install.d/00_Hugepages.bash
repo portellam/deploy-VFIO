@@ -11,7 +11,9 @@
 
 # check if sudo/root #
     if [[ `whoami` != "root" ]]; then
-        echo -e "$0: WARNING: Script must be run as Sudo or Root! Exiting."
+        str_file=`echo ${0##/*}`
+        str_file=`echo $str_file | cut -d '/' -f2`
+        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
         exit 0
     fi
 
@@ -20,21 +22,22 @@
     IFS=$'\n'      # Change IFS to newline char
 
 # parameters #
+    readonly str_thisFile="${0##*/}"
     bool_missingFiles=false
     str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                # default output
     int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
 
 # system files #
-    str_outFile1="/etc/libvirt/qemu.conf"
+    readonly str_outFile1="/etc/libvirt/qemu.conf"
 
 # input files #
-    str_inFile1=`find . -name *etc_libvirt_qemu.conf`
+    readonly str_inFile1=`find . -name *etc_libvirt_qemu.conf`
 
 # system file backups #
-    str_oldFile1=$str_outFile1".old"
+    readonly str_oldFile1=$str_outFile1".old"
 
 # debug logfiles #
-    str_logFile1=$(pwd)'/'$0'.log'
+    readonly str_logFile1="$str_thisFile.log"
 
 # prompt #
     str_output1="$0: HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and lower overhead of memory-access (memory latency).\n"

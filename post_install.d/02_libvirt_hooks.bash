@@ -11,7 +11,9 @@
 
 # check if sudo/root #
     if [[ `whoami` != "root" ]]; then
-        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $0'\n\tor\n\t'su' and 'bash $0'.\n$0: Exiting."
+        str_file=`echo ${0##/*}`
+        str_file=`echo $str_file | cut -d '/' -f2`
+        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
         exit 0
     fi
 
