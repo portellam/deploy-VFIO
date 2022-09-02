@@ -19,7 +19,7 @@ Post-install, execute:
 * **Pre-install:**
     * **Hugepages**
         * Static allocation of Host RAM to VMs for zero memory fragmentation and reduced memory latencies (best to use whole Memory channels/sticks, if possible).
-        * Outputs to logfile, for future reference by updater.
+        * Outputs to logfile, for future reference by Multi-boot updater.
     * **Zram swapfile**
         * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
     * **static/dynamic CPU thread allocation** **(work-in-progress)**
@@ -47,12 +47,14 @@ Post-install, execute:
     * Saves lists of external PCI devices, by order of IOMMU groups.
 * Prompt user for VFIO passthrough setup:
     * **Multi-Boot**
+        * vfio-pci **and** pci-stub grab passthrough devices (example: VGA and USB).
+            * NOTE: 'lspci' will report a given USB device is not grabbed. This is normal, and VFIO should work fine.
         * Select a host VGA boot device at GRUB menu.   (**Auto-Xorg** [1] is recommended)
         * Creates up to three menu entries (for first three installed and latest Linux kernels).
         * Appends to system file: **'/etc/grub.d/proxifiedScripts/custom'**
         * Outputs to logfile, for future reference by updater.
     * **Static**
-        * Asks user to VFIO passthrough any IOMMU groups (with external PCI devices, including VGA devices).
+        * vfio-pci **grabs all** passthrough devices.
         * Appends to system file(s): **'/etc/initramfs-tools/modules'**, **'/etc/modules'**, **'/etc/modprobe.d/*'**, **'/etc/default/grub'**.
 * Checks for existing VFIO setup, prompt user to uninstall setup, reboot, and try again to continue.
 
@@ -68,6 +70,8 @@ Post-install, execute:
 **[5]:** https://old.reddit.com/r/VFIO/comments/8ypedp/for_anyone_getting_issues_with_their_guest_when/ (ArchWiki, /u/sm-Fifteen)
 
 ## DISCLAIMER
+DO NOT CREATE/ADD NEW FILES, OF SAME NAME OR OTHERWISE, TO REPO DIRECTORY. MAY CAUSE CONFLICT WITH SCRIPT(S), AND UNINTENDED OPERATION OF, BUT NOT LIMITED TO, LOG FILE READ/WRITES.
+
 Tested on Debian Linux. Works on my machine!
 
 Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
