@@ -51,6 +51,14 @@
         fi
     }
 
+# clear nested git repos #
+    str_dir2="git"
+    declare -a arr_dir2=`ls $str_dir2 | sort -h | grep -Eiv '.gitkeep|README.md'`
+
+    for str_line1 in $arr_dir2; do
+        rm -rf $str_line1
+    done
+
 # parse and execute functions #
     str_output1=""
     str_dir1="uninstall.d"
