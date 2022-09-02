@@ -78,8 +78,8 @@
     str_output4=""
 
     declare -a arr_gitRepo=(
-    "duncanthrax/scream
-    gnif/LookingGlass"
+"duncanthrax/scream
+gnif/LookingGlass"
     )
 
     mkdir ./git
