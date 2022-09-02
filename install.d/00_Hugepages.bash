@@ -104,7 +104,8 @@
             echo "$0: Invalid input."
             ((int_count++))     # increment counter
         else
-            str_output1="default_hugepagesz=$str_HugePageSize hugepagesz=$str_HugePageSize hugepages=$int_HugePageNum"   # shared variable with other function   
+            # str_output1="default_hugepagesz=$str_HugePageSize hugepagesz=$str_HugePageSize hugepages=$int_HugePageNum"   # shared variable with other function
+            str_output1="#$str_HugePageSize #$int_HugePageNum"
         fi
 
         break
@@ -116,7 +117,7 @@
     fi
 
 # write to file #
-    echo $str_output1 >> $str_logFile1
+    echo $str_output1 > $str_logFile1
 
 ## /etc/libvirt/qemu.conf ##
     str_output1="user = \"user\"\ngroup = \"user\""

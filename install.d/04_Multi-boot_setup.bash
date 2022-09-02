@@ -11,6 +11,13 @@
 #
 #
 
+#
+# NOTES:
+# -find driver by BUS ID
+# "lspci -nnk -d PCI_BUS_ID_HERE | grep driver"
+#
+
+
 # check if sudo/root #
     if [[ `whoami` != "root" ]]; then
         str_file=`echo ${0##/*}`
@@ -86,15 +93,21 @@
 # GRUB and hugepages check #
     if [[ -z $str_file ]]; then
         str_file=`find . -name *Hugepages*bash*`
-        str_file=`echo ${str_file##/*}`
+        str_file=`echo ${str_file##/*} | cut -d '/' -f2`
+
+        echo -e '$str_file == '"'$str_file'"
         str_file=`echo $str_file | cut -d '/' -f2`
+
+        echo -e '$str_file == '"'$str_file'"
         echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_file' and '$0'.\n"
-        str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages="
     else
-        str_GRUB_CMDLINE_Hugepages=`cat $str_file`
+        readonly str_HugePageSize=`cat $str_file | cut -d '#' -f2 | cut -d ' ' -f1`
+        readonly str_HugePageSum=`cat $str_file | cut -d '#' -f3`
+        readonly str_GRUB_CMDLINE_Hugepages="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${str_HugePageSum}"
     fi
 
-    str_GRUB_CMDLINE_prefix="quiet splash video=efifb:off acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 $str_GRUB_CMDLINE_Hugepages"
+    # NOTE: update here #
+    str_GRUB_CMDLINE_prefix="quiet splash video=efifb:off acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 ${str_GRUB_CMDLINE_Hugepages}"
 
 # Multi boot setup #
     function MultiBootSetup {
@@ -116,6 +129,7 @@
                 declare -i int_i=0
                 str_devDriver_host_list=""
                 str_devDriver_VFIO_list=""
+                str_devHWID_STUB_list=""
                 str_devHWID_VFIO_list=""
 
             # parse IOMMU groups #
@@ -269,10 +283,19 @@
                         int_thisIOMMU=${arr_devIOMMU_sum[$int_i]}
                         str_thisDevDriver=${arr_devDriver_sum[$int_i]}
                         str_thisDevHWID=${arr_devHWID_sum[$int_i]}
+                        str_thisDevType=`echo ${arr_devType_sum[$int_i]} | tr '[:lower:]' '[:upper:]'`
 
                         # match IOMMU and false match existing element in list #
                         if [[ "$int_thisIOMMU" == "$int_IOMMU_VFIO" && $str_devHWID_VFIO_list != *$str_thisDevHWID* ]]; then
-                            str_devHWID_VFIO_list+="$str_thisDevHWID,"
+
+                            # bind to pci-stub #
+                            if [[ $str_thisDevType == *"USB"* ]]; then
+                                str_devHWID_STUB_list+="$str_thisDevHWID,"
+
+                            # bind to vfio-pci #
+                            else
+                                str_devHWID_VFIO_list+="$str_thisDevHWID,"
+                            fi
 
                             # valid driver and false match existing element in list(s) #
                             if [[ $str_thisDevDriver != "" && $str_thisDevDriver != "N/A" && $str_devDriver_host_list != *$str_thisDevDriver* && $str_devDriver_VFIO_list != *$str_devDriver_host_list* ]]; then
@@ -394,6 +417,7 @@
                 declare -a arr_GRUB_title=()
                 str_devFullName_VGA="N/A"
                 str_devDriver_VFIO_VGA_list=""
+                str_devHWID_STUB_VGA_list=""
                 str_devHWID_VFIO_VGA_list=""
                 str_GRUB_CMDLINE=""
 
@@ -408,8 +432,17 @@
 
                         # match IOMMU, false match VGA IOMMU and false match existing element in list #
                         if [[ "$int_thisIOMMU" == "$int_IOMMU_VFIO" && $int_IOMMU_VFIO != $int_IOMMU_VFIO_VGA && $str_devHWID_VFIO_list != *$str_thisDevHWID* ]]; then
+
                             if [[ $str_devHWID_VFIO_list != *$str_thisDevHWID* ]]; then
-                                str_devHWID_VFIO_VGA_list+="$str_thisDevHWID,"
+
+                                # bind to pci-stub #
+                                if [[ $str_thisDevType == *"USB"* ]]; then
+                                    str_devHWID_STUB_VGA_list+="$str_thisDevHWID,"
+
+                                # bind to vfio-pci #
+                                else
+                                    str_devHWID_VFIO_VGA_list+="$str_thisDevHWID,"
+                                fi
                             fi
 
                             # valid driver and false match existing element in list(s) #
@@ -437,11 +470,16 @@
 
                 # update parameters #
                 str_devDriver_VFIO_thisList=${str_devDriver_VFIO_list}${str_devDriver_VFIO_VGA_list}
+                str_devHWID_STUB_thisList=${str_devHWID_STUB_list}${str_devHWID_STUB_VGA_list}
                 str_devHWID_VFIO_thislist=${str_devHWID_VFIO_list}${str_devHWID_VFIO_VGA_list}
 
                 # remove last separator #
                 if [[ ${str_devDriver_VFIO_thisList: -1} == "," ]]; then
                     str_devDriver_VFIO_thisList=${str_devDriver_VFIO_thisList::-1}
+                fi
+
+                if [[ ${str_devHWID_STUB_thisList: -1} == "," ]]; then
+                    str_devHWID_STUB_thisList=${str_devHWID_STUB_thisList::-1}
                 fi
 
                 if [[ ${str_devHWID_VFIO_thislist: -1} == "," ]]; then
@@ -454,10 +492,11 @@
                         str_devFullName_VGA=$str_IGPU_devFullName
                     fi
 
-                    str_GRUB_CMDLINE+="$str_GRUB_CMDLINE_prefix modprobe.blacklist=$str_devDriver_VFIO_thisList vfio_pci.ids=$str_devHWID_VFIO_thislist"
+                    # NOTE: change here #
+                    str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} modprobe.blacklist=${str_devDriver_VFIO_thisList} pci-stub.ids=${str_devHWID_STUB_thisList} vfio_pci.ids=${str_devHWID_VFIO_thislist}"
 
                     ## log file ##
-                        echo -e "#$int_IOMMU_VFIO_VGA #$str_devFullName_VGA #$str_GRUB_CMDLINE" >> $str_logFile0
+                        echo -e "#$int_IOMMU_VFIO_VGA #$str_devFullName_VGA #${str_GRUB_CMDLINE}" >> $str_logFile0
 
                     ## /etc/grub.d/proxifiedScripts/custom ##
 
