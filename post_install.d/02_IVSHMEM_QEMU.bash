@@ -179,9 +179,11 @@
         # backup file #
         if [[ -z $str_oldFile1 ]]; then
             cp $str_outFile1 $str_oldFile1
-        else
-            cp $str_oldFile1 $str_outFile1
         fi
+
+	if [[ -e $str_outFile1 ]]; then
+	    rm $str_outFile1
+	fi
 
         # write to file #
         while read -r str_line1; do
