@@ -508,8 +508,8 @@
                                 str_thisRootKernel=${arr_rootKernel[$int_i]:1}
 
                                 # new parameters #
-                                str_output1='menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_devFullName_VGA'\" {"
-                                str_output1_log="\n"'menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` #kernel_'$int_i'# (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_devFullName_VGA'\" {"
+                                str_output1='menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_devFullName_VGA'\") {"
+                                str_output1_log="\n"'menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` #kernel_'$int_i'# (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_devFullName_VGA'\") {"
                                 str_output2="\tinsmod $str_rootFSTYPE"
                                 str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
                                 str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$str_rootUUID\n\t"'fi'
@@ -634,6 +634,7 @@ echo -e "$0: 'Multi-boot' is a flexible VFIO setup, adding multiple GRUB boot me
                 sudo update-grub
                 # sudo update-initramfs -u -k all
                 echo -e "\n$0: Review changes:\n\t'$str_outFile1'"
+                echo -e "$0: To update Multi-boot (kernel upgrade), execute updater. Updater will read from logfile '$str_logFile0'."
                 break;;
             "N")
                 IFS=$SAVEIFS                # reset IFS     # NOTE: necessary for newline preservation in arrays and files
