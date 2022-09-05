@@ -16,7 +16,7 @@
     SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
     IFS=$'\n'      # Change IFS to newline char
 
-# precede with echo prompt for input #
+# procede with echo prompt for input #
     # ask user for input then validate #
     function ReadInput {
 
@@ -35,7 +35,7 @@
             # manual prompt #
             if [[ $int_count -ge 3 ]]; then
                 echo -en "Exceeded max attempts. "
-                str_input1="N"                    # default input     # NOTE: change here
+                str_input1="N"                    # default input     # NOTE: update here
             else
                 echo -en "\t$str_output1"
                 read str_input1
@@ -348,7 +348,7 @@
             done
         done
 
-        # change parameters #
+        # update parameters #
         if [[ ${str_PCISTUB_HWIDlist: -1} == "," ]]; then
             str_PCISTUB_HWIDlist=${str_PCISTUB_HWIDlist::-1}
         fi
@@ -386,7 +386,7 @@
         # write to files #
         if [[ $bool_outputToGRUB == true ]]; then
 
-            # change parameters #
+            # update parameters #
             str_PCISTUB_HWIDlist="${str_PCISTUB_HWIDlist},"
 
             # /etc/default/grub #
@@ -571,20 +571,22 @@
 # multi-boot setup #
     function MultiBootSetup
     {
-        echo -e "$0: Executing Static setup..."
+        echo -e "$0: Executing Multi-boot setup..."
 
         # parameters #
         declare -a arr_VFIO_driver=()
         declare -a arr_VFIOVGA_driver=()
         str_thisFullName=""
+        str_PCISTUB_HWIDlist=""
+        str_PCISTUBVGA_HWIDlist=""
         str_VFIO_driverList=""
         str_VFIO_HWIDList=""
         str_VFIOVGA_driverList=""
-        str_VFIOVGA_HWIDList
+        str_VFIOVGA_HWIDList=""
 
         # parse VFIO IOMMU group(s) #
-        for int_VFIOIOMMU in ${arr_IOMMU_VFIO[@]}; do
-            for str_line0 in `find /sys/kernel/iommu_groups/$int_VFIOIOMMU -maxdepth 0 -type d | sort -V`; do
+        for int_IOMMU_VFIO in ${arr_IOMMU_VFIO[@]}; do
+            for str_line0 in `find /sys/kernel/iommu_groups/$int_IOMMU_VFIO -maxdepth 0 -type d | sort -V`; do
                 for str_line1 in $str_line0/devices/*; do
 
                     # parameters #
@@ -596,13 +598,25 @@
                     # add to lists #
                     arr_VFIO_driver+=("$str_thisDriver")
                     str_VFIO_driverList+="$str_thisDriver,"
-                    str_VFIO_HWIDList+="$str_thisHWID,"
+
+                    if [[ $str_thisDriver != *"$str_PCISTUB_driverList"* ]]; then
+                        str_VFIO_HWIDList+="$str_thisHWID,"
+                    else
+                        str_PCISTUB_HWIDlist+="$str_thisHWID,"
+                    fi
                 done
             done
         done
 
         # parse VFIO IOMMU group(s) with VGA device(s) #
-        for int_thisIOMMU in ${arr_IOMMU_VFIOVGA[@]}; do
+        for int_IOMMU_VFIOVGA in ${arr_IOMMU_VFIOVGA[@]}; do
+
+            # update parameters #
+            str_PCISTUB_HWIDlist=""
+            str_PCISTUBVGA_HWIDlist=""
+            str_VFIOVGA_driverList=""
+            str_VFIOVGA_HWIDList=""
+
             for str_line0 in `find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V`; do
 
                 # parameters #
@@ -618,23 +632,166 @@
                     str_thisType=`lspci -mmd $str_thisHWID | cut -d '"' -f2 | tr '[:lower:]' '[:upper:]'`
 
                     # add to lists #
-                    if [[ $int_thisIOMMU != $int_VFIOIOMMU ]]; then
+                    if [[ $int_thisIOMMU != $int_IOMMU_VFIOVGA ]]; then
                         arr_VFIOVGA_driver+=("$str_thisDriver")
                         str_VFIOVGA_driverList+="$str_thisDriver,"
-                        str_VFIOVGA_HWIDList+="$str_thisHWID,"
-                    fi
+
+                        if [[ $str_thisDriver != *"$str_PCISTUB_driverList"* ]]; then
+                            str_VFIOVGA_HWIDList+="$str_thisHWID,"
+                        else
+                            str_PCISTUBVGA_HWIDlist+="$str_thisHWID,"
+                        fi
 
                     # save VGA vendor and device name #
                     else
-                        if [[ $str_thisType == *"VGA"* || $str_thisType == *"GRAPHIC"* && -z $str_IGPUFullName && $str_IGPUFullName = "" ]]; then
+                        if [[ $str_thisType == *"VGA"* || $str_thisType == *"GRAPHIC"* ]]; then
                             str_thisFullName=`lspci -mmn | grep $str_thisBusID | cut -d '"' -f4``lspci -mmn | grep $str_thisBusID | cut -d '"' -f6`
                         fi
                     fi
                 done
             done
-        done
 
+            # update parameters #
+            str_thisPCISTUB_HWIDList=${str_VFIO_HWIDList}${str_VFIOVGA_HWIDList}
+            str_thisVFIO_driverList=${str_VFIO_driverList}${str_VFIOVGA_driverList}
+            str_thisVFIO_HWIDList=${str_VFIO_HWIDList}${str_VFIOVGA_HWIDList}
 
+            # remove last separator #
+            if [[ ${str_thisPCISTUB_HWIDList: -1} == "," ]]; then
+                str_thisPCISTUB_HWIDList=${str_thisPCISTUB_HWIDList::-1}
+            fi
+
+            if [[ ${str_thisVFIO_driverList: -1} == "," ]]; then
+                str_thisVFIO_driverList=${str_thisVFIO_driverList::-1}
+            fi
+
+            if [[ ${str_thisVFIO_HWIDList: -1} == "," ]]; then
+                str_thisVFIO_HWIDList=${str_thisVFIO_HWIDList::-1}
+            fi
+
+            # write to file #
+
+                # parameters #
+                if [[ $str_IGPUFullName != "N/A" ]]; then
+                    str_thisFullName=$str_IGPUFullName
+                fi
+
+                # NOTE: update here #
+                str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} modprobe.blacklist=${str_thisVFIO_driverList} pci-stub.ids=${str_thisPCISTUB_HWIDList} vfio_pci.ids=${str_thisVFIO_HWIDList}"
+
+                ## log file ##
+                echo -e "#${int_IOMMU_VFIOVGA} #${str_thisFullName} #${str_GRUB_CMDLINE}" >> $str_logFile0
+
+                ## /etc/grub.d/proxifiedScripts/custom ##
+
+                    # parse kernels #
+                    for (( int_i=0 ; int_i<${#arr_rootKernel[@]} ; int_i++)); do
+
+                        # match #
+                        if [[ -e ${arr_rootKernel[$int_i]} || ${arr_rootKernel[$int_i]} != "" ]]; then
+                            str_thisRootKernel=${arr_rootKernel[$int_i]:1}
+
+                            # parameters #
+                            str_output1='menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_thisFullName'\") {"
+                            str_output1_log="\n"'menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` #kernel_'$int_i'# (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_thisFullName'\") {"
+                            str_output2="\tinsmod $str_rootFSTYPE"
+                            str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
+                            str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$str_rootUUID\n\t"'fi'
+                            str_output5="\techo    'Loading Linux $str_thisRootKernel ...'"
+                            str_output5_log="\techo    'Loading Linux #kernel'$int_i'# ...'"
+                            str_output6="\tlinux   /boot/vmlinuz-$str_thisRootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
+                            str_output6_log="\tlinux   /boot/vmlinuz-#kernel'$int_i'# root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
+                            str_output7="\tinitrd  /boot/initrd.img-$str_thisRootKernel"
+                            str_output7_log="\tinitrd  /boot/initrd.img-"'#kernel'$int_i'#'
+
+                            # debug prompt #
+                            # echo -e "$0: '$""str_output0'\t\t= $str_output0"
+                            # echo -e "$0: '$""str_output1'\t\t= $str_output1"
+                            # echo -e "$0: '$""str_output2'\t\t= $str_output2"
+                            # echo -e "$0: '$""str_output3'\t\t= $str_output3"
+                            # echo -e "$0: '$""str_output4'\t\t= $str_output4"
+                            # echo -e "$0: '$""str_output5'\t\t= $str_output5"
+                            # echo -e "$0: '$""str_output6'\t\t= $str_output6"
+                            # echo -e "$0: '$""str_output7'\t\t= $str_output7"
+                            # echo
+
+                            if [[ -e $str_inFile1 && -e $str_inFile1b ]]; then
+
+                                # write to tempfile #
+                                echo -e >> $str_outFile1
+
+                                while read -r str_line1; do
+                                    case $str_line1 in
+
+                                        *'#$str_output1'*)
+                                            str_outLine1="$str_output1";;
+                                            # str_logLine1="$str_output1_log";;
+
+                                        *'#$str_output2'*)
+                                            str_outLine1="$str_output2";;
+                                            # str_logLine1="$str_output2";;
+
+                                        *'#$str_output3'*)
+                                            str_outLine1="$str_output3";;
+                                            # str_logLine1="$str_output3";;
+
+                                        *'#$str_output4'*)
+                                            str_outLine1="$str_output4";;
+                                            # str_logLine1="$str_output4";;
+
+                                        *'#$str_output5'*)
+                                            str_outLine1="$str_output5";;
+                                            # str_logLine1="$str_output5_log";;
+
+                                        *'#$str_output6'*)
+                                            str_outLine1="$str_output6";;
+                                            # str_logLine1="$str_output6_log";;
+
+                                        *'#$str_output7'*)
+                                            str_outLine1="$str_output7";;
+                                            # str_logLine1="$str_output7_log";;
+
+                                        *)
+                                            str_outLine1="$str_line1";;
+                                            # str_logLine1="$str_outLine1";;      # NOTE: do not change this line!
+                                    esac
+
+                                    # write to system file and logfile (post_install: update Multi-boot) #
+                                    echo -e "$str_outLine1" >> $str_outFile1
+                                    # echo -e "$str_logLine1" >> $str_logFile0
+                                done < $str_inFile1b        # read from template
+                            else
+                                bool_missingFiles=true
+                            fi
+                        fi
+                    done
+                done
+            done
+
+        # file check #
+            if [[ $bool_missingFiles == true ]]; then
+                echo -e "$0: File(s) missing:"
+
+                if [[ -z $str_inFile1 ]]; then
+                    echo -e "\t'$str_inFile1'"
+                fi
+
+                if [[ -z $str_inFile1b ]]; then
+                    echo -e "\t'$str_inFile1b'"
+                fi
+
+                echo -e "$0: Executing Multi-boot setup... Failed."
+                exit 0
+            elif [[ ${#arr_IOMMU_VFIO[@]} -eq 0 && ${#arr_IOMMU_VFIO_VGA[@]} -ge 1 ]]; then
+                echo -e "$0: Executing Multi-boot setup... Cancelled. No IOMMU groups (with VGA devices) selected."
+                exit 0
+            elif [[ ${#arr_IOMMU_VFIO[@]} -eq 0 && ${#arr_IOMMU_VFIO_VGA[@]} -eq 0 ]]; then
+                echo -e "$0: Executing Multi-boot setup... Cancelled. No IOMMU groups selected."
+                exit 0
+            else
+                chmod 755 $str_outFile1 $str_oldFile1                   # set proper permissions
+                echo -e "$0: Executing Multi-boot setup... Complete."
+            fi
 
     }
 
