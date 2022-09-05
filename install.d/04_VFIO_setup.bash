@@ -162,7 +162,7 @@
 
             # save all IOMMU groups that contain VGA device(s) #
             # parse this list for 'Multi-boot' function later on
-            if [[ $str_thisType == *"VGA"* || $str_thisType == *"GRAPHIC"* ]]; then
+            if [[ $str_thisType == *"3D"* || $str_thisType == *"DISPLAY"* || $str_thisType == *"GRAPHIC"* || $str_thisType == *"VGA"* ]]; then
                 # arr_typeIsVGA_IOMMU+=("$int_thisIOMMU")
                 bool_IOMMUcontainsVGA=true
             fi
@@ -311,7 +311,7 @@
 
                     # save VGA vendor and device name #
                     else
-                        if [[ $str_thisType == *"VGA"* || $str_thisType == *"GRAPHIC"* ]]; then
+                        if [[ $str_thisType == *"3D"* || $str_thisType == *"DISPLAY"* || $str_thisType == *"GRAPHIC"* || $str_thisType == *"VGA"* ]]; then
                             str_thisFullName=`lspci -mmn | grep $str_thisBusID | cut -d '"' -f4``lspci -mmn | grep $str_thisBusID | cut -d '"' -f6`
                         fi
                     fi
