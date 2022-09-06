@@ -1,5 +1,5 @@
 ## Description
-Ultimate scripts to seamlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Swap preferred host and VM graphics at GRUB boot menu. VFIO: Run any OS with real hardware, under a virtual machine (VM), in the Linux desktop of your choice.
+Ultimate scripts to seamlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Swap the preferred host graphics (VGA) device at GRUB boot menu. VFIO: Run any OS with real hardware, under a virtual machine (VM), in the Linux desktop of your choice.
 
 ## How-to
 To install, execute:
@@ -25,10 +25,9 @@ Post-install, execute:
     * **static/dynamic CPU thread allocation** **(work-in-progress)**
     * **Auto-Xorg** system service to find and set a valid host boot VGA device for Xorg. [1]
 * **VFIO setup:**
-    * Setup Multi-Boot or static. Swap preferred host and VM graphics at GRUB boot menu. 'Multi-boot' is a flexible VFIO setup:\n\tinstallation appends different combinations of IOMMU groups to a GRUB menu entry;\n\tthe user may select the preferred host graphics (VGA) device at GRUB boot menu.\n\t'Static' is a 'permanent' VFIO setup:\n\tinstallation may append to system files. 'Static' survives kernel upgrades (without help of the 'post-install' updater).\n\tMulti-boot is the recommended choice.\n"
-
+    * Setup Multi-boot or static. Multi-boot: Swap the preferred host graphics (VGA) device at GRUB boot menu. **(see 'examples')**
 * **Post-install:**
-    * **update Multi-Boot** with latest installed Linux kernels.
+    * **update Multi-boot** with latest installed Linux kernels.
     * **Loopback audio** user service, audio capture from VM to host (ex: PCI Line-out to on-board Line-in/Mic).
     * IVSHMEM (Inter-VM Shared Memory Device):
         * **Evdev (Event devices)** is a Virtual Keyboard-Video-Mouse switch (K.V.M w/o video). (good fall-back)
@@ -47,7 +46,7 @@ Post-install, execute:
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups of devices.
     * Saves lists of external PCI devices, by order of IOMMU groups.
 * Prompt user for VFIO passthrough setup:
-    * **Multi-Boot**
+    * **Multi-boot**
         * bind passthrough devices to **vfio-pci** and **pci-stub** (example types: VGA and USB, respectively).
             * NOTE: 'lspci' may report a device is binded to its original driver. For devices binded to 'pci-stub', this is normal.
         * Select a host VGA boot device at GRUB menu.   (**Auto-Xorg** [1] is recommended)
