@@ -229,6 +229,11 @@
                 echo -e "\t$str_output2\n"
             done;
 
+            if [[ ${#arr_IOMMU_VFIO[@]} -eq 0 && ${#arr_IOMMU_VFIOVGA[@]} -eq 0 ]]; then
+                echo -e "Executing Multi-boot setup... Cancelled. No IOMMU groups selected."
+                exit 0
+            fi
+
         # parameters #
             readonly str_thisFile="${0##*/}"
             readonly str_logFile0="$str_thisFile.log"
@@ -496,14 +501,6 @@
                 echo -e "Executing Multi-boot setup... Failed."
                 exit 0
 
-            # elif [[ ${#arr_IOMMU_VFIOVGA[@]} -eq 0 ]]; then
-            #     echo -e "Executing Multi-boot setup... Cancelled. No IOMMU groups (with VGA devices) selected."
-            #     exit 0
-
-            elif [[ ${#arr_IOMMU_VFIO[@]} -eq 0 ]]; then
-                echo -e "Executing Multi-boot setup... Cancelled. No IOMMU groups selected."
-                exit 0
-
             else
                 chmod 755 $str_outFile1 $str_oldFile1                   # set proper permissions
                 echo -e "Executing Multi-boot setup... Complete."
@@ -633,6 +630,16 @@
 
                 echo -e "\t$str_output2\n"
             done;
+
+            if [[ ${#arr_IOMMU_VFIO[@]} -eq 0 && ${#arr_IOMMU_VFIOVGA[@]} -eq 0 ]]; then
+                echo -e "Executing Static setup... Cancelled. No IOMMU groups selected."
+                exit 0
+            fi
+
+            if [[ ${#arr_IOMMU_hostVGA[@]} -eq 0 ]]; then
+                echo -e "Executing Static setup... Cancelled. No VGA device(s) available to host OS."
+                exit 0
+            fi
 
         # parameters #
             declare -a arr_VFIO_driver=()
@@ -970,10 +977,6 @@
                 fi
 
                 echo -e "Executing Static setup... Failed."
-                exit 0
-
-            elif [[ ${#arr_IOMMU_VFIO[@]} -eq 0 ]]; then
-                echo -e "Executing Static setup... Cancelled. No IOMMU groups selected."
                 exit 0
 
             else
