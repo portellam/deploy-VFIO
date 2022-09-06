@@ -360,7 +360,7 @@
                     # save VGA vendor and device name #
                     else
                         if [[ $str_thisType == *"3D"* || $str_thisType == *"DISPLAY"* || $str_thisType == *"GRAPHIC"* || $str_thisType == *"VGA"* ]]; then
-                            str_thisFullName=`lspci -mmn | grep $str_thisBusID | cut -d '"' -f4``lspci -mmn | grep $str_thisBusID | cut -d '"' -f6`
+                            str_thisFullName=`lspci -mnn | grep $str_thisBusID | cut -d '"' -f4``lspci -mnn | grep $str_thisBusID | cut -d '"' -f6`
                         fi
                     fi
                 done
@@ -387,7 +387,7 @@
             # write to file #
 
                 # parameters #
-                if [[ $str_IGPUFullName != "N/A" ]]; then
+                if [[ $str_IGPUFullName != "N/A" && $str_IGPUFullName != "" ]]; then
                     str_thisFullName=$str_IGPUFullName
                 fi
 
@@ -407,8 +407,8 @@
                             str_thisRootKernel=${arr_rootKernel[$int_i]:1}
 
                             # parameters #
-                            str_output1='menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_thisFullName'\") {"
-                            str_output1_log="\n"'menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` #kernel_'$int_i'# (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_thisFullName'\") {"
+                            str_output1='menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIOVGA', w/ boot VGA '$str_thisFullName'\") {"
+                            str_output1_log="\n"'menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` #kernel_'$int_i'# (VFIO, w/o IOMMU '$int_IOMMU_VFIOVGA', w/ boot VGA '$str_thisFullName'\") {"
                             str_output2="\tinsmod $str_rootFSTYPE"
                             str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
                             str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$str_rootUUID\n\t"'fi'
