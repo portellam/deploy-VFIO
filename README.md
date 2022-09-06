@@ -25,7 +25,8 @@ Post-install, execute:
     * **static/dynamic CPU thread allocation** **(work-in-progress)**
     * **Auto-Xorg** system service to find and set a valid host boot VGA device for Xorg. [1]
 * **VFIO setup:**
-    * Setup Multi-Boot or static. Swap preferred host and VM graphics at GRUB boot menu.
+    * Setup Multi-Boot or static. Swap preferred host and VM graphics at GRUB boot menu. 'Multi-boot' is a flexible VFIO setup:\n\tinstallation appends different combinations of IOMMU groups to a GRUB menu entry;\n\tthe user may select the preferred host graphics (VGA) device at GRUB boot menu.\n\t'Static' is a 'permanent' VFIO setup:\n\tinstallation may append to system files. 'Static' survives kernel upgrades (without help of the 'post-install' updater).\n\tMulti-boot is the recommended choice.\n"
+
 * **Post-install:**
     * **update Multi-Boot** with latest installed Linux kernels.
     * **Loopback audio** user service, audio capture from VM to host (ex: PCI Line-out to on-board Line-in/Mic).
@@ -47,15 +48,15 @@ Post-install, execute:
     * Saves lists of external PCI devices, by order of IOMMU groups.
 * Prompt user for VFIO passthrough setup:
     * **Multi-Boot**
-        * **vfio-pci and pci-stub grab** passthrough devices (example: VGA and USB).
-            * NOTE: 'lspci' will report a given USB device is not grabbed. This is normal, and VFIO should work fine.
+        * bind passthrough devices to **vfio-pci** and **pci-stub** (example types: VGA and USB, respectively).
+            * NOTE: 'lspci' may report a device is binded to its original driver. For devices binded to 'pci-stub', this is normal.
         * Select a host VGA boot device at GRUB menu.   (**Auto-Xorg** [1] is recommended)
         * Creates up to three menu entries (for first three installed and latest Linux kernels).
-        * Appends to system file: **'/etc/grub.d/proxifiedScripts/custom'**
+        * Appends to GRUB: **'/etc/grub.d/proxifiedScripts/custom'**
         * Outputs to logfile, for future reference by updater.
     * **Static**
-        * **vfio-pci grabs all** passthrough devices.
-        * Appends to system file(s): **'/etc/initramfs-tools/modules'**, **'/etc/modules'**, **'/etc/modprobe.d/*'**, **'/etc/default/grub'**.
+        * bind all passthrough devices to **vfio-pci**.
+        * Append to GRUB or system files:   **'/etc/default/grub'**, or **'/etc/initramfs-tools/modules'**, **'/etc/modules'**, and **'/etc/modprobe.d/*'**.
 * Checks for existing VFIO setup, prompt user to uninstall setup, reboot, and try again to continue.
 
 ## Credits
