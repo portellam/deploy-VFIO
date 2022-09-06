@@ -48,7 +48,9 @@ Post-install, execute:
 * Prompt user for VFIO passthrough setup:
     * **Multi-boot**
         * bind passthrough devices to **vfio-pci** and **pci-stub** (example types: VGA and USB, respectively).
-            * NOTE: 'lspci' may report a device is binded to its original driver. For devices binded to 'pci-stub', this is normal.
+            * NOTE: 'lspci' may report a device is binded to its original driver.
+                * For devices binded to 'pci-stub', this is normal.
+                * For some child devices (VGA audio device) and/or devices that share drivers with onboard devices (onboard audio), this is normal.
         * Select a host VGA boot device at GRUB menu.   (**Auto-Xorg** [1] is recommended)
         * Creates up to three menu entries (for first three installed and latest Linux kernels).
         * Appends to GRUB: **'/etc/grub.d/proxifiedScripts/custom'**
