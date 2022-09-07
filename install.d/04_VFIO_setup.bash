@@ -30,7 +30,7 @@
             # manual prompt #
             if [[ $int_count -ge 3 ]]; then
                 echo -en "Exceeded max attempts. "
-                str_input1="N"                    # default input     # NOTE: update here
+                str_input1="N"                    # default input     # NOTE: update here!
             else
                 echo -en "\t$str_output1"
                 read str_input1
@@ -91,8 +91,6 @@
     # fi
 
 # parameters #
-    # declare -a arr_internalPCI_driver=()
-    # declare -a arr_internalPCI_HWID=()
     declare -a arr_IOMMU_host=()
     declare -a arr_IOMMU_hostVGA=()
     declare -a arr_IOMMU_VFIO=()
@@ -107,8 +105,9 @@
     str_internalPCI_HWIDList=""
     str_PCISTUB_driverList=""
     str_IGPUFullName=""
-    # NOTE: update here #
-    str_GRUB_CMDLINE_prefix="quiet splash video=efifb:off acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 ${str_GRUB_CMDLINE_Hugepages}"
+
+    # NOTE: update here!
+    str_GRUB_CMDLINE_prefix="quiet splash video=efifb:off,vesafb:off acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 ${str_GRUB_CMDLINE_Hugepages}"
 
 # multi-boot setup #
     function MultiBootSetup
@@ -152,7 +151,6 @@
                     # parse this list to exclude these devices from blacklist
                     # example: 'snd_hda_intel' is used by on-board audio devices and VGA audio child devices
                     if [[ ${str_thisBusID::1} == "0" && ${str_thisBusID:1:1} -lt 1 ]]; then
-                        # arr_internalDriver+=("$str_thisDriver")
                         str_internalPCI_driverList+="$str_thisDriver,"
                         str_internalPCI_HWIDList+="$str_thisHWID,"
                         bool_IOMMUcontainsExtPCI=false
@@ -163,7 +161,6 @@
                     # save all IOMMU groups that contain VGA device(s) #
                     # parse this list for 'Multi-boot' function later on
                     if [[ $str_thisType == *"3D"* || $str_thisType == *"DISPLAY"* || $str_thisType == *"GRAPHIC"* || $str_thisType == *"VGA"* ]]; then
-                        # arr_typeIsVGA_IOMMU+=("$int_thisIOMMU")
                         bool_IOMMUcontainsVGA=true
                     fi
 
@@ -172,7 +169,7 @@
                     # Why? Bind devices earlier than 'vfio-pci'
                     # GRUB:             parse this list and append to pci-stub
                     # system files:     parse this list and append to vfio-pci
-                    if [[ $str_thisType == *"USB"* ]]; then                     # NOTE: update here! #
+                    if [[ $str_thisType == *"USB"* ]]; then                     # NOTE: update here!
                         str_PCISTUB_driverList+="$str_thisDriver,"
                     fi
 
@@ -236,21 +233,12 @@
 
         # parameters #
             readonly str_thisFile="${0##*/}"
-            readonly str_logFile0="$str_thisFile.log"
             declare -a arr_VFIO_driver=()
             declare -a arr_VFIOVGA_driver=()
             str_thisFullName=""
-            # str_PCISTUB_HWIDlist=""
-            # str_PCISTUBVGA_HWIDlist=""
-            # str_VFIO_driverList=""
-            # str_VFIO_HWIDList=""
-            # str_VFIOVGA_driverList=""
-            # str_VFIOVGA_HWIDList=""
 
             readonly str_rootDistro=`lsb_release -i -s`                                                 # Linux distro name
             declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n3`)     # first three kernels
-            # str_rootKernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`                   # latest kernel
-            # readonly str_rootKernel=${str_rootKernel: 1}
             readonly str_rootDisk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
             readonly str_rootUUID=`blkid -s UUID | grep $str_rootDisk | cut -d '"' -f2`
             str_rootFSTYPE=`blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2`
@@ -272,15 +260,7 @@
             readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"
 
             # uncomment to debug here #
-            # readonly str_outFile1="custom.log"
             readonly str_oldFile1="$str_outFile1.old"
-
-            # create logfile #
-            if [[ -e $str_logFile0 ]]; then
-                rm $str_logFile0
-            else
-                touch $str_logFile0
-            fi
 
             # create backup #
             if [[ -e $str_outFile1 ]]; then
@@ -396,11 +376,8 @@
                     str_thisFullName=$str_IGPUFullName
                 fi
 
-                # NOTE: update here #
+                # NOTE: update here!
                 str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} modprobe.blacklist=${str_thisVFIO_driverList} pci-stub.ids=${str_thisPCISTUB_HWIDList} vfio_pci.ids=${str_thisVFIO_HWIDList}"
-
-                ## log file ##
-                echo -e "#${int_IOMMU_VFIOVGA} #${str_thisFullName} #${str_GRUB_CMDLINE}" >> $str_logFile0
 
                 ## /etc/grub.d/proxifiedScripts/custom ##
 
@@ -445,40 +422,31 @@
 
                                         *'#$str_output1'*)
                                             str_outLine1="$str_output1";;
-                                            # str_logLine1="$str_output1_log";;
 
                                         *'#$str_output2'*)
                                             str_outLine1="$str_output2";;
-                                            # str_logLine1="$str_output2";;
 
                                         *'#$str_output3'*)
                                             str_outLine1="$str_output3";;
-                                            # str_logLine1="$str_output3";;
 
                                         *'#$str_output4'*)
                                             str_outLine1="$str_output4";;
-                                            # str_logLine1="$str_output4";;
 
                                         *'#$str_output5'*)
                                             str_outLine1="$str_output5";;
-                                            # str_logLine1="$str_output5_log";;
 
                                         *'#$str_output6'*)
                                             str_outLine1="$str_output6";;
-                                            # str_logLine1="$str_output6_log";;
 
                                         *'#$str_output7'*)
                                             str_outLine1="$str_output7";;
-                                            # str_logLine1="$str_output7_log";;
 
                                         *)
                                             str_outLine1="$str_line1";;
-                                            # str_logLine1="$str_outLine1";;      # NOTE: do not change this line!
                                     esac
 
                                     # write to system file and logfile (post_install: update Multi-boot) #
                                     echo -e "$str_outLine1" >> $str_outFile1
-                                    # echo -e "$str_logLine1" >> $str_logFile0
                                 done < $str_inFile1b        # read from template
                             else
                                 bool_missingFiles=true
@@ -550,7 +518,6 @@
                     # parse this list to exclude these devices from blacklist
                     # example: 'snd_hda_intel' is used by on-board audio devices and VGA audio child devices
                     if [[ ${str_thisBusID::1} == "0" && ${str_thisBusID:1:1} -lt 1 ]]; then
-                        # arr_internalDriver+=("$str_thisDriver")
                         str_internalPCI_driverList+="$str_thisDriver,"
                         str_internalPCI_HWIDList+="$str_thisHWID,"
                         bool_IOMMUcontainsExtPCI=false
@@ -561,7 +528,6 @@
                     # save all IOMMU groups that contain VGA device(s) #
                     # parse this list for 'Multi-boot' function later on
                     if [[ $str_thisType == *"3D"* || $str_thisType == *"DISPLAY"* || $str_thisType == *"GRAPHIC"* || $str_thisType == *"VGA"* ]]; then
-                        # arr_typeIsVGA_IOMMU+=("$int_thisIOMMU")
                         bool_IOMMUcontainsVGA=true
                     fi
 
@@ -570,7 +536,7 @@
                     # Why? Bind devices earlier than 'vfio-pci'
                     # GRUB:             parse this list and append to pci-stub
                     # system files:     parse this list and append to vfio-pci
-                    if [[ $str_thisType == *"USB"* ]]; then                     # NOTE: update here! #
+                    if [[ $str_thisType == *"USB"* ]]; then                     # NOTE: update here!
                         str_PCISTUB_driverList+="$str_thisDriver,"
                     fi
 
