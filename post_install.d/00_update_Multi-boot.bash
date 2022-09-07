@@ -71,8 +71,8 @@ cp $str_inFile1 $str_outFile1          # copy over blank
     while read -r str_line1; do
 
         # new parameters #
-        int_IOMMU_VFIO_VGA=`echo $str_line1 | cut -d '#' -f2`
-        str_devFullName_VGA=`echo $str_line1 | cut -d '#' -f3`
+        int_IOMMU_VFIO_VGA=`echo $str_line1 | cut -d '#' -f2 | cut -d ' ' -f1`
+        str_devFullName_VGA=`echo $str_line1 | cut -d '#' -f3 | cut -d ' ' -f1`
         str_GRUB_CMDLINE=`echo $str_line1 | cut -d '#' -f4`
 
         # debug prompt #
