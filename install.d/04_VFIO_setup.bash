@@ -4,6 +4,13 @@
 # Author(s):    Alex Portell <github.com/portellam>
 #
 
+#
+# TO-DO:
+#   - hide 'grep' error, possibly occurs during vfio driver/hw id parse in either setup
+#   - change logfile ownership to home folder owner
+#
+#
+
 # check if sudo/root #
     if [[ `whoami` != "root" ]]; then
         str_file=`echo ${0##/*}`
@@ -233,6 +240,7 @@
 
         # parameters #
             readonly str_thisFile="${0##*/}"
+            readonly str_logFile0="$str_thisFile.log"
             declare -a arr_VFIO_driver=()
             declare -a arr_VFIOVGA_driver=()
             str_thisFullName=""
@@ -272,6 +280,13 @@
                 cp $str_inFile1 $str_outFile1
             fi
 
+            # create logfile #
+            if [[ -e $str_logFile0 ]]; then
+                rm $str_logFile0
+            else
+                touch $str_logFile0
+            fi
+
         # parse VFIO IOMMU group(s) #
         for int_IOMMU_VFIO in ${arr_IOMMU_VFIO[@]}; do
             for str_line0 in `find /sys/kernel/iommu_groups/$int_IOMMU_VFIO -maxdepth 0 -type d | sort -V`; do
@@ -286,13 +301,31 @@
                     # add to lists #
                     if [[ $str_thisDriver != "" ]]; then
                         if [[ -z `echo $str_internalPCI_driverList | grep $str_thisDriver` && -z `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
-                            arr_VFIO_driver+=("$str_thisDriver")
-                            str_VFIO_driverList+="$str_thisDriver,"
-                        fi
+                            if [[ ${#str_VFIO_driverList[@]} != 0 && -z `echo $str_VFIO_driverList | grep $str_thisDriver` ]]; then
+                                arr_VFIO_driver+=("$str_thisDriver")
+                                str_VFIO_driverList+="$str_thisDriver,"
 
-                        if [[ -z `echo $str_internalPCI_HWIDList | grep $str_thisHWID` ]]; then
-                            if [[ `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
+                            else
+                                arr_VFIO_driver+=("$str_thisDriver")
+                                str_VFIO_driverList+="$str_thisDriver,"
+                            fi
+                        fi
+                    fi
+
+                    if [[ -z `echo $str_internalPCI_HWIDList | grep $str_thisHWID` && -z `echo $str_VFIO_HWIDList | grep $str_thisHWID` ]]; then
+                        if [[ ${#str_PCISTUB_HWIDlist[@]} != 0 && -z `echo $str_PCISTUB_HWIDlist | grep $str_thisHWID` ]]; then
+                            if [[ ! -z `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
                                 str_PCISTUB_HWIDlist+="$str_thisHWID,"
+
+                            else
+                                str_VFIO_HWIDList+="$str_thisHWID,"
+                            fi
+
+                        else
+
+                            if [[ ! -z `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
+                                str_PCISTUB_HWIDlist+="$str_thisHWID,"
+
                             else
                                 str_VFIO_HWIDList+="$str_thisHWID,"
                             fi
@@ -306,7 +339,6 @@
         for int_IOMMU_VFIOVGA in ${arr_IOMMU_VFIOVGA[@]}; do
 
             # update parameters #
-            str_PCISTUB_HWIDlist=""
             str_PCISTUBVGA_HWIDlist=""
             str_VFIOVGA_driverList=""
             str_VFIOVGA_HWIDList=""
@@ -328,17 +360,17 @@
                     # add to lists #
                     if [[ $int_thisIOMMU != $int_IOMMU_VFIOVGA ]]; then
                         if [[ $str_thisDriver != "" ]]; then
-                            if [[ -z `echo $str_internalPCI_driverList | grep $str_thisDriver` && -z `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
+                            if [[ -z `echo $str_internalPCI_driverList | grep $str_thisDriver` && -z `echo $str_PCISTUB_driverList | grep $str_thisDriver` && -z `echo $str_VFIO_driverList | grep $str_thisDriver` && -z `echo $str_VFIOVGA_driverList | grep $str_thisDriver` ]]; then
                                 arr_VFIOVGA_driver+=("$str_thisDriver")
                                 str_VFIOVGA_driverList+="$str_thisDriver,"
                             fi
+                        fi
 
-                            if [[ -z `echo $str_internalPCI_HWIDList | grep $str_thisHWID` ]]; then
-                                if [[ `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
-                                    str_PCISTUBVGA_HWIDlist+="$str_thisHWID,"
-                                else
-                                    str_VFIOVGA_HWIDList+="$str_thisHWID,"
-                                fi
+                        if [[ -z `echo $str_internalPCI_HWIDList | grep $str_thisHWID` && -z `echo $str_PCISTUB_HWIDlist | grep $str_thisHWID` && -z `echo $str_VFIO_HWIDList | grep $str_thisHWID` ]]; then
+                            if [[ ! -z `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
+                                str_PCISTUBVGA_HWIDlist+="$str_thisHWID,"
+                            else
+                                str_VFIOVGA_HWIDList+="$str_thisHWID,"
                             fi
                         fi
 
@@ -378,6 +410,9 @@
 
                 # NOTE: update here!
                 str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} modprobe.blacklist=${str_thisVFIO_driverList} pci-stub.ids=${str_thisPCISTUB_HWIDList} vfio_pci.ids=${str_thisVFIO_HWIDList}"
+
+                # log file #
+                echo -e "#${int_IOMMU_VFIOVGA} #${str_thisFullName} #${str_GRUB_CMDLINE}" >> $str_logFile0
 
                 ## /etc/grub.d/proxifiedScripts/custom ##
 
@@ -682,13 +717,30 @@
                     # add to lists #
                     if [[ $str_thisDriver != "" ]]; then
                         if [[ -z `echo $str_internalPCI_driverList | grep $str_thisDriver` && -z `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
-                            arr_VFIO_driver+=("$str_thisDriver")
-                            str_VFIO_driverList+="$str_thisDriver,"
-                        fi
+                            if [[ ${#str_VFIO_driverList[@]} != 0 && -z `echo $str_VFIO_driverList | grep $str_thisDriver` ]]; then
+                                arr_VFIO_driver+=("$str_thisDriver")
+                                str_VFIO_driverList+="$str_thisDriver,"
 
-                        if [[ -z `echo $str_internalPCI_HWIDList | grep $str_thisHWID` ]]; then
-                            if [[ `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
+                            else
+                                arr_VFIO_driver+=("$str_thisDriver")
+                                str_VFIO_driverList+="$str_thisDriver,"
+                            fi
+                        fi
+                    fi
+
+                    if [[ -z `echo $str_internalPCI_HWIDList | grep $str_thisHWID` && -z `echo $str_VFIO_HWIDList | grep $str_thisHWID` ]]; then
+                        if [[ ${#str_PCISTUB_HWIDlist[@]} != 0 && -z `echo $str_PCISTUB_HWIDlist | grep $str_thisHWID` ]]; then
+                            if [[ ! -z `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
                                 str_PCISTUB_HWIDlist+="$str_thisHWID,"
+
+                            else
+                                str_VFIO_HWIDList+="$str_thisHWID,"
+                            fi
+
+                        else
+                            if [[ ! -z `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
+                                str_PCISTUB_HWIDlist+="$str_thisHWID,"
+
                             else
                                 str_VFIO_HWIDList+="$str_thisHWID,"
                             fi
@@ -715,13 +767,14 @@
                             arr_VFIO_driver+=("$str_thisDriver")
                             str_VFIO_driverList+="$str_thisDriver,"
                         fi
+                    fi
 
-                        if [[ -z `echo $str_internalPCI_HWIDList | grep $str_thisHWID` ]]; then
-                            if [[ `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
-                                str_PCISTUB_HWIDlist+="$str_thisHWID,"
-                            else
-                                str_VFIO_HWIDList+="$str_thisHWID,"
-                            fi
+                    if [[ -z `echo $str_internalPCI_HWIDList | grep $str_thisHWID` ]]; then
+                        if [[ ! -z `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
+                            str_PCISTUB_HWIDlist+="$str_thisHWID,"
+
+                        else
+                            str_VFIO_HWIDList+="$str_thisHWID,"
                         fi
                     fi
                 done
