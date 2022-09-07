@@ -4,12 +4,6 @@
 # Author(s):    Alex Portell <github.com/portellam>
 #
 
-#
-# TO-DO
-# -terminal output reports an error in grub output, but it doesn't appear to cause an issue. Monitor this.
-#
-#
-
 # check if sudo/root #
     if [[ `whoami` != "root" ]]; then
         str_file=`echo ${0##/*}`
@@ -55,7 +49,7 @@ echo -en "$0: Updating Multi-boot setup... "
 
     readonly str_inFile1=`find . -name *etc_grub.d_proxifiedScripts_custom`
     readonly str_inFile1b=`find . -name *Multi-boot_template`
-    readonly str_logFile1=`find .. -name *Multi-boot*log*`
+    readonly str_logFile1=`find .. -name *VFIO_setup*log*`
 
 # system files #
     readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"
@@ -71,14 +65,19 @@ cp $str_inFile1 $str_outFile1          # copy over blank
     while read -r str_line1; do
 
         # new parameters #
-        int_IOMMU_VFIO_VGA=`echo $str_line1 | cut -d '#' -f2`
-        str_devFullName_VGA=`echo $str_line1 | cut -d '#' -f3`
+        int_IOMMU_VFIO_VGA=`echo $str_line1 | cut -d '#' -f2 | cut -d ' ' -f1`
+        str_thisFullName=`echo $str_line1 | cut -d '#' -f3`
         str_GRUB_CMDLINE=`echo $str_line1 | cut -d '#' -f4`
+
+        # update parameters #
+        if [[ ${str_thisFullName: -1} == " " ]]; then
+            str_thisFullName=${str_thisFullName::-1}
+        fi
 
         # debug prompt #
         # echo
         # echo -e "$0: '$""int_IOMMU_VFIO_VGA'\t\t= $int_IOMMU_VFIO_VGA"
-        # echo -e "$0: '$""str_devFullName_VGA'\t\t= $str_devFullName_VGA"
+        # echo -e "$0: '$""str_thisFullName'\t\t= $str_thisFullName"
         # echo -e "$0: '$""str_GRUB_CMDLINE'\t\t= $str_GRUB_CMDLINE"
 
         # parse kernels #
@@ -89,7 +88,7 @@ cp $str_inFile1 $str_outFile1          # copy over blank
                 str_thisRootKernel=${arr_rootKernel[$int_i]:1}
 
                 # new parameters #
-                str_output1='menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_devFullName_VGA'\" {"
+                str_output1='menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_thisFullName')\" {"
                 str_output2="\tinsmod $str_rootFSTYPE"
                 str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
                 str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$str_rootUUID\n\t"'fi'
