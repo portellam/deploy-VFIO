@@ -27,7 +27,7 @@ Post-install, execute:
 * **VFIO setup:**
     * Setup Multi-boot or static. Multi-boot: Swap the preferred host graphics (VGA) device at GRUB boot menu. **(see 'examples')**
 * **Post-install:**
-    * **update Multi-boot** with latest installed Linux kernels.
+    * **update Multi-boot** with latest installed Linux kernels, and **select default boot entry.**
     * **Loopback audio** user service, audio capture from VM to host (ex: PCI Line-out to on-board Line-in/Mic).
     * IVSHMEM (Inter-VM Shared Memory Device):
         * **Evdev (Event devices)** is a Virtual Keyboard-Video-Mouse switch (K.V.M w/o video). (good fall-back)
@@ -52,11 +52,11 @@ Post-install, execute:
                 * For devices binded to 'pci-stub', this is normal.
                 * For some child devices (VGA audio device) and/or devices that share drivers with onboard devices (onboard audio), this is normal.
         * Select a host VGA boot device at GRUB menu.   (**Auto-Xorg** [1] is recommended)
-        * Creates up to three menu entries (for first three installed and latest Linux kernels).
+        * Creates up to three menu entries (for first three installed and latest Linux kernels), and **select default boot entry.**
         * Appends to GRUB: **'/etc/grub.d/proxifiedScripts/custom'**
         * Outputs to logfile, for future reference by updater.
     * **Static**
-        * bind all passthrough devices to **vfio-pci**.
+        * bind all passthrough devices to **vfio-pci** and **pci-stub** (GRUB), or **vfio-pci** only (system files).
         * Append to GRUB or system files:   **'/etc/default/grub'**, or **'/etc/initramfs-tools/modules'**, **'/etc/modules'**, and **'/etc/modprobe.d/*'**.
 * Checks for existing VFIO setup, prompt user to uninstall setup, reboot, and try again to continue.
 
