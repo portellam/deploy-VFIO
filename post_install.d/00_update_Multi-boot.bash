@@ -8,7 +8,7 @@
     if [[ `whoami` != "root" ]]; then
         str_file=`echo ${0##/*}`
         str_file=`echo $str_file | cut -d '/' -f2`
-        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
+        echo -e "WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
         exit 0
     fi
 
@@ -54,24 +54,22 @@
 
     if [[ `echo ${str_pwd##*/}` != "post_install.d" ]]; then
         if [[ -e `find .. -name post_install.d` ]]; then
-            # echo -e "$0: Script located the correct working directory."
+            # echo -e "Script located the correct working directory."
             cd `find .. -name post_install.d`
         else
-            echo -e "$0: WARNING: Script cannot locate the correct working directory. Exiting."
+            echo -e "WARNING: Script cannot locate the correct working directory. Exiting."
         fi
     # else
-    #     echo -e "$0: Script is in the correct working directory."
+    #     echo -e "Script is in the correct working directory."
     fi
 
 echo -e "Updating Multi-boot setup..."
 
 ## parameters ##
     declare -a arr_GRUBmenuEntry=()
-    readonly str_rootDistro=`lsb_release -i -s`                                                 # Linux distro name
     declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n3`)     # first three kernels
-    # str_rootKernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`                   # latest kernel
-    # readonly str_rootKernel=${str_rootKernel: 1}
     readonly str_rootDisk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
+    readonly str_rootDistro=`lsb_release -i -s`                                                 # Linux distro name
     readonly str_rootUUID=`blkid -s UUID | grep $str_rootDisk | cut -d '"' -f2`
     str_rootFSTYPE=`blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2`
 
@@ -116,9 +114,9 @@ cp $str_inFile1 $str_outFile1          # copy over blank
 
         # debug prompt #
         # echo
-        # echo -e "$0: '$""int_IOMMU_VFIO_VGA'\t\t= $int_IOMMU_VFIO_VGA"
-        # echo -e "$0: '$""str_thisFullName'\t\t= $str_thisFullName"
-        # echo -e "$0: '$""str_GRUB_CMDLINE'\t\t= $str_GRUB_CMDLINE"
+        # echo -e "'$""int_IOMMU_VFIO_VGA'\t\t= $int_IOMMU_VFIO_VGA"
+        # echo -e "'$""str_thisFullName'\t\t= $str_thisFullName"
+        # echo -e "'$""str_GRUB_CMDLINE'\t\t= $str_GRUB_CMDLINE"
 
         # parse kernels #
         for (( int_i=0 ; int_i<${#arr_rootKernel[@]} ; int_i++)); do
@@ -138,12 +136,12 @@ cp $str_inFile1 $str_outFile1          # copy over blank
                 str_output7="\tinitrd  /boot/initrd.img-$str_thisRootKernel"
 
                 # debug prompt #
-                # echo -e "$0: '$""str_output2'\t\t= $str_output2"
-                # echo -e "$0: '$""str_output3'\t\t= $str_output3"
-                # echo -e "$0: '$""str_output4'\t\t= $str_output4"
-                # echo -e "$0: '$""str_output5'\t\t= $str_output5"
-                # echo -e "$0: '$""str_output6'\t\t= $str_output6"
-                # echo -e "$0: '$""str_output7'\t\t= $str_output7"
+                # echo -e "'$""str_output2'\t\t= $str_output2"
+                # echo -e "'$""str_output3'\t\t= $str_output3"
+                # echo -e "'$""str_output4'\t\t= $str_output4"
+                # echo -e "'$""str_output5'\t\t= $str_output5"
+                # echo -e "'$""str_output6'\t\t= $str_output6"
+                # echo -e "'$""str_output7'\t\t= $str_output7"
                 # echo
 
                 if [[ -e $str_inFile1b && -e $str_logFile1 ]]; then
@@ -188,9 +186,9 @@ cp $str_inFile1 $str_outFile1          # copy over blank
                 else
                     bool_missingFiles=true
                 fi
-            fi
 
-            arr_GRUBmenuEntry+=(`echo $str_thisGRUBmenuEntry`)
+                arr_GRUBmenuEntry+=(`echo $str_thisGRUBmenuEntry`)
+            fi
         done
     done < $str_logFile1                                # read from log file
 
@@ -207,8 +205,8 @@ cp $str_inFile1 $str_outFile1          # copy over blank
         bool_loop=true
 
         # write to system file #
-        while [[ $bool_loop == true ]]; do
-            if [[ ${#arr_GRUBmenuEntry[@]} -gt 0 ]]; then
+        if [[ ${#arr_GRUBmenuEntry[@]} -gt 0 ]]; then
+            while [[ $bool_loop == true ]]; do
                 for str_thisGRUBmenuEntry in ${arr_GRUBmenuEntry[@]}; do
 
                     # parameters #
@@ -284,8 +282,9 @@ cp $str_inFile1 $str_outFile1          # copy over blank
                 done
 
                 echo
-            fi
-        done
+                break
+            done
+        fi
 
         echo
     fi

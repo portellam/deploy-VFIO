@@ -14,7 +14,7 @@ exit 0
     if [[ `whoami` != "root" ]]; then
         str_file=`echo ${0##/*}`
         str_file=`echo $str_file | cut -d '/' -f2`
-        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
+        echo -e "WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
         exit 0
     fi
 
@@ -26,9 +26,9 @@ exit 0
     readonly str_logFile1="$str_thisFile.log"
 
 # prompt #
-    str_output1="$0: HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and lower overhead of memory-access (memory latency).\n"
+    str_output1="HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and lower overhead of memory-access (memory latency).\n"
     # echo -e $str_output1
-    echo -e "$0: Executing CPU isolation setup..."
+    echo -e "Executing CPU isolation setup..."
 
 # parameters #
     readonly declare -i int_totalCores=`cat /proc/cpuinfo | grep 'cpu cores' | uniq`

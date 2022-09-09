@@ -13,7 +13,7 @@
     if [[ `whoami` != "root" ]]; then
         str_file=`echo ${0##/*}`
         str_file=`echo $str_file | cut -d '/' -f2`
-        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
+        echo -e "WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
         exit 0
     fi
 
@@ -22,13 +22,13 @@
 
     if [[ `echo ${str_pwd##*/}` != "post-install.d" ]]; then
         if [[ -e `find . -name post-install.d` ]]; then
-            # echo -e "$0: Script located the correct working directory."
+            # echo -e "Script located the correct working directory."
             cd `find . -name post-install.d`
         else
-            echo -e "$0: WARNING: Script cannot locate the correct working directory. Exiting."
+            echo -e "WARNING: Script cannot locate the correct working directory. Exiting."
         fi
     # else
-    #     echo -e "$0: Script is in the correct working directory."
+    #     echo -e "Script is in the correct working directory."
     fi
 
 # NOTE: necessary for newline preservation in arrays and files #
@@ -38,7 +38,7 @@
 # precede with echo prompt for input #
 # ask user for input then validate #
     function ReadInput {
-        #echo -en "$0: "
+        #echo -en ""
 
         if [[ $str_input1 == "Y" ]]; then
             echo -en $str_output1$str_input1
@@ -62,7 +62,7 @@
                     "Y"|"N")
                         break;;
                     *)
-                        echo -en "$0: Invalid input. ";;
+                        echo -en "Invalid input. ";;
                 esac
 
                 ((int_count++))         # increment counter
@@ -105,7 +105,7 @@ gnif/LookingGlass"
 
 ## prompts ##
     str_input1=""
-    echo -en "$0: Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n\tHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n\tSetup Evdev? [Y/n]: "
+    echo -en "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n\tHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n\tSetup Evdev? [Y/n]: "
     ReadInput $str_input1
 
     if [[ $str_input1 == "Y"* ]]; then
@@ -114,7 +114,7 @@ gnif/LookingGlass"
     fi
 
     str_input1=""
-    echo -en "\n$0: Looking Glass is a remote viewer of a VM GPU's primary video output, to a window on the host.\n\tNOTE: Windows VM's only!\n\tSetup Looking Glass? [Y/n]: "
+    echo -en "\nLooking Glass is a remote viewer of a VM GPU's primary video output, to a window on the host.\n\tNOTE: Windows VM's only!\n\tSetup Looking Glass? [Y/n]: "
     ReadInput $str_input1
 
     if [[ $str_input1 == "Y"* ]]; then
@@ -125,7 +125,7 @@ gnif/LookingGlass"
     fi
 
     str_input1=""
-    echo -en "\n$0: Scream is a virtual sound card that transmits audio through a virtual network, back to the host.\n\tSetup Scream? [Y/n]: "
+    echo -en "\nScream is a virtual sound card that transmits audio through a virtual network, back to the host.\n\tSetup Scream? [Y/n]: "
     ReadInput $str_input1
 
     if [[ $str_input1 == "Y"* ]]; then
@@ -255,10 +255,10 @@ gnif/LookingGlass"
                     #cd ./git/gnif/LookingGlass/client/build
                     #cmake ../
                     #make
-                    #echo -e "\n$0: Installed Looking Glass client.\n\tReview documentation to install server and complete setup ('https://looking-glass.io')."
-                    echo -e "\n$0: Review documentation to install Looking Glass and complete setup ('https://looking-glass.io')."
+                    #echo -e "\nInstalled Looking Glass client.\n\tReview documentation to install server and complete setup ('https://looking-glass.io')."
+                    echo -e "\nReview documentation to install Looking Glass and complete setup ('https://looking-glass.io')."
                 else
-                    echo -e "\n$0: Missing 'gnif/LookingGlass'."
+                    echo -e "\nMissing 'gnif/LookingGlass'."
                 fi
             fi
 
@@ -276,14 +276,14 @@ gnif/LookingGlass"
                     #cd ./git/duncanthrax/scream/build
                     #cmake ..
                     #make
-                    #echo -e "\n$0: Installed Scream client.\n\tReview documentation to install server and complete setup ('https://github.com/duncanthrax/scream/')."
-                    echo -e "\n$0: Review documentation to install Scream and complete setup ('https://github.com/duncanthrax/scream/')."
+                    #echo -e "\nInstalled Scream client.\n\tReview documentation to install server and complete setup ('https://github.com/duncanthrax/scream/')."
+                    echo -e "\nReview documentation to install Scream and complete setup ('https://github.com/duncanthrax/scream/')."
                 else
-                    echo -e "\n$0: Missing 'duncanthrax/scream'."
+                    echo -e "\nMissing 'duncanthrax/scream'."
                 fi
             fi
 
-            echo -e "\n$0: Review changes:\n\t'$str_outFile1'\n\t'$str_outFile2'"
+            echo -e "\nReview changes:\n\t'$str_outFile1'\n\t'$str_outFile2'"
         fi
     else
         echo -e "Failed. File(s) missing:"

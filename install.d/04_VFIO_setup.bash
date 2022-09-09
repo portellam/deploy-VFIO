@@ -239,15 +239,17 @@
             fi
 
         # parameters #
+            bool_outputToGRUB=false
             readonly str_thisFile="${0##*/}"
             readonly str_logFile0="$str_thisFile.log"
             declare -a arr_VFIO_driver=()
             declare -a arr_VFIOVGA_driver=()
             str_thisFullName=""
 
-            readonly str_rootDistro=`lsb_release -i -s`                                                 # Linux distro name
+            declare -a arr_GRUBmenuEntry=()
             declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n3`)     # first three kernels
             readonly str_rootDisk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
+            readonly str_rootDistro=`lsb_release -i -s`                                                 # Linux distro name
             readonly str_rootUUID=`blkid -s UUID | grep $str_rootDisk | cut -d '"' -f2`
             str_rootFSTYPE=`blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2`
 
@@ -424,7 +426,9 @@
                             str_thisRootKernel=${arr_rootKernel[$int_i]:1}
 
                             # parameters #
-                            str_output1='menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIOVGA', w/ boot VGA '$str_thisFullName'\") {"
+                            str_thisGRUBmenuEntry="`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_thisFullName')"
+                            arr_GRUBmenuEntry+=("$str_thisGRUBmenuEntry")
+                            str_output1="menuentry \"$str_thisGRUBmenuEntry\" {"
                             str_output1_log="\n"'menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` #kernel_'$int_i'# (VFIO, w/o IOMMU '$int_IOMMU_VFIOVGA', w/ boot VGA '$str_thisFullName'\") {"
                             str_output2="\tinsmod $str_rootFSTYPE"
                             str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
@@ -506,6 +510,99 @@
 
             else
                 chmod 755 $str_outFile1 $str_oldFile1                   # set proper permissions
+
+                # # TO-DO: redo. echo reports a filled array, but the if statement doesn't 'work'
+                # # - this code block in the updater works fine, but here it reports '3' elements, and the if statement does fuck all
+                # #
+                # echo -e '${#arr_GRUBmenuEntry[@]} == "'"'${#arr_GRUBmenuEntry[@]}'"
+
+                # # parameters #
+                # ##bool_loop=true
+
+                # # write to system file #
+                # if [[ ${#arr_GRUBmenuEntry[@]} -ge 0 ]]; then
+                #     ##while [[ $bool_loop == true ]]; do
+                #         for str_thisGRUBmenuEntry in ${arr_GRUBmenuEntry[@]}; do
+
+                #             # parameters #
+                #             echo -e "\n\tGRUB Menu Entry: \"$str_thisGRUBmenuEntry\""
+                #             str_output1="Set the given GRUB menu entry as default? [Y/n]: "
+                #             ReadInput $str_output1
+
+                #             case $str_input1 in
+                #                 "Y")
+                #                     # parameters #
+                #                     bool_foundLineMatch=false
+                #                     bool_foundCommentLineMatch=false
+
+                #                     # write to GRUB #
+                #                     if [[ -e $str_outFile2 ]]; then
+
+                #                         # clear logfile #
+                #                         if [[ -e $str_oldFile2 ]]; then
+                #                             rm $str_oldFile2
+                #                         fi
+
+                #                         touch $str_oldFile2
+
+                #                         # parse system file #
+                #                         while read -r str_line2; do
+
+                #                             # match line #
+                #                             if [[ $bool_foundLineMatch == false && $str_line2 == *"GRUB_DEFAULT="* ]]; then
+
+                #                                 # match exact line #
+                #                                 if [[ $str_line2 != "#"* ]]; then
+                #                                     str_line2="GRUB_DEFAULT=\"$str_thisGRUBmenuEntry\""
+                #                                     bool_foundLineMatch=true
+
+                #                                 # match commented line #
+                #                                 else
+                #                                     bool_foundCommentLineMatch=true
+                #                                 fi
+                #                             fi
+
+                #                             echo -e $str_line2 >> $str_oldFile2
+                #                         done < $str_outFile2        # read from template
+
+                #                         # should loop find no line match, append the selection to the end of the file #
+                #                         if [[ $bool_foundCommentLineMatch == true && $bool_foundLineMatch == false ]]; then
+                #                             str_line2="GRUB_DEFAULT=\"$str_thisGRUBmenuEntry\""
+                #                             echo -e $str_line2 >> $str_oldFile2
+                #                         fi
+
+                #                         # copy over system file #
+                #                         if [[ -e $str_oldFile2 ]]; then
+                #                             cp $str_oldFile2 $str_outFile2
+                #                             str_output2="Set GRUB menu entry as default."
+                #                         else
+                #                             str_output2="Write failed. File(s) missing:\t'$str_oldFile2'"
+                #                         fi
+                #                     else
+                #                         str_output2="Write failed. File(s) missing:\t'$str_outFile2'"
+                #                     fi
+
+                #                     bool_outputToGRUB=true
+                #                     ##bool_loop=false
+                #                     break;;
+
+                #                 "N")
+                #                     str_output2="Skipped GRUB menu entry."
+                #                     ##bool_loop=false;;
+                #                     break;;
+
+                #                 *)
+                #                     str_output2="Invalid input.";;
+                #             esac
+
+                #             echo -e "\t$str_output2\n"
+                #         done
+
+                #         echo
+                #         break
+                #     ##done
+                # fi
+
                 echo -e "Executing Multi-boot setup... Complete."
             fi
         done
@@ -1026,7 +1123,13 @@
                 MultiBootSetup $str_GRUB_CMDLINE_Hugepages $bool_foundExistingVFIOsetup
                 echo
                 sudo update-grub
-                echo -e "\nReview changes:\n\t'$str_outFile1'"
+
+                if [[ $bool_outputToGRUB == true ]]; then
+                    echo -e "\nReview changes:\n\t'$str_outFile1'\n\t'$str_outFile2'"
+                else
+                    echo -e "\nReview changes:\n\t'$str_outFile1'"
+                fi
+
                 break;;
 
             "S")

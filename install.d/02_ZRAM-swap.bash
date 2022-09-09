@@ -13,7 +13,7 @@
     if [[ `whoami` != "root" ]]; then
         str_file=`echo ${0##/*}`
         str_file=`echo $str_file | cut -d '/' -f2`
-        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
+        echo -e "WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
         exit 0
     fi
 
@@ -41,10 +41,10 @@
     str_logFile0=`find . -name *Hugepages*log*`
 
 # prompt #
-    str_output1="$0: ZRAM allocates RAM as a compressed swapfile.\n\tThe default compression method \"lz4\", at a ratio of 2:1 to 5:2, offers the greatest performance."
+    str_output1="ZRAM allocates RAM as a compressed swapfile.\n\tThe default compression method \"lz4\", at a ratio of 2:1 to 5:2, offers the greatest performance."
 
     echo -e $str_output1
-    echo -e "$0: Executing ZRAM-swap setup. Calculating..."
+    echo -e "Executing ZRAM-swap setup. Calculating..."
 
 # parameters #
     int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
@@ -81,12 +81,12 @@
         str_file=`find . -name *Hugepages*bash*`
         str_file=`echo ${str_file##/*}`
         str_file=`echo $str_file | cut -d '/' -f2`
-        echo -e "$0: Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_file' and '$0'.\n"
+        echo -e "Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_file' and '$0'.\n"
 
         declare -i int_hostMemFreeG=$int_sysMemMaxG
 
         # setup ZRAM #
-        echo -e "$0: Total system memory: <= ${int_sysMemMaxG}G.\n$0: If 'Z == ${int_sysMemMaxG}G - (V + X)', where ('Z' == ZRAM, 'V' == VM(s), and 'X' == remainder for Host machine).\n\tCalculate 'Z'."
+        echo -e "Total system memory: <= ${int_sysMemMaxG}G.\nIf 'Z == ${int_sysMemMaxG}G - (V + X)', where ('Z' == ZRAM, 'V' == VM(s), and 'X' == remainder for Host machine).\n\tCalculate 'Z'."
     else
 
         while read -r str_line1; do
@@ -104,10 +104,10 @@
         declare -i int_hostMemFreeG=$int_sysMemMaxG-$int_hugepagesMemG
 
         # setup ZRAM #
-        echo -e "$0: Free system memory after hugepages (${int_hugepagesMemG}G): <= ${int_hostMemFreeG}G."
+        echo -e "Free system memory after hugepages (${int_hugepagesMemG}G): <= ${int_hostMemFreeG}G."
     fi
 
-    str_output1="$0: Enter zram-swap size in G (0G < n < ${int_hostMemFreeG}G): "
+    str_output1="Enter zram-swap size in G (0G < n < ${int_hostMemFreeG}G): "
     echo -en $str_output1
     read -r int_ZRAM_sizeG
 
@@ -116,11 +116,11 @@
         # attempt #
         if [[ $int_count -ge 2 ]]; then
             ((int_ZRAM_sizeG=int_hostMemFreeG/2))      # default selection
-            echo -e "$0: Exceeded max attempts. Default selection: ${int_ZRAM_sizeG}G"
+            echo -e "Exceeded max attempts. Default selection: ${int_ZRAM_sizeG}G"
             break
         else
             if [[ -z $int_ZRAM_sizeG || $int_ZRAM_sizeG -lt 0 || $int_ZRAM_sizeG -ge $int_hostMemFreeG ]]; then
-                echo -en "$0: Invalid input.\n$str_output1"
+                echo -en "Invalid input.\n$str_output1"
                 read -r int_ZRAM_sizeG
             else break; fi
         fi
@@ -156,8 +156,8 @@
 
         systemctl restart zram-swap     # restart service   # NOTE: do not enable/start zramswap.service?  # NOTE: test!
         # NOTE: in my setup, I prefer the git repo. I currently do not understand zram setup using the debian package/config file (zram pages are exact sizes compressed, not uncompressed as above).
-        echo -e "$0: Executing ZRAM-swap setup... Complete.\n"
-        echo -e "$0: Review changes:\n\t'$str_outFile2'"
+        echo -e "Executing ZRAM-swap setup... Complete.\n"
+        echo -e "Review changes:\n\t'$str_outFile2'"
     else
         echo -e "Failed. File(s) missing:"
 

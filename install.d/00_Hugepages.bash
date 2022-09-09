@@ -13,7 +13,7 @@
     if [[ `whoami` != "root" ]]; then
         str_file=`echo ${0##/*}`
         str_file=`echo $str_file | cut -d '/' -f2`
-        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
+        echo -e "WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
         exit 0
     fi
 
@@ -40,10 +40,10 @@
     readonly str_logFile1="$str_thisFile.log"
 
 # prompt #
-    str_output1="$0: HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and lower overhead of memory-access (memory latency).\n"
+    str_output1="HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and lower overhead of memory-access (memory latency).\n"
 
     echo -e $str_output1
-    echo -e "$0: Executing Hugepages setup..."
+    echo -e "Executing Hugepages setup..."
 
 # Hugepage size: validate input #
     declare -i int_count=0      # reset counter
@@ -52,9 +52,9 @@
         # attempt #
         if [[ $int_count -ge 3 ]]; then
             str_HugePageSize="1G"           # default selection
-            echo -e "$0: Exceeded max attempts. Default selection: ${str_HugePageSize}"
+            echo -e "Exceeded max attempts. Default selection: ${str_HugePageSize}"
         else
-            echo -en "$0: Enter Hugepage size and byte-size. [2M/1G]: "
+            echo -en "Enter Hugepage size and byte-size. [2M/1G]: "
             read -r str_HugePageSize
             str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
         fi
@@ -64,7 +64,7 @@
             "2M"|"1G")
                 break;;
             *)
-                echo "$0: Invalid input.";;
+                echo "Invalid input.";;
         esac
 
         ((int_count++))     # increment counter
@@ -78,7 +78,7 @@
         # attempt #
         if [[ $int_count -ge 3 ]]; then
             int_HugePageNum=$int_HugePageMax        # default selection
-            echo "$0: Exceeded max attempts. Default selection: ${int_HugePageNum}"
+            echo "Exceeded max attempts. Default selection: ${int_HugePageNum}"
         else
             # Hugepage Size #
             if [[ $str_HugePageSize == "2M" ]]; then
@@ -95,13 +95,13 @@
             declare -i int_HugePageMemMax=$int_HostMemMaxK-$int_HostMemMinK
             declare -i int_HugePageMax=$int_HugePageMemMax/$int_HugePageK   # max HugePages
 
-            echo -en "$0: Enter number of HugePages (n * $str_HugePageSize). [$int_HugePageMin <= n <= $int_HugePageMax pages]: "
+            echo -en "Enter number of HugePages (n * $str_HugePageSize). [$int_HugePageMin <= n <= $int_HugePageMax pages]: "
             read -r int_HugePageNum
         fi
 
         # check input #
         if [[ $int_HugePageNum -lt $int_HugePageMin || $int_HugePageNum -gt $int_HugePageMax ]]; then
-            echo "$0: Invalid input."
+            echo "Invalid input."
             ((int_count++))     # increment counter
         else
             # str_output1="default_hugepagesz=$str_HugePageSize hugepagesz=$str_HugePageSize hugepages=$int_HugePageNum"   # shared variable with other function
@@ -146,10 +146,10 @@
             echo -e $str_line1 >> $str_outFile1
         done < $str_inFile1
 
-        echo -e "$0: Executing Hugepages setup... Complete.\n"
+        echo -e "Executing Hugepages setup... Complete.\n"
         systemctl enable libvirtd
         systemctl restart libvirtd
-        echo -e "$0: Review changes:\n\t'$str_outFile1'"
+        echo -e "Review changes:\n\t'$str_outFile1'"
     else
         echo -e "Failed. File(s) missing:"
         echo -e "\t'$str_inFile1'"
