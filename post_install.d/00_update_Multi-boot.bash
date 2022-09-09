@@ -4,12 +4,6 @@
 # Author(s):    Alex Portell <github.com/portellam>
 #
 
-#
-# TO-DO
-# -terminal output reports an error in grub output, but it doesn't appear to cause an issue. Monitor this.
-#
-#
-
 # check if sudo/root #
     if [[ `whoami` != "root" ]]; then
         str_file=`echo ${0##/*}`
@@ -17,6 +11,43 @@
         echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
         exit 0
     fi
+
+# NOTE: necessary for newline preservation in arrays and files #
+    SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
+    IFS=$'\n'      # Change IFS to newline char
+
+# procede with echo prompt for input #
+    # ask user for input then validate #
+    function ReadInput {
+
+        # parameters #
+        str_input1=""
+        declare -i int_count=0      # reset counter
+
+        while true; do
+
+            # manual prompt #
+            if [[ $int_count -ge 3 ]]; then
+                echo -en "Exceeded max attempts. "
+                str_input1="N"                    # default input     # NOTE: update here!
+            else
+                echo -en "\t$str_output1"
+                read str_input1
+
+                str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
+                str_input1=${str_input1:0:1}
+            fi
+
+            case $str_input1 in
+                "Y"|"N")
+                    break;;
+                *)
+                    echo -en "\tInvalid input. ";;
+            esac
+
+            ((int_count++))         # increment counter
+        done
+    }
 
 # check if in correct dir #
     str_pwd=`pwd`
@@ -32,9 +63,10 @@
     #     echo -e "$0: Script is in the correct working directory."
     fi
 
-echo -en "$0: Updating Multi-boot setup... "
+echo -e "Updating Multi-boot setup..."
 
 ## parameters ##
+    declare -a arr_GRUBmenuEntry=()
     readonly str_rootDistro=`lsb_release -i -s`                                                 # Linux distro name
     declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n3`)     # first three kernels
     # str_rootKernel=`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n1`                   # latest kernel
@@ -55,13 +87,15 @@ echo -en "$0: Updating Multi-boot setup... "
 
     readonly str_inFile1=`find . -name *etc_grub.d_proxifiedScripts_custom`
     readonly str_inFile1b=`find . -name *Multi-boot_template`
-    readonly str_logFile1=`find .. -name *VFIO_setup*log*`
+    readonly str_logFile1=`find . -name *VFIO_setup*log*`
 
 # system files #
     readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"
+    readonly str_outFile2="/etc/default/grub"
 
 # system file backups #
     readonly str_oldFile1=$str_outFile1".old"
+    readonly str_oldFile2=$str_outFile2".old"
 
 cp $str_inFile1 $str_outFile1          # copy over blank
 
@@ -72,13 +106,18 @@ cp $str_inFile1 $str_outFile1          # copy over blank
 
         # new parameters #
         int_IOMMU_VFIO_VGA=`echo $str_line1 | cut -d '#' -f2 | cut -d ' ' -f1`
-        str_devFullName_VGA=`echo $str_line1 | cut -d '#' -f3 | cut -d ' ' -f1`
+        str_thisFullName=`echo $str_line1 | cut -d '#' -f3`
         str_GRUB_CMDLINE=`echo $str_line1 | cut -d '#' -f4`
+
+        # update parameters #
+        if [[ ${str_thisFullName: -1} == " " ]]; then
+            str_thisFullName=${str_thisFullName::-1}
+        fi
 
         # debug prompt #
         # echo
         # echo -e "$0: '$""int_IOMMU_VFIO_VGA'\t\t= $int_IOMMU_VFIO_VGA"
-        # echo -e "$0: '$""str_devFullName_VGA'\t\t= $str_devFullName_VGA"
+        # echo -e "$0: '$""str_thisFullName'\t\t= $str_thisFullName"
         # echo -e "$0: '$""str_GRUB_CMDLINE'\t\t= $str_GRUB_CMDLINE"
 
         # parse kernels #
@@ -89,7 +128,8 @@ cp $str_inFile1 $str_outFile1          # copy over blank
                 str_thisRootKernel=${arr_rootKernel[$int_i]:1}
 
                 # new parameters #
-                str_output1='menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_devFullName_VGA')\" {"
+                str_thisGRUBmenuEntry="`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_thisFullName')"
+                str_output1="menuentry \"$str_thisGRUBmenuEntry\" {"
                 str_output2="\tinsmod $str_rootFSTYPE"
                 str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
                 str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$str_rootUUID\n\t"'fi'
@@ -149,19 +189,108 @@ cp $str_inFile1 $str_outFile1          # copy over blank
                     bool_missingFiles=true
                 fi
             fi
+
+            arr_GRUBmenuEntry+=(`echo $str_thisGRUBmenuEntry`)
         done
     done < $str_logFile1                                # read from log file
 
     if [[ $bool_missingFiles == true ]]; then
-        echo -e "Failed.\n$0: File(s) missing:"
+        echo -e "Updating Multi-boot setup... Failed.\n File(s) missing:"
 
-        if [[ -z $str_logFile1b ]]; then
-            echo -e "\t'$str_logFile1b'"
+        if [[ -z $str_logFile1 ]]; then
+            echo -e "\t'$str_logFile1'"
         fi
     else
         chmod 755 $str_outFile1 $str_oldFile1b          # set proper permissions
-        echo -e "Complete."
-        sudo update-grub
+
+        # parameters #
+        bool_loop=true
+
+        # write to system file #
+        while [[ $bool_loop == true ]]; do
+            if [[ ${#arr_GRUBmenuEntry[@]} -gt 0 ]]; then
+                for str_thisGRUBmenuEntry in ${arr_GRUBmenuEntry[@]}; do
+
+                    # parameters #
+                    echo -e "\n\tGRUB Menu Entry: \"$str_thisGRUBmenuEntry\""
+                    str_output1="Set the given GRUB menu entry as default? [Y/n]: "
+                    ReadInput $str_output1
+
+                    case $str_input1 in
+                        "Y")
+                            # parameters #
+                            bool_foundLineMatch=false
+                            bool_foundCommentLineMatch=false
+
+                            # write to GRUB #
+                            if [[ -e $str_outFile2 ]]; then
+
+                                # clear logfile #
+                                if [[ -e $str_oldFile2 ]]; then
+                                    rm $str_oldFile2
+                                fi
+
+                                touch $str_oldFile2
+
+                                # parse system file #
+                                while read -r str_line2; do
+
+                                    # match line #
+                                    if [[ $bool_foundLineMatch == false && $str_line2 == *"GRUB_DEFAULT="* ]]; then
+
+                                        # match exact line #
+                                        if [[ $str_line2 != "#"* ]]; then
+                                            str_line2="GRUB_DEFAULT=\"$str_thisGRUBmenuEntry\""
+                                            bool_foundLineMatch=true
+
+                                        # match commented line #
+                                        else
+                                            bool_foundCommentLineMatch=true
+                                        fi
+                                    fi
+
+                                    echo -e $str_line2 >> $str_oldFile2
+                                done < $str_outFile2        # read from template
+
+                                # should loop find no line match, append the selection to the end of the file #
+                                if [[ $bool_foundCommentLineMatch == true && $bool_foundLineMatch == false ]]; then
+                                    str_line2="GRUB_DEFAULT=\"$str_thisGRUBmenuEntry\""
+                                    echo -e $str_line2 >> $str_oldFile2
+                                fi
+
+                                # copy over system file #
+                                if [[ -e $str_oldFile2 ]]; then
+                                    cp $str_oldFile2 $str_outFile2
+                                    str_output2="Set GRUB menu entry as default."
+                                else
+                                    str_output2="Write failed. File(s) missing:\t'$str_oldFile2'"
+                                fi
+                            else
+                                str_output2="Write failed. File(s) missing:\t'$str_outFile2'"
+                            fi
+
+                            bool_loop=false
+                            break;;
+
+                        "N")
+                            str_output2="Skipped GRUB menu entry."
+                            bool_loop=false;;
+
+                        *)
+                            str_output2="Invalid input.";;
+                    esac
+
+                    echo -e "\t$str_output2\n"
+                done
+
+                echo
+            fi
+        done
+
+        echo
     fi
+
+    echo -e "Updating Multi-boot setup... Complete."
+    sudo update-grub
 
 exit 0
