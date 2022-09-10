@@ -18,11 +18,13 @@ Post-install, execute:
 ## Functions
 * **Pre-install:**
     * **Hugepages**
-        * Static allocation of Host RAM to VMs for zero memory fragmentation and reduced memory latencies (best to use whole Memory channels/sticks, if possible).
+        * Static allocation of system RAM to VMs for zero memory fragmentation and reduced memory latencies (best to use whole Memory channels/sticks, if possible).
         * Outputs to logfile, for future reference by Multi-boot updater.
     * **Zram swapfile**
         * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
-    * **static/dynamic CPU thread allocation** **(work-in-progress)**
+    * **Static CPU Isolation**
+        * Static isolation of system CPU threads. **(see 'post-install/Libvirt hooks' for Dynamic isolation)**
+        * Outputs to logfile, for future reference by VFIO setup.
     * **Auto-Xorg** system service to find and set a valid host boot VGA device for Xorg. [1]
 * **VFIO setup:**
     * Setup Multi-boot or static. Multi-boot: Swap the preferred host graphics (VGA) device at GRUB boot menu. **(see 'examples')**

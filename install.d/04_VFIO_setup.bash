@@ -84,18 +84,16 @@
         readonly str_GRUB_CMDLINE_Hugepages="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${str_HugePageSum}"
     fi
 
-# GRUB: isolate CPUs check #
-    str_file=`find .. -name *Isolate_CPU*log*`
+# GRUB: Static isolate CPUs check #
+    str_file=`find .. -name *Static_CPU_isolation*log*`
 
-    # if [[ -z $str_file ]]; then
-    #     str_file=`find . -name *Isolate_CPU*bash*`
-    #     str_file=`echo ${str_file##/*} | cut -d '/' -f2`
-    #     echo -e "WARNING: Logfile does not exist.\n\tShould you wish to allocate CPU threads, execute '$str_file', then '$0'.\n"
-    # else
-    #     readonly str_HugePageSize=`cat $str_file | cut -d '#' -f2 | cut -d ' ' -f1`
-    #     readonly str_HugePageSum=`cat $str_file | cut -d '#' -f3`
-    #     readonly str_GRUB_CMDLINE_Hugepages="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${str_HugePageSum}"
-    # fi
+    if [[ -z $str_file ]]; then
+        str_file=`find . -name *Static_CPU_isolation*bash*`
+        str_file=`echo ${str_file##/*} | cut -d '/' -f2`
+        echo -e "WARNING: Logfile does not exist.\n\tShould you wish statically isolate CPU threads, execute '$str_file', then '$0'.\n"
+    else
+        readonly str_GRUB_CMDLINE_IsolateCPU=`cat $str_file | head -n1 | cut -d '#' -f2`
+    fi
 
 # parameters #
     declare -a arr_IOMMU_host=()
@@ -114,7 +112,7 @@
     str_IGPUFullName=""
 
     # NOTE: update here!
-    str_GRUB_CMDLINE_prefix="quiet splash video=efifb:off,vesafb:off acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 ${str_GRUB_CMDLINE_Hugepages}"
+    str_GRUB_CMDLINE_prefix="quiet splash video=efifb:off,vesafb:off acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 ${str_GRUB_CMDLINE_Hugepages} ${str_GRUB_CMDLINE_IsolateCPU}"
 
 # multi-boot setup #
     function MultiBootSetup
