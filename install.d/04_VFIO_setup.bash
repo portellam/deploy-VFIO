@@ -301,11 +301,12 @@
                     # add to lists #
                     if [[ $str_thisDriver != "" ]]; then
                         if [[ -z `echo $str_internalPCI_driverList | grep $str_thisDriver` && -z `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
-                            if [[ ${#str_VFIO_driverList[@]} != 0 && -z `echo $str_VFIO_driverList | grep $str_thisDriver` ]]; then
+                            if [[ ${#str_VFIO_driverList[@]} != 0 && ! `echo $str_VFIO_driverList | grep $str_thisDriver` ]]; then
                                 arr_VFIO_driver+=("$str_thisDriver")
                                 str_VFIO_driverList+="$str_thisDriver,"
+                            fi
 
-                            else
+                            if [[ ${#str_VFIO_driverList[@]} == 0 ]]; then
                                 arr_VFIO_driver+=("$str_thisDriver")
                                 str_VFIO_driverList+="$str_thisDriver,"
                             fi
@@ -320,9 +321,9 @@
                             else
                                 str_VFIO_HWIDList+="$str_thisHWID,"
                             fi
+                        fi
 
-                        else
-
+                        if [[ ${#str_PCISTUB_HWIDlist[@]} == 0 ]]; then
                             if [[ ! -z `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
                                 str_PCISTUB_HWIDlist+="$str_thisHWID,"
 
@@ -424,7 +425,7 @@
                             str_thisRootKernel=${arr_rootKernel[$int_i]:1}
 
                             # parameters #
-                            str_thisGRUBmenuEntry="`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_thisFullName')"
+                            str_thisGRUBmenuEntry="`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIOVGA', w/ boot VGA '$str_thisFullName')"
                             arr_GRUBmenuEntry+=("$str_thisGRUBmenuEntry")
                             str_output1="menuentry \"$str_thisGRUBmenuEntry\" {"
                             str_output1_log="\n"'menuentry "'"`lsb_release -i -s` `uname -o`, with `uname` #kernel_'$int_i'# (VFIO, w/o IOMMU '$int_IOMMU_VFIOVGA', w/ boot VGA '$str_thisFullName'\") {"

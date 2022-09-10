@@ -22,7 +22,7 @@ Post-install, execute:
         * Outputs to logfile, for future reference by Multi-boot updater.
     * **Zram swapfile**
         * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
-    * **Static CPU Isolation**
+    * **Static CPU isolation**
         * Static isolation of system CPU threads. **(see 'post-install/Libvirt hooks' for Dynamic isolation)**
         * Outputs to logfile, for future reference by VFIO setup.
     * **Auto-Xorg** system service to find and set a valid host boot VGA device for Xorg. [1]
