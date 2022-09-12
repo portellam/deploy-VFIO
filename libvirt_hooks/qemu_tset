@@ -162,6 +162,7 @@ exit 0
     if [[ "$str_object" == "shield" ]]; then
         shield_vm
         exit
+
     elif [[ "$str_object" == "unshield" ]]; then
         unshield_vm
         exit
@@ -169,12 +170,14 @@ exit 0
 
     # allocate/release threads to host after VM start/stop #
     case "$str_operation" in
+
             # allocate #
             "prepare")
                     systemctl set-property --runtime -- user.slice AllowedCPUs=$str_hostThreads
                     systemctl set-property --runtime -- system.slice AllowedCPUs=$str_hostThreads
                     systemctl set-property --runtime -- init.scope AllowedCPUs=$str_hostThreads
                     ;;
+
             # release #
             "release")
                     systemctl set-property --runtime -- user.slice AllowedCPUs=0-$int_totalThreads
