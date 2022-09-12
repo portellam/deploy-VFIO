@@ -96,14 +96,6 @@
             fi
 
         # group threads for host #
-            # for (( int_count=0 ; int_count<$int_multiThread ; int_count++ )); do
-            #     declare -i int_firstHostCore=0
-            #     declare -i int_firstHostThread=$((int_firstHostCore+int_totalCores*int_count))
-            #     declare -i int_lastHostCore=$((int_hostCores-1))
-            #     declare -i int_lastHostThread=$((int_lastHostCore+int_totalCores*int_count))
-            #     str_hostThreads+="${int_firstHostThread}-${int_lastHostThread},"
-            # done
-
             for (( int_count=0 ; int_count<$int_multiThread ; int_count++ )); do
                 declare -i int_firstHostCore=$int_hostCores
                 declare -i int_firstHostThread=$((int_hostCores+int_totalCores*int_count))

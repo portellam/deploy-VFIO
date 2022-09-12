@@ -214,78 +214,85 @@ cp $str_inFile1 $str_outFile1          # copy over blank
                     # if true; then                                                                     # uncomment to parse every kernel with a menu entry
 
                         # parameters #
-                        str_output1="\n\nSet the given GRUB menu entry as default:\n\tGRUB Menu Entry: \"$str_thisGRUBmenuEntry\"\n\t[Y/n]: "
+                        str_output1="\n\nSet the given GRUB menu entry as default:\n\t\"$str_thisGRUBmenuEntry\"\n\t[Y/n]: "
 
                         ReadInput $str_output1
 
                         case $str_input1 in
                             "Y")
-                                # parameters #
-                                bool_foundLineMatch=false
-                                bool_foundCommentLineMatch=false
-
-                                # write to GRUB #
-                                if [[ -e $str_outFile2 ]]; then
-
-                                    # clear logfile #
-                                    if [[ -e $str_oldFile2 ]]; then
-                                        rm $str_oldFile2
-                                    fi
-
-                                    touch $str_oldFile2
-
-                                    # parse system file #
-                                    while read -r str_line2; do
-
-                                        # match line #
-                                        if [[ $bool_foundLineMatch == false && $str_line2 == *"GRUB_DEFAULT="* ]]; then
-
-                                            # match exact line #
-                                            if [[ $str_line2 != "#"* ]]; then
-                                                str_line2="GRUB_DEFAULT=\"$str_thisGRUBmenuEntry\""
-                                                bool_foundLineMatch=true
-
-                                            # match commented line #
-                                            else
-                                                bool_foundCommentLineMatch=true
-                                            fi
-                                        fi
-
-                                        echo -e $str_line2 >> $str_oldFile2
-                                    done < $str_outFile2        # read from template
-
-                                    # should loop find no line match, append the selection to the end of the file #
-                                    if [[ $bool_foundCommentLineMatch == true && $bool_foundLineMatch == false ]]; then
-                                        str_line2="GRUB_DEFAULT=\"$str_thisGRUBmenuEntry\""
-                                        echo -e $str_line2 >> $str_oldFile2
-                                    fi
-
-                                    # copy over system file #
-                                    if [[ -e $str_oldFile2 ]]; then
-                                        cp $str_oldFile2 $str_outFile2
-                                        str_output2="Set GRUB menu entry as default."
-                                    else
-                                        str_output2="Write failed. File(s) missing:\t'$str_oldFile2'"
-                                    fi
-                                else
-                                    str_output2="Write failed. File(s) missing:\t'$str_outFile2'"
-                                fi
-
                                 bool_loop=false
                                 break;;
 
                             "N")
                                 str_output2="Skipped GRUB menu entry."
+                                str_thisGRUBmenuEntry=""                # clear field
                                 bool_loop=false;;
 
                             *)
                                 ;;
                         esac
 
-                        echo -e "$str_output2"
+                        echo -en "$str_output2 "
 
+                    else
+                        str_thisGRUBmenuEntry=""                # clear field
                     fi
                 done
+
+                if [[ $str_thisGRUBmenuEntry == "" ]]; then
+                    echo -e "No selection. Skipping."
+                fi
+
+                # parameters #
+                bool_foundLineMatch=false
+                bool_foundCommentLineMatch=false
+
+                # write to GRUB #
+                if [[ -e $str_outFile2 ]]; then
+
+                    # clear logfile #
+                    if [[ -e $str_oldFile2 ]]; then
+                        rm $str_oldFile2
+                    fi
+
+                    touch $str_oldFile2
+
+                    # parse system file #
+                    while read -r str_line2; do
+
+                        # match line #
+                        if [[ $bool_foundLineMatch == false && $str_line2 == *"GRUB_DEFAULT="* ]]; then
+
+                            # match exact line #
+                            if [[ $str_line2 != "#"* ]]; then
+                                str_line2="GRUB_DEFAULT=\"$str_thisGRUBmenuEntry\""
+                                bool_foundLineMatch=true
+
+                            # match commented line #
+                            else
+                                bool_foundCommentLineMatch=true
+                            fi
+                        fi
+
+                        echo -e $str_line2 >> $str_oldFile2
+                    done < $str_outFile2        # read from template
+
+                    # should loop find no line match, append the selection to the end of the file #
+                    if [[ $bool_foundCommentLineMatch == true && $bool_foundLineMatch == false ]]; then
+                        str_line2="GRUB_DEFAULT=\"$str_thisGRUBmenuEntry\""
+                        echo -e $str_line2 >> $str_oldFile2
+                    fi
+
+                    # copy over system file #
+                    if [[ -e $str_oldFile2 ]]; then
+                        cp $str_oldFile2 $str_outFile2
+                        str_output2="Set GRUB menu entry as default."
+                    else
+                        str_output2="Write failed. File(s) missing:\t'$str_oldFile2'"
+                    fi
+                else
+                    str_output2="Write failed. File(s) missing:\t'$str_outFile2'"
+                fi
 
                 echo
                 break

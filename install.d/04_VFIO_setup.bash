@@ -378,7 +378,7 @@
                     # save VGA vendor and device name #
                     else
                         if [[ $str_thisType == *"3D"* || $str_thisType == *"DISPLAY"* || $str_thisType == *"GRAPHIC"* || $str_thisType == *"VGA"* ]]; then
-                            str_thisFullName=`lspci -mnn | grep $str_thisBusID | cut -d '"' -f4``lspci -mnn | grep $str_thisBusID | cut -d '"' -f6`
+                            str_thisFullName=`lspci -mnn | grep $str_thisBusID | cut -d '"' -f4`" "`lspci -mnn | grep $str_thisBusID | cut -d '"' -f6`
                         fi
                     fi
                 done
