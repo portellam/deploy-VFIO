@@ -15,9 +15,13 @@ str_extraArg="$4"
 
 # create nosleep system service instance for given guest #
 case "$str_operation" in
+
+        # allocate #
         "prepare")
                 systemctl start libvirt-nosleep@"$str_object"
                 ;;
+
+        # release #
         "release")
                 systemctl stop libvirt-nosleep@"$str_object"
                 ;;

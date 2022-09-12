@@ -19,6 +19,7 @@ hex_hostInput="0f"      # The input the host is connected to (without 0x, but wi
 
 if [[ "$2/$3" == "started/begin" ]]; then
     hex_input="$hex_domainInput"
+
 elif [[ "$2/$3" == "stopped/end" ]]; then
     hex_input="$hex_hostInput"
 fi
