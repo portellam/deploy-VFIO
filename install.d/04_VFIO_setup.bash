@@ -49,6 +49,7 @@
             case $str_input1 in
                 "Y"|"N")
                     break;;
+
                 *)
                     echo -en "\tInvalid input. ";;
             esac
