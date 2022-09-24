@@ -5,99 +5,95 @@
 #
 
 # check if sudo/root #
-    if [[ `whoami` != "root" ]]; then
-        str_file=`echo ${0##/*}`
-        str_file=`echo $str_file | cut -d '/' -f2`
-        echo -e "$0: WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\nExiting."
-        exit 0
-    fi
+    function CheckIfUserIsRoot
+    {
+        if [[ $(whoami) != "root" ]]; then
+            str_file1=$(echo ${0##/*})
+            str_file1=$(echo $str_file1 | cut -d '/' -f2)
+            echo -e "WARNING: Script must execute as root. In terminal, run:\n\t'bash $str_file1'\n\tor\n\t'su' and 'bash $str_file1'. Exiting."
+            exit 1
+        fi
+    }
 
-# NOTE: necessary for newline preservation in arrays and files #
-    SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
-    IFS=$'\n'      # Change IFS to newline char
-
-# precede with echo prompt for input #
-# ask user for input then validate #
+# procede with echo prompt for input #
+    # ask user for input then validate #
     function ReadInput {
-        echo -en "$0: "
 
-        if [[ $str_input1 == "Y" ]]; then
-            echo -en $str_output1$str_input1
-        else
-            declare -i int_count=0      # reset counter
+        # parameters #
+        str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
+        str_input1=${str_input1:0:1}
+        declare -i int_count=0      # reset counter
 
-            while true; do
-                # manual prompt #
-                if [[ $int_count -ge 3 ]]; then       # auto answer
-                    echo "Exceeded max attempts."
-                str_input1="N"                    # default input     # NOTE: change here
+        while true; do
+
+            # manual prompt #
+            if [[ $int_count -ge 3 ]]; then
+                echo -en "Exceeded max attempts. "
+                str_input1="N"                    # default input     # NOTE: update here!
+
             else
-                echo -en $str_output1
+                echo -en "\t$1 [Y/n]: "
                 read str_input1
 
-                str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
+                str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
                 str_input1=${str_input1:0:1}
             fi
 
             case $str_input1 in
                 "Y"|"N")
                     break;;
+
                 *)
-                    echo -en "$0: Invalid input. ";;
+                    echo -en "\tInvalid input. ";;
             esac
 
             ((int_count++))         # increment counter
-            done
-        fi
+        done
     }
 
-# clear nested git repos #
-    str_dir2="git"
-    declare -a arr_dir2=`ls $str_dir2 | sort -h | grep -Eiv '.gitkeep|README.md'`
+# main #
+    # parse and execute functions #
 
-    for str_line1 in $arr_dir2; do
-        rm -rf $str_line1
-    done
-
-# parse and execute functions #
-    str_output1=""
+    # parameters #
     str_dir1="uninstall.d"
 
-    if [[ -z `find . -name $str_dir1*` ]]; then
-        echo -e "$0: Executing functions... Failed. Missing files."
-    else
-        echo -e "$0: Executing functions...\n"
+    # call functions #
+    CheckIfUserIsRoot
 
-        declare -a arr_dir1=`ls $str_dir1 | sort -h`
+    if [[ -e $(find .. -name *$str_dir1*) ]]; then
+        echo -e "Executing functions..."
+
+        declare -a arr_dir1=$(ls $str_dir1)
+
         # call functions #
         for str_line1 in $arr_dir1; do
 
-            # input variable auto executes functions #
-            if [[ `echo $1 | tr '[:lower:]' '[:upper:]'` == "Y"* ]]; then
-                str_input1="Y"
-            else
-                str_input1=""
-            fi
+            # update parameters #
+            str_input1=""
 
             # execute sh/bash scripts in directory
-            if [[ $str_line1 == *".bash"||*".sh" && $str_line1 != *".log" ]]; then
-                str_output1="Execute '$str_line1'? [Y/n]: "
-                ReadInput $str_input1
+            if [[ ( $str_line1 == *".bash" || $str_line1 == *".sh" ) && $str_line1 != *".log" ]]; then
+                ReadInput "Execute '$str_line1'?"
+                echo
             fi
 
             if [[ $str_input1 == "Y" && $str_line1 == *".bash" && $str_line1 != *".log" ]]; then
-                sudo bash $str_dir1"/"$str_line1
+                bash $str_dir1"/"$str_line1
+                echo
             fi
 
             if [[ $str_input1 == "Y" && $str_line1 == *".sh" && $str_line1 != *".log" ]]; then
-                sudo sh $str_dir1"/"$str_line1
+                sh $str_dir1"/"$str_line1
+                echo
             fi
-
-            echo
         done
 
-        echo -e "$0: Review changes made. Exiting."
+        echo -en "Review changes made. "
+
+    else
+        echo -en "FAILURE: Missing files. "
     fi
 
-IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
-exit 0
+    IFS=$SAVEIFS        # reset IFS
+    echo "Exiting."
+    exit 0
