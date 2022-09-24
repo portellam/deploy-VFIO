@@ -25,22 +25,14 @@
     IFS=$'\n'      # Change IFS to newline char
 
 # parameters #
-    readonly str_thisFile="${0##*/}"
     bool_missingFiles=false
+    int_HostMemMaxK=$(cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1)     # sum of system RAM in KiB
     str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                # default output
-    int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
-
-# system files #
-    readonly str_outFile1="/etc/libvirt/qemu.conf"
-
-# input files #
-    readonly str_inFile1=`find . -name *etc_libvirt_qemu.conf`
-
-# system file backups #
-    readonly str_oldFile1=$str_outFile1".old"
-
-# debug logfiles #
+    readonly str_inFile1=$(find . -name *etc_libvirt_qemu.conf)
+    readonly str_thisFile="${0##*/}"
     readonly str_logFile1="$str_thisFile.log"
+    readonly str_outFile1="/etc/libvirt/qemu.conf"
+    readonly str_oldFile1=$str_outFile1".old"
 
 # prompt #
     str_output1="HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and lower overhead of memory-access (memory latency).\n"
@@ -49,32 +41,34 @@
     echo -e "Executing Hugepages setup..."
 
 # Hugepage size: validate input #
-    declare -i int_count=0      # reset counter
+    declare -i int_count=0
 
     while true; do
         # attempt #
         if [[ $int_count -ge 3 ]]; then
             str_HugePageSize="1G"           # default selection
             echo -e "Exceeded max attempts. Default selection: ${str_HugePageSize}"
+
         else
             echo -en "Enter Hugepage size and byte-size. [2M/1G]: "
             read -r str_HugePageSize
-            str_HugePageSize=`echo $str_HugePageSize | tr '[:lower:]' '[:upper:]'`
+            str_HugePageSize=$(echo $str_HugePageSize | tr '[:lower:]' '[:upper:]')
         fi
 
         # check input #
         case $str_HugePageSize in
             "2M"|"1G")
                 break;;
+
             *)
                 echo "Invalid input.";;
         esac
 
-        ((int_count++))     # increment counter
+        ((int_count++))
     done
 
 # Hugepage sum: validate input #
-    declare -i int_count=0      # reset counter
+    declare -i int_count=0
 
     while true; do
 
@@ -105,7 +99,8 @@
         # check input #
         if [[ $int_HugePageNum -lt $int_HugePageMin || $int_HugePageNum -gt $int_HugePageMax ]]; then
             echo "Invalid input."
-            ((int_count++))     # increment counter
+            ((int_count++))
+
         else
             # str_output1="default_hugepagesz=$str_HugePageSize hugepagesz=$str_HugePageSize hugepages=$int_HugePageNum"   # shared variable with other function
             str_output1="#$str_HugePageSize #$int_HugePageNum"
@@ -153,10 +148,11 @@
         systemctl enable libvirtd
         systemctl restart libvirtd
         echo -e "Review changes:\n\t'$str_outFile1'"
+
     else
         echo -e "Failed. File(s) missing:"
         echo -e "\t'$str_inFile1'"
     fi
 
-IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
-exit 0
+    IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
+    exit 0
