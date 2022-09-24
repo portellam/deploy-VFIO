@@ -71,25 +71,25 @@ echo -e "Updating Multi-boot setup..."
 
 ## parameters ##
     declare -a arr_GRUBmenuEntry=()
-    declare -a arr_rootKernel+=(`ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n3`)     # first three kernels
-    readonly str_rootDisk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
-    readonly str_rootDistro=`lsb_release -i -s`                                                 # Linux distro name
-    readonly str_rootUUID=`blkid -s UUID | grep $str_rootDisk | cut -d '"' -f2`
-    str_rootFSTYPE=`blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2`
+    declare -a arr_rootKernel+=($(ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n3))     # first three kernels
+    readonly str_rootDisk=$(df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1)
+    readonly str_rootDistro=$(lsb_release -i -s)                                                 # Linux distro name
+    readonly str_rootUUID=$(blkid -s UUID | grep $str_rootDisk | cut -d '"' -f2)
+    str_rootFSTYPE=$(blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2)
 
     if [[ $str_rootFSTYPE == "ext4" || $str_rootFSTYPE == "ext3" ]]; then
         readonly str_rootFSTYPE="ext2"
     fi
 
 # input files #
-    readonly str_dir1=`find .. -name files`
+    readonly str_dir1=$(find .. -name files)
     if [[ -e $str_dir1 ]]; then
         cd $str_dir1
     fi
 
-    readonly str_inFile1=`find . -name *etc_grub.d_proxifiedScripts_custom`
-    readonly str_inFile1b=`find . -name *Multi-boot_template`
-    readonly str_logFile1=`find . -name *VFIO_setup*log*`
+    readonly str_inFile1=$(find . -name *etc_grub.d_proxifiedScripts_custom)
+    readonly str_inFile1b=$(find . -name *Multi-boot_template)
+    readonly str_logFile1=$(find . -name *VFIO_setup*log*)
 
 # system files #
     readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"
@@ -107,9 +107,9 @@ cp $str_inFile1 $str_outFile1          # copy over blank
     while read -r str_line1; do
 
         # new parameters #
-        int_IOMMU_VFIO_VGA=`echo $str_line1 | cut -d '#' -f2 | cut -d ' ' -f1`
-        str_thisFullName=`echo $str_line1 | cut -d '#' -f3`
-        str_GRUB_CMDLINE=`echo $str_line1 | cut -d '#' -f4`
+        int_IOMMU_VFIO_VGA=$(echo $str_line1 | cut -d '#' -f2 | cut -d ' ' -f1)
+        str_thisFullName=$(echo $str_line1 | cut -d '#' -f3)
+        str_GRUB_CMDLINE=$(echo $str_line1 | cut -d '#' -f4)
 
         # update parameters #
         if [[ ${str_thisFullName: -1} == " " ]]; then
@@ -130,7 +130,7 @@ cp $str_inFile1 $str_outFile1          # copy over blank
                 str_thisRootKernel=${arr_rootKernel[$int_i]:1}
 
                 # new parameters #
-                str_thisGRUBmenuEntry="`lsb_release -i -s` `uname -o`, with `uname` $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_thisFullName')"
+                str_thisGRUBmenuEntry=$(lsb_release -i -s)" "$(uname -o)", with "$(uname)" $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_thisFullName')"
                 str_output1="menuentry \"$str_thisGRUBmenuEntry\" {"
                 str_output2="\tinsmod $str_rootFSTYPE"
                 str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
@@ -191,7 +191,7 @@ cp $str_inFile1 $str_outFile1          # copy over blank
                     bool_missingFiles=true
                 fi
 
-                arr_GRUBmenuEntry+=(`echo $str_thisGRUBmenuEntry`)
+                arr_GRUBmenuEntry+=($(echo $str_thisGRUBmenuEntry))
             fi
         done
     done < $str_logFile1                                # read from log file
@@ -207,7 +207,7 @@ cp $str_inFile1 $str_outFile1          # copy over blank
 
         # parameters #
         bool_loop=true
-        readonly str_currentKernel=`uname -r`
+        readonly str_currentKernel=$(uname -r)
 
         # write to system file #
         if [[ ${#arr_GRUBmenuEntry[@]} -gt 0 ]]; then

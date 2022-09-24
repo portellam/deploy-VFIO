@@ -31,7 +31,7 @@
         # parameters #
         str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
         str_input1=${str_input1:0:1}
-        declare -i int_count=0      # reset counter
+        declare -i int_count=0
 
         while true; do
 
@@ -56,7 +56,7 @@
                     echo -en "\tInvalid input. ";;
             esac
 
-            ((int_count++))         # increment counter
+            ((int_count++))
         done
     }
 
@@ -71,11 +71,10 @@
 # main function #
     function ParseCPU
     {
-
         # parameters #
-            readonly arr_coresByThread=(`cat /proc/cpuinfo | grep 'core id' | cut -d ':' -f2 | cut -d ' ' -f2`)
-            readonly int_totalCores=`cat /proc/cpuinfo | grep 'cpu cores' | uniq | cut -d ':' -f2 | cut -d ' ' -f2`
-            readonly int_totalThreads=`cat /proc/cpuinfo | grep 'siblings' | uniq | cut -d ':' -f2 | cut -d ' ' -f2`
+            readonly arr_coresByThread=($(cat /proc/cpuinfo | grep 'core id' | cut -d ':' -f2 | cut -d ' ' -f2))
+            readonly int_totalCores=$(cat /proc/cpuinfo | grep 'cpu cores' | uniq | cut -d ':' -f2 | cut -d ' ' -f2)
+            readonly int_totalThreads=$(cat /proc/cpuinfo | grep 'siblings' | uniq | cut -d ':' -f2 | cut -d ' ' -f2)
             readonly int_multiThread=$(( $int_totalThreads / $int_totalCores ))
             declare -a arr_totalCores=()
             declare -a arr_hostCores=()
@@ -100,11 +99,11 @@
             fi
 
         # group threads for host #
-            for (( int_count=0 ; int_count<$int_multiThread ; int_count++ )); do
+            for (( int_i=0 ; int_i<$int_multiThread ; int_i++ )); do
                 declare -i int_firstHostCore=$int_hostCores
-                declare -i int_firstHostThread=$((int_hostCores+int_totalCores*int_count))
+                declare -i int_firstHostThread=$((int_hostCores+int_totalCores*int_i))
                 declare -i int_lastHostCore=$((int_totalCores-1))
-                declare -i int_lastHostThread=$((int_lastHostCore+int_totalCores*int_count))
+                declare -i int_lastHostThread=$((int_lastHostCore+int_totalCores*int_i))
                 str_virtThreads+="${int_firstHostThread}-${int_lastHostThread},"
             done
 
@@ -115,15 +114,11 @@
 
         # group threads by core id #
             for (( int_i=0 ; int_i<$int_totalCores ; int_i++ )); do
-
-                # parameters #
                 str_line1=""
                 declare -i int_thisCore=${arr_coresByThread[int_i]}
 
-                for (( int_count=0 ; int_count<$int_multiThread ; int_count++ )); do
-
-                    # parameters #
-                    int_thisThread=$((int_thisCore+int_totalCores*int_count))
+                for (( int_j=0 ; int_j<$int_multiThread ; int_j++ )); do
+                    int_thisThread=$((int_thisCore+int_totalCores*int_j))
                     str_line1+="$int_thisThread,"
 
                     if [[ $int_thisCore -lt $int_hostCores ]]; then
@@ -183,8 +178,8 @@
             readonly int_hostThreads_mask
 
             # int to hex #
-            readonly hex_totalThreads_mask=`printf '%x\n' $int_totalThreads_mask`
-            readonly hex_hostThreads_mask=`printf '%x\n' $int_hostThreads_mask`
+            readonly hex_totalThreads_mask=$(printf '%x\n' $int_totalThreads_mask)
+            readonly hex_hostThreads_mask=$(printf '%x\n' $int_hostThreads_mask)
 
         # debug prompt #
             function DebugOutput

@@ -25,34 +25,21 @@
     IFS=$'\n'      # Change IFS to newline char
 
 # parameters #
-    str_logFile0=`find . -name *hugepages*bash* | grep -v log`
-    declare -i int_count=0      # reset counter
+    declare -i int_count=0
+    int_HostMemMaxK=$(cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1)     # sum of system RAM in KiB
+    str_gitRepo="FoundObjects/zram-swap"
+    str_gitUserName=$(echo $str_gitRepo | cut -d '/' -f1)
 
-# system files #
+    str_inFile2=$(find . -name *etc_default_zram-swap*)
+    str_logFile0=$(find . -name *Hugepages*log*)
     str_outFile1="/etc/default/zramswap"
     str_outFile2="/etc/default/zram-swap"
-
-# input files #
-# none for file1
-    str_inFile2=`find . -name *etc_default_zram-swap*`
-
-# system file backups #
     str_oldFile1=$str_outFile1".old"
     str_oldFile2=$str_outFile2".old"
 
-# debug logfiles #
-    str_logFile0=`find . -name *Hugepages*log*`
-
-# prompt #
     str_output1="ZRAM allocates RAM as a compressed swapfile.\n\tThe default compression method \"lz4\", at a ratio of 2:1 to 5:2, offers the greatest performance."
-
     echo -e $str_output1
     echo -e "Executing ZRAM-swap setup. Calculating..."
-
-# parameters #
-    int_HostMemMaxK=`cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1`     # sum of system RAM in KiB
-    str_gitRepo="FoundObjects/zram-swap"
-    str_gitUserName=`echo $str_gitRepo | cut -d '/' -f1`
     mkdir ./git
 
 # check for zram-utils #
@@ -62,7 +49,7 @@
     fi
 
 # clone repo #
-    if [[ ! `find -wholename *./git/$str_gitRepo*` ]]; then
+    if [[ !  $(find -wholename *./git/$str_gitRepo*) ]]; then
         mkdir ./git/$str_gitUserName
         git clone https://www.github.com/$str_gitRepo ./git/$str_gitRepo
     fi
@@ -72,8 +59,15 @@
         sh ./git/$str_gitRepo/install.sh
     fi
 
-    if [[ `sudo swapon -v | grep /dev/zram*` == "/dev/zram"* ]]; then sudo swapoff /dev/zram*; fi   # disable ZRAM swap
-    if [[ -z $str_oldFile2 ]]; then cp $str_outFile2 $str_oldFile2; fi                                 # backup config file
+    # disable ZRAM swap
+    if [[ $(sudo swapon -v | grep /dev/zram*) == "/dev/zram"* ]]; then
+        sudo swapoff /dev/zram*
+    fi
+
+    # backup config file
+    if [[ -z $str_oldFile2 ]]; then
+        cp $str_outFile2 $str_oldFile2
+    fi
 
 # find free memory #
     declare -i int_hostMemMaxG=$((int_HostMemMaxK/1048576))
@@ -81,24 +75,37 @@
 
 # check #
     if [[ -z $str_logFile0 ]]; then
-        str_file=`find . -name *Hugepages*bash*`
-        str_file=`echo ${str_file##/*}`
-        str_file=`echo $str_file | cut -d '/' -f2`
+        str_file=$(find . -name *Hugepages*bash*)
+        str_file=$(echo ${str_file##/*})
+        str_file=$(echo $str_file | cut -d '/' -f2)
         echo -e "Hugepages logfile does not exist. Should you wish to enable Hugepages, execute both '$str_file' and '$0'.\n"
-
         declare -i int_hostMemFreeG=$int_sysMemMaxG
 
         # setup ZRAM #
         echo -e "Total system memory: <= ${int_sysMemMaxG}G.\nIf 'Z == ${int_sysMemMaxG}G - (V + X)', where ('Z' == ZRAM, 'V' == VM(s), and 'X' == remainder for Host machine).\n\tCalculate 'Z'."
+
     else
 
         while read -r str_line1; do
-            if [[ $str_line1 == *"hugepagesz="* ]]; then str_hugePageSize=`echo $str_line1 | cut -d '=' -f2 | cut -d ' ' -f1`; fi       # parse hugepage size
-            if [[ $str_line1 == *"hugepages="* ]]; then str_HugePageNum=`echo $str_line1 | cut -d '=' -f4`; fi                          # parse hugepage num
+
+            # parse hugepage size #
+            if [[ $str_line1 == *"hugepagesz="* ]]; then
+                str_hugePageSize=$(echo $str_line1 | cut -d '=' -f2 | cut -d ' ' -f1)
+            fi
+
+            # parse hugepage num
+            if [[ $str_line1 == *"hugepages="* ]]; then
+                str_HugePageNum=$(echo $str_line1 | cut -d '=' -f4)
+            fi
         done < $str_logFile0
 
-        if [[ $str_hugePageSize == "2M" ]]; then declare -i int_hugePageSizeK=2048; fi
-        if [[ $str_hugePageSize == "1G" ]]; then declare -i int_hugePageSizeK=1048576; fi
+        if [[ $str_hugePageSize == "2M" ]]; then
+            declare -i int_hugePageSizeK=2048
+        fi
+
+        if [[ $str_hugePageSize == "1G" ]]; then
+            declare -i int_hugePageSizeK=1048576
+        fi
 
         int_HugePageNum=$str_HugePageNum
 
@@ -121,23 +128,30 @@
             ((int_ZRAM_sizeG=int_hostMemFreeG/2))      # default selection
             echo -e "Exceeded max attempts. Default selection: ${int_ZRAM_sizeG}G"
             break
+
         else
             if [[ -z $int_ZRAM_sizeG || $int_ZRAM_sizeG -lt 0 || $int_ZRAM_sizeG -ge $int_hostMemFreeG ]]; then
                 echo -en "Invalid input.\n$str_output1"
                 read -r int_ZRAM_sizeG
-            else break; fi
+
+            else
+                break
+            fi
         fi
 
-        ((int_count++))     # increment counter
+        ((int_count++))
     done
 
 # NOTE: leave as "! -z" (IS 'NOT' NULL), integers do not work with "-e" (IS 'NOT-NULL') #
-    if [[ ! -z $int_ZRAM_sizeG ]]; then declare -i int_denominator=$int_sysMemMaxG/$int_ZRAM_sizeG; fi
+    if [[ ! -z $int_ZRAM_sizeG ]]; then
+        declare -i int_denominator=$int_sysMemMaxG/$int_ZRAM_sizeG
+    fi
 
 # NOTE: leave as "! -z" (IS 'NOT' NULL), integers do not work with "-e" (IS 'NOT-NULL') #
 # if input is valid #
     if [[ ! -z $int_denominator ]]; then
         str_output1="_zram_fraction=\"1/$int_denominator\""
+
     else
         str_output1=""
     fi
@@ -161,6 +175,7 @@
         # NOTE: in my setup, I prefer the git repo. I currently do not understand zram setup using the debian package/config file (zram pages are exact sizes compressed, not uncompressed as above).
         echo -e "Executing ZRAM-swap setup... Complete.\n"
         echo -e "Review changes:\n\t'$str_outFile2'"
+
     else
         echo -e "Failed. File(s) missing:"
 

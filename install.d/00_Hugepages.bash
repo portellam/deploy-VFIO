@@ -76,6 +76,7 @@
         if [[ $int_count -ge 3 ]]; then
             int_HugePageNum=$int_HugePageMax        # default selection
             echo "Exceeded max attempts. Default selection: ${int_HugePageNum}"
+
         else
             # Hugepage Size #
             if [[ $str_HugePageSize == "2M" ]]; then
@@ -154,5 +155,5 @@
         echo -e "\t'$str_inFile1'"
     fi
 
-    IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
-    exit 0
+IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
+exit 0

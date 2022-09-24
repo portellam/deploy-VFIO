@@ -27,11 +27,11 @@
 
 # parameters #
     str_gitRepo="portellam/Auto-Xorg"
-    str_gitUserName=`echo $str_gitRepo | cut -d '/' -f1`
+    str_gitUserName=$(echo $str_gitRepo | cut -d '/' -f1)
     mkdir ./git
 
 # clone repo #
-    if [[ ! `find -wholename *./git/$str_gitRepo*` ]]; then
+    if [[ ! $(find -wholename *./git/$str_gitRepo*) ]]; then
         mkdir ./git/$str_gitUserName
         git clone https://www.github.com/$str_gitRepo ./git/$str_gitRepo
     fi

@@ -29,7 +29,7 @@
         # parameters #
         str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
         str_input1=${str_input1:0:1}
-        declare -i int_count=0      # reset counter
+        declare -i int_count=0
 
         while true; do
 
@@ -54,7 +54,7 @@
                     echo -en "\tInvalid input. ";;
             esac
 
-            ((int_count++))         # increment counter
+            ((int_count++))
         done
     }
 
@@ -81,6 +81,7 @@
         str_file=`find . -name *Hugepages*bash*`
         str_file=`echo ${str_file##/*} | cut -d '/' -f2`
         echo -e "WARNING: Logfile does not exist.\n\tShould you wish to allocate Hugepages, execute '$str_file', then '$0'.\n"
+
     else
         readonly str_HugePageSize=`cat $str_file | cut -d '#' -f2 | cut -d ' ' -f1`
         readonly str_HugePageSum=`cat $str_file | cut -d '#' -f3`
@@ -94,6 +95,7 @@
         str_file=`find . -name *Static_CPU_isolation*bash*`
         str_file=`echo ${str_file##/*} | cut -d '/' -f2`
         echo -e "WARNING: Logfile does not exist.\n\tShould you wish statically isolate CPU threads, execute '$str_file', then '$0'.\n"
+
     else
         readonly str_GRUB_CMDLINE_IsolateCPU=`cat $str_file | head -n1 | cut -d '#' -f2`
     fi
@@ -151,6 +153,7 @@
                     if [[ -z $str_thisDriver || $str_thisDriver == "" ]]; then
                         str_thisDriver="N/A"
                         bool_driverIsValid=false
+
                     else
                         bool_driverIsValid=true
                     fi
@@ -162,6 +165,7 @@
                         str_internalPCI_driverList+="$str_thisDriver,"
                         str_internalPCI_HWIDList+="$str_thisHWID,"
                         bool_IOMMUcontainsExtPCI=false
+
                     else
                         bool_IOMMUcontainsExtPCI=true
                     fi
@@ -217,6 +221,7 @@
                             *)
                                 str_output2="Invalid input.";;
                         esac
+
                     else
                         case $str_input1 in
                             "Y")
@@ -286,6 +291,7 @@
             # create logfile #
             if [[ -e $str_logFile0 ]]; then
                 rm $str_logFile0
+
             else
                 touch $str_logFile0
             fi
@@ -373,6 +379,7 @@
                         if [[ -z `echo $str_internalPCI_HWIDList | grep $str_thisHWID` && -z `echo $str_PCISTUB_HWIDlist | grep $str_thisHWID` && -z `echo $str_VFIO_HWIDList | grep $str_thisHWID` ]]; then
                             if [[ ! -z `echo $str_PCISTUB_driverList | grep $str_thisDriver` ]]; then
                                 str_PCISTUBVGA_HWIDlist+="$str_thisHWID,"
+
                             else
                                 str_VFIOVGA_HWIDList+="$str_thisHWID,"
                             fi
@@ -551,6 +558,7 @@
                     if [[ -z $str_thisDriver || $str_thisDriver == "" ]]; then
                         str_thisDriver="N/A"
                         bool_driverIsValid=false
+
                     else
                         bool_driverIsValid=true
                     fi
@@ -562,6 +570,7 @@
                         str_internalPCI_driverList+="$str_thisDriver,"
                         str_internalPCI_HWIDList+="$str_thisHWID,"
                         bool_IOMMUcontainsExtPCI=false
+
                     else
                         bool_IOMMUcontainsExtPCI=true
                     fi
@@ -602,6 +611,7 @@
 
                 if [[ $bool_IOMMUcontainsExtPCI == false ]]; then
                     str_output2="Skipped IOMMU group: External devices not found."
+
                 else
                     str_output1="Select IOMMU group '$int_thisIOMMU'? [Y/n]: "
                     ReadInput $str_output1
@@ -619,6 +629,7 @@
                             *)
                                 str_output2="Invalid input.";;
                         esac
+
                     else
                         case $str_input1 in
                             "Y")
@@ -692,8 +703,13 @@
                 # none for file2-files5
 
             # clear files #     # NOTE: do NOT delete GRUB !!!
-            if [[ -e $str_logFile1 ]]; then rm $str_logFile1; fi
-            if [[ -e $str_logFile5 ]]; then rm $str_logFile5; fi
+            if [[ -e $str_logFile1 ]]; then
+                rm $str_logFile1
+            fi
+
+            if [[ -e $str_logFile5 ]]; then
+                rm $str_logFile5
+            fi
 
         # prompt #
         str_output1="Append changes to '/etc/default/grub' or no (system files)? [Y/n]: "
@@ -857,6 +873,7 @@
 
                         echo -e $str_line1 >> $str_outFile2
                     done < $str_inFile2
+
                 else
                     bool_missingFiles=true
                 fi
@@ -885,6 +902,7 @@
 
                         echo -e $str_line1 >> $str_outFile3
                     done < $str_inFile3
+
                 else
                     bool_missingFiles=true
                 fi
@@ -912,6 +930,7 @@
 
                         echo -e $str_line1 >> $str_outFile4
                     done < $str_inFile4
+
                 else
                     bool_missingFiles=true
                 fi
@@ -944,6 +963,7 @@
 
                         echo -e $str_line1 >> $str_outFile5
                     done < $str_inFile5
+
                 else
                     bool_missingFiles=true
                 fi
@@ -972,6 +992,7 @@
 
                     echo -e $str_line1 >> $str_outFile1
                 done < $str_inFile1
+
             else
                 bool_missingFiles=true
             fi
@@ -1013,12 +1034,13 @@
 # prompt #
     echo -e "'Multi-boot' is a flexible VFIO setup:\n\tinstallation appends different combinations of IOMMU groups to a GRUB menu entry;\n\tthe user may select the preferred host graphics (VGA) device at GRUB boot menu.\n\t'Static' is a 'permanent' VFIO setup:\n\tinstallation may append to system files. 'Static' survives kernel upgrades (without help of the 'post-install' updater).\n\tMulti-boot is the recommended choice.\n"
 
-    declare -i int_count=0                  # reset counter
+    declare -i int_count=0
 
     while [[ $bool_foundExistingVFIOsetup == false || -z $bool_foundExistingVFIOsetup || $bool_missingFiles == false ]]; do
         if [[ $int_count -ge 3 ]]; then
             echo -e "Exceeded max attempts."
             str_input1="N"                  # default selection
+
         else
             echo -en "Deploy VFIO setup? [ (M)ulti-boot / (S)tatic / (N)one ]: "
             read -r str_input1
@@ -1035,6 +1057,7 @@
 
                 if [[ $bool_outputToGRUB == true ]]; then
                     echo -e "\nReview changes:\n\t'$str_outFile1'\n\t'$str_outFile2'"
+
                 else
                     echo -e "\nReview changes:\n\t'$str_outFile1'"
                 fi
@@ -1050,6 +1073,7 @@
 
                 if [[ $bool_outputToGRUB == true ]]; then
                     echo -e "\nReview changes:\n\t'$str_outFile1'"
+
                 else
                     echo -e "\nReview changes:\n\t'$str_outFile1'\n\t'$str_outFile2'\n\t'$str_outFile3'\n\t'$str_outFile4'\n\t'$str_outFile5'"
                 fi
@@ -1064,7 +1088,7 @@
                 echo -e "Invalid input. ";;
         esac
 
-        ((int_count++))                     # increment counter
+        ((int_count++))
     done
 
     # warn user to delete existing setup and reboot to continue #
@@ -1073,6 +1097,7 @@
 
         if [[ -e `find .. -name *uninstall.bash*` ]]; then
             echo -e "To continue, execute `find .. -name *uninstall.bash*` and reboot system."
+
         else
             echo -e "To continue, uninstall setup and reboot system."
         fi
