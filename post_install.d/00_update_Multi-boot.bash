@@ -309,4 +309,5 @@ cp $str_inFile1 $str_outFile1          # copy over blank
     echo -e "Updating Multi-boot setup... Complete."
     sudo update-grub
 
+IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
 exit 0
