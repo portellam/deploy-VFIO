@@ -10,12 +10,15 @@
 #
 
 # check if sudo/root #
-    if [[ `whoami` != "root" ]]; then
-        str_file=`echo ${0##/*}`
-        str_file=`echo $str_file | cut -d '/' -f2`
-        echo -e "WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
-        exit 0
-    fi
+    function CheckIfUserIsRoot
+    {
+        if [[ $(whoami) != "root" ]]; then
+            str_file1=$(echo ${0##/*})
+            str_file1=$(echo $str_file1 | cut -d '/' -f2)
+            echo -e "WARNING: Script must execute as root. In terminal, run:\n\t'bash $str_file1'\n\tor\n\t'su' and 'bash $str_file1'. Exiting."
+            exit 1
+        fi
+    }
 
 # NOTE: necessary for newline preservation in arrays and files #
     SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)

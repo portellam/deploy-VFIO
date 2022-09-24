@@ -12,23 +12,22 @@
 #
 
 # check if sudo/root #
-    if [[ `whoami` != "root" ]]; then
-        str_file=`echo ${0##/*}`
-        str_file=`echo $str_file | cut -d '/' -f2`
-        echo -e "WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
-        exit 0
-    fi
-
-# NOTE: necessary for newline preservation in arrays and files #
-    SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
-    IFS=$'\n'      # Change IFS to newline char
+    function CheckIfUserIsRoot
+    {
+        if [[ $(whoami) != "root" ]]; then
+            str_file1=$(echo ${0##/*})
+            str_file1=$(echo $str_file1 | cut -d '/' -f2)
+            echo -e "WARNING: Script must execute as root. In terminal, run:\n\t'bash $str_file1'\n\tor\n\t'su' and 'bash $str_file1'. Exiting."
+            exit 1
+        fi
+    }
 
 # procede with echo prompt for input #
     # ask user for input then validate #
     function ReadInput {
 
         # parameters #
-        str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
+        str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
         str_input1=${str_input1:0:1}
         declare -i int_count=0      # reset counter
 
@@ -38,11 +37,12 @@
             if [[ $int_count -ge 3 ]]; then
                 echo -en "Exceeded max attempts. "
                 str_input1="N"                    # default input     # NOTE: update here!
+
             else
-                echo -en "\t$str_output1"
+                echo -en "\t$1 [Y/n]: "
                 read str_input1
 
-                str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
+                str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
                 str_input1=${str_input1:0:1}
             fi
 
@@ -59,18 +59,20 @@
     }
 
 # check if in correct dir #
-    str_pwd=`pwd`
+    str_pwd=$(pwd)
 
-    if [[ `echo ${str_pwd##*/}` != "install.d" ]]; then
-        if [[ -e `find . -name install.d` ]]; then
-            # echo -e "Script located the correct working directory."
-            cd `find . -name install.d`
+    if [[ $(echo ${str_pwd##*/}) != "post_install.d" ]]; then
+        if [[ -e $(find .. -name post_install.d) ]]; then
+            cd $(find .. -name post_install.d)
+
         else
-            echo -e "WARNING: Script cannot locate the correct working directory.\n\tExiting."
+            echo -e "WARNING: Script cannot locate the correct working directory. Exiting."
         fi
-    # else
-    #     echo -e "Script is in the correct working directory."
     fi
+
+# NOTE: necessary for newline preservation in arrays and files #
+    SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
+    IFS=$'\n'      # Change IFS to newline char
 
 # GRUB: hugepages check #
     str_file=`find .. -name *Hugepages*log*`

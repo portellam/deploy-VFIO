@@ -14,24 +14,22 @@
 #
 
 # check if sudo/root #
-    if [[ `whoami` != "root" ]]; then
-        str_file=`echo ${0##/*}`
-        str_file=`echo $str_file | cut -d '/' -f2`
-        echo -e "WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_file'\n\tor\n\t'su' and 'bash $str_file'.\n$str_file: Exiting."
-        exit 0
-    fi
-
-# NOTE: necessary for newline preservation in arrays and files #
-    SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
-    IFS=$'\n'      # Change IFS to newline char
+    function CheckIfUserIsRoot
+    {
+        if [[ $(whoami) != "root" ]]; then
+            str_file1=$(echo ${0##/*})
+            str_file1=$(echo $str_file1 | cut -d '/' -f2)
+            echo -e "WARNING: Script must execute as root. In terminal, run:\n\t'bash $str_file1'\n\tor\n\t'su' and 'bash $str_file1'. Exiting."
+            exit 1
+        fi
+    }
 
 # procede with echo prompt for input #
     # ask user for input then validate #
-    function ReadInput
-    {
+    function ReadInput {
 
         # parameters #
-        str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
+        str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
         str_input1=${str_input1:0:1}
         declare -i int_count=0      # reset counter
 
@@ -41,17 +39,19 @@
             if [[ $int_count -ge 3 ]]; then
                 echo -en "Exceeded max attempts. "
                 str_input1="N"                    # default input     # NOTE: update here!
+
             else
-                echo -en "\t$str_output1"
+                echo -en "\t$1 [Y/n]: "
                 read str_input1
 
-                str_input1=`echo $str_input1 | tr '[:lower:]' '[:upper:]'`
+                str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
                 str_input1=${str_input1:0:1}
             fi
 
             case $str_input1 in
                 "Y"|"N")
                     break;;
+
                 *)
                     echo -en "\tInvalid input. ";;
             esac
@@ -59,6 +59,10 @@
             ((int_count++))         # increment counter
         done
     }
+
+# NOTE: necessary for newline preservation in arrays and files #
+    SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
+    IFS=$'\n'      # Change IFS to newline char
 
 # debug logfiles #
     readonly str_thisFile="${0##*/}"
