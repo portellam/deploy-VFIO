@@ -292,10 +292,10 @@ cp $str_inFile1 $str_outFile1          # copy over blank
                         cp $str_oldFile2 $str_outFile2
                         str_output2="Set GRUB menu entry as default."
                     else
-                        str_output2="Write failed. File(s) missing:\t'$str_oldFile2'"
+                        str_output2="WARNING: File(s) missing:\t'$str_oldFile2'"
                     fi
                 else
-                    str_output2="Write failed. File(s) missing:\t'$str_outFile2'"
+                    str_output2="WARNING: File(s) missing:\t'$str_outFile2'"
                 fi
 
                 echo
