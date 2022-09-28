@@ -109,7 +109,7 @@
     CheckDistro
     CheckIOMMU
 
-    if [[ -e $(find .. -name *$str_dir1*) ]]; then
+    if [[ -e $(find .. -name $str_dir1*) ]]; then
         echo -e "Executing functions..."
 
         declare -a arr_dir1=$(ls $str_dir1)

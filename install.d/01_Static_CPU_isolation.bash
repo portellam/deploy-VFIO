@@ -73,9 +73,9 @@
     {
         # parameters #
             readonly arr_coresByThread=($(cat /proc/cpuinfo | grep 'core id' | cut -d ':' -f2 | cut -d ' ' -f2))
-            readonly int_totalCores=$(cat /proc/cpuinfo | grep 'cpu cores' | uniq | cut -d ':' -f2 | cut -d ' ' -f2)
-            readonly int_totalThreads=$(cat /proc/cpuinfo | grep 'siblings' | uniq | cut -d ':' -f2 | cut -d ' ' -f2)
-            readonly int_multiThread=$(( $int_totalThreads / $int_totalCores ))
+            readonly int_totalCores=$( cat /proc/cpuinfo | grep 'cpu cores' | uniq | grep -o '[0-9]\+' )
+            readonly int_totalThreads=$( cat /proc/cpuinfo | grep 'siblings' | uniq | grep -o '[0-9]\+' )
+            readonly int_SMT_multiplier=$(( $int_totalThreads / $int_totalCores ))
             declare -a arr_totalCores=()
             declare -a arr_hostCores=()
             declare -a arr_hostThreads=()
@@ -99,12 +99,18 @@
             fi
 
         # group threads for host #
-            for (( int_i=0 ; int_i<$int_multiThread ; int_i++ )); do
+            for (( int_i=0 ; int_i<$int_SMT_multiplier ; int_i++ )); do
                 declare -i int_firstHostCore=$int_hostCores
                 declare -i int_firstHostThread=$((int_hostCores+int_totalCores*int_i))
                 declare -i int_lastHostCore=$((int_totalCores-1))
                 declare -i int_lastHostThread=$((int_lastHostCore+int_totalCores*int_i))
-                str_virtThreads+="${int_firstHostThread}-${int_lastHostThread},"
+
+                if [[ $int_firstHostThread -eq $int_lastHostThread ]]; then
+                    str_virtThreads+="${int_firstHostThread},"
+
+                else
+                    str_virtThreads+="${int_firstHostThread}-${int_lastHostThread},"
+                fi
             done
 
             # update parameters #
@@ -117,7 +123,7 @@
                 str_line1=""
                 declare -i int_thisCore=${arr_coresByThread[int_i]}
 
-                for (( int_j=0 ; int_j<$int_multiThread ; int_j++ )); do
+                for (( int_j=0 ; int_j<$int_SMT_multiplier ; int_j++ )); do
                     int_thisThread=$((int_thisCore+int_totalCores*int_j))
                     str_line1+="$int_thisThread,"
 
@@ -195,21 +201,26 @@
                 echo -e "$0: "'${#arr_hostThreads[@]}\t= '"'${#arr_hostThreads[@]}'"
                 echo -e "$0: "'${#arr_hostThreadSets[@]}\t= '"'${#arr_hostThreadSets[@]}'"
                 echo -e "$0: "'$hex_hostThreads_mask\t= '"'$hex_hostThreads_mask'"
-                echo -e "$0: "'$str_virtThreads\t= '"'$str_virtThreads'"
-                echo -e "$0: "'$int_multiThread\t\t= '"'$int_multiThread'"
+                echo -e "$0: "'$str_virtThreads\t\t= '"'$str_virtThreads'"
+                echo -e "$0: "'$int_SMT_multiplier\t\t\t= '"'$int_SMT_multiplier'"
                 echo -e "$0: "'${#arr_virtThreadSets[@]}\t= '"'${#arr_virtThreadSets[@]}'"
 
                 for (( i=0 ; i<${#arr_coresByThread[@]} ; i++ )); do echo -e "$0: '$""{arr_coresByThread[$i]}'\t= '${arr_coresByThread[$i]}'"; done && echo
                 for (( i=0 ; i<${#arr_totalThreads[@]} ; i++ )); do echo -e "$0: '$""{arr_totalThreads[$i]}'\t= '${arr_totalThreads[$i]}'"; done && echo
                 for (( i=0 ; i<${#arr_hostThreads[@]} ; i++ )); do echo -e "$0: '$""{arr_hostThreads[$i]}'\t= '${arr_hostThreads[$i]}'"; done && echo
-                for (( i=0 ; i<${#arr_hostThreadSets[@]} ; i++ )); do echo -e "$0: '$""{arr_hostThreadSets[$i]}'\t= '${arr_hostThreadSets[$i]}'"; done && echo
-                for (( i=0 ; i<${#arr_virtThreadSets[@]} ; i++ )); do echo -e "$0: '$""{arr_virtThreadSets[$i]}'\t= '${arr_virtThreadSets[$i]}'"; done && echo
+                for (( i=0 ; i<${#arr_hostThreadSets[@]} ; i++ )); do echo -e "$0: '$""{arr_hostThreadSets[$i]}' = '${arr_hostThreadSets[$i]}'"; done && echo
+                for (( i=0 ; i<${#arr_virtThreadSets[@]} ; i++ )); do echo -e "$0: '$""{arr_virtThreadSets[$i]}' = '${arr_virtThreadSets[$i]}'"; done && echo
 
                 echo -e "\n$0: ========== DEBUG PROMPT =========="
                 exit 0
             }
 
             # DebugOutput     # uncomment to debug here
+
+        echo -e "\tNumber of CPU cores:\t${int_totalCores}"
+        echo -e "\tNumber of CPU threads:\t${int_totalThreads}"
+        echo -e "\tSets of Virt threads:\t${str_virtThreads}"
+        echo
 
         # clear existing file #
             if [[ -e $str_logFile1 ]]; then
@@ -234,7 +245,7 @@
     }
 
 # prompt #
-    str_output1="CPU isolation (Static or Dynamic) is a feature which allocates system CPU threads to the host and Virtual machines (VMs).\n\tVirtual machines can use CPU isolation or 'pinning' to a peformance benefit\n\t'Static' is 'permanent' CPU isolation: installation will append to GRUB after VFIO setup.\n\tAlternatively, 'Dynamic' CPU isolation is flexible and on-demand: post-installation will execute as a libvirt hook script (per VM).\n"
+    str_output1="CPU isolation (Static or Dynamic) is a feature which allocates system CPU threads to the host and Virtual machines (VMs), separately.\n\tVirtual machines can use CPU isolation or 'pinning' to a peformance benefit\n\t'Static' is more 'permanent' CPU isolation: installation will append to GRUB after VFIO setup.\n\tAlternatively, 'Dynamic' CPU isolation is flexible and on-demand: post-installation will execute as a libvirt hook script (per VM)."
     echo -e $str_output1
 
     str_output1="Setup 'Static' CPU isolation? [Y/n]: "
@@ -242,12 +253,12 @@
 
     case $str_input1 in
         "Y")
-            echo -en "Executing CPU isolation setup... "
+            echo -e "Executing CPU isolation setup..."
             ParseCPU
-            echo -e "Complete.";;
+            echo -e "Executing CPU isolation setup... Complete.";;
 
         "N")
-            echo -e "Exiting.";;
+            echo -en "Executing CPU isolation setup... Exiting.";;
     esac
 
 IFS=$SAVEIFS        # reset IFS     # NOTE: necessary for newline preservation in arrays and files
