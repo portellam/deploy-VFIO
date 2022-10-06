@@ -18,21 +18,6 @@ function CheckIfUserIsRoot
     fi
 }
 
-function CheckIfIOMMU_IsEnabled
-{
-    (exit 0)
-
-    echo -en "Checking if Virtualization is enabled/supported... "
-
-    if [[ -z $(compgen -G "/sys/kernel/iommu_groups/*/devices/*") ]]; then
-        echo "Failed."
-        false
-
-    else
-        echo -e "Successful."
-    fi
-}
-
 function CreateBackupFromFile
 {
     # behavior:
@@ -167,6 +152,40 @@ function CreateBackupFromFile
     esac
 }
 
+function ReadInput
+{
+    (exit 0)
+
+    # parameters #
+    declare -i int_count=0
+
+    while true; do
+
+        # manual prompt #
+        if [[ $int_count -ge 3 ]]; then
+            echo -en "Exceeded max attempts. "
+            str_input1="N"                    # default input     # NOTE: update here!
+
+        else
+            echo -en "\t$1 [Y/n]: "
+            read str_input1
+
+            str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
+            str_input1=${str_input1:0:1}
+        fi
+
+        case $str_input1 in
+            "Y"|"N")
+                break;;
+
+            *)
+                echo -en "\tInvalid input. ";;
+        esac
+
+        ((int_count++))
+    done
+}
+
 function CreateFile
 {
     (exit 0)
@@ -239,6 +258,190 @@ function DeleteFile
             echo -e "Failed. Null exception/invalid input.";;
 
         {3-255})
+            false;;
+    esac
+}
+
+function WriteVarToFile
+{
+    (exit 0)
+    echo -en "Writing to file...\t"
+
+    # null exception
+    if [[ -z $1 || -z $2 ]]; then
+        (exit 254)
+    fi
+
+    # file not found exception
+    if [[ ! -e $1 ]]; then
+        (exit 253)
+    fi
+
+    # file not readable exception
+    if [[ ! -r $1 ]]; then
+        (exit 252)
+    fi
+
+    # if a given element is a string longer than one char, the var is an array #
+    for str_element in ${2}; do
+        if [[ ${#str_element} -gt 1 ]]; then
+            bool_varIsAnArray=true
+            break
+        fi
+    done
+
+    if [[ "$?" -eq 0 ]]; then
+
+        # write array to file #
+        if [[ $bool_varIsAnArray == true ]]; then
+            for str_element in ${2}; do
+                echo $str_element >> $1 || (exit 255)
+            done
+
+        # write string to file #
+        else
+            echo $2 >> $1 || (exit 255)
+        fi
+    fi
+
+    case "$?" in
+        0)
+            echo -e "Successful."
+            true;;
+
+        255)
+            echo -e "Failed.";;
+
+        254)
+            echo -e "Failed. Null exception/invalid input.";;
+
+        253)
+            echo -e "Failed. File '$1' does not exist.";;
+
+        252)
+            echo -e "Failed. File '$1' is not readable.";;
+
+        {131-255})
+            false;;
+    esac
+}
+
+function CheckIfIOMMU_IsEnabled
+{
+    (exit 0)
+
+    echo -en "Checking if Virtualization is enabled/supported... "
+
+    if [[ -z $(compgen -G "/sys/kernel/iommu_groups/*/devices/*") ]]; then
+        echo "Failed."
+        false
+
+    else
+        echo -e "Successful."
+    fi
+}
+
+function CloneOrUpdateGitRepositories
+{
+    (exit 0)
+    echo -en "Cloning Git repositories...\t"
+
+    # dir #
+        # null exception
+        if [[ -z $1 || -z $2 ]]; then
+            (exit 254)
+        fi
+
+        # dir not found exception
+        if [[ ! -d $1 ]]; then
+            (exit 253)
+        fi
+
+        # dir not writeable exception
+        if [[ ! -w $1 ]]; then
+            (exit 252)
+        fi
+
+        case "$?" in
+            255)
+                echo -e "Failed.";;
+
+            254)
+                echo -e "Failed. Null exception/invalid input.";;
+
+            253)
+                echo -e "Failed. Dir '$1' does not exist.";;
+
+            252)
+                echo -e "Failed. Dir '$1' is not writeable.";;
+
+            {131-255})
+                false
+                exit;;
+        esac
+
+    # git repos #
+        # null exception
+        if [[ -z $1 || -z $2 ]]; then
+            (exit 254)
+        fi
+
+        # dir not found exception
+        if [[ ! -d $1 ]]; then
+            (exit 253)
+        fi
+
+        # dir not writeable exception
+        if [[ ! -w $1 ]]; then
+            (exit 252)
+        fi
+
+    # if a given element is a string longer than one char, the var is an array #
+    for str_element in ${2}; do
+        if [[ ${#str_element} -gt 1 ]]; then
+            bool_varIsAnArray=true
+            break
+        fi
+    done
+
+    if [[ "$?" -eq 0 ]]; then
+
+        # write array to file #
+        if [[ $bool_varIsAnArray == true ]]; then
+            for str_element in ${2}; do
+                git clone $str_element >> $1 || (exit 255)
+            done
+
+        # write string to file #
+        else
+            echo $2 >> $1 || (exit 255)
+        fi
+    fi
+
+    case "$?" in
+        0)
+            echo -e "Successful."
+            true;;
+
+        3)
+            echo -e "Successful. One or more Git repositories could not be cloned."
+            ## list here
+
+            ;;
+
+        255)
+            echo -e "Failed.";;
+
+        254)
+            echo -e "Failed. Null exception/invalid input.";;
+
+        253)
+            echo -e "Failed. Dir '$1' does not exist.";;
+
+        252)
+            echo -e "Failed. Dir '$1' is not writeable.";;
+
+        {131-255})
             false;;
     esac
 }
@@ -333,104 +536,6 @@ function ParseIOMMUandPCI
             {131-255})
                 false;;
         esac
-}
-
-function WriteVarToFile
-{
-    (exit 0)
-    echo -en "Writing to file...\t"
-
-    # null exception
-    if [[ -z $1 || -z $2 ]]; then
-        (exit 254)
-    fi
-
-    # file not found exception
-    if [[ ! -e $1 ]]; then
-        (exit 253)
-    fi
-
-    # file not readable exception
-    if [[ ! -r $1 ]]; then
-        (exit 252)
-    fi
-
-    # if a given element is a string longer than one char, the var is an array #
-    for str_element in ${2}; do
-        if [[ ${#str_element} -gt 1 ]]; then
-            bool_varIsAnArray=true
-            break
-        fi
-    done
-
-    if [[ "$?" -eq 0 ]]; then
-
-        # write array to file #
-        if [[ $bool_varIsAnArray == true ]]; then
-            for str_element in ${2}; do
-                echo $str_element >> $1 || (exit 255)
-            done
-
-        # write string to file #
-        else
-            echo $2 >> $1 || (exit 255)
-        fi
-    fi
-
-    case "$?" in
-        0)
-            echo -e "Successful."
-            true;;
-
-        255)
-            echo -e "Failed.";;
-
-        254)
-            echo -e "Failed. Null exception/invalid input.";;
-
-        253)
-            echo -e "Failed. File '$1' does not exist.";;
-
-        252)
-            echo -e "Failed. File '$1' is not readable.";;
-
-        {131-255})
-            false;;
-    esac
-}
-
-function ReadInput
-{
-    (exit 0)
-
-    # parameters #
-    declare -i int_count=0
-
-    while true; do
-
-        # manual prompt #
-        if [[ $int_count -ge 3 ]]; then
-            echo -en "Exceeded max attempts. "
-            str_input1="N"                    # default input     # NOTE: update here!
-
-        else
-            echo -en "\t$1 [Y/n]: "
-            read str_input1
-
-            str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
-            str_input1=${str_input1:0:1}
-        fi
-
-        case $str_input1 in
-            "Y"|"N")
-                break;;
-
-            *)
-                echo -en "\tInvalid input. ";;
-        esac
-
-        ((int_count++))
-    done
 }
 
 function SetupHugepages
@@ -541,7 +646,7 @@ function SetupStaticCPU_Isolation
         readonly int_totalCores=$( cat /proc/cpuinfo | grep 'cpu cores' | uniq | grep -o '[0-9]\+' )
         readonly int_totalThreads=$( cat /proc/cpuinfo | grep 'siblings' | uniq | grep -o '[0-9]\+' )
         readonly int_SMT_multiplier=$(( $int_totalThreads / $int_totalCores ))
-        declare -a arr_totalCores=()
+        # declare -a arr_totalCores=()
         declare -a arr_hostCores=()
         declare -a arr_hostThreads=()
         declare -a arr_hostThreadSets=()
@@ -566,7 +671,7 @@ function SetupStaticCPU_Isolation
 
         # group threads for host #
         for (( int_i=0 ; int_i<$int_SMT_multiplier ; int_i++ )); do
-            declare -i int_firstHostCore=$int_hostCores
+            # declare -i int_firstHostCore=$int_hostCores
             declare -i int_firstHostThread=$((int_hostCores+int_totalCores*int_i))
             declare -i int_lastHostCore=$((int_totalCores-1))
             declare -i int_lastHostThread=$((int_lastHostCore+int_totalCores*int_i))
@@ -656,7 +761,7 @@ function SetupStaticCPU_Isolation
     # prompt #
     echo -e "CPU isolation (Static or Dynamic) is a feature which allocates system CPU threads to the host and Virtual machines (VMs), separately.\n\tVirtual machines can use CPU isolation or 'pinning' to a peformance benefit\n\t'Static' is more 'permanent' CPU isolation: installation will append to GRUB after VFIO setup.\n\tAlternatively, 'Dynamic' CPU isolation is flexible and on-demand: post-installation will execute as a libvirt hook script (per VM)."
 
-    ReadInput "Setup 'Static' CPU isolation? [Y/n]: "
+    ReadInput "Setup 'Static' CPU isolation?"
 
     case $str_input1 in
         "Y")
