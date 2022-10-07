@@ -628,6 +628,16 @@
             esac
     }
 
+    function SetupAutoXorg
+    {
+        (exit 0)
+
+        str_pwd=$( pwd )
+
+        echo -e "Installing Auto-Xorg...\t"
+        ( cd $( find -wholename Auto-Xorg | uniq | head -n1 ) && bash ./installer.bash && cd $str_pwd && echo -e "Successful." ) || ( echo -e "Failed." && (exit 255) )
+    }
+
     function SetupHugepages
     {
         (exit 0)
@@ -725,7 +735,7 @@
         esac
     }
 
-    function SetupStaticCPU_Isolation
+    function SetupStaticCPU_isolation
     {
         (exit 0)
 
@@ -862,6 +872,105 @@
                 false;;
         esac
     }
+
+    function SetupZRAM_Swap
+    {
+        (exit 0)
+
+        str_pwd=$( pwd )
+
+        echo -e "Installing zram-swap...\t"
+
+        if [[ $( systemctl status asshole &> /dev/null ) != *"could not be found"* ]]; then
+            systemctl stop zramswap &> /dev/null
+            systemctl disable zramswap &> /dev/null
+        fi
+
+        ( cd $( find -wholename zram-swap | uniq | head -n1 ) && sh ./install.sh && cd $str_pwd ) || (exit 255)
+
+        # setup ZRAM #
+        if [[ "$?" -eq 0 ]]; then
+
+            # disable all existing zram swap devices
+            if [[ $( swapon -v | grep /dev/zram* ) == "/dev/zram"* ]]; then
+                swapoff /dev/zram* &> /dev/null
+            fi
+
+            declare -ir int_hostMemMaxG=$(( int_HostMemMaxK / 1048576 ))
+            declare -ir int_sysMemMaxG=$(( int_hostMemMaxG + 1 ))
+
+            echo -e "Total system memory: <= ${int_sysMemMaxG}G.\nIf 'Z == ${int_sysMemMaxG}G - (V + X)', where ('Z' == ZRAM, 'V' == VM(s), and 'X' == remainder for Host machine).\n\tCalculate 'Z'."
+
+            # free memory #
+            if [[ ! -z $str_HugePageSize && ! -z $int_HugePageNum ]]; then
+                case $str_HugePageSize in
+                    "1G")
+                        declare -ir int_hugePageSizeK=1048576;;
+
+                    "2M")
+                        declare -ir int_hugePageSizeK=2048;;
+                esac
+
+                declare -ir int_hugepagesMemG=$int_HugePageNum*$int_hugePageSizeK/1048576
+                declare -ir int_hostMemFreeG=$int_sysMemMaxG-$int_hugepagesMemG
+                echo -e "Free system memory after hugepages (${int_hugepagesMemG}G): <= ${int_hostMemFreeG}G."
+
+            else
+                declare -ir int_hostMemFreeG=$int_sysMemMaxG
+                echo -e "Free system memory: <= ${int_hostMemFreeG}G."
+            fi
+
+            str_output1="Enter zram-swap size in G (0G < n < ${int_hostMemFreeG}G): "
+            echo -en $str_output1
+            read -r int_ZRAM_sizeG
+
+            while true; do
+
+                # attempt #
+                if [[ $int_count -ge 2 ]]; then
+                    ((int_ZRAM_sizeG=int_hostMemFreeG/2))      # default selection
+                    echo -e "Exceeded max attempts. Default selection: ${int_ZRAM_sizeG}G"
+                    break
+
+                else
+                    if [[ -z $int_ZRAM_sizeG || $int_ZRAM_sizeG -lt 0 || $int_ZRAM_sizeG -ge $int_hostMemFreeG ]]; then
+                        echo -en "Invalid input.\n$str_output1"
+                        read -r int_ZRAM_sizeG
+
+                    else
+                        break
+                    fi
+                fi
+
+                ((int_count++))
+            done
+
+            declare -ir int_denominator=(( $int_sysMemMaxG / $int_ZRAM_sizeG ))
+            str_output1="\n_zram_fraction=\"1/$int_denominator\""
+            # str_outFile1="/etc/default/zramswap"
+            str_outFile1="/etc/default/zram-swap"
+
+            CreateBackupFromFile $str_outFile1
+            WriteVarToFile $str_outFile1 $str_output1 || (exit 255)
+        fi
+
+        echo -en "Zram-swap setup "
+
+        case "$?" in
+            0)
+                echo -e "successful."
+                true;;
+
+            255)
+                echo -e "failed.";;
+
+            254)
+                echo -e "failed. Null exception/invalid input.";;
+
+            {131-255})
+                false;;
+        esac
+    }
 ##
 
 ## executive functions ##
@@ -869,6 +978,7 @@
     {
         # parameters #
         bool_isAutoXorgSetup=false
+        bool_isCPU_staticIsolationSetup=false
         bool_isHugepagesSetup=false
         bool_isZRAM_swapSetup=false
 
@@ -909,37 +1019,36 @@
                 fi
             fi
 
-            SetupStaticCPU_Isolation
+            ( SetupStaticCPU_isolation && bool_isCPU_staticIsolationSetup=true ) || bool_isCPU_staticIsolationSetup=false
+
+            # TO-DO: add check for necessary dependencies or packages
 
             if [[ TestNetwork == true ]]; then
-
-                # TO-DO: add check for necessary dependencies or packages
-
-                # zram swap #
+                # zram-swap #
                 if ( CloneOrUpdateGitRepositories "FoundObjects/zram-swap" ); then
-                    # execute setup here
-                    echo
-                    bool_isZRAM_swapSetup=true
+                    ( SetupZRAM_Swap && bool_isZRAM_swapSetup=true ) || bool_isZRAM_swapSetup=false
                 fi
-                
-                
 
-                # auto-xorg
+                # auto-xorg #
+                if ( CloneOrUpdateGitRepositories "portellam/auto-xorg" ); then
+                    ( SetupAutoXorg && bool_isAutoXorgSetup=true ) || bool_isAutoXorgSetup=false
+                fi
 
             else
-
+                # zram-swap #
                 if ( CheckIfFileOrDirExists "zram-swap" == true ); then
-                    # do something
-                    echo
-
+                    ( SetupZRAM_Swap && bool_isZRAM_swapSetup=true ) || bool_isZRAM_swapSetup=false
                 fi
 
-                echo -e "WARNING: Cannot execute additional pre-setup."
+                # auto-xorg #
+                if ( CheckIfFileOrDirExists "auto-xorg" ); then
+                    ( SetupAutoXorg && bool_isAutoXorgSetup=true ) || bool_isAutoXorgSetup=false
+                fi
             fi
 
-
-        # more code here #
-
+            if [[ $bool_isAutoXorgSetup == false && $bool_isCPU_staticIsolationSetup == false && $bool_isHugepagesSetup == false && $bool_isZRAM_swapSetup == false ]]; then
+                echo -e "WARNING: Failed pre-setup."
+            fi
     }
 ##
 
