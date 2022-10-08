@@ -46,6 +46,7 @@
                 false;;
         esac
 
+        echo
     }
 
     function CreateBackupFromFile
@@ -180,6 +181,8 @@
             {131-255})
                 false;;
         esac
+
+        echo
     }
 
     function CreateFile
@@ -218,6 +221,8 @@
             {3-255})
                 false;;
         esac
+
+        echo
     }
 
     function DeleteFile
@@ -256,6 +261,8 @@
             {3-255})
                 false;;
         esac
+
+        echo
     }
 
     function ExitWithStatement
@@ -288,7 +295,7 @@
                 str_input1="N"                    # default input     # NOTE: update here!
 
             else
-                echo -en "\t$1 [Y/n]: "
+                echo -en "$1 [Y/n]: "
                 read str_input1
 
                 str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
@@ -305,6 +312,8 @@
 
             ((int_count++))
         done
+
+        echo
     }
 
     function TestNetwork
@@ -331,6 +340,8 @@
                 echo -e "Failed to ping Internet/DNS servers. Check network settings or firewall, and try again."
                 false;;
         esac
+
+        echo
     }
 
     function WriteVarToFile
@@ -395,6 +406,8 @@
             {131-255})
                 false;;
         esac
+
+        echo
     }
 ##
 
@@ -410,6 +423,8 @@
         else
             echo -e "Successful."
         fi
+
+        echo
     }
 
     function CloneOrUpdateGitRepositories
@@ -528,6 +543,8 @@
             {131-255})
                 false;;
         esac
+
+        echo
     }
 
     function ParseIOMMUandPCI
@@ -620,6 +637,8 @@
                 {131-255})
                     false;;
             esac
+
+        echo
     }
 
     function SetupAutoXorg
@@ -630,6 +649,8 @@
 
         echo -e "Installing Auto-Xorg...\t"
         ( cd $( find -wholename Auto-Xorg | uniq | head -n1 ) && bash ./installer.bash && cd $str_pwd && echo -e "Successful." ) || ( echo -e "Failed." && (exit 255) )
+
+        echo
     }
 
     function SetupHugepages
@@ -658,7 +679,7 @@
             # check input #
             case $str_HugePageSize in
                 "2M"|"1G")
-                    readonly $str_HugePageSize
+                    readonly $str_HugePageSize &> /dev/null
                     (exit 0)
                     break;;
 
@@ -704,7 +725,7 @@
                 (exit 254)
 
             else
-                readonly int_HugePageNum
+                readonly int_HugePageNum &> /dev/null
                 (exit 0)
                 break
             fi
@@ -865,6 +886,8 @@
             "N")
                 false;;
         esac
+
+        echo
     }
 
     function SetupZRAM_Swap
@@ -964,6 +987,8 @@
             {131-255})
                 false;;
         esac
+
+        echo
     }
 ##
 
@@ -980,16 +1005,23 @@
         CheckIfUserIsRoot
         CheckIfIOMMU_IsEnabled
 
+        # str_GRUB_CMDLINE_Hugepages="hello"
+        # echo -e "str_GRUB_CMDLINE_Hugepages:'${str_GRUB_CMDLINE_Hugepages}'"  # test
+
+        SetupHugepages
+        # echo -e "int_HugePageNum:'${int_HugePageNum}'"
+        # echo -e "str_HugePageSize:'${str_HugePageSize}'"
+        # echo -e "str_GRUB_CMDLINE_Hugepages:'${str_GRUB_CMDLINE_Hugepages}'"  # works as it should, carries from local scope to *global* scope
+
+        exit 0
+
         # pre setup #
             # write to qemu system file to enable hugepages #
             # NOTE: this will only append at end of file #
-            if [[ SetupHugepages == true ]]; then
+            if ( SetupHugepages == true ); then
                 str_inFile1="etc_libvirt_qemu.conf"
 
-                echo -e $int_HugePageNum
-                echo -e $str_HugePageSize
-                echo -e $str_GRUB_CMDLINE_Hugepages
-                exit 0
+                # echo -e "str_GRUB_CMDLINE_Hugepages:'${str_GRUB_CMDLINE_Hugepages}'"  # this scope doesn't work
 
                 if ( CheckIfFileOrDirExists $str_inFile1 == true ); then
                     str_outFile1="/etc/libvirt/qemu.conf"
@@ -1007,8 +1039,6 @@
                         bool_isHugepagesSetup=false
                         ExitWithStatement "WARNING: Setup cannot continue." false
                     fi
-
-                    bool_isHugepagesSetup=true
 
                 else
                     bool_isHugepagesSetup=false
