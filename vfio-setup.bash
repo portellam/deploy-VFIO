@@ -12,14 +12,14 @@
         if [[ $( whoami ) != "root" ]]; then
             str_thisFile=$( echo ${0##/*} )
             str_thisFile=$( echo $str_thisFile | cut -d '/' -f2 )
-            ExitWithStatement "WARNING: Script must execute as root. In terminal, run:\n\t'sudo bash $str_thisFile'" false
+            ExitWithStatement "\e[33mWARNING:\e[0m"" Script must execute as root. In terminal, run:\n\t'sudo bash $str_thisFile'" false
         fi
     }
 
     function CheckIfFileOrDirExists
     {
         (exit 0)
-        echo -en "Checking if file or directory exists...\t"
+        echo -en "Checking if file or directory exists... "
 
         # null exception
         if [[ -z $1 ]]; then
@@ -33,20 +33,18 @@
 
         case "$?" in
             0)
-                echo -e "Successful."
+                echo -e "\e[32mSuccessful.\e[0m"
                 true;;
 
             255)
-                echo -e "Failed. Could not find '$1'.";;
+                echo -e "\e[31mFailed.\e[0m"" Could not find '$1'.";;
 
             254)
-                echo -e "Failed. Null exception/invalid input.";;
+                echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
 
             {3-255})
                 false;;
         esac
-
-        echo
     }
 
     function CreateBackupFromFile
@@ -57,7 +55,7 @@
         #
 
         (exit 0)
-        echo -en "Backing up file...\t"
+        echo -en "Backing up file... "
 
         # parameters #
         str_thisFile=$1
@@ -79,116 +77,117 @@
         fi
 
         # work #
-        # parameters #
-        declare -r str_suffix=".old"
-        declare -r str_thisDir=$( dirname $1 )
-        declare -ar arr_thisDir=( $( ls -1v $str_thisDir | grep $str_thisFile | grep $str_suffix | uniq ) )
-
-        # positive non-zero count
-        if [[ "${#arr_thisDir[@]}" -ge 1 ]]; then
+        if [[ "$?" -eq 0 ]]; then
 
             # parameters #
-            declare -ir int_maxCount=5
-            str_line=${arr_thisDir[0]}
-            str_line=${str_line%"${str_suffix}"}        # substitution
-            str_line=${str_line##*.}                    # ditto
+            declare -r str_suffix=".old"
+            declare -r str_thisDir=$( dirname $1 )
+            declare -ar arr_thisDir=( $( ls -1v $str_thisDir | grep $str_thisFile | grep $str_suffix | uniq ) )
 
-            # check if string is a valid integer #
-            if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then
-                declare -ir int_firstIndex="${str_line}"
+            # positive non-zero count
+            if [[ "${#arr_thisDir[@]}" -ge 1 ]]; then
 
-            else
-                (exit 254)
-            fi
+                # parameters #
+                declare -ir int_maxCount=5
+                str_line=${arr_thisDir[0]}
+                str_line=${str_line%"${str_suffix}"}        # substitution
+                str_line=${str_line##*.}                    # ditto
 
-            for str_element in ${arr_thisDir[@]}; do
-                if cmp -s $str_thisFile $str_element; then
+                # check if string is a valid integer #
+                if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then
+                    declare -ir int_firstIndex="${str_line}"
+
+                else
+                    (exit 254)
+                fi
+
+                for str_element in ${arr_thisDir[@]}; do
+                    if cmp -s $str_thisFile $str_element; then
+                        (exit 3)
+                        break
+                    fi
+                done
+
+                # if latest backup is same as original file, exit
+                if cmp -s $str_thisFile ${arr_thisDir[-1]}; then
                     (exit 3)
-                    break
                 fi
-            done
 
-            # if latest backup is same as original file, exit
-            if cmp -s $str_thisFile ${arr_thisDir[-1]}; then
-                (exit 3)
-            fi
+                # before backup, delete all but some number of backup files
+                while [[ ${#arr_thisDir[@]} -ge $int_maxCount ]]; do
+                    if [[ -e ${arr_thisDir[0]} ]]; then
+                        rm ${arr_thisDir[0]}
+                        break
+                    fi
+                done
 
-            # before backup, delete all but some number of backup files
-            while [[ ${#arr_thisDir[@]} -ge $int_maxCount ]]; do
-                if [[ -e ${arr_thisDir[0]} ]]; then
-                    rm ${arr_thisDir[0]}
-                    break
+                # if *first* backup is same as original file, exit
+                if cmp -s $str_thisFile ${arr_thisDir[0]}; then
+                    (exit 3)
                 fi
-            done
 
-            # if *first* backup is same as original file, exit
-            if cmp -s $str_thisFile ${arr_thisDir[0]}; then
-                (exit 3)
-            fi
+                # new parameters #
+                str_line=${arr_thisDir[-1]%"${str_suffix}"}     # substitution
+                str_line=${str_line##*.}                        # ditto
 
-            # new parameters #
-            str_line=${arr_thisDir[-1]%"${str_suffix}"}     # substitution
-            str_line=${str_line##*.}                        # ditto
+                # check if string is a valid integer #
+                if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then
+                    declare -i int_lastIndex="${str_line}"
 
-            # check if string is a valid integer #
-            if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then
-                declare -i int_lastIndex="${str_line}"
+                else
+                    (exit 254)
+                fi
 
+                (( int_lastIndex++ ))           # counter
+
+                # source file is newer and different than backup, add to backups
+                if [[ $str_thisFile -nt ${arr_thisDir[-1]} && ! ( $str_thisFile -ef ${arr_thisDir[-1]} ) ]]; then
+                    cp $str_thisFile "${str_thisFile}.${int_lastIndex}${str_suffix}"
+
+                elif [[ $str_thisFile -ot ${arr_thisDir[-1]} && ! ( $str_thisFile -ef ${arr_thisDir[-1]} ) ]]; then
+                    (exit 3)
+
+                else
+                    (exit 3)
+                fi
+
+            # no backups, create backup
             else
-                (exit 254)
+                cp $str_thisFile "${str_thisFile}.0${str_suffix}"
             fi
-
-            (( int_lastIndex++ ))           # counter
-
-            # source file is newer and different than backup, add to backups
-            if [[ $str_thisFile -nt ${arr_thisDir[-1]} && ! ( $str_thisFile -ef ${arr_thisDir[-1]} ) ]]; then
-                cp $str_thisFile "${str_thisFile}.${int_lastIndex}${str_suffix}"
-
-            elif [[ $str_thisFile -ot ${arr_thisDir[-1]} && ! ( $str_thisFile -ef ${arr_thisDir[-1]} ) ]]; then
-                (exit 3)
-
-            else
-                (exit 3)
-            fi
-
-        # no backups, create backup
-        else
-            cp $str_thisFile "${str_thisFile}.0${str_suffix}"
         fi
 
         # append output and return code
         case "$?" in
             0)
-                echo -e "Successful."
+                echo -e "\e[32mSuccessful.\e[0m"
                 true;;
 
             3)
-                echo -e "Skipped. No changes from most recent backup."
+                echo -e "\e[33mSkipped.\e[0m"" No changes from most recent backup."
                 true;;
 
             255)
-                echo -e "Failed.";;
+                echo -e "\e[31mFailed.\e[0m""";;
 
             254)
-                echo -e "Failed. Exception: Null/invalid input.";;
+                echo -e "\e[31mFailed.\e[0m"" Exception: Null/invalid input.";;
 
             253)
-                echo -e "Failed. Exception: File '$str_thisFile' does not exist.";;
+                echo -e "\e[31mFailed.\e[0m"" Exception: File '$str_thisFile' does not exist.";;
 
             252)
-                echo -e "Failed. Exception: File '$str_thisFile' is not readable.";;
+                echo -e "\e[31mFailed.\e[0m"" Exception: File '$str_thisFile' is not readable.";;
 
             {131-255})
                 false;;
         esac
-
-        echo
     }
 
     function CreateFile
     {
         (exit 0)
-        echo -en "Creating file...\t"
+        echo -en "Creating file... "
 
         # null exception
         if [[ -z $1 ]]; then
@@ -205,18 +204,18 @@
 
         case "$?" in
             0)
-                echo -e "Successful."
+                echo -e "\e[32mSuccessful.\e[0m"
                 true;;
 
             3)
-                echo -e "Skipped. File '$1' exists."
+                echo -e "\e[33mSkipped.\e[0m"" File '$1' exists."
                 true;;
 
             255)
-                echo -e "Failed. Could not create file '$1'.";;
+                echo -e "\e[31mFailed.\e[0m"" Could not create file '$1'.";;
 
             254)
-                echo -e "Failed. Null exception/invalid input.";;
+                echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
 
             {3-255})
                 false;;
@@ -228,7 +227,7 @@
     function DeleteFile
     {
         (exit 0)
-        echo -en "Deleting file...\t"
+        echo -en "Deleting file... "
 
         # null exception
         if [[ -z $1 ]]; then
@@ -245,18 +244,18 @@
 
         case "$?" in
             0)
-                echo -e "Successful."
+                echo -e "\e[32mSuccessful.\e[0m"
                 true;;
 
             3)
-                echo -e "Skipped. File '$1' does not exist."
+                echo -e "\e[33mSkipped.\e[0m"" File '$1' does not exist."
                 true;;
 
             255)
-                echo -e "Failed. Could not delete file '$1'.";;
+                echo -e "\e[31mFailed.\e[0m"" Could not delete file '$1'.";;
 
             254)
-                echo -e "Failed. Null exception/invalid input.";;
+                echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
 
             {3-255})
                 false;;
@@ -282,39 +281,255 @@
 
     function ReadInput
     {
-        (exit 0)
+        # behavior:
+        #
+        # ask for Yes/No answer, return boolean,
+        # default selection is N/false
+        # always returns bool
+        #
+
+        # using statements #
+        shopt -s nocasematch
 
         # parameters #
-        declare -i int_count=0
+        declare -lir int_maxCount=3
+        declare -lar arr_count=$( seq $int_maxCount )
 
-        while true; do
-
-            # manual prompt #
-            if [[ $int_count -ge 3 ]]; then
-                echo -en "Exceeded max attempts. "
-                str_input1="N"                    # default input     # NOTE: update here!
-
-            else
-                echo -en "$1 [Y/n]: "
-                read str_input1
-
-                str_input1=$(echo $str_input1 | tr '[:lower:]' '[:upper:]')
-                str_input1=${str_input1:0:1}
-            fi
+        for int_count in ${arr_count[@]}; do
+            echo -en "$1 [Y/n]: "
+            read str_input1
 
             case $str_input1 in
-                "Y"|"N")
-                    break;;
+                "Y")
+                    echo
+                    return 0;;
+
+                "N")
+                    echo
+                    return 1;;
 
                 *)
-                    echo -en "\tInvalid input. ";;
-            esac
+                    if [[ $int_count -eq $int_maxCount ]]; then
+                        echo -e "Exceeded max attempts.\n"
+                        return 1
+                    fi
 
-            ((int_count++))
+                    echo -en "\e[33mInvalid input.\e[0m ";;
+            esac
+        done
+    }
+
+    function ReadInputFromMultipleChoiceIgnoreCase
+    {
+        # behavior:
+        #
+        # ask for multiple choice, up to eight choices
+        # default selection is first choice
+        # proper use always returns valid answer
+        #
+
+        if [[ -z $2 ]]; then
+            echo -e "\e[31mFailed.\e[0m"" Exception: Null/invalid input."
+            false
+
+        else
+
+            # parameters #
+            declare -lir int_maxCount=3
+            declare -lar arr_count=$( seq $int_maxCount )
+
+            # using statements #
+            shopt -s nocasematch
+
+            for int_count in ${arr_count[@]}; do
+                echo -en "$1 "
+                read str_input1
+
+                if [[ -z $2 && $str_input1 == $2 ]]; then
+                    break
+
+                elif [[ -z $3 && $str_input1 == $3 ]]; then
+                    break
+
+                elif [[ -z $4 && $str_input1 == $4 ]]; then
+                    break
+
+                elif [[ -z $5 && $str_input1 == $5 ]]; then
+                    break
+
+                elif [[ -z $6 && $str_input1 == $6 ]]; then
+                    break
+
+                elif [[ -z $7 && $str_input1 == $7 ]]; then
+                    break
+
+                elif [[ -z $8 && $str_input1 == $8 ]]; then
+                    break
+
+                elif [[ -z $9 && $str_input1 == $9 ]]; then
+                    break
+
+                else
+                    if [[ $int_count -eq $int_maxCount ]]; then
+                        echo -e "Exceeded max attempts."
+                        str_input1=$2                       # default selection: first choice
+                        break
+                    fi
+
+                    echo -en "\e[33mInvalid input.\e[0m "
+                fi
+            done
+        fi
+
+        echo
+    }
+
+    function ReadInputFromMultipleChoiceUpperCase
+    {
+        # behavior:
+        #
+        # ask for multiple choice, up to eight choices
+        # default selection is first choice
+        # proper use always returns valid answer
+        #
+
+        if [[ -z $2 ]]; then
+            echo -e "\e[31mFailed.\e[0m"" Exception: Null/invalid input."
+            false
+
+        else
+
+            # parameters #
+            declare -lir int_maxCount=3
+            declare -lar arr_count=$( seq $int_maxCount )
+
+            for int_count in ${arr_count[@]}; do
+                echo -en "$1 "
+                read str_input1
+                str_input1=$( echo $str_input1 | tr '[:lower:]' '[:upper:]' )
+
+                if [[ ! -z $2 && $str_input1 == $2 ]]; then
+                    break
+
+                elif [[ ! -z $3 && $str_input1 == $3 ]]; then
+                    break
+
+                elif [[ ! -z $4 && $str_input1 == $4 ]]; then
+                    break
+
+                elif [[ ! -z $5 && $str_input1 == $5 ]]; then
+                    break
+
+                elif [[ ! -z $6 && $str_input1 == $6 ]]; then
+                    break
+
+                elif [[ ! -z $7 && $str_input1 == $7 ]]; then
+                    break
+
+                elif [[ ! -z $8 && $str_input1 == $8 ]]; then
+                    break
+
+                elif [[ ! -z $9 && $str_input1 == $9 ]]; then
+                    break
+
+                else
+                    if [[ $int_count -eq $int_maxCount ]]; then
+                        echo -e "Exceeded max attempts."
+                        str_input1=$2                       # default selection: first choice
+                        break
+                    fi
+
+                    echo -en "\e[33mInvalid input.\e[0m "
+                fi
+            done
+        fi
+
+        echo
+    }
+
+    function ReadInputFromRangeOfNums
+    {
+        # behavior:
+        #
+        # ask for multiple choice, up to eight choices
+        # default selection is first choice
+        # proper use always returns valid answer
+        #
+
+        # parameters #
+        declare -lir int_maxCount=3
+        declare -lar arr_count=$( seq $int_maxCount )
+
+        # using statements #
+        shopt -s nocasematch
+
+        for int_count in ${arr_count[@]}; do
+            echo -en "$1 "
+            read str_input1
+
+            # valid input #
+            if [[ $str_input1 -ge $2 && $str_input1 -le $3 ]]; then
+                break
+            fi
+
+            # default input #
+            if [[ $int_count -eq $int_maxCount ]]; then
+                echo -e "Exceeded max attempts."
+                str_input1=$2                       # default selection: first choice
+                break
+            fi
+
+            # check if string is a valid integer #
+            if [[ ! ( "${str_input1}" -ge "$(( ${str_input1} ))" ) ]] 2> /dev/null; then
+                echo -en "\e[33mInvalid input.\e[0m "
+            fi
         done
 
         echo
     }
+
+    # function ReadInputFromRangeOfNums
+    # {
+    #     # behavior:
+    #     #
+    #     # ask for multiple choice, up to eight choices
+    #     # default selection is first choice
+    #     # proper use always returns valid answer
+    #     #
+
+    #     # parameters #
+    #     declare -lir int_maxCount=3
+    #     declare -lar arr_count=$( seq $int_maxCount )
+
+    #     # using statements #
+    #     shopt -s nocasematch
+
+    #     for int_count in ${arr_count[@]}; do
+    #         echo -en "$1 "
+    #         read str_input1
+
+    #         # check if string is a valid integer #
+    #         if [[ ( "${str_input1}" -ge "$(( ${str_input1} ))" ) ]] 2> /dev/null; then
+
+    #             # valid input #
+    #             if [[ $str_input1 -ge $2 && $str_input1 -le $3 ]]; then
+    #                 break
+    #             fi
+
+    #         else
+    #             echo -en "\e[33mInvalid input.\e[0m "
+    #         fi
+
+    #         # default input #
+    #         if [[ $int_count -eq $int_maxCount ]]; then
+    #             echo -e "Exceeded max attempts."
+    #             str_input1=$2                       # default selection: first choice
+    #             break
+    #         fi
+    #     done
+
+    #     echo $str_input1
+    # }
 
     function TestNetwork
     {
@@ -326,11 +541,11 @@
         (exit 0)    # set exit status to "successful" before work starts
 
         # test IP resolution
-        echo -en "Testing Internet connection...\t"
-        ping -q -c 1 8.8.8.8 &> /dev/null && echo -e "Successful." || ( echo -e "Failed." && (exit 255) )          # set exit status, but still execute rest of function
+        echo -en "Testing Internet connection... "
+        ping -q -c 1 8.8.8.8 &> /dev/null && echo -e "\e[32mSuccessful.\e[0m" || ( echo -e "\e[31mFailed.\e[0m""" && (exit 255) )          # set exit status, but still execute rest of function
 
-        echo -en "Testing connection to DNS...\t"
-        ping -q -c 1 www.google.com &> /dev/null && echo -e "Successful." || ( echo -e "Failed." && (exit 255) )   # ditto
+        echo -en "Testing connection to DNS... "
+        ping -q -c 1 www.google.com &> /dev/null && echo -e "\e[32mSuccessful.\e[0m" || ( echo -e "\e[31mFailed.\e[0m""" && (exit 255) )   # ditto
 
         case "$?" in
             0)
@@ -346,8 +561,19 @@
 
     function WriteVarToFile
     {
+        # behavior:
+        #
+        # input variable #2 ( $2 ) is the name of the variable we wish to point to
+        # this may help with calling/parsing arrays
+        # when passing the var, write the name without " $ "
+        #
+
+        # NOTE: necessary for newline preservation in arrays and files #
+        SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
+        IFS=$'\n'      # Change IFS to newline char
+
         (exit 0)
-        echo -en "Writing to file...\t"
+        echo -en "Writing to file... "
 
         # null exception
         if [[ -z $1 || -z $2 ]]; then
@@ -364,19 +590,36 @@
             (exit 252)
         fi
 
-        # if a given element is a string longer than one char, the var is an array #
-        for str_element in ${2}; do
-            if [[ ${#str_element} -gt 1 ]]; then
-                bool_varIsAnArray=true
-                break
-            fi
+        #declare -lar arr=(${!2})
+        declare -lar arr=$2
+
+        for str_element in ${arr[@]}; do
+            echo $str_element
         done
+
+        exit 0
+
+
+        # TO-DO:    how do I pass an array to this function?
+
+
+        # if a given element is a string longer than one char, the var is an array #
+        if [[ "$(declare -p !2)" =~ "declare -a" ]]; then
+            bool_varIsAnArray=true
+
+        else
+            bool_varIsAnArray=false
+        fi
+
+        echo $bool_varIsAnArray
+        exit 0
 
         if [[ "$?" -eq 0 ]]; then
 
             # write array to file #
             if [[ $bool_varIsAnArray == true ]]; then
-                for str_element in ${2}; do
+                for str_element in ${!2}; do
+                    echo $str_element
                     echo $str_element >> $1 || (exit 255)
                 done
 
@@ -388,26 +631,24 @@
 
         case "$?" in
             0)
-                echo -e "Successful."
+                echo -e "\e[32mSuccessful.\e[0m"
                 true;;
 
             255)
-                echo -e "Failed.";;
+                echo -e "\e[31mFailed.\e[0m""";;
 
             254)
-                echo -e "Failed. Null exception/invalid input.";;
+                echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
 
             253)
-                echo -e "Failed. File '$1' does not exist.";;
+                echo -e "\e[31mFailed.\e[0m"" File '$1' does not exist.";;
 
             252)
-                echo -e "Failed. File '$1' is not readable.";;
+                echo -e "\e[31mFailed.\e[0m"" File '$1' is not readable.";;
 
             {131-255})
                 false;;
         esac
-
-        echo
     }
 ##
 
@@ -418,10 +659,10 @@
         echo -en "Checking if Virtualization is enabled/supported... "
 
         if [[ -z $(compgen -G "/sys/kernel/iommu_groups/*/devices/*") ]]; then
-            ExitWithStatement false "Failed."
+            ExitWithStatement false "\e[31mFailed.\e[0m"""
 
         else
-            echo -e "Successful."
+            echo -e "\e[32mSuccessful.\e[0m"
         fi
 
         echo
@@ -430,7 +671,7 @@
     function CloneOrUpdateGitRepositories
     {
         (exit 0)
-        echo -en "Cloning Git repositories...\t"
+        echo -en "Cloning Git repositories... "
 
         # dir #
             # null exception
@@ -453,16 +694,16 @@
                     cd $1;;
 
                 255)
-                    echo -e "Failed.";;
+                    echo -e "\e[31mFailed.\e[0m""";;
 
                 254)
-                    echo -e "Failed. Null exception/invalid input.";;
+                    echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
 
                 253)
-                    echo -e "Failed. Dir '$1' does not exist.";;
+                    echo -e "\e[31mFailed.\e[0m"" Dir '$1' does not exist.";;
 
                 252)
-                    echo -e "Failed. Dir '$1' is not writeable.";;
+                    echo -e "\e[31mFailed.\e[0m"" Dir '$1' is not writeable.";;
 
                 {131-255})
                     false
@@ -528,17 +769,17 @@
 
         case "$?" in
             0)
-                echo -e "Successful."
+                echo -e "\e[32mSuccessful.\e[0m"
                 true;;
 
             3)
-                echo -e "Successful. One or more Git repositories could not be cloned.";;
+                echo -e "\e[32mSuccessful.\e[0m One or more Git repositories could not be cloned.";;
 
             255)
-                echo -e "Failed.";;
+                echo -e "\e[31mFailed.\e[0m""";;
 
             254)
-                echo -e "Failed. Null exception/invalid input.";;
+                echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
 
             {131-255})
                 false;;
@@ -550,7 +791,7 @@
     function ParseIOMMUandPCI
     {
         (exit 254)
-        echo -en "Parsing IOMMU groups...\t"
+        echo -en "Parsing IOMMU groups... "
 
         # parameters #
         declare -ir int_lastIOMMU="$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )"
@@ -617,21 +858,21 @@
         case "$?" in
                 # function never failed
                 0)
-                    echo -e "Successful."
+                    echo -e "\e[32mSuccessful.\e[0m"
                     true;;
 
                 3)
-                    echo -e "Successful. One or more external PCI device(s) missing drivers."
+                    echo -e "\e[32mSuccessful.\e[0m One or more external PCI device(s) missing drivers."
                     true;;
 
                 255)
-                    echo -e "Failed.";;
+                    echo -e "\e[31mFailed.\e[0m""";;
 
                 254)
-                    echo -e "Failed. Exception: No devices found.";;
+                    echo -e "\e[31mFailed.\e[0m"" Exception: No devices found.";;
 
                 253)
-                    echo -e "Failed. Exception: Existing VFIO setup found.";;
+                    echo -e "\e[31mFailed.\e[0m"" Exception: Existing VFIO setup found.";;
 
                 # function failed at a given point, inform user
                 {131-255})
@@ -647,107 +888,57 @@
 
         str_pwd=$( pwd )
 
-        echo -e "Installing Auto-Xorg...\t"
-        ( cd $( find -wholename Auto-Xorg | uniq | head -n1 ) && bash ./installer.bash && cd $str_pwd && echo -e "Successful." ) || ( echo -e "Failed." && (exit 255) )
+        echo -e "Installing Auto-Xorg... "
+        ( cd $( find -wholename Auto-Xorg | uniq | head -n1 ) && bash ./installer.bash && cd $str_pwd && echo -e "\e[32mSuccessful.\e[0m" ) || ( echo -e "\e[31mFailed.\e[0m""" && (exit 255) )
 
         echo
     }
 
     function SetupHugepages
     {
-        (exit 0)
+        # behavior:
+        #
+        # find vars necessary for Hugepages setup
+        # function can never *fail*, just execute or exit
+        #
 
         # parameters #
-        int_HostMemMaxK=$(cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1)     # sum of system RAM in KiB
+        local bool=false
+        int_HostMemMaxK=$(cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1)    # sum of system RAM in KiB
         str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                # default output
 
         echo -e "HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and lower overhead of memory-access (memory latency).\n"
-        ReadInput "Execute Hugepages setup?"
-        declare -i int_count=0
+        ReadInput "Execute Hugepages setup?" && bool=true
 
-        while true; do
-            if [[ $int_count -ge 3 ]]; then
-                str_HugePageSize="1G"           # default selection
-                echo -e "Exceeded max attempts. Default selection: ${str_HugePageSize}"
+        if [[ $bool == true ]]; then
+            ReadInputFromMultipleChoiceUpperCase "Enter Hugepage size and byte-size [1G/2m]:" "1G" "2M"
+            str_HugePageSize=$str_input1
 
-            else
-                echo -en "Enter Hugepage size and byte-size. [2M/1G]: "
-                read -r str_HugePageSize
-                str_HugePageSize=$(echo $str_HugePageSize | tr '[:lower:]' '[:upper:]')
-            fi
+            declare -lir int_HostMemMinK=4194304     # min host RAM in KiB
 
-            # check input #
+            # Hugepage Size #
             case $str_HugePageSize in
-                "2M"|"1G")
-                    readonly $str_HugePageSize &> /dev/null
-                    (exit 0)
-                    break;;
+                "2M")
+                    declare -lir int_HugePageK=2048  # Hugepage size
+                    declare -lir int_HugePageMin=2;; # min HugePages
 
-                *)
-                    echo -e "Invalid input."
-                    (exit 254);;
+                "1G")
+                    declare -lir int_HugePageK=1048576   # Hugepage size
+                    declare -lir int_HugePageMin=1;;     # min HugePages
             esac
 
-            ((int_count++))
-        done
+            declare -lir int_HugePageMemMax=$(( $int_HostMemMaxK - $int_HostMemMinK ))
+            declare -lir int_HugePageMax=$(( $int_HugePageMemMax / $int_HugePageK ))       # max HugePages
 
-        declare -i int_count=0
+            ReadInputFromRangeOfNums "Enter number of HugePages (n * $str_HugePageSize). [$int_HugePageMin <= n <= $int_HugePageMax pages]:" $int_HugePageMin $int_HugePageMax
+            declare -ir int_HugePageNum=$str_input1
 
-        while true; do
-            if [[ $int_count -ge 3 ]]; then
-                int_HugePageNum=$int_HugePageMax        # default selection
-                echo "Exceeded max attempts. Default selection: ${int_HugePageNum}"
+            readonly str_GRUB_CMDLINE_Hugepages="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
+            true
 
-            else
-                # Hugepage Size #
-                if [[ $str_HugePageSize == "2M" ]]; then
-                    declare -i int_HugePageK=2048       # Hugepage size
-                    declare -i int_HugePageMin=2        # min HugePages
-                fi
-
-                if [[ $str_HugePageSize == "1G" ]]; then
-                    declare -i int_HugePageK=1048576    # Hugepage size
-                    declare -i int_HugePageMin=1        # min HugePages
-                fi
-
-                declare -i int_HostMemMinK=4194304                              # min host RAM in KiB
-                declare -i int_HugePageMemMax=$int_HostMemMaxK-$int_HostMemMinK
-                declare -i int_HugePageMax=$int_HugePageMemMax/$int_HugePageK   # max HugePages
-
-                echo -en "Enter number of HugePages (n * $str_HugePageSize). [$int_HugePageMin <= n <= $int_HugePageMax pages]: "
-                read -r int_HugePageNum
-            fi
-
-            # check input #
-            if [[ $int_HugePageNum -lt $int_HugePageMin || $int_HugePageNum -gt $int_HugePageMax ]]; then
-                echo -e "Invalid input."
-                ((int_count++))
-                (exit 254)
-
-            else
-                readonly int_HugePageNum &> /dev/null
-                (exit 0)
-                break
-            fi
-        done
-
-        readonly str_GRUB_CMDLINE_Hugepages="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
-        echo -en "Hugepages setup "
-
-        case "$?" in
-            0)
-                echo -e "successful."
-                true;;
-
-            255)
-                echo -e "failed.";;
-
-            254)
-                echo -e "failed. Null exception/invalid input.";;
-
-            {131-255})
-                false;;
-        esac
+        else
+            false
+        fi
     }
 
     function SetupStaticCPU_isolation
@@ -896,7 +1087,7 @@
 
         str_pwd=$( pwd )
 
-        echo -e "Installing zram-swap...\t"
+        echo -e "Installing zram-swap... "
 
         if [[ $( systemctl status asshole &> /dev/null ) != *"could not be found"* ]]; then
             systemctl stop zramswap &> /dev/null
@@ -951,7 +1142,7 @@
 
                 else
                     if [[ -z $int_ZRAM_sizeG || $int_ZRAM_sizeG -lt 0 || $int_ZRAM_sizeG -ge $int_hostMemFreeG ]]; then
-                        echo -en "Invalid input.\n$str_output1"
+                        echo -en "\e[33mInvalid input.\e[0m\n$str_output1"
                         read -r int_ZRAM_sizeG
 
                     else
@@ -975,14 +1166,14 @@
 
         case "$?" in
             0)
-                echo -e "successful."
+                echo -e "\e[32mSuccessful.\e[0m"
                 true;;
 
             255)
-                echo -e "failed.";;
+                echo -e "\e[31mFailed.\e[0m""";;
 
             254)
-                echo -e "failed. Null exception/invalid input.";;
+                echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
 
             {131-255})
                 false;;
@@ -1005,76 +1196,74 @@
         CheckIfUserIsRoot
         CheckIfIOMMU_IsEnabled
 
-        # str_GRUB_CMDLINE_Hugepages="hello"
-        # echo -e "str_GRUB_CMDLINE_Hugepages:'${str_GRUB_CMDLINE_Hugepages}'"  # test
-
-        SetupHugepages
-        # echo -e "int_HugePageNum:'${int_HugePageNum}'"
-        # echo -e "str_HugePageSize:'${str_HugePageSize}'"
-        # echo -e "str_GRUB_CMDLINE_Hugepages:'${str_GRUB_CMDLINE_Hugepages}'"  # works as it should, carries from local scope to *global* scope
-
-        exit 0
+        SetupHugepages && bool_isHugepagesSetup=true
 
         # pre setup #
-            # write to qemu system file to enable hugepages #
-            # NOTE: this will only append at end of file #
-            if ( SetupHugepages == true ); then
-                str_inFile1="etc_libvirt_qemu.conf"
+        # write to qemu system file to enable hugepages #
+        # NOTE: this will only append at end of file #
+        if [[ $bool_isHugepagesSetup == true ]]; then
+            str_inFile1="etc_libvirt_qemu.conf"
 
-                # echo -e "str_GRUB_CMDLINE_Hugepages:'${str_GRUB_CMDLINE_Hugepages}'"  # this scope doesn't work
+            # echo -e "str_GRUB_CMDLINE_Hugepages:'${str_GRUB_CMDLINE_Hugepages}'"  # this scope does work!
 
-                if ( CheckIfFileOrDirExists $str_inFile1 == true ); then
-                    str_outFile1="/etc/libvirt/qemu.conf"
+            if ( CheckIfFileOrDirExists $str_inFile1 == true ); then
+                # str_outFile1="/etc/libvirt/qemu.conf"
+                str_outFile1="test-qemu.conf"
 
-                    declare -a arr_output1=(
-                        "user = \"user\"\ngroup = \"user\""
-                        "hugetlbfs_mount = \"/dev/hugepages\""
-                        "cgroup_device_acl = [\n    \"/dev/null\", \"/dev/full\", \"/dev/zero\",\n    \"/dev/random\", \"/dev/urandom\",\n    \"/dev/ptmx\", \"/dev/kvm\",\n    \"/dev/rtc\",\"/dev/hpet\"\n]"
-                        )
+                declare -la arr_output1=(
+                    "user = \"user\"\ngroup = \"user\""
+                    "hugetlbfs_mount = \"/dev/hugepages\""
+                    "cgroup_device_acl = [\n    \"/dev/null\", \"/dev/full\", \"/dev/zero\",\n    \"/dev/random\", \"/dev/urandom\",\n    \"/dev/ptmx\", \"/dev/kvm\",\n    \"/dev/rtc\",\"/dev/hpet\"\n]"
+                    )
 
-                    if ( CreateBackupFromFile $str_outFile1 == true ); then
-                        WriteVarToFile $str_outFile1 $arr_output1
+                echo ${#arr_output1[@]}
 
-                    else
-                        bool_isHugepagesSetup=false
-                        ExitWithStatement "WARNING: Setup cannot continue." false
-                    fi
+                if ( CreateBackupFromFile $str_outFile1 == true ); then
+                    WriteVarToFile $str_outFile1 ${arr_output1[@]}
 
                 else
                     bool_isHugepagesSetup=false
-                fi
-            fi
-
-            ( SetupStaticCPU_isolation && bool_isCPU_staticIsolationSetup=true ) || bool_isCPU_staticIsolationSetup=false
-
-            # TO-DO: add check for necessary dependencies or packages
-
-            if [[ TestNetwork == true ]]; then
-                # zram-swap #
-                if ( CloneOrUpdateGitRepositories "FoundObjects/zram-swap" ); then
-                    ( SetupZRAM_Swap && bool_isZRAM_swapSetup=true ) || bool_isZRAM_swapSetup=false
-                fi
-
-                # auto-xorg #
-                if ( CloneOrUpdateGitRepositories "portellam/auto-xorg" ); then
-                    ( SetupAutoXorg && bool_isAutoXorgSetup=true ) || bool_isAutoXorgSetup=false
+                    ExitWithStatement "\e[33mWARNING:\e[0m"" Setup cannot continue." false
                 fi
 
             else
-                # zram-swap #
-                if ( CheckIfFileOrDirExists "zram-swap" == true ); then
-                    ( SetupZRAM_Swap && bool_isZRAM_swapSetup=true ) || bool_isZRAM_swapSetup=false
-                fi
+                bool_isHugepagesSetup=false
+            fi
+        fi
 
-                # auto-xorg #
-                if ( CheckIfFileOrDirExists "auto-xorg" ); then
-                    ( SetupAutoXorg && bool_isAutoXorgSetup=true ) || bool_isAutoXorgSetup=false
-                fi
+        exit 0
+        SetupStaticCPU_isolation && bool_isCPU_staticIsolationSetup=true
+
+        # TO-DO: add check for necessary dependencies or packages
+
+        if [[ TestNetwork == true ]]; then
+
+            # zram-swap #
+            if ( CloneOrUpdateGitRepositories "FoundObjects/zram-swap" ); then
+                SetupZRAM_Swap && bool_isZRAM_swapSetup=true
             fi
 
-            if [[ $bool_isAutoXorgSetup == false && $bool_isCPU_staticIsolationSetup == false && $bool_isHugepagesSetup == false && $bool_isZRAM_swapSetup == false ]]; then
-                echo -e "WARNING: Failed pre-setup."
+            # auto-xorg #
+            if ( CloneOrUpdateGitRepositories "portellam/auto-xorg" ); then
+                SetupAutoXorg && bool_isAutoXorgSetup=true
             fi
+
+        else
+
+            # zram-swap #
+            if ( CheckIfFileOrDirExists "zram-swap" == true ); then
+                SetupZRAM_Swap && bool_isZRAM_swapSetup=true
+            fi
+
+            # auto-xorg #
+            if ( CheckIfFileOrDirExists "auto-xorg" ); then
+                SetupAutoXorg && bool_isAutoXorgSetup=true
+            fi
+        fi
+
+        if [[ $bool_isAutoXorgSetup == false && $bool_isCPU_staticIsolationSetup == false && $bool_isHugepagesSetup == false && $bool_isZRAM_swapSetup == false ]]; then
+            echo -e "\e[33mWARNING:\e[0m"" Failed pre-setup."
+        fi
     }
 ##
 
