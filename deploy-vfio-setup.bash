@@ -7,8 +7,6 @@
 ## prep and I/O functions ##
     function CheckIfUserIsRoot
     {
-        true
-
         if [[ $( whoami ) != "root" ]]; then
             str_thisFile=$( echo ${0##/*} )
             str_thisFile=$( echo $str_thisFile | cut -d '/' -f2 )
@@ -18,7 +16,7 @@
 
     function CheckIfFileOrDirExists
     {
-        (exit 0)
+        false
         echo -en "Checking if file or directory exists... "
 
         # null exception
@@ -41,9 +39,6 @@
 
             254)
                 echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
-
-            {3-255})
-                false;;
         esac
     }
 
@@ -54,7 +49,7 @@
         #   return boolean, to be used by main
         #
 
-        (exit 0)
+        false
         echo -en "Backing up file... "
 
         # parameters #
@@ -178,15 +173,12 @@
 
             252)
                 echo -e "\e[31mFailed.\e[0m"" Exception: File '$str_thisFile' is not readable.";;
-
-            {131-255})
-                false;;
         esac
     }
 
     function CreateFile
     {
-        (exit 0)
+        false
         echo -en "Creating file... "
 
         # null exception
@@ -216,15 +208,12 @@
 
             254)
                 echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
-
-            {3-255})
-                false;;
         esac
     }
 
     function DeleteFile
     {
-        (exit 0)
+        false
         echo -en "Deleting file... "
 
         # null exception
@@ -254,9 +243,6 @@
 
             254)
                 echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
-
-            {3-255})
-                false;;
         esac
     }
 
@@ -284,6 +270,8 @@
         # always returns bool
         #
 
+        false
+
         # using statements #
         shopt -s nocasematch
 
@@ -298,16 +286,16 @@
             case $str_input1 in
                 "Y")
                     echo
-                    return 0;;
+                    true;;
 
                 "N")
                     echo
-                    return 1;;
+                    false;;
 
                 *)
                     if [[ $int_element -eq $int_maxCount ]]; then
                         echo -e "Exceeded max attempts.\n"
-                        return 1
+                        false
                     fi
 
                     echo -en "\e[33mInvalid input.\e[0m ";;
@@ -491,22 +479,21 @@
         #   return boolean, to be used by main
         #
 
-        (exit 0)    # set exit status to "successful" before work starts
+        false
 
         # test IP resolution
         echo -en "Testing Internet connection... "
-        ping -q -c 1 8.8.8.8 &> /dev/null && echo -e "\e[32mSuccessful.\e[0m" || ( echo -e "\e[31mFailed.\e[0m""" && (exit 255) )          # set exit status, but still execute rest of function
+        ( ping -q -c 1 8.8.8.8 &> /dev/null || ping -q -c 1 1.1.1.1 &> /dev/null ) && echo -e "\e[32mSuccessful.\e[0m" || ( echo -e "\e[31mFailed.\e[0m""" && (exit 255) )          # set exit status, but still execute rest of function
 
         echo -en "Testing connection to DNS... "
-        ping -q -c 1 www.google.com &> /dev/null && echo -e "\e[32mSuccessful.\e[0m" || ( echo -e "\e[31mFailed.\e[0m""" && (exit 255) )   # ditto
+        ( ping -q -c 1 www.google.com &> /dev/null && ping -q -c 1 www.yandex.com &> /dev/null ) && echo -e "\e[32mSuccessful.\e[0m" || ( echo -e "\e[31mFailed.\e[0m""" && (exit 255) )   # ditto
 
         case "$?" in
             0)
                 true;;
 
             *)
-                echo -e "Failed to ping Internet/DNS servers. Check network settings or firewall, and try again."
-                false;;
+                echo -e "Failed to ping Internet/DNS servers. Check network settings or firewall, and try again.";;
         esac
 
         echo
@@ -525,7 +512,7 @@
         SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
         IFS=$'\n'      # Change IFS to newline char
 
-        (exit 0)
+        false
         echo -en "Writing to file... "
 
         # null exception
@@ -571,9 +558,6 @@
 
             251)
                 echo -e "\e[31mFailed.\e[0m"" File '$1' is not writable.";;
-
-            {131-255})
-                false;;
         esac
     }
 ##
@@ -581,7 +565,6 @@
 ## relative functions ##
     function CheckIfIOMMU_IsEnabled
     {
-        true
         echo -en "Checking if Virtualization is enabled/supported... "
 
         if [[ -z $(compgen -G "/sys/kernel/iommu_groups/*/devices/*") ]]; then
@@ -589,6 +572,7 @@
 
         else
             echo -e "\e[32mSuccessful.\e[0m"
+            true
         fi
 
         echo
@@ -596,7 +580,7 @@
 
     function CloneOrUpdateGitRepositories
     {
-        (exit 0)
+        true
         echo -en "Cloning Git repositories... "
 
         # dir #
@@ -617,7 +601,8 @@
 
             case "$?" in
                 0)
-                    cd $1;;
+                    cd $1
+                    true;;
 
                 255)
                     echo -e "\e[31mFailed.\e[0m""";;
@@ -630,13 +615,15 @@
 
                 252)
                     echo -e "\e[31mFailed.\e[0m"" Dir '$1' is not writeable.";;
-
-                {131-255})
-                    false
-                    exit;;
             esac
 
+            if [[ $? -ge 131 ]]; then
+                exit
+            fi
+
         # git repos #
+            false
+
             # null exception
             if [[ -z $1 || -z $2 ]]; then
                 (exit 254)
@@ -706,9 +693,6 @@
 
             254)
                 echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
-
-            {131-255})
-                false;;
         esac
 
         echo
@@ -716,7 +700,7 @@
 
     function ParseIOMMUandPCI
     {
-        (exit 254)
+        false
         echo -en "Parsing IOMMU groups... "
 
         # parameters #
@@ -732,7 +716,6 @@
 
         # parse list of IOMMU groups #
         for str_element1 in $( find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V ); do
-            (exit 0)
 
             # parameters #
             str_thisIOMMU=$( basename $str_element1 )
@@ -799,10 +782,6 @@
 
                 253)
                     echo -e "\e[31mFailed.\e[0m"" Exception: Existing VFIO setup found.";;
-
-                # function failed at a given point, inform user
-                {131-255})
-                    false;;
             esac
 
         echo
@@ -810,12 +789,11 @@
 
     function SetupAutoXorg
     {
-        (exit 0)
-
+        # parameters #
         str_pwd=$( pwd )
 
         echo -e "Installing Auto-Xorg... "
-        ( cd $( find -wholename Auto-Xorg | uniq | head -n1 ) && bash ./installer.bash && cd $str_pwd && echo -e "\e[32mSuccessful.\e[0m" ) || ( echo -e "\e[31mFailed.\e[0m""" && (exit 255) )
+        ( cd $( find -wholename Auto-Xorg | uniq | head -n1 ) && bash ./installer.bash && cd $str_pwd && echo -e "\e[32mSuccessful.\e[0m" && true ) || ( echo -e "\e[31mFailed.\e[0m""" )
 
         echo
     }
@@ -828,6 +806,8 @@
         # add active desktop users to groups for Libvirt, QEMU, Input devices, etc.
         # write to logfile
         #
+
+        false
 
         # parameters #
         local bool=false
@@ -887,6 +867,8 @@
         # write to logfile
         #
 
+        false
+
         # parameters #
         local bool=false
         declare -lr str_thisFile1="qemu-hugepages.log"
@@ -935,7 +917,7 @@
 
             if [[ $bool == true ]]; then
                 declare -lr str_output="hugetlbfs_mount = \"/dev/hugepages\""
-                ( WriteVarToFile $str_thisFile1 $str_output1 && true && echo  ) || false
+                ( WriteVarToFile $str_thisFile1 $str_output1 && true && echo ) || false
             fi
 
         else
@@ -945,7 +927,7 @@
 
     function SetupStaticCPU_isolation
     {
-        (exit 0)
+        false
 
         function ParseCPU
         {
@@ -1069,24 +1051,16 @@
         # prompt #
         echo -e "CPU isolation (Static or Dynamic) is a feature which allocates system CPU threads to the host and Virtual machines (VMs), separately.\n\tVirtual machines can use CPU isolation or 'pinning' to a peformance benefit\n\t'Static' is more 'permanent' CPU isolation: installation will append to GRUB after VFIO setup.\n\tAlternatively, 'Dynamic' CPU isolation is flexible and on-demand: post-installation will execute as a libvirt hook script (per VM)."
 
-        ReadInput "Setup 'Static' CPU isolation?"
-
-        case $str_input1 in
-            "Y")
-                echo -en  "Executing CPU isolation setup... "
-                ( ParseCPU && echo -e "Complete." && true ) || ( echo -e "Failure." && false );;
-
-            "N")
-                false;;
-        esac
+        ( ReadInput "Setup 'Static' CPU isolation?" && echo -en "Executing CPU isolation setup... " && ParseCPU && echo -e "Complete." && true ) || ( echo -e "Failure." && false )
 
         echo
     }
 
     function SetupZRAM_Swap
     {
-        (exit 0)
+        false
 
+        # parameters #
         str_pwd=$( pwd )
 
         echo -e "Installing zram-swap... "
@@ -1176,9 +1150,6 @@
 
             254)
                 echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
-
-            {131-255})
-                false;;
         esac
 
         echo
