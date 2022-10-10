@@ -295,7 +295,7 @@
         declare -lir int_maxCount=3
         declare -lar arr_count=$( seq $int_maxCount )
 
-        for int_count in ${arr_count[@]}; do
+        for int_element in ${arr_count[@]}; do
             echo -en "$1 [Y/n]: "
             read str_input1
 
@@ -309,7 +309,7 @@
                     return 1;;
 
                 *)
-                    if [[ $int_count -eq $int_maxCount ]]; then
+                    if [[ $int_element -eq $int_maxCount ]]; then
                         echo -e "Exceeded max attempts.\n"
                         return 1
                     fi
@@ -341,7 +341,7 @@
             # using statements #
             shopt -s nocasematch
 
-            for int_count in ${arr_count[@]}; do
+            for int_element in ${arr_count[@]}; do
                 echo -en "$1 "
                 read str_input1
 
@@ -370,7 +370,7 @@
                     break
 
                 else
-                    if [[ $int_count -eq $int_maxCount ]]; then
+                    if [[ $int_element -eq $int_maxCount ]]; then
                         echo -e "Exceeded max attempts."
                         str_input1=$2                       # default selection: first choice
                         break
@@ -403,7 +403,7 @@
             declare -lir int_maxCount=3
             declare -lar arr_count=$( seq $int_maxCount )
 
-            for int_count in ${arr_count[@]}; do
+            for int_element in ${arr_count[@]}; do
                 echo -en "$1 "
                 read str_input1
                 str_input1=$( echo $str_input1 | tr '[:lower:]' '[:upper:]' )
@@ -433,7 +433,7 @@
                     break
 
                 else
-                    if [[ $int_count -eq $int_maxCount ]]; then
+                    if [[ $int_element -eq $int_maxCount ]]; then
                         echo -e "Exceeded max attempts."
                         str_input1=$2                       # default selection: first choice
                         break
@@ -463,7 +463,7 @@
         # using statements #
         shopt -s nocasematch
 
-        for int_count in ${arr_count[@]}; do
+        for int_element in ${arr_count[@]}; do
             echo -en "$1 "
             read str_input1
 
@@ -473,7 +473,7 @@
             fi
 
             # default input #
-            if [[ $int_count -eq $int_maxCount ]]; then
+            if [[ $int_element -eq $int_maxCount ]]; then
                 echo -e "Exceeded max attempts."
                 str_input1=$2                       # default selection: first choice
                 break
@@ -487,49 +487,6 @@
 
         echo
     }
-
-    # function ReadInputFromRangeOfNums
-    # {
-    #     # behavior:
-    #     #
-    #     # ask for multiple choice, up to eight choices
-    #     # default selection is first choice
-    #     # proper use always returns valid answer
-    #     #
-
-    #     # parameters #
-    #     declare -lir int_maxCount=3
-    #     declare -lar arr_count=$( seq $int_maxCount )
-
-    #     # using statements #
-    #     shopt -s nocasematch
-
-    #     for int_count in ${arr_count[@]}; do
-    #         echo -en "$1 "
-    #         read str_input1
-
-    #         # check if string is a valid integer #
-    #         if [[ ( "${str_input1}" -ge "$(( ${str_input1} ))" ) ]] 2> /dev/null; then
-
-    #             # valid input #
-    #             if [[ $str_input1 -ge $2 && $str_input1 -le $3 ]]; then
-    #                 break
-    #             fi
-
-    #         else
-    #             echo -en "\e[33mInvalid input.\e[0m "
-    #         fi
-
-    #         # default input #
-    #         if [[ $int_count -eq $int_maxCount ]]; then
-    #             echo -e "Exceeded max attempts."
-    #             str_input1=$2                       # default selection: first choice
-    #             break
-    #         fi
-    #     done
-
-    #     echo $str_input1
-    # }
 
     function TestNetwork
     {
@@ -590,43 +547,13 @@
             (exit 252)
         fi
 
-        #declare -lar arr=(${!2})
-        declare -lar arr=$2
-
-        for str_element in ${arr[@]}; do
-            echo $str_element
-        done
-
-        exit 0
-
-
-        # TO-DO:    how do I pass an array to this function?
-
-
-        # if a given element is a string longer than one char, the var is an array #
-        if [[ "$(declare -p !2)" =~ "declare -a" ]]; then
-            bool_varIsAnArray=true
-
-        else
-            bool_varIsAnArray=false
+        # file not readable exception
+        if [[ ! -w $1 ]]; then
+            (exit 251)
         fi
 
-        echo $bool_varIsAnArray
-        exit 0
-
         if [[ "$?" -eq 0 ]]; then
-
-            # write array to file #
-            if [[ $bool_varIsAnArray == true ]]; then
-                for str_element in ${!2}; do
-                    echo $str_element
-                    echo $str_element >> $1 || (exit 255)
-                done
-
-            # write string to file #
-            else
-                echo $2 >> $1 || (exit 255)
-            fi
+            echo $2 >> $1 || (exit 255)
         fi
 
         case "$?" in
@@ -645,6 +572,9 @@
 
             252)
                 echo -e "\e[31mFailed.\e[0m"" File '$1' is not readable.";;
+
+            251)
+                echo -e "\e[31mFailed.\e[0m"" File '$1' is not writable.";;
 
             {131-255})
                 false;;
@@ -805,22 +735,22 @@
         bool_foundVFIO=false
 
         # parse list of IOMMU groups #
-        for str_line1 in $( find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V ); do
+        for str_element1 in $( find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V ); do
             (exit 0)
 
             # parameters #
-            str_thisIOMMU=$( basename $str_line1 )
+            str_thisIOMMU=$( basename $str_element1 )
 
             # parse given IOMMU group for PCI IDs #
-            for str_line2 in $( ls ${str_line1}/devices ); do
+            for str_element2 in $( ls ${str_element1}/devices ); do
 
                 # parameters #
                 # save output of given device #
-                str_thisDevicePCI_ID="${str_line2##"0000:"}"
-                str_thisDeviceName="$( lspci -ms ${str_line2} | cut -d '"' -f6 )"
-                str_thisDeviceType="$( lspci -ms ${str_line2} | cut -d '"' -f2 )"
-                str_thisDeviceVendor="$( lspci -ms ${str_line2} | cut -d '"' -f4 )"
-                str_thisDeviceDriver="$( lspci -ks ${str_line2} | grep driver | cut -d ':' -f2 )"
+                str_thisDevicePCI_ID="${str_element2##"0000:"}"
+                str_thisDeviceName="$( lspci -ms ${str_element2} | cut -d '"' -f6 )"
+                str_thisDeviceType="$( lspci -ms ${str_element2} | cut -d '"' -f2 )"
+                str_thisDeviceVendor="$( lspci -ms ${str_element2} | cut -d '"' -f4 )"
+                str_thisDeviceDriver="$( lspci -ks ${str_element2} | grep driver | cut -d ':' -f2 )"
 
                 if [[ -z $str_thisDeviceDriver ]]; then
                     str_thisDeviceDriver="N/A"
@@ -894,37 +824,108 @@
         echo
     }
 
+    function SetupEvdev
+    {
+        # behavior:
+        #
+        # ask user to prep setup of Evdev
+        # add active desktop users to groups for Libvirt, QEMU, Input devices, etc.
+        # write to logfile
+        #
+
+        # parameters #
+        local bool=false
+        declare -lr str_file1="qemu-evdev.log"
+        declare -lr str_file2="/etc/apparmor.d/abstractions/libvirt-qemu"
+
+        echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n\tHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
+        ReadInput "Setup Evdev?" && bool=true
+
+        if [[ $bool == true ]]; then
+            # readonly str_firstUser=$( id -u 1000 -n ) && echo -e "Found the first desktop user of the system: $str_firstUser"
+
+            # add users to groups #
+            declare -a arr_User=(`getent passwd {1000..60000} | cut -d ":" -f 1`)
+
+            for str_element in $arr_User; do
+                adduser $str_element input
+                adduser $str_element libvirt
+            done
+
+            ( DeleteFile $str_file1 && CreateFile $str_file1 ) || bool=false
+
+            if [[ $bool == true ]]; then
+
+                # list of input devices #
+                declare -lar arr_InputDeviceID=$( ls /dev/input/by-id )
+                declare -lar arr_InputEventDeviceID=$( ls -l /dev/input/by-id | cut -d '/' -f2 | grep -v 'total 0' )
+
+                for str_element in ${arr_InputDeviceID[@]}; do
+                    ( WriteToFile $str_file1 "    \"/dev/input/by-id/$str_element\",\n" ) &v /dev/null
+                done
+
+                for str_element in ${arr_InputEventDeviceID[@]}; do
+                    ( WriteToFile $str_file1 "    \"/dev/input/by-id/$str_element\",\n" ) &v /dev/null
+                done
+
+                # append system file #
+                declare -lr str_output1+="\n  # Evdev #\n  /dev/input/* rw,\n  /dev/input/by-id/* rw,\n"
+                ( CheckIfFileOrDirExists $str_file2 && WriteToFile $str_file2 $str_output1 && true ) || false
+                # will require restart of apparmor service or system #
+
+                echo $str_file1
+
+            else
+                false
+            fi
+
+        else
+            false
+        fi
+    }
+
     function SetupHugepages
     {
         # behavior:
         #
         # find vars necessary for Hugepages setup
         # function can never *fail*, just execute or exit
+        # write to logfile
         #
 
         # parameters #
         local bool=false
-        int_HostMemMaxK=$(cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1)    # sum of system RAM in KiB
-        str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                # default output
+        declare -lr str_file1="qemu-hugepages.log"
+        declare -lir int_HostMemMaxK=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )     # sum of system RAM in KiB
+        str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                                # default output
 
         echo -e "HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and lower overhead of memory-access (memory latency).\n"
         ReadInput "Execute Hugepages setup?" && bool=true
 
         if [[ $bool == true ]]; then
+
+            # add users to groups #
+            declare -a arr_User=(`getent passwd {1000..60000} | cut -d ":" -f 1`)
+
+            for str_element in $arr_User; do
+                adduser $str_element input
+                adduser $str_element libvirt
+            done
+
             ReadInputFromMultipleChoiceUpperCase "Enter Hugepage size and byte-size [1G/2m]:" "1G" "2M"
             str_HugePageSize=$str_input1
 
-            declare -lir int_HostMemMinK=4194304     # min host RAM in KiB
+            declare -lir int_HostMemMinK=4194304        # min host RAM in KiB
 
             # Hugepage Size #
             case $str_HugePageSize in
                 "2M")
-                    declare -lir int_HugePageK=2048  # Hugepage size
-                    declare -lir int_HugePageMin=2;; # min HugePages
+                    declare -lir int_HugePageK=2048     # Hugepage size
+                    declare -lir int_HugePageMin=2;;    # min HugePages
 
                 "1G")
-                    declare -lir int_HugePageK=1048576   # Hugepage size
-                    declare -lir int_HugePageMin=1;;     # min HugePages
+                    declare -lir int_HugePageK=1048576  # Hugepage size
+                    declare -lir int_HugePageMin=1;;    # min HugePages
             esac
 
             declare -lir int_HugePageMemMax=$(( $int_HostMemMaxK - $int_HostMemMinK ))
@@ -934,7 +935,13 @@
             declare -ir int_HugePageNum=$str_input1
 
             readonly str_GRUB_CMDLINE_Hugepages="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
-            true
+
+            ( DeleteFile $str_file1 && CreateFile $str_file1 ) || bool=false
+
+            if [[ $bool == true ]]; then
+                declare -lr str_output1="hugetlbfs_mount = \"/dev/hugepages\""
+                ( WriteVarToFile $str_file1 $str_output1 && true && echo $str_file1 ) || false
+            fi
 
         else
             false
@@ -1189,49 +1196,100 @@
         # parameters #
         bool_isAutoXorgSetup=false
         bool_isCPU_staticIsolationSetup=false
+        bool_isEvdevSetup=false
         bool_isHugepagesSetup=false
         bool_isZRAM_swapSetup=false
+        bool=false
 
         # checks #
         CheckIfUserIsRoot
         CheckIfIOMMU_IsEnabled
 
-        SetupHugepages && bool_isHugepagesSetup=true
-
         # pre setup #
-        # write to qemu system file to enable hugepages #
-        # NOTE: this will only append at end of file #
-        if [[ $bool_isHugepagesSetup == true ]]; then
-            str_inFile1="etc_libvirt_qemu.conf"
+            declare -lr str_file1="etc_libvirt_qemu.conf"
+            # declare -lr str_file2="/etc/libvirt/qemu.conf"
+
+            declare -lr str_file2="test-qemu.conf"            # debug
+            CreateFile $str_file2                             # debug
 
             # echo -e "str_GRUB_CMDLINE_Hugepages:'${str_GRUB_CMDLINE_Hugepages}'"  # this scope does work!
 
-            if ( CheckIfFileOrDirExists $str_inFile1 == true ); then
-                # str_outFile1="/etc/libvirt/qemu.conf"
-                str_outFile1="test-qemu.conf"
+            # restore system file from repo backup if local backups do not exist #
+            # if ( CheckIfFileOrDirExists $str_file1 == true && CheckIfFileOrDirExists $str_file2 == false); then
+            #     cp $str_file1 $str_file2
+            # fi
 
-                declare -la arr_output1=(
-                    "user = \"user\"\ngroup = \"user\""
-                    "hugetlbfs_mount = \"/dev/hugepages\""
-                    "cgroup_device_acl = [\n    \"/dev/null\", \"/dev/full\", \"/dev/zero\",\n    \"/dev/random\", \"/dev/urandom\",\n    \"/dev/ptmx\", \"/dev/kvm\",\n    \"/dev/rtc\",\"/dev/hpet\"\n]"
-                    )
+            # append to system file #
+            declare -la arr_output1=(
+                "# Generated by 'portellam/deploy-VFIO-setup'"
+                "#"
+                "# WARNING: Any modifications to this file will be modified by 'deploy-VFIO-setup'"
+                "#"
+                "# Run 'systemctl restart libvirtd.service' to update."
+                " "
+                "# User permissions #"
+                "#     user = \"user\""
+                "#     group = \"user\""
+                "#"
+            )
 
-                echo ${#arr_output1[@]}
+            # find first desktop user, add user to groups for libvirt/qemu, hugepages, and evdev
+            readonly str_firstUser=$( id -u 1000 -n ) && echo -e "Found the first desktop user of the system: $str_firstUser" && adduser $str_firstUser libvirt input && bool=true || bool=false
 
-                if ( CreateBackupFromFile $str_outFile1 == true ); then
-                    WriteVarToFile $str_outFile1 ${arr_output1[@]}
+            # append to system file #
+            if [[ $bool == true ]]; then
+                arr_output1+=(
+                    "#"
+                    "user = \"${str_firstUser}\"\ngroup = \"user\""
+                    "#"
+                )
+            fi
 
-                else
-                    bool_isHugepagesSetup=false
-                    ExitWithStatement "\e[33mWARNING:\e[0m"" Setup cannot continue." false
-                fi
+            # execute Hugepages setup #
+            ( str_file1=SetupHugepages && bool_isHugepagesSetup=true ) || bool_isHugepagesSetup=false
+
+            # append #
+            if [[ $bool_isHugepagesSetup == true ]]; then
+                arr_output1+=($( cat $str_file1 ))
+                arr_output1+="#"
+            fi
+
+            # append #
+            arr_output1+=(
+                "cgroup_device_acl = ["
+                "    \"/dev/null\", \"/dev/full\", \"/dev/zero\","
+                "    \"/dev/random\", \"/dev/urandom\","
+                "    \"/dev/ptmx\", \"/dev/kvm\","
+                "    \"/dev/rtc\",\"/dev/hpet\""
+            )
+
+            # execute Evdev setup #
+            ( str_file1=SetupEvdev && bool_isEvdevSetup=true ) || bool_isEvdevSetup=false
+
+            # append #
+            if [[ $bool_isEvdevSetup == true ]]; then
+                arr_output1+=($( cat $str_file1 ))
+                arr_output1+="#"
+            fi
+
+            # append #
+            arr_output1+=(
+                "]"
+                "#"
+            )
+
+            if ( CreateBackupFromFile $str_outFile1 == true ); then
+                for str_output1 in ${arr_output1[@]}; do
+                    ( WriteVarToFile $str_outFile1 $str_output1 &v /dev/null && true ) || false
+                done
 
             else
                 bool_isHugepagesSetup=false
+                ExitWithStatement "\e[33mWARNING:\e[0m"" Setup cannot continue." false
             fi
-        fi
 
-        exit 0
+        exit 0      # debug
+
         SetupStaticCPU_isolation && bool_isCPU_staticIsolationSetup=true
 
         # TO-DO: add check for necessary dependencies or packages
