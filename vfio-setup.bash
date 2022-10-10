@@ -220,8 +220,6 @@
             {3-255})
                 false;;
         esac
-
-        echo
     }
 
     function DeleteFile
@@ -239,7 +237,7 @@
             (exit 3)
 
         else
-            touch $1 &> /dev/null || (exit 255)
+            rm $1 &> /dev/null || (exit 255)
         fi
 
         case "$?" in
@@ -260,8 +258,6 @@
             {3-255})
                 false;;
         esac
-
-        echo
     }
 
     function ExitWithStatement
@@ -845,14 +841,15 @@
             # readonly str_firstUser=$( id -u 1000 -n ) && echo -e "Found the first desktop user of the system: $str_firstUser"
 
             # add users to groups #
-            declare -a arr_User=(`getent passwd {1000..60000} | cut -d ":" -f 1`)
+            declare -a arr_User=($( getent passwd {1000..60000} | cut -d ":" -f 1 ))
 
             for str_element in $arr_User; do
-                adduser $str_element input
-                adduser $str_element libvirt
+                adduser $str_element input &> /dev/null       # quiet output
+                adduser $str_element libvirt &> /dev/null     # quiet output
             done
 
-            ( DeleteFile $str_file1 && CreateFile $str_file1 ) || bool=false
+            CheckIfFileOrDirExists $str_file1 &> /dev/null && DeleteFile $str_file1 &> /dev/null
+            CreateFile $str_file1 || bool=false
 
             if [[ $bool == true ]]; then
 
@@ -861,20 +858,17 @@
                 declare -lar arr_InputEventDeviceID=$( ls -l /dev/input/by-id | cut -d '/' -f2 | grep -v 'total 0' )
 
                 for str_element in ${arr_InputDeviceID[@]}; do
-                    ( WriteToFile $str_file1 "    \"/dev/input/by-id/$str_element\",\n" ) &v /dev/null
+                    ( WriteVarToFile $str_file1 "    \"/dev/input/by-id/$str_element\"," ) &> /dev/null       # quiet output
                 done
 
                 for str_element in ${arr_InputEventDeviceID[@]}; do
-                    ( WriteToFile $str_file1 "    \"/dev/input/by-id/$str_element\",\n" ) &v /dev/null
+                    ( WriteVarToFile $str_file1 "    \"/dev/input/by-id/$str_element\"," ) &> /dev/null       # quiet output
                 done
 
                 # append system file #
                 declare -lr str_output1+="\n  # Evdev #\n  /dev/input/* rw,\n  /dev/input/by-id/* rw,\n"
-                ( CheckIfFileOrDirExists $str_file2 && WriteToFile $str_file2 $str_output1 && true ) || false
+                ( CheckIfFileOrDirExists $str_file2 &> /dev/null && WriteVarToFile $str_file2 $str_output1 && true && echo $str_file1 &> /dev/null ) || false
                 # will require restart of apparmor service or system #
-
-                echo $str_file1
-
             else
                 false
             fi
@@ -895,7 +889,7 @@
 
         # parameters #
         local bool=false
-        declare -lr str_file1="qemu-hugepages.log"
+        declare -lr str_thisFile1="qemu-hugepages.log"
         declare -lir int_HostMemMaxK=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )     # sum of system RAM in KiB
         str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                                # default output
 
@@ -905,11 +899,11 @@
         if [[ $bool == true ]]; then
 
             # add users to groups #
-            declare -a arr_User=(`getent passwd {1000..60000} | cut -d ":" -f 1`)
+            declare -a arr_User=($( getent passwd {1000..60000} | cut -d ":" -f 1 ))
 
             for str_element in $arr_User; do
-                adduser $str_element input
-                adduser $str_element libvirt
+                adduser $str_element input &> /dev/null       # quiet output
+                adduser $str_element libvirt &> /dev/null     # quiet output
             done
 
             ReadInputFromMultipleChoiceUpperCase "Enter Hugepage size and byte-size [1G/2m]:" "1G" "2M"
@@ -936,11 +930,12 @@
 
             readonly str_GRUB_CMDLINE_Hugepages="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
 
-            ( DeleteFile $str_file1 && CreateFile $str_file1 ) || bool=false
+            CheckIfFileOrDirExists $str_thisFile1 && DeleteFile $str_thisFile1
+            CreateFile $str_thisFile1 || bool=false
 
             if [[ $bool == true ]]; then
-                declare -lr str_output1="hugetlbfs_mount = \"/dev/hugepages\""
-                ( WriteVarToFile $str_file1 $str_output1 && true && echo $str_file1 ) || false
+                declare -lr str_output="hugetlbfs_mount = \"/dev/hugepages\""
+                ( WriteVarToFile $str_thisFile1 $str_output1 && true && echo  ) || false
             fi
 
         else
@@ -1193,26 +1188,23 @@
 ## executive functions ##
     function main
     {
-        # parameters #
-        bool_isAutoXorgSetup=false
-        bool_isCPU_staticIsolationSetup=false
-        bool_isEvdevSetup=false
-        bool_isHugepagesSetup=false
-        bool_isZRAM_swapSetup=false
-        bool=false
-
         # checks #
         CheckIfUserIsRoot
         CheckIfIOMMU_IsEnabled
 
         # pre setup #
+            # parameters #
+            bool_isAutoXorgSetup=false
+            bool_isCPU_staticIsolationSetup=false
+            bool_isEvdevSetup=false
+            bool_isHugepagesSetup=false
+            bool_isZRAM_swapSetup=false
+            bool=false
             declare -lr str_file1="etc_libvirt_qemu.conf"
             # declare -lr str_file2="/etc/libvirt/qemu.conf"
-
             declare -lr str_file2="test-qemu.conf"            # debug
-            CreateFile $str_file2                             # debug
 
-            # echo -e "str_GRUB_CMDLINE_Hugepages:'${str_GRUB_CMDLINE_Hugepages}'"  # this scope does work!
+            CreateFile $str_file2                             # debug
 
             # restore system file from repo backup if local backups do not exist #
             # if ( CheckIfFileOrDirExists $str_file1 == true && CheckIfFileOrDirExists $str_file2 == false); then
@@ -1234,25 +1226,31 @@
             )
 
             # find first desktop user, add user to groups for libvirt/qemu, hugepages, and evdev
-            readonly str_firstUser=$( id -u 1000 -n ) && echo -e "Found the first desktop user of the system: $str_firstUser" && adduser $str_firstUser libvirt input && bool=true || bool=false
+            readonly str_firstUser=$( id -u 1000 -n ) && (
+                adduser $str_firstUser libvirt &> /dev/null
+                adduser $str_firstUser input &> /dev/null
+                bool=true
+                ) || bool=false
 
             # append to system file #
             if [[ $bool == true ]]; then
                 arr_output1+=(
-                    "#"
-                    "user = \"${str_firstUser}\"\ngroup = \"user\""
+                    "user = \"${str_firstUser}\""
+                    "group = \"user\""
                     "#"
                 )
             fi
 
             # execute Hugepages setup #
-            ( str_file1=SetupHugepages && bool_isHugepagesSetup=true ) || bool_isHugepagesSetup=false
+            ( SetupHugepages && arr_output1+=$( cat $str_thisFile1 ) && arr_output1+="#" ) || bool_isHugepagesSetup=false
 
-            # append #
-            if [[ $bool_isHugepagesSetup == true ]]; then
-                arr_output1+=($( cat $str_file1 ))
-                arr_output1+="#"
-            fi
+            # echo -e "str_GRUB_CMDLINE_Hugepages:'${str_GRUB_CMDLINE_Hugepages}'"  # this scope does work!
+
+            # # append #
+            # if [[ $bool_isHugepagesSetup == true ]]; then
+            #     arr_output1+=$( cat $str_file3 )
+            #     arr_output1+="#"
+            # fi
 
             # append #
             arr_output1+=(
@@ -1264,11 +1262,11 @@
             )
 
             # execute Evdev setup #
-            ( str_file1=SetupEvdev && bool_isEvdevSetup=true ) || bool_isEvdevSetup=false
+            ( SetupEvdev && declare -lr str_file4="$_" && bool_isEvdevSetup=true ) || bool_isEvdevSetup=false
 
             # append #
             if [[ $bool_isEvdevSetup == true ]]; then
-                arr_output1+=($( cat $str_file1 ))
+                arr_output1+=$( cat $str_file4 )
                 arr_output1+="#"
             fi
 
@@ -1278,12 +1276,13 @@
                 "#"
             )
 
-            if ( CreateBackupFromFile $str_outFile1 == true ); then
-                for str_output1 in ${arr_output1[@]}; do
-                    ( WriteVarToFile $str_outFile1 $str_output1 &v /dev/null && true ) || false
+            if ( CreateBackupFromFile $str_file2 == true ); then
+                for str_element in ${arr_output1[@]}; do
+                    ( WriteVarToFile $str_file2 $str_element && true ) || false
                 done
 
             else
+                bool_isEvdevSetup=false
                 bool_isHugepagesSetup=false
                 ExitWithStatement "\e[33mWARNING:\e[0m"" Setup cannot continue." false
             fi
