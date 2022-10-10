@@ -1,14 +1,15 @@
+## To-do
+* refactor code
+* redo readme in vain of code
+* differentiate pre setup, main setup, post install setup, and uninstaller as input params
+
 ## Description
 Ultimate scripts to seamlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Swap the preferred host graphics (VGA) device at GRUB boot menu. VFIO: Run any OS with real hardware, under a virtual machine (VM), in the Linux desktop of your choice.
 
 ## How-to
-To install, execute:
+To execute:
 
-        sudo bash install.bash
-
-Post-install, execute:
-
-        sudo bash post_install.bash
+        sudo bash deploy-vfio-setup.bash
 
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
@@ -16,31 +17,29 @@ Post-install, execute:
 * a useful guide:       https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 
 ## Functions
-* **Pre-install:**
-    * **Hugepages**
-        * Static allocation of system RAM to VMs for zero memory fragmentation and reduced memory latencies (best to use whole Memory channels/sticks, if possible).
+
+* **Evdev (Event devices)** is a Virtual Keyboard-Video-Mouse switch (K.V.M w/o video). (good fall-back)
+* **Hugepages**
+    * Static allocation of system RAM to VMs for zero memory fragmentation and reduced memory latencies (best to use whole Memory channels/sticks, if possible).
         * Outputs to logfile, for future reference by Multi-boot updater.
-    * **Zram swapfile**
-        * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
-    * **Static CPU isolation**
-        * Static isolation of system CPU threads. **(see 'post-install/Libvirt hooks' for Dynamic isolation)**
-        * Outputs to logfile, for future reference by VFIO setup.
-    * **Auto-Xorg** system service to find and set a valid host boot VGA device for Xorg. [1]
-* **VFIO setup:**
-    * Setup Multi-boot or static. Multi-boot: Swap the preferred host graphics (VGA) device at GRUB boot menu. **(see 'examples')**
-* **Post-install:**
-    * **update Multi-boot** with latest installed Linux kernels, and **select default boot entry.**
-    * **Loopback audio** user service, audio capture from VM to host (ex: PCI Line-out to on-board Line-in/Mic).
-    * IVSHMEM (Inter-VM Shared Memory Device):
-        * **Evdev (Event devices)** is a Virtual Keyboard-Video-Mouse switch (K.V.M w/o video). (good fall-back)
-        * **Looking Glass** is a video capture of the VM GPU primary output, to host. [2]
-        * **Scream** is audio capture (virtual audio cable) over virtual network bridge, from VM to host. [3]
-    * **Libvirt hooks** [4]
-        * Invoke 'hooks' for individual VMs. **(w-i-p)** [4]
-        * Switch display input (video output) at VM start. **(w-i-p)**
-        * Prompt user to set/allocate system resources (CPU, memory) dynamically. **(w-i-p)**
-        * **Libvirt-nosleep** system service to prevent Host sleep while VM(s) are active. **(works standalone)** [5]
-    * **Auto VM Deployment** **(w-i-p)**
+* **Zram swapfile**
+    * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
+* **Static CPU isolation**
+    * Static isolation of system CPU threads. **(see 'post-install/Libvirt hooks' for Dynamic isolation)**
+    * Outputs to logfile, for future reference by VFIO setup.
+* **Auto-Xorg** system service to find and set a valid host boot VGA device for Xorg. [1]
+* Setup Multi-boot or static. Multi-boot: Swap the preferred host graphics (VGA) device at GRUB boot menu. **(see 'examples')**
+* **update Multi-boot** with latest installed Linux kernels, and **select default boot entry.**
+* **Loopback audio** user service, audio capture from VM to host (ex: PCI Line-out to on-board Line-in/Mic).
+* IVSHMEM (Inter-VM Shared Memory Device):
+    * **Evdev (Event devices)**
+    * **Looking Glass** is a video capture of the VM GPU primary output, to host. [2]
+    * **Scream** is audio capture (virtual audio cable) over virtual network bridge, from VM to host. [3]
+* **Libvirt hooks** [4]
+    * Invoke 'hooks' for individual VMs. **(w-i-p)** [4]
+    * Switch display input (video output) at VM start. **(w-i-p)**
+    * Prompt user to set/allocate system resources (CPU, memory) dynamically. **(w-i-p)**
+    * **Libvirt-nosleep** system service to prevent Host sleep while VM(s) are active. **(works standalone)** [5]
 
 * work-in-progress; more features to be added, as discovered and needed.
 

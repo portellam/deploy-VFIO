@@ -1,3 +1,0 @@
-#isolcpus=1 nohz_full=1 rcu_nocbs=1
-#TOTAL_THREADS_MASK=3
-#HOST_THREADS_MASK=1
