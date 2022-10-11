@@ -286,21 +286,30 @@
             case $str_input1 in
                 "Y")
                     echo
-                    true;;
+                    break;;
 
                 "N")
                     echo
-                    false;;
+                    break;;
 
                 *)
                     if [[ $int_element -eq $int_maxCount ]]; then
                         echo -e "Exceeded max attempts.\n"
-                        false
+                        str_input1="N"
+                        break
                     fi
 
                     echo -en "\e[33mInvalid input.\e[0m ";;
             esac
         done
+
+        case $str_input1 in
+            "Y")
+                true;;
+
+            "N")
+                false;;
+        esac
     }
 
     function ReadInputFromMultipleChoiceIgnoreCase
@@ -810,14 +819,12 @@
         false
 
         # parameters #
-        local bool=false
-        declare -lr str_file1="qemu-evdev.log"
-        declare -lr str_file2="/etc/apparmor.d/abstractions/libvirt-qemu"
+        declare -lr str_thisFile1="qemu-evdev.log"
+        declare -lr str_thisFile2="/etc/apparmor.d/abstractions/libvirt-qemu"
 
         echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n\tHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
-        ReadInput "Setup Evdev?" && bool=true
 
-        if [[ $bool == true ]]; then
+        if ReadInput "Setup Evdev?" == true; then
             # readonly str_firstUser=$( id -u 1000 -n ) && echo -e "Found the first desktop user of the system: $str_firstUser"
 
             # add users to groups #
@@ -828,26 +835,54 @@
                 adduser $str_element libvirt &> /dev/null     # quiet output
             done
 
-            CheckIfFileOrDirExists $str_file1 &> /dev/null && DeleteFile $str_file1 &> /dev/null
-            CreateFile $str_file1 || bool=false
+            # CheckIfFileOrDirExists $str_thisFile1 &> /dev/null && DeleteFile $str_thisFile1 &> /dev/null
+            # CreateFile $str_thisFile1 || bool=false
 
-            if [[ $bool == true ]]; then
+            if true; then
+            # if [[ $bool == true ]]; then
 
                 # list of input devices #
                 declare -lar arr_InputDeviceID=$( ls /dev/input/by-id )
                 declare -lar arr_InputEventDeviceID=$( ls -l /dev/input/by-id | cut -d '/' -f2 | grep -v 'total 0' )
+                # declare -a arr_output_evdevQEMU
 
                 for str_element in ${arr_InputDeviceID[@]}; do
-                    ( WriteVarToFile $str_file1 "    \"/dev/input/by-id/$str_element\"," ) &> /dev/null       # quiet output
+                    arr_output_evdevQEMU+=("    \"/dev/input/by-id/$str_element\",")
+                    # ( WriteVarToFile $str_thisFile1 "    \"/dev/input/by-id/$str_element\"," ) &> /dev/null       # quiet output
                 done
 
                 for str_element in ${arr_InputEventDeviceID[@]}; do
-                    ( WriteVarToFile $str_file1 "    \"/dev/input/by-id/$str_element\"," ) &> /dev/null       # quiet output
+                    arr_output_evdevQEMU+=("    \"/dev/input/by-id/$str_element\",")
+                    # ( WriteVarToFile $str_thisFile1 "    \"/dev/input/by-id/$str_element\"," ) &> /dev/null       # quiet output
                 done
 
+                # append file #
+                for str_element in ${arr_output_evdevQEMU[@]}; do
+                    if ( CheckIfFileOrDirExists $str_thisFile1 &> /dev/null == true ); then
+                        WriteVarToFile $str_thisFile1 $str_element && true
+                    fi
+                done
+
+                declare -ar arr_output_evdevApparmor=(
+                    "#"
+                    "# Evdev #"
+                    "  /dev/input/* rw,"
+                    "  /dev/input/by-id/* rw,"
+                    "#"
+                )
+
                 # append system file #
-                declare -lr str_output1+="\n  # Evdev #\n  /dev/input/* rw,\n  /dev/input/by-id/* rw,\n"
-                ( CheckIfFileOrDirExists $str_file2 &> /dev/null && WriteVarToFile $str_file2 $str_output1 && true && echo $str_file1 &> /dev/null ) || false
+                for str_element in ${arr_output_evdevApparmor[@]}; do
+                    if ( CheckIfFileOrDirExists $str_thisFile2 &> /dev/null == true ); then
+                        WriteVarToFile $str_thisFile2 $str_element && true
+                    fi
+                done
+
+                true
+
+                # append system file #
+                # declare -lr str_output1+="\n  # Evdev #\n  /dev/input/* rw,\n  /dev/input/by-id/* rw,\n"
+                # ( CheckIfFileOrDirExists $str_thisFile2 &> /dev/null && WriteVarToFile $str_thisFile2 $str_output1 && true && echo $str_thisFile1 &> /dev/null ) || false
                 # will require restart of apparmor service or system #
             else
                 false
@@ -870,15 +905,13 @@
         false
 
         # parameters #
-        local bool=false
         declare -lr str_thisFile1="qemu-hugepages.log"
         declare -lir int_HostMemMaxK=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )     # sum of system RAM in KiB
         str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                                # default output
 
         echo -e "HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and lower overhead of memory-access (memory latency).\n"
-        ReadInput "Execute Hugepages setup?" && bool=true
 
-        if [[ $bool == true ]]; then
+        if ReadInput "Execute Hugepages setup?" == true; then
 
             # add users to groups #
             declare -a arr_User=($( getent passwd {1000..60000} | cut -d ":" -f 1 ))
@@ -910,15 +943,17 @@
             ReadInputFromRangeOfNums "Enter number of HugePages (n * $str_HugePageSize). [$int_HugePageMin <= n <= $int_HugePageMax pages]:" $int_HugePageMin $int_HugePageMax
             declare -ir int_HugePageNum=$str_input1
 
-            readonly str_GRUB_CMDLINE_Hugepages="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
+            readonly str_hugepagesGRUB="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
 
-            CheckIfFileOrDirExists $str_thisFile1 && DeleteFile $str_thisFile1
-            CreateFile $str_thisFile1 || bool=false
+            readonly str_hugepagesQEMU="hugetlbfs_mount = \"/dev/hugepages\""
 
-            if [[ $bool == true ]]; then
-                declare -lr str_output="hugetlbfs_mount = \"/dev/hugepages\""
-                ( WriteVarToFile $str_thisFile1 $str_output1 && true && echo ) || false
-            fi
+            # CheckIfFileOrDirExists $str_thisFile1 && DeleteFile $str_thisFile1
+            # CreateFile $str_thisFile1 && local bool=true
+
+            # if [[ $bool == true ]]; then
+            #     readonly str_output1="hugetlbfs_mount = \"/dev/hugepages\""
+            #     ( WriteVarToFile $str_thisFile1 $str_output1 && echo && true ) || false
+            # fi
 
         else
             false
@@ -1165,12 +1200,6 @@
 
         # pre setup #
             # parameters #
-            bool_isAutoXorgSetup=false
-            bool_isCPU_staticIsolationSetup=false
-            bool_isEvdevSetup=false
-            bool_isHugepagesSetup=false
-            bool_isZRAM_swapSetup=false
-            bool=false
             declare -lr str_file1="etc_libvirt_qemu.conf"
             # declare -lr str_file2="/etc/libvirt/qemu.conf"
             declare -lr str_file2="test-qemu.conf"            # debug
@@ -1213,15 +1242,17 @@
             fi
 
             # execute Hugepages setup #
-            ( SetupHugepages && arr_output1+=$( cat $str_thisFile1 ) && arr_output1+="#" ) || bool_isHugepagesSetup=false
+            bool_isHugepagesSetup=false
+            SetupHugepages && bool_isHugepagesSetup=true
 
             # echo -e "str_GRUB_CMDLINE_Hugepages:'${str_GRUB_CMDLINE_Hugepages}'"  # this scope does work!
 
-            # # append #
-            # if [[ $bool_isHugepagesSetup == true ]]; then
-            #     arr_output1+=$( cat $str_file3 )
-            #     arr_output1+="#"
-            # fi
+            # append #
+            if [[ $bool_isHugepagesSetup == true ]]; then
+                # arr_output1+=("${str_hugepagesQEMU}")
+                arr_output1+=($( cat $str_thisFile1 ))
+                arr_output1+=("#")
+            fi
 
             # append #
             arr_output1+=(
@@ -1233,12 +1264,19 @@
             )
 
             # execute Evdev setup #
-            ( SetupEvdev && declare -lr str_file4="$_" && bool_isEvdevSetup=true ) || bool_isEvdevSetup=false
+            bool_isEvdevSetup=false
+            SetupEvdev && bool_isEvdevSetup=true
 
             # append #
             if [[ $bool_isEvdevSetup == true ]]; then
-                arr_output1+=$( cat $str_file4 )
-                arr_output1+="#"
+
+                # for str_element in ${arr_output_evdevQEMU[@]}; do
+                #     arr_output+=("${str_element}")
+                #     echo $str_element
+                # done
+
+                arr_output1+=($( cat $str_thisFile1 ))
+                arr_output1+=("#")
             fi
 
             # append #
@@ -1253,8 +1291,6 @@
                 done
 
             else
-                bool_isEvdevSetup=false
-                bool_isHugepagesSetup=false
                 ExitWithStatement "\e[33mWARNING:\e[0m"" Setup cannot continue." false
             fi
 
