@@ -246,19 +246,25 @@
         esac
     }
 
-    function ExitWithStatement
+    function ExitGivenExitCode
     {
-        # set exit code (pass or fail) if input var is a boolean
-        if [[ ! -z $1 && ( $1 == true || $1 == false ) ]]; then
-            $1
-            echo -e "$2"    # append output
-
-        else
-            echo -e "$1"    # append output
-        fi
-
         echo -e "Exiting."
-        exit
+        exit $?
+    }
+
+    function AppendOutputGivenExitCode
+    {
+        # output a message with a pass or fail depending on the (pending exit code)
+        if [[ ! -z $1 ]]; then
+            echo -en "$1"
+
+            if [[ "$?" -eq 0 ]]; then
+                echo -e "... [32mSuccessful.\e[0m"   # append output
+
+            else
+                echo -e "... [31mFailed.\e[0m"       # append output
+            fi
+        fi
     }
 
     function ReadInput
@@ -571,7 +577,7 @@
     }
 ##
 
-## relative functions ##
+## context functions ##
     function CheckIfIOMMU_IsEnabled
     {
         echo -en "Checking if Virtualization is enabled/supported... "
@@ -842,8 +848,8 @@
             # if [[ $bool == true ]]; then
 
                 # list of input devices #
-                declare -lar arr_InputDeviceID=$( ls /dev/input/by-id )
-                declare -lar arr_InputEventDeviceID=$( ls -l /dev/input/by-id | cut -d '/' -f2 | grep -v 'total 0' )
+                declare -lar arr_InputDeviceID=$( ls /dev/input/by-id &> /dev/null )
+                declare -lar arr_InputEventDeviceID=$( ls -l /dev/input/by-id &> /dev/null | cut -d '/' -f2 | grep -v 'total 0' )
                 # declare -a arr_output_evdevQEMU
 
                 for str_element in ${arr_InputDeviceID[@]}; do
@@ -857,11 +863,11 @@
                 done
 
                 # append file #
-                for str_element in ${arr_output_evdevQEMU[@]}; do
-                    if ( CheckIfFileOrDirExists $str_thisFile1 &> /dev/null == true ); then
-                        WriteVarToFile $str_thisFile1 $str_element && true
-                    fi
-                done
+                # for str_element in ${arr_output_evdevQEMU[@]}; do
+                #     if ( CheckIfFileOrDirExists $str_thisFile1 &> /dev/null == true ); then
+                #         WriteVarToFile $str_thisFile1 $str_element && true
+                #     fi
+                # done
 
                 declare -ar arr_output_evdevApparmor=(
                     "#"
@@ -872,11 +878,11 @@
                 )
 
                 # append system file #
-                for str_element in ${arr_output_evdevApparmor[@]}; do
-                    if ( CheckIfFileOrDirExists $str_thisFile2 &> /dev/null == true ); then
-                        WriteVarToFile $str_thisFile2 $str_element && true
-                    fi
-                done
+                # for str_element in ${arr_output_evdevApparmor[@]}; do
+                #     if ( CheckIfFileOrDirExists $str_thisFile2 &> /dev/null == true ); then
+                #         WriteVarToFile $str_thisFile2 $str_element && true
+                #     fi
+                # done
 
                 true
 
@@ -943,9 +949,9 @@
             ReadInputFromRangeOfNums "Enter number of HugePages (n * $str_HugePageSize). [$int_HugePageMin <= n <= $int_HugePageMax pages]:" $int_HugePageMin $int_HugePageMax
             declare -ir int_HugePageNum=$str_input1
 
-            readonly str_hugepagesGRUB="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
+            readonly arr_output_hugepagesGRUB="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
 
-            readonly str_hugepagesQEMU="hugetlbfs_mount = \"/dev/hugepages\""
+            readonly arr_output_hugepagesQEMU="hugetlbfs_mount = \"/dev/hugepages\""
 
             # CheckIfFileOrDirExists $str_thisFile1 && DeleteFile $str_thisFile1
             # CreateFile $str_thisFile1 && local bool=true
@@ -1249,8 +1255,8 @@
 
             # append #
             if [[ $bool_isHugepagesSetup == true ]]; then
-                # arr_output1+=("${str_hugepagesQEMU}")
-                arr_output1+=($( cat $str_thisFile1 ))
+                arr_output1+=("${arr_output_hugepagesQEMU}")
+                # arr_output1+=($( cat $str_thisFile1 ))
                 arr_output1+=("#")
             fi
 
@@ -1269,13 +1275,11 @@
 
             # append #
             if [[ $bool_isEvdevSetup == true ]]; then
+                for str_element in ${arr_output_evdevQEMU[@]}; do
+                    arr_output+=("${str_element}")
+                done
 
-                # for str_element in ${arr_output_evdevQEMU[@]}; do
-                #     arr_output+=("${str_element}")
-                #     echo $str_element
-                # done
-
-                arr_output1+=($( cat $str_thisFile1 ))
+                # arr_output1+=($( cat $str_thisFile1 ))
                 arr_output1+=("#")
             fi
 
@@ -1285,16 +1289,23 @@
                 "#"
             )
 
-            if ( CreateBackupFromFile $str_file2 == true ); then
+            if ( CreateBackupFromFile $str_file2 &> /dev/null == true ); then
+
                 for str_element in ${arr_output1[@]}; do
-                    ( WriteVarToFile $str_file2 $str_element && true ) || false
+                    if [[ "$?" -ne 0 ]]; then
+                        break
+                    fi
+
+                    ( WriteVarToFile $str_file2 $str_element &> /dev/null && true ) || ( bool_fail_outputIsQuiet && false )
                 done
 
             else
                 ExitWithStatement "\e[33mWARNING:\e[0m"" Setup cannot continue." false
             fi
 
-        exit 0      # debug
+        if [[ "$?" -ne 0 ]]; then
+            break
+        fi
 
         SetupStaticCPU_isolation && bool_isCPU_staticIsolationSetup=true
 
