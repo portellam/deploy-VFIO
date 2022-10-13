@@ -4,13 +4,22 @@
 ## Author(s):    Alex Portell <github.com/portellam>
 ##
 
+
+##
+## TO-DO:
+##  -organize error codes
+##  -reduce redundant code
+##  -separate concerns: for example, error code exits (pass or fail), and error code exceptions (specific details). Call these funcs separately.
+##
+
 ## prep and I/O functions ##
     function CheckIfUserIsRoot
     {
         if [[ $( whoami ) != "root" ]]; then
             str_thisFile=$( echo ${0##/*} )
             str_thisFile=$( echo $str_thisFile | cut -d '/' -f2 )
-            ExitWithStatement "\e[33mWARNING:\e[0m"" Script must execute as root. In terminal, run:\n\t'sudo bash $str_thisFile'" false
+            echo -e "\e[33mWARNING:\e[0m"" Script must execute as root. In terminal, run:\n\t'sudo bash $str_thisFile'"
+            ExitWithThisExitCode
         fi
     }
 
@@ -63,12 +72,12 @@
 
         # file not found exception
         if [[ ! -e $str_thisFile ]]; then
-            (exit 253)
+            (exit 250)
         fi
 
         # file not readable exception
         if [[ ! -r $str_thisFile ]]; then
-            (exit 252)
+            (exit 249)
         fi
 
         # work #
@@ -188,32 +197,21 @@
 
         # file not found
         if [[ ! -e $1 ]]; then
-            touch $1 &> /dev/null || (exit 255)
+            touch $1 &> /dev/null || (exit 247)
 
         else
             (exit 3)
         fi
 
         case "$?" in
-            0)
-                echo -e "\e[32mSuccessful.\e[0m"
-                true;;
-
             3)
-                echo -e "\e[33mSkipped.\e[0m"" File '$1' exists."
+                echo -e "File '$1' exists."
                 true;;
-
-            255)
-                echo -e "\e[31mFailed.\e[0m"" Could not create file '$1'.";;
-
-            254)
-                echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
         esac
     }
 
     function DeleteFile
     {
-        false
         echo -en "Deleting file... "
 
         # null exception
@@ -235,6 +233,7 @@
                 true;;
 
             3)
+                PassOrFailThisExitCode
                 echo -e "\e[33mSkipped.\e[0m"" File '$1' does not exist."
                 true;;
 
@@ -246,25 +245,85 @@
         esac
     }
 
-    function ExitGivenExitCode
+    function ExitWithThisExitCode
     {
         echo -e "Exiting."
         exit $?
     }
 
-    function AppendOutputGivenExitCode
+    function PassOrFailThisExitCode
     {
-        # output a message with a pass or fail depending on the (pending exit code)
+        # output a pass or fail depending on the exit code
+
+        #
+        # reserved/unreserved exit codes #
+        #
+        #   0       == always pass
+        #   3       == free
+        #   131-255 == free
+        #
+
         if [[ ! -z $1 ]]; then
             echo -en "$1"
-
-            if [[ "$?" -eq 0 ]]; then
-                echo -e "... [32mSuccessful.\e[0m"   # append output
-
-            else
-                echo -e "... [31mFailed.\e[0m"       # append output
-            fi
         fi
+
+        # append output #
+        case "$?" in
+            0||3)
+                echo -e " [32mSuccessful. \e[0m";;
+
+            *)
+                echo -e " [31mFailed. \e[0m";;
+        esac
+    }
+
+    function ParseThisExitCode
+    {
+        # output a specific error/exception given exit code
+
+        #
+        # relative exit codes
+        #
+        #   3       == pass with some errors
+        #   255-248 == specified
+        #   <= 247  == function specific
+        #
+
+        if [[ ! -z $1 ]]; then
+            echo -en "$1"
+        fi
+
+        # append output #
+        case "$?" in
+            255)
+                echo;;      # unspecified error
+
+            254)
+                echo -e "Exception: Null input.";;
+
+            253)
+                echo -e "Exception: Invalid input.";;
+
+            252)
+                echo -e "Error: Missed steps; missed execution of key subfunctions.";;
+
+            251)
+                echo -e "Error: Missing components/variables.";;
+
+            250)
+                echo -e "Exception: File does not exist.";;
+
+            249)
+                echo -e "Exception: File is not readable.";;
+
+            248)
+                echo -e "Exception: File is not writable.";;
+
+            *)
+                echo;;
+        esac
+
+        echo
     }
 
     function ReadInput
@@ -494,8 +553,6 @@
         #   return boolean, to be used by main
         #
 
-        false
-
         # test IP resolution
         echo -en "Testing Internet connection... "
         ( ping -q -c 1 8.8.8.8 &> /dev/null || ping -q -c 1 1.1.1.1 &> /dev/null ) && echo -e "\e[32mSuccessful.\e[0m" || ( echo -e "\e[31mFailed.\e[0m""" && (exit 255) )          # set exit status, but still execute rest of function
@@ -503,13 +560,9 @@
         echo -en "Testing connection to DNS... "
         ( ping -q -c 1 www.google.com &> /dev/null && ping -q -c 1 www.yandex.com &> /dev/null ) && echo -e "\e[32mSuccessful.\e[0m" || ( echo -e "\e[31mFailed.\e[0m""" && (exit 255) )   # ditto
 
-        case "$?" in
-            0)
-                true;;
-
-            *)
-                echo -e "Failed to ping Internet/DNS servers. Check network settings or firewall, and try again.";;
-        esac
+        if [[ "$?" -ne 0 ]]; then
+                echo -e "Failed to ping Internet/DNS servers. Check network settings or firewall, and try again."
+        fi
 
         echo
     }
@@ -527,7 +580,6 @@
         SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
         IFS=$'\n'      # Change IFS to newline char
 
-        false
         echo -en "Writing to file... "
 
         # null exception
@@ -554,26 +606,7 @@
             echo $2 >> $1 || (exit 255)
         fi
 
-        case "$?" in
-            0)
-                echo -e "\e[32mSuccessful.\e[0m"
-                true;;
-
-            255)
-                echo -e "\e[31mFailed.\e[0m""";;
-
-            254)
-                echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
-
-            253)
-                echo -e "\e[31mFailed.\e[0m"" File '$1' does not exist.";;
-
-            252)
-                echo -e "\e[31mFailed.\e[0m"" File '$1' is not readable.";;
-
-            251)
-                echo -e "\e[31mFailed.\e[0m"" File '$1' is not writable.";;
-        esac
+        PassOrFailThisExitCode
     }
 ##
 
@@ -583,7 +616,8 @@
         echo -en "Checking if Virtualization is enabled/supported... "
 
         if [[ -z $(compgen -G "/sys/kernel/iommu_groups/*/devices/*") ]]; then
-            ExitWithStatement false "\e[31mFailed.\e[0m"""
+            echo -e "\e[31mFailed.\e[0m"""
+            ExitWithThisExitCode
 
         else
             echo -e "\e[32mSuccessful.\e[0m"
@@ -805,11 +839,11 @@
     function SetupAutoXorg
     {
         # parameters #
-        str_pwd=$( pwd )
+        declare -lr str_pwd=$( pwd )
 
         echo -e "Installing Auto-Xorg... "
-        ( cd $( find -wholename Auto-Xorg | uniq | head -n1 ) && bash ./installer.bash && cd $str_pwd && echo -e "\e[32mSuccessful.\e[0m" && true ) || ( echo -e "\e[31mFailed.\e[0m""" )
-
+        cd $( find -wholename Auto-Xorg | uniq | head -n1 ) && bash ./installer.bash && cd $str_pwd
+        PassOrFailThisExitCode
         echo
     }
 
@@ -822,15 +856,14 @@
         # write to logfile
         #
 
-        false
-
         # parameters #
         declare -lr str_thisFile1="qemu-evdev.log"
         declare -lr str_thisFile2="/etc/apparmor.d/abstractions/libvirt-qemu"
 
         echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n\tHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
+        ReadInput "Setup Evdev?"
 
-        if ReadInput "Setup Evdev?" == true; then
+        if [[ "$?" -eq 0 ]]; then
             # readonly str_firstUser=$( id -u 1000 -n ) && echo -e "Found the first desktop user of the system: $str_firstUser"
 
             # add users to groups #
@@ -841,35 +874,30 @@
                 adduser $str_element libvirt &> /dev/null     # quiet output
             done
 
-            # CheckIfFileOrDirExists $str_thisFile1 &> /dev/null && DeleteFile $str_thisFile1 &> /dev/null
-            # CreateFile $str_thisFile1 || bool=false
+            # output to file #
+            CheckIfFileOrDirExists $str_thisFile1 &> /dev/null && DeleteFile $str_thisFile1 &> /dev/null
+            ( CreateFile $str_thisFile1 && true ) || false
 
-            if true; then
-            # if [[ $bool == true ]]; then
+            if [[ "$?" -eq 0 ]]; then
 
                 # list of input devices #
-                declare -lar arr_InputDeviceID=$( ls /dev/input/by-id &> /dev/null )
-                declare -lar arr_InputEventDeviceID=$( ls -l /dev/input/by-id &> /dev/null | cut -d '/' -f2 | grep -v 'total 0' )
-                # declare -a arr_output_evdevQEMU
+                declare -lar arr_InputDeviceID=($( ls /dev/input/by-id ))
+                declare -lar arr_InputEventDeviceID=($( ls -l /dev/input/by-id | cut -d '/' -f2 | grep -v 'total 0' ))
+                declare -la arr_output_evdevQEMU=()
 
+                # append output #
                 for str_element in ${arr_InputDeviceID[@]}; do
                     arr_output_evdevQEMU+=("    \"/dev/input/by-id/$str_element\",")
-                    # ( WriteVarToFile $str_thisFile1 "    \"/dev/input/by-id/$str_element\"," ) &> /dev/null       # quiet output
                 done
 
                 for str_element in ${arr_InputEventDeviceID[@]}; do
                     arr_output_evdevQEMU+=("    \"/dev/input/by-id/$str_element\",")
-                    # ( WriteVarToFile $str_thisFile1 "    \"/dev/input/by-id/$str_element\"," ) &> /dev/null       # quiet output
                 done
 
-                # append file #
-                # for str_element in ${arr_output_evdevQEMU[@]}; do
-                #     if ( CheckIfFileOrDirExists $str_thisFile1 &> /dev/null == true ); then
-                #         WriteVarToFile $str_thisFile1 $str_element && true
-                #     fi
-                # done
+                readonly arr_output_evdevQEMU
 
-                declare -ar arr_output_evdevApparmor=(
+                # append output #
+                declare -lar arr_output_evdevApparmor=(
                     "#"
                     "# Evdev #"
                     "  /dev/input/* rw,"
@@ -877,26 +905,49 @@
                     "#"
                 )
 
-                # append system file #
-                # for str_element in ${arr_output_evdevApparmor[@]}; do
-                #     if ( CheckIfFileOrDirExists $str_thisFile2 &> /dev/null == true ); then
-                #         WriteVarToFile $str_thisFile2 $str_element && true
-                #     fi
-                # done
+                # debug #
+                echo -e '${#arr_InputDeviceID[@]}='"'${#arr_InputDeviceID[@]}'"
+                echo -e '${#arr_InputEventDeviceID[@]}='"'${#arr_InputEventDeviceID[@]}'"
+                echo -e '${#arr_output_evdevQEMU[@]}='"'${#arr_output_evdevQEMU[@]}'"
 
-                true
+                # append file #
+                CheckIfFileOrDirExists $str_thisFile1 &> /dev/null
+
+                if [[ "$?" -eq 0 ]]; then
+                    for str_element in ${arr_output_evdevQEMU[@]}; do
+                            WriteVarToFile $str_thisFile1 $str_element &> /dev/null
+                        fi
+
+                        # should this loop fail at any given time, exit
+                        else
+                            false && break
+                        fi
+                    done
+                fi
 
                 # append system file #
-                # declare -lr str_output1+="\n  # Evdev #\n  /dev/input/* rw,\n  /dev/input/by-id/* rw,\n"
-                # ( CheckIfFileOrDirExists $str_thisFile2 &> /dev/null && WriteVarToFile $str_thisFile2 $str_output1 && true && echo $str_thisFile1 &> /dev/null ) || false
-                # will require restart of apparmor service or system #
-            else
-                false
+                if [[ "$?" -eq 0 ]]; then
+                    for str_element in ${arr_output_evdevApparmor[@]}; do
+                        if ( CheckIfFileOrDirExists $str_thisFile2 &> /dev/null == true ); then
+                            WriteVarToFile $str_thisFile2 $str_element &> /dev/null
+
+                        # should this loop fail at any given time, exit
+                        else
+                            false && break
+                        fi
+                    done
+                fi
+
+                # append system file #
+                # will require restart of apparmor service or system
+                if [[ "$?" -eq 0 ]]; then
+                    declare -lr str_output1+="\n  # Evdev #\n  /dev/input/* rw,\n  /dev/input/by-id/* rw,\n"
+                    CheckIfFileOrDirExists $str_thisFile2 &> /dev/null && WriteVarToFile $str_thisFile2 $str_output1 && echo $str_thisFile1 &> /dev/null
+                fi
             fi
-
-        else
-            false
         fi
+
+        PassOrFailThisExitCode "Setup Evdev"
     }
 
     function SetupHugepages
@@ -908,25 +959,25 @@
         # write to logfile
         #
 
-        false
-
         # parameters #
         declare -lr str_thisFile1="qemu-hugepages.log"
         declare -lir int_HostMemMaxK=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )     # sum of system RAM in KiB
         str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                                # default output
 
         echo -e "HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and lower overhead of memory-access (memory latency).\n"
+        ReadInput "Setup Hugepages?"
 
-        if ReadInput "Execute Hugepages setup?" == true; then
+        if [[ "$?" -eq 0 ]]; then
 
             # add users to groups #
-            declare -a arr_User=($( getent passwd {1000..60000} | cut -d ":" -f 1 ))
+            declare -lar arr_User=($( getent passwd {1000..60000} | cut -d ":" -f 1 ))
 
             for str_element in $arr_User; do
                 adduser $str_element input &> /dev/null       # quiet output
                 adduser $str_element libvirt &> /dev/null     # quiet output
             done
 
+            # prompt #
             ReadInputFromMultipleChoiceUpperCase "Enter Hugepage size and byte-size [1G/2m]:" "1G" "2M"
             str_HugePageSize=$str_input1
 
@@ -946,30 +997,28 @@
             declare -lir int_HugePageMemMax=$(( $int_HostMemMaxK - $int_HostMemMinK ))
             declare -lir int_HugePageMax=$(( $int_HugePageMemMax / $int_HugePageK ))       # max HugePages
 
+            # prompt #
             ReadInputFromRangeOfNums "Enter number of HugePages (n * $str_HugePageSize). [$int_HugePageMin <= n <= $int_HugePageMax pages]:" $int_HugePageMin $int_HugePageMax
             declare -ir int_HugePageNum=$str_input1
 
-            readonly arr_output_hugepagesGRUB="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
+            # output #
+            readonly str_output_hugepagesGRUB="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
+            readonly str_output_hugepagesQEMU="hugetlbfs_mount = \"/dev/hugepages\""
 
-            readonly arr_output_hugepagesQEMU="hugetlbfs_mount = \"/dev/hugepages\""
+            # write to file #
+            CheckIfFileOrDirExists $str_thisFile1 &> /dev/null && DeleteFile $str_thisFile1 &> /dev/null
+            CreateFile $str_thisFile1 &> /dev/null
 
-            # CheckIfFileOrDirExists $str_thisFile1 && DeleteFile $str_thisFile1
-            # CreateFile $str_thisFile1 && local bool=true
-
-            # if [[ $bool == true ]]; then
-            #     readonly str_output1="hugetlbfs_mount = \"/dev/hugepages\""
-            #     ( WriteVarToFile $str_thisFile1 $str_output1 && echo && true ) || false
+            # if [[ "$?" -eq 0 ]]; then
+            #     WriteVarToFile $str_thisFile1 $str_output_hugepagesQEMU && echo
             # fi
-
-        else
-            false
         fi
+
+        PassOrFailThisExitCode "Setup Hugepages"
     }
 
     function SetupStaticCPU_isolation
     {
-        false
-
         function ParseCPU
         {
             # parameters #
@@ -1091,19 +1140,17 @@
 
         # prompt #
         echo -e "CPU isolation (Static or Dynamic) is a feature which allocates system CPU threads to the host and Virtual machines (VMs), separately.\n\tVirtual machines can use CPU isolation or 'pinning' to a peformance benefit\n\t'Static' is more 'permanent' CPU isolation: installation will append to GRUB after VFIO setup.\n\tAlternatively, 'Dynamic' CPU isolation is flexible and on-demand: post-installation will execute as a libvirt hook script (per VM)."
-
-        ( ReadInput "Setup 'Static' CPU isolation?" && echo -en "Executing CPU isolation setup... " && ParseCPU && echo -e "Complete." && true ) || ( echo -e "Failure." && false )
-
+        ReadInput "Setup 'Static' CPU isolation?" && echo -en "Executing CPU isolation setup... " && ParseCPU
+        PassOrFailThisExitCode
         echo
     }
 
     function SetupZRAM_Swap
     {
-        false
-
         # parameters #
-        str_pwd=$( pwd )
+        declare -lr str_pwd=$( pwd )
 
+        # prompt #
         echo -e "Installing zram-swap... "
 
         if [[ $( systemctl status asshole &> /dev/null ) != *"could not be found"* ]]; then
@@ -1255,7 +1302,7 @@
 
             # append #
             if [[ $bool_isHugepagesSetup == true ]]; then
-                arr_output1+=("${arr_output_hugepagesQEMU}")
+                arr_output1+=("${str_output_hugepagesQEMU}")
                 # arr_output1+=($( cat $str_thisFile1 ))
                 arr_output1+=("#")
             fi
@@ -1275,6 +1322,8 @@
 
             # append #
             if [[ $bool_isEvdevSetup == true ]]; then
+                echo -e '${#arr_output_evdevQEMU[@]}='"'${#arr_output_evdevQEMU[@]}'"
+
                 for str_element in ${arr_output_evdevQEMU[@]}; do
                     arr_output+=("${str_element}")
                 done
@@ -1290,7 +1339,6 @@
             )
 
             if ( CreateBackupFromFile $str_file2 &> /dev/null == true ); then
-
                 for str_element in ${arr_output1[@]}; do
                     if [[ "$?" -ne 0 ]]; then
                         break
@@ -1300,13 +1348,10 @@
                 done
 
             else
-                ExitWithStatement "\e[33mWARNING:\e[0m"" Setup cannot continue." false
+                echo -e "\e[33mWARNING:\e[0m"" Setup cannot continue." && ExitWithThisExitCode
             fi
 
-        if [[ "$?" -ne 0 ]]; then
-            break
-        fi
-
+        exit 0
         SetupStaticCPU_isolation && bool_isCPU_staticIsolationSetup=true
 
         # TO-DO: add check for necessary dependencies or packages
