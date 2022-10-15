@@ -58,7 +58,6 @@
         #   return boolean, to be used by main
         #
 
-        false
         echo -en "Backing up file... "
 
         # parameters #
@@ -68,126 +67,110 @@
         # null exception
         if [[ -z $str_thisFile ]]; then
             (exit 254)
-        fi
 
         # file not found exception
-        if [[ ! -e $str_thisFile ]]; then
+        elif [[ ! -e $str_thisFile ]]; then
             (exit 250)
-        fi
 
         # file not readable exception
-        if [[ ! -r $str_thisFile ]]; then
+        elif [[ ! -r $str_thisFile ]]; then
             (exit 249)
-        fi
 
         # work #
-        if [[ "$?" -eq 0 ]]; then
-
-            # parameters #
-            declare -r str_suffix=".old"
-            declare -r str_thisDir=$( dirname $1 )
-            declare -ar arr_thisDir=( $( ls -1v $str_thisDir | grep $str_thisFile | grep $str_suffix | uniq ) )
-
-            # positive non-zero count
-            if [[ "${#arr_thisDir[@]}" -ge 1 ]]; then
+        else
+            if [[ "$?" -eq 0 ]]; then
 
                 # parameters #
-                declare -ir int_maxCount=5
-                str_line=${arr_thisDir[0]}
-                str_line=${str_line%"${str_suffix}"}        # substitution
-                str_line=${str_line##*.}                    # ditto
+                declare -r str_suffix=".old"
+                declare -r str_thisDir=$( dirname $1 )
+                declare -ar arr_thisDir=( $( ls -1v $str_thisDir | grep $str_thisFile | grep $str_suffix | uniq ) )
 
-                # check if string is a valid integer #
-                if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then
-                    declare -ir int_firstIndex="${str_line}"
+                # positive non-zero count
+                if [[ "${#arr_thisDir[@]}" -ge 1 ]]; then
 
-                else
-                    (exit 254)
-                fi
+                    # parameters #
+                    declare -ir int_maxCount=5
+                    str_line=${arr_thisDir[0]}
+                    str_line=${str_line%"${str_suffix}"}        # substitution
+                    str_line=${str_line##*.}                    # ditto
 
-                for str_element in ${arr_thisDir[@]}; do
-                    if cmp -s $str_thisFile $str_element; then
+                    # check if string is a valid integer #
+                    if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then
+                        declare -ir int_firstIndex="${str_line}"
+
+                    else
+                        (exit 254)
+                        ParseThisExitCode
+                    fi
+
+                    for str_element in ${arr_thisDir[@]}; do
+                        if cmp -s $str_thisFile $str_element; then
+                            (exit 3)
+                            break
+                        fi
+                    done
+
+                    # if latest backup is same as original file, exit
+                    if cmp -s $str_thisFile ${arr_thisDir[-1]}; then
                         (exit 3)
-                        break
                     fi
-                done
 
-                # if latest backup is same as original file, exit
-                if cmp -s $str_thisFile ${arr_thisDir[-1]}; then
-                    (exit 3)
-                fi
+                    # before backup, delete all but some number of backup files
+                    while [[ ${#arr_thisDir[@]} -ge $int_maxCount ]]; do
+                        if [[ -e ${arr_thisDir[0]} ]]; then
+                            rm ${arr_thisDir[0]}
+                            break
+                        fi
+                    done
 
-                # before backup, delete all but some number of backup files
-                while [[ ${#arr_thisDir[@]} -ge $int_maxCount ]]; do
-                    if [[ -e ${arr_thisDir[0]} ]]; then
-                        rm ${arr_thisDir[0]}
-                        break
+                    # if *first* backup is same as original file, exit
+                    if cmp -s $str_thisFile ${arr_thisDir[0]}; then
+                        (exit 3)
                     fi
-                done
 
-                # if *first* backup is same as original file, exit
-                if cmp -s $str_thisFile ${arr_thisDir[0]}; then
-                    (exit 3)
-                fi
+                    # new parameters #
+                    str_line=${arr_thisDir[-1]%"${str_suffix}"}     # substitution
+                    str_line=${str_line##*.}                        # ditto
 
-                # new parameters #
-                str_line=${arr_thisDir[-1]%"${str_suffix}"}     # substitution
-                str_line=${str_line##*.}                        # ditto
+                    # check if string is a valid integer #
+                    if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then
+                        declare -i int_lastIndex="${str_line}"
 
-                # check if string is a valid integer #
-                if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then
-                    declare -i int_lastIndex="${str_line}"
+                    else
+                        (exit 254)
+                        ParseThisExitCode
+                    fi
 
+                    (( int_lastIndex++ ))           # counter
+
+                    # source file is newer and different than backup, add to backups
+                    if [[ $str_thisFile -nt ${arr_thisDir[-1]} && ! ( $str_thisFile -ef ${arr_thisDir[-1]} ) ]]; then
+                        cp $str_thisFile "${str_thisFile}.${int_lastIndex}${str_suffix}"
+
+                    elif [[ $str_thisFile -ot ${arr_thisDir[-1]} && ! ( $str_thisFile -ef ${arr_thisDir[-1]} ) ]]; then
+                        (exit 3)
+
+                    else
+                        (exit 3)
+                    fi
+
+                # no backups, create backup
                 else
-                    (exit 254)
+                    cp $str_thisFile "${str_thisFile}.0${str_suffix}"
                 fi
-
-                (( int_lastIndex++ ))           # counter
-
-                # source file is newer and different than backup, add to backups
-                if [[ $str_thisFile -nt ${arr_thisDir[-1]} && ! ( $str_thisFile -ef ${arr_thisDir[-1]} ) ]]; then
-                    cp $str_thisFile "${str_thisFile}.${int_lastIndex}${str_suffix}"
-
-                elif [[ $str_thisFile -ot ${arr_thisDir[-1]} && ! ( $str_thisFile -ef ${arr_thisDir[-1]} ) ]]; then
-                    (exit 3)
-
-                else
-                    (exit 3)
-                fi
-
-            # no backups, create backup
-            else
-                cp $str_thisFile "${str_thisFile}.0${str_suffix}"
             fi
         fi
 
         # append output and return code
         case "$?" in
-            0)
-                echo -e "\e[32mSuccessful.\e[0m"
-                true;;
-
             3)
-                echo -e "\e[33mSkipped.\e[0m"" No changes from most recent backup."
-                true;;
-
-            255)
-                echo -e "\e[31mFailed.\e[0m""";;
-
-            254)
-                echo -e "\e[31mFailed.\e[0m"" Exception: Null/invalid input.";;
-
-            253)
-                echo -e "\e[31mFailed.\e[0m"" Exception: File '$str_thisFile' does not exist.";;
-
-            252)
-                echo -e "\e[31mFailed.\e[0m"" Exception: File '$str_thisFile' is not readable.";;
+                EchoPassOrFailThisExitCode
+                echo -e "No changes from most recent backup."
         esac
     }
 
     function CreateFile
     {
-        false
         echo -en "Creating file... "
 
         # null exception
@@ -197,17 +180,14 @@
 
         # file not found
         if [[ ! -e $1 ]]; then
-            touch $1 &> /dev/null || (exit 247)
+            touch $1 &> /dev/null || ( (exit 250) && ParseThisExitCode )
 
         else
             (exit 3)
         fi
 
-        case "$?" in
-            3)
-                echo -e "File '$1' exists."
-                true;;
-        esac
+        EchoPassOrFailThisExitCode
+        ParseThisExitCode
     }
 
     function DeleteFile
@@ -227,31 +207,11 @@
             rm $1 &> /dev/null || (exit 255)
         fi
 
-        case "$?" in
-            0)
-                echo -e "\e[32mSuccessful.\e[0m"
-                true;;
-
-            3)
-                PassOrFailThisExitCode
-                echo -e "\e[33mSkipped.\e[0m"" File '$1' does not exist."
-                true;;
-
-            255)
-                echo -e "\e[31mFailed.\e[0m"" Could not delete file '$1'.";;
-
-            254)
-                echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
-        esac
+        EchoPassOrFailThisExitCode
+        ParseThisExitCode
     }
 
-    function ExitWithThisExitCode
-    {
-        echo -e "Exiting."
-        exit $?
-    }
-
-    function PassOrFailThisExitCode
+    function EchoPassOrFailThisExitCode
     {
         # output a pass or fail depending on the exit code
 
@@ -275,6 +235,12 @@
             *)
                 echo -e " [31mFailed. \e[0m";;
         esac
+    }
+
+    function ExitWithThisExitCode
+    {
+        echo -e "Exiting."
+        exit $?
     }
 
     function ParseThisExitCode
@@ -311,13 +277,13 @@
                 echo -e "Error: Missing components/variables.";;
 
             250)
-                echo -e "Exception: File does not exist.";;
+                echo -e "Exception: File/Dir does not exist.";;
 
             249)
-                echo -e "Exception: File is not readable.";;
+                echo -e "Exception: File/Dir is not readable.";;
 
             248)
-                echo -e "Exception: File is not writable.";;
+                echo -e "Exception: File/Dir is not writable.";;
 
             *)
                 echo;;
@@ -334,8 +300,6 @@
         # default selection is N/false
         # always returns bool
         #
-
-        false
 
         # using statements #
         shopt -s nocasematch
@@ -387,8 +351,8 @@
         #
 
         if [[ -z $2 ]]; then
-            echo -e "\e[31mFailed.\e[0m"" Exception: Null/invalid input."
-            false
+            (exit 254)
+            ParseThisExitCode
 
         else
 
@@ -452,8 +416,8 @@
         #
 
         if [[ -z $2 ]]; then
-            echo -e "\e[31mFailed.\e[0m"" Exception: Null/invalid input."
-            false
+            (exit 254)
+            ParseThisExitCode
 
         else
 
@@ -555,13 +519,15 @@
 
         # test IP resolution
         echo -en "Testing Internet connection... "
-        ( ping -q -c 1 8.8.8.8 &> /dev/null || ping -q -c 1 1.1.1.1 &> /dev/null ) && echo -e "\e[32mSuccessful.\e[0m" || ( echo -e "\e[31mFailed.\e[0m""" && (exit 255) )          # set exit status, but still execute rest of function
+        ( ping -q -c 1 8.8.8.8 &> /dev/null || ping -q -c 1 1.1.1.1 &> /dev/null ) || false
+        EchoPassOrFailThisExitCode
 
         echo -en "Testing connection to DNS... "
-        ( ping -q -c 1 www.google.com &> /dev/null && ping -q -c 1 www.yandex.com &> /dev/null ) && echo -e "\e[32mSuccessful.\e[0m" || ( echo -e "\e[31mFailed.\e[0m""" && (exit 255) )   # ditto
+        ( ping -q -c 1 www.google.com &> /dev/null && ping -q -c 1 www.yandex.com &> /dev/null ) || false
+        EchoPassOrFailThisExitCode
 
         if [[ "$?" -ne 0 ]]; then
-                echo -e "Failed to ping Internet/DNS servers. Check network settings or firewall, and try again."
+            echo -e "Failed to ping Internet/DNS servers. Check network settings or firewall, and try again."
         fi
 
         echo
@@ -585,28 +551,27 @@
         # null exception
         if [[ -z $1 || -z $2 ]]; then
             (exit 254)
-        fi
 
         # file not found exception
-        if [[ ! -e $1 ]]; then
+        elif [[ ! -e $1 ]]; then
             (exit 253)
-        fi
 
         # file not readable exception
-        if [[ ! -r $1 ]]; then
+        elif [[ ! -r $1 ]]; then
             (exit 252)
-        fi
 
         # file not readable exception
-        if [[ ! -w $1 ]]; then
+        elif [[ ! -w $1 ]]; then
             (exit 251)
+
+        else
+            if [[ "$?" -eq 0 ]]; then
+                echo $2 >> $1 || (exit 255)
+            fi
         fi
 
-        if [[ "$?" -eq 0 ]]; then
-            echo $2 >> $1 || (exit 255)
-        fi
-
-        PassOrFailThisExitCode
+        EchoPassOrFailThisExitCode
+        ParseThisExitCode
     }
 ##
 
@@ -616,20 +581,19 @@
         echo -en "Checking if Virtualization is enabled/supported... "
 
         if [[ -z $(compgen -G "/sys/kernel/iommu_groups/*/devices/*") ]]; then
-            echo -e "\e[31mFailed.\e[0m"""
-            ExitWithThisExitCode
+            false
 
         else
-            echo -e "\e[32mSuccessful.\e[0m"
             true
         fi
 
-        echo
+        EchoPassOrFailThisExitCode
+        ParseThisExitCode
+        ExitWithThisExitCode
     }
 
     function CloneOrUpdateGitRepositories
     {
-        true
         echo -en "Cloning Git repositories... "
 
         # dir #
@@ -650,29 +614,17 @@
 
             case "$?" in
                 0)
-                    cd $1
-                    true;;
-
-                255)
-                    echo -e "\e[31mFailed.\e[0m""";;
-
-                254)
-                    echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
-
-                253)
-                    echo -e "\e[31mFailed.\e[0m"" Dir '$1' does not exist.";;
-
-                252)
-                    echo -e "\e[31mFailed.\e[0m"" Dir '$1' is not writeable.";;
+                    cd $1;;
             esac
 
-            if [[ $? -ge 131 ]]; then
-                exit
+            EchoPassOrFailThisExitCode
+            ParseThisExitCode
+
+            if [[ $? -ne 0 ]]; then
+                ExitWithThisExitCode
             fi
 
         # git repos #
-            false
-
             # null exception
             if [[ -z $1 || -z $2 ]]; then
                 (exit 254)
@@ -729,19 +681,11 @@
 
         fi
 
+        EchoPassOrFailThisExitCode
+
         case "$?" in
-            0)
-                echo -e "\e[32mSuccessful.\e[0m"
-                true;;
-
             3)
-                echo -e "\e[32mSuccessful.\e[0m One or more Git repositories could not be cloned.";;
-
-            255)
-                echo -e "\e[31mFailed.\e[0m""";;
-
-            254)
-                echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
+                echo -e "One or more Git repositories could not be cloned.";;
         esac
 
         echo
@@ -749,7 +693,6 @@
 
     function ParseIOMMUandPCI
     {
-        false
         echo -en "Parsing IOMMU groups... "
 
         # parameters #
@@ -813,24 +756,17 @@
                 (exit 254);;
         esac
 
+        EchoPassOrFailThisExitCode
+
         case "$?" in
-                # function never failed
-                0)
-                    echo -e "\e[32mSuccessful.\e[0m"
-                    true;;
-
                 3)
-                    echo -e "\e[32mSuccessful.\e[0m One or more external PCI device(s) missing drivers."
-                    true;;
-
-                255)
-                    echo -e "\e[31mFailed.\e[0m""";;
+                    echo -e "One or more external PCI device(s) missing drivers.";;
 
                 254)
-                    echo -e "\e[31mFailed.\e[0m"" Exception: No devices found.";;
+                    echo -e "Exception: No devices found.";;
 
                 253)
-                    echo -e "\e[31mFailed.\e[0m"" Exception: Existing VFIO setup found.";;
+                    echo -e "Exception: Existing VFIO setup found.";;
             esac
 
         echo
@@ -843,7 +779,8 @@
 
         echo -e "Installing Auto-Xorg... "
         cd $( find -wholename Auto-Xorg | uniq | head -n1 ) && bash ./installer.bash && cd $str_pwd
-        PassOrFailThisExitCode
+        EchoPassOrFailThisExitCode
+        ParseThisExitCode
         echo
     }
 
@@ -876,7 +813,7 @@
 
             # output to file #
             CheckIfFileOrDirExists $str_thisFile1 &> /dev/null && DeleteFile $str_thisFile1 &> /dev/null
-            ( CreateFile $str_thisFile1 && true ) || false
+            ( CreateFile $str_thisFile1 ) || false
 
             if [[ "$?" -eq 0 ]]; then
 
@@ -928,7 +865,9 @@
                 # append system file #
                 if [[ "$?" -eq 0 ]]; then
                     for str_element in ${arr_output_evdevApparmor[@]}; do
-                        if ( CheckIfFileOrDirExists $str_thisFile2 &> /dev/null == true ); then
+                        CheckIfFileOrDirExists $str_thisFile2 &> /dev/null
+
+                        if [[ "$?" -eq 0 ]]; then
                             WriteVarToFile $str_thisFile2 $str_element &> /dev/null
 
                         # should this loop fail at any given time, exit
@@ -947,7 +886,8 @@
             fi
         fi
 
-        PassOrFailThisExitCode "Setup Evdev"
+        EchoPassOrFailThisExitCode "Setup Evdev"
+        ParseThisExitCode
     }
 
     function SetupHugepages
@@ -1014,7 +954,8 @@
             # fi
         fi
 
-        PassOrFailThisExitCode "Setup Hugepages"
+        EchoPassOrFailThisExitCode "Setup Hugepages"
+        ParseThisExitCode
     }
 
     function SetupStaticCPU_isolation
@@ -1141,7 +1082,8 @@
         # prompt #
         echo -e "CPU isolation (Static or Dynamic) is a feature which allocates system CPU threads to the host and Virtual machines (VMs), separately.\n\tVirtual machines can use CPU isolation or 'pinning' to a peformance benefit\n\t'Static' is more 'permanent' CPU isolation: installation will append to GRUB after VFIO setup.\n\tAlternatively, 'Dynamic' CPU isolation is flexible and on-demand: post-installation will execute as a libvirt hook script (per VM)."
         ReadInput "Setup 'Static' CPU isolation?" && echo -en "Executing CPU isolation setup... " && ParseCPU
-        PassOrFailThisExitCode
+        EchoPassOrFailThisExitCode
+        ParseThisExitCode
         echo
     }
 
@@ -1226,20 +1168,8 @@
             WriteVarToFile $str_outFile1 $str_output1 || (exit 255)
         fi
 
-        echo -en "Zram-swap setup "
-
-        case "$?" in
-            0)
-                echo -e "\e[32mSuccessful.\e[0m"
-                true;;
-
-            255)
-                echo -e "\e[31mFailed.\e[0m""";;
-
-            254)
-                echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
-        esac
-
+        EchoPassOrFailThisExitCode "Zram-swap setup "
+        ParseThisExitCode
         echo
     }
 ##
