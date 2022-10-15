@@ -25,7 +25,6 @@
 
     function CheckIfFileOrDirExists
     {
-        false
         echo -en "Checking if file or directory exists... "
 
         # null exception
@@ -35,20 +34,12 @@
 
         # dir/file not found
         if [[ ! -e $1 ]]; then
-            find . -name $1 | uniq &> /dev/null || (exit 255)
+            find . -name $1 | uniq &> /dev/null || (exit 250)
         fi
 
-        case "$?" in
-            0)
-                echo -e "\e[32mSuccessful.\e[0m"
-                true;;
-
-            255)
-                echo -e "\e[31mFailed.\e[0m"" Could not find '$1'.";;
-
-            254)
-                echo -e "\e[31mFailed.\e[0m"" Null exception/invalid input.";;
-        esac
+        # call functions
+        EchoPassOrFailThisExitCode
+        ParseThisExitCode
     }
 
     function CreateBackupFromFile
@@ -60,7 +51,7 @@
 
         echo -en "Backing up file... "
 
-        # parameters #
+        # parameters
         str_thisFile=$1
 
         # create false match statements before work begins, to catch exceptions
@@ -76,11 +67,11 @@
         elif [[ ! -r $str_thisFile ]]; then
             (exit 249)
 
-        # work #
+        # work
         else
             if [[ "$?" -eq 0 ]]; then
 
-                # parameters #
+                # parameters
                 declare -r str_suffix=".old"
                 declare -r str_thisDir=$( dirname $1 )
                 declare -ar arr_thisDir=( $( ls -1v $str_thisDir | grep $str_thisFile | grep $str_suffix | uniq ) )
@@ -94,13 +85,12 @@
                     str_line=${str_line%"${str_suffix}"}        # substitution
                     str_line=${str_line##*.}                    # ditto
 
-                    # check if string is a valid integer #
+                    # check if string is a valid integer
                     if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then
                         declare -ir int_firstIndex="${str_line}"
 
                     else
                         (exit 254)
-                        ParseThisExitCode
                     fi
 
                     for str_element in ${arr_thisDir[@]}; do
@@ -132,13 +122,12 @@
                     str_line=${arr_thisDir[-1]%"${str_suffix}"}     # substitution
                     str_line=${str_line##*.}                        # ditto
 
-                    # check if string is a valid integer #
+                    # check if string is a valid integer
                     if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then
                         declare -i int_lastIndex="${str_line}"
 
                     else
                         (exit 254)
-                        ParseThisExitCode
                     fi
 
                     (( int_lastIndex++ ))           # counter
@@ -161,10 +150,13 @@
             fi
         fi
 
+        # call functions
+        EchoPassOrFailThisExitCode
+        ParseThisExitCode
+
         # append output and return code
         case "$?" in
             3)
-                EchoPassOrFailThisExitCode
                 echo -e "No changes from most recent backup."
         esac
     }
@@ -180,7 +172,7 @@
 
         # file not found
         if [[ ! -e $1 ]]; then
-            touch $1 &> /dev/null || ( (exit 250) && ParseThisExitCode )
+            touch $1 &> /dev/null || (exit 250)
 
         else
             (exit 3)
@@ -211,6 +203,7 @@
         ParseThisExitCode
     }
 
+    ##### NOTE: do not change below #####
     function EchoPassOrFailThisExitCode
     {
         # output a pass or fail depending on the exit code
@@ -291,6 +284,7 @@
 
         echo
     }
+    #####
 
     function ReadInput
     {
@@ -597,60 +591,52 @@
         echo -en "Cloning Git repositories... "
 
         # dir #
-            # null exception
-            if [[ -z $1 || -z $2 ]]; then
-                (exit 254)
-            fi
+        # null exception
+        if [[ -z $1 || -z $2 ]]; then
+            (exit 254)
+        fi
 
-            # dir not found exception
-            if [[ ! -d $1 ]]; then
-                (exit 253)
-            fi
+        # dir not found exception
+        if [[ ! -d $1 ]]; then
+            (exit 250)
+        fi
 
-            # dir not writeable exception
-            if [[ ! -w $1 ]]; then
-                (exit 252)
-            fi
-
-            case "$?" in
-                0)
-                    cd $1;;
-            esac
-
-            EchoPassOrFailThisExitCode
-            ParseThisExitCode
-
-            if [[ $? -ne 0 ]]; then
-                ExitWithThisExitCode
-            fi
-
-        # git repos #
-            # null exception
-            if [[ -z $1 || -z $2 ]]; then
-                (exit 254)
-            fi
-
-            # dir not found exception
-            if [[ ! -d $1 ]]; then
-                (exit 253)
-            fi
-
-            # dir not writeable exception
-            if [[ ! -w $1 ]]; then
-                (exit 252)
-            fi
-
-        # if a given element is a string longer than one char, the var is an array #
-        for str_element in ${2}; do
-            if [[ ${#str_element} -gt 1 ]]; then
-                bool_varIsAnArray=true
-                break
-            fi
-        done
-
-        declare -i int_count=1
+        # dir not writeable exception
+        if [[ ! -w $1 ]]; then
+            (exit 248)
+        fi
 
         if [[ "$?" -eq 0 ]]; then
+            cd $1
+
+            # git repos #
+            # null exception
+            if [[ -z $1 || -z $2 ]]; then
+                (exit 254)
+            fi
+
+            # dir not found exception
+            if [[ ! -d $1 ]]; then
+                (exit 250)
+            fi
+
+            # dir not writeable exception
+            if [[ ! -w $1 ]]; then
+                (exit 248)
+            fi
+        fi
+
+        if [[ "$?" -eq 0 ]]; then
+
+            # if a given element is a string longer than one char, the var is an array #
+            for str_element in ${2}; do
+                if [[ ${#str_element} -gt 1 ]]; then
+                    bool_varIsAnArray=true
+                    break
+                fi
+            done
+
+            declare -i int_count=1
 
             # git clone from array #
             if [[ $bool_varIsAnArray == true ]]; then
@@ -678,10 +664,10 @@
             else
                 echo $2 >> $1 || (exit 255)
             fi
-
         fi
 
         EchoPassOrFailThisExitCode
+        ParseThisExitCode
 
         case "$?" in
             3)
@@ -872,7 +858,8 @@
 
                         # should this loop fail at any given time, exit
                         else
-                            false && break
+                            false
+                            break
                         fi
                     done
                 fi
