@@ -4,6 +4,7 @@
 ## Author(s):    Alex Portell <github.com/portellam>
 ##
 
+declare -i int_thisExitCode=$?
 
 ##
 ## TO-DO:
@@ -19,6 +20,9 @@
             str_thisFile=$( echo ${0##/*} )
             str_thisFile=$( echo $str_thisFile | cut -d '/' -f2 )
             echo -e "\e[33mWARNING:\e[0m"" Script must execute as root. In terminal, run:\n\t'sudo bash $str_thisFile'"
+
+            # call functions
+            SaveThisExitCode
             ExitWithThisExitCode
         fi
     }
@@ -38,6 +42,7 @@
         fi
 
         # call functions
+        SaveThisExitCode
         EchoPassOrFailThisExitCode
         ParseThisExitCode
     }
@@ -69,7 +74,7 @@
 
         # work
         else
-            if [[ "$?" -eq 0 ]]; then
+            if [[ $int_thisExitCode -eq 0 ]]; then
 
                 # parameters
                 declare -r str_suffix=".old"
@@ -79,7 +84,7 @@
                 # positive non-zero count
                 if [[ "${#arr_thisDir[@]}" -ge 1 ]]; then
 
-                    # parameters #
+                    # parameters
                     declare -ir int_maxCount=5
                     str_line=${arr_thisDir[0]}
                     str_line=${str_line%"${str_suffix}"}        # substitution
@@ -151,11 +156,12 @@
         fi
 
         # call functions
+        SaveThisExitCode
         EchoPassOrFailThisExitCode
         ParseThisExitCode
 
         # append output and return code
-        case "$?" in
+        case $int_thisExitCode in
             3)
                 echo -e "No changes from most recent backup."
         esac
@@ -178,6 +184,8 @@
             (exit 3)
         fi
 
+        # call functions
+        SaveThisExitCode
         EchoPassOrFailThisExitCode
         ParseThisExitCode
     }
@@ -199,6 +207,8 @@
             rm $1 &> /dev/null || (exit 255)
         fi
 
+        # call functions
+        SaveThisExitCode
         EchoPassOrFailThisExitCode
         ParseThisExitCode
     }
@@ -220,20 +230,33 @@
             echo -en "$1"
         fi
 
-        # append output #
-        case "$?" in
-            0||3)
-                echo -e " [32mSuccessful. \e[0m";;
+        # call functions
+        SaveThisExitCode
+
+        # append output
+        case "$int_thisExitCode" in
+            # 0|3)
+            #     echo -e " \e[32mSuccessful. \e[0m";;
+
+            0)
+                echo -e " \e[32mSuccessful. \e[0m";;
+
+            3)
+                echo -e " \e[33mSkipped. \e[0m";;
 
             *)
-                echo -e " [31mFailed. \e[0m";;
+                echo -e " \e[31mFailed. \e[0m";;
         esac
     }
 
     function ExitWithThisExitCode
     {
         echo -e "Exiting."
-        exit $?
+
+        # call functions
+        SaveThisExitCode
+
+        exit $int_thisExitCode
     }
 
     function ParseThisExitCode
@@ -252,8 +275,11 @@
             echo -en "$1"
         fi
 
-        # append output #
-        case "$?" in
+        # call functions
+        SaveThisExitCode
+
+        # append output
+        case $int_thisExitCode in
             255)
                 echo;;      # unspecified error
 
@@ -281,8 +307,6 @@
             *)
                 echo;;
         esac
-
-        echo
     }
     #####
 
@@ -295,30 +319,23 @@
         # always returns bool
         #
 
-        # using statements #
-        shopt -s nocasematch
-
-        # parameters #
-        declare -lir int_maxCount=3
-        declare -lar arr_count=$( seq $int_maxCount )
+        # parameters
+        declare -ir int_maxCount=3
+        declare -ar arr_count=$( seq $int_maxCount )
 
         for int_element in ${arr_count[@]}; do
-            echo -en "$1 [Y/n]: "
+            echo -en "$1 \e[30;43m[Y/n]:\e[0m "
             read str_input1
+            str_input1=$( echo $str_input1 | tr '[:lower:]' '[:upper:]' )
 
             case $str_input1 in
-                "Y")
-                    echo
-                    break;;
-
-                "N")
-                    echo
+                "Y"|"N")
                     break;;
 
                 *)
                     if [[ $int_element -eq $int_maxCount ]]; then
-                        echo -e "Exceeded max attempts.\n"
                         str_input1="N"
+                        echo -e "Exceeded max attempts. Default selection: \e[30;42m$str_input1\e[0m"
                         break
                     fi
 
@@ -331,8 +348,16 @@
                 true;;
 
             "N")
-                false;;
+                (exit 3)
+                #SaveThisExitCode
+                int_thisExitCode=$?
+                ;;
         esac
+
+        # call functions
+        SaveThisExitCode
+
+        echo
     }
 
     function ReadInputFromMultipleChoiceIgnoreCase
@@ -346,20 +371,17 @@
 
         if [[ -z $2 ]]; then
             (exit 254)
-            ParseThisExitCode
 
         else
 
-            # parameters #
-            declare -lir int_maxCount=3
-            declare -lar arr_count=$( seq $int_maxCount )
-
-            # using statements #
-            shopt -s nocasematch
+            # parameters
+            declare -ir int_maxCount=3
+            declare -ar arr_count=$( seq $int_maxCount )
 
             for int_element in ${arr_count[@]}; do
                 echo -en "$1 "
                 read str_input1
+                # str_input1=$( echo $str_input1 | tr '[:lower:]' '[:upper:]' )
 
                 if [[ -z $2 && $str_input1 == $2 ]]; then
                     break
@@ -387,17 +409,20 @@
 
                 else
                     if [[ $int_element -eq $int_maxCount ]]; then
-                        echo -e "Exceeded max attempts."
                         str_input1=$2                       # default selection: first choice
+                        echo -e "Exceeded max attempts. Default selection: \e[30;42m$str_input1\e[0m"
                         break
                     fi
 
                     echo -en "\e[33mInvalid input.\e[0m "
+                    (exit 253)
                 fi
             done
         fi
 
-        echo
+        # call functions
+        SaveThisExitCode
+        ParseThisExitCode
     }
 
     function ReadInputFromMultipleChoiceUpperCase
@@ -411,13 +436,12 @@
 
         if [[ -z $2 ]]; then
             (exit 254)
-            ParseThisExitCode
 
         else
 
-            # parameters #
-            declare -lir int_maxCount=3
-            declare -lar arr_count=$( seq $int_maxCount )
+            # parameters
+            declare -ir int_maxCount=3
+            declare -ar arr_count=$( seq $int_maxCount )
 
             for int_element in ${arr_count[@]}; do
                 echo -en "$1 "
@@ -450,17 +474,20 @@
 
                 else
                     if [[ $int_element -eq $int_maxCount ]]; then
-                        echo -e "Exceeded max attempts."
                         str_input1=$2                       # default selection: first choice
+                        echo -e "Exceeded max attempts. Default selection: \e[30;42m$str_input1\e[0m"
                         break
                     fi
 
                     echo -en "\e[33mInvalid input.\e[0m "
+                    (exit 253)
                 fi
             done
         fi
 
-        echo
+        # call functions
+        SaveThisExitCode
+        ParseThisExitCode
     }
 
     function ReadInputFromRangeOfNums
@@ -472,36 +499,40 @@
         # proper use always returns valid answer
         #
 
-        # parameters #
-        declare -lir int_maxCount=3
-        declare -lar arr_count=$( seq $int_maxCount )
-
-        # using statements #
-        shopt -s nocasematch
+        # parameters
+        declare -ir int_maxCount=3
+        declare -ar arr_count=$( seq $int_maxCount )
 
         for int_element in ${arr_count[@]}; do
             echo -en "$1 "
             read str_input1
 
-            # valid input #
+            # valid input
             if [[ $str_input1 -ge $2 && $str_input1 -le $3 ]]; then
                 break
-            fi
 
-            # default input #
-            if [[ $int_element -eq $int_maxCount ]]; then
-                echo -e "Exceeded max attempts."
-                str_input1=$2                       # default selection: first choice
-                break
-            fi
+            else
 
-            # check if string is a valid integer #
-            if [[ ! ( "${str_input1}" -ge "$(( ${str_input1} ))" ) ]] 2> /dev/null; then
+                # default input
+                if [[ $int_element -eq $int_maxCount ]]; then
+                    str_input1=$2                       # default selection: first choice
+                    echo -e "Exceeded max attempts. Default selection: \e[30;42m$str_input1\e[0m"
+                    break
+                fi
+
+                # check if string is a valid integer
+                # if [[ ! ( "${str_input1}" -ge "$(( ${str_input1} ))" ) ]] 2> /dev/null; then
+                #     echo -en "\e[33mInvalid input.\e[0m "
+                # fi
+
                 echo -en "\e[33mInvalid input.\e[0m "
             fi
         done
+    }
 
-        echo
+    function SaveThisExitCode
+    {
+        int_thisExitCode=$?     # NOTE: this statement must follow an exit code statement, and come before any new statement
     }
 
     function TestNetwork
@@ -514,13 +545,19 @@
         # test IP resolution
         echo -en "Testing Internet connection... "
         ( ping -q -c 1 8.8.8.8 &> /dev/null || ping -q -c 1 1.1.1.1 &> /dev/null ) || false
+
+        # call functions
+        SaveThisExitCode
         EchoPassOrFailThisExitCode
 
         echo -en "Testing connection to DNS... "
         ( ping -q -c 1 www.google.com &> /dev/null && ping -q -c 1 www.yandex.com &> /dev/null ) || false
+
+        # call functions
+        SaveThisExitCode
         EchoPassOrFailThisExitCode
 
-        if [[ "$?" -ne 0 ]]; then
+        if [[ $int_thisExitCode -ne 0 ]]; then
             echo -e "Failed to ping Internet/DNS servers. Check network settings or firewall, and try again."
         fi
 
@@ -545,25 +582,29 @@
         # null exception
         if [[ -z $1 || -z $2 ]]; then
             (exit 254)
-
-        # file not found exception
-        elif [[ ! -e $1 ]]; then
-            (exit 253)
-
-        # file not readable exception
-        elif [[ ! -r $1 ]]; then
-            (exit 252)
-
-        # file not readable exception
-        elif [[ ! -w $1 ]]; then
-            (exit 251)
-
-        else
-            if [[ "$?" -eq 0 ]]; then
-                echo $2 >> $1 || (exit 255)
-            fi
         fi
 
+        # file not found exception
+        if [[ ! -e $1 ]]; then
+            (exit 253)
+        fi
+
+        # file not readable exception
+        if [[ ! -r $1 ]]; then
+            (exit 252)
+        fi
+
+        # file not readable exception
+        if [[ ! -w $1 ]]; then
+            (exit 251)
+        fi
+
+        if [[ $int_thisExitCode -eq 0 ]]; then
+            echo $2 >> $1 || (exit 255)
+        fi
+
+        # call functions
+        SaveThisExitCode
         EchoPassOrFailThisExitCode
         ParseThisExitCode
     }
@@ -574,16 +615,20 @@
     {
         echo -en "Checking if Virtualization is enabled/supported... "
 
-        if [[ -z $(compgen -G "/sys/kernel/iommu_groups/*/devices/*") ]]; then
+        if [[ -z $( compgen -G "/sys/kernel/iommu_groups/*/devices/*" ) ]]; then
             false
 
-        else
-            true
-        fi
+            # call functions
+            SaveThisExitCode
+            EchoPassOrFailThisExitCode
+            ParseThisExitCode
+            ExitWithThisExitCode
 
-        EchoPassOrFailThisExitCode
-        ParseThisExitCode
-        ExitWithThisExitCode
+        else
+            # call functions
+            SaveThisExitCode
+            EchoPassOrFailThisExitCode
+        fi
     }
 
     function CloneOrUpdateGitRepositories
@@ -606,7 +651,7 @@
             (exit 248)
         fi
 
-        if [[ "$?" -eq 0 ]]; then
+        if [[ $int_thisExitCode -eq 0 ]]; then
             cd $1
 
             # git repos #
@@ -626,7 +671,7 @@
             fi
         fi
 
-        if [[ "$?" -eq 0 ]]; then
+        if [[ $int_thisExitCode -eq 0 ]]; then
 
             # if a given element is a string longer than one char, the var is an array #
             for str_element in ${2}; do
@@ -666,10 +711,12 @@
             fi
         fi
 
+        # call functions
+        SaveThisExitCode
         EchoPassOrFailThisExitCode
         ParseThisExitCode
 
-        case "$?" in
+        case $int_thisExitCode in
             3)
                 echo -e "One or more Git repositories could not be cloned.";;
         esac
@@ -742,9 +789,11 @@
                 (exit 254);;
         esac
 
+        # call functions
+        SaveThisExitCode
         EchoPassOrFailThisExitCode
 
-        case "$?" in
+        case $int_thisExitCode in
                 3)
                     echo -e "One or more external PCI device(s) missing drivers.";;
 
@@ -761,12 +810,16 @@
     function SetupAutoXorg
     {
         # parameters #
-        declare -lr str_pwd=$( pwd )
+        declare -r str_pwd=$( pwd )
 
         echo -e "Installing Auto-Xorg... "
         cd $( find -wholename Auto-Xorg | uniq | head -n1 ) && bash ./installer.bash && cd $str_pwd
+
+        # call functions
+        SaveThisExitCode
         EchoPassOrFailThisExitCode
         ParseThisExitCode
+
         echo
     }
 
@@ -780,13 +833,13 @@
         #
 
         # parameters #
-        declare -lr str_thisFile1="qemu-evdev.log"
-        declare -lr str_thisFile2="/etc/apparmor.d/abstractions/libvirt-qemu"
+        declare -r str_thisFile1="qemu-evdev.log"
+        declare -r str_thisFile2="/etc/apparmor.d/abstractions/libvirt-qemu"
 
         echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n\tHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
         ReadInput "Setup Evdev?"
 
-        if [[ "$?" -eq 0 ]]; then
+        if [[ $int_thisExitCode -eq 0 ]]; then
             # readonly str_firstUser=$( id -u 1000 -n ) && echo -e "Found the first desktop user of the system: $str_firstUser"
 
             # add users to groups #
@@ -801,12 +854,12 @@
             CheckIfFileOrDirExists $str_thisFile1 &> /dev/null && DeleteFile $str_thisFile1 &> /dev/null
             ( CreateFile $str_thisFile1 ) || false
 
-            if [[ "$?" -eq 0 ]]; then
+            if [[ $int_thisExitCode -eq 0 ]]; then
 
                 # list of input devices #
-                declare -lar arr_InputDeviceID=($( ls /dev/input/by-id ))
-                declare -lar arr_InputEventDeviceID=($( ls -l /dev/input/by-id | cut -d '/' -f2 | grep -v 'total 0' ))
-                declare -la arr_output_evdevQEMU=()
+                declare -ar arr_InputDeviceID=($( ls /dev/input/by-id ))
+                declare -ar arr_InputEventDeviceID=($( ls -l /dev/input/by-id | cut -d '/' -f2 | grep -v 'total 0' ))
+                declare -a arr_output_evdevQEMU=()
 
                 # append output #
                 for str_element in ${arr_InputDeviceID[@]}; do
@@ -820,60 +873,52 @@
                 readonly arr_output_evdevQEMU
 
                 # append output #
-                declare -lar arr_output_evdevApparmor=(
-                    "#"
-                    "# Evdev #"
+                declare -ar arr_output_evdevApparmor=(
+                    "  "
+                    "  # Generated by 'portellam/deploy-VFIO-setup'"
+                    "  #"
+                    "  # WARNING: Any modifications to this file will be modified by 'deploy-VFIO-setup'"
+                    "  #"
+                    "  # Run 'systemctl restart apparmor.service' to update."
+                    "  "
+                    "  # Evdev #"
                     "  /dev/input/* rw,"
                     "  /dev/input/by-id/* rw,"
-                    "#"
                 )
 
                 # debug #
-                echo -e '${#arr_InputDeviceID[@]}='"'${#arr_InputDeviceID[@]}'"
-                echo -e '${#arr_InputEventDeviceID[@]}='"'${#arr_InputEventDeviceID[@]}'"
-                echo -e '${#arr_output_evdevQEMU[@]}='"'${#arr_output_evdevQEMU[@]}'"
+                # echo -e '${#arr_InputDeviceID[@]}='"'${#arr_InputDeviceID[@]}'"
+                # echo -e '${#arr_InputEventDeviceID[@]}='"'${#arr_InputEventDeviceID[@]}'"
+                # echo -e '${#arr_output_evdevQEMU[@]}='"'${#arr_output_evdevQEMU[@]}'"
 
                 # append file #
-                CheckIfFileOrDirExists $str_thisFile1 &> /dev/null
+                CheckIfFileOrDirExists $str_thisFile1
 
-                if [[ "$?" -eq 0 ]]; then
+                if [[ $int_thisExitCode -eq 0 ]]; then
                     for str_element in ${arr_output_evdevQEMU[@]}; do
-                            WriteVarToFile $str_thisFile1 $str_element &> /dev/null
-                        fi
-
-                        # should this loop fail at any given time, exit
-                        else
-                            false && break
-                        fi
-                    done
-                fi
-
-                # append system file #
-                if [[ "$?" -eq 0 ]]; then
-                    for str_element in ${arr_output_evdevApparmor[@]}; do
-                        CheckIfFileOrDirExists $str_thisFile2 &> /dev/null
-
-                        if [[ "$?" -eq 0 ]]; then
-                            WriteVarToFile $str_thisFile2 $str_element &> /dev/null
-
-                        # should this loop fail at any given time, exit
-                        else
-                            false
-                            break
-                        fi
+                        WriteVarToFile $str_thisFile1 $str_element &> /dev/null || ( false && break )   # should this loop fail at any given time, exit
                     done
                 fi
 
                 # append system file #
                 # will require restart of apparmor service or system
-                if [[ "$?" -eq 0 ]]; then
-                    declare -lr str_output1+="\n  # Evdev #\n  /dev/input/* rw,\n  /dev/input/by-id/* rw,\n"
-                    CheckIfFileOrDirExists $str_thisFile2 &> /dev/null && WriteVarToFile $str_thisFile2 $str_output1 && echo $str_thisFile1 &> /dev/null
+                if [[ $int_thisExitCode -eq 0 ]]; then
+                    CheckIfFileOrDirExists $str_thisFile2 &> /dev/null
+
+                    if [[ $int_thisExitCode -eq 0 ]]; then
+                        for str_element in ${arr_output_evdevApparmor[@]}; do
+                            WriteVarToFile $str_thisFile2 $str_element &> /dev/null || ( false && break )   # should this loop fail at any given time, exit
+                        done
+
+                        echo $arr_output_evdevQEMU &> /dev/null || false
+                    fi
                 fi
             fi
         fi
 
-        EchoPassOrFailThisExitCode "Setup Evdev"
+        # call functions
+        SaveThisExitCode
+        EchoPassOrFailThisExitCode "Setup Evdev..."
         ParseThisExitCode
     }
 
@@ -887,17 +932,17 @@
         #
 
         # parameters #
-        declare -lr str_thisFile1="qemu-hugepages.log"
-        declare -lir int_HostMemMaxK=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )     # sum of system RAM in KiB
+        declare -r str_thisFile1="qemu-hugepages.log"
+        declare -ir int_HostMemMaxK=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )     # sum of system RAM in KiB
         str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                                # default output
 
-        echo -e "HugePages is a feature which statically allocates System Memory to pagefiles.\n\tVirtual machines can use HugePages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and lower overhead of memory-access (memory latency).\n"
+        echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\n\tVirtual machines can use Hugepages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n"
         ReadInput "Setup Hugepages?"
 
-        if [[ "$?" -eq 0 ]]; then
+        if [[ $int_thisExitCode -eq 0 ]]; then
 
             # add users to groups #
-            declare -lar arr_User=($( getent passwd {1000..60000} | cut -d ":" -f 1 ))
+            declare -ar arr_User=($( getent passwd {1000..60000} | cut -d ":" -f 1 ))
 
             for str_element in $arr_User; do
                 adduser $str_element input &> /dev/null       # quiet output
@@ -905,27 +950,27 @@
             done
 
             # prompt #
-            ReadInputFromMultipleChoiceUpperCase "Enter Hugepage size and byte-size [1G/2m]:" "1G" "2M"
+            ReadInputFromMultipleChoiceUpperCase "Enter Hugepage size and byte-size \e[30;43m[1G/2M]:\e[0m" "1G" "2M"
             str_HugePageSize=$str_input1
 
-            declare -lir int_HostMemMinK=4194304        # min host RAM in KiB
+            declare -ir int_HostMemMinK=4194304        # min host RAM in KiB
 
             # Hugepage Size #
             case $str_HugePageSize in
                 "2M")
-                    declare -lir int_HugePageK=2048     # Hugepage size
-                    declare -lir int_HugePageMin=2;;    # min HugePages
+                    declare -ir int_HugePageK=2048     # Hugepage size
+                    declare -ir int_HugePageMin=2;;    # min HugePages
 
                 "1G")
-                    declare -lir int_HugePageK=1048576  # Hugepage size
-                    declare -lir int_HugePageMin=1;;    # min HugePages
+                    declare -ir int_HugePageK=1048576  # Hugepage size
+                    declare -ir int_HugePageMin=1;;    # min HugePages
             esac
 
-            declare -lir int_HugePageMemMax=$(( $int_HostMemMaxK - $int_HostMemMinK ))
-            declare -lir int_HugePageMax=$(( $int_HugePageMemMax / $int_HugePageK ))       # max HugePages
+            declare -ir int_HugePageMemMax=$(( $int_HostMemMaxK - $int_HostMemMinK ))
+            declare -ir int_HugePageMax=$(( $int_HugePageMemMax / $int_HugePageK ))       # max HugePages
 
             # prompt #
-            ReadInputFromRangeOfNums "Enter number of HugePages (n * $str_HugePageSize). [$int_HugePageMin <= n <= $int_HugePageMax pages]:" $int_HugePageMin $int_HugePageMax
+            ReadInputFromRangeOfNums "Enter number of HugePages (n * $str_HugePageSize) \e[30;43m[$int_HugePageMin <= n <= $int_HugePageMax pages]:\e[0m" $int_HugePageMin $int_HugePageMax
             declare -ir int_HugePageNum=$str_input1
 
             # output #
@@ -936,12 +981,14 @@
             CheckIfFileOrDirExists $str_thisFile1 &> /dev/null && DeleteFile $str_thisFile1 &> /dev/null
             CreateFile $str_thisFile1 &> /dev/null
 
-            # if [[ "$?" -eq 0 ]]; then
-            #     WriteVarToFile $str_thisFile1 $str_output_hugepagesQEMU && echo
-            # fi
+            if [[ $int_thisExitCode -eq 0 ]]; then
+                WriteVarToFile $str_thisFile1 $str_output_hugepagesQEMU &> /dev/null && echo
+            fi
         fi
 
-        EchoPassOrFailThisExitCode "Setup Hugepages"
+        # call functions
+        SaveThisExitCode
+        EchoPassOrFailThisExitCode "Setup Hugepages..."
         ParseThisExitCode
     }
 
@@ -1058,7 +1105,7 @@
             done
 
             # save output #
-            if [[ "$?" -eq 0 ]]; then
+            if [[ $int_thisExitCode -eq 0 ]]; then
                 readonly int_hostThreads_mask
                 readonly hex_totalThreads_mask=$(printf '%x\n' $int_totalThreads_mask)  # int to hex #
                 readonly hex_hostThreads_mask=$(printf '%x\n' $int_hostThreads_mask)    # int to hex #
@@ -1071,13 +1118,14 @@
         ReadInput "Setup 'Static' CPU isolation?" && echo -en "Executing CPU isolation setup... " && ParseCPU
         EchoPassOrFailThisExitCode
         ParseThisExitCode
+
         echo
     }
 
     function SetupZRAM_Swap
     {
         # parameters #
-        declare -lr str_pwd=$( pwd )
+        declare -r str_pwd=$( pwd )
 
         # prompt #
         echo -e "Installing zram-swap... "
@@ -1090,7 +1138,7 @@
         ( cd $( find -wholename zram-swap | uniq | head -n1 ) && sh ./install.sh && cd $str_pwd ) || (exit 255)
 
         # setup ZRAM #
-        if [[ "$?" -eq 0 ]]; then
+        if [[ $int_thisExitCode -eq 0 ]]; then
 
             # disable all existing zram swap devices
             if [[ $( swapon -v | grep /dev/zram* ) == "/dev/zram"* ]]; then
@@ -1155,8 +1203,11 @@
             WriteVarToFile $str_outFile1 $str_output1 || (exit 255)
         fi
 
+        # call functions
+        SaveThisExitCode
         EchoPassOrFailThisExitCode "Zram-swap setup "
         ParseThisExitCode
+
         echo
     }
 ##
@@ -1170,9 +1221,9 @@
 
         # pre setup #
             # parameters #
-            declare -lr str_file1="etc_libvirt_qemu.conf"
-            # declare -lr str_file2="/etc/libvirt/qemu.conf"
-            declare -lr str_file2="test-qemu.conf"            # debug
+            declare -r str_file1="etc_libvirt_qemu.conf"
+            # declare -r str_file2="/etc/libvirt/qemu.conf"
+            declare -r str_file2="test-qemu.conf"            # debug
 
             CreateFile $str_file2                             # debug
 
@@ -1182,7 +1233,7 @@
             # fi
 
             # append to system file #
-            declare -la arr_output1=(
+            declare -a arr_output1=(
                 "# Generated by 'portellam/deploy-VFIO-setup'"
                 "#"
                 "# WARNING: Any modifications to this file will be modified by 'deploy-VFIO-setup'"
@@ -1219,8 +1270,8 @@
 
             # append #
             if [[ $bool_isHugepagesSetup == true ]]; then
-                arr_output1+=("${str_output_hugepagesQEMU}")
-                # arr_output1+=($( cat $str_thisFile1 ))
+                # arr_output1+=("${str_output_hugepagesQEMU}")
+                arr_output1+=($( cat $str_thisFile1 ))
                 arr_output1+=("#")
             fi
 
@@ -1257,7 +1308,7 @@
 
             if ( CreateBackupFromFile $str_file2 &> /dev/null == true ); then
                 for str_element in ${arr_output1[@]}; do
-                    if [[ "$?" -ne 0 ]]; then
+                    if [[ $int_thisExitCode -ne 0 ]]; then
                         break
                     fi
 
