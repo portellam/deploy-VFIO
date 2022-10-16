@@ -230,9 +230,6 @@ declare -i int_thisExitCode=$?
             echo -en "$1"
         fi
 
-        # call functions
-        SaveThisExitCode
-
         # append output
         case "$int_thisExitCode" in
             # 0|3)
@@ -252,10 +249,6 @@ declare -i int_thisExitCode=$?
     function ExitWithThisExitCode
     {
         echo -e "Exiting."
-
-        # call functions
-        SaveThisExitCode
-
         exit $int_thisExitCode
     }
 
@@ -274,9 +267,6 @@ declare -i int_thisExitCode=$?
         if [[ ! -z $1 ]]; then
             echo -en "$1"
         fi
-
-        # call functions
-        SaveThisExitCode
 
         # append output
         case $int_thisExitCode in
@@ -348,10 +338,7 @@ declare -i int_thisExitCode=$?
                 true;;
 
             "N")
-                (exit 3)
-                #SaveThisExitCode
-                int_thisExitCode=$?
-                ;;
+                (exit 3);;
         esac
 
         # call functions
@@ -533,6 +520,7 @@ declare -i int_thisExitCode=$?
     function SaveThisExitCode
     {
         int_thisExitCode=$?     # NOTE: this statement must follow an exit code statement, and come before any new statement
+        # echo -e '\nDEBUG:\t$int_thisExitCode='"'$int_thisExitCode'"
     }
 
     function TestNetwork
@@ -615,19 +603,16 @@ declare -i int_thisExitCode=$?
     {
         echo -en "Checking if Virtualization is enabled/supported... "
 
-        if [[ -z $( compgen -G "/sys/kernel/iommu_groups/*/devices/*" ) ]]; then
-            false
+        # call functions
+        if [[ ! -z $( compgen -G "/sys/kernel/iommu_groups/*/devices/*" ) ]]; then
+            SaveThisExitCode
+            EchoPassOrFailThisExitCode
 
-            # call functions
+        else
             SaveThisExitCode
             EchoPassOrFailThisExitCode
             ParseThisExitCode
             ExitWithThisExitCode
-
-        else
-            # call functions
-            SaveThisExitCode
-            EchoPassOrFailThisExitCode
         fi
     }
 
@@ -987,7 +972,7 @@ declare -i int_thisExitCode=$?
         fi
 
         # call functions
-        SaveThisExitCode
+        # SaveThisExitCode
         EchoPassOrFailThisExitCode "Setup Hugepages..."
         ParseThisExitCode
     }
