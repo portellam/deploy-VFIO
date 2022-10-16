@@ -213,7 +213,6 @@ declare -i int_thisExitCode=$?
         ParseThisExitCode
     }
 
-    ##### NOTE: do not change below #####
     function EchoPassOrFailThisExitCode
     {
         # output a pass or fail depending on the exit code
@@ -298,7 +297,37 @@ declare -i int_thisExitCode=$?
                 echo;;
         esac
     }
-    #####
+
+    function ReadFile
+    {
+        echo -en "Reading file... "
+
+        # null exception
+        if [[ -z $1 ]]; then
+            (exit 254)
+        fi
+
+        # file not found
+        if [[ ! -e $1 ]]; then
+            (exit 250)
+        fi
+
+        # file is not readable
+        if [[ ! -r $1 ]]; then
+            (exit 249)
+        fi
+
+        declare -a arr_output_thisFile=()
+
+        while read str_line; do
+            arr_output_thisFile+=("$str_line") || ( (exit 249) && arr_output_thisFile=() && break )
+        done < $1
+
+        # call functions
+        SaveThisExitCode
+        EchoPassOrFailThisExitCode
+        ParseThisExitCode
+    }
 
     function ReadInput
     {
@@ -1255,8 +1284,10 @@ declare -i int_thisExitCode=$?
 
             # append #
             if [[ $bool_isHugepagesSetup == true ]]; then
-                # arr_output1+=("${str_output_hugepagesQEMU}")
-                arr_output1+=($( cat $str_thisFile1 ))
+                #arr_output1+=("${str_output_hugepagesQEMU}")
+                # arr_output1+=($( cat $str_thisFile1 ))
+
+                ReadFile "qemu-hugepages.log" && arr_output1+=( $arr_output_thisFile )
                 arr_output1+=("#")
             fi
 
@@ -1275,13 +1306,15 @@ declare -i int_thisExitCode=$?
 
             # append #
             if [[ $bool_isEvdevSetup == true ]]; then
-                echo -e '${#arr_output_evdevQEMU[@]}='"'${#arr_output_evdevQEMU[@]}'"
+                # echo -e '${#arr_output_evdevQEMU[@]}='"'${#arr_output_evdevQEMU[@]}'"
 
-                for str_element in ${arr_output_evdevQEMU[@]}; do
-                    arr_output+=("${str_element}")
-                done
+                # for str_element in ${arr_output_evdevQEMU[@]}; do
+                #     arr_output+=("${str_element}")
+                # done
 
                 # arr_output1+=($( cat $str_thisFile1 ))
+
+                ReadFile "qemu-evdev.log" && arr_output1+=( $arr_output_thisFile )
                 arr_output1+=("#")
             fi
 
