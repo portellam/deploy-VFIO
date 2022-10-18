@@ -1228,7 +1228,88 @@ declare -i int_thisExitCode=$?
 ##
 
 ## executive functions
-    function main
+    function ParseInputParamForOptions
+    {
+        declare -lar arr_options=(
+            "--full"
+            "-f"
+            "--multiboot"
+            "-m"
+            "--static"
+            "-s"
+            "--uninstall"
+            "-u"
+        )
+
+        if [[ -z $1 ]]; then
+            (exit 254)
+            SaveThisExitCode
+
+        else
+            str_option=$( echo $1 | tr '[:upper:]' '[:lower:]' )
+
+            case $str_option in
+                "--"*|"-"*)
+                    for str_element in ${arr_options[@]}; do
+                        for int_key in ${!arr_options[@]}; do
+                            if [[ ${arr_options[$int_key]} == $str_element && $str_element == $str_option ]]; then
+                                declare -lir int_thisKey=$int_key
+                                (exit 0)
+                                SaveThisExitCode
+                                break
+                            fi
+                        done
+                    done
+
+                    if [[ -z $int_thisKey ]]; then
+                        (exit 253)
+                        SaveThisExitCode
+                    fi
+                    ;;
+
+                *)
+                    (exit 253)
+                    SaveThisExitCode
+                    ;;
+            esac
+        fi
+
+        case $int_thisKey in
+            0|1)
+                bool_execFullSetup=true;;
+
+            2|3)
+                bool_execMultiBootSetup=true;;
+
+            4|5)
+                bool_execStaticSetup=true;;
+
+            6|7)
+                bool_execUninstallSetup=true;;
+        esac
+
+        # if [[ $bool_execFullSetup == true ]]; then
+        #     echo "bool_execFullSetup"
+        # fi
+
+        # if [[ $bool_execMultiBootSetup == true ]]; then
+        #     echo "bool_execMultiBootSetup"
+        # fi
+
+        # if [[ $bool_execStaticSetup == true ]]; then
+        #     echo "bool_execStaticSetup"
+        # fi
+
+        # if [[ $bool_execUninstallSetup == true ]]; then
+        #     echo "bool_execUninstallSetup"
+        # fi
+
+        ParseThisExitCode
+        # exit 0
+    }
+
+
+    function PreInstall
     {
         # checks
         CheckIfUserIsRoot
@@ -1353,7 +1434,6 @@ declare -i int_thisExitCode=$?
                 echo -e "\e[33mWARNING:\e[0m"" Setup cannot continue." && ExitWithThisExitCode
             fi
 
-        exit 0
         SetupStaticCPU_isolation && bool_isCPU_staticIsolationSetup=true
 
         # TO-DO: add check for necessary dependencies or packages
@@ -1394,5 +1474,6 @@ declare -i int_thisExitCode=$?
     SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
     IFS=$'\n'      # Change IFS to newline char
 
-    main
+    ParseInputParamForOptions $1
+    exit 0
 ##
