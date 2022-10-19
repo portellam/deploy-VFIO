@@ -101,14 +101,14 @@ declare -i int_thisExitCode=$?
 
                     for str_element in ${arr_thisDir[@]}; do
                         if cmp -s $str_thisFile $str_element; then
-                            (exit 3)
+                            (exit 131)
                             break
                         fi
                     done
 
                     # if latest backup is same as original file, exit
                     if cmp -s $str_thisFile ${arr_thisDir[-1]}; then
-                        (exit 3)
+                        (exit 131)
                     fi
 
                     # before backup, delete all but some number of backup files
@@ -121,7 +121,7 @@ declare -i int_thisExitCode=$?
 
                     # if *first* backup is same as original file, exit
                     if cmp -s $str_thisFile ${arr_thisDir[0]}; then
-                        (exit 3)
+                        (exit 131)
                     fi
 
                     # new parameters #
@@ -143,10 +143,10 @@ declare -i int_thisExitCode=$?
                         cp $str_thisFile "${str_thisFile}.${int_lastIndex}${str_suffix}"
 
                     elif [[ $str_thisFile -ot ${arr_thisDir[-1]} && ! ( $str_thisFile -ef ${arr_thisDir[-1]} ) ]]; then
-                        (exit 3)
+                        (exit 131)
 
                     else
-                        (exit 3)
+                        (exit 131)
                     fi
 
                 # no backups, create backup
@@ -163,7 +163,7 @@ declare -i int_thisExitCode=$?
 
         # append output and return code
         case $int_thisExitCode in
-            3)
+            131)
                 echo -e "No changes from most recent backup."
         esac
     }
@@ -182,7 +182,7 @@ declare -i int_thisExitCode=$?
             touch $1 &> /dev/null || (exit 250)
 
         else
-            (exit 3)
+            (exit 131)
         fi
 
         # call functions
@@ -202,7 +202,7 @@ declare -i int_thisExitCode=$?
 
         # file not found
         if [[ ! -e $1 ]]; then
-            (exit 3)
+            (exit 131)
 
         else
             rm $1 &> /dev/null || (exit 255)
@@ -232,13 +232,10 @@ declare -i int_thisExitCode=$?
 
         # append output
         case "$int_thisExitCode" in
-            # 0|3)
-            #     echo -e " \e[32mSuccessful. \e[0m";;
-
-            0)
+            0|3)
                 echo -e " \e[32mSuccessful. \e[0m";;
 
-            3)
+            131)
                 echo -e " \e[33mSkipped. \e[0m";;
 
             *)
@@ -368,7 +365,7 @@ declare -i int_thisExitCode=$?
                 true;;
 
             "N")
-                (exit 3);;
+                (exit 131);;
         esac
 
         # call functions
@@ -705,12 +702,12 @@ declare -i int_thisExitCode=$?
                     # cd into repo, update, and back out
                     if [[ -e $( basename $1 ) ]]; then
                         cd $( basename $1 )
-                        git pull $str_element &> /dev/null || ( ((int_count++)) && (exit 3) )
+                        git pull $str_element &> /dev/null || ( ((int_count++)) && (exit 131) )
                         cd ..
 
                     # clone new repo
                     else
-                        git clone $str_element &> /dev/null || ( ((int_count++)) && (exit 3) )
+                        git clone $str_element &> /dev/null || ( ((int_count++)) && (exit 131) )
                     fi
 
                 done
@@ -732,7 +729,7 @@ declare -i int_thisExitCode=$?
         ParseThisExitCode
 
         case $int_thisExitCode in
-            3)
+            131)
                 echo -e "One or more Git repositories could not be cloned.";;
         esac
 
@@ -795,6 +792,13 @@ declare -i int_thisExitCode=$?
             done
         done
 
+        readonly arr_DeviceIOMMU
+        readonly arr_DevicePCI_ID
+        readonly arr_DeviceDriver
+        readonly arr_DeviceName
+        readonly arr_DeviceType
+        readonly arr_DeviceVendor
+
         # prioritize worst exit code (place last)
         case true in
             $bool_missingDriver)
@@ -810,7 +814,7 @@ declare -i int_thisExitCode=$?
 
         case $int_thisExitCode in
                 3)
-                    echo -e "One or more external PCI device(s) missing drivers.";;
+                    echo -e "\e[33mWarning:\e[0m One or more external PCI device(s) missing drivers.";;
 
                 254)
                     echo -e "Exception: No devices found.";;
@@ -1228,6 +1232,13 @@ declare -i int_thisExitCode=$?
 ##
 
 ## executive functions
+    function MultiBootSetup
+    {
+        echo -e "Executing Multi-boot setup..."
+        ParseIOMMUandPCI
+
+    }
+
     function ParseInputParamForOptions
     {
         declare -lar arr_options=(
@@ -1465,6 +1476,18 @@ declare -i int_thisExitCode=$?
             echo -e "\e[33mWARNING:\e[0m"" Failed pre-setup."
         fi
     }
+
+    function StaticSetup
+    {
+        echo -e "Executing Static setup..."
+        ParseIOMMUandPCI
+
+    }
+
+    function UninstallSetup
+    {
+        echo -e "Executing Uninstaller..."
+    }
 ##
 
 ## execution
@@ -1495,7 +1518,7 @@ declare -i int_thisExitCode=$?
                     StaticSetup;;
 
                 *)
-                    ReadInputFromMultipleChoiceIgnoreCase "Execute Multiboot or Static setup? [M/S]:" "M" "S"
+                    ReadInputFromMultipleChoiceUpperCase "Execute Multiboot or Static setup? [M/S]:" "M" "S"
 
                     case $str_input1 in
                         "M")
