@@ -1237,6 +1237,405 @@ declare -i int_thisExitCode=$?
         echo -e "Executing Multi-boot setup..."
         # code here
 
+        # parse IOMMU #
+            shopt -s nullglob
+            for str_line0 in $(find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V); do
+
+                # parameters #
+                bool_driverIsValid=false
+                bool_IOMMUcontainsExtPCI=false
+                bool_IOMMUcontainsVGA=false
+                declare -i int_thisIOMMU=$(echo $str_line0 | cut -d '/' -f5)
+                str_input1=""
+                echo -e "IOMMU Group: '$int_thisIOMMU'"
+
+                for str_line1 in $str_line0/devices/*; do
+
+                    # parameters #
+                    str_line2=$(lspci -mns ${str_line1##*/})
+                    str_thisBusID=$(echo $str_line2 | cut -d '"' -f1 | cut -d ' ' -f1)
+                    str_thisHWID=$(lspci -n | grep $str_thisBusID | cut -d ' ' -f3)
+                    str_thisDriver=$(lspci -kd $str_thisHWID | grep "driver" | cut -d ':' -f2 | cut -d ' ' -f2)
+                    str_thisType=$(lspci -mmd $str_thisHWID | cut -d '"' -f2 | tr '[:lower:]' '[:upper:]')
+                    str_line3=$(lspci -nnkd $str_thisHWID | grep -Eiv "DeviceName:|Kernel modules:|Subsystem:")
+
+                    if [[ $str_thisDriver == *"vfio"* ]]; then
+                        bool_foundExistingVFIOsetup=true
+                    fi
+
+                    if [[ -z $str_thisDriver || $str_thisDriver == "" ]]; then
+                        str_thisDriver="N/A"
+                        bool_driverIsValid=false
+
+                    else
+                        bool_driverIsValid=true
+                    fi
+
+                    # save all internal PCI drivers to list #
+                    # parse this list to exclude these devices from blacklist
+                    # example: 'snd_hda_intel' is used by on-board audio devices and VGA audio child devices
+                    if [[ ${str_thisBusID::1} == "0" && ${str_thisBusID:1:1} -lt 1 ]]; then
+                        str_internalPCI_driverList+="$str_thisDriver,"
+                        str_internalPCI_HWIDList+="$str_thisHWID,"
+                        bool_IOMMUcontainsExtPCI=false
+
+                    else
+                        bool_IOMMUcontainsExtPCI=true
+                    fi
+
+                    # save all IOMMU groups that contain VGA device(s) #
+                    # parse this list for 'Multi-boot' function later on
+                    if [[ $str_thisType == *"3D"* || $str_thisType == *"DISPLAY"* || $str_thisType == *"GRAPHIC"* || $str_thisType == *"VGA"* ]]; then
+                        bool_IOMMUcontainsVGA=true
+                    fi
+
+                    # save drivers (of given device type) for 'pci-stub' (not 'vfio-pci') #
+                    # parse this list for 'Multi-boot' function later on
+                    # Why? Bind devices earlier than 'vfio-pci'
+                    # GRUB:             parse this list and append to pci-stub
+                    # system files:     parse this list and append to vfio-pci
+                    if [[ $str_thisType == *"USB"* ]]; then                     # NOTE: update here!
+                        str_PCISTUB_driverList+="$str_thisDriver,"
+                    fi
+
+                    # parse IOMMU if it cotains external PCI #
+                    if [[ $bool_IOMMUcontainsExtPCI == true ]]; then
+                        if [[ $bool_driverIsValid == false ]]; then
+                            str_line3+="\n\tKernel driver in use: N/A"
+                        fi
+
+                        echo -e "\t$str_line3\n"
+
+                    # save IGPU vendor and device name #
+                    else
+                        if [[ $bool_IOMMUcontainsVGA == true ]]; then
+                            str_IGPUFullName=$(lspci -mmn | grep $str_thisBusID | cut -d '"' -f4)$(lspci -mmn | grep $str_thisBusID | cut -d '"' -f6)
+                        fi
+                    fi
+                done;
+
+                # prompt #
+                str_output2=""
+
+                if [[ $bool_IOMMUcontainsExtPCI == false ]]; then
+                    str_output2="Skipped IOMMU group: External devices not found."
+                else
+                    str_output1="Select IOMMU group '$int_thisIOMMU'? [Y/n]: "
+                    ReadInput $str_output1
+
+                    if [[ $bool_IOMMUcontainsVGA == false ]]; then
+                        case $str_input1 in
+                            "Y")
+                                arr_IOMMU_VFIO+=("$int_thisIOMMU")
+                                str_output2="Selected IOMMU group.";;
+                            "N")
+                                arr_IOMMU_host+=("$int_thisIOMMU")
+                                str_output2="Skipped IOMMU group.";;
+                            *)
+                                str_output2="Invalid input.";;
+                        esac
+
+                    else
+                        case $str_input1 in
+                            "Y")
+                                arr_IOMMU_VFIOVGA+=("$int_thisIOMMU")
+                                str_output2="Selected IOMMU group.";;
+                            "N")
+                                arr_IOMMU_hostVGA+=("$int_thisIOMMU")
+                                str_output2="Skipped IOMMU group.";;
+                            *)
+                                str_output2="Invalid input.";;
+                        esac
+                    fi
+                fi
+
+                echo -e "\t$str_output2\n"
+            done;
+
+            if [[ ${#arr_IOMMU_VFIO[@]} -eq 0 && ${#arr_IOMMU_VFIOVGA[@]} -eq 0 ]]; then
+                echo -e "Executing Multi-boot setup... Cancelled. No IOMMU groups selected."
+                exit 1
+            fi
+
+        # parameters #
+            bool_outputToGRUB=false
+            readonly str_thisFile="${0##*/}"
+            readonly str_logFile0="$str_thisFile.log"
+            declare -a arr_VFIO_driver=()
+            declare -a arr_VFIOVGA_driver=()
+            str_thisFullName=""
+
+            declare -a arr_GRUBmenuEntry=()
+            declare -a arr_rootKernel+=($(ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n3))     # first three kernels
+            readonly str_rootDisk=$(df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1)
+            readonly str_rootDistro=$(lsb_release -i -s)                                                 # Linux distro name
+            readonly str_rootUUID=$(blkid -s UUID | grep $str_rootDisk | cut -d '"' -f2)
+            str_rootFSTYPE=$(blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2)
+
+            if [[ $str_rootFSTYPE == "ext4" || $str_rootFSTYPE == "ext3" ]]; then
+                readonly str_rootFSTYPE="ext2"
+            fi
+
+            # files #
+            readonly str_dir1=$(find .. -name files)
+            if [[ -e $str_dir1 ]]; then
+                cd $str_dir1
+            fi
+
+            readonly str_inFile1=$(find . -name *etc_grub.d_proxifiedScripts_custom)
+            readonly str_inFile1b=$(find . -name *Multi-boot_template)
+
+            # comment to debug here #
+            readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"
+
+            # uncomment to debug here #
+            readonly str_oldFile1="$str_outFile1.old"
+
+            # create backup #
+            if [[ -e $str_outFile1 ]]; then
+                mv $str_outFile1 $str_oldFile1
+            fi
+
+            # restore backup #
+            if [[ -e $str_inFile1 ]]; then
+                cp $str_inFile1 $str_outFile1
+            fi
+
+            # create logfile #
+            if [[ -e $str_logFile0 ]]; then
+                rm $str_logFile0
+
+            else
+                touch $str_logFile0
+            fi
+
+        # parse VFIO IOMMU group(s) #
+        for int_IOMMU_VFIO in ${arr_IOMMU_VFIO[@]}; do
+            for str_line0 in $(find /sys/kernel/iommu_groups/$int_IOMMU_VFIO -maxdepth 0 -type d | sort -V); do
+                for str_line1 in $str_line0/devices/*; do
+
+                    # parameters #
+                    str_line2=$(lspci -mns ${str_line1##*/})
+                    str_thisBusID=$(echo $str_line2 | cut -d '"' -f1 | cut -d ' ' -f1)
+                    str_thisHWID=$(lspci -n | grep $str_thisBusID | cut -d ' ' -f3)
+                    str_thisDriver=$(lspci -kd $str_thisHWID | grep "driver" | cut -d ':' -f2 | cut -d ' ' -f2)
+
+                    # add to lists #
+                    if [[ $str_thisDriver != "" ]]; then
+                        if [[ -z $(echo $str_internalPCI_driverList | grep $str_thisDriver) && -z $(echo $str_PCISTUB_driverList | grep $str_thisDriver) ]]; then
+                            if [[ ${#str_VFIO_driverList[@]} != 0 && ! $(echo $str_VFIO_driverList | grep $str_thisDriver) ]]; then
+                                arr_VFIO_driver+=("$str_thisDriver")
+                                str_VFIO_driverList+="$str_thisDriver,"
+                            fi
+
+                            if [[ ${#str_VFIO_driverList[@]} == 0 ]]; then
+                                arr_VFIO_driver+=("$str_thisDriver")
+                                str_VFIO_driverList+="$str_thisDriver,"
+                            fi
+                        fi
+                    fi
+
+                    if [[ -z $(echo $str_internalPCI_HWIDList | grep $str_thisHWID) && -z $(echo $str_VFIO_HWIDList | grep $str_thisHWID) ]]; then
+                        if [[ ${#str_PCISTUB_HWIDlist[@]} != 0 && -z $(echo $str_PCISTUB_HWIDlist | grep $str_thisHWID) ]]; then
+                            if [[ ! -z $(echo $str_PCISTUB_driverList | grep $str_thisDriver) ]]; then
+                                str_PCISTUB_HWIDlist+="$str_thisHWID,"
+
+                            else
+                                str_VFIO_HWIDList+="$str_thisHWID,"
+                            fi
+                        fi
+
+                        if [[ ${#str_PCISTUB_HWIDlist[@]} == 0 ]]; then
+                            if [[ ! -z $(echo $str_PCISTUB_driverList | grep $str_thisDriver) ]]; then
+                                str_PCISTUB_HWIDlist+="$str_thisHWID,"
+
+                            else
+                                str_VFIO_HWIDList+="$str_thisHWID,"
+                            fi
+                        fi
+                    fi
+                done
+            done
+        done
+
+        # parse VFIO IOMMU group(s) with VGA device(s) #
+        for int_IOMMU_VFIOVGA in ${arr_IOMMU_VFIOVGA[@]}; do
+
+            # update parameters #
+            str_PCISTUBVGA_HWIDlist=""
+            str_VFIOVGA_driverList=""
+            str_VFIOVGA_HWIDList=""
+
+            for str_line0 in $(find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V); do
+
+                # parameters #
+                declare -i int_thisIOMMU=$(echo $str_line0 | cut -d '/' -f5)
+
+                for str_line1 in $str_line0/devices/*; do
+
+                    # parameters #
+                    str_line2=$(lspci -mns ${str_line1##*/})
+                    str_thisBusID=$(echo $str_line2 | cut -d '"' -f1 | cut -d ' ' -f1)
+                    str_thisHWID=$(lspci -n | grep $str_thisBusID | cut -d ' ' -f3)
+                    str_thisDriver=$(lspci -kd $str_thisHWID | grep "driver" | cut -d ':' -f2 | cut -d ' ' -f2)
+                    str_thisType=$(lspci -mmd $str_thisHWID | cut -d '"' -f2 | tr '[:lower:]' '[:upper:]')
+
+                    # add to lists #
+                    if [[ $int_thisIOMMU != $int_IOMMU_VFIOVGA ]]; then
+                        if [[ $str_thisDriver != "" ]]; then
+                            if [[ -z $(echo $str_internalPCI_driverList | grep $str_thisDriver) && -z $(echo $str_PCISTUB_driverList | grep $str_thisDriver) && -z $(echo $str_VFIO_driverList | grep $str_thisDriver) && -z $(echo $str_VFIOVGA_driverList | grep $str_thisDriver) ]]; then
+                                arr_VFIOVGA_driver+=("$str_thisDriver")
+                                str_VFIOVGA_driverList+="$str_thisDriver,"
+                            fi
+                        fi
+
+                        if [[ -z $(echo $str_internalPCI_HWIDList | grep $str_thisHWID) && -z $(echo $str_PCISTUB_HWIDlist | grep $str_thisHWID) && -z $(echo $str_VFIO_HWIDList | grep $str_thisHWID) ]]; then
+                            if [[ ! -z $(echo $str_PCISTUB_driverList | grep $str_thisDriver) ]]; then
+                                str_PCISTUBVGA_HWIDlist+="$str_thisHWID,"
+
+                            else
+                                str_VFIOVGA_HWIDList+="$str_thisHWID,"
+                            fi
+                        fi
+
+                    # save VGA vendor and device name #
+                    else
+                        if [[ $str_thisType == *"3D"* || $str_thisType == *"DISPLAY"* || $str_thisType == *"GRAPHIC"* || $str_thisType == *"VGA"* ]]; then
+                            str_thisFullName=$(lspci -mnn | grep $str_thisBusID | cut -d '"' -f4)" ")lspci -mnn | grep $str_thisBusID | cut -d '"' -f6)
+                        fi
+                    fi
+                done
+            done
+
+            # update parameters #
+            str_thisPCISTUB_HWIDList=${str_PCISTUB_HWIDlist}${str_PCISTUBVGA_HWIDlist}
+            str_thisVFIO_driverList=${str_VFIO_driverList}${str_VFIOVGA_driverList}
+            str_thisVFIO_HWIDList=${str_VFIO_HWIDList}${str_VFIOVGA_HWIDList}
+
+            # remove last separator #
+            if [[ ${str_thisPCISTUB_HWIDList: -1} == "," ]]; then
+                str_thisPCISTUB_HWIDList=${str_thisPCISTUB_HWIDList::-1}
+            fi
+
+            if [[ ${str_thisVFIO_driverList: -1} == "," ]]; then
+                str_thisVFIO_driverList=${str_thisVFIO_driverList::-1}
+            fi
+
+            if [[ ${str_thisVFIO_HWIDList: -1} == "," ]]; then
+                str_thisVFIO_HWIDList=${str_thisVFIO_HWIDList::-1}
+            fi
+
+            # write to file #
+
+                # parameters #
+                if [[ $str_IGPUFullName != "N/A" && $str_IGPUFullName != "" ]]; then
+                    str_thisFullName=$str_IGPUFullName
+                fi
+
+                # NOTE: update here!
+                str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} modprobe.blacklist=${str_thisVFIO_driverList} pci-stub.ids=${str_thisPCISTUB_HWIDList} vfio_pci.ids=${str_thisVFIO_HWIDList}"
+
+                # log file #
+                echo -e "#${int_IOMMU_VFIOVGA} #${str_thisFullName} #${str_GRUB_CMDLINE}" >> $str_logFile0
+
+                ## /etc/grub.d/proxifiedScripts/custom ##
+
+                    # parse kernels #
+                    for (( int_i=0 ; int_i<${#arr_rootKernel[@]} ; int_i++)); do
+
+                        # match #
+                        if [[ -e ${arr_rootKernel[$int_i]} || ${arr_rootKernel[$int_i]} != "" ]]; then
+                            str_thisRootKernel=${arr_rootKernel[$int_i]:1}
+
+                            # parameters #
+                            str_thisGRUBmenuEntry=$(lsb_release -i -s)" "$(uname -o)", with "$(uname)" $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_thisFullName')"
+                            arr_GRUBmenuEntry+=("$str_thisGRUBmenuEntry")
+                            str_output1="menuentry \"$str_thisGRUBmenuEntry\" {"
+                            str_output1_log="\n"'menuentry "'$(lsb_release -i -s)" "$(uname -o)", with "$(uname)" #kernel_'$int_i'# (VFIO, w/o IOMMU '$int_IOMMU_VFIOVGA', w/ boot VGA '$str_thisFullName'\") {"
+                            str_output2="\tinsmod $str_rootFSTYPE"
+                            str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
+                            str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$str_rootUUID\n\t"'fi'
+                            str_output5="\techo    'Loading Linux $str_thisRootKernel ...'"
+                            str_output5_log="\techo    'Loading Linux #kernel'$int_i'# ...'"
+                            str_output6="\tlinux   /boot/vmlinuz-$str_thisRootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
+                            str_output6_log="\tlinux   /boot/vmlinuz-#kernel'$int_i'# root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
+                            str_output7="\tinitrd  /boot/initrd.img-$str_thisRootKernel"
+                            str_output7_log="\tinitrd  /boot/initrd.img-"'#kernel'$int_i'#'
+
+                            # debug prompt #
+                            # echo -e "'$""str_output0'\t\t= $str_output0"
+                            # echo -e "'$""str_output1'\t\t= $str_output1"
+                            # echo -e "'$""str_output2'\t\t= $str_output2"
+                            # echo -e "'$""str_output3'\t\t= $str_output3"
+                            # echo -e "'$""str_output4'\t\t= $str_output4"
+                            # echo -e "'$""str_output5'\t\t= $str_output5"
+                            # echo -e "'$""str_output6'\t\t= $str_output6"
+                            # echo -e "'$""str_output7'\t\t= $str_output7"
+                            # echo
+
+                            if [[ -e $str_inFile1 && -e $str_inFile1b ]]; then
+
+                                # write to tempfile #
+                                echo -e >> $str_outFile1
+
+                                while read -r str_line1; do
+                                    case $str_line1 in
+
+                                        *'#$str_output1'*)
+                                            str_outLine1="$str_output1";;
+
+                                        *'#$str_output2'*)
+                                            str_outLine1="$str_output2";;
+
+                                        *'#$str_output3'*)
+                                            str_outLine1="$str_output3";;
+
+                                        *'#$str_output4'*)
+                                            str_outLine1="$str_output4";;
+
+                                        *'#$str_output5'*)
+                                            str_outLine1="$str_output5";;
+
+                                        *'#$str_output6'*)
+                                            str_outLine1="$str_output6";;
+
+                                        *'#$str_output7'*)
+                                            str_outLine1="$str_output7";;
+
+                                        *)
+                                            str_outLine1="$str_line1";;
+                                    esac
+
+                                    # write to system file and logfile (post_install: update Multi-boot) #
+                                    echo -e "$str_outLine1" >> $str_outFile1
+                                done < $str_inFile1b        # read from template
+                            else
+                                bool_missingFiles=true
+                            fi
+                        fi
+                    done
+
+        # file check #
+            if [[ $bool_missingFiles == true ]]; then
+                echo -e "File(s) missing:"
+
+                if [[ -z $str_inFile1 ]]; then
+                    echo -e "\t'$str_inFile1'"
+                fi
+
+                if [[ -z $str_inFile1b ]]; then
+                    echo -e "\t'$str_inFile1b'"
+                fi
+
+                echo -e "Executing Multi-boot setup... Failed."
+                exit 1
+
+            else
+                chmod 755 $str_outFile1 $str_oldFile1                   # set proper permissions
+                echo -e "Executing Multi-boot setup... Complete."
+            fi
+        done
+
         ParseThisExitCode "Executing Multi-boot setup..."
     }
 
