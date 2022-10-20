@@ -1235,8 +1235,9 @@ declare -i int_thisExitCode=$?
     function MultiBootSetup
     {
         echo -e "Executing Multi-boot setup..."
-        ParseIOMMUandPCI
+        # code here
 
+        ParseThisExitCode "Executing Multi-boot setup..."
     }
 
     function ParseInputParamForOptions
@@ -1325,6 +1326,8 @@ declare -i int_thisExitCode=$?
 
     function PreInstallSetup
     {
+        echo -e "Executing Pre-install setup..."
+
         # parameters
         declare -r str_file1="etc_libvirt_qemu.conf"
         # declare -r str_file2="/etc/libvirt/qemu.conf"
@@ -1475,18 +1478,32 @@ declare -i int_thisExitCode=$?
         if [[ $bool_isAutoXorgSetup == false && $bool_isCPU_staticIsolationSetup == false && $bool_isHugepagesSetup == false && $bool_isZRAM_swapSetup == false ]]; then
             echo -e "\e[33mWARNING:\e[0m"" Failed pre-setup."
         fi
+
+        ParseThisExitCode "Executing Pre-install setup..."
+    }
+
+    function PostInstallSetup
+    {
+        echo -e "Executing Post-install setup..."
+        # code here
+
+        ParseThisExitCode "Executing Post-install setup..."
     }
 
     function StaticSetup
     {
         echo -e "Executing Static setup..."
         ParseIOMMUandPCI
+        # code here
 
+        ParseThisExitCode "Executing Static setup..."
     }
 
     function UninstallSetup
     {
-        echo -e "Executing Uninstaller..."
+        echo -en "Executing Uninstaller..."
+        # code here
+        ParseThisExitCode
     }
 ##
 
