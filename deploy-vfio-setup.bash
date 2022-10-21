@@ -748,6 +748,9 @@ declare -i int_thisExitCode=$?
         declare -a arr_DeviceName=()
         declare -a arr_DeviceType=()
         declare -a arr_DeviceVendor=()
+        declare -a arr_IOMMU_hasVGA=()
+        declare -a arr_IOMMU_hasInternalPCI=()
+        declare -a arr_IOMMU_hasExternalPCI=()
         bool_missingDriver=false
         bool_foundVFIO=false
 
@@ -762,11 +765,13 @@ declare -i int_thisExitCode=$?
 
                 # parameters #
                 # save output of given device #
-                str_thisDevicePCI_ID="${str_element2##"0000:"}"
-                str_thisDeviceName="$( lspci -ms ${str_element2} | cut -d '"' -f6 )"
-                str_thisDeviceType="$( lspci -ms ${str_element2} | cut -d '"' -f2 )"
-                str_thisDeviceVendor="$( lspci -ms ${str_element2} | cut -d '"' -f4 )"
-                str_thisDeviceDriver="$( lspci -ks ${str_element2} | grep driver | cut -d ':' -f2 )"
+                local str_thisDevicePCI_ID="${str_element2##"0000:"}"
+                local str_thisDeviceBusID=$( echo $str_thisDevicePCI_ID | cut -d ':' -f1 )
+                declare -li int_thisDeviceBusID=$str_thisDeviceBusID
+                local str_thisDeviceName="$( lspci -ms ${str_element2} | cut -d '"' -f6 )"
+                local str_thisDeviceType="$( lspci -ms ${str_element2} | cut -d '"' -f2 )"
+                local str_thisDeviceVendor="$( lspci -ms ${str_element2} | cut -d '"' -f4 )"
+                local str_thisDeviceDriver="$( lspci -ks ${str_element2} | grep driver | cut -d ':' -f2 )"
 
                 if [[ -z $str_thisDeviceDriver ]]; then
                     str_thisDeviceDriver="N/A"
@@ -782,13 +787,33 @@ declare -i int_thisExitCode=$?
                     fi
                 fi
 
+                # append to list only once #
+                if [[ $str_thisIOMMU != ${arr_IOMMU_hasVGA[-1]} ]]; then
+                    case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in
+                        *"3D"*|*"DISPLAY"*|*"GRAPHICS"*|*"VGA"*)
+                            arr_IOMMU_hasVGA+=( "$str_thisIOMMU" );;
+                    esac
+                fi
+
+                # append to list only once #
+                if [[ $int_thisDeviceBusID -eq 0 ]]; then
+                    if [[ $str_thisIOMMU != ${arr_IOMMU_hasInternalPCI[-1]} ]]; then
+                        arr_IOMMU_hasInternalPCI+=( "$str_thisIOMMU" )
+                    fi
+
+                else
+                    if [[ $str_thisIOMMU != ${arr_IOMMU_hasInternalPCI[-1]} ]]; then
+                        arr_IOMMU_hasExternalPCI+=( "$str_thisIOMMU" )
+                    fi
+                fi
+
                 # parameters #
-                arr_DeviceIOMMU+=( "$str_thisIOMMU" )
-                arr_DevicePCI_ID+=( "$str_thisDevicePCI_ID" )
-                arr_DeviceDriver+=( "$str_thisDeviceDriver" )
-                arr_DeviceName+=( "$str_thisDeviceName" )
-                arr_DeviceType+=( "$str_thisDeviceType" )
-                arr_DeviceVendor+=( "$str_thisDeviceVendor" )
+                arr_DeviceIOMMU+=( "${str_thisIOMMU}" )
+                arr_DevicePCI_ID+=( "${str_thisDevicePCI_ID}" )
+                arr_DeviceDriver+=( "${str_thisDeviceDriver}" )
+                arr_DeviceName+=( "${str_thisDeviceName}" )
+                arr_DeviceType+=( "${str_thisDeviceType}" )
+                arr_DeviceVendor+=( "${str_thisDeviceVendor}" )
             done
         done
 
@@ -824,6 +849,96 @@ declare -i int_thisExitCode=$?
             esac
 
         echo
+    }
+
+    function SelectAnIOMMUGroup
+    {
+        echo -e "Prompting IOMMU groups..."
+
+        local bool_thisIOMMU_hasVGA=false
+        declare -la arr_IOMMU_forHost=()
+        declare -la arr_IOMMU_forVFIO=()
+        declare -la arr_IOMMU_withVGA_forHost=()
+        declare -la arr_IOMMU_withVGA_forVFIO=()
+
+        # parse only external PCI
+        for int_key in ${!arr_IOMMU_hasExternalPCI[@]}; do
+            declare -la arr_thisIOMMU=()    # reset var for this pass
+            declare -li int_IOMMU=${arr_IOMMU_hasExternalPCI[$int_key]}
+
+            # check if given IOMMU group contains VGA
+            for int_thisIOMMU in ${arr_IOMMU_hasVGA[@]}; do
+                if [[ $int_thisIOMMU -eq $int_IOMMU ]]; then
+                    bool_thisIOMMU_hasVGA=true
+                    break
+                fi
+            done
+
+            # parse all devices in given IOMMU group
+            for int_thisKey in ${!arr_DeviceIOMMU[@]}; do
+                declare -li int_thisIOMMU=${arr_DeviceIOMMU[$int_thisKey]}
+
+                if [[ $int_thisIOMMU -eq $int_IOMMU ]]; then
+                    arr_thisIOMMU+=$( "${int_thisIOMMU}" )
+                fi
+            done
+
+
+            echo -e "IOMMU group #:\t${int_IOMMU}\n"
+
+            # output all devices in given IOMMU group
+            for int_thisKey in ${!arr_thisIOMMU[@]}; do
+                str_thisDevicePCI_ID="${arr_DevicePCI_ID[$int_thisKey]}"
+                str_thisDeviceDriver="${arr_DeviceDriver[$int_thisKey]}"
+                str_thisDeviceName="${arr_DeviceName[$int_thisKey]}"
+                str_thisDeviceType="${arr_DeviceType[$int_thisKey]}"
+                str_thisDeviceVendor="${arr_DeviceVendor[$int_thisKey]}"
+
+                echo -e "Device #:\t\t${int_thisKey}"
+                echo -e "\tPCI ID:\t\t${str_thisDevicePCI_ID}"
+                echo -e "\tDevice driver:\t${str_thisDeviceDriver}"
+                echo -e "\tDevice name:\t${str_thisDeviceName}"
+                echo -e "\tDevice type:\t${str_thisDeviceType}"
+                echo -e "\tVendor name:\t${str_thisDeviceVendor}"
+                echo
+            done
+
+            ReadInput "Select IOMMU group '${int_IOMMU}'?"
+
+            case $str_input in
+                "Y")
+                    if [[ $bool_thisIOMMU_hasVGA == true ]]; then
+                        arr_IOMMU_withVGA_forVFIO+=("${int_IOMMU}")
+
+                    else
+                        arr_IOMMU_forVFIO+=("${int_IOMMU}")
+                    fi
+                    ;;
+
+                "N")
+                    if [[ $bool_thisIOMMU_hasVGA == true ]]; then
+                        arr_IOMMU_withVGA_forHost+=("${int_IOMMU}")
+
+                    else
+                        arr_IOMMU_forHost+=("${int_IOMMU}")
+                    fi
+                    ;;
+            esac
+
+            bool_thisIOMMU_hasVGA=false     # reset var for next pass
+        done
+
+
+        if [[ ${#arr_IOMMU_forVFIO[@]} -eq 0 && ${#arr_IOMMU_withVGA_forVFIO[@]} -eq 0 ]]; then
+            (exit 255)
+            SaveThisExitCode
+
+        else
+            (exit 0)
+            SaveThisExitCode
+        fi
+
+        ParseThisExitCode "Prompting IOMMU groups..."
     }
 
     function SetupAutoXorg
@@ -1234,26 +1349,33 @@ declare -i int_thisExitCode=$?
 ## executive functions
     function MultiBootSetup
     {
+
+        # TODO: review code and take what is needed.
+        #   PCI STUB is valuable
+        #   also save IGPU name, too
+        #   what else?
+
         echo -e "Executing Multi-boot setup..."
-        # code here
+        # ParseIOMMUandPCI
+        # SelectAnIOMMUGroup
 
         # parse IOMMU #
             shopt -s nullglob
-            for str_line0 in $(find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V); do
+            for str_line0 in $( find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V ); do
 
                 # parameters #
                 bool_driverIsValid=false
                 bool_IOMMUcontainsExtPCI=false
                 bool_IOMMUcontainsVGA=false
-                declare -i int_thisIOMMU=$(echo $str_line0 | cut -d '/' -f5)
+                declare -i int_thisIOMMU=$( echo $str_line0 | cut -d '/' -f5 )
                 str_input1=""
                 echo -e "IOMMU Group: '$int_thisIOMMU'"
 
                 for str_line1 in $str_line0/devices/*; do
 
                     # parameters #
-                    str_line2=$(lspci -mns ${str_line1##*/})
-                    str_thisBusID=$(echo $str_line2 | cut -d '"' -f1 | cut -d ' ' -f1)
+                    str_line2=$( lspci -mns ${str_line1##*/})
+                    str_thisBusID=$( echo $str_line2 | cut -d '"' -f1 | cut -d ' ' -f1)
                     str_thisHWID=$(lspci -n | grep $str_thisBusID | cut -d ' ' -f3)
                     str_thisDriver=$(lspci -kd $str_thisHWID | grep "driver" | cut -d ':' -f2 | cut -d ' ' -f2)
                     str_thisType=$(lspci -mmd $str_thisHWID | cut -d '"' -f2 | tr '[:lower:]' '[:upper:]')
@@ -1893,16 +2015,29 @@ declare -i int_thisExitCode=$?
     {
         echo -e "Executing Static setup..."
         ParseIOMMUandPCI
-        # code here
+        SelectAnIOMMUGroup
 
         ParseThisExitCode "Executing Static setup..."
     }
 
     function UninstallSetup
     {
-        echo -en "Executing Uninstaller..."
-        # code here
-        ParseThisExitCode
+        echo -e "Executing Uninstaller..."
+        ParseIOMMUandPCI
+
+        # VFIO setup detected #
+        if [[ $int_thisExitCode -eq 253 ]]; then
+            # uninstall VFIO
+
+
+            (exit 0)
+            SaveThisExitCode
+        else
+            (exit 255)
+            SaveThisExitCode
+        fi
+
+        ParseThisExitCode "Executing Uninstaller..."
     }
 ##
 
