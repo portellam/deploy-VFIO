@@ -748,6 +748,7 @@ declare -i int_thisExitCode=$?
         declare -a arr_DeviceName=()
         declare -a arr_DeviceType=()
         declare -a arr_DeviceVendor=()
+        declare -a arr_IOMMU_hasUSB=()
         declare -a arr_IOMMU_hasVGA=()
         declare -a arr_IOMMU_hasInternalPCI=()
         declare -a arr_IOMMU_hasExternalPCI=()
@@ -773,6 +774,7 @@ declare -i int_thisExitCode=$?
                 local str_thisDeviceVendor="$( lspci -ms ${str_element2} | cut -d '"' -f4 )"
                 local str_thisDeviceDriver="$( lspci -ks ${str_element2} | grep driver | cut -d ':' -f2 )"
 
+                # checl for valid driver #
                 if [[ -z $str_thisDeviceDriver ]]; then
                     str_thisDeviceDriver="N/A"
                     bool_missingDriver=true
@@ -787,6 +789,8 @@ declare -i int_thisExitCode=$?
                     fi
                 fi
 
+                # check for VGA type #
+                # reference to append to VFIO PCI #
                 # append to list only once #
                 if [[ $str_thisIOMMU != ${arr_IOMMU_hasVGA[-1]} ]]; then
                     case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in
@@ -795,6 +799,25 @@ declare -i int_thisExitCode=$?
                     esac
                 fi
 
+                if [[ $str_thisIOMMU != ${arr_IOMMU_hasVGA[-1]} ]]; then
+                    case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in
+                        *"3D"*|*"DISPLAY"*|*"GRAPHICS"*|*"VGA"*)
+                            arr_IOMMU_hasVGA+=( "$str_thisIOMMU" );;
+                    esac
+                fi
+
+                # check for USB type #
+                # reference to append to PCI STUB #
+                # append to list only once #
+                if [[ $str_thisIOMMU != ${arr_IOMMU_hasUSB[-1]} ]]; then
+                    case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in
+                        *"USB"*)
+                            arr_IOMMU_hasUSB+=( "$str_thisIOMMU" );;
+                    esac
+                fi
+
+                # check for internal/external PCI #
+                # reference to append to VFIO PCI #
                 # append to list only once #
                 if [[ $int_thisDeviceBusID -eq 0 ]]; then
                     if [[ $str_thisIOMMU != ${arr_IOMMU_hasInternalPCI[-1]} ]]; then
@@ -818,11 +841,15 @@ declare -i int_thisExitCode=$?
         done
 
         readonly arr_DeviceIOMMU
-        readonly arr_DevicePCI_ID
-        readonly arr_DeviceDriver
+        readonly aarr_DevicePCI_ID
+        readonly aarr_DeviceDriver
         readonly arr_DeviceName
         readonly arr_DeviceType
         readonly arr_DeviceVendor
+        readonly arr_IOMMU_hasUSB
+        readonly arr_IOMMU_hasVGA
+        readonly arr_IOMMU_hasInternalPCI
+        readonly arr_IOMMU_hasExternalPCI
 
         # prioritize worst exit code (place last)
         case true in
@@ -853,41 +880,61 @@ declare -i int_thisExitCode=$?
 
     function SelectAnIOMMUGroup
     {
-        echo -e "Prompting IOMMU groups..."
+        echo -e "Reviewing IOMMU groups..."
 
         local bool_thisIOMMU_hasVGA=false
+
+        # parameters #
+        # lists of Key value pairs (IOMMU group number to device indexes)
         declare -la arr_IOMMU_forHost=()
+        declare -la arr_IOMMU_forSTUB=()
         declare -la arr_IOMMU_forVFIO=()
         declare -la arr_IOMMU_withVGA_forHost=()
         declare -la arr_IOMMU_withVGA_forVFIO=()
 
-        # parse only external PCI
+        # parse only external PCI #
         for int_key in ${!arr_IOMMU_hasExternalPCI[@]}; do
-            declare -la arr_thisIOMMU=()    # reset var for this pass
+
+            # reset parameters for this pass #
+            declare -la arr_thisIOMMU_devices=()
+            declare -la arr_thisIOMMU_devicesWithUSB_forSTUB=()
+            declare -la arr_thisIOMMU_devicesWithVGA_forVFIO=()
             declare -li int_IOMMU=${arr_IOMMU_hasExternalPCI[$int_key]}
 
-            # check if given IOMMU group contains VGA
-            for int_thisIOMMU in ${arr_IOMMU_hasVGA[@]}; do
+            # check if given IOMMU group contains USB #
+            for int_thisKey in ${!arr_IOMMU_hasUSB[@]}; do
+                declare -li int_thisIOMMU=${arr_DeviceIOMMU[$int_thisKey]}
+
                 if [[ $int_thisIOMMU -eq $int_IOMMU ]]; then
-                    bool_thisIOMMU_hasVGA=true
-                    break
+                    bool_thisIOMMU_hasUSB=true
+                    arr_thisIOMMU_devicesWithUSB_forSTUB+=( "${int_thisKey}" )
                 fi
             done
 
-            # parse all devices in given IOMMU group
+            # check if given IOMMU group contains VGA #
+            for int_thisKey in ${!arr_IOMMU_hasVGA[@]}; do
+                declare -li int_thisIOMMU=${arr_DeviceIOMMU[$int_thisKey]}
+
+                if [[ $int_thisIOMMU -eq $int_IOMMU ]]; then
+                    bool_thisIOMMU_hasVGA=true
+                    arr_thisIOMMU_devicesWithVGA_forVFIO+=( "${int_thisKey}" )
+                fi
+            done
+
+            # parse all devices in given IOMMU group #
             for int_thisKey in ${!arr_DeviceIOMMU[@]}; do
                 declare -li int_thisIOMMU=${arr_DeviceIOMMU[$int_thisKey]}
 
                 if [[ $int_thisIOMMU -eq $int_IOMMU ]]; then
-                    arr_thisIOMMU+=$( "${int_thisIOMMU}" )
+                    arr_thisIOMMU_devices+=( "${int_thisKey}" )
                 fi
             done
 
 
             echo -e "IOMMU group #:\t${int_IOMMU}\n"
 
-            # output all devices in given IOMMU group
-            for int_thisKey in ${!arr_thisIOMMU[@]}; do
+            # output all devices in given IOMMU group #
+            for int_thisKey in ${!arr_thisIOMMU_devices[@]}; do
                 str_thisDevicePCI_ID="${arr_DevicePCI_ID[$int_thisKey]}"
                 str_thisDeviceDriver="${arr_DeviceDriver[$int_thisKey]}"
                 str_thisDeviceName="${arr_DeviceName[$int_thisKey]}"
@@ -907,38 +954,60 @@ declare -i int_thisExitCode=$?
 
             case $str_input in
                 "Y")
-                    if [[ $bool_thisIOMMU_hasVGA == true ]]; then
-                        arr_IOMMU_withVGA_forVFIO+=("${int_IOMMU}")
+
+                    # append to list a valid array or empty value #
+                    if [[ $bool_thisIOMMU_hasUSB == true ]]; then
+                        arr_IOMMU_forSTUB+=( "${arr_thisIOMMU_devicesWithUSB_forSTUB[@]}" )
 
                     else
-                        arr_IOMMU_forVFIO+=("${int_IOMMU}")
+                        arr_IOMMU_forSTUB+=("")
+                    fi
+
+                    if [[ $bool_thisIOMMU_hasVGA == true ]]; then
+                        arr_IOMMU_forVFIO+=("")
+                        arr_IOMMU_withVGA_forVFIO+=( "${arr_thisIOMMU_devicesWithVGA_forVFIO[@]}" )
+
+                    else
+                        arr_IOMMU_forVFIO+=( "${arr_thisIOMMU_devices[@]}" )
+                        arr_IOMMU_withVGA_forVFIO+=("")
                     fi
                     ;;
 
                 "N")
+
+                    # append to list a valid array or empty value #
                     if [[ $bool_thisIOMMU_hasVGA == true ]]; then
-                        arr_IOMMU_withVGA_forHost+=("${int_IOMMU}")
+                        arr_IOMMU_forHost+=("")
+                        arr_IOMMU_withVGA_forHost+=( "${arr_thisIOMMU_devicesWithVGA_forVFIO[@]}" )
 
                     else
-                        arr_IOMMU_forHost+=("${int_IOMMU}")
+                        arr_IOMMU_forHost+=( "${arr_thisIOMMU_devices[@]}" )
+                        arr_IOMMU_withVGA_forHost+=("")
                     fi
                     ;;
             esac
 
-            bool_thisIOMMU_hasVGA=false     # reset var for next pass
+            # reset vars for next pass #
+            bool_thisIOMMU_hasUSB=false
+            bool_thisIOMMU_hasVGA=false
         done
 
-
-        if [[ ${#arr_IOMMU_forVFIO[@]} -eq 0 && ${#arr_IOMMU_withVGA_forVFIO[@]} -eq 0 ]]; then
+        # check if all IOMMU groups remain assigned to host #
+        # yes, fail setup
+        # if one isn't, complete setup
+        if [[ ${!arr_IOMMU_forHost[-1]} -eq ${int_lastIOMMU} ]]; then
             (exit 255)
             SaveThisExitCode
 
-        else
-            (exit 0)
-            SaveThisExitCode
+            for str_element in ${arr_IOMMU_forHost[@]}; do
+                if [[ $str_element == "" || -z $str_element ]]; then
+                    (exit 0)
+                    SaveThisExitCode
+                fi
+            done
         fi
 
-        ParseThisExitCode "Prompting IOMMU groups..."
+        ParseThisExitCode "Reviewing IOMMU groups..."
     }
 
     function SetupAutoXorg
@@ -1347,137 +1416,40 @@ declare -i int_thisExitCode=$?
 ##
 
 ## executive functions
+    function DeleteSetup
+    {
+        echo -e "Executing Uninstaller..."
+        ParseIOMMUandPCI
+
+        # VFIO setup detected #
+        if [[ $int_thisExitCode -eq 253 ]]; then
+            # uninstall VFIO
+
+
+            (exit 0)
+            SaveThisExitCode
+        else
+            (exit 255)
+            SaveThisExitCode
+        fi
+
+        ParseThisExitCode "Executing Uninstaller..."
+    }
+
     function MultiBootSetup
     {
-
-        # TODO: review code and take what is needed.
-        #   PCI STUB is valuable
-        #   also save IGPU name, too
-        #   what else?
+        # TODO:
+        #   -retrofit new functions with old code
+        #   -refactor
+        #   -var for IGPU dev name
 
         echo -e "Executing Multi-boot setup..."
-        # ParseIOMMUandPCI
-        # SelectAnIOMMUGroup
+        ParseIOMMUandPCI
+        SelectAnIOMMUGroup
 
-        # parse IOMMU #
-            shopt -s nullglob
-            for str_line0 in $( find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V ); do
-
-                # parameters #
-                bool_driverIsValid=false
-                bool_IOMMUcontainsExtPCI=false
-                bool_IOMMUcontainsVGA=false
-                declare -i int_thisIOMMU=$( echo $str_line0 | cut -d '/' -f5 )
-                str_input1=""
-                echo -e "IOMMU Group: '$int_thisIOMMU'"
-
-                for str_line1 in $str_line0/devices/*; do
-
-                    # parameters #
-                    str_line2=$( lspci -mns ${str_line1##*/})
-                    str_thisBusID=$( echo $str_line2 | cut -d '"' -f1 | cut -d ' ' -f1)
-                    str_thisHWID=$(lspci -n | grep $str_thisBusID | cut -d ' ' -f3)
-                    str_thisDriver=$(lspci -kd $str_thisHWID | grep "driver" | cut -d ':' -f2 | cut -d ' ' -f2)
-                    str_thisType=$(lspci -mmd $str_thisHWID | cut -d '"' -f2 | tr '[:lower:]' '[:upper:]')
-                    str_line3=$(lspci -nnkd $str_thisHWID | grep -Eiv "DeviceName:|Kernel modules:|Subsystem:")
-
-                    if [[ $str_thisDriver == *"vfio"* ]]; then
-                        bool_foundExistingVFIOsetup=true
-                    fi
-
-                    if [[ -z $str_thisDriver || $str_thisDriver == "" ]]; then
-                        str_thisDriver="N/A"
-                        bool_driverIsValid=false
-
-                    else
-                        bool_driverIsValid=true
-                    fi
-
-                    # save all internal PCI drivers to list #
-                    # parse this list to exclude these devices from blacklist
-                    # example: 'snd_hda_intel' is used by on-board audio devices and VGA audio child devices
-                    if [[ ${str_thisBusID::1} == "0" && ${str_thisBusID:1:1} -lt 1 ]]; then
-                        str_internalPCI_driverList+="$str_thisDriver,"
-                        str_internalPCI_HWIDList+="$str_thisHWID,"
-                        bool_IOMMUcontainsExtPCI=false
-
-                    else
-                        bool_IOMMUcontainsExtPCI=true
-                    fi
-
-                    # save all IOMMU groups that contain VGA device(s) #
-                    # parse this list for 'Multi-boot' function later on
-                    if [[ $str_thisType == *"3D"* || $str_thisType == *"DISPLAY"* || $str_thisType == *"GRAPHIC"* || $str_thisType == *"VGA"* ]]; then
-                        bool_IOMMUcontainsVGA=true
-                    fi
-
-                    # save drivers (of given device type) for 'pci-stub' (not 'vfio-pci') #
-                    # parse this list for 'Multi-boot' function later on
-                    # Why? Bind devices earlier than 'vfio-pci'
-                    # GRUB:             parse this list and append to pci-stub
-                    # system files:     parse this list and append to vfio-pci
-                    if [[ $str_thisType == *"USB"* ]]; then                     # NOTE: update here!
-                        str_PCISTUB_driverList+="$str_thisDriver,"
-                    fi
-
-                    # parse IOMMU if it cotains external PCI #
-                    if [[ $bool_IOMMUcontainsExtPCI == true ]]; then
-                        if [[ $bool_driverIsValid == false ]]; then
-                            str_line3+="\n\tKernel driver in use: N/A"
-                        fi
-
-                        echo -e "\t$str_line3\n"
-
-                    # save IGPU vendor and device name #
-                    else
-                        if [[ $bool_IOMMUcontainsVGA == true ]]; then
-                            str_IGPUFullName=$(lspci -mmn | grep $str_thisBusID | cut -d '"' -f4)$(lspci -mmn | grep $str_thisBusID | cut -d '"' -f6)
-                        fi
-                    fi
-                done;
-
-                # prompt #
-                str_output2=""
-
-                if [[ $bool_IOMMUcontainsExtPCI == false ]]; then
-                    str_output2="Skipped IOMMU group: External devices not found."
-                else
-                    str_output1="Select IOMMU group '$int_thisIOMMU'? [Y/n]: "
-                    ReadInput $str_output1
-
-                    if [[ $bool_IOMMUcontainsVGA == false ]]; then
-                        case $str_input1 in
-                            "Y")
-                                arr_IOMMU_VFIO+=("$int_thisIOMMU")
-                                str_output2="Selected IOMMU group.";;
-                            "N")
-                                arr_IOMMU_host+=("$int_thisIOMMU")
-                                str_output2="Skipped IOMMU group.";;
-                            *)
-                                str_output2="Invalid input.";;
-                        esac
-
-                    else
-                        case $str_input1 in
-                            "Y")
-                                arr_IOMMU_VFIOVGA+=("$int_thisIOMMU")
-                                str_output2="Selected IOMMU group.";;
-                            "N")
-                                arr_IOMMU_hostVGA+=("$int_thisIOMMU")
-                                str_output2="Skipped IOMMU group.";;
-                            *)
-                                str_output2="Invalid input.";;
-                        esac
-                    fi
-                fi
-
-                echo -e "\t$str_output2\n"
-            done;
-
-            if [[ ${#arr_IOMMU_VFIO[@]} -eq 0 && ${#arr_IOMMU_VFIOVGA[@]} -eq 0 ]]; then
-                echo -e "Executing Multi-boot setup... Cancelled. No IOMMU groups selected."
-                exit 1
-            fi
+        if [[ $int_thisExitCode -ne 0 ]]; then
+            ExitWithThisExitCode "Executing Multi-boot setup..."
+        fi
 
         # parameters #
             bool_outputToGRUB=false
@@ -1531,123 +1503,50 @@ declare -i int_thisExitCode=$?
                 touch $str_logFile0
             fi
 
-        # parse VFIO IOMMU group(s) #
-        for int_IOMMU_VFIO in ${arr_IOMMU_VFIO[@]}; do
-            for str_line0 in $(find /sys/kernel/iommu_groups/$int_IOMMU_VFIO -maxdepth 0 -type d | sort -V); do
-                for str_line1 in $str_line0/devices/*; do
-
-                    # parameters #
-                    str_line2=$(lspci -mns ${str_line1##*/})
-                    str_thisBusID=$(echo $str_line2 | cut -d '"' -f1 | cut -d ' ' -f1)
-                    str_thisHWID=$(lspci -n | grep $str_thisBusID | cut -d ' ' -f3)
-                    str_thisDriver=$(lspci -kd $str_thisHWID | grep "driver" | cut -d ':' -f2 | cut -d ' ' -f2)
-
-                    # add to lists #
-                    if [[ $str_thisDriver != "" ]]; then
-                        if [[ -z $(echo $str_internalPCI_driverList | grep $str_thisDriver) && -z $(echo $str_PCISTUB_driverList | grep $str_thisDriver) ]]; then
-                            if [[ ${#str_VFIO_driverList[@]} != 0 && ! $(echo $str_VFIO_driverList | grep $str_thisDriver) ]]; then
-                                arr_VFIO_driver+=("$str_thisDriver")
-                                str_VFIO_driverList+="$str_thisDriver,"
-                            fi
-
-                            if [[ ${#str_VFIO_driverList[@]} == 0 ]]; then
-                                arr_VFIO_driver+=("$str_thisDriver")
-                                str_VFIO_driverList+="$str_thisDriver,"
-                            fi
-                        fi
-                    fi
-
-                    if [[ -z $(echo $str_internalPCI_HWIDList | grep $str_thisHWID) && -z $(echo $str_VFIO_HWIDList | grep $str_thisHWID) ]]; then
-                        if [[ ${#str_PCISTUB_HWIDlist[@]} != 0 && -z $(echo $str_PCISTUB_HWIDlist | grep $str_thisHWID) ]]; then
-                            if [[ ! -z $(echo $str_PCISTUB_driverList | grep $str_thisDriver) ]]; then
-                                str_PCISTUB_HWIDlist+="$str_thisHWID,"
-
-                            else
-                                str_VFIO_HWIDList+="$str_thisHWID,"
-                            fi
-                        fi
-
-                        if [[ ${#str_PCISTUB_HWIDlist[@]} == 0 ]]; then
-                            if [[ ! -z $(echo $str_PCISTUB_driverList | grep $str_thisDriver) ]]; then
-                                str_PCISTUB_HWIDlist+="$str_thisHWID,"
-
-                            else
-                                str_VFIO_HWIDList+="$str_thisHWID,"
-                            fi
-                        fi
-                    fi
-                done
-            done
-        done
-
-        # parse VFIO IOMMU group(s) with VGA device(s) #
-        for int_IOMMU_VFIOVGA in ${arr_IOMMU_VFIOVGA[@]}; do
-
-            # update parameters #
-            str_PCISTUBVGA_HWIDlist=""
-            str_VFIOVGA_driverList=""
-            str_VFIOVGA_HWIDList=""
-
-            for str_line0 in $(find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V); do
-
-                # parameters #
-                declare -i int_thisIOMMU=$(echo $str_line0 | cut -d '/' -f5)
-
-                for str_line1 in $str_line0/devices/*; do
-
-                    # parameters #
-                    str_line2=$(lspci -mns ${str_line1##*/})
-                    str_thisBusID=$(echo $str_line2 | cut -d '"' -f1 | cut -d ' ' -f1)
-                    str_thisHWID=$(lspci -n | grep $str_thisBusID | cut -d ' ' -f3)
-                    str_thisDriver=$(lspci -kd $str_thisHWID | grep "driver" | cut -d ':' -f2 | cut -d ' ' -f2)
-                    str_thisType=$(lspci -mmd $str_thisHWID | cut -d '"' -f2 | tr '[:lower:]' '[:upper:]')
-
-                    # add to lists #
-                    if [[ $int_thisIOMMU != $int_IOMMU_VFIOVGA ]]; then
-                        if [[ $str_thisDriver != "" ]]; then
-                            if [[ -z $(echo $str_internalPCI_driverList | grep $str_thisDriver) && -z $(echo $str_PCISTUB_driverList | grep $str_thisDriver) && -z $(echo $str_VFIO_driverList | grep $str_thisDriver) && -z $(echo $str_VFIOVGA_driverList | grep $str_thisDriver) ]]; then
-                                arr_VFIOVGA_driver+=("$str_thisDriver")
-                                str_VFIOVGA_driverList+="$str_thisDriver,"
-                            fi
-                        fi
-
-                        if [[ -z $(echo $str_internalPCI_HWIDList | grep $str_thisHWID) && -z $(echo $str_PCISTUB_HWIDlist | grep $str_thisHWID) && -z $(echo $str_VFIO_HWIDList | grep $str_thisHWID) ]]; then
-                            if [[ ! -z $(echo $str_PCISTUB_driverList | grep $str_thisDriver) ]]; then
-                                str_PCISTUBVGA_HWIDlist+="$str_thisHWID,"
-
-                            else
-                                str_VFIOVGA_HWIDList+="$str_thisHWID,"
-                            fi
-                        fi
-
-                    # save VGA vendor and device name #
-                    else
-                        if [[ $str_thisType == *"3D"* || $str_thisType == *"DISPLAY"* || $str_thisType == *"GRAPHIC"* || $str_thisType == *"VGA"* ]]; then
-                            str_thisFullName=$(lspci -mnn | grep $str_thisBusID | cut -d '"' -f4)" ")lspci -mnn | grep $str_thisBusID | cut -d '"' -f6)
-                        fi
-                    fi
+            # devices for PCI STUB #
+            for str_element in ${arr_IOMMU_forSTUB[@]}; do
+                for int_key in ${str_element}; do
+                    str_driverListForSTUB+="${arr_DeviceDriver[$int_key]},"
+                    str_HWIDlist_forSTUB+="${arr_DeviceHWID[$int_key]},"
                 done
             done
 
-            # update parameters #
-            str_thisPCISTUB_HWIDList=${str_PCISTUB_HWIDlist}${str_PCISTUBVGA_HWIDlist}
-            str_thisVFIO_driverList=${str_VFIO_driverList}${str_VFIOVGA_driverList}
-            str_thisVFIO_HWIDList=${str_VFIO_HWIDList}${str_VFIOVGA_HWIDList}
+            # devices for PCI STUB #
+            for str_element in ${arr_IOMMU_forVFIO[@]}; do
+                for int_key in ${str_element}; do
+                    str_driverListForVFIO+="${arr_DeviceDriver[$int_key]},"
+                    str_HWID_list_forVFIO+="${arr_DeviceHWID[$int_key]},"
+                done
+            done
+
+            # devices for PCI STUB #
+            for str_element in ${arr_IOMMU_withVGA_forVFIO[@]}; do
+                for int_key in ${str_element}; do
+                    str_driverListWithVGA_forVFIO+="${arr_DeviceDriver[$int_key]},"
+                    str_HWID_listWithVGA_forVFIO+="${arr_DeviceHWID[$int_key]},"
+                done
+            done
 
             # remove last separator #
-            if [[ ${str_thisPCISTUB_HWIDList: -1} == "," ]]; then
-                str_thisPCISTUB_HWIDList=${str_thisPCISTUB_HWIDList::-1}
+            str_driverListForSTUB=${str_driverListForSTUB::-1} # &> /dev/null
+            str_driverListForVFIO=${str_driverListForVFIO::-1}
+            str_driverListWithVGA_forVFIO=${str_driverListWithVGA_forVFIO::-1}
+            str_HWIDlist_forSTUB=${str_HWIDlist_forSTUB::-1}
+            str_HWID_list_forVFIO=${str_HWID_list_forVFIO::-1}
+            str_HWID_listWithVGA_forVFIO=${str_HWID_listWithVGA_forVFIO::-1}
+
+            if [[ ${#str_driverListWithVGA_forVFIO} -gt 0 ]]; then
+                str_driverListForVFIO+=",${str_driverListWithVGA_forVFIO}"
             fi
 
-            if [[ ${str_thisVFIO_driverList: -1} == "," ]]; then
-                str_thisVFIO_driverList=${str_thisVFIO_driverList::-1}
+            if [[ ${#str_HWID_listWithVGA_forVFIO} -gt 0 ]]; then
+                str_HWID_list_forVFIO+=",${str_HWID_listWithVGA_forVFIO}"
             fi
 
-            if [[ ${str_thisVFIO_HWIDList: -1} == "," ]]; then
-                str_thisVFIO_HWIDList=${str_thisVFIO_HWIDList::-1}
-            fi
 
             # write to file #
+
+                # TODO: declare IGPU name
 
                 # parameters #
                 if [[ $str_IGPUFullName != "N/A" && $str_IGPUFullName != "" ]]; then
@@ -1655,10 +1554,10 @@ declare -i int_thisExitCode=$?
                 fi
 
                 # NOTE: update here!
-                str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} modprobe.blacklist=${str_thisVFIO_driverList} pci-stub.ids=${str_thisPCISTUB_HWIDList} vfio_pci.ids=${str_thisVFIO_HWIDList}"
+                str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} modprobe.blacklist=${str_driverListForVFIO} pci-stub.ids=${str_driverListForSTUB} vfio_pci.ids=${str_HWID_list_forVFIO}"
 
                 # log file #
-                echo -e "#${int_IOMMU_VFIOVGA} #${str_thisFullName} #${str_GRUB_CMDLINE}" >> $str_logFile0
+                echo -e "#${arr_IOMMU_withVGA_forVFIO[1]} #${str_thisFullName} #${str_GRUB_CMDLINE}" >> $str_logFile0
 
                 ## /etc/grub.d/proxifiedScripts/custom ##
 
@@ -1670,10 +1569,10 @@ declare -i int_thisExitCode=$?
                             str_thisRootKernel=${arr_rootKernel[$int_i]:1}
 
                             # parameters #
-                            str_thisGRUBmenuEntry=$(lsb_release -i -s)" "$(uname -o)", with "$(uname)" $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIO_VGA', w/ boot VGA '$str_thisFullName')"
+                            str_thisGRUBmenuEntry=$(lsb_release -i -s)" "$(uname -o)", with "$(uname)" $str_thisRootKernel (VFIO, w/o IOMMU '${arr_IOMMU_withVGA_forVFIO[1]}}', w/ boot VGA '$str_thisFullName')"
                             arr_GRUBmenuEntry+=("$str_thisGRUBmenuEntry")
                             str_output1="menuentry \"$str_thisGRUBmenuEntry\" {"
-                            str_output1_log="\n"'menuentry "'$(lsb_release -i -s)" "$(uname -o)", with "$(uname)" #kernel_'$int_i'# (VFIO, w/o IOMMU '$int_IOMMU_VFIOVGA', w/ boot VGA '$str_thisFullName'\") {"
+                            str_output1_log="\n"'menuentry "'$(lsb_release -i -s)" "$(uname -o)", with "$(uname)" #kernel_'$int_i'# (VFIO, w/o IOMMU '${arr_IOMMU_withVGA_forVFIO[1]}', w/ boot VGA '$str_thisFullName'\") {"
                             str_output2="\tinsmod $str_rootFSTYPE"
                             str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
                             str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$str_rootUUID\n\t"'fi'
@@ -1749,12 +1648,12 @@ declare -i int_thisExitCode=$?
                     echo -e "\t'$str_inFile1b'"
                 fi
 
-                echo -e "Executing Multi-boot setup... Failed."
-                exit 1
-
+                (exit 255)
+                SaveThisExitCode
             else
-                chmod 755 $str_outFile1 $str_oldFile1                   # set proper permissions
-                echo -e "Executing Multi-boot setup... Complete."
+                chmod 755 $str_outFile1 $str_oldFile1 &> /dev/null                  # set proper permissions
+                (exit 0)
+                SaveThisExitCode
             fi
         done
 
@@ -1766,23 +1665,26 @@ declare -i int_thisExitCode=$?
         declare -lar arr_options=(
             "--help"
             "-h"
+            "-d"
+            "--delete"
             "--full"
             "-f"
             "--multiboot"
             "-m"
             "--static"
             "-s"
-            "--uninstall"
+            "--update"
             "-u"
         )
 
         str_helpPrompt="Usage: $0 [ OPTIONS ]
             \nwhere OPTIONS
             \n\t-h --help\tDisplay this prompt.
+            \n\t-d --delete\tDelete existing VFIO setup.
             \n\t-f --full\tExecute pre-setup and post-setup, and prompt for either VFIO setup.
-            \n\t-m --multiboot\tExecute Multiboot VFIO setup only.
-            \n\t-s --static\tExecute Static VFIO setup only.
-            \n\t-u --uninstall\tUninstall existing VFIO setup."
+            \n\t-m --multiboot\tExecute Multiboot VFIO setup.
+            \n\t-s --static\tExecute Static VFIO setup.
+            \n\t-u --update\tUpdate existing VFIO setup."
 
         if [[ ! -z $1 ]]; then
             str_option=$( echo $1 | tr '[:upper:]' '[:lower:]' )
@@ -1818,16 +1720,19 @@ declare -i int_thisExitCode=$?
                 bool_execHelp=true;;
 
             2|3)
-                bool_execFullSetup=true;;
+                bool_execDeleteSetup=true;;
 
             4|5)
-                bool_execMultiBootSetup=true;;
+                bool_execFullSetup=true;;
 
             6|7)
-                bool_execStaticSetup=true;;
+                bool_execMultiBootSetup=true;;
 
             8|9)
-                bool_execUninstallSetup=true;;
+                bool_execStaticSetup=true;;
+
+            10|11)
+                bool_execUpdateSetup=true;;
         esac
 
         if [[ $int_thisExitCode -ne 0 ]]; then
@@ -2020,14 +1925,14 @@ declare -i int_thisExitCode=$?
         ParseThisExitCode "Executing Static setup..."
     }
 
-    function UninstallSetup
+    function UpdateSetup
     {
-        echo -e "Executing Uninstaller..."
+        echo -e "Updating..."
         ParseIOMMUandPCI
 
         # VFIO setup detected #
         if [[ $int_thisExitCode -eq 253 ]]; then
-            # uninstall VFIO
+            # update VFIO
 
 
             (exit 0)
@@ -2037,8 +1942,9 @@ declare -i int_thisExitCode=$?
             SaveThisExitCode
         fi
 
-        ParseThisExitCode "Executing Uninstaller..."
+        ParseThisExitCode "Updating ..."
     }
+
 ##
 
 ## execution
@@ -2050,11 +1956,13 @@ declare -i int_thisExitCode=$?
     CheckIfUserIsRoot
     CheckIfIOMMU_IsEnabled
 
+    # TODO: reorder options!
+
     if [[ -z $2 ]]; then
         ParseInputParamForOptions $1
 
-        if [[ $bool_execUninstallSetup == true ]]; then
-            UninstallSetup
+        if [[ $bool_execDeleteSetup == true ]]; then
+            DeleteSetup
 
         else
             if [[ $bool_execFullSetup == true ]]; then
@@ -2068,8 +1976,11 @@ declare -i int_thisExitCode=$?
                 $bool_execStaticSetup)
                     StaticSetup;;
 
+                $bool_execUpdateSetup)
+                    UpdateSetup;;
+
                 *)
-                    ReadInputFromMultipleChoiceUpperCase "Execute Multiboot or Static setup? [M/S]:" "M" "S"
+                    ReadInputFromMultipleChoiceUpperCase "Execute Multiboot or Static setup, or update? [M/S/U]:" "M" "S" "U"
 
                     case $str_input1 in
                         "M")
@@ -2077,6 +1988,9 @@ declare -i int_thisExitCode=$?
 
                         "S")
                             StaticSetup;;
+
+                        "U")
+                            UpdateSetup;;
                     esac
                     ;;
             esac
