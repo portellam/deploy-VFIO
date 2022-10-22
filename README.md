@@ -17,7 +17,7 @@ OPTIONS:
         -f  --full       Execute pre-setup and post-setup, and prompt for either VFIO setup.
         -m  --multiboot  Execute Multiboot VFIO setup.
         -s  --static     Execute Static VFIO setup.
-        -u  --update     Update existing VFIO setup."
+        -u  --update     Update existing VFIO setup.
 
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
