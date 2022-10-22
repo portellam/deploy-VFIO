@@ -4,10 +4,9 @@
 ## Author(s):    Alex Portell <github.com/portellam>
 ##
 
-
 declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation, for conditional statements
 
-## prep and I/O functions ##
+# prep and I/O functions #
     function CheckIfUserIsRoot
     {
         if [[ $( whoami ) != "root" ]]; then
@@ -583,9 +582,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         EchoPassOrFailThisExitCode
         ParseThisExitCode
     }
-##
 
-## context functions ##
+# context functions #
     function CheckIfIOMMU_IsEnabled
     {
         echo -en "Checking if Virtualization is enabled/supported... "
@@ -603,8 +601,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         fi
     }
 
-    # TODO: review this!
-    function CloneOrUpdateGitRepositories
+    function CloneOrUpdateGitRepositories       # TODO: review this!
     {
         echo -en "Cloning Git repositories... "
 
@@ -826,8 +823,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         echo
     }
 
-    # TODO: review this!
-    function SelectAnIOMMUGroup
+    function SelectAnIOMMUGroup                 # TODO: review this!
     {
         echo -e "Reviewing IOMMU groups..."
 
@@ -959,8 +955,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         ParseThisExitCode "Reviewing IOMMU groups..."
     }
 
-    # TODO: fix here!
-    function SetupAutoXorg
+    function SetupAutoXorg                      # TODO: fix here!
     {
         # parameters #
         declare -r str_pwd=$( pwd )
@@ -1145,8 +1140,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         ParseThisExitCode
     }
 
-    # TODO: fix here!
-    function SetupStaticCPU_isolation
+    function SetupStaticCPU_isolation           # TODO: fix here!
     {
         function ParseCPU
         {
@@ -1276,8 +1270,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         echo
     }
 
-    # TODO: fix here!
-    function SetupZRAM_Swap
+    function SetupZRAM_Swap                     # TODO: fix here!
     {
         # parameters #
         declare -r str_pwd=$( pwd )
@@ -1365,12 +1358,10 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
         echo
     }
-##
 
-## executive functions
+# executive functions #
 
-    # TODO: fix here!
-    function DeleteSetup
+    function DeleteSetup                        # TODO: fix here!
     {
         echo -e "Executing Uninstaller..."
         ParseIOMMUandPCI
@@ -1390,8 +1381,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         ParseThisExitCode "Executing Uninstaller..."
     }
 
-    # TODO: review this!
-    function MultiBootSetup
+    function MultiBootSetup                     # TODO: review this!
     {
         # TODO:
         #   -retrofit new functions with old code
@@ -1705,8 +1695,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         ParseThisExitCode
     }
 
-    # TODO: review this!
-    function PreInstallSetup
+    function PreInstallSetup                    # TODO: review this!
     {
         echo -e "Executing Pre-install setup..."
 
@@ -1864,8 +1853,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         ParseThisExitCode "Executing Pre-install setup..."
     }
 
-    # TODO: fix here!
-    function PostInstallSetup
+    function PostInstallSetup                   # TODO: fix here!
     {
         echo -e "Executing Post-install setup..."
         # code here
@@ -1889,8 +1877,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         esac
     }
 
-    # TODO: fix here!
-    function StaticSetup
+    function StaticSetup                        # TODO: fix here!
     {
         echo -e "Executing Static setup..."
         ParseIOMMUandPCI
@@ -1899,8 +1886,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         ParseThisExitCode "Executing Static setup..."
     }
 
-    # TODO: fix here!
-    function UpdateSetup
+    function UpdateSetup                        # TODO: fix here!
     {
         echo -e "Updating..."
         ParseIOMMUandPCI
@@ -1919,9 +1905,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
         ParseThisExitCode "Updating ..."
     }
-##
 
-## execution
+# main #
     # NOTE: necessary for newline preservation in arrays and files
     SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
     IFS=$'\n'      # Change IFS to newline char
@@ -1962,4 +1947,3 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     fi
 
     ExitWithThisExitCode
-##
