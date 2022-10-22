@@ -14,6 +14,8 @@ declare -i int_thisExitCode=$?
             str_thisFile=$( echo ${0##/*} )
             str_thisFile=$( echo $str_thisFile | cut -d '/' -f2 )
             echo -e "\e[33mWARNING:\e[0m"" Script must execute as root. In terminal, run:\n\t'sudo bash $str_thisFile'"
+
+            # call functions
             SaveThisExitCode
             ExitWithThisExitCode
         fi
@@ -22,12 +24,18 @@ declare -i int_thisExitCode=$?
     function CheckIfFileOrDirExists
     {
         echo -en "Checking if file or directory exists... "
-        if [[ -z $1 ]]; then    # null exception
+
+        # null exception
+        if [[ -z $1 ]]; then
             (exit 254)
         fi
-        if [[ ! -e $1 ]]; then  # dir/file not found
+
+        # dir/file not found
+        if [[ ! -e $1 ]]; then
             find . -name $1 | uniq &> /dev/null || (exit 250)
         fi
+
+        # call functions
         SaveThisExitCode
         EchoPassOrFailThisExitCode
         ParseThisExitCode
@@ -35,71 +43,119 @@ declare -i int_thisExitCode=$?
 
     function CreateBackupFromFile
     {
+        # behavior:
+        #   create a backup file
+        #   return boolean, to be used by main
+        #
+
         echo -en "Backing up file... "
+
+        # parameters
         str_thisFile=$1
-        if [[ -z $str_thisFile ]]; then         # null exception
+
+        # create false match statements before work begins, to catch exceptions
+        # null exception
+        if [[ -z $str_thisFile ]]; then
             (exit 254)
-        elif [[ ! -e $str_thisFile ]]; then     # file not found exception
+
+        # file not found exception
+        elif [[ ! -e $str_thisFile ]]; then
             (exit 250)
-        elif [[ ! -r $str_thisFile ]]; then     # file not readable exception
+
+        # file not readable exception
+        elif [[ ! -r $str_thisFile ]]; then
             (exit 249)
+
+        # work
         else
             if [[ $int_thisExitCode -eq 0 ]]; then
+
+                # parameters
                 declare -r str_suffix=".old"
                 declare -r str_thisDir=$( dirname $1 )
                 declare -ar arr_thisDir=( $( ls -1v $str_thisDir | grep $str_thisFile | grep $str_suffix | uniq ) )
-                if [[ "${#arr_thisDir[@]}" -ge 1 ]]; then       # positive non-zero count
+
+                # positive non-zero count
+                if [[ "${#arr_thisDir[@]}" -ge 1 ]]; then
+
+                    # parameters
                     declare -ir int_maxCount=5
                     str_line=${arr_thisDir[0]}
                     str_line=${str_line%"${str_suffix}"}        # substitution
                     str_line=${str_line##*.}                    # ditto
-                    if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then  # check if string is a valid integer
+
+                    # check if string is a valid integer
+                    if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then
                         declare -ir int_firstIndex="${str_line}"
+
                     else
                         (exit 254)
                     fi
+
                     for str_element in ${arr_thisDir[@]}; do
                         if cmp -s $str_thisFile $str_element; then
                             (exit 131)
                             break
                         fi
                     done
-                    if cmp -s $str_thisFile ${arr_thisDir[-1]}; then        # if latest backup is same as original file, exit
+
+                    # if latest backup is same as original file, exit
+                    if cmp -s $str_thisFile ${arr_thisDir[-1]}; then
                         (exit 131)
                     fi
-                    while [[ ${#arr_thisDir[@]} -ge $int_maxCount ]]; do    # before backup, delete all but some number of backup files
+
+                    # before backup, delete all but some number of backup files
+                    while [[ ${#arr_thisDir[@]} -ge $int_maxCount ]]; do
                         if [[ -e ${arr_thisDir[0]} ]]; then
                             rm ${arr_thisDir[0]}
                             break
                         fi
                     done
-                    if cmp -s $str_thisFile ${arr_thisDir[0]}; then         # if *first* backup is same as original file, exit
+
+                    # if *first* backup is same as original file, exit
+                    if cmp -s $str_thisFile ${arr_thisDir[0]}; then
                         (exit 131)
                     fi
-                    str_line=${arr_thisDir[-1]%"${str_suffix}"}             # substitution
-                    str_line=${str_line##*.}                                # ditto
-                    if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then      # check if string is a valid integer
+
+                    # new parameters #
+                    str_line=${arr_thisDir[-1]%"${str_suffix}"}     # substitution
+                    str_line=${str_line##*.}                        # ditto
+
+                    # check if string is a valid integer
+                    if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then
                         declare -i int_lastIndex="${str_line}"
+
                     else
                         (exit 254)
                     fi
-                    (( int_lastIndex++ ))   # counter
-                    if [[ $str_thisFile -nt ${arr_thisDir[-1]} && ! ( $str_thisFile -ef ${arr_thisDir[-1]} ) ]]; then   # source file is newer and different than backup, add to backups
+
+                    (( int_lastIndex++ ))           # counter
+
+                    # source file is newer and different than backup, add to backups
+                    if [[ $str_thisFile -nt ${arr_thisDir[-1]} && ! ( $str_thisFile -ef ${arr_thisDir[-1]} ) ]]; then
                         cp $str_thisFile "${str_thisFile}.${int_lastIndex}${str_suffix}"
+
                     elif [[ $str_thisFile -ot ${arr_thisDir[-1]} && ! ( $str_thisFile -ef ${arr_thisDir[-1]} ) ]]; then
                         (exit 131)
+
                     else
                         (exit 131)
                     fi
-                else                                                    # no backups, create backup
+
+                # no backups, create backup
+                else
                     cp $str_thisFile "${str_thisFile}.0${str_suffix}"
                 fi
             fi
         fi
+
+        # call functions
         SaveThisExitCode
         EchoPassOrFailThisExitCode
         ParseThisExitCode
-        case $int_thisExitCode in                                       # append output and return code
+
+        # append output and return code
+        case $int_thisExitCode in
             131)
                 echo -e "No changes from most recent backup."
         esac
@@ -108,14 +164,21 @@ declare -i int_thisExitCode=$?
     function CreateFile
     {
         echo -en "Creating file... "
-        if [[ -z $1 ]]; then                    # null exception
+
+        # null exception
+        if [[ -z $1 ]]; then
             (exit 254)
         fi
-        if [[ ! -e $1 ]]; then                  # file not found
+
+        # file not found
+        if [[ ! -e $1 ]]; then
             touch $1 &> /dev/null || (exit 250)
+
         else
             (exit 131)
         fi
+
+        # call functions
         SaveThisExitCode
         EchoPassOrFailThisExitCode
         ParseThisExitCode
@@ -124,14 +187,21 @@ declare -i int_thisExitCode=$?
     function DeleteFile
     {
         echo -en "Deleting file... "
-        if [[ -z $1 ]]; then            # null exception
+
+        # null exception
+        if [[ -z $1 ]]; then
             (exit 254)
         fi
-        if [[ ! -e $1 ]]; then          # file not found
+
+        # file not found
+        if [[ ! -e $1 ]]; then
             (exit 131)
+
         else
             rm $1 &> /dev/null || (exit 255)
         fi
+
+        # call functions
         SaveThisExitCode
         EchoPassOrFailThisExitCode
         ParseThisExitCode
@@ -1895,32 +1965,47 @@ declare -i int_thisExitCode=$?
 
         ParseThisExitCode "Updating ..."
     }
+##
 
-SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)    # NOTE: necessary for newline preservation in arrays and files
-IFS=$'\n'      # Change IFS to newline char
-CheckIfUserIsRoot
-CheckIfIOMMU_IsEnabled
-if [[ -z $2 ]]; then
-    ParseInputParamForOptions $1
-    case true in
-        $bool_execDeleteSetup)
-            DeleteSetup;;
-        $bool_execFullSetup)
-            PreInstallSetup
-            SelectVFIOSetup
-            PostInstallSetup;;
-        $bool_execMultiBootSetup)
-            MultiBootSetup;;
-        $bool_execStaticSetup)
-            StaticSetup;;
-        $bool_execUpdateSetup)
-            UpdateSetup;;
-        *)
-            SelectVFIOSetup;;
-    esac
-else
-    (exit 254)
-    SaveThisExitCode
-    ParseThisExitCode "Cannot parse multiple options."
-fi
-ExitWithThisExitCode
+## execution
+    # NOTE: necessary for newline preservation in arrays and files
+    SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
+    IFS=$'\n'      # Change IFS to newline char
+
+    # checks
+    CheckIfUserIsRoot
+    CheckIfIOMMU_IsEnabled
+
+    if [[ -z $2 ]]; then
+        ParseInputParamForOptions $1
+
+        case true in
+            $bool_execDeleteSetup)
+                DeleteSetup;;
+
+            $bool_execFullSetup)
+                PreInstallSetup
+                SelectVFIOSetup
+                PostInstallSetup;;
+
+            $bool_execMultiBootSetup)
+                MultiBootSetup;;
+
+            $bool_execStaticSetup)
+                StaticSetup;;
+
+            $bool_execUpdateSetup)
+                UpdateSetup;;
+
+            *)
+                SelectVFIOSetup;;
+        esac
+
+    else
+        (exit 254)
+        SaveThisExitCode
+        ParseThisExitCode "Cannot parse multiple options."
+    fi
+
+    ExitWithThisExitCode
+##
