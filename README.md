@@ -1,7 +1,6 @@
 ## To-do
 * refactor code
-* redo readme in vain of code
-* differentiate pre setup, main setup, post install setup, and uninstaller as input params
+* BRANCH NOT FINISHED
 
 ## Description
 Ultimate scripts to seamlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Swap the preferred host graphics (VGA) device at GRUB boot menu. VFIO: Run any OS with real hardware, under a virtual machine (VM), in the Linux desktop of your choice.
@@ -10,6 +9,15 @@ Ultimate scripts to seamlessly deploy a VFIO setup (PCI passthrough). Multi-boot
 To execute:
 
         sudo bash deploy-vfio-setup.bash
+
+OPTIONS:
+
+        -h  --help       Display this prompt.
+        -d  --delete     Delete existing VFIO setup.
+        -f  --full       Execute pre-setup and post-setup, and prompt for either VFIO setup.
+        -m  --multiboot  Execute Multiboot VFIO setup.
+        -s  --static     Execute Static VFIO setup.
+        -u  --update     Update existing VFIO setup."
 
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html

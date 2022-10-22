@@ -4,14 +4,7 @@
 ## Author(s):    Alex Portell <github.com/portellam>
 ##
 
-##
-## TO-DO:
-##  -organize error codes
-##  -reduce redundant code
-##  -separate concerns: for example, error code exits (pass or fail), and error code exceptions (specific details). Call these funcs separately.
-##
-
-# NOTE: necessary for exit code preservation for conditional statements
+# NOTE: necessary for exit code preservation, for conditional statements
 declare -i int_thisExitCode=$?
 
 ## prep and I/O functions ##
@@ -643,6 +636,7 @@ declare -i int_thisExitCode=$?
         fi
     }
 
+    # TODO: review this!
     function CloneOrUpdateGitRepositories
     {
         echo -en "Cloning Git repositories... "
@@ -878,6 +872,7 @@ declare -i int_thisExitCode=$?
         echo
     }
 
+    # TODO: review this!
     function SelectAnIOMMUGroup
     {
         echo -e "Reviewing IOMMU groups..."
@@ -1010,6 +1005,7 @@ declare -i int_thisExitCode=$?
         ParseThisExitCode "Reviewing IOMMU groups..."
     }
 
+    # TODO: fix here!
     function SetupAutoXorg
     {
         # parameters #
@@ -1195,6 +1191,7 @@ declare -i int_thisExitCode=$?
         ParseThisExitCode
     }
 
+    # TODO: fix here!
     function SetupStaticCPU_isolation
     {
         function ParseCPU
@@ -1325,6 +1322,7 @@ declare -i int_thisExitCode=$?
         echo
     }
 
+    # TODO: fix here!
     function SetupZRAM_Swap
     {
         # parameters #
@@ -1416,6 +1414,8 @@ declare -i int_thisExitCode=$?
 ##
 
 ## executive functions
+
+    # TODO: fix here!
     function DeleteSetup
     {
         echo -e "Executing Uninstaller..."
@@ -1436,6 +1436,7 @@ declare -i int_thisExitCode=$?
         ParseThisExitCode "Executing Uninstaller..."
     }
 
+    # TODO: review this!
     function MultiBootSetup
     {
         # TODO:
@@ -1750,6 +1751,7 @@ declare -i int_thisExitCode=$?
         ParseThisExitCode
     }
 
+    # TODO: review this!
     function PreInstallSetup
     {
         echo -e "Executing Pre-install setup..."
@@ -1908,6 +1910,7 @@ declare -i int_thisExitCode=$?
         ParseThisExitCode "Executing Pre-install setup..."
     }
 
+    # TODO: fix here!
     function PostInstallSetup
     {
         echo -e "Executing Post-install setup..."
@@ -1932,6 +1935,7 @@ declare -i int_thisExitCode=$?
         esac
     }
 
+    # TODO: fix here!
     function StaticSetup
     {
         echo -e "Executing Static setup..."
@@ -1941,6 +1945,7 @@ declare -i int_thisExitCode=$?
         ParseThisExitCode "Executing Static setup..."
     }
 
+    # TODO: fix here!
     function UpdateSetup
     {
         echo -e "Updating..."
@@ -1960,7 +1965,6 @@ declare -i int_thisExitCode=$?
 
         ParseThisExitCode "Updating ..."
     }
-
 ##
 
 ## execution
