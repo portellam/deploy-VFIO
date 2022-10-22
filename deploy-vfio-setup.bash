@@ -1916,6 +1916,22 @@ declare -i int_thisExitCode=$?
         ParseThisExitCode "Executing Post-install setup..."
     }
 
+    function SelectVFIOSetup
+    {
+        ReadInputFromMultipleChoiceUpperCase "Execute Multiboot or Static setup, or update? [M/S/U]:" "M" "S" "U"
+
+        case $str_input1 in
+            "M")
+                MultiBootSetup;;
+
+            "S")
+                StaticSetup;;
+
+            "U")
+                UpdateSetup;;
+        esac
+    }
+
     function StaticSetup
     {
         echo -e "Executing Static setup..."
@@ -1956,49 +1972,30 @@ declare -i int_thisExitCode=$?
     CheckIfUserIsRoot
     CheckIfIOMMU_IsEnabled
 
-    # TODO: reorder options!
-
     if [[ -z $2 ]]; then
         ParseInputParamForOptions $1
 
-        if [[ $bool_execDeleteSetup == true ]]; then
-            DeleteSetup
+        case true in
+            $bool_execDeleteSetup)
+                DeleteSetup;;
 
-        else
-            if [[ $bool_execFullSetup == true ]]; then
+            $bool_execFullSetup)
                 PreInstallSetup
-            fi
+                SelectVFIOSetup
+                PostInstallSetup;;
 
-            case true in
-                $bool_execMultiBootSetup)
-                    MultiBootSetup;;
+            $bool_execMultiBootSetup)
+                MultiBootSetup;;
 
-                $bool_execStaticSetup)
-                    StaticSetup;;
+            $bool_execStaticSetup)
+                StaticSetup;;
 
-                $bool_execUpdateSetup)
-                    UpdateSetup;;
+            $bool_execUpdateSetup)
+                UpdateSetup;;
 
-                *)
-                    ReadInputFromMultipleChoiceUpperCase "Execute Multiboot or Static setup, or update? [M/S/U]:" "M" "S" "U"
-
-                    case $str_input1 in
-                        "M")
-                            MultiBootSetup;;
-
-                        "S")
-                            StaticSetup;;
-
-                        "U")
-                            UpdateSetup;;
-                    esac
-                    ;;
-            esac
-
-            if [[ $bool_execFullSetup == true ]]; then
-                PostInstallSetup
-            fi
-        fi
+            *)
+                SelectVFIOSetup;;
+        esac
 
     else
         (exit 254)
