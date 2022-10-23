@@ -868,7 +868,9 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
         case $int_thisExitCode in
                 3)
-                    echo -e "\e[33mWarning:\e[0m One or more external PCI device(s) missing drivers.";;
+                    echo -e "\e[33mWarning:\e[0m One or more external PCI device(s) missing drivers."
+                    (exit 0)
+                    SaveThisExitCode;;
                 254)
                     echo -e "Exception: No devices found.";;
                 253)
@@ -1179,7 +1181,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         echo -e "CPU isolation (Static or Dynamic) is a feature which allocates system CPU threads to the host and Virtual machines (VMs), separately.\n\tVirtual machines can use CPU isolation or 'pinning' to a peformance benefit\n\t'Static' is more 'permanent' CPU isolation: installation will append to GRUB after VFIO setup.\n\tAlternatively, 'Dynamic' CPU isolation is flexible and on-demand: post-installation will execute as a libvirt hook script (per VM)."
         ReadInput "Setup 'Static' CPU isolation?" && echo -en "Executing CPU isolation setup... " && ParseCPU
         EchoPassOrFailThisExitCode              # call functions
-        ParseThisExitCode
         echo
     }
 
@@ -1288,7 +1289,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             SaveThisExitCode
         fi
 
-        ParseThisExitCode "Executing Uninstaller..."
+        EchoPassOrFailThisExitCode "Executing Uninstaller..."
     }
 
     function MultiBootSetup                     # TODO: review this!
@@ -1298,6 +1299,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         SelectAnIOMMUGroup
 
         if [[ $int_thisExitCode -ne 0 ]]; then
+            echo -e "Fuck."
             ExitWithThisExitCode "Executing Multi-boot setup..."
         fi
 
@@ -1439,14 +1441,15 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                         WriteVarToFile $str_outFile1 $str_outLine1 &> /dev/null || ( SaveThisExitCode && break )    # write to system file and logfile (post_install: update Multi-boot)
                     done < $str_inFile1b                                                                            # read from template
                 ) || (
-                    local bool_missingFiles=true && (exit 255) && SaveThisExitCodebreak
+                    local bool_missingFiles=true && (exit 255) && SaveThisExitCode && break
                 )
             fi
         done && (
             chmod 755 $str_outFile1 $str_oldFile1 &> /dev/null && (exit 0) && SaveThisExitCode                      # set proper permissions
         )
 
-        ParseThisExitCode "Executing Multi-boot setup..."
+        echo -e "Fuck yes."
+        EchoPassOrFailThisExitCode "Executing Multi-boot setup..."
 
         if [[ $bool_missingFiles == true ]]; then   # file check
             echo -e "File(s) missing:"
@@ -1476,7 +1479,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             \nwhere OPTIONS
             \n\t-h --help\tDisplay this prompt.
             \n\t-d --delete\tDelete existing VFIO setup.
-            \n\t-f --full\tExecute pre-setup and post-setup, and prompt for either VFIO setup.
+            \n\t-f --full\tExecute pre-setup, prompt for either VFIO setup, and execute post-setup.
             \n\t-m --multiboot\tExecute Multiboot VFIO setup.
             \n\t-s --static\tExecute Static VFIO setup.
             \n\t-u --update\tUpdate existing VFIO setup."
@@ -1532,11 +1535,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
         if [[ $bool_execHelp == true ]]; then
             echo -e $str_helpPrompt
-            ParseThisExitCode
             ExitWithThisExitCode
         fi
-
-        ParseThisExitCode
     }
 
     function PreInstallSetup                    # TODO: review this!
@@ -1694,7 +1694,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             echo -e "\e[33mWARNING:\e[0m"" Failed pre-setup."
         fi
 
-        ParseThisExitCode "Executing Pre-install setup..."
+        EchoPassOrFailThisExitCode "Executing Pre-install setup..."
     }
 
     function PostInstallSetup                   # TODO: fix here!
@@ -1702,7 +1702,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         echo -e "Executing Post-install setup..."
         # code here
 
-        ParseThisExitCode "Executing Post-install setup..."
+        EchoPassOrFailThisExitCode "Executing Post-install setup..."
     }
 
     function SelectVFIOSetup
@@ -1725,7 +1725,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         ParseIOMMUandPCI
         SelectAnIOMMUGroup
 
-        ParseThisExitCode "Executing Static setup..."
+        EchoPassOrFailThisExitCode "Executing Static setup..."
     }
 
     function UpdateSetup                        # TODO: fix here!
@@ -1745,7 +1745,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             SaveThisExitCode
         fi
 
-        ParseThisExitCode "Updating ..."
+        EchoPassOrFailThisExitCode "Updating ..."
     }
 
 # main #
