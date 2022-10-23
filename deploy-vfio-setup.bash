@@ -234,8 +234,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         fi
 
         case $int_thisExitCode in   # append output
-            255)
-                echo;;      # unspecified error
+            # 255)
+            #     echo;;      # unspecified error
             254)
                 echo -e "Exception: Null input.";;
             253)
@@ -250,8 +250,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 echo -e "Exception: File/Dir is not readable.";;
             248)
                 echo -e "Exception: File/Dir is not writable.";;
-            *)
-                echo;;
+            # *)
+            #     echo;;
         esac
     }
 
@@ -532,7 +532,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         fi
 
         if [[ $int_thisExitCode -eq 0 ]]; then
-            echo $2 >> $1 || (exit 255)
+            echo -e $2 >> $1 || (exit 255)
         fi
 
         SaveThisExitCode                # call functions
@@ -765,6 +765,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         declare -a arr_IOMMU_hasExternalPCI=()
         bool_missingDriver=false
         bool_foundVFIO=false
+        local str_IGPU_fullName=""
+        declare -lr str_logFile="iommu.log"
 
         for str_element1 in $( find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V ); do           # parse list of IOMMU groups
             str_thisIOMMU=$( basename $str_element1 )
@@ -798,26 +800,31 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                     fi
                 fi
 
+                # find IGPU #
+                case $( echo ${str_thisDeviceType} | tr '[:lower:]' '[:upper:]' ) in                  # check for VGA type
+                    *"3D"*|*"DISPLAY"*|*"GRAPHICS"*|*"VGA"*)
+                        if [[ $int_thisDeviceBusID -eq 0 && ${#str_IGPU_fullName} -eq 0 ]]; then      # append IGPU name
+                            readonly str_IGPU_fullName="${str_thisDeviceVendor} ${str_thisDeviceName}"
+                        fi
+
+                        if [[ $int_thisDeviceBusID -gt 0 && ${#str_IGPU_fullName} -eq 0 ]]; then
+                            readonly str_IGPU_fullName="N/A"
+                        fi
+                        ;;
+                esac
+
                 # append to VFIO PCI #
                 if [[ ${#arr_IOMMU_hasVGA[@]} -eq 0 || ( ${#arr_IOMMU_hasVGA[@]} -gt 0 && $str_thisIOMMU != ${arr_IOMMU_hasVGA[-1]} ) ]]; then
-                    case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in  # check for VGA type
+                    case $( echo ${str_thisDeviceType} | tr '[:lower:]' '[:upper:]' ) in              # check for VGA type
                         *"3D"*|*"DISPLAY"*|*"GRAPHICS"*|*"VGA"*)
-                            arr_IOMMU_hasVGA+=( "$str_thisIOMMU" );                             # append to list only once
-
-                            if [[ $int_thisDeviceBusID -eq 0 && -z $str_IGPU_fullName ]]; then  # append IGPU name
-                                declare -lr str_IGPU_fullName="${str_thisDeviceVendor} ${str_thisDeviceName}"
-                            fi
-
-                            if [[ $int_thisDeviceBusID -gt 0 && -z $str_IGPU_fullName ]]; then
-                                declare -lr str_IGPU_fullName="N/A"
-                            fi
+                            arr_IOMMU_hasVGA+=( "$str_thisIOMMU" );                                   # append to list only once
                             ;;
                     esac
                 fi
 
                 # append to PCI STUB #
                 if [[ ${#arr_IOMMU_hasUSB[@]} -eq 0 || ( ${#arr_IOMMU_hasUSB[@]} -gt 0 && $str_thisIOMMU != ${arr_IOMMU_hasUSB[-1]} ) ]]; then
-                    case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in  # check for USB type
+                    case $( echo ${str_thisDeviceType} | tr '[:lower:]' '[:upper:]' ) in        # check for USB type
                         *"USB"*)
                             arr_IOMMU_hasUSB+=( "$str_thisIOMMU");;                             # append to list only once
                     esac
@@ -846,8 +853,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
         # parameters #
         readonly arr_DeviceIOMMU
-        readonly aarr_DevicePCI_ID
-        readonly aarr_DeviceDriver
+        readonly arr_DevicePCI_ID
+        readonly arr_DeviceDriver
         readonly arr_DeviceName
         readonly arr_DeviceType
         readonly arr_DeviceVendor
@@ -867,15 +874,64 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         EchoPassOrFailThisExitCode
 
         case $int_thisExitCode in
-                3)
-                    echo -e "\e[33mWarning:\e[0m One or more external PCI device(s) missing drivers."
-                    (exit 0)
-                    SaveThisExitCode;;
-                254)
-                    echo -e "Exception: No devices found.";;
-                253)
-                    echo -e "Exception: Existing VFIO setup found.";;
-            esac
+            3)
+                echo -e "\e[33mWarning:\e[0m One or more external PCI device(s) missing drivers."
+                (exit 0)
+                SaveThisExitCode;;
+            254)
+                echo -e "Exception: No devices found.";;
+            253)
+                echo -e "Exception: Existing VFIO setup found.";;
+        esac
+
+        case $int_thisExitCode in
+            # NOTE: do not write to logfile if VFIO drivers are found #
+            0)
+                CheckIfFileOrDirExists $str_logFile && DeleteFile $str_logFile || CreateFile $str_logFile
+                WriteVarToFile $str_logFile '# Generated by 'portellam/deploy-VFIO-setup'\n#\n# WARNING: Any modifications to this file will be modified by 'deploy-VFIO-setup'\n#'
+                WriteVarToFile $str_logFile "{str_IGPU_fullName}\t'${str_IGPU_fullName}'" &> /dev/null
+
+                for int_key in ${!arr_DeviceIOMMU[@]}; do
+                    local str_element="{arr_DeviceIOMMU[$int_key]}\t'${arr_DeviceIOMMU[$int_key]}'"
+                    WriteVarToFile $str_logFile $str_element &> /dev/null
+                done
+
+                for int_key in ${!arr_DevicePCI_ID[@]}; do
+                    local str_element="{arr_DevicePCI_ID[$int_key]}\t'${arr_DevicePCI_ID[$int_key]}'"
+                    WriteVarToFile $str_logFile $str_element &> /dev/null
+                done
+
+                for int_key in ${!arr_DeviceDriver[@]}; do
+                    local str_element="{arr_DeviceDriver[$int_key]}\t'${arr_DeviceDriver[$int_key]}'"
+                    WriteVarToFile $str_logFile $str_element &> /dev/null
+                done
+
+                for int_key in ${!arr_DeviceType[@]}; do
+                    local str_element="{arr_DeviceType[$int_key]}\t'${arr_DeviceType[$int_key]}'"
+                    WriteVarToFile $str_logFile $str_element &> /dev/null
+                done
+
+                for int_key in ${!arr_IOMMU_hasUSB[@]}; do
+                    local str_element="{arr_IOMMU_hasUSB[$int_key]}\t'${arr_IOMMU_hasUSB[$int_key]}'"
+                    WriteVarToFile $str_logFile $str_element &> /dev/null
+                done
+
+                for int_key in ${!arr_IOMMU_hasVGA[@]}; do
+                    local str_element="{arr_IOMMU_hasVGA[$int_key]}\t'${arr_IOMMU_hasVGA[$int_key]}'"
+                    WriteVarToFile $str_logFile $str_element &> /dev/null
+                done
+
+                for int_key in ${!arr_IOMMU_hasInternalPCI[@]}; do
+                    local str_element="{arr_IOMMU_hasInternalPCI[$int_key]}\t'${arr_IOMMU_hasInternalPCI[$int_key]}'"
+                    WriteVarToFile $str_logFile $str_element &> /dev/null
+                done
+
+                for int_key in ${!arr_IOMMU_hasExternalPCI[@]}; do
+                    local str_element="{arr_IOMMU_hasExternalPCI[$int_key]}\t'${arr_IOMMU_hasExternalPCI[$int_key]}'"
+                    WriteVarToFile $str_logFile $str_element &> /dev/null
+                done
+                ;;
+        esac
 
         echo
     }
@@ -1482,7 +1538,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             \n\t-f --full\tExecute pre-setup, prompt for either VFIO setup, and execute post-setup.
             \n\t-m --multiboot\tExecute Multiboot VFIO setup.
             \n\t-s --static\tExecute Static VFIO setup.
-            \n\t-u --update\tUpdate existing VFIO setup."
+            \n\t-u --update\tUpdate existing VFIO setup (read from previous logfile)."
 
         if [[ ! -z $1 ]]; then
             str_option=$( echo $1 | tr '[:upper:]' '[:lower:]' )
@@ -1723,9 +1779,9 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     {
         echo -e "Executing Static setup..."
         ParseIOMMUandPCI
-        SelectAnIOMMUGroup
+        # SelectAnIOMMUGroup
 
-        EchoPassOrFailThisExitCode "Executing Static setup..."
+        # EchoPassOrFailThisExitCode "Executing Static setup..."
     }
 
     function UpdateSetup                        # TODO: fix here!
@@ -1736,6 +1792,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         # VFIO setup detected #
         if [[ $int_thisExitCode -eq 253 ]]; then
             # update VFIO
+
+            # read from file for lscpi or iommu?
 
 
             (exit 0)
