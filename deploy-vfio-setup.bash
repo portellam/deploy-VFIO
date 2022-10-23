@@ -64,7 +64,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
                 if [[ "${#arr_thisDir[@]}" -ge 1 ]]; then       # positive non-zero count
 
-                    # parameters
+                    # parameters #
                     declare -ir int_maxCount=5
                     str_line=${arr_thisDir[0]}
                     str_line=${str_line%"${str_suffix}"}        # substitution
@@ -72,7 +72,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
                     if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then      # check if string is a valid integer
                         declare -ir int_firstIndex="${str_line}"
-
                     else
                         (exit 254)
                         SaveThisExitCode
@@ -109,7 +108,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
                     if [[ "${str_line}" -eq "$(( ${str_line} ))" ]] 2> /dev/null; then      # check if string is a valid integer
                         declare -i int_lastIndex="${str_line}"
-
                     else
                         (exit 254)
                         SaveThisExitCode
@@ -119,16 +117,13 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
                     if [[ $str_thisFile -nt ${arr_thisDir[-1]} && ! ( $str_thisFile -ef ${arr_thisDir[-1]} ) ]]; then       # source file is newer and different than backup, add to backups
                         cp $str_thisFile "${str_thisFile}.${int_lastIndex}${str_suffix}"
-
                     elif [[ $str_thisFile -ot ${arr_thisDir[-1]} && ! ( $str_thisFile -ef ${arr_thisDir[-1]} ) ]]; then
                         (exit 131)
-
                     else
                         (exit 131)
                     fi
 
                     SaveThisExitCode
-
                 else
                     cp $str_thisFile "${str_thisFile}.0${str_suffix}"   # no backups, create backup
                     SaveThisExitCode
@@ -139,8 +134,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         EchoPassOrFailThisExitCode  # call functions
         ParseThisExitCode
 
-        # append output and return code
-        case $int_thisExitCode in
+        case $int_thisExitCode in   # append output and return code
             131)
                 echo -e "No changes from most recent backup."
         esac
@@ -242,28 +236,20 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         case $int_thisExitCode in   # append output
             255)
                 echo;;      # unspecified error
-
             254)
                 echo -e "Exception: Null input.";;
-
             253)
                 echo -e "Exception: Invalid input.";;
-
             252)
                 echo -e "Error: Missed steps; missed execution of key subfunctions.";;
-
             251)
                 echo -e "Error: Missing components/variables.";;
-
             250)
                 echo -e "Exception: File/Dir does not exist.";;
-
             249)
                 echo -e "Exception: File/Dir is not readable.";;
-
             248)
                 echo -e "Exception: File/Dir is not writable.";;
-
             *)
                 echo;;
         esac
@@ -319,7 +305,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             case $str_input1 in
                 "Y"|"N")
                     break;;
-
                 *)
                     if [[ $int_element -eq $int_maxCount ]]; then
                         str_input1="N"
@@ -334,7 +319,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         case $str_input1 in
             "Y")
                 true;;
-
             "N")
                 (exit 131);;
         esac
@@ -354,7 +338,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
         if [[ -z $2 ]]; then
             (exit 254)
-
         else
 
             # parameters
@@ -368,28 +351,20 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
                 if [[ -z $2 && $str_input1 == $2 ]]; then
                     break
-
                 elif [[ -z $3 && $str_input1 == $3 ]]; then
                     break
-
                 elif [[ -z $4 && $str_input1 == $4 ]]; then
                     break
-
                 elif [[ -z $5 && $str_input1 == $5 ]]; then
                     break
-
                 elif [[ -z $6 && $str_input1 == $6 ]]; then
                     break
-
                 elif [[ -z $7 && $str_input1 == $7 ]]; then
                     break
-
                 elif [[ -z $8 && $str_input1 == $8 ]]; then
                     break
-
                 elif [[ -z $9 && $str_input1 == $9 ]]; then
                     break
-
                 else
                     if [[ $int_element -eq $int_maxCount ]]; then
                         str_input1=$2                       # default selection: first choice
@@ -419,7 +394,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
         if [[ -z $2 ]]; then
             (exit 254)
-
         else
 
             # parameters #
@@ -433,28 +407,20 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
                 if [[ ! -z $2 && $str_input1 == $2 ]]; then
                     break
-
                 elif [[ ! -z $3 && $str_input1 == $3 ]]; then
                     break
-
                 elif [[ ! -z $4 && $str_input1 == $4 ]]; then
                     break
-
                 elif [[ ! -z $5 && $str_input1 == $5 ]]; then
                     break
-
                 elif [[ ! -z $6 && $str_input1 == $6 ]]; then
                     break
-
                 elif [[ ! -z $7 && $str_input1 == $7 ]]; then
                     break
-
                 elif [[ ! -z $8 && $str_input1 == $8 ]]; then
                     break
-
                 elif [[ ! -z $9 && $str_input1 == $9 ]]; then
                     break
-
                 else
                     if [[ $int_element -eq $int_maxCount ]]; then
                         str_input1=$2                       # default selection: first choice
@@ -491,9 +457,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
             if [[ $str_input1 -ge $2 && $str_input1 -le $3 ]]; then     # valid input
                 break
-
             else
-
                 if [[ $int_element -eq $int_maxCount ]]; then           # default input
                     str_input1=$2                                       # default selection: first choice
                     echo -e "Exceeded max attempts. Default selection: \e[30;42m$str_input1\e[0m"
@@ -592,7 +556,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         if [[ ! -z $( compgen -G "/sys/kernel/iommu_groups/*/devices/*" ) ]]; then
             SaveThisExitCode
             EchoPassOrFailThisExitCode
-
         else
             SaveThisExitCode
             EchoPassOrFailThisExitCode
@@ -601,7 +564,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         fi
     }
 
-    function CloneOrUpdateGitRepositories       # TODO: review this!
+    function CloneOrUpdateGitRepositories
     {
         echo -en "Cloning Git repositories... "
 
@@ -700,16 +663,11 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         bool_missingDriver=false
         bool_foundVFIO=false
 
-        # parse list of IOMMU groups #
-        for str_element1 in $( find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V ); do
-
-            # parameters #
+        for str_element1 in $( find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V ); do           # parse list of IOMMU groups
             str_thisIOMMU=$( basename $str_element1 )
 
-            # parse given IOMMU group for PCI IDs #
-            for str_element2 in $( ls ${str_element1}/devices ); do
+            for str_element2 in $( ls ${str_element1}/devices ); do         # parse given IOMMU group for PCI IDs
 
-                # parameters #
                 # save output of given device #
                 local str_thisDevicePCI_ID="${str_element2##"0000:"}"
                 local str_thisDeviceBusID=$( echo $str_thisDevicePCI_ID | cut -d ':' -f1 )
@@ -719,59 +677,49 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 local str_thisDeviceVendor="$( lspci -ms ${str_element2} | cut -d '"' -f4 )"
                 local str_thisDeviceDriver="$( lspci -ks ${str_element2} | grep driver | cut -d ':' -f2 )"
 
-                # checl for valid driver #
-                if [[ -z $str_thisDeviceDriver ]]; then
+                if [[ -z $str_thisDeviceDriver ]]; then                     # check for valid driver
                     str_thisDeviceDriver="N/A"
                     bool_missingDriver=true
-
                 else
                     if [[ $str_thisDeviceDriver == *"vfio-pci"* ]]; then
                         str_thisDeviceDriver="N/A"
                         bool_foundVFIO=true
-
                     else
                         str_thisDeviceDriver="${str_thisDeviceDriver##" "}"
                     fi
                 fi
 
-                # check for VGA type #
                 # reference to append to VFIO PCI #
-                # append to list only once #
-                if [[ $str_thisIOMMU != ${arr_IOMMU_hasVGA[-1]} ]]; then
-                    case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in
+                if [[ $str_thisIOMMU != ${arr_IOMMU_hasVGA[-1]} ]]; then                        # append to list only once
+                    case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in  # check for VGA type
                         *"3D"*|*"DISPLAY"*|*"GRAPHICS"*|*"VGA"*)
                             arr_IOMMU_hasVGA+=( "$str_thisIOMMU" );;
                     esac
                 fi
 
-                if [[ $str_thisIOMMU != ${arr_IOMMU_hasVGA[-1]} ]]; then
-                    case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in
+                if [[ $str_thisIOMMU != ${arr_IOMMU_hasVGA[-1]} ]]; then                        # append to list only once
+                    case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in  # check for VGA type
                         *"3D"*|*"DISPLAY"*|*"GRAPHICS"*|*"VGA"*)
                             arr_IOMMU_hasVGA+=( "$str_thisIOMMU" );;
                     esac
                 fi
 
-                # check for USB type #
                 # reference to append to PCI STUB #
-                # append to list only once #
-                if [[ $str_thisIOMMU != ${arr_IOMMU_hasUSB[-1]} ]]; then
-                    case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in
+                if [[ $str_thisIOMMU != ${arr_IOMMU_hasUSB[-1]} ]]; then                        # append to list only once
+                    case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in  # check for USB type
                         *"USB"*)
                             arr_IOMMU_hasUSB+=( "$str_thisIOMMU" );;
                     esac
                 fi
 
-                # check for internal/external PCI #
                 # reference to append to VFIO PCI #
-                # append to list only once #
-                if [[ $int_thisDeviceBusID -eq 0 ]]; then
-                    if [[ $str_thisIOMMU != ${arr_IOMMU_hasInternalPCI[-1]} ]]; then
+                if [[ $int_thisDeviceBusID -eq 0 ]]; then                                       # check for internal PCI
+                    if [[ $str_thisIOMMU != ${arr_IOMMU_hasInternalPCI[-1]} ]]; then            # append to list only once
                         arr_IOMMU_hasInternalPCI+=( "$str_thisIOMMU" )
                     fi
-
                 else
-                    if [[ $str_thisIOMMU != ${arr_IOMMU_hasInternalPCI[-1]} ]]; then
-                        arr_IOMMU_hasExternalPCI+=( "$str_thisIOMMU" )
+                    if [[ $str_thisIOMMU != ${arr_IOMMU_hasExternalPCI[-1]} ]]; then            # check for external PCI
+                        arr_IOMMU_hasExternalPCI+=( "$str_thisIOMMU" )                          # append to list only once
                     fi
                 fi
 
@@ -785,6 +733,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             done
         done
 
+        # parameters #
         readonly arr_DeviceIOMMU
         readonly aarr_DevicePCI_ID
         readonly aarr_DeviceDriver
@@ -796,26 +745,21 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         readonly arr_IOMMU_hasInternalPCI
         readonly arr_IOMMU_hasExternalPCI
 
-        # prioritize worst exit code (place last)
-        case true in
+        case true in                # prioritize worst exit code (place last)
             $bool_missingDriver)
                 (exit 3);;
-
             $bool_foundVFIO)
                 (exit 254);;
         esac
 
-        # call functions
-        SaveThisExitCode
+        SaveThisExitCode            # call functions
         EchoPassOrFailThisExitCode
 
         case $int_thisExitCode in
                 3)
                     echo -e "\e[33mWarning:\e[0m One or more external PCI device(s) missing drivers.";;
-
                 254)
                     echo -e "Exception: No devices found.";;
-
                 253)
                     echo -e "Exception: Existing VFIO setup found.";;
             esac
@@ -823,7 +767,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         echo
     }
 
-    function SelectAnIOMMUGroup                 # TODO: review this!
+    function SelectAnIOMMUGroup
     {
         echo -e "Reviewing IOMMU groups..."
 
@@ -903,7 +847,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                     # append to list a valid array or empty value #
                     if [[ $bool_thisIOMMU_hasUSB == true ]]; then
                         arr_IOMMU_forSTUB+=( "${arr_thisIOMMU_devicesWithUSB_forSTUB[@]}" )
-
                     else
                         arr_IOMMU_forSTUB+=("")
                     fi
@@ -911,7 +854,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                     if [[ $bool_thisIOMMU_hasVGA == true ]]; then
                         arr_IOMMU_forVFIO+=("")
                         arr_IOMMU_withVGA_forVFIO+=( "${arr_thisIOMMU_devicesWithVGA_forVFIO[@]}" )
-
                     else
                         arr_IOMMU_forVFIO+=( "${arr_thisIOMMU_devices[@]}" )
                         arr_IOMMU_withVGA_forVFIO+=("")
@@ -924,7 +866,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                     if [[ $bool_thisIOMMU_hasVGA == true ]]; then
                         arr_IOMMU_forHost+=("")
                         arr_IOMMU_withVGA_forHost+=( "${arr_thisIOMMU_devicesWithVGA_forVFIO[@]}" )
-
                     else
                         arr_IOMMU_forHost+=( "${arr_thisIOMMU_devices[@]}" )
                         arr_IOMMU_withVGA_forHost+=("")
@@ -957,17 +898,14 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
     function SetupAutoXorg                      # TODO: fix here!
     {
-        # parameters #
         declare -r str_pwd=$( pwd )
 
         echo -e "Installing Auto-Xorg... "
         cd $( find -wholename Auto-Xorg | uniq | head -n1 ) && bash ./installer.bash && cd $str_pwd
 
-        # call functions
-        SaveThisExitCode
+        SaveThisExitCode            # call functions
         EchoPassOrFailThisExitCode
         ParseThisExitCode
-
         echo
     }
 
@@ -1009,12 +947,11 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 declare -ar arr_InputEventDeviceID=($( ls -l /dev/input/by-id | cut -d '/' -f2 | grep -v 'total 0' ))
                 declare -a arr_output_evdevQEMU=()
 
-                # append output #
-                for str_element in ${arr_InputDeviceID[@]}; do
+                for str_element in ${arr_InputDeviceID[@]}; do                          # append output
                     arr_output_evdevQEMU+=("    \"/dev/input/by-id/$str_element\",")
                 done
 
-                for str_element in ${arr_InputEventDeviceID[@]}; do
+                for str_element in ${arr_InputEventDeviceID[@]}; do                     # append output
                     arr_output_evdevQEMU+=("    \"/dev/input/by-id/$str_element\",")
                 done
 
@@ -1039,21 +976,19 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 # echo -e '${#arr_InputEventDeviceID[@]}='"'${#arr_InputEventDeviceID[@]}'"
                 # echo -e '${#arr_output_evdevQEMU[@]}='"'${#arr_output_evdevQEMU[@]}'"
 
-                # append file #
                 CheckIfFileOrDirExists $str_thisFile1
 
-                if [[ $int_thisExitCode -eq 0 ]]; then
+                if [[ $int_thisExitCode -eq 0 ]]; then                                                      # append file
                     for str_element in ${arr_output_evdevQEMU[@]}; do
-                        WriteVarToFile $str_thisFile1 $str_element &> /dev/null || ( false && break )   # should this loop fail at any given time, exit
+                        WriteVarToFile $str_thisFile1 $str_element &> /dev/null || ( false && break )       # should this loop fail at any given time, exit
                     done
                 fi
 
-                # append system file #
-                # will require restart of apparmor service or system
+                # NOTE: will require restart of apparmor service or system
                 if [[ $int_thisExitCode -eq 0 ]]; then
                     CheckIfFileOrDirExists $str_thisFile2 &> /dev/null
 
-                    if [[ $int_thisExitCode -eq 0 ]]; then
+                    if [[ $int_thisExitCode -eq 0 ]]; then                                                  # append file
                         for str_element in ${arr_output_evdevApparmor[@]}; do
                             WriteVarToFile $str_thisFile2 $str_element &> /dev/null || ( false && break )   # should this loop fail at any given time, exit
                         done
@@ -1081,16 +1016,14 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
         # parameters #
         declare -r str_thisFile1="qemu-hugepages.log"
-        declare -ir int_HostMemMaxK=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )     # sum of system RAM in KiB
+        declare -ir int_HostMemMaxK=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )      # sum of system RAM in KiB
         str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                                # default output
 
         echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\n\tVirtual machines can use Hugepages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n"
         ReadInput "Setup Hugepages?"
 
         if [[ $int_thisExitCode -eq 0 ]]; then
-
-            # add users to groups #
-            declare -ar arr_User=($( getent passwd {1000..60000} | cut -d ":" -f 1 ))
+            declare -ar arr_User=($( getent passwd {1000..60000} | cut -d ":" -f 1 ))   # add users to groups
 
             for str_element in $arr_User; do
                 adduser $str_element input &> /dev/null       # quiet output
@@ -1101,17 +1034,15 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             ReadInputFromMultipleChoiceUpperCase "Enter Hugepage size and byte-size \e[30;43m[1G/2M]:\e[0m" "1G" "2M"
             str_HugePageSize=$str_input1
 
-            declare -ir int_HostMemMinK=4194304        # min host RAM in KiB
+            declare -ir int_HostMemMinK=4194304         # min host RAM in KiB
 
-            # Hugepage Size #
-            case $str_HugePageSize in
+            case $str_HugePageSize in                   # Hugepage Size
                 "2M")
-                    declare -ir int_HugePageK=2048     # Hugepage size
-                    declare -ir int_HugePageMin=2;;    # min HugePages
-
+                    declare -ir int_HugePageK=2048      # Hugepage size
+                    declare -ir int_HugePageMin=2;;     # min HugePages
                 "1G")
-                    declare -ir int_HugePageK=1048576  # Hugepage size
-                    declare -ir int_HugePageMin=1;;    # min HugePages
+                    declare -ir int_HugePageK=1048576   # Hugepage size
+                    declare -ir int_HugePageMin=1;;     # min HugePages
             esac
 
             declare -ir int_HugePageMemMax=$(( $int_HostMemMaxK - $int_HostMemMinK ))
@@ -1134,8 +1065,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             fi
         fi
 
-        # call functions
-        # SaveThisExitCode
+        # SaveThisExitCode                                  # call functions
         EchoPassOrFailThisExitCode "Setup Hugepages..."
         ParseThisExitCode
     }
