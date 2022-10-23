@@ -185,10 +185,10 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
     function EchoPassOrFailThisExitCode
     {
+        # behavior:
         # output a pass or fail depending on the exit code
-
         #
-        # reserved/unreserved exit codes #
+        # reserved/unreserved exit codes:
         #
         #   0       == always pass
         #   3       == free
@@ -219,10 +219,10 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
     function ParseThisExitCode
     {
+        # behavior:
         # output a specific error/exception given exit code
-
         #
-        # relative exit codes
+        # relative exit codes:
         #
         #   3       == pass with some errors
         #   255-248 == specified
@@ -287,7 +287,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     function ReadInput
     {
         # behavior:
-        #
         # ask for Yes/No answer, return boolean,
         # default selection is N/false
         # always returns bool
@@ -330,7 +329,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     function ReadInputFromMultipleChoiceIgnoreCase
     {
         # behavior:
-        #
         # ask for multiple choice, up to eight choices
         # default selection is first choice
         # proper use always returns valid answer
@@ -378,8 +376,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             done
         fi
 
-        # call functions
-        SaveThisExitCode
+        SaveThisExitCode    # call functions
         ParseThisExitCode
     }
 
@@ -441,7 +438,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     function ReadInputFromRangeOfNums
     {
         # behavior:
-        #
         # ask for multiple choice, up to eight choices
         # default selection is first choice
         # proper use always returns valid answer
@@ -464,8 +460,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                     break
                 fi
 
-                # check if string is a valid integer
-                # if [[ ! ( "${str_input1}" -ge "$(( ${str_input1} ))" ) ]] 2> /dev/null; then
+                # if [[ ! ( "${str_input1}" -ge "$(( ${str_input1} ))" ) ]] 2> /dev/null; then  # check if string is a valid integer
                 #     echo -en "\e[33mInvalid input.\e[0m "
                 # fi
 
@@ -483,7 +478,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     function TestNetwork
     {
         # behavior:
-        #
         #   test internet connection and DNS servers
         #   return boolean, to be used by main
         #
@@ -511,7 +505,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     function WriteVarToFile
     {
         # behavior:
-        #
         # input variable #2 ( $2 ) is the name of the variable we wish to point to
         # this may help with calling/parsing arrays
         # when passing the var, write the name without " $ "
@@ -662,16 +655,11 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         declare -i int_hostCores=1          # default value
 
         # reserve remainder cores to host #
-        # >= 4-core CPU, leave max 2
-        if [[ $int_totalCores -ge 4 ]]; then
+        if [[ $int_totalCores -ge 4 ]]; then                                # >= 4-core CPU, leave max 2
             readonly int_hostCores=2
-
-        # 2 or 3-core CPU, leave max 1
-        elif [[ $int_totalCores -le 3 && $int_totalCores -ge 2 ]]; then
+        elif [[ $int_totalCores -le 3 && $int_totalCores -ge 2 ]]; then     # 2 or 3-core CPU, leave max 1
             readonly int_hostCores=1
-
-        # 1-core CPU, do not reserve cores to virt
-        else
+        else                                                                # 1-core CPU, do not reserve cores to virt
             readonly int_hostCores=$int_totalCores
             (exit 255)
         fi
@@ -685,19 +673,16 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
             if [[ $int_firstHostThread -eq $int_lastHostThread ]]; then
                 str_virtThreads+="${int_firstHostThread},"
-
             else
                 str_virtThreads+="${int_firstHostThread}-${int_lastHostThread},"
             fi
         done
 
-        # update parameters #
-        if [[ ${str_virtThreads: -1} == "," ]]; then
+        if [[ ${str_virtThreads: -1} == "," ]]; then                # update parameters
             str_virtThreads=${str_virtThreads::-1}
         fi
 
-        # group threads by core id #
-        for (( int_i=0 ; int_i<$int_totalCores ; int_i++ )); do
+        for (( int_i=0 ; int_i<$int_totalCores ; int_i++ )); do     # group threads by core id
             str_line1=""
             declare -i int_thisCore=${arr_coresByThread[int_i]}
 
@@ -710,17 +695,14 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 fi
             done
 
-            # update    str_output1="Setup 'Static' CPU isolation? [Y/n]: "
+            # str_output1="Setup 'Static' CPU isolation? [Y/n]: "       # update
 
             arr_totalThreads+=("$str_line1")
 
-            # save output for cpu isolation (host) #
-            if [[ $int_thisCore -lt $int_hostCores ]]; then
+            if [[ $int_thisCore -lt $int_hostCores ]]; then             # save output for cpu isolation (host)
                 arr_hostCores+=("$int_thisCore")
                 arr_hostThreadSets+=("$str_line1")
-
-            # save output for cpuset/cpumask (qemu cpu pinning) #
-            else
+            else                                                        # save output for cpuset/cpumask (qemu cpu pinning)
                 # arr_virtCores+=("$int_thisCore")
                 arr_virtThreadSets+=("$str_line1")
             fi
@@ -759,8 +741,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         # save output #
         if [[ $int_thisExitCode -eq 0 ]]; then
             readonly int_hostThreads_mask
-            readonly hex_totalThreads_mask=$(printf '%x\n' $int_totalThreads_mask)  # int to hex #
-            readonly hex_hostThreads_mask=$(printf '%x\n' $int_hostThreads_mask)    # int to hex #
+            readonly hex_totalThreads_mask=$(printf '%x\n' $int_totalThreads_mask)  # int to hex
+            readonly hex_hostThreads_mask=$(printf '%x\n' $int_hostThreads_mask)    # int to hex
             readonly str_GRUB_CMDLINE_CPU_Isolation="isolcpus=$str_virtThreads nohz_full=$str_virtThreads rcu_nocbs=$str_virtThreads"
         fi
     }
@@ -810,30 +792,32 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                     fi
                 fi
 
-                # reference to append to VFIO PCI #
+                # append to VFIO PCI #
                 if [[ $str_thisIOMMU != ${arr_IOMMU_hasVGA[-1]} ]]; then                        # append to list only once
                     case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in  # check for VGA type
                         *"3D"*|*"DISPLAY"*|*"GRAPHICS"*|*"VGA"*)
-                            arr_IOMMU_hasVGA+=( "$str_thisIOMMU" );;
+                            arr_IOMMU_hasVGA+=( "$str_thisIOMMU" );
+
+                            if [[ $int_thisDeviceBusID -eq 0 && -z $str_IGPU_fullName ]]; then  # append IGPU name
+                                declare -lr str_IGPU_fullName="${str_thisDeviceVendor} ${str_thisDeviceName}"
+                            fi
+
+                            if [[ $int_thisDeviceBusID -gt 0 && -z $str_IGPU_fullName ]]; then
+                                declare -lr str_IGPU_fullName="N/A"
+                            fi
+                            ;
                     esac
                 fi
 
-                if [[ $str_thisIOMMU != ${arr_IOMMU_hasVGA[-1]} ]]; then                        # append to list only once
-                    case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in  # check for VGA type
-                        *"3D"*|*"DISPLAY"*|*"GRAPHICS"*|*"VGA"*)
-                            arr_IOMMU_hasVGA+=( "$str_thisIOMMU" );;
-                    esac
-                fi
-
-                # reference to append to PCI STUB #
+                # append to PCI STUB #
                 if [[ $str_thisIOMMU != ${arr_IOMMU_hasUSB[-1]} ]]; then                        # append to list only once
                     case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in  # check for USB type
                         *"USB"*)
-                            arr_IOMMU_hasUSB+=( "$str_thisIOMMU" );;
+                            arr_IOMMU_hasUSB+=( "$str_thisIOMMU");;
                     esac
                 fi
 
-                # reference to append to VFIO PCI #
+                # append to VFIO PCI #
                 if [[ $int_thisDeviceBusID -eq 0 ]]; then                                       # check for internal PCI
                     if [[ $str_thisIOMMU != ${arr_IOMMU_hasInternalPCI[-1]} ]]; then            # append to list only once
                         arr_IOMMU_hasInternalPCI+=( "$str_thisIOMMU" )
@@ -1017,23 +1001,19 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         ParseThisExitCode "Reviewing IOMMU groups..."
     }
 
-    function SetupAutoXorg                      # TODO: fix here!
+    function SetupAutoXorg
     {
         declare -r str_pwd=$( pwd )
-
         echo -e "Installing Auto-Xorg... "
         cd $( find -wholename Auto-Xorg | uniq | head -n1 ) && bash ./installer.bash && cd $str_pwd
-
         SaveThisExitCode            # call functions
         EchoPassOrFailThisExitCode
         ParseThisExitCode
         echo
     }
-
     function SetupEvdev
     {
         # behavior:
-        #
         # ask user to prep setup of Evdev
         # add active desktop users to groups for Libvirt, QEMU, Input devices, etc.
         # write to logfile
@@ -1129,7 +1109,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     function SetupHugepages
     {
         # behavior:
-        #
         # find vars necessary for Hugepages setup
         # function can never *fail*, just execute or exit
         # write to logfile
@@ -1191,9 +1170,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         ParseThisExitCode
     }
 
-    function SetupStaticCPU_isolation           # TODO: fix here!
+    function SetupStaticCPU_isolation
     {
-        # prompt #
         echo -e "CPU isolation (Static or Dynamic) is a feature which allocates system CPU threads to the host and Virtual machines (VMs), separately.\n\tVirtual machines can use CPU isolation or 'pinning' to a peformance benefit\n\t'Static' is more 'permanent' CPU isolation: installation will append to GRUB after VFIO setup.\n\tAlternatively, 'Dynamic' CPU isolation is flexible and on-demand: post-installation will execute as a libvirt hook script (per VM)."
         ReadInput "Setup 'Static' CPU isolation?" && echo -en "Executing CPU isolation setup... " && ParseCPU
         EchoPassOrFailThisExitCode              # call functions
@@ -1201,10 +1179,10 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         echo
     }
 
-    function SetupZRAM_Swap                     # TODO: fix here!
+    function SetupZRAM_Swap
     {
         # parameters #
-        declare -r str_pwd=$( pwd )
+        declare -lr str_pwd=$( pwd )
 
         # prompt #
         echo -e "Installing zram-swap... "
@@ -1224,8 +1202,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 swapoff /dev/zram* &> /dev/null
             fi
 
-            declare -ir int_hostMemMaxG=$(( int_HostMemMaxK / 1048576 ))
-            declare -ir int_sysMemMaxG=$(( int_hostMemMaxG + 1 ))
+            declare -lir int_hostMemMaxG=$(( int_HostMemMaxK / 1048576 ))
+            declare -lir int_sysMemMaxG=$(( int_hostMemMaxG + 1 ))
 
             echo -e "Total system memory: <= ${int_sysMemMaxG}G.\nIf 'Z == ${int_sysMemMaxG}G - (V + X)', where ('Z' == ZRAM, 'V' == VM(s), and 'X' == remainder for Host machine).\n\tCalculate 'Z'."
 
@@ -1233,47 +1211,48 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             if [[ ! -z $str_HugePageSize && ! -z $int_HugePageNum ]]; then
                 case $str_HugePageSize in
                     "1G")
-                        declare -ir int_hugePageSizeK=1048576;;
+                        declare -lir int_hugePageSizeK=1048576;;
 
                     "2M")
-                        declare -ir int_hugePageSizeK=2048;;
+                        declare -lir int_hugePageSizeK=2048;;
                 esac
 
-                declare -ir int_hugepagesMemG=$int_HugePageNum*$int_hugePageSizeK/1048576
-                declare -ir int_hostMemFreeG=$int_sysMemMaxG-$int_hugepagesMemG
+                declare -lir int_hugepagesMemG=$int_HugePageNum*$int_hugePageSizeK/1048576
+                declare -lir int_hostMemFreeG=$int_sysMemMaxG-$int_hugepagesMemG
                 echo -e "Free system memory after hugepages (${int_hugepagesMemG}G): <= ${int_hostMemFreeG}G."
 
             else
-                declare -ir int_hostMemFreeG=$int_sysMemMaxG
+                declare -lir int_hostMemFreeG=$int_sysMemMaxG
                 echo -e "Free system memory: <= ${int_hostMemFreeG}G."
             fi
 
             str_output1="Enter zram-swap size in G (0G < n < ${int_hostMemFreeG}G): "
-            echo -en $str_output1
-            read -r int_ZRAM_sizeG
 
-            while true; do
+            ReadInputFromRangeOfNums "Enter zram-swap size in G (0G < n < ${int_hostMemFreeG}G): " ((0)) $int_hostMemFreeG
+            declare -lir int_ZRAM_sizeG=(( $str_input1 ))
 
-                # attempt #
-                if [[ $int_count -ge 2 ]]; then
-                    ((int_ZRAM_sizeG=int_hostMemFreeG/2))      # default selection
-                    echo -e "Exceeded max attempts. Default selection: ${int_ZRAM_sizeG}G"
-                    break
+            # while true; do
 
-                else
-                    if [[ -z $int_ZRAM_sizeG || $int_ZRAM_sizeG -lt 0 || $int_ZRAM_sizeG -ge $int_hostMemFreeG ]]; then
-                        echo -en "\e[33mInvalid input.\e[0m\n$str_output1"
-                        read -r int_ZRAM_sizeG
+            #     # attempt #
+            #     if [[ $int_count -ge 2 ]]; then
+            #         ((int_ZRAM_sizeG=int_hostMemFreeG/2))      # default selection
+            #         echo -e "Exceeded max attempts. Default selection: ${int_ZRAM_sizeG}G"
+            #         break
 
-                    else
-                        break
-                    fi
-                fi
+            #     else
+            #         if [[ -z $int_ZRAM_sizeG || $int_ZRAM_sizeG -lt 0 || $int_ZRAM_sizeG -ge $int_hostMemFreeG ]]; then
+            #             echo -en "\e[33mInvalid input.\e[0m\n$str_output1"
+            #             read -r int_ZRAM_sizeG
 
-                ((int_count++))
-            done
+            #         else
+            #             break
+            #         fi
+            #     fi
 
-            declare -ir int_denominator="(( $int_sysMemMaxG / $int_ZRAM_sizeG ))"
+            #     ((int_count++))
+            # done
+
+            declare -lir int_denominator="(( $int_sysMemMaxG / $int_ZRAM_sizeG ))"
             str_output1="\n_zram_fraction=\"1/$int_denominator\""
             # str_outFile1="/etc/default/zramswap"
             str_outFile1="/etc/default/zram-swap"
@@ -1282,11 +1261,9 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             WriteVarToFile $str_outFile1 $str_output1 || (exit 255)
         fi
 
-        # call functions
-        SaveThisExitCode
+        SaveThisExitCode            # call functions
         EchoPassOrFailThisExitCode "Zram-swap setup "
         ParseThisExitCode
-
         echo
     }
 
@@ -1313,11 +1290,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
     function MultiBootSetup                     # TODO: review this!
     {
-        # TODO:
-        #   -retrofit new functions with old code
-        #   -refactor
-        #   -var for IGPU dev name
-
         echo -e "Executing Multi-boot setup..."
         ParseIOMMUandPCI
         SelectAnIOMMUGroup
@@ -1327,204 +1299,156 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         fi
 
         # parameters #
-            bool_outputToGRUB=false
-            readonly str_thisFile="${0##*/}"
-            readonly str_logFile0="$str_thisFile.log"
-            declare -a arr_VFIO_driver=()
-            declare -a arr_VFIOVGA_driver=()
-            str_thisFullName=""
+        bool_outputToGRUB=false
+        readonly str_thisFile="${0##*/}"
+        readonly str_logFile0="$str_thisFile.log"
+        declare -a arr_VFIO_driver=()
+        declare -a arr_VFIOVGA_driver=()
+        str_thisGPU_FullName=""
 
-            declare -a arr_GRUBmenuEntry=()
-            declare -a arr_rootKernel+=($(ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n3))     # first three kernels
-            readonly str_rootDisk=$(df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1)
-            readonly str_rootDistro=$(lsb_release -i -s)                                                 # Linux distro name
-            readonly str_rootUUID=$(blkid -s UUID | grep $str_rootDisk | cut -d '"' -f2)
-            str_rootFSTYPE=$(blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2)
+        declare -a arr_GRUBmenuEntry=()
+        declare -a arr_rootKernel+=($(ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n3))     # first three kernels
+        readonly str_rootDisk=$(df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1)
+        readonly str_rootDistro=$(lsb_release -i -s)                                                 # Linux distro name
+        readonly str_rootUUID=$(blkid -s UUID | grep $str_rootDisk | cut -d '"' -f2)
+        str_rootFSTYPE=$(blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2)
 
-            if [[ $str_rootFSTYPE == "ext4" || $str_rootFSTYPE == "ext3" ]]; then
-                readonly str_rootFSTYPE="ext2"
-            fi
+        if [[ $str_rootFSTYPE == "ext4" || $str_rootFSTYPE == "ext3" ]]; then
+            readonly str_rootFSTYPE="ext2"
+        fi
 
-            # files #
-            readonly str_dir1=$(find .. -name files)
-            if [[ -e $str_dir1 ]]; then
-                cd $str_dir1
-            fi
+        # files #
+        readonly str_dir1=$(find .. -name files)
+        CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
 
-            readonly str_inFile1=$(find . -name *etc_grub.d_proxifiedScripts_custom)
-            readonly str_inFile1b=$(find . -name *Multi-boot_template)
+        readonly str_inFile1=$(find . -name *etc_grub.d_proxifiedScripts_custom)
+        readonly str_inFile1b=$(find . -name *Multi-boot_template)
+        readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"
 
-            # comment to debug here #
-            readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"
+        CreateBackupFromFile $str_outFile1 &> /dev/null
+        CheckIfFileOrDirExists $str_inFile1 &> /dev/null && cp $str_inFile1 $str_outFile1    # restore backup
+        CheckIfFileOrDirExists $str_logFile0 &> /dev/null && DeleteFile $str_logFile0 &> /dev/null
+        CreateFile $str_logFile0 &> /dev/null
 
-            # uncomment to debug here #
-            readonly str_oldFile1="$str_outFile1.old"
-
-            # create backup #
-            if [[ -e $str_outFile1 ]]; then
-                mv $str_outFile1 $str_oldFile1
-            fi
-
-            # restore backup #
-            if [[ -e $str_inFile1 ]]; then
-                cp $str_inFile1 $str_outFile1
-            fi
-
-            # create logfile #
-            if [[ -e $str_logFile0 ]]; then
-                rm $str_logFile0
-
-            else
-                touch $str_logFile0
-            fi
-
-            # devices for PCI STUB #
-            for str_element in ${arr_IOMMU_forSTUB[@]}; do
-                for int_key in ${str_element}; do
-                    str_driverListForSTUB+="${arr_DeviceDriver[$int_key]},"
-                    str_HWIDlist_forSTUB+="${arr_DeviceHWID[$int_key]},"
-                done
+        for str_element in ${arr_IOMMU_forSTUB[@]}; do                          # devices for PCI STUB
+            for int_key in ${str_element}; do
+                str_driverListForSTUB+="${arr_DeviceDriver[$int_key]},"
+                str_HWIDlist_forSTUB+="${arr_DeviceHWID[$int_key]},"
             done
-
-            # devices for PCI STUB #
-            for str_element in ${arr_IOMMU_forVFIO[@]}; do
-                for int_key in ${str_element}; do
-                    str_driverListForVFIO+="${arr_DeviceDriver[$int_key]},"
-                    str_HWID_list_forVFIO+="${arr_DeviceHWID[$int_key]},"
-                done
-            done
-
-            # devices for PCI STUB #
-            for str_element in ${arr_IOMMU_withVGA_forVFIO[@]}; do
-                for int_key in ${str_element}; do
-                    str_driverListWithVGA_forVFIO+="${arr_DeviceDriver[$int_key]},"
-                    str_HWID_listWithVGA_forVFIO+="${arr_DeviceHWID[$int_key]},"
-                done
-            done
-
-            # remove last separator #
-            str_driverListForSTUB=${str_driverListForSTUB::-1} # &> /dev/null
-            str_driverListForVFIO=${str_driverListForVFIO::-1}
-            str_driverListWithVGA_forVFIO=${str_driverListWithVGA_forVFIO::-1}
-            str_HWIDlist_forSTUB=${str_HWIDlist_forSTUB::-1}
-            str_HWID_list_forVFIO=${str_HWID_list_forVFIO::-1}
-            str_HWID_listWithVGA_forVFIO=${str_HWID_listWithVGA_forVFIO::-1}
-
-            if [[ ${#str_driverListWithVGA_forVFIO} -gt 0 ]]; then
-                str_driverListForVFIO+=",${str_driverListWithVGA_forVFIO}"
-            fi
-
-            if [[ ${#str_HWID_listWithVGA_forVFIO} -gt 0 ]]; then
-                str_HWID_list_forVFIO+=",${str_HWID_listWithVGA_forVFIO}"
-            fi
-
-
-            # write to file #
-
-                # TODO: declare IGPU name
-
-                # parameters #
-                if [[ $str_IGPUFullName != "N/A" && $str_IGPUFullName != "" ]]; then
-                    str_thisFullName=$str_IGPUFullName
-                fi
-
-                # NOTE: update here!
-                str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} modprobe.blacklist=${str_driverListForVFIO} pci-stub.ids=${str_driverListForSTUB} vfio_pci.ids=${str_HWID_list_forVFIO}"
-
-                # log file #
-                echo -e "#${arr_IOMMU_withVGA_forVFIO[1]} #${str_thisFullName} #${str_GRUB_CMDLINE}" >> $str_logFile0
-
-                ## /etc/grub.d/proxifiedScripts/custom ##
-
-                    # parse kernels #
-                    for (( int_i=0 ; int_i<${#arr_rootKernel[@]} ; int_i++)); do
-
-                        # match #
-                        if [[ -e ${arr_rootKernel[$int_i]} || ${arr_rootKernel[$int_i]} != "" ]]; then
-                            str_thisRootKernel=${arr_rootKernel[$int_i]:1}
-
-                            # parameters #
-                            str_thisGRUBmenuEntry=$(lsb_release -i -s)" "$(uname -o)", with "$(uname)" $str_thisRootKernel (VFIO, w/o IOMMU '${arr_IOMMU_withVGA_forVFIO[1]}}', w/ boot VGA '$str_thisFullName')"
-                            arr_GRUBmenuEntry+=("$str_thisGRUBmenuEntry")
-                            str_output1="menuentry \"$str_thisGRUBmenuEntry\" {"
-                            str_output1_log="\n"'menuentry "'$(lsb_release -i -s)" "$(uname -o)", with "$(uname)" #kernel_'$int_i'# (VFIO, w/o IOMMU '${arr_IOMMU_withVGA_forVFIO[1]}', w/ boot VGA '$str_thisFullName'\") {"
-                            str_output2="\tinsmod $str_rootFSTYPE"
-                            str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
-                            str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$str_rootUUID\n\t"'fi'
-                            str_output5="\techo    'Loading Linux $str_thisRootKernel ...'"
-                            str_output5_log="\techo    'Loading Linux #kernel'$int_i'# ...'"
-                            str_output6="\tlinux   /boot/vmlinuz-$str_thisRootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
-                            str_output6_log="\tlinux   /boot/vmlinuz-#kernel'$int_i'# root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
-                            str_output7="\tinitrd  /boot/initrd.img-$str_thisRootKernel"
-                            str_output7_log="\tinitrd  /boot/initrd.img-"'#kernel'$int_i'#'
-
-                            # debug prompt #
-                            # echo -e "'$""str_output0'\t\t= $str_output0"
-                            # echo -e "'$""str_output1'\t\t= $str_output1"
-                            # echo -e "'$""str_output2'\t\t= $str_output2"
-                            # echo -e "'$""str_output3'\t\t= $str_output3"
-                            # echo -e "'$""str_output4'\t\t= $str_output4"
-                            # echo -e "'$""str_output5'\t\t= $str_output5"
-                            # echo -e "'$""str_output6'\t\t= $str_output6"
-                            # echo -e "'$""str_output7'\t\t= $str_output7"
-                            # echo
-
-                            if [[ -e $str_inFile1 && -e $str_inFile1b ]]; then
-
-                                # write to tempfile #
-                                echo -e >> $str_outFile1
-
-                                while read -r str_line1; do
-                                    case $str_line1 in
-                                        *'#$str_output1'*)
-                                            str_outLine1="$str_output1";;
-                                        *'#$str_output2'*)
-                                            str_outLine1="$str_output2";;
-                                        *'#$str_output3'*)
-                                            str_outLine1="$str_output3";;
-                                        *'#$str_output4'*)
-                                            str_outLine1="$str_output4";;
-                                        *'#$str_output5'*)
-                                            str_outLine1="$str_output5";;
-                                        *'#$str_output6'*)
-                                            str_outLine1="$str_output6";;
-                                        *'#$str_output7'*)
-                                            str_outLine1="$str_output7";;
-                                        *)
-                                            str_outLine1="$str_line1";;
-                                    esac
-
-                                    # write to system file and logfile (post_install: update Multi-boot) #
-                                    echo -e "$str_outLine1" >> $str_outFile1
-                                done < $str_inFile1b        # read from template
-                            else
-                                bool_missingFiles=true
-                            fi
-                        fi
-                    done
-
-        # file check #
-            if [[ $bool_missingFiles == true ]]; then
-                echo -e "File(s) missing:"
-
-                if [[ -z $str_inFile1 ]]; then
-                    echo -e "\t'$str_inFile1'"
-                fi
-
-                if [[ -z $str_inFile1b ]]; then
-                    echo -e "\t'$str_inFile1b'"
-                fi
-
-                (exit 255)
-                SaveThisExitCode
-            else
-                chmod 755 $str_outFile1 $str_oldFile1 &> /dev/null                  # set proper permissions
-                (exit 0)
-                SaveThisExitCode
-            fi
         done
 
+        for str_element in ${arr_IOMMU_forVFIO[@]}; do                          # devices for VFIO PCI
+            for int_key in ${str_element}; do
+                str_driverListForVFIO+="${arr_DeviceDriver[$int_key]},"
+                str_HWID_list_forVFIO+="${arr_DeviceHWID[$int_key]},"
+            done
+        done
+
+        for str_element in ${arr_IOMMU_withVGA_forVFIO[@]}; do                  # devices for VFIO PCI
+            for int_key in ${str_element}; do
+                str_driverListWithVGA_forVFIO+="${arr_DeviceDriver[$int_key]},"
+                str_HWID_listWithVGA_forVFIO+="${arr_DeviceHWID[$int_key]},"
+            done
+        done
+
+        # remove last separator #
+        str_driverListForSTUB=${str_driverListForSTUB::-1}
+        str_driverListForVFIO=${str_driverListForVFIO::-1}
+        str_driverListWithVGA_forVFIO=${str_driverListWithVGA_forVFIO::-1}
+        str_HWIDlist_forSTUB=${str_HWIDlist_forSTUB::-1}
+        str_HWID_list_forVFIO=${str_HWID_list_forVFIO::-1}
+        str_HWID_listWithVGA_forVFIO=${str_HWID_listWithVGA_forVFIO::-1}
+
+        if [[ ${#str_driverListWithVGA_forVFIO} -gt 0 ]]; then
+            str_driverListForVFIO+=",${str_driverListWithVGA_forVFIO}"
+        fi
+
+        if [[ ${#str_HWID_listWithVGA_forVFIO} -gt 0 ]]; then
+            str_HWID_list_forVFIO+=",${str_HWID_listWithVGA_forVFIO}"
+        fi
+
+        if [[ $str_IGPU_fullName != "N/A" && -z $str_IGPU_fullName ]]; then     # append IGPU name
+            str_thisGPU_FullName=$str_IGPU_fullName
+        fi
+
+        # NOTE: update here!
+        # write to file #
+        str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} modprobe.blacklist=${str_driverListForVFIO} pci-stub.ids=${str_driverListForSTUB} vfio_pci.ids=${str_HWID_list_forVFIO}"
+
+        WriteVarToFile $str_logFile0 "#${arr_IOMMU_withVGA_forVFIO[1]} #${str_thisGPU_FullName} #${str_GRUB_CMDLINE}" &> /dev/null  # log file
+
+        # /etc/grub.d/proxifiedScripts/custom #
+        for (( int_i=0 ; int_i<${#arr_rootKernel[@]} ; int_i++)); do                        # parse kernels
+            if [[ -e ${arr_rootKernel[$int_i]} || ${arr_rootKernel[$int_i]} != "" ]]; then  # match
+                str_thisRootKernel=${arr_rootKernel[$int_i]:1}
+
+                # parameters #
+                str_thisGRUBmenuEntry=$(lsb_release -i -s)" "$(uname -o)", with "$(uname)" $str_thisRootKernel (VFIO, w/o IOMMU '${arr_IOMMU_withVGA_forVFIO[1]}}', w/ boot VGA '$str_thisGPU_FullName')"
+                arr_GRUBmenuEntry+=("$str_thisGRUBmenuEntry")
+                str_output1="menuentry \"$str_thisGRUBmenuEntry\" {"
+                str_output1_log="\n"'menuentry "'$(lsb_release -i -s)" "$(uname -o)", with "$(uname)" #kernel_'$int_i'# (VFIO, w/o IOMMU '${arr_IOMMU_withVGA_forVFIO[1]}', w/ boot VGA '$str_thisGPU_FullName'\") {"
+                str_output2="\tinsmod $str_rootFSTYPE"
+                str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
+                str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$str_rootUUID\n\t"'fi'
+                str_output5="\techo    'Loading Linux $str_thisRootKernel ...'"
+                str_output5_log="\techo    'Loading Linux #kernel'$int_i'# ...'"
+                str_output6="\tlinux   /boot/vmlinuz-$str_thisRootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
+                str_output6_log="\tlinux   /boot/vmlinuz-#kernel'$int_i'# root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
+                str_output7="\tinitrd  /boot/initrd.img-$str_thisRootKernel"
+                str_output7_log="\tinitrd  /boot/initrd.img-"'#kernel'$int_i'#'
+
+                # debug prompt #
+                # echo -e "'$""str_output0'\t\t= $str_output0"
+                # echo -e "'$""str_output1'\t\t= $str_output1"
+                # echo -e "'$""str_output2'\t\t= $str_output2"
+                # echo -e "'$""str_output3'\t\t= $str_output3"
+                # echo -e "'$""str_output4'\t\t= $str_output4"
+                # echo -e "'$""str_output5'\t\t= $str_output5"
+                # echo -e "'$""str_output6'\t\t= $str_output6"
+                # echo -e "'$""str_output7'\t\t= $str_output7"
+                # echo
+
+                # write to tempfile #
+                CheckIfFileOrDirExists $str_inFile1 && CheckIfFileOrDirExists $str_inFile1b && (
+                    echo -e >> $str_outFile1
+
+                    while read -r str_line1; do
+                        case $str_line1 in
+                            *'#$str_output1'*)
+                                str_outLine1="$str_output1";;
+                            *'#$str_output2'*)
+                                str_outLine1="$str_output2";;
+                            *'#$str_output3'*)
+                                str_outLine1="$str_output3";;
+                            *'#$str_output4'*)
+                                str_outLine1="$str_output4";;
+                            *'#$str_output5'*)
+                                str_outLine1="$str_output5";;
+                            *'#$str_output6'*)
+                                str_outLine1="$str_output6";;
+                            *'#$str_output7'*)
+                                str_outLine1="$str_output7";;
+                            *)
+                                str_outLine1="$str_line1";;
+                        esac
+
+                        WriteVarToFile $str_outFile1 $str_outLine1 &> /dev/null || ( SaveThisExitCode && break )    # write to system file and logfile (post_install: update Multi-boot)
+                    done < $str_inFile1b                                                                            # read from template
+                ) || (
+                    local bool_missingFiles=true && (exit 255) && SaveThisExitCodebreak
+                )
+            fi
+        done && (
+            chmod 755 $str_outFile1 $str_oldFile1 &> /dev/null && (exit 0) && SaveThisExitCode                      # set proper permissions
+        )
+
         ParseThisExitCode "Executing Multi-boot setup..."
+
+        if [[ $bool_missingFiles == true ]]; then   # file check
+            echo -e "File(s) missing:"
+            CheckIfFileOrDirExists $str_inFile1 &> /dev/null || echo -e "\t'$str_inFile1'"
+            CheckIfFileOrDirExists $str_inFile1b &> /dev/null || echo -e "\t'$str_inFile1b'"
+        fi
     }
 
     function ParseInputParamForOptions
