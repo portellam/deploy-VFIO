@@ -774,7 +774,13 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 # save output of given device #
                 local str_thisDevicePCI_ID="${str_element2##"0000:"}"
                 local str_thisDeviceBusID=$( echo $str_thisDevicePCI_ID | cut -d ':' -f1 )
-                declare -li int_thisDeviceBusID=$str_thisDeviceBusID
+
+                if [[ ${str_thisDeviceBusID::1} -eq 0 ]]; then
+                    declare -li int_thisDeviceBusID=$(( ${str_thisDeviceBusID:1:2} ))
+                else
+                    declare -li int_thisDeviceBusID=$(( $str_thisDeviceBusID ))
+                fi
+
                 local str_thisDeviceName="$( lspci -ms ${str_element2} | cut -d '"' -f6 )"
                 local str_thisDeviceType="$( lspci -ms ${str_element2} | cut -d '"' -f2 )"
                 local str_thisDeviceVendor="$( lspci -ms ${str_element2} | cut -d '"' -f4 )"
@@ -793,10 +799,10 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 fi
 
                 # append to VFIO PCI #
-                if [[ $str_thisIOMMU != ${arr_IOMMU_hasVGA[-1]} ]]; then                        # append to list only once
+                if [[ ${#arr_IOMMU_hasVGA[@]} -eq 0 || ( ${#arr_IOMMU_hasVGA[@]} -gt 0 && $str_thisIOMMU != ${arr_IOMMU_hasVGA[-1]} ) ]]; then
                     case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in  # check for VGA type
                         *"3D"*|*"DISPLAY"*|*"GRAPHICS"*|*"VGA"*)
-                            arr_IOMMU_hasVGA+=( "$str_thisIOMMU" );
+                            arr_IOMMU_hasVGA+=( "$str_thisIOMMU" );                             # append to list only once
 
                             if [[ $int_thisDeviceBusID -eq 0 && -z $str_IGPU_fullName ]]; then  # append IGPU name
                                 declare -lr str_IGPU_fullName="${str_thisDeviceVendor} ${str_thisDeviceName}"
@@ -805,25 +811,25 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                             if [[ $int_thisDeviceBusID -gt 0 && -z $str_IGPU_fullName ]]; then
                                 declare -lr str_IGPU_fullName="N/A"
                             fi
-                            ;
+                            ;;
                     esac
                 fi
 
                 # append to PCI STUB #
-                if [[ $str_thisIOMMU != ${arr_IOMMU_hasUSB[-1]} ]]; then                        # append to list only once
+                if [[ ${#arr_IOMMU_hasUSB[@]} -eq 0 || ( ${#arr_IOMMU_hasUSB[@]} -gt 0 && $str_thisIOMMU != ${arr_IOMMU_hasUSB[-1]} ) ]]; then
                     case $( echo ${arr_DeviceType[$int_key]} | tr '[:lower:]' '[:upper:]' ) in  # check for USB type
                         *"USB"*)
-                            arr_IOMMU_hasUSB+=( "$str_thisIOMMU");;
+                            arr_IOMMU_hasUSB+=( "$str_thisIOMMU");;                             # append to list only once
                     esac
                 fi
 
                 # append to VFIO PCI #
                 if [[ $int_thisDeviceBusID -eq 0 ]]; then                                       # check for internal PCI
-                    if [[ $str_thisIOMMU != ${arr_IOMMU_hasInternalPCI[-1]} ]]; then            # append to list only once
-                        arr_IOMMU_hasInternalPCI+=( "$str_thisIOMMU" )
+                    if [[ ${#arr_IOMMU_hasInternalPCI[@]} -eq 0 || ( ${#arr_IOMMU_hasInternalPCI[@]} -gt 0 && $str_thisIOMMU != ${arr_IOMMU_hasInternalPCI[-1]} ) ]]; then
+                        arr_IOMMU_hasInternalPCI+=( "$str_thisIOMMU" )                          # append to list only once
                     fi
-                else
-                    if [[ $str_thisIOMMU != ${arr_IOMMU_hasExternalPCI[-1]} ]]; then            # check for external PCI
+                else                                                                            # check for external PCI
+                    if [[ ${#arr_IOMMU_hasExternalPCI[@]} -eq 0 || ( ${#arr_IOMMU_hasExternalPCI[@]} -gt 0 && $str_thisIOMMU != ${arr_IOMMU_hasExternalPCI[-1]} ) ]]; then
                         arr_IOMMU_hasExternalPCI+=( "$str_thisIOMMU" )                          # append to list only once
                     fi
                 fi
@@ -986,17 +992,15 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         # check if all IOMMU groups remain assigned to host #
         # yes, fail setup
         # if one isn't, complete setup
-        if [[ ${!arr_IOMMU_forHost[-1]} -eq ${int_lastIOMMU} ]]; then
-            (exit 255)
-            SaveThisExitCode
+        (exit 255)
+        SaveThisExitCode
 
-            for str_element in ${arr_IOMMU_forHost[@]}; do
-                if [[ $str_element == "" || -z $str_element ]]; then
-                    (exit 0)
-                    SaveThisExitCode
-                fi
-            done
-        fi
+        for str_element in ${arr_IOMMU_forHost[@]}; do
+            if [[ $str_element == "" || -z $str_element ]]; then
+                (exit 0)
+                SaveThisExitCode
+            fi
+        done
 
         ParseThisExitCode "Reviewing IOMMU groups..."
     }
@@ -1220,7 +1224,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 declare -lir int_hugepagesMemG=$int_HugePageNum*$int_hugePageSizeK/1048576
                 declare -lir int_hostMemFreeG=$int_sysMemMaxG-$int_hugepagesMemG
                 echo -e "Free system memory after hugepages (${int_hugepagesMemG}G): <= ${int_hostMemFreeG}G."
-
             else
                 declare -lir int_hostMemFreeG=$int_sysMemMaxG
                 echo -e "Free system memory: <= ${int_hostMemFreeG}G."
@@ -1228,8 +1231,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
             str_output1="Enter zram-swap size in G (0G < n < ${int_hostMemFreeG}G): "
 
-            ReadInputFromRangeOfNums "Enter zram-swap size in G (0G < n < ${int_hostMemFreeG}G): " ((0)) $int_hostMemFreeG
-            declare -lir int_ZRAM_sizeG=(( $str_input1 ))
+            ReadInputFromRangeOfNums "Enter zram-swap size in G (0G < n < ${int_hostMemFreeG}G): " 0 $int_hostMemFreeG
+            declare -lir int_ZRAM_sizeG=$str_input1
 
             # while true; do
 
@@ -1252,7 +1255,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             #     ((int_count++))
             # done
 
-            declare -lir int_denominator="(( $int_sysMemMaxG / $int_ZRAM_sizeG ))"
+            declare -lir int_denominator=$(( $int_sysMemMaxG / $int_ZRAM_sizeG ))
             str_output1="\n_zram_fraction=\"1/$int_denominator\""
             # str_outFile1="/etc/default/zramswap"
             str_outFile1="/etc/default/zram-swap"
@@ -1323,7 +1326,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
         readonly str_inFile1=$(find . -name *etc_grub.d_proxifiedScripts_custom)
         readonly str_inFile1b=$(find . -name *Multi-boot_template)
-        readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"
+        # readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"
+        readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom.new"     # debug
 
         CreateBackupFromFile $str_outFile1 &> /dev/null
         CheckIfFileOrDirExists $str_inFile1 &> /dev/null && cp $str_inFile1 $str_outFile1    # restore backup
@@ -1749,11 +1753,10 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
     IFS=$'\n'      # Change IFS to newline char
 
-    CheckIfUserIsRoot
-    CheckIfIOMMU_IsEnabled
-
     if [[ -z $2 ]]; then
         ParseInputParamForOptions $1
+        CheckIfUserIsRoot
+        CheckIfIOMMU_IsEnabled
 
         case true in
             $bool_execDeleteSetup)
