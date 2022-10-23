@@ -1476,28 +1476,20 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
                                 while read -r str_line1; do
                                     case $str_line1 in
-
                                         *'#$str_output1'*)
                                             str_outLine1="$str_output1";;
-
                                         *'#$str_output2'*)
                                             str_outLine1="$str_output2";;
-
                                         *'#$str_output3'*)
                                             str_outLine1="$str_output3";;
-
                                         *'#$str_output4'*)
                                             str_outLine1="$str_output4";;
-
                                         *'#$str_output5'*)
                                             str_outLine1="$str_output5";;
-
                                         *'#$str_output6'*)
                                             str_outLine1="$str_output6";;
-
                                         *'#$str_output7'*)
                                             str_outLine1="$str_output7";;
-
                                         *)
                                             str_outLine1="$str_line1";;
                                     esac
@@ -1582,7 +1574,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                         SaveThisExitCode
                     fi
                     ;;
-
                 *)
                     (exit 253)
                     SaveThisExitCode
@@ -1593,19 +1584,14 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         case $int_thisKey in
             0|1)
                 bool_execHelp=true;;
-
             2|3)
                 bool_execDeleteSetup=true;;
-
             4|5)
                 bool_execFullSetup=true;;
-
             6|7)
                 bool_execMultiBootSetup=true;;
-
             8|9)
                 bool_execStaticSetup=true;;
-
             10|11)
                 bool_execUpdateSetup=true;;
         esac
@@ -1798,10 +1784,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         case $str_input1 in
             "M")
                 MultiBootSetup;;
-
             "S")
                 StaticSetup;;
-
             "U")
                 UpdateSetup;;
         esac
@@ -1851,25 +1835,19 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         case true in
             $bool_execDeleteSetup)
                 DeleteSetup;;
-
             $bool_execFullSetup)
                 PreInstallSetup
                 SelectVFIOSetup
                 PostInstallSetup;;
-
             $bool_execMultiBootSetup)
                 MultiBootSetup;;
-
             $bool_execStaticSetup)
                 StaticSetup;;
-
             $bool_execUpdateSetup)
                 UpdateSetup;;
-
             *)
                 SelectVFIOSetup;;
         esac
-
     else
         (exit 254)
         SaveThisExitCode
