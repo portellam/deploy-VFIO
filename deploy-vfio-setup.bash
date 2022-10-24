@@ -7,8 +7,7 @@
 # TODO:
 # write iommu output to logfile     done
 # if parse iommu fails, try to read from logfile
-# read from logfile or read from existing system file, then update
-#
+# read from logfile or read from existing system file, then update\
 #
 
 declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation, for conditional statements
@@ -1873,6 +1872,377 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         fi
 
         SelectAnIOMMUGroup
+
+        # parameters #
+        declare -a arr_VFIO_driver=()
+        declare -a arr_VFIOVGA_driver=()
+        bool_missingFiles=false
+        str_PCISTUB_HWIDlist=""
+        str_VFIO_driver_softdep=""
+        str_VFIO_driverList=""
+        str_VFIO_HWIDList=""
+
+        # files #
+        readonly str_dir1=$(find .. -name files)
+        if [[ -e $str_dir1 ]]; then
+            cd $str_dir1
+        fi
+
+        str_inFile1=$(find . -name *etc_default_grub)
+        str_inFile2=$(find . -name *etc_modules)
+        str_inFile3=$(find . -name *etc_initramfs-tools_modules)
+        str_inFile4=$(find . -name *etc_modprobe.d_pci-blacklists.conf)
+        str_inFile5=$(find . -name *etc_modprobe.d_vfio.conf)
+
+        # comment to debug here #
+        str_outFile1="/etc/default/grub"
+        str_outFile2="/etc/modules"
+        str_outFile3="/etc/initramfs-tools/modules"
+        str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
+        str_outFile5="/etc/modprobe.d/vfio.conf"
+
+        # uncomment to debug here #
+        # str_outFile1="grub.log"
+        # str_outFile2="modules.log"
+        # str_outFile3="initramfs_tools_modules.log"
+        # str_outFile4="pci-blacklists.conf.log"
+        # str_outFile5="vfio.conf.log"
+
+        str_oldFile1=$str_outFile1".old"
+        str_oldFile2=$str_outFile2".old"
+        str_oldFile3=$str_outFile3".old"
+        str_oldFile4=$str_outFile4".old"
+        str_oldFile5=$str_outFile5".old"
+        str_logFile1=$(pwd)"/grub.log"
+        # none for file2-files5
+
+        # clear files #     # NOTE: do NOT delete GRUB !!!
+        if [[ -e $str_logFile1 ]]; then
+            rm $str_logFile1
+        fi
+
+        if [[ -e $str_logFile5 ]]; then
+            rm $str_logFile5
+        fi
+
+        # prompt #
+        str_output1="Append changes to '/etc/default/grub' or no (system files)? [Y/n]: "
+        ReadInput $str_output1
+
+        case $str_input1 in
+            "Y")
+                bool_outputToGRUB=true;;
+
+            "N")
+                bool_outputToGRUB=false;;
+        esac
+
+        echo
+
+        # parse VFIO IOMMU group(s) #
+        for int_thisIOMMU in ${arr_IOMMU_VFIO[@]}; do
+            for str_line0 in $(find /sys/kernel/iommu_groups/$int_thisIOMMU -maxdepth 0 -type d | sort -V); do
+                for str_line1 in $str_line0/devices/*; do
+
+                    # parameters #
+                    str_line2=$(lspci -mns ${str_line1##*/})
+                    str_thisBusID=$(echo $str_line2 | cut -d '"' -f1 | cut -d ' ' -f1)
+                    str_thisHWID=$(lspci -n | grep $str_thisBusID | cut -d ' ' -f3)
+                    str_thisDriver=$(lspci -kd $str_thisHWID | grep "driver" | cut -d ':' -f2 | cut -d ' ' -f2)
+
+                    # add to lists #
+                    if [[ $str_thisDriver != "" ]]; then
+                        if [[ -z $(echo $str_internalPCI_driverList | grep $str_thisDriver) && -z $(echo $str_PCISTUB_driverList | grep $str_thisDriver) ]]; then
+                            if [[ ${#str_VFIO_driverList[@]} != 0 && -z $(echo $str_VFIO_driverList | grep $str_thisDriver) ]]; then
+                                arr_VFIO_driver+=("$str_thisDriver")
+                                str_VFIO_driverList+="$str_thisDriver,"
+
+                            else
+                                arr_VFIO_driver+=("$str_thisDriver")
+                                str_VFIO_driverList+="$str_thisDriver,"
+                            fi
+                        fi
+                    fi
+
+                    if [[ -z $(echo $str_internalPCI_HWIDList | grep $str_thisHWID) && -z $(echo $str_VFIO_HWIDList | grep $str_thisHWID) ]]; then
+                        if [[ ${#str_PCISTUB_HWIDlist[@]} != 0 && -z $(echo $str_PCISTUB_HWIDlist | grep $str_thisHWID) ]]; then
+                            if [[ ! -z $(echo $str_PCISTUB_driverList | grep $str_thisDriver) ]]; then
+                                str_PCISTUB_HWIDlist+="$str_thisHWID,"
+
+                            else
+                                str_VFIO_HWIDList+="$str_thisHWID,"
+                            fi
+
+                        else
+                            if [[ ! -z $(echo $str_PCISTUB_driverList | grep $str_thisDriver) ]]; then
+                                str_PCISTUB_HWIDlist+="$str_thisHWID,"
+
+                            else
+                                str_VFIO_HWIDList+="$str_thisHWID,"
+                            fi
+                        fi
+                    fi
+                done
+            done
+        done
+
+        # parse VFIO IOMMU group(s) with VGA device(s) #
+        for int_thisIOMMU in ${arr_IOMMU_VFIOVGA[@]}; do
+            for str_line0 in $(find /sys/kernel/iommu_groups/$int_thisIOMMU -maxdepth 0 -type d | sort -V); do
+                for str_line1 in $str_line0/devices/*; do
+
+                    # parameters #
+                    str_line2=$(lspci -mns ${str_line1##*/})
+                    str_thisBusID=$(echo $str_line2 | cut -d '"' -f1 | cut -d ' ' -f1)
+                    str_thisHWID=$(lspci -n | grep $str_thisBusID | cut -d ' ' -f3)
+                    str_thisDriver=$(lspci -kd $str_thisHWID | grep "driver" | cut -d ':' -f2 | cut -d ' ' -f2)
+
+                    # add to lists #
+                    if [[ $str_thisDriver != "" ]]; then
+                        if [[ -z $(echo $str_internalPCI_driverList | grep $str_thisDriver) && -z $(echo $str_PCISTUB_driverList | grep $str_thisDriver) ]]; then
+                            arr_VFIO_driver+=("$str_thisDriver")
+                            str_VFIO_driverList+="$str_thisDriver,"
+                        fi
+                    fi
+
+                    if [[ -z $(echo $str_internalPCI_HWIDList | grep $str_thisHWID) ]]; then
+                        if [[ ! -z $(echo $str_PCISTUB_driverList | grep $str_thisDriver) ]]; then
+                            str_PCISTUB_HWIDlist+="$str_thisHWID,"
+
+                        else
+                            str_VFIO_HWIDList+="$str_thisHWID,"
+                        fi
+                    fi
+                done
+            done
+        done
+
+        # update parameters #
+        if [[ ${str_VFIO_driverList: -1} == "," ]]; then
+            str_VFIO_driverList=${str_VFIO_driverList::-1}
+        fi
+
+        if [[ ${str_VFIO_HWIDList: -1} == "," ]]; then
+            str_VFIO_HWIDList=${str_VFIO_HWIDList::-1}
+        fi
+
+        # VFIO soft dependencies #
+
+        # parse VFIO groups #
+        for str_thisDriver in ${arr_VFIO_driver[@]}; do
+
+            # false match internal device #
+            if [[ $str_thisDriver != *"$str_internalPCI_driverList"* ]]; then
+                str_VFIO_driver_softdep+="\nsoftdep $str_thisDriver pre: vfio-pci"
+                str_VFIO_driver_softdepFull+="\nsoftdep $str_thisDriver pre: vfio-pci\n$str_thisDriver"
+            fi
+        done
+
+        # parse VFIO VGA groups #
+        for str_thisDriver in ${arr_VFIOVGA_driver[@]}; do
+
+            # false match internal device #
+            if [[ $str_thisDriver != *"$str_internalPCI_driverList"* ]]; then
+                str_VFIO_driver_softdep+="\nsoftdep $str_thisDriver pre: vfio-pci"
+                str_VFIO_driver_softdepFull+="\nsoftdep $str_thisDriver pre: vfio-pci\n$str_thisDriver"
+            fi
+        done
+
+        # write to files #
+        if [[ $bool_outputToGRUB == true ]]; then
+
+            # update parameters #
+            if [[ ${str_PCISTUB_HWIDlist: -1} == "," ]]; then
+                str_PCISTUB_HWIDlist=${str_PCISTUB_HWIDlist::-1}
+            fi
+
+            # /etc/default/grub #
+            str_GRUB_CMDLINE+="${str_GRUB_CMDLINE_prefix} modprobe.blacklist=${str_VFIO_driverList} pci-stub.ids=${str_PCISTUB_HWIDlist} vfio_pci.ids=${str_VFIO_HWIDList}"
+
+            cp $str_inFile2 $str_outFile2
+            cp $str_inFile3 $str_outFile3
+            cp $str_inFile4 $str_outFile4
+            cp $str_inFile5 $str_outFile5
+        else
+
+            # /etc/default/grub #
+            str_GRUB_CMDLINE+="${str_GRUB_CMDLINE_prefix} modprobe.blacklist= pci-stub.ids= vfio_pci.ids="
+
+            # /etc/modules #
+            str_output1="vfio_pci ids=${str_PCISTUB_HWIDlist}${str_VFIO_HWIDList}"
+
+            if [[ -e $str_inFile2 ]]; then
+                if [[ -e $str_outFile2 ]]; then
+                    # mv $str_outFile2 $str_oldFile2      # create backup
+                    rm $str_outFile2
+                fi
+
+                touch $str_outFile2
+
+                # write to file #
+                while read -r str_line1; do
+                    if [[ $str_line1 == '#$str_output1'* ]]; then
+                        str_line1=$str_output1
+                    fi
+
+                    echo -e $str_line1 >> $str_outFile2
+                done < $str_inFile2
+
+            else
+                bool_missingFiles=true
+            fi
+
+            # /etc/initramfs-tools/modules #
+            str_output1=$str_VFIO_driver_softdepFull
+            str_output2="options vfio_pci ids=${str_PCISTUB_HWIDlist}${str_VFIO_HWIDList}\nvfio_pci ids=${str_PCISTUB_HWIDlist}${str_VFIO_HWIDList}\nvfio-pci"
+
+            if [[ -e $str_inFile3 ]]; then
+                if [[ -e $str_outFile3 ]]; then
+                    # mv $str_outFile3 $str_oldFile3      # create backup
+                    rm $str_outFile3
+                fi
+
+                touch $str_outFile3
+
+                # write to file #
+                while read -r str_line1; do
+                    if [[ $str_line1 == '#$str_output1'* ]]; then
+                        str_line1=$str_output1
+                    fi
+
+                    if [[ $str_line1 == '#$str_output2'* ]]; then
+                        str_line1=$str_output2
+                    fi
+
+                    echo -e $str_line1 >> $str_outFile3
+                done < $str_inFile3
+
+            else
+                bool_missingFiles=true
+            fi
+
+            # /etc/modprobe.d/pci-blacklists.conf #
+            str_output1=""
+
+            for str_thisDriver in ${arr_VFIO_driver[@]}; do
+                str_output1+="blacklist $str_thisDriver\n"
+            done
+
+            if [[ -e $str_inFile4 ]]; then
+                if [[ -e $str_outFile4 ]]; then
+                    # mv $str_outFile4 $str_oldFile4      # create backup
+                    rm $str_outFile4
+                fi
+
+                touch $str_outFile4
+
+                # write to file #
+                while read -r str_line1; do
+                    if [[ $str_line1 == '#$str_output1'* ]]; then
+                        str_line1=$str_output1
+                    fi
+
+                    echo -e $str_line1 >> $str_outFile4
+                done < $str_inFile4
+
+            else
+                bool_missingFiles=true
+            fi
+
+            # /etc/modprobe.d/vfio.conf #
+            str_output1="$str_VFIO_driver_softdep"
+            str_output2="options vfio_pci ids=${str_PCISTUB_HWIDlist}${str_VFIO_HWIDList}"
+
+            if [[ -e $str_inFile5 ]]; then
+                if [[ -e $str_outFile5 ]]; then
+                    # mv $str_outFile5 $str_oldFile5      # create backup
+                    rm $str_outFile5
+                fi
+
+                touch $str_outFile5
+
+                # write to file #
+                while read -r str_line1; do
+                    if [[ $str_line1 == '#$str_output1'* ]]; then
+                        str_line1=$str_output1
+                    fi
+
+                    if [[ $str_line1 == '#$str_output2'* ]]; then
+                        str_line1=$str_output2
+                    fi
+
+                    if [[ $str_line1 == '#$str_output3'* ]]; then
+                        str_line1=$str_output3
+                    fi
+
+                    echo -e $str_line1 >> $str_outFile5
+                done < $str_inFile5
+
+            else
+                bool_missingFiles=true
+            fi
+        fi
+
+        # /etc/default/grub #
+        str_output1="GRUB_DISTRIBUTOR=\)lsb_release -i -s 2> /dev/null || echo ")lsb_release -i -s)"\)"
+        str_output2="GRUB_CMDLINE_LINUX_DEFAULT=\"$str_GRUB_CMDLINE\""
+
+        if [[ -e $str_inFile1 ]]; then
+            if [[ -e $str_outFile1 ]]; then
+                mv $str_outFile1 $str_oldFile1      # create backup
+            fi
+
+            touch $str_outFile1
+
+            # write to file #
+            while read -r str_line1; do
+                if [[ $str_line1 == '#$str_output1'* ]]; then
+                    str_line1=$str_output1
+                fi
+
+                if [[ $str_line1 == '#$str_output2'* ]]; then
+                    str_line1=$str_output2
+                fi
+
+                echo -e $str_line1 >> $str_outFile1
+            done < $str_inFile1
+
+        else
+            bool_missingFiles=true
+        fi
+
+        # file check #
+        if [[ $bool_missingFiles == true ]]; then
+            bool_missingFiles=true
+            echo -e "File(s) missing:"
+
+            if [[ -z $str_inFile1 ]]; then
+                echo -e "\t'$str_inFile1'"
+            fi
+
+            if [[ -z $str_inFile2 ]]; then
+                echo -e "\t'$str_inFile2'"
+            fi
+
+            if [[ -z $str_inFile3 ]]; then
+                echo -e "\t'$str_inFile3'"
+            fi
+
+            if [[ -z $str_inFile4 ]]; then
+                echo -e "\t'$str_inFile4'"
+            fi
+
+            if [[ -z $str_inFile5 ]]; then
+                echo -e "\t'$str_inFile5'"
+            fi
+
+            echo -e "Executing Static setup... Failed."
+            exit 1
+
+        else
+            chmod 755 $str_outFile1 $str_oldFile1                   # set proper permissions
+            echo -e "Executing Static setup... Complete."
+        fi
 
         EchoPassOrFailThisExitCode "Executing Static setup..."
     }
