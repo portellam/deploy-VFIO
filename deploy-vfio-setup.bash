@@ -8,6 +8,8 @@
 # write iommu output to logfile     done
 # if parse iommu fails, try to read from logfile
 # read from logfile or read from existing system file, then update
+#
+#
 
 declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation, for conditional statements
 
@@ -958,6 +960,67 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         echo
     }
 
+    function ReadIOMMUFromLogFile
+    {
+        echo -en "Parsing IOMMU groups from logfile... "
+
+        # parameters #
+        declare -ir int_lastIOMMU="$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )"
+        declare -a arr_DeviceIOMMU=()
+        declare -a arr_DevicePCI_ID=()
+        declare -a arr_DeviceDriver=()
+        declare -a arr_DeviceName=()
+        declare -a arr_DeviceType=()
+        declare -a arr_DeviceVendor=()
+        declare -a arr_IOMMU_hasUSB=()
+        declare -a arr_IOMMU_hasVGA=()
+        declare -a arr_IOMMU_hasInternalPCI=()
+        declare -a arr_IOMMU_hasExternalPCI=()
+        declare -lr str_logFile="logs/iommu.log"
+
+        CheckIfFileOrDirExists $str_logFile
+
+        while read str_line; do
+            local str_element=$( echo $str_line | cut -d "'" -f2 )
+            case $str_line in
+                "arr_DeviceIOMMU"*)
+                    arr_DeviceIOMMU+=( "${str_element}" );;
+                "arr_DevicePCI_ID"*)
+                    arr_DevicePCI_ID+=( "${str_element}" );;
+                "arr_DeviceDriver"*)
+                    arr_DeviceDriver+=( "${str_element}" );;
+                "arr_DeviceName"*)
+                    arr_DeviceName+=( "${str_element}" );;
+                "arr_DeviceType"*)
+                    arr_DeviceType+=( "${str_element}" );;
+                "arr_DeviceVendor"*)
+                    arr_DeviceVendor+=( "${str_element}" );;
+                "arr_IOMMU_hasUSB"*)
+                    arr_IOMMU_hasUSB+=( "${str_element}" );;
+                "arr_IOMMU_hasVGA"*)
+                    arr_IOMMU_hasVGA+=( "${str_element}" );;
+                "arr_IOMMU_hasInternalPCI"*)
+                    arr_IOMMU_hasInternalPCI+=( "${str_element}" );;
+                "arr_IOMMU_hasExternalPCI"*)
+                    arr_IOMMU_hasExternalPCI+=( "${str_element}" );;
+            esac
+        done < $str_logFile
+
+        # parameters #
+        readonly arr_DeviceIOMMU
+        readonly arr_DevicePCI_ID
+        readonly arr_DeviceDriver
+        readonly arr_DeviceName
+        readonly arr_DeviceType
+        readonly arr_DeviceVendor
+        readonly arr_IOMMU_hasUSB
+        readonly arr_IOMMU_hasVGA
+        readonly arr_IOMMU_hasInternalPCI
+        readonly arr_IOMMU_hasExternalPCI
+
+        EchoPassOrFailThisExitCode  # call functions
+    }
+
     function SelectAnIOMMUGroup
     {
         echo -e "Reviewing IOMMU groups..."
@@ -1105,7 +1168,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         #
 
         # parameters #
-        declare -r str_thisFile1="qemu-evdev.log"
+        declare -r str_thisFile1="/logs/qemu-evdev.log"
         declare -r str_thisFile2="/etc/apparmor.d/abstractions/libvirt-qemu"
 
         echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n\tHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
@@ -1200,7 +1263,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         #
 
         # parameters #
-        declare -r str_thisFile1="qemu-hugepages.log"
+        declare -r str_thisFile1="/logs/qemu-hugepages.log"
         declare -ir int_HostMemMaxK=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )      # sum of system RAM in KiB
         str_GRUB_CMDLINE_Hugepages="default_hugepagesz=1G hugepagesz=1G hugepages=0"                                # default output
 
@@ -1549,8 +1612,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             "-m"
             "--static"
             "-s"
-            "--update"
-            "-u"
         )
 
         str_helpPrompt="Usage: $0 [ OPTIONS ]
@@ -1558,9 +1619,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             \n\t-h --help\tDisplay this prompt.
             \n\t-d --delete\tDelete existing VFIO setup.
             \n\t-f --full\tExecute pre-setup, prompt for either VFIO setup, and execute post-setup.
-            \n\t-m --multiboot\tExecute Multiboot VFIO setup.
-            \n\t-s --static\tExecute Static VFIO setup.
-            \n\t-u --update\tUpdate existing VFIO setup (read from previous logfile)."
+            \n\t-m --multiboot\tExecute or update Multiboot VFIO setup.
+            \n\t-s --static\tExecute or update Static VFIO setup."
 
         if [[ ! -z $1 ]]; then
             str_option=$( echo $1 | tr '[:upper:]' '[:lower:]' )
@@ -1601,8 +1661,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 bool_execMultiBootSetup=true;;
             8|9)
                 bool_execStaticSetup=true;;
-            10|11)
-                bool_execUpdateSetup=true;;
         esac
 
         if [[ $int_thisExitCode -ne 0 ]]; then
@@ -1624,7 +1682,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         # parameters
         declare -r str_file1="etc_libvirt_qemu.conf"
         # declare -r str_file2="/etc/libvirt/qemu.conf"
-        declare -r str_file2="test-qemu.conf"            # debug
+        declare -r str_file2="/logs/qemu.conf.log"        # debug
 
         CreateFile $str_file2                             # debug
 
@@ -1677,7 +1735,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             while read str_line; do
                 arr_output1+=("$str_line")
                 echo $str_line
-            done < "qemu-hugepages.log"
+            done < "logs/qemu-hugepages.log"
 
             arr_output1+=("#")
         fi
@@ -1801,7 +1859,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     {
         echo -e "Executing Static setup..."
         ParseIOMMUandPCI
-        # SelectAnIOMMUGroup
+        SelectAnIOMMUGroup
 
         # EchoPassOrFailThisExitCode "Executing Static setup..."
     }
@@ -1809,14 +1867,9 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     function UpdateSetup                        # TODO: fix here!
     {
         echo -e "Updating..."
-        ParseIOMMUandPCI
 
-        # VFIO setup detected #
-        if [[ $int_thisExitCode -eq 253 ]]; then
-            # update VFIO
-
-            # read from file for lscpi or iommu?
-
+        if [[ $int_thisExitCode -eq 253 ]]; then    # VFIO setup detected
+            ReadIOMMUFromLogFile
 
             (exit 0)
             SaveThisExitCode

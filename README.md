@@ -15,9 +15,8 @@ OPTIONS:
         -h  --help       Display this prompt.
         -d  --delete     Delete existing VFIO setup.
         -f  --full       Execute pre-setup, prompt for either VFIO setup, and execute post-setup.
-        -m  --multiboot  Execute Multiboot VFIO setup.
-        -s  --static     Execute Static VFIO setup.
-        -u  --update     Update existing VFIO setup.
+        -m  --multiboot  Execute or update Multiboot VFIO setup.
+        -s  --static     Execute or update Static VFIO setup.
 
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
