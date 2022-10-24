@@ -1854,15 +1854,13 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
     function SelectVFIOSetup
     {
-        ReadInputFromMultipleChoiceUpperCase "Execute Multiboot or Static setup, or update? [M/S/U]:" "M" "S" "U"
+        ReadInputFromMultipleChoiceUpperCase "Execute Multiboot or Static setup? [M/S]:" "M" "S"
 
         case $str_input1 in
             "M")
                 MultiBootSetup;;
             "S")
                 StaticSetup;;
-            "U")
-                UpdateSetup;;
         esac
     }
 

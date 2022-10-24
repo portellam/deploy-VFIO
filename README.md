@@ -1,7 +1,3 @@
-## To-do
-* refactor code
-* BRANCH NOT FINISHED
-
 ## Description
 Ultimate scripts to seamlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Swap the preferred host graphics (VGA) device at GRUB boot menu. VFIO: Run any OS with real hardware, under a virtual machine (VM), in the Linux desktop of your choice.
 
@@ -17,6 +13,8 @@ OPTIONS:
         -f  --full       Execute pre-setup, prompt for either VFIO setup, and execute post-setup.
         -m  --multiboot  Execute or update Multiboot VFIO setup.
         -s  --static     Execute or update Static VFIO setup.
+
+* Should one wish to **update** a system's VFIO setup (completely, with Evdev, Hugepages, Static or Multiboot, etc.), then review the **OPTIONS** above.
 
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
@@ -36,7 +34,6 @@ OPTIONS:
     * Outputs to logfile, for future reference by VFIO setup.
 * **Auto-Xorg** system service to find and set a valid host boot VGA device for Xorg. [1]
 * Setup Multi-boot or static. Multi-boot: Swap the preferred host graphics (VGA) device at GRUB boot menu. **(see 'examples')**
-* **update Multi-boot** with latest installed Linux kernels, and **select default boot entry.**
 * **Loopback audio** user service, audio capture from VM to host (ex: PCI Line-out to on-board Line-in/Mic).
 * IVSHMEM (Inter-VM Shared Memory Device):
     * **Evdev (Event devices)**
@@ -48,11 +45,12 @@ OPTIONS:
     * Prompt user to set/allocate system resources (CPU, memory) dynamically. **(w-i-p)**
     * **Libvirt-nosleep** system service to prevent Host sleep while VM(s) are active. **(works standalone)** [5]
 
-* work-in-progress; more features to be added, as discovered and needed.
-
 ## VFIO setup *(expanded)*
 * Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups of devices.
     * Saves lists of external PCI devices, by order of IOMMU groups.
+    * Outputs to logfile, for future reference by updater.
+* **Install or Update from logfile**
+    * If parse fails (because of an existing VFIO setup or other reason), **read from existing logfile** and continue to VFIO setup.
 * Prompt user for VFIO passthrough setup:
     * **Multi-boot**
         * bind passthrough devices to **vfio-pci** and **pci-stub** (example types: VGA and USB, respectively).
@@ -62,11 +60,9 @@ OPTIONS:
         * Select a host VGA boot device at GRUB menu.   (**Auto-Xorg** [1] is recommended)
         * Creates up to three menu entries (for first three installed and latest Linux kernels), and **select default boot entry.**
         * Appends to GRUB: **'/etc/grub.d/proxifiedScripts/custom'**
-        * Outputs to logfile, for future reference by updater.
     * **Static**
         * bind all passthrough devices to **vfio-pci** and **pci-stub** (GRUB), or **vfio-pci** only (system files).
         * Append to GRUB or system files:   **'/etc/default/grub'**, or **'/etc/initramfs-tools/modules'**, **'/etc/modules'**, and **'/etc/modprobe.d/*'**.
-* Checks for existing VFIO setup, prompt user to uninstall setup, reboot, and try again to continue.
 
 ## Credits
 **[1]:** https://github.com/portellam/Auto-Xorg
