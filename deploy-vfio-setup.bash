@@ -1558,7 +1558,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 # echo
 
                 # write to tempfile #
-                CheckIfFileOrDirExists $str_inFile1 && CheckIfFileOrDirExists $str_inFile2 && (
+                CheckIfFileOrDirExists $str_inFile1 &> /dev/null && CheckIfFileOrDirExists &> /dev/null $str_inFile2 && (
                     echo -e >> $str_outFile1
 
                     while read -r str_line; do
