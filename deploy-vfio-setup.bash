@@ -4,6 +4,11 @@
 ## Author(s):    Alex Portell <github.com/portellam>
 ##
 
+# TODO:
+# write iommu output to logfile     done
+# if parse iommu fails, try to read from logfile
+# read from logfile or read from existing system file, then update
+
 declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation, for conditional statements
 
 # prep and I/O functions #
@@ -800,10 +805,13 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                     fi
                 fi
 
-                # find IGPU #
-                case $( echo ${str_thisDeviceType} | tr '[:lower:]' '[:upper:]' ) in                  # check for VGA type
-                    *"3D"*|*"DISPLAY"*|*"GRAPHICS"*|*"VGA"*)
-                        if [[ $int_thisDeviceBusID -eq 0 && ${#str_IGPU_fullName} -eq 0 ]]; then      # append IGPU name
+                # append to VFIO PCI and find IGPU #
+                if [[ ${#arr_IOMMU_hasVGA[@]} -eq 0 || ( ${#arr_IOMMU_hasVGA[@]} -gt 0 && $str_thisIOMMU != ${arr_IOMMU_hasVGA[-1]} ) ]]; then
+                    case $( echo ${str_thisDeviceType} | tr '[:lower:]' '[:upper:]' ) in                # check for VGA type
+                        *"3D"*|*"DISPLAY"*|*"GRAPHICS"*|*"VGA"*)
+                            arr_IOMMU_hasVGA+=( "$str_thisIOMMU" );                                     # append to list only once
+
+                            if [[ $int_thisDeviceBusID -eq 0 && ${#str_IGPU_fullName} -eq 0 ]]; then    # append IGPU name
                             readonly str_IGPU_fullName="${str_thisDeviceVendor} ${str_thisDeviceName}"
                         fi
 
@@ -811,14 +819,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                             readonly str_IGPU_fullName="N/A"
                         fi
                         ;;
-                esac
-
-                # append to VFIO PCI #
-                if [[ ${#arr_IOMMU_hasVGA[@]} -eq 0 || ( ${#arr_IOMMU_hasVGA[@]} -gt 0 && $str_thisIOMMU != ${arr_IOMMU_hasVGA[-1]} ) ]]; then
-                    case $( echo ${str_thisDeviceType} | tr '[:lower:]' '[:upper:]' ) in              # check for VGA type
-                        *"3D"*|*"DISPLAY"*|*"GRAPHICS"*|*"VGA"*)
-                            arr_IOMMU_hasVGA+=( "$str_thisIOMMU" );                                   # append to list only once
-                            ;;
                     esac
                 fi
 
@@ -1355,7 +1355,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         SelectAnIOMMUGroup
 
         if [[ $int_thisExitCode -ne 0 ]]; then
-            echo -e "Fuck."
+            echo -e "!!!! premature exit !!!!!"
             ExitWithThisExitCode "Executing Multi-boot setup..."
         fi
 
@@ -1433,8 +1433,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             str_thisGPU_FullName=$str_IGPU_fullName
         fi
 
-        # NOTE: update here!
-        # write to file #
+        # write to file     # NOTE: update here!
         str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} modprobe.blacklist=${str_driverListForVFIO} pci-stub.ids=${str_driverListForSTUB} vfio_pci.ids=${str_HWID_list_forVFIO}"
 
         WriteVarToFile $str_logFile0 "#${arr_IOMMU_withVGA_forVFIO[1]} #${str_thisGPU_FullName} #${str_GRUB_CMDLINE}" &> /dev/null  # log file
@@ -1504,7 +1503,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             chmod 755 $str_outFile1 $str_oldFile1 &> /dev/null && (exit 0) && SaveThisExitCode                      # set proper permissions
         )
 
-        echo -e "Fuck yes."
+        echo -e "!!!! expected exit !!!!!"
         EchoPassOrFailThisExitCode "Executing Multi-boot setup..."
 
         if [[ $bool_missingFiles == true ]]; then   # file check
