@@ -12,6 +12,25 @@
 declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation, for conditional statements
 
 # prep and I/O functions #
+    # function ChangeOwnershipOfFileOrDir
+    # {
+    #     # behavior:
+    #     # change ownership of existing file to current user
+    #     # current user may be the sudoer or root (either is not necessarily the same)
+    #     # note: $UID is intelligent enough to differentiate between the two
+    #     #
+
+    #     if [[ -z $1 ]]; then        # null exception
+    #         (exit 254)
+    #         SaveThisExitCode
+    #     else
+    #         echo '$UID =='"'$UID'"
+    #         chown -f $UID $1
+    #         (exit 0)
+    #         SaveThisExitCode
+    #     fi
+    # }
+
     function CheckIfUserIsRoot
     {
         if [[ $( whoami ) != "root" ]]; then
@@ -771,7 +790,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         bool_missingDriver=false
         bool_foundVFIO=false
         local str_IGPU_fullName=""
-        declare -lr str_logFile="iommu.log"
+        declare -lr str_logFile="logs/iommu.log"
 
         for str_element1 in $( find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V ); do           # parse list of IOMMU groups
             str_thisIOMMU=$( basename $str_element1 )
@@ -930,6 +949,9 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                     local str_element="{arr_IOMMU_hasExternalPCI[$int_key]}\t'${arr_IOMMU_hasExternalPCI[$int_key]}'"
                     WriteVarToFile $str_logFile $str_element &> /dev/null
                 done
+
+                # ChangeOwnershipOfFileOrDir $str_logFile
+                # chown -f 1000 $str_logFile
                 ;;
         esac
 
@@ -1073,6 +1095,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         ParseThisExitCode
         echo
     }
+
     function SetupEvdev
     {
         # behavior:
