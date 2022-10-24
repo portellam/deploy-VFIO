@@ -896,9 +896,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
         case $int_thisExitCode in
             3)
-                echo -e "\e[33mWarning:\e[0m One or more external PCI device(s) missing drivers."
-                (exit 0)
-                SaveThisExitCode;;
+                echo -e "\e[33mWarning:\e[0m One or more external PCI device(s) missing drivers.";;
             254)
                 echo -e "Exception: No devices found.";;
             253)
@@ -1438,12 +1436,17 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     {
         echo -e "Executing Multi-boot setup..."
         ParseIOMMUandPCI
-        SelectAnIOMMUGroup
+
+        if [[ $int_thisExitCode -ne 0 ]]; then
+            ReadIOMMUFromLogFile
+        fi
 
         if [[ $int_thisExitCode -ne 0 ]]; then
             echo -e "!!!! premature exit !!!!!"
             ExitWithThisExitCode "Executing Multi-boot setup..."
         fi
+
+        SelectAnIOMMUGroup
 
         # parameters #
         bool_outputToGRUB=false
@@ -1604,8 +1607,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         declare -lar arr_options=(
             "--help"
             "-h"
-            "-d"
             "--delete"
+            "-d"
             "--full"
             "-f"
             "--multiboot"
@@ -1859,26 +1862,19 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     {
         echo -e "Executing Static setup..."
         ParseIOMMUandPCI
-        SelectAnIOMMUGroup
 
-        # EchoPassOrFailThisExitCode "Executing Static setup..."
-    }
-
-    function UpdateSetup                        # TODO: fix here!
-    {
-        echo -e "Updating..."
-
-        if [[ $int_thisExitCode -eq 253 ]]; then    # VFIO setup detected
+        if [[ $int_thisExitCode -ne 0 ]]; then
             ReadIOMMUFromLogFile
-
-            (exit 0)
-            SaveThisExitCode
-        else
-            (exit 255)
-            SaveThisExitCode
         fi
 
-        EchoPassOrFailThisExitCode "Updating ..."
+        if [[ $int_thisExitCode -ne 0 ]]; then
+            echo -e "!!!! premature exit !!!!!"
+            ExitWithThisExitCode "Executing Static setup..."
+        fi
+
+        SelectAnIOMMUGroup
+
+        EchoPassOrFailThisExitCode "Executing Static setup..."
     }
 
 # main #
@@ -1902,8 +1898,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 MultiBootSetup;;
             $bool_execStaticSetup)
                 StaticSetup;;
-            $bool_execUpdateSetup)
-                UpdateSetup;;
             *)
                 SelectVFIOSetup;;
         esac
