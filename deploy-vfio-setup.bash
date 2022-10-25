@@ -1429,6 +1429,24 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         EchoPassOrFailThisExitCode "Executing Uninstaller..."
     }
 
+    function Help
+    {
+        declare -lr str_helpPrompt="Usage: $0 [ OPTIONS ]
+            \nwhere OPTIONS
+            \n\t-h | --help\t\tdisplay this prompt.
+            \n\t-d | --delete\t\tdelete existing VFIO setup.
+            \n\t-w | --write <logfile>\twrite output (IOMMU groups) to <logfile>
+
+            \n\t-m | --multiboot <option>\texecute Multiboot VFIO setup.
+            \n\t-s | --static <option>\texecute Static VFIO setup.
+
+            \nwhere <option>
+            \n\t-f | --full\t\texecute pre-setup and post-setup.
+            \n\t-r | --read <logfile>\tread previous output (IOMMU groups) from <logfile>, and update VFIO setup."
+
+        echo -e $str_helpPrompt
+    }
+
     function MultiBootSetup                     # TODO: review this!
     {
         echo -e "Executing Multi-boot setup..."
@@ -1601,19 +1619,89 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         fi
     }
 
+    function ParseInputParamForOptions_2
+    {
+        while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do        # parse input parameters
+            case $1 in
+                "")
+                    (exit 255)
+                    SaveThisExitCode
+                    break;;
+                *)
+                    (exit 255)
+                    SaveThisExitCode
+                    ParseThisExitCode
+                    Help
+                    break;;
+                -h | --help )
+                    declare -lir int_aFlag=1
+                    break;;
+                -d | --delete )
+                    declare -lir int_aFlag=2
+                    break;;
+                -f | --full )
+                    declare -lir int_bFlag=1;;
+                -m | --multiboot )
+                    declare -lir int_aFlag=3;;
+                -r | --read )
+                    declare -lir int_bFlag=2;;
+                -s | --static )
+                    declare -lir int_aFlag=4;;
+                -w | --write )
+                    declare -lir int_aFlag=5;;
+            esac
+            shift
+        done
+
+        if [[ "$1" == '--' ]]; then
+            shift
+        fi
+
+        case $int_aFlag in                                  # execute second options before first options
+            3|4)
+                case $int_bFlag in
+                    1)
+                        PreInstallSetup;;
+                    # 2)
+                    #     ReadIOMMU_FromFile;;
+                esac;;
+        esac
+
+        case $int_aFlag in                                  # execute first options
+            1)
+                Help;;
+            2)
+                DeleteSetup;;
+            3)
+                MultiBootSetup;;
+            4)
+                StaticSetup;;
+            # 5)
+            #     WriteIOMMU_ToFile;;
+        esac
+
+        case $int_aFlag in                                  # execute second options after first options
+            3|4)
+                case $int_bFlag in
+                    1)
+                        PostInstallSetup;;
+                esac;;
+        esac
+    }
+
     function ParseInputParamForOptions
     {
         declare -lar arr_options=(
             "--help"
-            "-h"
+            "h"
             "--delete"
-            "-d"
+            "d"
             "--full"
-            "-f"
+            "f"
             "--multiboot"
-            "-m"
+            "m"
             "--static"
-            "-s"
+            "s"
         )
 
         str_helpPrompt="Usage: $0 [ OPTIONS ]
@@ -1628,7 +1716,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             str_option=$( echo $1 | tr '[:upper:]' '[:lower:]' )
 
             case $str_option in
-                "--"*|"-"*)
+                "--"*|*)
                     for str_element in ${arr_options[@]}; do
                         for int_key in ${!arr_options[@]}; do
                             if [[ ${arr_options[$int_key]} == $str_element && $str_element == $str_option ]]; then
@@ -1854,7 +1942,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
     function SelectVFIOSetup
     {
-        ReadInputFromMultipleChoiceUpperCase "Execute Multiboot or Static setup? [M/S]:" "M" "S"
+        ReadInputFromMultipleChoiceUpperCase "Execute Multiboot or Static setup? [M/s]:" "M" "S"
 
         case $str_input1 in
             "M")
@@ -2170,5 +2258,15 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         SaveThisExitCode
         ParseThisExitCode "Cannot parse multiple options."
     fi
+
+    # if [[ -z $2 ]]; then
+    #     CheckIfUserIsRoot
+    #     CheckIfIOMMU_IsEnabled
+    #     ParseInputParamForOptions_2 $1 || SelectVFIOSetup
+    # else
+    #     (exit 254)
+    #     SaveThisExitCode
+    #     ParseThisExitCode "Cannot parse multiple options."
+    # fi
 
     ExitWithThisExitCode
