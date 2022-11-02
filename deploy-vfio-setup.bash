@@ -262,19 +262,19 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             # 255)
             #     echo;;      # unspecified error
             254)
-                echo -e "Exception: Null input.";;
+                echo -e "\e[33mException:\e[0m Null input.";;
             253)
-                echo -e "Exception: Invalid input.";;
+                echo -e "\e[33mException:\e[0m Invalid input.";;
             252)
-                echo -e "Error: Missed steps; missed execution of key subfunctions.";;
+                echo -e "\e[33mError:\e[0m Missed steps; missed execution of key subfunctions.";;
             251)
-                echo -e "Error: Missing components/variables.";;
+                echo -e "\e[33mError:\e[0m Missing components/variables.";;
             250)
-                echo -e "Exception: File/Dir does not exist.";;
+                echo -e "\e[33mException:\e[0m File/Dir does not exist.";;
             249)
-                echo -e "Exception: File/Dir is not readable.";;
+                echo -e "\e[33mException:\e[0m File/Dir is not readable.";;
             248)
-                echo -e "Exception: File/Dir is not writable.";;
+                echo -e "\e[33mException:\e[0m File/Dir is not writable.";;
             # *)
             #     echo;;
         esac
@@ -896,9 +896,9 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             3)
                 echo -e "\e[33mWarning:\e[0m One or more external PCI device(s) missing drivers.";;
             254)
-                echo -e "Exception: No devices found.";;
+                echo -e "\e[33mException: \e[0mNo devices found.";;
             253)
-                echo -e "Exception: Existing VFIO setup found.";;
+                echo -e "\e[33mException: \e[0mExisting VFIO setup found.";;
         esac
 
         case $int_thisExitCode in
@@ -1431,20 +1431,21 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
     function Help
     {
-        declare -lr str_helpPrompt="Usage: $0 [ OPTIONS ]
+        declare -r str_helpPrompt="Usage: $0 [ OPTIONS | ARGUMENTS ]
             \nwhere OPTIONS
-            \n\t-h | --help\t\tdisplay this prompt.
-            \n\t-d | --delete\t\tdelete existing VFIO setup.
-            \n\t-w | --write <logfile>\twrite output (IOMMU groups) to <logfile>
-
-            \n\t-m | --multiboot <option>\texecute Multiboot VFIO setup.
-            \n\t-s | --static <option>\texecute Static VFIO setup.
-
-            \nwhere <option>
-            \n\t-f | --full\t\texecute pre-setup and post-setup.
-            \n\t-r | --read <logfile>\tread previous output (IOMMU groups) from <logfile>, and update VFIO setup."
+            \n\t-h  --help\t\t\tPrint this prompt.
+            \n\t-d  --delete\t\t\tDelete existing VFIO setup.
+            \n\t-w  --write <logfile>\t\tWrite output (IOMMU groups) to <logfile>
+            \n\t-m  --multiboot <ARGUMENT>\tExecute Multiboot VFIO setup.
+            \n\t-s  --static <ARGUMENT>\t\tExecute Static VFIO setup.
+            \n\nwhere ARGUMENTS
+            \n\t-f  --full\t\t\tExecute pre-setup and post-setup.
+            \n\t-r  --read <logfile>\t\tRead previous output (IOMMU groups) from <logfile>, and update VFIO setup.
+            \n"
 
         echo -e $str_helpPrompt
+
+        ExitWithThisExitCode
     }
 
     function MultiBootSetup                     # TODO: review this!
@@ -1621,41 +1622,118 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
     function ParseInputParamForOptions_2
     {
-        while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do        # parse input parameters
-            case $1 in
-                "")
+        # Get the options
+        while getopts ":h" option; do
+            case $option in
+                "")                                     # no option
                     (exit 255)
                     SaveThisExitCode
                     break;;
-                *)
-                    (exit 255)
-                    SaveThisExitCode
-                    ParseThisExitCode
-                    Help
-                    break;;
-                -h | --help )
+
+                h | help )                              # options
                     declare -lir int_aFlag=1
                     break;;
-                -d | --delete )
+                d | delete )
                     declare -lir int_aFlag=2
                     break;;
-                -f | --full )
-                    declare -lir int_bFlag=1;;
-                -m | --multiboot )
+                m | multiboot )
                     declare -lir int_aFlag=3;;
-                -r | --read )
-                    declare -lir int_bFlag=2;;
-                -s | --static )
+                s | static )
                     declare -lir int_aFlag=4;;
-                -w | --write )
+                w | write )
                     declare -lir int_aFlag=5;;
+
+                f | full )                              # arguments
+                    declare -lir int_bFlag=1;;
+                r | read )
+                    declare -lir int_bFlag=2;;
+
+                *)                                      # invalid option
+                    declare -lir int_aFlag=1
+                    (exit 254)
+                    SaveThisExitCode
+                    ParseThisExitCode
+                    echo
+                    break;;
             esac
-            shift
         done
 
-        if [[ "$1" == '--' ]]; then
-            shift
+        case $int_aFlag in                                  # execute second options before first options
+            3|4)
+                case $int_bFlag in
+                    1)
+                        PreInstallSetup;;
+                    # 2)
+                    #     ReadIOMMU_FromFile;;
+                esac;;
+        esac
+
+        case $int_aFlag in                                  # execute first options
+            1)
+                Help
+                ExitWithThisExitCode;;
+            2)
+                DeleteSetup;;
+            3)
+                MultiBootSetup;;
+            4)
+                StaticSetup;;
+            # 5)
+            #     WriteIOMMU_ToFile;;
+        esac
+
+        case $int_aFlag in                                  # execute second options after first options
+            3|4)
+                case $int_bFlag in
+                    1)
+                        PostInstallSetup;;
+                esac;;
+        esac
+    }
+
+    function ParseInputParamForOptions
+    {
+        if [[ "$1" =~ ^- || "$1" == "--" ]]; then           # parse input parameters
+            while [[ "$1" =~ ^-  ]]; do
+                case $1 in
+                    "")                                     # no option
+                        (exit 255)
+                        SaveThisExitCode
+                        break;;
+
+                    -h | --help )                           # options
+                        declare -lir int_aFlag=1
+                        break;;
+                    -d | --delete )
+                        declare -lir int_aFlag=2
+                        break;;
+                    -m | --multiboot )
+                        declare -lir int_aFlag=3;;
+                    -s | --static )
+                        declare -lir int_aFlag=4;;
+                    -w | --write )
+                        declare -lir int_aFlag=5;;
+
+                    -f | --full )                           # arguments
+                        declare -lir int_bFlag=1;;
+                    -r | --read )
+                        declare -lir int_bFlag=2;;
+                esac
+
+                shift
+            done
+        else                                                # invalid option
+            (exit 255)
+            SaveThisExitCode
+            ParseThisExitCode
+            
+            Help
+            ExitWithThisExitCode
         fi
+
+        # if [[ "$1" == '--' ]]; then
+        #     shift
+        # fi
 
         case $int_aFlag in                                  # execute second options before first options
             3|4)
@@ -1687,80 +1765,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                         PostInstallSetup;;
                 esac;;
         esac
-    }
-
-    function ParseInputParamForOptions
-    {
-        declare -lar arr_options=(
-            "--help"
-            "h"
-            "--delete"
-            "d"
-            "--full"
-            "f"
-            "--multiboot"
-            "m"
-            "--static"
-            "s"
-        )
-
-        str_helpPrompt="Usage: $0 [ OPTIONS ]
-            \nwhere OPTIONS
-            \n\t-h --help\tDisplay this prompt.
-            \n\t-d --delete\tDelete existing VFIO setup.
-            \n\t-f --full\tExecute pre-setup, prompt for either VFIO setup, and execute post-setup.
-            \n\t-m --multiboot\tExecute or update Multiboot VFIO setup.
-            \n\t-s --static\tExecute or update Static VFIO setup."
-
-        if [[ ! -z $1 ]]; then
-            str_option=$( echo $1 | tr '[:upper:]' '[:lower:]' )
-
-            case $str_option in
-                "--"*|*)
-                    for str_element in ${arr_options[@]}; do
-                        for int_key in ${!arr_options[@]}; do
-                            if [[ ${arr_options[$int_key]} == $str_element && $str_element == $str_option ]]; then
-                                declare -lir int_thisKey=$int_key
-                                (exit 0)
-                                SaveThisExitCode
-                                break
-                            fi
-                        done
-                    done
-
-                    if [[ -z $int_thisKey ]]; then
-                        (exit 253)
-                        SaveThisExitCode
-                    fi;;
-                *)
-                    (exit 253)
-                    SaveThisExitCode;;
-            esac
-        fi
-
-        case $int_thisKey in
-            0|1)
-                bool_execHelp=true;;
-            2|3)
-                bool_execDeleteSetup=true;;
-            4|5)
-                bool_execFullSetup=true;;
-            6|7)
-                bool_execMultiBootSetup=true;;
-            8|9)
-                bool_execStaticSetup=true;;
-        esac
-
-        if [[ $int_thisExitCode -ne 0 ]]; then
-            ParseThisExitCode
-            echo -e $str_helpPrompt
-            ExitWithThisExitCode
-        fi
-
-        if [[ $bool_execHelp == true ]]; then
-            echo -e $str_helpPrompt
-            ExitWithThisExitCode
-        fi
     }
 
     function PreInstallSetup                    # TODO: review this!
@@ -2074,7 +2078,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 str_element=${arr_DeviceDriver[$int_key]}
                 str_driverList_forVFIO_softdep+="\nsoftdep $str_element pre: vfio-pci"
                 str_driverList_forVFIO_softdepFull+="\nsoftdep $str_element pre: vfio-pci\n$str_element"
-                fi
             done
 
             # parse VFIO VGA groups #
@@ -2082,7 +2085,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 str_element=${arr_DeviceDriver[$int_key]}
                 str_driverList_forVFIO_softdep+="\nsoftdep $str_element pre: vfio-pci"
                 str_driverList_forVFIO_softdepFull+="\nsoftdep $str_element pre: vfio-pci\n$str_element"
-                fi
             done
 
         # write to files #
@@ -2235,7 +2237,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     IFS=$'\n'      # Change IFS to newline char
 
     if [[ -z $2 ]]; then
-        ParseInputParamForOptions $1
+        ParseInputParamForOptions_2 $1
         CheckIfUserIsRoot
         CheckIfIOMMU_IsEnabled
 
