@@ -788,8 +788,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         declare -a arr_IOMMU_hasVGA=()
         declare -a arr_IOMMU_hasInternalPCI=()
         declare -a arr_IOMMU_hasExternalPCI=()
-        bool_missingDriver=false
-        bool_foundVFIO=false
+        local bool_missingDriver=false
+        local bool_foundVFIO=false
         local str_IGPU_fullName=""
         declare -lr str_logFile="logs/iommu.log"
 
@@ -815,11 +815,14 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
                 if [[ -z $str_thisDeviceDriver ]]; then                     # check for valid driver
                     str_thisDeviceDriver="N/A"
-                    bool_missingDriver=true
+                    (exit 3)
+                    SaveThisExitCode
                 else
                     if [[ $str_thisDeviceDriver == *"vfio-pci"* ]]; then
                         str_thisDeviceDriver="N/A"
-                        bool_foundVFIO=true
+                        (exit 253)
+                        SaveThisExitCode
+                        break
                     else
                         str_thisDeviceDriver="${str_thisDeviceDriver##" "}"
                     fi
@@ -882,21 +885,13 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         readonly arr_IOMMU_hasInternalPCI
         readonly arr_IOMMU_hasExternalPCI
 
-        case true in                # prioritize worst exit code (place last)
-            $bool_missingDriver)
-                (exit 3);;
-            $bool_foundVFIO)
-                (exit 254);;
-        esac
-
-        SaveThisExitCode            # call functions
-        EchoPassOrFailThisExitCode
+        EchoPassOrFailThisExitCode  # call functions
 
         case $int_thisExitCode in
             3)
                 echo -e "\e[33mWarning:\e[0m One or more external PCI device(s) missing drivers.";;
-            254)
-                echo -e "\e[33mException: \e[0mNo devices found.";;
+            # 254)
+            #     echo -e "\e[33mException: \e[0mNo devices found.";;
             253)
                 echo -e "\e[33mException: \e[0mExisting VFIO setup found.";;
         esac
@@ -1411,22 +1406,75 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 # main functions #
     function DeleteSetup                        # TODO: fix here!
     {
-        echo -e "Executing Uninstaller..."
-        ParseIOMMUandPCI
+        ReadInput "Are you sure you want to uninstall the existing VFIO setup?"
+
+        if [[ $int_thisExitCode -ne 0 ]]; then
+            ExitWithThisExitCode
+        fi
+
+        echo -en "Executing Uninstaller... "
+        ParseIOMMUandPCI &> /dev/null
 
         # VFIO setup detected #
         if [[ $int_thisExitCode -eq 253 ]]; then
-            # uninstall VFIO
-
-
             (exit 0)
             SaveThisExitCode
+
+            declare -ar arr_files=(
+                "/etc/grub.d/proxifiedScripts/custom"
+                ,"/etc/initramfs-tools/modules"
+                ,"/etc/modules"
+                ,"/etc/modprobe.d/pci-blacklists.conf"
+                ,"/etc/modprobe.d/vfio.conf"
+            )
+
+            for str_element in ${arr_files[@]}; do
+                CheckIfFileOrDirExists $str_element &> /dev/null && (
+                    # str_oldFile=$( ls -l $str_element".old"* | sort -r | head -n1 )           # find most recent backup
+                    DeleteFile $str_element &> /dev/null
+                ) || (
+                    (exit 255) && SaveThisExitCode && break )
+            done && (
+                update-initramfs -u -k all &> /dev/null
+            )
+
+            str_file1="/etc/default/grub"
+
+            CheckIfFileOrDirExists $str_file1 &> /dev/null && (
+                CreateBackupFromFile $str_file1 &> /dev/null
+                str_oldFile=$str_file1".old"
+
+                CheckIfFileOrDirExists $str_oldFile* &> /dev/null && (
+                    str_oldFile=$( ls -l $str_file1".old"* | sort -r | head -n1  )          # find most recent backup
+                )
+
+                # local str_thisBasename=$( basename $str_file1)                            # old
+                # declare -li int_thisBasename=$(( 0 - ${#str_thisBasename} ))
+                # local str_thisDir=${#str_file1::int_thisBasename}
+                # cd $str_thisDir
+                # str_oldFile=$( find . -name $str_thisBasename | sort -r | head -n1 )
+
+                CheckIfFileOrDirExists $str_oldFile &> /dev/null && (
+                    while read str_line; do                                                 # read from backup, write overwrite current file
+                        case $str_line in                                                   # match given lines, overwrite with defaults
+                            'GRUB_CMDLINE_LINUX'*'="'*'"'*)
+                                str_line=$( echo $str_line | cut -d '=' -f1 )'quiet splash'
+                                ;;
+                        esac
+
+                        WriteVarToFile $str_file1 $str_line &> /dev/null || ( (exit 255) && SaveThisExitCode && break )
+                    done < $str_oldFile && (
+                        update-grub &> /dev/null
+                    )
+                ) || ( (exit 255) && SaveThisExitCode )
+            )
         else
             (exit 255)
             SaveThisExitCode
         fi
 
-        EchoPassOrFailThisExitCode "Executing Uninstaller..."
+        EchoPassOrFailThisExitCode
+        ParseThisExitCode
     }
 
     function Help
@@ -1633,7 +1681,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 h | help )                              # options
                     declare -lir int_aFlag=1
                     break;;
-                d | delete )
+                d | delete)
                     declare -lir int_aFlag=2
                     break;;
                 m | multiboot )
@@ -1648,13 +1696,13 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                 r | read )
                     declare -lir int_bFlag=2;;
 
-                *)                                      # invalid option
-                    declare -lir int_aFlag=1
-                    (exit 254)
-                    SaveThisExitCode
-                    ParseThisExitCode
-                    echo
-                    break;;
+                # *)                                     # invalid option
+                #     declare -lir int_aFlag=1
+                #     (exit 254)
+                #     SaveThisExitCode
+                #     ParseThisExitCode
+                #     echo
+                #     break;;
             esac
         done
 
@@ -1726,7 +1774,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             (exit 255)
             SaveThisExitCode
             ParseThisExitCode
-            
             Help
             ExitWithThisExitCode
         fi
@@ -2181,10 +2228,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
                         str_line=$str_output2
                     fi
 
-                    if [[ $str_line == '#$str_output3'* ]]; then
-                        str_line=$str_output3
-                    fi
-
                     WriteVarToFile $str_outFile5 $str_line
                 done < $str_inFile5
             ) || bool_missingFiles=true
@@ -2237,7 +2280,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     IFS=$'\n'      # Change IFS to newline char
 
     if [[ -z $2 ]]; then
-        ParseInputParamForOptions_2 $1
+        ParseInputParamForOptions_2 $1          # TODO: need to fix params function
         CheckIfUserIsRoot
         CheckIfIOMMU_IsEnabled
 
