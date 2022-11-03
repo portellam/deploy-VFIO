@@ -527,6 +527,57 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         echo
     }
 
+    function WriteArrayToFile
+    {
+        # TODO: not working!
+
+        # behavior:
+        # input variable #2 ( $2 ) is the name of the variable we wish to point to
+        # this may help with calling/parsing arrays
+        # when passing the var, write the name without " $ "
+        #
+
+        SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)    # NOTE: necessary for newline preservation in arrays and files
+        IFS=$'\n'      # Change IFS to newline char
+        var_input=$2
+
+        echo -en "Writing to file... "
+
+        if [[ -z $1 || -z $var_input ]]; then   # null exception
+            (exit 254)
+        fi
+
+        if [[ ! -e $1 ]]; then          # file not found exception
+            (exit 253)
+        fi
+
+        if [[ ! -r $1 ]]; then          # file not readable exception
+            (exit 252)
+        fi
+
+        if [[ ! -w $1 ]]; then          # file not readable exception
+            (exit 251)
+        fi
+
+        if [[ $int_thisExitCode -eq 0 ]]; then
+            case ${!var_input[@]} in                    # check number of key-value pairs
+                0)                                      # var is invalid
+                    (exit 255)
+                    SaveThisExitCode;;
+                1)      # check if var is not an array
+                    echo -e $var_input >> $1 || ( (exit 255) && SaveThisExitCode );;
+                *)      # check if var is an array
+                    for str_element in ${var_input[@]}; do
+                        echo -e $str_element >> $1 || ( (exit 255) && SaveThisExitCode && break )
+                    done;;
+            esac
+        fi
+
+        SaveThisExitCode                # call functions
+        EchoPassOrFailThisExitCode
+        ParseThisExitCode
+    }
+
     function WriteVarToFile
     {
         # behavior:
@@ -535,7 +586,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         # when passing the var, write the name without " $ "
         #
 
-        SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)    # NOTE: necessary for newline preservation in arrays and files 
+        SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)    # NOTE: necessary for newline preservation in arrays and files
         IFS=$'\n'      # Change IFS to newline char
 
         echo -en "Writing to file... "
