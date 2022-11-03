@@ -1668,76 +1668,115 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         fi
     }
 
-    function ParseInputParamForOptions_2
-    {
-        # Get the options
-        while getopts ":h" option; do
-            case $option in
-                "")                                     # no option
-                    (exit 255)
-                    SaveThisExitCode
-                    break;;
+    # function ParseInputParamForOptions_2
+    # {
+    #     str_option=$1
+    #     str_args=$2
 
-                h | help )                              # options
-                    declare -lir int_aFlag=1
-                    break;;
-                d | delete)
-                    declare -lir int_aFlag=2
-                    break;;
-                m | multiboot )
-                    declare -lir int_aFlag=3;;
-                s | static )
-                    declare -lir int_aFlag=4;;
-                w | write )
-                    declare -lir int_aFlag=5;;
+    #     case $str_option in
+    #         "--"*)
+    #             str_option=${str_option:2};;
+    #         "-"*)
+    #             str_option=${str_option:1};;
+    #     esac
 
-                f | full )                              # arguments
-                    declare -lir int_bFlag=1;;
-                r | read )
-                    declare -lir int_bFlag=2;;
+    #     case $str_args in
+    #         "--"*)
+    #             str_args=${str_args:2};;
+    #         "-"*)
+    #             str_args=${str_args:1};;
+    #     esac
 
-                # *)                                     # invalid option
-                #     declare -lir int_aFlag=1
-                #     (exit 254)
-                #     SaveThisExitCode
-                #     ParseThisExitCode
-                #     echo
-                #     break;;
-            esac
-        done
+    #     declare -lar arr_options=(
+    #         "help"
+    #         ,"delete"
+    #         ,"multiboot"
+    #         ,"static"
+    #         ,"write"
+    #     )
 
-        case $int_aFlag in                                  # execute second options before first options
-            3|4)
-                case $int_bFlag in
-                    1)
-                        PreInstallSetup;;
-                    # 2)
-                    #     ReadIOMMU_FromFile;;
-                esac;;
-        esac
+    #     declare -lar arr_args=(
+    #         "full"
+    #         ,"read"
+    #     )
 
-        case $int_aFlag in                                  # execute first options
-            1)
-                Help
-                ExitWithThisExitCode;;
-            2)
-                DeleteSetup;;
-            3)
-                MultiBootSetup;;
-            4)
-                StaticSetup;;
-            # 5)
-            #     WriteIOMMU_ToFile;;
-        esac
+    #     for int_key in ${!arr_options[@]}; do
+    #         local str_element=${arr_options[$int_key]}
 
-        case $int_aFlag in                                  # execute second options after first options
-            3|4)
-                case $int_bFlag in
-                    1)
-                        PostInstallSetup;;
-                esac;;
-        esac
-    }
+    #         if [[ $str_option == $str_element ]]; then
+    #             declare -lir int_option=$int_key
+    #             break
+    #         fi
+    #     done
+
+    #     # Get the options
+    #     while getopts ":h" option; do
+    #         case $option in
+    #             "")                                     # no option
+    #                 (exit 255)
+    #                 SaveThisExitCode
+    #                 break;;
+
+    #             h)                                      # options
+    #                 declare -lir int_aFlag=1
+    #                 break;;
+    #             d)
+    #                 declare -lir int_aFlag=2
+    #                 break;;
+    #             m)
+    #                 declare -lir int_aFlag=3;;
+    #             s)
+    #                 declare -lir int_aFlag=4;;
+    #             w)
+    #                 declare -lir int_aFlag=5;;
+
+    #             f)                                      # arguments
+    #                 declare -lir int_bFlag=1;;
+    #             r)
+    #                 declare -lir int_bFlag=2;;
+
+    #             *)                                      # invalid option
+    #                 declare -lir int_aFlag=1
+    #                 (exit 254)
+    #                 SaveThisExitCode
+    #                 ParseThisExitCode
+    #                 echo
+    #                 break;;
+    #         esac
+    #     done
+
+    #     case $int_aFlag in                                  # execute second options before first options
+    #         3|4)
+    #             case $int_bFlag in
+    #                 1)
+    #                     PreInstallSetup;;
+    #                 # 2)
+    #                 #     ReadIOMMU_FromFile;;
+    #             esac;;
+    #     esac
+
+    #     case $int_aFlag in                                  # execute first options
+    #         1)
+    #             Help
+    #             ExitWithThisExitCode;;
+    #         2)
+    #             DeleteSetup;;
+    #         3)
+    #             MultiBootSetup;;
+    #         4)
+    #             StaticSetup;;
+    #         # 5)
+    #         #     WriteIOMMU_ToFile;;
+    #     esac
+
+    #     case $int_aFlag in                                  # execute second options after first options
+    #         3|4)
+    #             case $int_bFlag in
+    #                 1)
+    #                     PostInstallSetup;;
+    #             esac;;
+    #     esac
+    # }
 
     function ParseInputParamForOptions
     {
@@ -2280,7 +2319,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     IFS=$'\n'      # Change IFS to newline char
 
     if [[ -z $2 ]]; then
-        ParseInputParamForOptions_2 $1          # TODO: need to fix params function
+        ParseInputParamForOptions $1            # TODO: need to fix params function
         CheckIfUserIsRoot
         CheckIfIOMMU_IsEnabled
 
