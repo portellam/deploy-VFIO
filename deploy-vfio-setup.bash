@@ -560,13 +560,10 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         fi
 
         if [[ $int_thisExitCode -eq 0 ]]; then
-            case ${!var_input[@]} in                    # check number of key-value pairs
-                0)                                      # var is invalid
-                    (exit 255)
-                    SaveThisExitCode;;
-                1)      # check if var is not an array
+            case ${!var_input[@]} in                                                    # check number of key-value pairs
+                ( -eq 0))                                                                      # check if var is not an array
                     echo -e $var_input >> $1 || ( (exit 255) && SaveThisExitCode );;
-                *)      # check if var is an array
+                *)                                                                      # check if var is an array
                     for str_element in ${var_input[@]}; do
                         echo -e $str_element >> $1 || ( (exit 255) && SaveThisExitCode && break )
                     done;;

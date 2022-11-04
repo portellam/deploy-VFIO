@@ -20,7 +20,7 @@ echo
 # echo as is #
 echo -e '$str1:'"'$str1'"
 echo -e '$str2:'"'$str2'"
-echo -e '$arr1:'"'$arr1'"
+echo -e '$arr1:'"'$arr1'"           # same as arr1[0]
 echo -e '$arr2:'"'$arr2'"
 echo
 
