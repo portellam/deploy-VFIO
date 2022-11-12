@@ -5,6 +5,7 @@
 ##
 
 # TODO:
+# add support for test cases (check for flag or boolean to exec test case in a debug mode)
 # write iommu output to logfile     done
 # if parse iommu fails, try to read from logfile
 # read from logfile or read from existing system file, then update\
@@ -710,7 +711,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         echo
     }
 
-    function ParseCPU                           # TODO: fix here!
+    function ParseCPU
     {
         # TODO: fix var names for ENVIRONMENT VARIABLES
 
@@ -1452,7 +1453,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
     }
 
 # main functions #
-    function DeleteSetup                        # TODO: fix here!
+    function DeleteSetup
     {
         ReadInput "Are you sure you want to uninstall the existing VFIO setup?"
 
@@ -1544,7 +1545,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         ExitWithThisExitCode
     }
 
-    function MultiBootSetup                     # TODO: review this!
+    function MultiBootSetup
     {
         echo -e "Executing Multi-boot setup..."
         ParseIOMMUandPCI
@@ -1716,116 +1717,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         fi
     }
 
-    # function ParseInputParamForOptions_2
-    # {
-    #     str_option=$1
-    #     str_args=$2
-
-    #     case $str_option in
-    #         "--"*)
-    #             str_option=${str_option:2};;
-    #         "-"*)
-    #             str_option=${str_option:1};;
-    #     esac
-
-    #     case $str_args in
-    #         "--"*)
-    #             str_args=${str_args:2};;
-    #         "-"*)
-    #             str_args=${str_args:1};;
-    #     esac
-
-    #     declare -lar arr_options=(
-    #         "help"
-    #         ,"delete"
-    #         ,"multiboot"
-    #         ,"static"
-    #         ,"write"
-    #     )
-
-    #     declare -lar arr_args=(
-    #         "full"
-    #         ,"read"
-    #     )
-
-    #     for int_key in ${!arr_options[@]}; do
-    #         local str_element=${arr_options[$int_key]}
-
-    #         if [[ $str_option == $str_element ]]; then
-    #             declare -lir int_option=$int_key
-    #             break
-    #         fi
-    #     done
-
-    #     # Get the options
-    #     while getopts ":h" option; do
-    #         case $option in
-    #             "")                                     # no option
-    #                 (exit 255)
-    #                 SaveThisExitCode
-    #                 break;;
-
-    #             h)                                      # options
-    #                 declare -lir int_aFlag=1
-    #                 break;;
-    #             d)
-    #                 declare -lir int_aFlag=2
-    #                 break;;
-    #             m)
-    #                 declare -lir int_aFlag=3;;
-    #             s)
-    #                 declare -lir int_aFlag=4;;
-    #             w)
-    #                 declare -lir int_aFlag=5;;
-
-    #             f)                                      # arguments
-    #                 declare -lir int_bFlag=1;;
-    #             r)
-    #                 declare -lir int_bFlag=2;;
-
-    #             *)                                      # invalid option
-    #                 declare -lir int_aFlag=1
-    #                 (exit 254)
-    #                 SaveThisExitCode
-    #                 ParseThisExitCode
-    #                 echo
-    #                 break;;
-    #         esac
-    #     done
-
-    #     case $int_aFlag in                                  # execute second options before first options
-    #         3|4)
-    #             case $int_bFlag in
-    #                 1)
-    #                     PreInstallSetup;;
-    #                 # 2)
-    #                 #     ReadIOMMU_FromFile;;
-    #             esac;;
-    #     esac
-
-    #     case $int_aFlag in                                  # execute first options
-    #         1)
-    #             Help
-    #             ExitWithThisExitCode;;
-    #         2)
-    #             DeleteSetup;;
-    #         3)
-    #             MultiBootSetup;;
-    #         4)
-    #             StaticSetup;;
-    #         # 5)
-    #         #     WriteIOMMU_ToFile;;
-    #     esac
-
-    #     case $int_aFlag in                                  # execute second options after first options
-    #         3|4)
-    #             case $int_bFlag in
-    #                 1)
-    #                     PostInstallSetup;;
-    #             esac;;
-    #     esac
-    # }
-
     function ParseInputParamForOptions
     {
         if [[ "$1" =~ ^- || "$1" == "--" ]]; then           # parse input parameters
@@ -1901,7 +1792,118 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         esac
     }
 
-    function PreInstallSetup                    # TODO: review this!
+    # TODO: fix here !
+        # function ParseInputParamForOptions_2
+        # {
+        #     str_option=$1
+        #     str_args=$2
+
+        #     case $str_option in
+        #         "--"*)
+        #             str_option=${str_option:2};;
+        #         "-"*)
+        #             str_option=${str_option:1};;
+        #     esac
+
+        #     case $str_args in
+        #         "--"*)
+        #             str_args=${str_args:2};;
+        #         "-"*)
+        #             str_args=${str_args:1};;
+        #     esac
+
+        #     declare -lar arr_options=(
+        #         "help"
+        #         ,"delete"
+        #         ,"multiboot"
+        #         ,"static"
+        #         ,"write"
+        #     )
+
+        #     declare -lar arr_args=(
+        #         "full"
+        #         ,"read"
+        #     )
+
+        #     for int_key in ${!arr_options[@]}; do
+        #         local str_element=${arr_options[$int_key]}
+
+        #         if [[ $str_option == $str_element ]]; then
+        #             declare -lir int_option=$int_key
+        #             break
+        #         fi
+        #     done
+
+        #     # Get the options
+        #     while getopts ":h" option; do
+        #         case $option in
+        #             "")                                     # no option
+        #                 (exit 255)
+        #                 SaveThisExitCode
+        #                 break;;
+
+        #             h)                                      # options
+        #                 declare -lir int_aFlag=1
+        #                 break;;
+        #             d)
+        #                 declare -lir int_aFlag=2
+        #                 break;;
+        #             m)
+        #                 declare -lir int_aFlag=3;;
+        #             s)
+        #                 declare -lir int_aFlag=4;;
+        #             w)
+        #                 declare -lir int_aFlag=5;;
+
+        #             f)                                      # arguments
+        #                 declare -lir int_bFlag=1;;
+        #             r)
+        #                 declare -lir int_bFlag=2;;
+
+        #             *)                                      # invalid option
+        #                 declare -lir int_aFlag=1
+        #                 (exit 254)
+        #                 SaveThisExitCode
+        #                 ParseThisExitCode
+        #                 echo
+        #                 break;;
+        #         esac
+        #     done
+
+        #     case $int_aFlag in                                  # execute second options before first options
+        #         3|4)
+        #             case $int_bFlag in
+        #                 1)
+        #                     PreInstallSetup;;
+        #                 # 2)
+        #                 #     ReadIOMMU_FromFile;;
+        #             esac;;
+        #     esac
+
+        #     case $int_aFlag in                                  # execute first options
+        #         1)
+        #             Help
+        #             ExitWithThisExitCode;;
+        #         2)
+        #             DeleteSetup;;
+        #         3)
+        #             MultiBootSetup;;
+        #         4)
+        #             StaticSetup;;
+        #         # 5)
+        #         #     WriteIOMMU_ToFile;;
+        #     esac
+
+        #     case $int_aFlag in                                  # execute second options after first options
+        #         3|4)
+        #             case $int_bFlag in
+        #                 1)
+        #                     PostInstallSetup;;
+        #             esac;;
+        #     esac
+        # }
+
+    function PreInstallSetup
     {
         echo -e "Executing Pre-install setup..."
 
@@ -2070,7 +2072,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         EchoPassOrFailThisExitCode "Executing Pre-install setup..."
     }
 
-    function PostInstallSetup                   # TODO: fix here!
+    function PostInstallSetup
     {
         echo -e "Executing Post-install setup..."
         # code here
@@ -2090,7 +2092,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         esac
     }
 
-    function StaticSetup                        # TODO: fix here!
+    function StaticSetup
     {
         echo -e "Executing Static setup..."
         ParseIOMMUandPCI
