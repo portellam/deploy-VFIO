@@ -55,8 +55,16 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
         fi
 
         if [[ ! -e $1 ]]; then      # dir/file not found
-            find . -name $1 | uniq &> /dev/null || (exit 250)
-            SaveThisExitCode
+            case $1 in
+                *"/"*)
+                    find $1 | uniq &> /dev/null || (exit 250)
+                    SaveThisExitCode
+                    break;;
+                *)
+                    find . -name $1 | uniq &> /dev/null || (exit 250)
+                    SaveThisExitCode
+                    break;;
+            esac
         fi
 
         EchoPassOrFailThisExitCode  # call functions
@@ -613,7 +621,7 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
 
         if [[ $int_thisExitCode -eq 0 ]]; then
             case ${!var_input[@]} in                                                    # check number of key-value pairs
-                ( -eq 0))                                                                      # check if var is not an array
+                0)                                                                      # check if var is not an array
                     echo -e $var_input >> $1 || ( (exit 255) && SaveThisExitCode );;
                 *)                                                                      # check if var is an array
                     for str_element in ${var_input[@]}; do
@@ -767,10 +775,10 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
         # TODO: fix var names for ENVIRONMENT VARIABLES
 
         # parameters #
-        readonly arr_coresByThread=($(cat /proc/cpuinfo | grep 'core id' | cut -d ':' -f2 | cut -d ' ' -f2))
-        readonly int_totalCores=$( cat /proc/cpuinfo | grep 'cpu cores' | uniq | grep -o '[0-9]\+' )
-        readonly int_totalThreads=$( cat /proc/cpuinfo | grep 'siblings' | uniq | grep -o '[0-9]\+' )
-        readonly int_SMT_multiplier=$(( $int_totalThreads / $int_totalCores ))
+        declare -r arr_coresByThread=($(cat /proc/cpuinfo | grep 'core id' | cut -d ':' -f2 | cut -d ' ' -f2))
+        declare -r int_totalCores=$( cat /proc/cpuinfo | grep 'cpu cores' | uniq | grep -o '[0-9]\+' )
+        declare -r int_totalThreads=$( cat /proc/cpuinfo | grep 'siblings' | uniq | grep -o '[0-9]\+' )
+        declare -r int_SMT_multiplier=$(( $int_totalThreads / $int_totalCores ))
         # declare -a arr_totalCores=()
         declare -a arr_hostCores=()
         declare -a arr_hostThreads=()
@@ -781,11 +789,11 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
 
         # reserve remainder cores to host #
         if [[ $int_totalCores -ge 4 ]]; then                                # >= 4-core CPU, leave max 2
-            readonly int_hostCores=2
+            declare -r int_hostCores=2
         elif [[ $int_totalCores -le 3 && $int_totalCores -ge 2 ]]; then     # 2 or 3-core CPU, leave max 1
-            readonly int_hostCores=1
+            declare -r int_hostCores=1
         else                                                                # 1-core CPU, do not reserve cores to virt
-            readonly int_hostCores=$int_totalCores
+            declare -r int_hostCores=$int_totalCores
             (exit 255)
         fi
 
@@ -834,10 +842,10 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
         done
 
         # update parameters #
-        readonly arr_totalThreads
-        readonly arr_hostCores
-        readonly arr_hostThreadSets
-        readonly arr_virtThreadSets
+        declare -r arr_totalThreads
+        declare -r arr_hostCores
+        declare -r arr_hostThreadSets
+        declare -r arr_virtThreadSets
 
         # save output to string for cpuset and cpumask #
         #
@@ -856,7 +864,7 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
         # 0-1,6-7   0b000011000011  C3      # host cores
         #
         # find cpu mask #
-        readonly int_totalThreads_mask=$(( ( 2 ** $int_totalThreads ) - 1 ))
+        declare -r int_totalThreads_mask=$(( ( 2 ** $int_totalThreads ) - 1 ))
         declare -i int_hostThreads_mask=0
 
         for int_thisThread in ${arr_hostThreads[@]}; do
@@ -865,10 +873,10 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
 
         # save output #
         if [[ $int_thisExitCode -eq 0 ]]; then
-            readonly int_hostThreads_mask
-            readonly hex_totalThreads_mask=$(printf '%x\n' $int_totalThreads_mask)  # int to hex
-            readonly hex_hostThreads_mask=$(printf '%x\n' $int_hostThreads_mask)    # int to hex
-            readonly str_GRUB_CMDLINE_CPU_Isolation="isolcpus=$str_virtThreads nohz_full=$str_virtThreads rcu_nocbs=$str_virtThreads"
+            declare -r int_hostThreads_mask
+            declare -r hex_totalThreads_mask=$(printf '%x\n' $int_totalThreads_mask)  # int to hex
+            declare -r hex_hostThreads_mask=$(printf '%x\n' $int_hostThreads_mask)    # int to hex
+            declare -r str_GRUB_CMDLINE_CPU_Isolation="isolcpus=$str_virtThreads nohz_full=$str_virtThreads rcu_nocbs=$str_virtThreads"
         fi
     }
 
@@ -888,9 +896,9 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
         declare -a arr_IOMMU_hasVGA=()
         declare -a arr_IOMMU_hasInternalPCI=()
         declare -a arr_IOMMU_hasExternalPCI=()
-        local bool_missingDriver=false
-        local bool_foundVFIO=false
-        local str_IGPU_fullName=""
+        declare -l bool_missingDriver=false
+        declare -l bool_foundVFIO=false
+        declare -l str_IGPU_fullName=""
         declare -lr str_logFile="logs/iommu.log"
 
         for str_element1 in $( find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V ); do           # parse list of IOMMU groups
@@ -899,8 +907,8 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
             for str_element2 in $( ls ${str_element1}/devices ); do         # parse given IOMMU group for PCI IDs
 
                 # save output of given device #
-                local str_thisDevicePCI_ID="${str_element2##"0000:"}"
-                local str_thisDeviceBusID=$( echo $str_thisDevicePCI_ID | cut -d ':' -f1 )
+                declare -l str_thisDevicePCI_ID="${str_element2##"0000:"}"
+                declare -l str_thisDeviceBusID=$( echo $str_thisDevicePCI_ID | cut -d ':' -f1 )
 
                 if [[ ${str_thisDeviceBusID::1} -eq 0 ]]; then
                     declare -li int_thisDeviceBusID=$(( ${str_thisDeviceBusID:1:2} ))
@@ -908,10 +916,10 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
                     declare -li int_thisDeviceBusID=$(( $str_thisDeviceBusID ))
                 fi
 
-                local str_thisDeviceName="$( lspci -ms ${str_element2} | cut -d '"' -f6 )"
-                local str_thisDeviceType="$( lspci -ms ${str_element2} | cut -d '"' -f2 )"
-                local str_thisDeviceVendor="$( lspci -ms ${str_element2} | cut -d '"' -f4 )"
-                local str_thisDeviceDriver="$( lspci -ks ${str_element2} | grep driver | cut -d ':' -f2 )"
+                declare -l str_thisDeviceName="$( lspci -ms ${str_element2} | cut -d '"' -f6 )"
+                declare -l str_thisDeviceType="$( lspci -ms ${str_element2} | cut -d '"' -f2 )"
+                declare -l str_thisDeviceVendor="$( lspci -ms ${str_element2} | cut -d '"' -f4 )"
+                declare -l str_thisDeviceDriver="$( lspci -ks ${str_element2} | grep driver | cut -d ':' -f2 )"
 
                 if [[ -z $str_thisDeviceDriver ]]; then                     # check for valid driver
                     str_thisDeviceDriver="N/A"
@@ -935,11 +943,11 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
                             arr_IOMMU_hasVGA+=( "$str_thisIOMMU" );                                     # append to list only once
 
                             if [[ $int_thisDeviceBusID -eq 0 && ${#str_IGPU_fullName} -eq 0 ]]; then    # append IGPU name
-                            readonly str_IGPU_fullName="${str_thisDeviceVendor} ${str_thisDeviceName}"
+                            declare -r str_IGPU_fullName="${str_thisDeviceVendor} ${str_thisDeviceName}"
                         fi
 
                         if [[ $int_thisDeviceBusID -gt 0 && ${#str_IGPU_fullName} -eq 0 ]]; then
-                            readonly str_IGPU_fullName="N/A"
+                            declare -r str_IGPU_fullName="N/A"
                         fi;;
                     esac
                 fi
@@ -974,16 +982,16 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
         done
 
         # parameters #
-        readonly arr_DeviceIOMMU
-        readonly arr_DevicePCI_ID
-        readonly arr_DeviceDriver
-        readonly arr_DeviceName
-        readonly arr_DeviceType
-        readonly arr_DeviceVendor
-        readonly arr_IOMMU_hasUSB
-        readonly arr_IOMMU_hasVGA
-        readonly arr_IOMMU_hasInternalPCI
-        readonly arr_IOMMU_hasExternalPCI
+        declare -r arr_DeviceIOMMU
+        declare -r arr_DevicePCI_ID
+        declare -r arr_DeviceDriver
+        declare -r arr_DeviceName
+        declare -r arr_DeviceType
+        declare -r arr_DeviceVendor
+        declare -r arr_IOMMU_hasUSB
+        declare -r arr_IOMMU_hasVGA
+        declare -r arr_IOMMU_hasInternalPCI
+        declare -r arr_IOMMU_hasExternalPCI
 
         EchoPassOrFailThisExitCode  # call functions
 
@@ -1004,42 +1012,42 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
                 WriteVarToFile $str_logFile "{str_IGPU_fullName}\t'${str_IGPU_fullName}'" &> /dev/null
 
                 for int_key in ${!arr_DeviceIOMMU[@]}; do
-                    local str_element="{arr_DeviceIOMMU[$int_key]}\t'${arr_DeviceIOMMU[$int_key]}'"
+                    declare -l str_element="{arr_DeviceIOMMU[$int_key]}\t'${arr_DeviceIOMMU[$int_key]}'"
                     WriteVarToFile $str_logFile $str_element &> /dev/null
                 done
 
                 for int_key in ${!arr_DevicePCI_ID[@]}; do
-                    local str_element="{arr_DevicePCI_ID[$int_key]}\t'${arr_DevicePCI_ID[$int_key]}'"
+                    declare -l str_element="{arr_DevicePCI_ID[$int_key]}\t'${arr_DevicePCI_ID[$int_key]}'"
                     WriteVarToFile $str_logFile $str_element &> /dev/null
                 done
 
                 for int_key in ${!arr_DeviceDriver[@]}; do
-                    local str_element="{arr_DeviceDriver[$int_key]}\t'${arr_DeviceDriver[$int_key]}'"
+                    declare -l str_element="{arr_DeviceDriver[$int_key]}\t'${arr_DeviceDriver[$int_key]}'"
                     WriteVarToFile $str_logFile $str_element &> /dev/null
                 done
 
                 for int_key in ${!arr_DeviceType[@]}; do
-                    local str_element="{arr_DeviceType[$int_key]}\t'${arr_DeviceType[$int_key]}'"
+                    declare -l str_element="{arr_DeviceType[$int_key]}\t'${arr_DeviceType[$int_key]}'"
                     WriteVarToFile $str_logFile $str_element &> /dev/null
                 done
 
                 for int_key in ${!arr_IOMMU_hasUSB[@]}; do
-                    local str_element="{arr_IOMMU_hasUSB[$int_key]}\t'${arr_IOMMU_hasUSB[$int_key]}'"
+                    declare -l str_element="{arr_IOMMU_hasUSB[$int_key]}\t'${arr_IOMMU_hasUSB[$int_key]}'"
                     WriteVarToFile $str_logFile $str_element &> /dev/null
                 done
 
                 for int_key in ${!arr_IOMMU_hasVGA[@]}; do
-                    local str_element="{arr_IOMMU_hasVGA[$int_key]}\t'${arr_IOMMU_hasVGA[$int_key]}'"
+                    declare -l str_element="{arr_IOMMU_hasVGA[$int_key]}\t'${arr_IOMMU_hasVGA[$int_key]}'"
                     WriteVarToFile $str_logFile $str_element &> /dev/null
                 done
 
                 for int_key in ${!arr_IOMMU_hasInternalPCI[@]}; do
-                    local str_element="{arr_IOMMU_hasInternalPCI[$int_key]}\t'${arr_IOMMU_hasInternalPCI[$int_key]}'"
+                    declare -l str_element="{arr_IOMMU_hasInternalPCI[$int_key]}\t'${arr_IOMMU_hasInternalPCI[$int_key]}'"
                     WriteVarToFile $str_logFile $str_element &> /dev/null
                 done
 
                 for int_key in ${!arr_IOMMU_hasExternalPCI[@]}; do
-                    local str_element="{arr_IOMMU_hasExternalPCI[$int_key]}\t'${arr_IOMMU_hasExternalPCI[$int_key]}'"
+                    declare -l str_element="{arr_IOMMU_hasExternalPCI[$int_key]}\t'${arr_IOMMU_hasExternalPCI[$int_key]}'"
                     WriteVarToFile $str_logFile $str_element &> /dev/null
                 done
 
@@ -1051,7 +1059,7 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
         echo
     }
 
-    function ReadIOMMUFromLogFile
+    function ReadIOMMUFromLogFile       # NOTE: added file check and test case boolean conditional
     {
         echo -en "Parsing IOMMU groups from logfile... "
 
@@ -1067,47 +1075,54 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
         declare -a arr_IOMMU_hasVGA=()
         declare -a arr_IOMMU_hasInternalPCI=()
         declare -a arr_IOMMU_hasExternalPCI=()
-        declare -lr str_logFile="logs/iommu.log"
 
-        CheckIfFileOrDirExists $str_logFile
+        if [[ $bool_executeTestCases == true ]]; then
+            declare -lr str_file1="logs/iommu.log"
 
-        while read str_line; do
-            local str_element=$( echo $str_line | cut -d "'" -f2 )
-            case $str_line in
-                "arr_DeviceIOMMU"*)
-                    arr_DeviceIOMMU+=( "${str_element}" );;
-                "arr_DevicePCI_ID"*)
-                    arr_DevicePCI_ID+=( "${str_element}" );;
-                "arr_DeviceDriver"*)
-                    arr_DeviceDriver+=( "${str_element}" );;
-                "arr_DeviceName"*)
-                    arr_DeviceName+=( "${str_element}" );;
-                "arr_DeviceType"*)
-                    arr_DeviceType+=( "${str_element}" );;
-                "arr_DeviceVendor"*)
-                    arr_DeviceVendor+=( "${str_element}" );;
-                "arr_IOMMU_hasUSB"*)
-                    arr_IOMMU_hasUSB+=( "${str_element}" );;
-                "arr_IOMMU_hasVGA"*)
-                    arr_IOMMU_hasVGA+=( "${str_element}" );;
-                "arr_IOMMU_hasInternalPCI"*)
-                    arr_IOMMU_hasInternalPCI+=( "${str_element}" );;
-                "arr_IOMMU_hasExternalPCI"*)
-                    arr_IOMMU_hasExternalPCI+=( "${str_element}" );;
-            esac
-        done < $str_logFile
+        else
+            declare -lr str_file1="logs/iommu.log"
+        fi
 
-        # parameters #
-        readonly arr_DeviceIOMMU
-        readonly arr_DevicePCI_ID
-        readonly arr_DeviceDriver
-        readonly arr_DeviceName
-        readonly arr_DeviceType
-        readonly arr_DeviceVendor
-        readonly arr_IOMMU_hasUSB
-        readonly arr_IOMMU_hasVGA
-        readonly arr_IOMMU_hasInternalPCI
-        readonly arr_IOMMU_hasExternalPCI
+        CheckIfFileOrDirExists $str_file1 &> /dev/null && (
+            while read str_line; do
+                declare -l str_element=$( echo $str_line | cut -d "'" -f2 )
+
+                case $str_line in
+                    "arr_DeviceIOMMU"*)
+                        arr_DeviceIOMMU+=( "${str_element}" );;
+                    "arr_DevicePCI_ID"*)
+                        arr_DevicePCI_ID+=( "${str_element}" );;
+                    "arr_DeviceDriver"*)
+                        arr_DeviceDriver+=( "${str_element}" );;
+                    "arr_DeviceName"*)
+                        arr_DeviceName+=( "${str_element}" );;
+                    "arr_DeviceType"*)
+                        arr_DeviceType+=( "${str_element}" );;
+                    "arr_DeviceVendor"*)
+                        arr_DeviceVendor+=( "${str_element}" );;
+                    "arr_IOMMU_hasUSB"*)
+                        arr_IOMMU_hasUSB+=( "${str_element}" );;
+                    "arr_IOMMU_hasVGA"*)
+                        arr_IOMMU_hasVGA+=( "${str_element}" );;
+                    "arr_IOMMU_hasInternalPCI"*)
+                        arr_IOMMU_hasInternalPCI+=( "${str_element}" );;
+                    "arr_IOMMU_hasExternalPCI"*)
+                        arr_IOMMU_hasExternalPCI+=( "${str_element}" );;
+                esac
+            done < $str_file1
+
+            # parameters #
+            declare -r arr_DeviceIOMMU
+            declare -r arr_DevicePCI_ID
+            declare -r arr_DeviceDriver
+            declare -r arr_DeviceName
+            declare -r arr_DeviceType
+            declare -r arr_DeviceVendor
+            declare -r arr_IOMMU_hasUSB
+            declare -r arr_IOMMU_hasVGA
+            declare -r arr_IOMMU_hasInternalPCI
+            declare -r arr_IOMMU_hasExternalPCI
+        ) || SaveThisExitCode
 
         EchoPassOrFailThisExitCode  # call functions
     }
@@ -1116,7 +1131,7 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
     {
         echo -e "Reviewing IOMMU groups..."
 
-        local bool_thisIOMMU_hasVGA=false
+        declare -l bool_thisIOMMU_hasVGA=false
 
         # parameters #
         # lists of Key value pairs (IOMMU group number to device indexes)
@@ -1264,7 +1279,7 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
         ReadInput "Setup Evdev?"
 
         if [[ $int_thisExitCode -eq 0 ]]; then
-            # readonly str_firstUser=$( id -u 1000 -n ) && echo -e "Found the first desktop user of the system: $str_firstUser"
+            # declare -r str_firstUser=$( id -u 1000 -n ) && echo -e "Found the first desktop user of the system: $str_firstUser"
 
             # add users to groups #
             declare -a arr_User=($( getent passwd {1000..60000} | cut -d ":" -f 1 ))
@@ -1293,7 +1308,7 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
                     arr_output_evdevQEMU+=("    \"/dev/input/by-id/$str_element\",")
                 done
 
-                readonly arr_output_evdevQEMU
+                declare -r arr_output_evdevQEMU
 
                 # append output #
                 declare -ar arr_output_evdevApparmor=(
@@ -1390,8 +1405,8 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
             declare -ir int_HugePageNum=$str_input1
 
             # output #
-            readonly str_output_hugepagesGRUB="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
-            readonly str_output_hugepagesQEMU="hugetlbfs_mount = \"/dev/hugepages\""
+            declare -r str_output_hugepagesGRUB="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
+            declare -r str_output_hugepagesQEMU="hugetlbfs_mount = \"/dev/hugepages\""
 
             # write to file #
             CheckIfFileOrDirExists $str_thisFile1 &> /dev/null && DeleteFile $str_thisFile1 &> /dev/null
@@ -1548,9 +1563,9 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
                     str_oldFile=$( ls -l $str_file1".old"* | sort -r | head -n1  )          # find most recent backup
                 )
 
-                # local str_thisBasename=$( basename $str_file1)                            # old
+                # declare -l str_thisBasename=$( basename $str_file1)                            # old
                 # declare -li int_thisBasename=$(( 0 - ${#str_thisBasename} ))
-                # local str_thisDir=${#str_file1::int_thisBasename}
+                # declare -l str_thisDir=${#str_file1::int_thisBasename}
                 # cd $str_thisDir
                 # str_oldFile=$( find . -name $str_thisBasename | sort -r | head -n1 )
 
@@ -1562,11 +1577,11 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
                                 ;;
                         esac
 
-                        WriteVarToFile $str_file1 $str_line &> /dev/null || ( (exit 255) && SaveThisExitCode && break )
+                        WriteVarToFile $str_file1 $str_line &> /dev/null || ( SaveThisExitCode && break )
                     done < $str_oldFile && (
                         update-grub &> /dev/null
                     )
-                ) || ( (exit 255) && SaveThisExitCode )
+                ) || ( SaveThisExitCode )
             )
         else
             (exit 255)
@@ -1601,17 +1616,17 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
         echo -e "Executing Multi-boot setup..."
 
         # parameters #
-        local bool_outputToGRUB=false
+        declare -l bool_outputToGRUB=false
         # declare -lr str_logFile1="/logs/${0##*/}.log"       # NOTE: what does this do?
         declare -la arr_GRUBmenuEntry=()
         declare -la arr_rootKernel+=( $( ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n3 ) )       # first three kernels
         declare -la arr_VFIO_driver=()
         declare -la arr_VFIOVGA_driver=()
-        local str_thisGPU_FullName=""
+        declare -l str_thisGPU_FullName=""
         declare -lr str_rootDisk=$( df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1 )
         declare -lr str_rootDistro=$( lsb_release -i -s )                                                   # Linux distro name
         declare -lr str_rootUUID=$( blkid -s UUID | grep $str_rootDisk | cut -d '"' -f2 )
-        local str_rootFSTYPE=$( blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2 )
+        declare -l str_rootFSTYPE=$( blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2 )
 
         if [[ $str_rootFSTYPE == "ext4" || $str_rootFSTYPE == "ext3" ]]; then       # NOTE: this implementation is hacky. This does not account for other root filesystems
             declare -lr str_rootFSTYPE="ext2"
@@ -1639,64 +1654,64 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
             )
 
             str_dir1=$( find tests/test-input | head -n1 )                                        # test input IOMMU file
-            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || SaveThisExitCode
 
             declare -lr str_inFile0=$( find . -name $str_file0 )
             declare -lr str_inFile1=$( find . -name $str_file1 )
-            CheckIfFileOrDirExists $str_inFile0 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile1 &> /dev/null || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile0 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile1 &> /dev/null || SaveThisExitCode
 
             if [[ $int_thisExitCode -eq 0 ]]; then      # read from test input IOMMU file
-                ReadIOMMUFromLogFile
+                ReadIOMMUFromLogFile $str_inFile0 || SaveThisExitCode
             fi
 
             str_dir1=$( find tests/test-input | head -n1 )                                        # test input system files
-            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || SaveThisExitCode
 
             declare -lr str_inFile2=$( find . -name $str_file2 )
             declare -lr str_inFile3=$( find . -name $str_file3 )
-            CheckIfFileOrDirExists $str_inFile2 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile3 &> /dev/null || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile2 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile3 &> /dev/null || SaveThisExitCode
 
             str_dir1=$( find tests/actual-output/multi-boot-setup | head -n1 )                    # actual output system files
-            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || SaveThisExitCode
 
             declare -lr str_outFile2=$( find . -name $str_file2 )
             declare -lr str_outFile3=$( find . -name $str_file3 )
-            CheckIfFileOrDirExists $str_outFile2 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile3 &> /dev/null || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile2 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile3 &> /dev/null || SaveThisExitCode
 
             str_dir1=$( find tests/expected-output | head -n1 )                                   # expected output system files
-            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || SaveThisExitCode
 
             declare -lr str_expectedOutFile2=$( find . -name $str_file2 )
             declare -lr str_expectedOutFile3=$( find . -name $str_file3 )
-            CheckIfFileOrDirExists $str_expectedOutFile2 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_expectedOutFile3 &> /dev/null || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_expectedOutFile2 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_expectedOutFile3 &> /dev/null || SaveThisExitCode
 
         else                                            # read normally
             str_dir1=$( find .. -name logs )
-            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || SaveThisExitCode
 
             declare -lr str_inFile0=$( find . -name $str_file0 )
-            CheckIfFileOrDirExists $str_inFile0 &> /dev/null || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile0 &> /dev/null || SaveThisExitCode
 
             str_dir1=$( find .. -name files )
-            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || SaveThisExitCode
 
             declare -lr str_inFile1=$( find . -name $str_file1 )
             declare -lr str_inFile2=$( find . -name $str_file2 )
             declare -lr str_inFile3=$( find . -name $str_file3 )
-            CheckIfFileOrDirExists $str_inFile1 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile2 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile3 &> /dev/null || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile1 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile2 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile3 &> /dev/null || SaveThisExitCode
 
             declare -lr str_outFile1="/etc/grub.d/proxifiedScripts/custom"
 
             ParseIOMMUandPCI
 
             if [[ $int_thisExitCode -ne 0 ]]; then      # call function
-                ReadIOMMUFromLogFile $1
+                ReadIOMMUFromLogFile $str_inFile0 || SaveThisExitCode
             fi
         fi
 
@@ -1756,7 +1771,7 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
 
             # /etc/grub.d/proxifiedScripts/custom #
             for int_key in ${!arr_rootKernel[@]}; do                                # parse kernels
-                local str_element=${arr_rootKernel[$int_key]}
+                declare -l str_element=${arr_rootKernel[$int_key]}
 
                 if [[ -e $str_element || $str_element != "" ]]; then                # match
                     str_thisRootKernel=${arr_rootKernel[$int_key]:1}
@@ -1829,7 +1844,7 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
 
         EchoPassOrFailThisExitCode "Executing Multi-boot setup..."
 
-        if [[ $int_thisExitCode -eq 250 ]]; then        # file check
+        if [[ $int_thisExitCode -eq 250 ]]; then                    # file check
             echo -e "File(s) missing:"
             CheckIfFileOrDirExists $str_inFile0 &> /dev/null || echo -e "\t'$str_inFile0'"
             CheckIfFileOrDirExists $str_inFile1 &> /dev/null || echo -e "\t'$str_inFile1'"
@@ -1956,7 +1971,7 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
         #     )
 
         #     for int_key in ${!arr_options[@]}; do
-        #         local str_element=${arr_options[$int_key]}
+        #         declare -l str_element=${arr_options[$int_key]}
 
         #         if [[ $str_option == $str_element ]]; then
         #             declare -lir int_option=$int_key
@@ -2044,7 +2059,7 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
 
         CreateFile $str_outFile2 &> /dev/null
 
-        # restore system file from repo backup if local backups do not exist #
+        # restore system file from repo backup if declare -l backups do not exist #
         CheckIfFileOrDirExists $str_outFile1 || (
             CheckIfFileOrDirExists $str_inFile1 && (
                 cp $str_inFile1 $str_outFile1
@@ -2067,7 +2082,7 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
         )
 
         # find first desktop user, add user to groups for libvirt/qemu, hugepages, and evdev
-        readonly str_firstUser=$( id -u 1000 -n ) && (
+        declare -r str_firstUser=$( id -u 1000 -n ) && (
             adduser $str_firstUser libvirt &> /dev/null
             adduser $str_firstUser input &> /dev/null
         )
@@ -2154,7 +2169,7 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
 
         # TO-DO: add check for necessary dependencies or packages
 
-        readonly str_dir1=$( find .. -name git )
+        declare -r str_dir1=$( find .. -name git )
         ( CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 ) && (
             if [[ TestNetwork == true ]]; then
 
@@ -2237,91 +2252,91 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
         if [[ $bool_executeTestCases == true ]]; then   # read from test-case input
             str_dir1=$( find tests/test-input | head -n1 )                                      # test input IOMMU file
             CheckIfFileOrDirExists $str_dir1 &> /dev/null || (
-                (exit 255) && SaveThisExitCode && EchoPassOrFailThisExitCode
+                SaveThisExitCode && EchoPassOrFailThisExitCode
             )
 
-            readonly str_inFile0=$( find . -name iommu-no-vfio.log )
-            CheckIfFileOrDirExists $str_inFile0 &> /dev/null || (exit 255) && SaveThisExitCode
+            declare -r str_inFile0=$( find . -name iommu-no-vfio.log )
+            CheckIfFileOrDirExists $str_inFile0 &> /dev/null || SaveThisExitCode
 
             str_dir1=$( find tests/test-input | head -n1 )                                      # test input system files
-            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
-            readonly str_inFile1=$( find . -name etc_default_grub )
-            readonly str_inFile2=$( find . -name etc_modules )
-            readonly str_inFile3=$( find . -name etc_initramfs-tools_modules )
-            readonly str_inFile4=$( find . -name etc_modprobe.d_pci-blacklists.conf )
-            readonly str_inFile5=$( find . -name etc_modprobe.d_vfio.conf )
-            CheckIfFileOrDirExists $str_inFile1 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile2 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile3 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile4 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile5 &> /dev/null || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || SaveThisExitCode
+            declare -r str_inFile1=$( find . -name etc_default_grub )
+            declare -r str_inFile2=$( find . -name etc_modules )
+            declare -r str_inFile3=$( find . -name etc_initramfs-tools_modules )
+            declare -r str_inFile4=$( find . -name etc_modprobe.d_pci-blacklists.conf )
+            declare -r str_inFile5=$( find . -name etc_modprobe.d_vfio.conf )
+            CheckIfFileOrDirExists $str_inFile1 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile2 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile3 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile4 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile5 &> /dev/null || SaveThisExitCode
 
             str_dir1=$( find tests/actual-output/static-setup | head -n1 )                      # actual output system files
-            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || SaveThisExitCode
 
-            readonly str_outFile1=$( find . -name etc_default_grub )
-            readonly str_outFile2=$( find . -name etc_modules )
-            readonly str_outFile3=$( find . -name etc_initramfs-tools_modules )
-            readonly str_outFile4=$( find . -name etc_modprobe.d_pci-blacklists.conf )
-            readonly str_outFile5=$( find . -name etc_modprobe.d_vfio.conf )
-            CheckIfFileOrDirExists $str_outFile1 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile2 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile3 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile4 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile5 &> /dev/null || (exit 255) && SaveThisExitCode
+            declare -r str_outFile1=$( find . -name etc_default_grub )
+            declare -r str_outFile2=$( find . -name etc_modules )
+            declare -r str_outFile3=$( find . -name etc_initramfs-tools_modules )
+            declare -r str_outFile4=$( find . -name etc_modprobe.d_pci-blacklists.conf )
+            declare -r str_outFile5=$( find . -name etc_modprobe.d_vfio.conf )
+            CheckIfFileOrDirExists $str_outFile1 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile2 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile3 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile4 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile5 &> /dev/null || SaveThisExitCode
 
             str_dir1=$( find tests/expected-output/static-setup | head -n1 )                    # expected output system files
-            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || SaveThisExitCode
 
-            readonly str_expectedOutFile1=$( find . -name etc_default_grub )
-            readonly str_expectedOutFile2=$( find . -name etc_modules )
-            readonly str_expectedOutFile3=$( find . -name etc_initramfs-tools_modules )
-            readonly str_expectedOutFile4=$( find . -name etc_modprobe.d_pci-blacklists.conf )
-            readonly str_expectedOutFile5=$( find . -name etc_modprobe.d_vfio.conf )
-            CheckIfFileOrDirExists $str_expectedOutFile1 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_expectedOutFile2 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_expectedOutFile3 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_expectedOutFile4 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_expectedOutFile5 &> /dev/null || (exit 255) && SaveThisExitCode
+            declare -r str_expectedOutFile1=$( find . -name etc_default_grub )
+            declare -r str_expectedOutFile2=$( find . -name etc_modules )
+            declare -r str_expectedOutFile3=$( find . -name etc_initramfs-tools_modules )
+            declare -r str_expectedOutFile4=$( find . -name etc_modprobe.d_pci-blacklists.conf )
+            declare -r str_expectedOutFile5=$( find . -name etc_modprobe.d_vfio.conf )
+            CheckIfFileOrDirExists $str_expectedOutFile1 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_expectedOutFile2 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_expectedOutFile3 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_expectedOutFile4 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_expectedOutFile5 &> /dev/null || SaveThisExitCode
 
         else                                            # read normally
-            readonly str_dir1=$( find .. -name files )
+            declare -r str_dir1=$( find .. -name files )
             CheckIfFileOrDirExists $str_dir1 &> /dev/null || (
-                (exit 255) && SaveThisExitCode && EchoPassOrFailThisExitCode
+                SaveThisExitCode && EchoPassOrFailThisExitCode
             )
 
-            readonly str_inFile0=$1
-            readonly str_inFile1=$( find . -name *etc_default_grub.bak )
-            readonly str_inFile2=$( find . -name *etc_modules.bak )
-            readonly str_inFile3=$( find . -name *etc_initramfs-tools_modules.bak )
-            readonly str_inFile4=$( find . -name *etc_modprobe.d_pci-blacklists.conf.bak )
-            readonly str_inFile5=$( find . -name *etc_modprobe.d_vfio.conf.bak )
-            CheckIfFileOrDirExists $str_inFile1 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile2 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile3 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile4 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile5 &> /dev/null || (exit 255) && SaveThisExitCode
+            declare -r str_inFile0=$1
+            declare -r str_inFile1=$( find . -name *etc_default_grub.bak )
+            declare -r str_inFile2=$( find . -name *etc_modules.bak )
+            declare -r str_inFile3=$( find . -name *etc_initramfs-tools_modules.bak )
+            declare -r str_inFile4=$( find . -name *etc_modprobe.d_pci-blacklists.conf.bak )
+            declare -r str_inFile5=$( find . -name *etc_modprobe.d_vfio.conf.bak )
+            CheckIfFileOrDirExists $str_inFile1 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile2 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile3 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile4 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile5 &> /dev/null || SaveThisExitCode
 
-            readonly str_outFile1="/etc/default/grub"
-            readonly str_outFile2="/etc/modules"
-            readonly str_outFile3="/etc/initramfs-tools/modules"
-            readonly str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
-            readonly str_outFile5="/etc/modprobe.d/vfio.conf"
-            CheckIfFileOrDirExists $str_outFile1 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile2 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile3 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile4 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile5 &> /dev/null || (exit 255) && SaveThisExitCode
+            declare -r str_outFile1="/etc/default/grub"
+            declare -r str_outFile2="/etc/modules"
+            declare -r str_outFile3="/etc/initramfs-tools/modules"
+            declare -r str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
+            declare -r str_outFile5="/etc/modprobe.d/vfio.conf"
+            CheckIfFileOrDirExists $str_outFile1 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile2 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile3 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile4 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile5 &> /dev/null || SaveThisExitCode
         fi
 
         ParseIOMMUandPCI || (
-            CheckIfFileOrDirExists $str_inFile0 &> /dev/null || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile0 &> /dev/null || SaveThisExitCode
 
             if [[ $int_thisExitCode -eq 0 ]]; then
                 ReadIOMMUFromLogFile $str_inFile0 &> /dev/null
             fi
         ) || (
-                (exit 255) && SaveThisExitCode
+                SaveThisExitCode
         )
 
         if [[ $int_thisExitCode -ne 0 ]]; then
@@ -2555,15 +2570,15 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
         CheckIfIOMMU_IsEnabled
 
         case true in
-            $bool_execDeleteSetup)
+            $bool_executeDeleteSetup)
                 DeleteSetup;;
-            $bool_execFullSetup)
+            $bool_executeFullSetup)
                 PreInstallSetup
                 SelectVFIOSetup
                 PostInstallSetup;;
-            $bool_execMultiBootSetup)
+            $bool_executeMultiBootSetup)
                 MultiBootSetup;;
-            $bool_execStaticSetup)
+            $bool_executeStaticSetup)
                 StaticSetup;;
             *)
                 SelectVFIOSetup;;
