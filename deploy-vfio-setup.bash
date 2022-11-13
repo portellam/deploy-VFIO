@@ -11,8 +11,8 @@
 # read from logfile or read from existing system file, then update\
 #
 
-declare -r bool_executeTestCases=true
-declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation, for conditional statements
+declare -r bool_executeTestCases=true   # NOTE: set to true to execute functions with test files exclusively
+declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preservation, for conditional statements
 
 # prep and I/O functions #
     # function ChangeOwnershipOfFileOrDir
@@ -265,6 +265,26 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
             *)
                 echo -e " \e[31mFailed. \e[0m";;
+        esac
+    }
+
+    function EchoPassOrFailThisTestCase
+    {
+        # behavior:
+        # output a pass or fail depending on the test case exut cide
+        #
+
+        str_testCaseName=$1
+
+        if [[ ! -z $str_testCaseName ]]; then
+            str_testCaseName="TestCase"
+        fi
+
+        case "$int_thisExitCode" in                 # append output
+            0)
+                echo -e "\e[32mPASS:\e[0m""\t$str_testCaseName";;
+            *)
+                echo -e " \e[33mFAIL:\e[0m""\t$str_testCaseName";;
         esac
     }
 
@@ -1582,7 +1602,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
         # parameters #
         local bool_outputToGRUB=false
-        declare -lr str_logFile1="/logs/${0##*/}.log"
+        # declare -lr str_logFile1="/logs/${0##*/}.log"       # NOTE: what does this do?
         declare -la arr_GRUBmenuEntry=()
         declare -la arr_rootKernel+=( $( ls -1 /boot/vmli* | cut -d "z" -f 2 | sort -r | head -n3 ) )       # first three kernels
         declare -la arr_VFIO_driver=()
@@ -1593,11 +1613,24 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         declare -lr str_rootUUID=$( blkid -s UUID | grep $str_rootDisk | cut -d '"' -f2 )
         local str_rootFSTYPE=$( blkid -s TYPE | grep $str_rootDisk | cut -d '"' -f2 )
 
-        if [[ $str_rootFSTYPE == "ext4" || $str_rootFSTYPE == "ext3" ]]; then       # NOTE: this implementation is hacky.
-            readonly str_rootFSTYPE="ext2"
+        if [[ $str_rootFSTYPE == "ext4" || $str_rootFSTYPE == "ext3" ]]; then       # NOTE: this implementation is hacky. This does not account for other root filesystems
+            declare -lr str_rootFSTYPE="ext2"
         fi
 
         # files #
+        # NOTES:
+        #
+        #   file0   == iommu logfile
+        #   file1   == multi-boot-template file for '/etc/grub.d/proxifiedScripts/custom'
+        #   file2   == '/etc/grub.d/proxifiedScripts/custom'
+        #   file3   == '/etc/default/grub'
+        #
+
+        declare -lr str_file0="iommu.log"
+        declare -lr str_file1="multi-boot-template"
+        declare -lr str_file2="etc_grub.d_proxifiedScripts_custom"
+        declare -lr str_file3="etc_default_grub"
+
         if [[ $bool_executeTestCases == true ]]; then   # read from test-case input
             declare -lar arr_rootKernel=(               # taken from test input
                 "5.18.0-0.deb11.3-amd64"
@@ -1608,8 +1641,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             str_dir1=$( find tests/test-input | head -n1 )                                        # test input IOMMU file
             CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
 
-            readonly str_inFile0=$( find . -name multi-boot-template )
-            readonly str_inFile1=$( find . -name iommu-no-vfio.log )
+            declare -lr str_inFile0=$( find . -name $str_file0 )
+            declare -lr str_inFile1=$( find . -name $str_file1 )
             CheckIfFileOrDirExists $str_inFile0 &> /dev/null || (exit 255) && SaveThisExitCode
             CheckIfFileOrDirExists $str_inFile1 &> /dev/null || (exit 255) && SaveThisExitCode
 
@@ -1619,36 +1652,46 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
             str_dir1=$( find tests/test-input | head -n1 )                                        # test input system files
             CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
-            readonly str_inFile1=$( find . -name etc_grub.d_proxifiedScripts_custom )
-            readonly str_inFile2=$( find . -name etc_default_grub )
+
+            declare -lr str_inFile2=$( find . -name $str_file2 )
+            declare -lr str_inFile3=$( find . -name $str_file3 )
+            CheckIfFileOrDirExists $str_inFile2 &> /dev/null || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile3 &> /dev/null || (exit 255) && SaveThisExitCode
 
             str_dir1=$( find tests/actual-output/multi-boot-setup | head -n1 )                    # actual output system files
             CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
 
-            readonly str_outFile1=$( find . -name etc_grub.d_proxifiedScripts_custom )
-            readonly str_outFile2=$( find . -name etc_default_grub )
-            CheckIfFileOrDirExists $str_outFile1 &> /dev/null || (exit 255) && SaveThisExitCode
+            declare -lr str_outFile2=$( find . -name $str_file2 )
+            declare -lr str_outFile3=$( find . -name $str_file3 )
+            CheckIfFileOrDirExists $str_outFile2 &> /dev/null || (exit 255) && SaveThisExitCode
             CheckIfFileOrDirExists $str_outFile3 &> /dev/null || (exit 255) && SaveThisExitCode
 
             str_dir1=$( find tests/expected-output | head -n1 )                                   # expected output system files
             CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
 
-            readonly str_expectedOutFile1=$( find . -name etc_grub.d_proxifiedScripts_custom )
-            readonly str_expectedOutFile2=$( find . -name etc_default_grub )
-            CheckIfFileOrDirExists $str_expectedOutFile1 &> /dev/null || (exit 255) && SaveThisExitCode
+            declare -lr str_expectedOutFile2=$( find . -name $str_file2 )
+            declare -lr str_expectedOutFile3=$( find . -name $str_file3 )
             CheckIfFileOrDirExists $str_expectedOutFile2 &> /dev/null || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_expectedOutFile3 &> /dev/null || (exit 255) && SaveThisExitCode
 
         else                                            # read normally
-            readonly str_dir1=$( find .. -name files )
+            str_dir1=$( find .. -name logs )
             CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
 
-            readonly str_inFile0=$( find . -name multi-boot-template )
-            readonly str_inFile1=$( find . -name etc_grub.d_proxifiedScripts_custom.bak )
-            readonly str_inFile1=$( find . -name etc_default_grub.bak )
+            declare -lr str_inFile0=$( find . -name $str_file0 )
             CheckIfFileOrDirExists $str_inFile0 &> /dev/null || (exit 255) && SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile1 &> /dev/null || (exit 255) && SaveThisExitCode
 
-            readonly str_outFile1="/etc/grub.d/proxifiedScripts/custom"
+            str_dir1=$( find .. -name files )
+            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || (exit 255) && SaveThisExitCode
+
+            declare -lr str_inFile1=$( find . -name $str_file1 )
+            declare -lr str_inFile2=$( find . -name $str_file2 )
+            declare -lr str_inFile3=$( find . -name $str_file3 )
+            CheckIfFileOrDirExists $str_inFile1 &> /dev/null || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile2 &> /dev/null || (exit 255) && SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile3 &> /dev/null || (exit 255) && SaveThisExitCode
+
+            declare -lr str_outFile1="/etc/grub.d/proxifiedScripts/custom"
 
             ParseIOMMUandPCI
 
@@ -1657,146 +1700,150 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             fi
         fi
 
-        if [[ $int_thisExitCode -ne 0 ]]; then
-            ExitWithThisExitCode "Executing Multi-boot setup..."
-        fi
+        while [[ $int_thisExitCode -eq 0 ]]; do                                                 # execute code until break at end or if an error occurs
+            SelectAnIOMMUGroup                                                                  # call function
+            CreateBackupFromFile $str_outFile2 &> /dev/null
+            CheckIfFileOrDirExists $str_inFile2 &> /dev/null && cp $str_inFile2 $str_outFile2   # restore backup
+            # CheckIfFileOrDirExists $str_logFile1 &> /dev/null && DeleteFile $str_logFile1 &> /dev/null
+            # CreateFile $str_logFile1 &> /dev/null
 
-        SelectAnIOMMUGroup      # call function
-
-        CreateBackupFromFile $str_outFile1 &> /dev/null
-        CheckIfFileOrDirExists $str_inFile1 &> /dev/null && cp $str_inFile1 $str_outFile1    # restore backup
-        CheckIfFileOrDirExists $str_logFile1 &> /dev/null && DeleteFile $str_logFile1 &> /dev/null
-        CreateFile $str_logFile1 &> /dev/null
-
-        for str_element in ${arr_IOMMU_forSTUB[@]}; do                          # devices for PCI STUB
-            for int_key in ${str_element}; do
-                str_driverListForSTUB+="${arr_DeviceDriver[$int_key]},"
-                str_HWIDlist_forSTUB+="${arr_DeviceHWID[$int_key]},"
+            for str_element in ${arr_IOMMU_forSTUB[@]}; do                          # devices for PCI STUB
+                for int_key in ${str_element}; do
+                    str_driverListForSTUB+="${arr_DeviceDriver[$int_key]},"
+                    str_HWIDlist_forSTUB+="${arr_DeviceHWID[$int_key]},"
+                done
             done
-        done
 
-        for str_element in ${arr_IOMMU_forVFIO[@]}; do                          # devices for VFIO PCI
-            for int_key in ${str_element}; do
-                str_driverListForVFIO+="${arr_DeviceDriver[$int_key]},"
-                str_HWID_list_forVFIO+="${arr_DeviceHWID[$int_key]},"
+            for str_element in ${arr_IOMMU_forVFIO[@]}; do                          # devices for VFIO PCI
+                for int_key in ${str_element}; do
+                    str_driverListForVFIO+="${arr_DeviceDriver[$int_key]},"
+                    str_HWID_list_forVFIO+="${arr_DeviceHWID[$int_key]},"
+                done
             done
-        done
 
-        for str_element in ${arr_IOMMU_withVGA_forVFIO[@]}; do                  # devices for VFIO PCI
-            for int_key in ${str_element}; do
-                str_driverListWithVGA_forVFIO+="${arr_DeviceDriver[$int_key]},"
-                str_HWID_listWithVGA_forVFIO+="${arr_DeviceHWID[$int_key]},"
+            for str_element in ${arr_IOMMU_withVGA_forVFIO[@]}; do                  # devices for VFIO PCI
+                for int_key in ${str_element}; do
+                    str_driverListWithVGA_forVFIO+="${arr_DeviceDriver[$int_key]},"
+                    str_HWID_listWithVGA_forVFIO+="${arr_DeviceHWID[$int_key]},"
+                done
             done
-        done
 
-        # remove last separator #
-        str_driverListForSTUB=${str_driverListForSTUB::-1}
-        str_driverListForVFIO=${str_driverListForVFIO::-1}
-        str_driverListWithVGA_forVFIO=${str_driverListWithVGA_forVFIO::-1}
-        str_HWIDlist_forSTUB=${str_HWIDlist_forSTUB::-1}
-        str_HWID_list_forVFIO=${str_HWID_list_forVFIO::-1}
-        str_HWID_listWithVGA_forVFIO=${str_HWID_listWithVGA_forVFIO::-1}
+            # remove last separator #
+            str_driverListForSTUB=${str_driverListForSTUB::-1}
+            str_driverListForVFIO=${str_driverListForVFIO::-1}
+            str_driverListWithVGA_forVFIO=${str_driverListWithVGA_forVFIO::-1}
+            str_HWIDlist_forSTUB=${str_HWIDlist_forSTUB::-1}
+            str_HWID_list_forVFIO=${str_HWID_list_forVFIO::-1}
+            str_HWID_listWithVGA_forVFIO=${str_HWID_listWithVGA_forVFIO::-1}
 
-        if [[ ${#str_driverListWithVGA_forVFIO} -gt 0 ]]; then
-            str_driverListForVFIO+=",${str_driverListWithVGA_forVFIO}"
-        fi
-
-        if [[ ${#str_HWID_listWithVGA_forVFIO} -gt 0 ]]; then
-            str_HWID_list_forVFIO+=",${str_HWID_listWithVGA_forVFIO}"
-        fi
-
-        if [[ $str_IGPU_fullName != "N/A" && -z $str_IGPU_fullName ]]; then     # append IGPU name
-            str_thisGPU_FullName=$str_IGPU_fullName
-        fi
-
-        # write to file     # NOTE: update here!
-        str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} modprobe.blacklist=${str_driverListForVFIO} pci-stub.ids=${str_driverListForSTUB} vfio_pci.ids=${str_HWID_list_forVFIO}"
-        WriteVarToFile $str_logFile1 "#${arr_IOMMU_withVGA_forVFIO[1]} #${str_thisGPU_FullName} #${str_GRUB_CMDLINE}" &> /dev/null  # log file
-
-        # NOTE: does this currently only parse one IOMMU group?
-
-        # /etc/grub.d/proxifiedScripts/custom #
-        for int_key in ${!arr_rootKernel[@]}; do                    # parse kernels
-            local str_element=${arr_rootKernel[$int_key]}
-
-            if [[ -e $str_element || $str_element != "" ]]; then    # match
-                str_thisRootKernel=${arr_rootKernel[$int_key]:1}
-                str_thisGRUBmenuEntry=$( lsb_release -i -s )" "$( uname -o )", with "$( uname )" ${str_thisRootKernel} (VFIO, w/o IOMMU '${arr_IOMMU_withVGA_forVFIO[1]}}', w/ boot VGA '${str_thisGPU_FullName}')"
-                arr_GRUBmenuEntry+=( "${str_thisGRUBmenuEntry}" )
-
-                str_output1="menuentry \"${str_thisGRUBmenuEntry}\" {"
-                str_output1_log="\n"'menuentry "'$( lsb_release -i -s )" "$( uname -o )", with "$( uname )" #kernel_'${int_key}'# (VFIO, w/o IOMMU '${arr_IOMMU_withVGA_forVFIO[1]}', w/ boot VGA '${str_thisGPU_FullName}'\") {"
-
-                str_output2="\tinsmod ${str_rootFSTYPE}"
-                str_output3="\tset root='/dev/disk/by-uuid/${str_rootUUID}'"
-                str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"${str_rootUUID}\n\t"'fi'
-
-                str_output5="\techo    'Loading Linux ${str_thisRootKernel} ...'"
-                str_output5_log="\techo    'Loading Linux #kernel'${int_key}'# ...'"
-
-                str_output6="\tlinux   /boot/vmlinuz-$str_thisRootKernel root=UUID=${str_rootUUID} ${str_GRUB_CMDLINE}"
-                str_output6_log="\tlinux   /boot/vmlinuz-#kernel'$int_key'# root=UUID=${str_rootUUID} ${str_GRUB_CMDLINE}"
-
-                str_output7="\tinitrd  /boot/initrd.img-${str_thisRootKernel}"
-                str_output7_log="\tinitrd  /boot/initrd.img-"'#kernel'${int_key}'#'
-
-                # debug prompt #
-                # echo -e "'$""str_output0'\t\t= $str_output0"
-                # echo -e "'$""str_output1'\t\t= $str_output1"
-                # echo -e "'$""str_output2'\t\t= $str_output2"
-                # echo -e "'$""str_output3'\t\t= $str_output3"
-                # echo -e "'$""str_output4'\t\t= $str_output4"
-                # echo -e "'$""str_output5'\t\t= $str_output5"
-                # echo -e "'$""str_output6'\t\t= $str_output6"
-                # echo -e "'$""str_output7'\t\t= $str_output7"
-                # echo
-
-                # write to tempfile #
-                CheckIfFileOrDirExists $str_inFile1 &> /dev/null && CheckIfFileOrDirExists &> /dev/null $str_inFile0 && (
-                    echo -e >> $str_outFile1
-
-                    while read -r str_line; do
-                        case $str_line in
-                            *'#$str_output1'*)
-                                str_outLine="$str_output1";;
-                            *'#$str_output2'*)
-                                str_outLine="$str_output2";;
-                            *'#$str_output3'*)
-                                str_outLine="$str_output3";;
-                            *'#$str_output4'*)
-                                str_outLine="$str_output4";;
-                            *'#$str_output5'*)
-                                str_outLine="$str_output5";;
-                            *'#$str_output6'*)
-                                str_outLine="$str_output6";;
-                            *'#$str_output7'*)
-                                str_outLine="$str_output7";;
-                            *)
-                                str_outLine="$str_line";;
-                        esac
-
-                        WriteVarToFile $str_outFile1 $str_outLine &> /dev/null || ( SaveThisExitCode && break )     # write to system file and logfile (post_install: update Multi-boot)
-                    done < $str_inFile0                                                                             # read from template
-                ) || (
-                    local bool_missingFiles=true && (exit 255) && SaveThisExitCode && break
-                )
+            if [[ ${#str_driverListWithVGA_forVFIO} -gt 0 ]]; then
+                str_driverListForVFIO+=",${str_driverListWithVGA_forVFIO}"
             fi
-        done && (
-            chmod 755 $str_outFile1 $str_oldFile1 &> /dev/null && (exit 0) && SaveThisExitCode                      # set proper permissions
-        )
+
+            if [[ ${#str_HWID_listWithVGA_forVFIO} -gt 0 ]]; then
+                str_HWID_list_forVFIO+=",${str_HWID_listWithVGA_forVFIO}"
+            fi
+
+            if [[ $str_IGPU_fullName != "N/A" && -z $str_IGPU_fullName ]]; then     # append IGPU name
+                str_thisGPU_FullName=$str_IGPU_fullName
+            fi
+
+            # write to file #                                                       # NOTE: update here!
+            str_GRUB_CMDLINE="${str_GRUB_CMDLINE_prefix} modprobe.blacklist=${str_driverListForVFIO} pci-stub.ids=${str_driverListForSTUB} vfio_pci.ids=${str_HWID_list_forVFIO}"
+            # WriteVarToFile $str_logFile1 "#${arr_IOMMU_withVGA_forVFIO[1]} #${str_thisGPU_FullName} #${str_GRUB_CMDLINE}" &> /dev/null  # log file
+
+            # NOTE: does this currently only parse one IOMMU group?
+
+            # /etc/grub.d/proxifiedScripts/custom #
+            for int_key in ${!arr_rootKernel[@]}; do                                # parse kernels
+                local str_element=${arr_rootKernel[$int_key]}
+
+                if [[ -e $str_element || $str_element != "" ]]; then                # match
+                    str_thisRootKernel=${arr_rootKernel[$int_key]:1}
+                    str_thisGRUBmenuEntry=$( lsb_release -i -s )" "$( uname -o )", with "$( uname )" ${str_thisRootKernel} (VFIO, w/o IOMMU '${arr_IOMMU_withVGA_forVFIO[1]}}', w/ boot VGA '${str_thisGPU_FullName}')"
+                    arr_GRUBmenuEntry+=( "${str_thisGRUBmenuEntry}" )
+
+                    str_output1="menuentry \"${str_thisGRUBmenuEntry}\" {"
+                    str_output1_log="\n"'menuentry "'$( lsb_release -i -s )" "$( uname -o )", with "$( uname )" #kernel_'${int_key}'# (VFIO, w/o IOMMU '${arr_IOMMU_withVGA_forVFIO[1]}', w/ boot VGA '${str_thisGPU_FullName}'\") {"
+
+                    str_output2="\tinsmod ${str_rootFSTYPE}"
+                    str_output3="\tset root='/dev/disk/by-uuid/${str_rootUUID}'"
+                    str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"${str_rootUUID}\n\t"'fi'
+
+                    str_output5="\techo    'Loading Linux ${str_thisRootKernel} ...'"
+                    str_output5_log="\techo    'Loading Linux #kernel'${int_key}'# ...'"
+
+                    str_output6="\tlinux   /boot/vmlinuz-$str_thisRootKernel root=UUID=${str_rootUUID} ${str_GRUB_CMDLINE}"
+                    str_output6_log="\tlinux   /boot/vmlinuz-#kernel'$int_key'# root=UUID=${str_rootUUID} ${str_GRUB_CMDLINE}"
+
+                    str_output7="\tinitrd  /boot/initrd.img-${str_thisRootKernel}"
+                    str_output7_log="\tinitrd  /boot/initrd.img-"'#kernel'${int_key}'#'
+
+                    # debug prompt #
+                    # echo -e "'$""str_output0'\t\t= $str_output0"
+                    # echo -e "'$""str_output1'\t\t= $str_output1"
+                    # echo -e "'$""str_output2'\t\t= $str_output2"
+                    # echo -e "'$""str_output3'\t\t= $str_output3"
+                    # echo -e "'$""str_output4'\t\t= $str_output4"
+                    # echo -e "'$""str_output5'\t\t= $str_output5"
+                    # echo -e "'$""str_output6'\t\t= $str_output6"
+                    # echo -e "'$""str_output7'\t\t= $str_output7"
+                    # echo
+
+                    # write to tempfile #
+                    CheckIfFileOrDirExists $str_inFile1 &> /dev/null && CheckIfFileOrDirExists $str_inFile0 &> /dev/null && (
+                        echo -e >> $str_outFile2
+
+                        while read -r str_line; do
+                            case $str_line in
+                                *'#$str_output1'*)
+                                    str_outLine="$str_output1";;
+                                *'#$str_output2'*)
+                                    str_outLine="$str_output2";;
+                                *'#$str_output3'*)
+                                    str_outLine="$str_output3";;
+                                *'#$str_output4'*)
+                                    str_outLine="$str_output4";;
+                                *'#$str_output5'*)
+                                    str_outLine="$str_output5";;
+                                *'#$str_output6'*)
+                                    str_outLine="$str_output6";;
+                                *'#$str_output7'*)
+                                    str_outLine="$str_output7";;
+                                *)
+                                    str_outLine="$str_line";;
+                            esac
+
+                            WriteVarToFile $str_outFile2 $str_outLine &> /dev/null || ( SaveThisExitCode && break )     # write to system file and logfile (post_install: update Multi-boot)
+                        done < $str_inFile0                                                                             # read from template
+                    ) || (
+                        (exit 250) && SaveThisExitCode && break
+                    )
+                fi
+            done && (
+                chmod 755 $str_outFile2 $str_oldFile1 &> /dev/null && (exit 0) && SaveThisExitCode  # set proper permissions
+            )
+
+            break
+        done
 
         EchoPassOrFailThisExitCode "Executing Multi-boot setup..."
 
-        if [[ $bool_missingFiles == true ]]; then       # file check
+        if [[ $int_thisExitCode -eq 250 ]]; then        # file check
             echo -e "File(s) missing:"
             CheckIfFileOrDirExists $str_inFile0 &> /dev/null || echo -e "\t'$str_inFile0'"
             CheckIfFileOrDirExists $str_inFile1 &> /dev/null || echo -e "\t'$str_inFile1'"
             CheckIfFileOrDirExists $str_inFile2 &> /dev/null || echo -e "\t'$str_inFile2'"
+            CheckIfFileOrDirExists $str_inFile3 &> /dev/null || echo -e "\t'$str_inFile3'"
         fi
 
-        if [[ $bool_executeTestCases == true ]]; then   # read from test-case input
-            CheckIfTwoFilesAreSame $str_outFile1 $str_expectedOutFile1
-            CheckIfTwoFilesAreSame $str_outFile2 $str_expectedOutFile2
+        if [[ $bool_executeTestCases == true ]]; then               # read from test-case input
+            true && SaveThisExitCode
+
+            CheckIfTwoFilesAreSame $str_outFile2 $str_expectedOutFile2 || SaveThisExitCode
+            CheckIfTwoFilesAreSame $str_outFile3 $str_expectedOutFile3 || SaveThisExitCode
+
+            EchoPassOrFailThisTestCase "MultiBootSetup_GivenInputIsValid_ReturnExpectedResult"
         fi
     }
 
@@ -1986,21 +2033,24 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         #     esac
         # }
 
-    function PreInstallSetup
+    function PreInstallSetup            # NOTE: reviewed 22-11-12. Refactored boolean functions. Looks good.
     {
         echo -e "Executing Pre-install setup..."
 
         # parameters
-        declare -r str_file1="etc_libvirt_qemu.conf"
-        # declare -r str_file2="/etc/libvirt/qemu.conf"
-        declare -r str_file2="/logs/qemu.conf.log"        # debug
+        declare -lr str_inFile1="etc_libvirt_qemu.conf"
+        declare -lr str_outFile1="/etc/libvirt/qemu.conf"
+        declare -lr str_outFile2="/logs/etc_libvirt_qemu.conf"
 
-        CreateFile $str_file2                             # debug
+        CreateFile $str_outFile2 &> /dev/null
 
         # restore system file from repo backup if local backups do not exist #
-        # if ( CheckIfFileOrDirExists $str_file1 == true && CheckIfFileOrDirExists $str_file2 == false); then
-        #     cp $str_file1 $str_file2
-        # fi
+        CheckIfFileOrDirExists $str_outFile1 || (
+            CheckIfFileOrDirExists $str_inFile1 && (
+                cp $str_inFile1 $str_outFile1
+                cp $str_inFile1 $str_outFile2
+            )
+        )
 
         # append to system file
         declare -a arr_output1=(
@@ -2020,9 +2070,9 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         readonly str_firstUser=$( id -u 1000 -n ) && (
             adduser $str_firstUser libvirt &> /dev/null
             adduser $str_firstUser input &> /dev/null
-            )
+        )
 
-        SaveThisExitCode
+        SaveThisExitCode            # NOTE: is this necessary?
 
         # append to system file
         if [[ $int_thisExitCode -eq 0 ]]; then
@@ -2033,15 +2083,10 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             )
         fi
 
-        # execute Hugepages setup
-        bool_isHugepagesSetup=false
-        SetupHugepages && bool_isHugepagesSetup=true
-
-        # echo -e "str_GRUB_CMDLINE_Hugepages:'${str_GRUB_CMDLINE_Hugepages}'"  # this scope does work!
-
-        # append
-        if [[ $bool_isHugepagesSetup == true ]]; then
-            #arr_output1+=("${str_output_hugepagesQEMU}")
+        # execute Hugepages setup #
+        SetupHugepages && (
+            # echo -e "str_GRUB_CMDLINE_Hugepages:'${str_GRUB_CMDLINE_Hugepages}'"  # this scope does work!
+            #arr_output1+=("${str_output_hugepagesQEMU}")   # append
 
             while read str_line; do
                 arr_output1+=("$str_line")
@@ -2049,19 +2094,15 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             done < "logs/qemu-hugepages.log"
 
             arr_output1+=("#")
-        fi
+        )
 
         # append
         arr_output1+=(
             "cgroup_device_acl = ["
         )
 
-        # execute Evdev setup
-        bool_isEvdevSetup=false
-        SetupEvdev && bool_isEvdevSetup=true
-
-        # append
-        if [[ $bool_isEvdevSetup == true ]]; then
+        # execute Evdev setup #
+        SetupEvdev && (
             # echo -e '${#arr_output_evdevQEMU[@]}='"'${#arr_output_evdevQEMU[@]}'"
 
             # for str_element in ${arr_output_evdevQEMU[@]}; do
@@ -2079,11 +2120,11 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             #     echo $str_element
             # done
 
-            while read str_line; do
+            while read str_line; do         # append
                 arr_output1+=("$str_line")
                 echo $str_line
             done < "qemu-evdev.log"
-        fi
+        )
 
         # append #
         arr_output1+=(
@@ -2095,51 +2136,55 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             "#"
         )
 
-        if ( CreateBackupFromFile $str_file2 &> /dev/null == true ); then
+        if ( CreateBackupFromFile $str_outFile1 &> /dev/null == true ); then
             for str_element in ${arr_output1[@]}; do
                 if [[ $int_thisExitCode -ne 0 ]]; then
                     break
                 fi
 
-                ( WriteVarToFile $str_file2 $str_element &> /dev/null && true ) || ( bool_fail_outputIsQuiet && false )
+                ( WriteVarToFile $str_outFile1 $str_element &> /dev/null ) || ( false && SaveThisExitCode )
+                ( WriteVarToFile $str_outFile2 $str_element &> /dev/null ) || ( false && SaveThisExitCode )
             done
 
         else
             echo -e "\e[33mWARNING:\e[0m"" Setup cannot continue." && ExitWithThisExitCode
         fi
 
-        SetupStaticCPU_isolation && bool_isCPU_staticIsolationSetup=true
+        SetupStaticCPU_isolation || ( false && SaveThisExitCode )
 
         # TO-DO: add check for necessary dependencies or packages
 
-        if [[ TestNetwork == true ]]; then
+        readonly str_dir1=$( find .. -name git )
+        ( CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 ) && (
+            if [[ TestNetwork == true ]]; then
 
             # zram-swap
             if ( CloneOrUpdateGitRepositories "FoundObjects/zram-swap" ); then
-                SetupZRAM_Swap && bool_isZRAM_swapSetup=true
+                SetupZRAM_Swap || ( false && SaveThisExitCode )
             fi
 
             # auto-xorg
             if ( CloneOrUpdateGitRepositories "portellam/auto-xorg" ); then
-                SetupAutoXorg && bool_isAutoXorgSetup=true
+                SetupAutoXorg || ( false && SaveThisExitCode )
             fi
 
-        else
+            else
 
-            # zram-swap
-            if ( CheckIfFileOrDirExists "zram-swap" == true ); then
-                SetupZRAM_Swap && bool_isZRAM_swapSetup=true
+                # zram-swap
+                if ( CheckIfFileOrDirExists "zram-swap" == true ); then
+                    SetupZRAM_Swap || ( false && SaveThisExitCode )
+                fi
+
+                # auto-xorg
+                if ( CheckIfFileOrDirExists "auto-xorg" ); then
+                    SetupAutoXorg || ( false && SaveThisExitCode )
+                fi
             fi
 
-            # auto-xorg
-            if ( CheckIfFileOrDirExists "auto-xorg" ); then
-                SetupAutoXorg && bool_isAutoXorgSetup=true
+            if [[ $int_thisExitCode -ne 0 ]]
+                echo -e "\e[34mWARNING:\e[0m"" Pre-setup incomplete."
             fi
-        fi
-
-        if [[ $bool_isAutoXorgSetup == false && $bool_isCPU_staticIsolationSetup == false && $bool_isHugepagesSetup == false && $bool_isZRAM_swapSetup == false ]]; then
-            echo -e "\e[33mWARNING:\e[0m"" Failed pre-setup."
-        fi
+        ) || ( false && SaveThisExitCode )
 
         # GRUB output           # NOTE: update here!
         str_output_GRUB_prefix="quiet splash video=efifb:off,vesafb:off acpi=force apm=power_off iommu=1,pt amd_iommu=on intel_iommu=on rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 "
@@ -2155,7 +2200,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         EchoPassOrFailThisExitCode "Executing Pre-install setup..."
     }
 
-    function PostInstallSetup
+    function PostInstallSetup           # TODO: fill out this function
     {
         echo -e "Executing Post-install setup..."
         # code here
@@ -2163,7 +2208,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         EchoPassOrFailThisExitCode "Executing Post-install setup..."
     }
 
-    function SelectVFIOSetup
+    function SelectVFIOSetup            # NOTE: this needs no further refactoring.
     {
         ReadInputFromMultipleChoiceUpperCase "Execute Multiboot or Static setup? [M/s]:" "M" "S"
 
@@ -2175,7 +2220,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         esac
     }
 
-    function StaticSetup
+    function StaticSetup                # NOTE: try this with test cases.
     {
         echo -e "Executing Static setup..."
 
@@ -2187,7 +2232,6 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         str_driverList_forVFIO_softdep=""
         str_VFIO_driverList=""
         str_VFIO_HWIDList=""
-        str_logFile1="/grub.log"                        # NOTE: what does this do?
 
         # files #
         if [[ $bool_executeTestCases == true ]]; then   # read from test-case input
@@ -2367,8 +2411,8 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
             cp $str_inFile3 $str_outFile3
             cp $str_inFile4 $str_outFile4
             cp $str_inFile5 $str_outFile5
-        else
 
+        else
             # /etc/default/grub #
             str_output_thisGRUB="${str_output_GRUB_prefix} modprobe.blacklist= pci-stub.ids= vfio_pci.ids="
 
@@ -2457,7 +2501,7 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
         str_output2="GRUB_CMDLINE_LINUX_DEFAULT=\"$str_output_thisGRUB\""
 
         CheckIfFileOrDirExists $str_inFile1 &> /dev/null && (
-            CheckIfFileOrDirExists $str_outFile1 &> /dev/null && DeleteFile $str_outFile1 &> /dev/null
+            ( CheckIfFileOrDirExists $str_outFile1 &> /dev/null && DeleteFile $str_outFile1 &> /dev/null ) || SaveThisExitCode
             CreateFile $str_outFile1 &> /dev/null
 
             while read -r str_line; do                              # write to file
@@ -2471,29 +2515,32 @@ declare -i int_thisExitCode=$?      # NOTE: necessary for exit code preservation
 
                 WriteVarToFile $str_outFile1 $str_line
             done < $str_inFile1
-        ) || bool_missingFiles=true
+        ) || SaveThisExitCode
 
-        if [[ $bool_missingFiles == true ]]; then                   # file check
+        EchoPassOrFailThisExitCode "Executing Static setup..."
+
+        if [[ $int_thisExitCode -eq 250 ]]; then                    # file check
             echo -e "File(s) missing:"
             CheckIfFileOrDirExists $str_inFile1 &> /dev/null || echo -e "\t'$str_inFile1'"
             CheckIfFileOrDirExists $str_inFile2 &> /dev/null || echo -e "\t'$str_inFile2'"
             CheckIfFileOrDirExists $str_inFile3 &> /dev/null || echo -e "\t'$str_inFile3'"
             CheckIfFileOrDirExists $str_inFile4 &> /dev/null || echo -e "\t'$str_inFile4'"
             CheckIfFileOrDirExists $str_inFile5 &> /dev/null || echo -e "\t'$str_inFile5'"
-            (exit 255)
-            SaveThisExitCode
+
         else
             chmod 755 $str_outFile1 $str_oldFile1                   # set proper permissions
         fi
 
-        EchoPassOrFailThisExitCode "Executing Static setup..."
+        if [[ $bool_executeTestCases == true ]]; then               # read from test-case input
+            true && SaveThisExitCode
 
-        if [[ $bool_executeTestCases == true ]]; then   # read from test-case input
-            CheckIfTwoFilesAreSame $str_outFile1 $str_expectedOutFile1
-            CheckIfTwoFilesAreSame $str_outFile2 $str_expectedOutFile2
-            CheckIfTwoFilesAreSame $str_outFile3 $str_expectedOutFile3
-            CheckIfTwoFilesAreSame $str_outFile4 $str_expectedOutFile4
-            CheckIfTwoFilesAreSame $str_outFile5 $str_expectedOutFile5
+            CheckIfTwoFilesAreSame $str_outFile1 $str_expectedOutFile1 || SaveThisExitCode
+            CheckIfTwoFilesAreSame $str_outFile2 $str_expectedOutFile2 || SaveThisExitCode
+            CheckIfTwoFilesAreSame $str_outFile3 $str_expectedOutFile3 || SaveThisExitCode
+            CheckIfTwoFilesAreSame $str_outFile4 $str_expectedOutFile4 || SaveThisExitCode
+            CheckIfTwoFilesAreSame $str_outFile5 $str_expectedOutFile5 || SaveThisExitCode
+
+            EchoPassOrFailThisTestCase "StaticSetup_GivenInputIsValid_ReturnExpectedResult"
         fi
     }
 
