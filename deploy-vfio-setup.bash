@@ -13,6 +13,7 @@
 
 declare -r bool_executeTestCases=true   # NOTE: set to true to execute functions with test files exclusively
 declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preservation, for conditional statements
+declare -r str_pwd=$( pwd )
 
 # prep and I/O functions #
     # function ChangeOwnershipOfFileOrDir
@@ -58,12 +59,10 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
             case $1 in
                 *"/"*)
                     find $1 | uniq &> /dev/null || (exit 250)
-                    SaveThisExitCode
-                    break;;
+                    SaveThisExitCode;;
                 *)
                     find . -name $1 | uniq &> /dev/null || (exit 250)
-                    SaveThisExitCode
-                    break;;
+                    SaveThisExitCode;;
             esac
         fi
 
@@ -2265,12 +2264,14 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
 
         if [[ $bool_executeTestCases == true ]]; then   # read from test-case input
             str_dir1=$( find tests/test-input | head -n1 )                                      # test input IOMMU file
-            CheckIfFileOrDirExists $str_dir1 &> /dev/null || (
+            CheckIfFileOrDirExists $str_dir1 || (
                 SaveThisExitCode && EchoPassOrFailThisExitCode
             )
+            cd $str_pwd
 
             str_dir1=$( find tests/test-input | head -n1 )                                      # test input system files
-            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_dir1 && cd $str_dir1 || SaveThisExitCode
+            cd $str_pwd
 
             declare -r str_inFile0=$( find . -name $str_file0 )
             declare -r str_inFile1=$( find . -name $str_file1 )
@@ -2278,72 +2279,77 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
             declare -r str_inFile3=$( find . -name $str_file3 )
             declare -r str_inFile4=$( find . -name $str_file4 )
             declare -r str_inFile5=$( find . -name $str_file5 )
-            CheckIfFileOrDirExists $str_inFile0 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile1 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile2 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile3 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile4 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile5 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile0 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile1 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile2 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile3 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile4 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile5 || SaveThisExitCode
 
             str_dir1=$( find tests/actual-output/static-setup | head -n1 )                      # actual output system files
-            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_dir1 && cd $str_dir1 || SaveThisExitCode
+            cd $str_pwd
 
             declare -r str_outFile1=$( find . -name etc_default_grub )
             declare -r str_outFile2=$( find . -name etc_modules )
             declare -r str_outFile3=$( find . -name etc_initramfs-tools_modules )
             declare -r str_outFile4=$( find . -name etc_modprobe.d_pci-blacklists.conf )
             declare -r str_outFile5=$( find . -name etc_modprobe.d_vfio.conf )
-            CheckIfFileOrDirExists $str_outFile1 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile2 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile3 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile4 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile5 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile1 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile2 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile3 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile4 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile5 || SaveThisExitCode
 
             str_dir1=$( find tests/expected-output/static-setup | head -n1 )                    # expected output system files
-            CheckIfFileOrDirExists $str_dir1 &> /dev/null && cd $str_dir1 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_dir1 && cd $str_dir1 || SaveThisExitCode
+            cd $str_pwd
 
             declare -r str_expectedOutFile1=$( find . -name etc_default_grub )
             declare -r str_expectedOutFile2=$( find . -name etc_modules )
             declare -r str_expectedOutFile3=$( find . -name etc_initramfs-tools_modules )
             declare -r str_expectedOutFile4=$( find . -name etc_modprobe.d_pci-blacklists.conf )
             declare -r str_expectedOutFile5=$( find . -name etc_modprobe.d_vfio.conf )
-            CheckIfFileOrDirExists $str_expectedOutFile1 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_expectedOutFile2 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_expectedOutFile3 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_expectedOutFile4 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_expectedOutFile5 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_expectedOutFile1 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_expectedOutFile2 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_expectedOutFile3 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_expectedOutFile4 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_expectedOutFile5 || SaveThisExitCode
 
         else                                            # read normally
             str_dir1=$( find .. -name logs )
-            CheckIfFileOrDirExists $str_dir1 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_dir1 || SaveThisExitCode
+            cd $str_pwd
 
             declare -r str_inFile0=$( find . -name $str_file0 )
-            CheckIfFileOrDirExists $str_inFile0 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile0 || SaveThisExitCode
+            cd $str_pwd
 
             str_dir1=$( find .. -name files )
-            CheckIfFileOrDirExists $str_dir1 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_dir1 || SaveThisExitCode
+            cd $str_pwd
 
             declare -r str_inFile1=$( find . -name $str_file1 )
             declare -r str_inFile2=$( find . -name $str_file2 )
             declare -r str_inFile3=$( find . -name $str_file3 )
             declare -r str_inFile4=$( find . -name $str_file4 )
             declare -r str_inFile5=$( find . -name $str_file5 )
-            CheckIfFileOrDirExists $str_inFile1 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile2 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile3 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile4 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_inFile5 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile1 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile2 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile3 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile4 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_inFile5 || SaveThisExitCode
 
             declare -r str_outFile1="/etc/default/grub"
             declare -r str_outFile2="/etc/modules"
             declare -r str_outFile3="/etc/initramfs-tools/modules"
             declare -r str_outFile4="/etc/modprobe.d/pci-blacklists.conf"
             declare -r str_outFile5="/etc/modprobe.d/vfio.conf"
-            CheckIfFileOrDirExists $str_outFile1 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile2 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile3 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile4 &> /dev/null || SaveThisExitCode
-            CheckIfFileOrDirExists $str_outFile5 &> /dev/null || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile1 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile2 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile3 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile4 || SaveThisExitCode
+            CheckIfFileOrDirExists $str_outFile5 || SaveThisExitCode
         fi
 
         while [[ $int_thisExitCode -eq 0 ]]; do                                     # execute code until break at end or if an error occurs
@@ -2581,8 +2587,14 @@ declare -i int_thisExitCode=$?          # NOTE: necessary for exit code preserva
     SAVEIFS=$IFS   # Save current IFS (Internal Field Separator)
     IFS=$'\n'      # Change IFS to newline char
 
+    bool_executeDeleteSetup=false
+    bool_executeFullSetup=false
+    bool_executeMultiBootSetup=false
+    bool_executeStaticSetup=false
+    bool_executeDeleteSetup=false
+
     if [[ -z $2 ]]; then
-        ParseInputParamForOptions $1            # TODO: need to fix params function
+        # ParseInputParamForOptions $1            # TODO: need to fix params function
         CheckIfUserIsRoot
         CheckIfIOMMU_IsEnabled
 
