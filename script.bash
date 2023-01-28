@@ -1,7 +1,12 @@
 
+# TODO
+#
+# -copy bash-libaries
+#
+#
 
-
-function IsEnabledIOMMU
+# <summary> Validation </summary
+function IsEnabled_IOMMU
 {
     # <params>
     local readonly str_output="Checking if Virtualization is enabled/supported..."
@@ -18,7 +23,8 @@ function IsEnabledIOMMU
     return 0
 }
 
-function ParseIOMMU
+# <summary> Get IOMMU </summary
+function Parse_IOMMU
 {
     # <summary> Return value given if a device's bus ID is Internal or External PCI. </summary>
     function IsBusInternalOrExternal
@@ -113,7 +119,7 @@ function ParseIOMMU
     }
 
     # <summary> Get all IOMMU groups on this system. </summary>
-    function GetIOMMUGroups
+    function GetGroups
     {
         # <params>
         declare -I arr_device_driver arr_device_IOMMU arr_device_name arr_device_PCI arr_device_type arr_device_vendor arr_group_devices arr_IOMMU_groups arr_IOMMU_groups_with_USB arr_IOMMU_groups_with_VGA str_IGPU_full_name str_IOMMU_group
@@ -151,7 +157,49 @@ function ParseIOMMU
 
     echo -e "${str_output}"
 
-    GetIOMMUGroups
+    GetGroups
     AppendPassOrFail "${str_output}"
     return "${?}"
 }
+
+function ReadFromFile_IOMMU
+{}
+
+function SaveToFile_IOMMU
+{}
+
+function Select_IOMMU
+{}
+
+# <summary> Main setup </summary>
+function Dynamic_VFIO
+{}
+
+function Static_VFIO
+{}
+
+function UpdateExisting_VFIO
+{}
+
+# <summary> Pre/post setup </summary
+function Allocate_CPU
+{}
+
+function Allocate_RAM
+{}
+
+function LibvirtHooks
+{}
+
+function RAM_Swapfile
+{}
+
+function Virtual_KVM
+{}
+
+function VirtualVideoCapture
+{}
+
+function VirtualAudioCapture
+{}
+
