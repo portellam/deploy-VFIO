@@ -6,6 +6,9 @@
 #
 
 # <summary> Validation </summary
+function DetectExisting_VFIO
+{}
+
 function IsEnabled_IOMMU
 {
     # <params>
