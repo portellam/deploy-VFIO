@@ -5,6 +5,10 @@
 #
 #
 
+    # <summary> </summary>
+    # <params> </params>
+
+
 # <summary> Validation </summary
 function DetectExisting_VFIO
 {}
@@ -185,24 +189,97 @@ function UpdateExisting_VFIO
 {}
 
 # <summary> Pre/post setup </summary
+
+# <summary> isolcpus: Ask user to allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and virtual machine performance. </summary
 function Allocate_CPU
 {}
 
+# <summary> Hugepages: Ask user to allocate host memory (RAM) to 'hugepages', to eliminate the need to defragement memory, to reduce host overhead, and to improve both host and virtual machine performance. </summary
 function Allocate_RAM
-{}
+{
+    # <params>
+    declare -ar arr_choices=(
+        "2M"
+        "1G"
+    )
+
+    declare -ar arr_user_groups(
+        "input"
+        "libvirt"
+    )
+
+    declare -gi int_huge_page_count=0
+    declare -g str_huge_page_byte_prefix=""
+    declare -gi int_huge_page_kbit_size=0
+    declare -gi int_huge_page_max_kbit_size=0
+    declare -gir int_huge_page_min_kbit_size=4194304
+    declare -gi int_huge_page_max=0
+    declare -gi int_huge_page_min=0
+    declare -g str_hugepages_GRUB=""
+    declare -g str_hugepages_QEMU=""
+    local readonly str_output1="Hugepages is a feature which statically allocates system memory to pagefiles.\n\tVirtual machines can use Hugepages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n"
+    local readonly str_output2="Setup Hugepages?"
+    local readonly var_add_user_to_group='adduser "${str_user_name}" "${str_user_group}"'
+    local readonly var_get_first_valid_user='getent passwd {1000..60000} | cut -d ":" -f 1'
+    local readonly var_get_host_max_mem='cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1'
+    # </params>
+
+    echo -e "${str_output1}"
+    ReadInput "${str_output2}" || return "${?}"
+    local readonly str_username=$( eval "${var_get_first_valid_user}" )
+
+    for str_user_group in "${arr_user_groups[@]}"; do
+        eval "${var_add_user_to_group}" || return "${?}"
+    done
+
+    ReadMultipleChoiceIgnoreCase "${arr_choices[@]}" || return "${?}"
+    var_input=""
+    str_huge_page_byte_prefix="${var_input}"
+    int_huge_page_max_kbit_size=$( eval "${var_get_host_max_mem}" )
+
+    case "${str_huge_page_byte_prefix}" in
+        "${arr_choices[0]}" )
+            readonly int_huge_page_kbit_size=2048
+            readonly int_huge_page_min=2
+            ;;
+        "${arr_choices[1]}" )
+            readonly int_huge_page_kbit_size=1048576
+            readonly int_huge_page_min=1
+            ;;
+        * )
+            return "${?}"
+            ;;
+    esac
+
+    readonly int_huge_page_max=$(( $int_huge_page_min_kbit_size - $int_huge_page_min_kbit_size ))
+    readonly int_HugePageMax=$(( $int_huge_page_max / $int_huge_page_kbit_size ))
+    local readonly str_output3="Enter number of Hugepages (n * ${str_huge_page_byte_prefix})"
+
+    ReadInputFromRangeOfTwoNums "${str_output3}" "${int_huge_page_min}" "${int_huge_page_max}" || return "${?}"
+    readonly int_huge_page_count="${var_input}"
+
+    readonly str_hugepages_GRUB="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
+    readonly str_hugepages_QEMU="hugetlbfs_mount = \"/dev/hugepages\""
+
+    return 0
+}
 
 function LibvirtHooks
 {}
 
+# <summary> zramswap: Ask user to setup a swap partition in host memory, to reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory. </summary>
 function RAM_Swapfile
 {}
 
+# <summary> Evdev: Ask user to setup a virtual Keyboard-Video-Mouse swich (excluding the Video). Will allow a user to swap between active virtual machines and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL'). </summary>
 function Virtual_KVM
 {}
 
+# <summary> Scream: Ask user to setup direct-memory-access of video framebuffer from virtual machine to host. NOTE: Only supported for Win 7/10/11 virtual machines. </summary>
 function VirtualVideoCapture
 {}
 
+# <summary> Scream: Ask user to setup audio loopback from virtual machine to host. NOTE: Only supported for Win 7/10/11 virtual machines. </summary>
 function VirtualAudioCapture
 {}
 
