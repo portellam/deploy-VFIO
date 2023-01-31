@@ -8,6 +8,9 @@
 #
 # </summary>
 
+declare -gr str_repo_name="deploy-VFIO-setup"
+declare -gr str_full_repo_name="portellam/${str_repo_name}"
+
 # <summary> #1 - Command operation and validation, and Miscellaneous </summary>
 # <code>
     # <summary> Append Pass or Fail given exit code. </summary>
@@ -1472,6 +1475,7 @@
         local readonly str_username=$( eval "${var_get_first_valid_user}" )
         # </params>
 
+        # <remarks> Add user(s) to groups. </remarks>
         for str_user_group in "${arr_user_groups[@]}"; do
             eval "${var_add_user_to_group}" || return "${?}"
         done
@@ -1494,14 +1498,15 @@
 
         declare -g bool_is_setup_hugepages=false
         declare -gi int_huge_page_count=0
-        declare -g str_huge_page_byte_prefix=""
         declare -gi int_huge_page_kbit_size=0
         declare -gi int_huge_page_max_kbit_size=0
         declare -gir int_huge_page_min_kbit_size=4194304
         declare -gi int_huge_page_max=0
         declare -gi int_huge_page_min=0
+        declare -g str_huge_page_byte_prefix=""
         declare -g str_hugepages_GRUB=""
         declare -g str_hugepages_QEMU=""
+
         local readonly str_output1="Hugepages is a feature which statically allocates system memory to pagefiles.\n\tVirtual machines can use Hugepages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n"
         local readonly str_output2="Setup Hugepages?"
         local readonly var_get_host_max_mem='cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1'
@@ -1555,106 +1560,159 @@
     function Virtual_KVM
     {
         # <params>
-        local readonly str_file1="/etc/apparmor.d/abstractions/libvirt-qemu"
-        local readonly str_file1_backup="./files/etc_libvirt_qemu.conf"
+        declare -ga arr_event_devices=()
+        declare -ga arr_input_devices=()
+
+        declare -g bool_is_setup_evdev=false
         local readonly str_output1="Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n\tHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
         local readonly str_output2="Setup Evdev?"
-        declare -a arr_evdev=()
-        declare -a arr_file1_contents=()
-        declare -ar arr_file1_default_cgroups=(
-            "\"/dev/null\", \"/dev/full\", \"/dev/zero\","
-            "#        \"/dev/random\", \"/dev/urandom\","
-            "#        \"/dev/ptmx\", \"/dev/kvm\","
-            "#        \"/dev/rtc\", \"/dev/hpet\""
-        )
+
+        local readonly var_get_event_devices='ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0"'
+        local readonly var_get_input_devices='ls /dev/input/by-id'
         # </params>
 
+        # <remarks> Ask user to proceed. </remarks>
         echo -e "${str_output1}"
         ReadInput "${str_output2}" || return "${?}"
 
+        # <remarks> Get all devices for Evdev. </remarks>
+        readonly arr_event_devices=( $( eval "${var_get_event_devices}") )
+        readonly arr_input_devices=( $( eval "${var_get_input_devices}") )
+
+        if ! CheckIfVarIsValid "${arr_event_devices[@]}" && ! CheckIfVarIsValid "${var_get_input_devices[@]}"; then
+            return 1
+        fi
+
+        bool_is_setup_evdev=true
+        return 0
+    }
+
+    # <summary> libvirt-qemu: Append necessary changes to QEMU system file, including user groups, Evdev, Hugepages, and NVRAM (for UEFI VMs). </summary>
+    function ModifyQEMU
+    {
+        # <params>
+        declare -a arr_file1_evdev_cgroups=()
+        declare -ar arr_file1_default_cgroups=(
+            "        \"/dev/null\", \"/dev/full\", \"/dev/zero\","
+            "        \"/dev/random\", \"/dev/urandom\","
+            "        \"/dev/ptmx\", \"/dev/kvm\","
+            "        \"/dev/rtc\", \"/dev/hpet\""
+        )
+
+        local readonly str_daemon1="libvirtd"
+        local readonly str_file1="/etc/apparmor.d/abstractions/libvirt-qemu"
+        local readonly str_file1_backup="./files/etc_libvirt_qemu.conf"
+        local readonly var_set_event_device='"        \"/dev/input/by-id/${str_event_device}\",'
+        # </params>
+
+        # <remarks> Backup system file and grab clean file from repository. </remarks>
         CreateBackupFile "${str_file1}"
         GoToScriptDir || return "${?}"
         CheckIfFileExists "${str_file1_backup}" || return "${?}"
         cp "${str_file1_backup}" "${str_file1}"
 
+        # <remarks> Get Event devices. </remarks>
+        if [[ "${bool_is_setup_evdev}" == true ]]; then
+            for str_event_device in "${arr_event_devices[@]}"; do
+                arr_file1_evdev_cgroups+=( $( eval "${var_set_event_device}" ) )
+            done
+
+            for str_event_device in "${arr_event_devices[@]}"; do
+                arr_file1_evdev_cgroups+=( $( eval "${var_set_event_device}" ) )
+            done
+        fi
+
+        readonly arr_file1_evdev_cgroups
+
+        # <remarks> Begin append. </remarks>
         arr_file1_contents=(
             "#"
-            "# Generated by 'portellam/deploy-VFIO-setup'"
+            "# Generated by '${str_full_repo_name}'"
             "#"
             "# WARNING: Any modifications to this file will be modified by"
-            "'deploy-VFIO-setup'"
+            "'${str_repo_name}'"
             "#"
-            "# Run 'systemctl restart libvirtd.service' to update."
-            "#"
-            ""
+            "# Run 'systemctl restart ${str_daemon1}.service' to update."
         )
 
+        # <remarks> Adds or omits specific user to use Evdev. </remarks>
         if CheckIfVarIsValid "${str_user_name}"; then
             arr_file1_contents+=(
                 "#"
                 "### User permissions ###"
-                "    user = \"${str_user_name}\""
-                "    group = \"user\""
+                "        user = \"${str_user_name}\""
+                "        group = \"user\""
                 "#"
             )
         else
             arr_file1_contents+=(
                 "#"
                 "### User permissions ###"
-                "#     user = \"user\""
-                "#     group = \"user\""
+                "#         user = \"user\""
+                "#         group = \"user\""
                 "#"
             )
         fi
 
+        # <remarks> Adds or omits validation for Hugepages. </remarks>
         if [[ "${bool_is_setup_hugepages}" == true ]]; then
             arr_file1_contents+=(
                 "#"
                 "### Hugepages ###"
-                "    hugetlbfs_mount = \"/dev/hugepages\""
+                "        hugetlbfs_mount = \"/dev/hugepages\""
                 "#"
             )
         else
             arr_file1_contents+=(
                 "#"
                 "### Hugepages ###"
-                "#     hugetlbfs_mount = \"/dev/hugepages\""
+                "#         hugetlbfs_mount = \"/dev/hugepages\""
                 "#"
             )
         fi
 
-        if CheckIfVarIsValid "${arr_evdev[@]}"; then
+        # <remarks> Adds or omits Event devices. </remarks>
+        if CheckIfVarIsValid "${arr_file1_evdev_cgroups[@]}"; then
             arr_file1_contents+=(
                 "#"
                 "### Devices ###"
-                "#     cgroup_device_acl = ["
-                "${arr_evdev[@]}"
-                "${arr_file1_default_cgroups}"
-                "     ]"
+                "# cgroup_device_acl = ["
+                "${arr_file1_evdev_cgroups[@]}"
+                "${arr_file1_default_cgroups[@]}"
+                "        ]"
                 "#"
             )
         else
             arr_file1_contents+=(
                 "#"
                 "### Devices ###"
-                "#     cgroup_device_acl = ["
-                "${arr_file1_default_cgroups}"
-                "     ]"
+                "# cgroup_device_acl = ["
+                "${arr_file1_default_cgroups[@]}"
+                "        ]"
                 "#"
             )
         fi
 
+        # <remarks> Adds NVRAM for EFI kernels in UEFI virtual machines. </remarks>
         arr_file1_contents+=(
             "nvram = ["
-            "\"/usr/share/OVMF/OVMF_CODE.fd:/usr/share/OVMF/OVMF_VARS.fd\","
-            "\"/usr/share/OVMF/OVMF_CODE.secboot.fd:/usr/share/OVMF/OVMF_VARS.fd\","
-            "\"/usr/share/AAVMF/AAVMF_CODE.fd:/usr/share/AAVMF/AAVMF_VARS.fd\","
-            "\"/usr/share/AAVMF/AAVMF32_CODE.fd:/usr/share/AAVMF/AAVMF32_VARS.fd\""
+            "        \"/usr/share/OVMF/OVMF_CODE.fd:/usr/share/OVMF/OVMF_VARS.fd\","
+            "        \"/usr/share/OVMF/OVMF_CODE.secboot.fd:/usr/share/OVMF/OVMF_VARS.fd\","
+            "        \"/usr/share/AAVMF/AAVMF_CODE.fd:/usr/share/AAVMF/AAVMF_VARS.fd\","
+            "        \"/usr/share/AAVMF/AAVMF32_CODE.fd:/usr/share/AAVMF/AAVMF32_VARS.fd\""
             "]"
         )
 
-        
+        # <remarks> End append. </remarks>
+        declare -a arr_file=( "${arr_file1_contents[@]}" )
+        WriteFile "${str_file1}" || return "${?}"
 
+        # <remarks> Check if daemon exists and restart it. </remarks>
+        CheckIfDaemonIsActiveOrNot "${str_daemon1}" || return "${?}"
+        systemctl enable "${str_daemon1}" || return 1
+        systemctl restart "${str_daemon1}" || return 1
+
+        return 0
     }
 
     # <summary> LookingGlass: Ask user to setup direct-memory-access of video framebuffer from virtual machine to host. NOTE: Only supported for Win 7/10/11 virtual machines. </summary>
