@@ -1401,10 +1401,12 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
             local bool_is_found_IGPU_full_name=false
             # </params>
 
+            # <remarks> Early-exit. </remarks>
             if ! CheckIfVarIsValid "${arr_IOMMU_groups[@]}" &> /dev/null;
                 return 1
             fi
 
+            # <remarks> Parse each IOMMU group, and call subfunction. </remarks>
             for str_IOMMU_group in ${arr_IOMMU_groups[@]}; do
                 if CheckIfVarIsValid "${str_IOMMU_group}" &> /dev/null; then
                     declare -a arr_group_devices=( $( eval "${var_get_devices_of_IOMMU_group}" ) )
@@ -1412,6 +1414,7 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
                 fi
             done
 
+            # <remarks> Save changes. </remarks>
             readonly arr_device_driver arr_device_IOMMU arr_device_name arr_device_PCI arr_device_type arr_device_vendor arr_IOMMU_groups_with_external_bus arr_IOMMU_groups_with_internal_bus arr_IOMMU_groups_with_USB arr_IOMMU_groups_with_VGA
 
             return 0
@@ -1512,6 +1515,7 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
         local readonly var_get_host_max_mem='cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1'
         # </params>
 
+        # <remarks> Ask user to proceed. </remarks>
         echo -e "${str_output1}"
         ReadInput "${str_output2}" || return "${?}"
         ReadMultipleChoiceIgnoreCase "${arr_choices[@]}" || return "${?}"
@@ -1519,6 +1523,7 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
         str_huge_page_byte_prefix="${var_input}"
         int_huge_page_max_kbit_size=$( eval "${var_get_host_max_mem}" )
 
+        # <remarks> Validate hugepage size and byte-size. </remarks>
         case "${str_huge_page_byte_prefix}" in
             "${arr_choices[0]}" )
                 readonly int_huge_page_kbit_size=2048
@@ -1533,13 +1538,16 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
                 ;;
         esac
 
+        # <remarks> Get values. </remarks>
         readonly int_huge_page_max=$(( $int_huge_page_min_kbit_size - $int_huge_page_min_kbit_size ))
         readonly int_HugePageMax=$(( $int_huge_page_max / $int_huge_page_kbit_size ))
         local readonly str_output3="Enter number of Hugepages (n * ${str_huge_page_byte_prefix})"
 
+        # <remarks> Ask user for preferred amount. </remarks>
         ReadInputFromRangeOfTwoNums "${str_output3}" "${int_huge_page_min}" "${int_huge_page_max}" || return "${?}"
         readonly int_huge_page_count="${var_input}"
 
+        # <remarks> Save changes. </remarks>
         readonly str_hugepages_GRUB="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
         bool_is_setup_hugepages=true
         return 0
@@ -1579,6 +1587,7 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
         readonly arr_event_devices=( $( eval "${var_get_event_devices}") )
         readonly arr_input_devices=( $( eval "${var_get_input_devices}") )
 
+        # <remarks> Early-exit. </remarks>
         if ! CheckIfVarIsValid "${arr_event_devices[@]}" && ! CheckIfVarIsValid "${var_get_input_devices[@]}"; then
             return 1
         fi
@@ -1622,6 +1631,7 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
             done
         fi
 
+        # <remarks> Save changes. </remarks>
         readonly arr_file1_evdev_cgroups
 
         # <remarks> Begin append. </remarks>
@@ -1703,7 +1713,8 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
             "]"
         )
 
-        # <remarks> End append. </remarks>
+        # <remarks> Save changes. </remarks>
+        readonly arr_file1_contents
         declare -a arr_file=( "${arr_file1_contents[@]}" )
         WriteFile "${str_file1}" || return "${?}"
 
