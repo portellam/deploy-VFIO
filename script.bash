@@ -1464,6 +1464,11 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
 
 # <summary> Business functions: Pre/Post setup </summary>
 # <code>
+    # <params>
+    declare -g bool_is_setup_evdev=false
+    declare -g bool_is_setup_hugepages=false
+    # </params>
+
     # <summary> Add user to necessary user groups. </summary>
     function AddUserToGroups
     {
@@ -1499,7 +1504,7 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
             "1G"
         )
 
-        declare -g bool_is_setup_hugepages=false
+        declare -I bool_is_setup_hugepages
         declare -gi int_huge_page_count=0
         declare -gi int_huge_page_kbit_size=0
         declare -gi int_huge_page_max_kbit_size=0
@@ -1571,7 +1576,7 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
         declare -ga arr_event_devices=()
         declare -ga arr_input_devices=()
 
-        declare -g bool_is_setup_evdev=false
+        declare -I bool_is_setup_evdev
         local readonly str_output1="Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n\tHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
         local readonly str_output2="Setup Evdev?"
 
@@ -1608,8 +1613,10 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
             "        \"/dev/rtc\", \"/dev/hpet\""
         )
 
+        declare -I bool_is_setup_evdev bool_is_setup_hugepages
         local readonly str_daemon1="libvirtd"
-        local readonly str_file1="/etc/apparmor.d/abstractions/libvirt-qemu"
+        local readonly str_daemon1_packages="qemu"
+        local readonly str_file1="/etc/libvirt/qemu.conf"
         local readonly str_file1_backup="./files/etc_libvirt_qemu.conf"
         local readonly var_set_event_device='"        \"/dev/input/by-id/${str_event_device}\",'
         # </params>
@@ -1618,7 +1625,7 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
         CreateBackupFile "${str_file1}"
         GoToScriptDir || return "${?}"
         CheckIfFileExists "${str_file1_backup}" || return "${?}"
-        cp "${str_file1_backup}" "${str_file1}"
+        cp "${str_file1_backup}" "${str_file1}" || return 1
 
         # <remarks> Get Event devices. </remarks>
         if [[ "${bool_is_setup_evdev}" == true ]]; then
@@ -1646,7 +1653,9 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
         )
 
         # <remarks> Adds or omits specific user to use Evdev. </remarks>
-        if CheckIfVarIsValid "${str_user_name}"; then
+        local readonly str_output4="Adding user..."
+
+        if CheckIfVarIsValid "${str_user_name}" &> /dev/null; then
             arr_file1_contents+=(
                 "#"
                 "### User permissions ###"
@@ -1654,6 +1663,8 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
                 "        group = \"user\""
                 "#"
             )
+
+            AppendPassOrFail "${str_output4}"
         else
             arr_file1_contents+=(
                 "#"
@@ -1662,9 +1673,13 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
                 "#         group = \"user\""
                 "#"
             )
+
+            AppendPassOrFail "${str_output4}"
         fi
 
         # <remarks> Adds or omits validation for Hugepages. </remarks>
+        local readonly str_output5="Adding Hugepages..."
+
         if [[ "${bool_is_setup_hugepages}" == true ]]; then
             arr_file1_contents+=(
                 "#"
@@ -1672,6 +1687,8 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
                 "        hugetlbfs_mount = \"/dev/hugepages\""
                 "#"
             )
+
+            AppendPassOrFail "${str_output5}"
         else
             arr_file1_contents+=(
                 "#"
@@ -1679,10 +1696,14 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
                 "#         hugetlbfs_mount = \"/dev/hugepages\""
                 "#"
             )
+
+            AppendPassOrFail "${str_output5}"
         fi
 
         # <remarks> Adds or omits Event devices. </remarks>
-        if CheckIfVarIsValid "${arr_file1_evdev_cgroups[@]}"; then
+        local readonly str_output6="Adding Hugepages..."
+
+        if CheckIfVarIsValid "${arr_file1_evdev_cgroups[@]}" &> /dev/null; then
             arr_file1_contents+=(
                 "#"
                 "### Devices ###"
@@ -1692,6 +1713,8 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
                 "        ]"
                 "#"
             )
+
+            AppendPassOrFail "${str_output6}"
         else
             arr_file1_contents+=(
                 "#"
@@ -1701,6 +1724,8 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
                 "        ]"
                 "#"
             )
+
+            AppendPassOrFail "${str_output6}"
         fi
 
         # <remarks> Adds NVRAM for EFI kernels in UEFI virtual machines. </remarks>
@@ -1719,10 +1744,9 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
         WriteFile "${str_file1}" || return "${?}"
 
         # <remarks> Check if daemon exists and restart it. </remarks>
-        CheckIfDaemonIsActiveOrNot "${str_daemon1}" || return "${?}"
-        systemctl enable "${str_daemon1}" || return 1
+        CheckIfPackageExists "${str_daemon1_package}" || return "${?}"
+        CheckIfDaemonIsActiveOrNot "${str_daemon1}" || ( systemctl enable "${str_daemon1}" || return 1 )
         systemctl restart "${str_daemon1}" || return 1
-
         return 0
     }
 
