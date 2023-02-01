@@ -1579,10 +1579,39 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
 # <summary> Business functions: Main setup </summary>
 # <code>
     function Dynamic_VFIO
-    {}
+    {
+        # <params>
+
+        # </params>
+
+
+    }
 
     function Static_VFIO
-    {}
+    {
+        # <params>
+
+        # </params>
+
+        AddUserToGroups
+        Allocate_CPU
+        Allocate_RAM
+        RAM_Swapfile
+        Virtual_KVM
+        ModifyQEMU
+
+        if ! Parse_IOMMU; then
+            ReadFromFile_IOMMU || return "${?}"
+        fi
+
+        SaveToFile_IOMMU
+        Select_IOMMU || return "${?}"
+
+        # diff between static and dynamic => static: all IOMMU for VFIO with PCI STUB devices will be binded to VFIO PCI driver? append only to GRUB and system files.
+        # dynamic: PCI STUB devices will use PCI STUB driver? append only GRUB and multiple GRUB entries
+
+
+    }
 
     function UpdateExisting_VFIO
     {}
