@@ -1448,55 +1448,60 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
 
     function Select_IOMMU
     {
-        # <params>
-        local str_output="Reviewing IOMMU groups..."
-        declare -a arr_IOMMU_forHost arr_IOMMU_forSTUB arr_IOMMU_forVFIO arr_IOMMU_withVGA_forHost arr_IOMMU_withVGA_forVFIO
-        declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus
-        # </params>
+        function Read_IOMMU_Group
+        {
+            # <params>
+            declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus arr_IOMMU_host arr_IOMMU_PCISTUB arr_IOMMU_VFIOPCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIOPCI_with_VGA
+            # </params>
 
-        echo -e "${str_output}"
+            for int_key1 in "${!arr_IOMMU_groups_with_external_bus[@]}"; do
+                declare -a arr_IOMMU_devices arr_IOMMU_devices_with_USB arr_IOMMU_devices_with_VGA
+                declare -i int_IOMMU="${!arr_IOMMU_groups_with_external_bus[$int_key1]}"
+                local bool_IOMMU_has_USB=false
+                local bool_IOMMU_has_VGA=false
 
-        if ! CheckIfVarIsValid "${arr_IOMMU_groups_with_external_bus[@]}"; then
-            AppendPassOrFail "${str_output}"
-            return "${?}"
-        fi
+                # <remarks> Check if given IOMMU group has USB. </remarks>
+                for int_key2 in ${!arr_IOMMU_devices_has_USB[@]}; do
+                    declare -i int_IOMMU_with_USB=${arr_IOMMU_devices[$int_key2]}
 
-        for int_key1 in "${!arr_IOMMU_groups_with_external_bus[@]}"; do
-            declare -a arr_IOMMU_devices arr_IOMMU_devices_with_USB arr_IOMMU_devices_with_VGA
-            declare -i int_IOMMU="${!arr_IOMMU_groups_with_external_bus[$int_key1]}"
-            local bool_IOMMU_has_USB=false
+                    if [[ "${int_IOMMU_with_USB}" -eq "${int_IOMMU}" ]]; then
+                        bool_IOMMU_has_USB=true
+                        arr_IOMMU_devices_with_USB+=( "${int_key2}" )
+                    fi
+                done
 
-            # <remarks> Check if given IOMMU group has USB. </remarks>
-            for int_key2 in ${!arr_IOMMU_devices_has_USB[@]}; do
-                declare -i int_IOMMU_with_USB=${arr_IOMMU_devices[$int_key2]}
+                # <remarks> Check if given IOMMU group has VGA. </remarks>
+                for int_key2 in ${!arr_IOMMU_devices_has_VGA[@]}; do
+                    declare -i int_IOMMU_with_VGA=${arr_IOMMU_devices[$int_key2]}
 
-                if [[ "${int_IOMMU_with_USB}" -eq "${int_IOMMU}" ]]; then
-                    bool_IOMMU_has_USB=true
-                    arr_IOMMU_devices_with_USB+=( "${int_key2}" )
-                fi
+                    if [[ "${int_IOMMU_with_VGA}" -eq "${int_IOMMU}" ]]; then
+                        bool_IOMMU_has_VGA=true
+                        arr_IOMMU_devices_with_VGA+=( "${int_key2}" )
+                    fi
+                done
+
+                # <remarks> Check if given IOMMU group has USB. </remarks>
+                for int_key2 in ${!arr_IOMMU_devices[@]}; do
+                    declare -i int_IOMMU_with_device=${arr_IOMMU_devices[$int_key2]}
+
+                    if [[ "${int_IOMMU_with_device}" -eq "${int_IOMMU}" ]]; then
+                        arr_IOMMU_with_device+=( "${int_key2}" )
+                    fi
+                done
+
+                Prompt_IOMMU_Group || return "${?}"
             done
+        }
 
-            # <remarks> Check if given IOMMU group has VGA. </remarks>
-            for int_key2 in ${!arr_IOMMU_devices_has_VGA[@]}; do
-                declare -i int_IOMMU_with_VGA=${arr_IOMMU_devices[$int_key2]}
-
-                if [[ "${int_IOMMU_with_VGA}" -eq "${int_IOMMU}" ]]; then
-                    bool_IOMMU_has_VGA=true
-                    arr_IOMMU_devices_with_VGA+=( "${int_key2}" )
-                fi
-            done
-
-            # <remarks> Check if given IOMMU group has USB. </remarks>
-            for int_key2 in ${!arr_IOMMU_devices[@]}; do
-                declare -i int_IOMMU_with_device=${arr_IOMMU_devices[$int_key2]}
-
-                if [[ "${int_IOMMU_with_device}" -eq "${int_IOMMU}" ]]; then
-                    arr_IOMMU_with_device+=( "${int_key2}" )
-                fi
-            done
+        function Prompt_IOMMU_Group
+        {
+            # <params>
+            declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus arr_IOMMU_host arr_IOMMU_PCISTUB arr_IOMMU_VFIOPCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIOPCI_with_VGA bool_IOMMU_has_USB bool_IOMMU_has_VGA
+            local readonly str_output="IOMMU group #:\t${int_IOMMU}\n"
+            # </params>
 
             # <remarks> Display all devices in given IOMMU group. </remarks>
-            echo -e "IOMMU group #:\t${int_IOMMU}\n"
+            echo -e "${str_output}"
 
             for int_key2 in ${!arr_IOMMU_devices[@]}; do
                 str_device_PCI="${arr_device_PCI[$int_key2]}"
@@ -1516,43 +1521,55 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
 
             local str_output_select_IOMMU="Select IOMMU group '${int_IOMMU}'?"
 
-            # <remarks> Apend to list a valid array or empty value. </remarks>
-
-            # TODO: fix here!
+            # <remarks> Append to list a valid array or empty value. </remarks>
             if ReadInput "${str_output_select_IOMMU}"; then
-                if [[ $bool_thisIOMMU_hasUSB == true ]]; then
-                    arr_IOMMU_forSTUB+=( "${arr_thisIOMMU_devicesWithUSB_forSTUB[@]}" )
+                if [[ "${bool_IOMMU_has_USB}" == true ]]; then
+                    arr_IOMMU_PCISTUB+=( "${arr_IOMMU_devices_has_USB[@]}" )
                 else
-                    arr_IOMMU_forSTUB+=("")
+                    arr_IOMMU_PCISTUB+=("")
                 fi
 
-                if [[ $bool_thisIOMMU_hasVGA == true ]]; then
-                    arr_IOMMU_forVFIO+=("")
-                    arr_IOMMU_withVGA_forVFIO+=( "${arr_thisIOMMU_devicesWithVGA_forVFIO[@]}" )
+                if [[ "${bool_IOMMU_has_VGA}" == true ]]; then
+                    arr_IOMMU_VFIOPCI+=("")
+                    arr_IOMMU_VFIOPCI_with_VGA+=( "${arr_IOMMU_devices_has_VGA[@]}" )
                 else
-                    arr_IOMMU_forVFIO+=( "${arr_thisIOMMU_devices[@]}" )
-                    arr_IOMMU_withVGA_forVFIO+=("")
+                    arr_IOMMU_VFIOPCI+=( "${arr_thisIOMMU_devices[@]}" )
+                    arr_IOMMU_VFIOPCI_with_VGA+=("")
                 fi
             else
-                if [[ $bool_thisIOMMU_hasUSB == true ]]; then
-                    arr_IOMMU_forSTUB+=( "${arr_thisIOMMU_devicesWithUSB_forSTUB[@]}" )
+                if [[ "${bool_IOMMU_has_USB}" == true ]]; then
+                    arr_IOMMU_PCISTUB+=( "${arr_IOMMU_devices_has_USB[@]}" )
                 else
-                    arr_IOMMU_forSTUB+=("")
+                    arr_IOMMU_PCISTUB+=("")
                 fi
 
-                if [[ $bool_thisIOMMU_hasVGA == true ]]; then
-                    arr_IOMMU_forVFIO+=("")
-                    arr_IOMMU_withVGA_forVFIO+=( "${arr_thisIOMMU_devicesWithVGA_forVFIO[@]}" )
+                if [[ "${bool_IOMMU_has_VGA}" == true ]]; then
+                    arr_IOMMU_VFIOPCI+=("")
+                    arr_IOMMU_VFIOPCI_with_VGA+=( "${arr_IOMMU_devices_has_VGA[@]}" )
                 else
-                    arr_IOMMU_forVFIO+=( "${arr_thisIOMMU_devices[@]}" )
-                    arr_IOMMU_withVGA_forVFIO+=("")
+                    arr_IOMMU_VFIOPCI+=( "${arr_thisIOMMU_devices[@]}" )
+                    arr_IOMMU_VFIOPCI_with_VGA+=("")
                 fi
             fi
-        done
 
-        for str_element in ${arr_IOMMU_forHost[@]}; do
-            CheckIfVarIsValid "${str_element}" &> /dev/null || SaveExitCode
-        done
+            return 0
+        }
+
+        # <params>
+        local str_output="Reviewing IOMMU groups..."
+        declare -a arr_IOMMU_host arr_IOMMU_PCISTUB arr_IOMMU_VFIOPCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIOPCI_with_VGA
+        declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus
+        # </params>
+
+        echo -e "${str_output}"
+
+        if ( ! Read_IOMMU_Group
+            && ! CheckIfVarIsValid "${arr_IOMMU_host[@]}" &> /dev/null
+            && ! CheckIfVarIsValid "${arr_IOMMU_VFIOPCI[@]}" &> /dev/null
+            # && ! CheckIfVarIsValid "${arr_IOMMU_PCISTUB[@]}" &> /dev/null     # NOTE: is this necessary? Likely not.
+        ); then
+            SaveExitCode
+        fi
 
         AppendPassOrFail "${str_output}"
         return "${?}"
