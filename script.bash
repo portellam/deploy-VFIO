@@ -1493,7 +1493,122 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
 
     # <summary> isolcpus: Ask user to allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and virtual machine performance. </summary
     function Allocate_CPU
-    {}
+    {
+        # <params>
+        declare -a arr_cores_by_thread arr_host_cores arr_host_threads arr_host_thread_sets arr_virt_thread_sets
+        declare -i int_host_cores=1
+        declare -i int_host_threads_mask=0
+        declare -i int_SMT_factor=1
+        declare -i int_total_cores=1
+        declare -i int_total_threads=1
+        declare -i int_total_threads_mask=1
+        declare -g str_GRUB_isolcpu=""
+        declare -g str_host_threads_mask=""
+        declare -g str_total_threads_mask=""
+        local str_virt_thread_sets=""
+
+        local readonly var_get_arr_SMT_factors='{1..$int_SMT_factor}'
+        local readonly var_get_cores_by_thread='cat /proc/cpuinfo | grep "core id" | cut -d ":" -f2 | cut -d " " -f2'
+        local readonly var_get_SMT_factor='$(( "${int_total_threads}" / "${int_total_cores}" ))'
+        local readonly var_get_thread_mask='$(( 2 ** $int_thread ))'
+        local readonly var_get_total_threads_mask='$(( ( 2 ** $int_total_threads ) - 1 ))'
+        local readonly var_get_total_cores='cat /proc/cpuinfo | grep "cpu cores" "| uniq | grep -o "[0-9]\+"'
+        local readonly var_get_total_threads='cat /proc/cpuinfo | grep "siblings" "| uniq | grep -o "[0-9]\+"'
+        # </params>
+
+        # <remarks> Get values. </remarks>
+        readonly arr_cores_by_thread=$( eval "${var_get_cores_by_thread}" )
+        readonly int_total_cores=$( eval "${int_total_cores}" )
+        readonly int_total_threads=$( eval "${var_get_total_threads}" )
+        readonly int_SMT_factor=$( eval "${var_get_SMT_factor}" )
+
+        # <remarks> quad-core or greater CPU </remarks>
+        if [[ "${int_total_cores}" -ge 4 ]]; then
+            readonly int_host_cores=2
+
+        # <remarks> double-core/triple-core CPU </remarks>
+        elif [[ "${int_total_cores}" -le 3 && "${int_total_cores}" -ge 2 ]]; then
+            readonly int_host_cores=1
+
+        # <remarks> single-core CPU </remarks>
+        else
+            readonly int_host_cores="${int_total_cores}"
+            return 1
+        fi
+
+        # <remarks> Get thread sets for virtual machines. </remarks>
+        for (( int_i=0 ; int_i<$int_SMT_factor ; int_i++ )); do
+            declare -i int_first_host_thread=$(( int_host_cores + int_total_cores * int_index ))
+            declare -i int_last_host_core=$(( int_total_cores - 1 ))
+            declare -i int_last_host_thread=$(( int_last_host_core + int_total_cores * int_index ))
+
+            if [[ "${int_first_host_thread}" -eq "${int_lastHostThread}" ]]; then
+                str_virt_thread_sets+="${int_first_host_thread},"
+            else
+                str_virt_thread_sets+="${int_first_host_thread}-${int_last_host_thread},"
+            fi
+        done
+
+        # <remarks> Truncate last delimiter. </remarks>
+        if [[ ${str_virt_thread_sets: -1} == "," ]]; then
+            str_virt_thread_sets=${str_virt_thread_sets::-1}
+        fi
+
+        # <remarks> Get thread sets for virtual machines. </remarks>
+        for (( int_i=0 ; int_i<$int_total_cores ; int_i++ )); do
+            local str_line=""
+            declare -i int_core=${arr_cores_by_thread[int_i]}
+
+            # <remarks> Add threads to host. </remarks>
+            for (( int_j=0 ; int_j<$int_SMT_multiplier ; int_j++ )); do
+                declare -i int_thread=$(( int_core + int_total_cores * int_j ))
+                str_line="${int_thread},"
+
+                if [[ $int_core -lt $int_host_cores ]]; then
+                    arr_host_threads+=("$int_thread")
+                fi
+            done
+
+            # <remarks> Add thread sets to host or virtual machine. </remarks>
+            if [[ "${int_core}" -eq "${int_host_cores}" ]]; then
+                arr_host_cores+=( "${int_core}" )
+                arr_host_thread_sets+=( "${str_line}" )
+            else
+                arr_virt_thread_sets+=( "${str_line}" )
+            fi
+        done
+
+        # <remarks>
+        # save output to string for cpuset and cpumask
+        # example:
+        #   host 0-1,8-9
+        #   virt 2-7,10-15
+        #
+        # information
+        # cores     bit masks       mask
+        # 0-7       0b11111111      FF      # total cores
+        # 0,4       0b00010001      11      # host cores
+        #
+        # 0-11      0b111111111111  FFF     # total cores
+        # 0-1,6-7   0b000011000011  C3      # host cores
+        #
+        # </remarks>
+
+        # <remarks> Find CPU mask. </remarks>
+        readonly int_total_threads_mask=$( eval "${var_get_total_threads_mask}" )
+
+        for int_thread in ${arr_host_threads[@]}; do
+            int_host_threads_mask+=$( eval "${var_get_thread_mask}" )
+        done
+
+        # <remarks> Save changes. </remarks>
+            # <remarks> Convert int to hex. </remarks>
+            readonly int_host_threads_mask
+            readonly str_total_threads_mask=$(printf '%x\n' $int_total_threads_mask)
+            readonly str_host_threads_mask=$(printf '%x\n' $int_host_threads_mask)
+        readonly str_GRUB_isolcpu="isolcpus=$str_virt_thread_sets nohz_full=$str_virt_thread_sets rcu_nocbs=$str_virt_thread_sets"
+        return 0
+    }
 
     # <summary> Hugepages: Ask user to allocate host memory (RAM) to 'hugepages', to eliminate the need to defragement memory, to reduce host overhead, and to improve both host and virtual machine performance. </summary
     function Allocate_RAM
@@ -1512,7 +1627,7 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
         declare -gi int_huge_page_max=0
         declare -gi int_huge_page_min=0
         declare -g str_huge_page_byte_prefix=""
-        declare -g str_hugepages_GRUB=""
+        declare -g str_GRUB_hugepages=""
         declare -g str_hugepages_QEMU=""
 
         local readonly str_output1="Hugepages is a feature which statically allocates system memory to pagefiles.\n\tVirtual machines can use Hugepages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n"
@@ -1553,7 +1668,7 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
         readonly int_huge_page_count="${var_input}"
 
         # <remarks> Save changes. </remarks>
-        readonly str_hugepages_GRUB="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
+        readonly str_GRUB_hugepages="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
         bool_is_setup_hugepages=true
         return 0
     }
