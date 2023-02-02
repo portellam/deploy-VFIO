@@ -6,14 +6,6 @@ To execute:
 
         sudo bash deploy-vfio-setup.bash
 
-OPTIONS:
-
-        -h  --help       Display this prompt.
-        -d  --delete     Delete existing VFIO setup.
-        -f  --full       Execute pre-setup, prompt for either VFIO setup, and execute post-setup.
-        -m  --multiboot  Execute or update Multiboot VFIO setup.
-        -s  --static     Execute or update Static VFIO setup.
-
 * Should one wish to **update** a system's VFIO setup (completely, with Evdev, Hugepages, Static or Multiboot, etc.), then review the **OPTIONS** above.
 
 ## What is VFIO?

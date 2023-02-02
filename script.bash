@@ -4,6 +4,12 @@
 # Author(s):    Alex Portell <github.com/portellam>
 #
 
+#
+# TODO
+# -Continuous Improvement: after conclusion of this script's dev. Propose a refactor using the bashful libraries and with better Bash principles in mind.
+# -demo the product: get a working, debuggable version ASAP.
+# -revise README, files
+
 # <summary> #1 - Command operation and validation, and Miscellaneous </summary>
 # <code>
     # <summary> Append Pass or Fail given exit code. </summary>
