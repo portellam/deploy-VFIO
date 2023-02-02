@@ -4,13 +4,6 @@
 # Author(s):    Alex Portell <github.com/portellam>
 #
 
-# <summary>
-#
-# </summary>
-
-declare -gr str_repo_name="deploy-VFIO-setup"
-declare -gr str_full_repo_name="portellam/${str_repo_name}"
-
 # <summary> #1 - Command operation and validation, and Miscellaneous </summary>
 # <code>
     # <summary> Append Pass or Fail given exit code. </summary>
@@ -1274,10 +1267,67 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
     }
 # </code>
 
+# <summary> Global parameters </summary>
+# <params>
+    # <summary> Getters and Setters </summary>
+        declare -g bool_is_installed_systemd=false
+        CheckIfCommandIsInstalled "systemd" &> /dev/null && bool_is_installed_systemd=true
+
+        declare -g bool_is_user_root=false
+        CheckIfUserIsRoot &> /dev/null && bool_is_user_root=true
+
+        declare -gl str_package_manager=""
+        CheckLinuxDistro &> /dev/null
+
+    # <summary> Setters </summary>
+        # <summary> Exit codes </summary>
+        declare -gir int_code_partial_completion=255
+        declare -gir int_code_skipped_operation=254
+        declare -gir int_code_var_is_null=253
+        declare -gir int_code_var_is_empty=252
+        declare -gir int_code_var_is_not_bool=251
+        declare -gir int_code_var_is_NAN=250
+        declare -gir int_code_dir_is_null=249
+        declare -gir int_code_file_is_null=248
+        declare -gir int_code_file_is_not_executable=247
+        declare -gir int_code_file_is_not_writable=246
+        declare -gir int_code_file_is_not_readable=245
+        declare -gir int_code_cmd_is_null=244
+        declare -gi int_exit_code="${?}"
+
+        # <summary>
+        # Color coding
+        # Reference URL: 'https://www.shellhacks.com/bash-colors'
+        # </summary>
+        declare -gr var_blinking_red='\033[0;31;5m'
+        declare -gr var_blinking_yellow='\033[0;33;5m'
+        declare -gr var_green='\033[0;32m'
+        declare -gr var_red='\033[0;31m'
+        declare -gr var_yellow='\033[0;33m'
+        declare -gr var_reset_color='\033[0m'
+
+        # <summary> Append output </summary>
+        declare -gr var_prefix_error="${var_yellow}Error:${var_reset_color}"
+        declare -gr var_prefix_fail="${var_red}Failure:${var_reset_color}"
+        declare -gr var_prefix_pass="${var_green}Success:${var_reset_color}"
+        declare -gr var_prefix_warn="${var_blinking_red}Warning:${var_reset_color}"
+        declare -gr var_suffix_fail="${var_red}Failure${var_reset_color}"
+        declare -gr var_suffix_maybe="${var_yellow}Incomplete${var_reset_color}"
+        declare -gr var_suffix_pass="${var_green}Success${var_reset_color}"
+        declare -gr var_suffix_skip="${var_yellow}Skipped${var_reset_color}"
+
+        # <summary> Output statement </summary>
+        declare -gr str_output_partial_completion="${var_prefix_warn} One or more operations failed."
+        declare -gr str_output_please_wait="The following operation may take a moment. ${var_blinking_yellow}Please wait.${var_reset_color}"
+        declare -gr str_output_var_is_not_valid="${var_prefix_error} Invalid input."
+# </params>
+
 # <summary> Business functions: Validation </summary>
 # <code>
     function DetectExisting_VFIO
-    {}
+    {
+        return 0
+    }
 
     function IsEnabled_IOMMU
     {
@@ -1330,14 +1380,14 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
                         arr_IOMMU_groups_with_VGA+=( "${str_IOMMU_group}" )
                     fi
 
-                    if [[ "${bool_is_found_IGPU_full_name}" == false ]]; then
+                    if "${bool_is_found_IGPU_full_name}"; then
                         IsBusInternalOrExternal && (
                             str_IGPU_full_name="${str_device_vendor} ${str_device_name}"
-                            bool_is_found_IGPU_full_name == true
+                            bool_is_found_IGPU_full_name=true
                         )
                     fi
 
-                    if [[ "${bool_is_found_IGPU_full_name}" == true ]]; then
+                    if "${bool_is_found_IGPU_full_name}"; then
                         readonly str_IGPU_full_name
                     fi
                 ;;
@@ -1402,7 +1452,7 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
             # </params>
 
             # <remarks> Early-exit. </remarks>
-            if ! CheckIfVarIsValid "${arr_IOMMU_groups[@]}" &> /dev/null;
+            if ! CheckIfVarIsValid "${arr_IOMMU_groups[@]}" &> /dev/null; then
                 return 1
             fi
 
@@ -1441,10 +1491,14 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
     }
 
     function ReadFromFile_IOMMU
-    {}
+    {
+        return 0
+    }
 
     function SaveToFile_IOMMU
-    {}
+    {
+        return 0
+    }
 
     function Select_IOMMU
     {
@@ -1523,13 +1577,13 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
 
             # <remarks> Append to list a valid array or empty value. </remarks>
             if ReadInput "${str_output_select_IOMMU}"; then
-                if [[ "${bool_IOMMU_has_USB}" == true ]]; then
+                if "${bool_IOMMU_has_USB}"; then
                     arr_IOMMU_PCISTUB+=( "${arr_IOMMU_devices_has_USB[@]}" )
                 else
                     arr_IOMMU_PCISTUB+=("")
                 fi
 
-                if [[ "${bool_IOMMU_has_VGA}" == true ]]; then
+                if "${bool_IOMMU_has_VGA}"; then
                     arr_IOMMU_VFIOPCI+=("")
                     arr_IOMMU_VFIOPCI_with_VGA+=( "${arr_IOMMU_devices_has_VGA[@]}" )
                 else
@@ -1537,13 +1591,13 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
                     arr_IOMMU_VFIOPCI_with_VGA+=("")
                 fi
             else
-                if [[ "${bool_IOMMU_has_USB}" == true ]]; then
+                if "${bool_IOMMU_has_USB}"; then
                     arr_IOMMU_PCISTUB+=( "${arr_IOMMU_devices_has_USB[@]}" )
                 else
                     arr_IOMMU_PCISTUB+=("")
                 fi
 
-                if [[ "${bool_IOMMU_has_VGA}" == true ]]; then
+                if "${bool_IOMMU_has_VGA}"; then
                     arr_IOMMU_VFIOPCI+=("")
                     arr_IOMMU_VFIOPCI_with_VGA+=( "${arr_IOMMU_devices_has_VGA[@]}" )
                 else
@@ -1563,11 +1617,7 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
 
         echo -e "${str_output}"
 
-        if ( ! Read_IOMMU_Group
-            && ! CheckIfVarIsValid "${arr_IOMMU_host[@]}" &> /dev/null
-            && ! CheckIfVarIsValid "${arr_IOMMU_VFIOPCI[@]}" &> /dev/null
-            # && ! CheckIfVarIsValid "${arr_IOMMU_PCISTUB[@]}" &> /dev/null     # NOTE: is this necessary? Likely not.
-        ); then
+        if ! Read_IOMMU_Group && ! CheckIfVarIsValid "${arr_IOMMU_host[@]}" &> /dev/null && ! CheckIfVarIsValid "${arr_IOMMU_VFIOPCI[@]}" &> /dev/null; then
             SaveExitCode
         fi
 
@@ -1581,40 +1631,49 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
     function Dynamic_VFIO
     {
         # <params>
-
+        local readonly str_file1="/etc/default/grub"
+        local readonly str_file2="/etc/grub.d/proxifiedScripts/custom"
+        local readonly str_file1_backup="./files/etc_default_grub"
+        local readonly str_file2_backup="./files/etc_grub.d_proxifiedScripts_custom"
         # </params>
 
+        GoToScriptDir && cd ""
 
+
+        if CheckIfFileExists "${}"; then
+            echo "peepeepoopoo"
+        fi
     }
 
     function Static_VFIO
     {
         # <params>
-
+        local readonly str_file1="/etc/default/grub"
+        local readonly str_file2="/etc/initramfs-tools/modules"
+        local readonly str_file3="/etc/modprobe.d/pci-blacklists.conf"
+        local readonly str_file4="/etc/modprobe.d/vfio.conf"
+        local readonly str_file5="/etc/modules"
+        local readonly str_file1_backup="./files/etc_default_grub"
         # </params>
 
-        AddUserToGroups
-        Allocate_CPU
-        Allocate_RAM
-        RAM_Swapfile
-        Virtual_KVM
-        ModifyQEMU
+    }
 
-        if ! Parse_IOMMU; then
-            ReadFromFile_IOMMU || return "${?}"
-        fi
+    function Setup_VFIO
+    {
+        # <params>
 
-        SaveToFile_IOMMU
-        Select_IOMMU || return "${?}"
+        # </params>
 
         # diff between static and dynamic => static: all IOMMU for VFIO with PCI STUB devices will be binded to VFIO PCI driver? append only to GRUB and system files.
         # dynamic: PCI STUB devices will use PCI STUB driver? append only GRUB and multiple GRUB entries
 
-
+        return 0
     }
 
     function UpdateExisting_VFIO
-    {}
+    {
+        return 0
+    }
 # </code>
 
 # <summary> Business functions: Pre/Post setup </summary>
@@ -1628,7 +1687,7 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
     function AddUserToGroups
     {
         # <params>
-        declare -ar arr_user_groups(
+        declare -ar arr_user_groups=(
             "input"
             "libvirt"
         )
@@ -1830,14 +1889,20 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
 
     # <summary> Ask user to setup audio loopback from the host's Line-in to active audio output. Useful for virtual machines with sound-cards (example: Creative SoundBlaster). </summary>
     function HostAudioLineIn
-    {}
+    {
+        return 0
+    }
 
     function LibvirtHooks
-    {}
+    {
+        return 0
+    }
 
     # <summary> zramswap: Ask user to setup a swap partition in host memory, to reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory. </summary>
     function RAM_Swapfile
-    {}
+    {
+        return 0
+    }
 
     # <summary> Evdev: Ask user to setup a virtual Keyboard-Video-Mouse swich (excluding the Video). Will allow a user to swap between active virtual machines and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL'). </summary>
     function Virtual_KVM
@@ -1898,7 +1963,7 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
         cp "${str_file1_backup}" "${str_file1}" || return 1
 
         # <remarks> Get Event devices. </remarks>
-        if [[ "${bool_is_setup_evdev}" == true ]]; then
+        if "${bool_is_setup_evdev}"; then
             for str_event_device in "${arr_event_devices[@]}"; do
                 arr_file1_evdev_cgroups+=( $( eval "${var_set_event_device}" ) )
             done
@@ -1950,7 +2015,7 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
         # <remarks> Adds or omits validation for Hugepages. </remarks>
         local readonly str_output5="Adding Hugepages..."
 
-        if [[ "${bool_is_setup_hugepages}" == true ]]; then
+        if "${bool_is_setup_hugepages}"; then
             arr_file1_contents+=(
                 "#"
                 "### Hugepages ###"
@@ -2022,9 +2087,188 @@ declare -gr str_full_repo_name="portellam/${str_repo_name}"
 
     # <summary> LookingGlass: Ask user to setup direct-memory-access of video framebuffer from virtual machine to host. NOTE: Only supported for Win 7/10/11 virtual machines. </summary>
     function VirtualVideoCapture
-    {}
+    {
+        return 0
+    }
 
     # <summary> Scream: Ask user to setup audio loopback from virtual machine to host. NOTE: Only supported for Win 7/10/11 virtual machines. </summary>
     function VirtualAudioCapture
-    {}
+    {
+        return 0
+    }
+# </code>
+
+# <summary> Main </summary>
+# <code>
+    function PrintUsage
+    {
+        # <params>
+        IFS=$'\n'
+        local readonly var_get_script_name='basename "${0}"'
+        local readonly str_script_name=$( eval "${var_get_script_name}" )
+        local readonly str_opt_dynamic_VFIO_setup="-d, --dynamic\texecute preferred VFIO setup: modify GRUB boot options only (excluding GRUB file and system files)"
+        local readonly str_opt_full_setup="-f, --full\texecute pre-setup, VFIO setup, and post-setup"
+        local readonly str_opt_help="-h, --help\tdisplay this help and exit"
+        local readonly str_opt_post_setup="-P, --post\texecute post-setup (LookingGlass, Scream)"
+        local readonly str_opt_pre_setup="-p, --pre\texecute pre-setup (allocate CPU, hugepages, zramswap, Evdev)"
+        local readonly str_opt_static_VFIO_setup="-s, --static\texecute preferred VFIO setup: modify GRUB file and system files only"
+        local readonly str_opt_update_VFIO_setup="-u, --update\tdetect existing VFIO setup, execute new VFIO setup, and apply changes"
+        local readonly str_arg_silent="-S, --silent\tdo not prompt before execution"
+
+        declare -ar arr_usage=(
+            "Usage:\t${str_script_name} [OPTION]"
+            "\tor ${str_script_name} [OPTION]...[ARGUMENTS]"
+            "\nRequired variables:"
+            "\t${str_script_name}"
+            "\nOptional variables:"
+            "\t${str_opt_help}"
+            "\t${str_opt_dynamic_VFIO_setup}"
+            "\t${str_opt_static_VFIO_setup}"
+            "\t${str_opt_update_VFIO_setup}"
+            "\t${str_opt_post_setup}"
+            "\t${str_opt_pre_setup}"
+            "\t${str_opt_full_setup}"
+            "\nArguments:"
+            "\t${str_arg_silent}"
+        )
+        # </params>
+
+        # <remarks> Display usage. </remarks>
+        for str_line in ${arr_usage[@]}; do
+            echo -e "${str_line}"
+        done
+
+        return 0
+    }
+
+    function GetUsage
+    {
+        # <params>
+
+        # NOTE: it appears declaring inherited vars doesn't work here. As I have used this in other areas, test it for validity.
+        # declare -I bool_opt_dynamic_VFIO_setup bool_opt_full_VFIO_setup bool_opt_help bool_opt_post_setup bool_opt_pre_setup bool_opt_static_VFIO_setup bool_opt_update_VFIO_setup bool_arg_silent
+
+        declare -gr arr_usage_opt=(
+            "-h"
+            "--help"
+            "-d"
+            "--dynamic"
+            "-f"
+            "--full"
+            "-P"
+            "--post"
+            "-p"
+            "--pre"
+            "-s"
+            "--static"
+            "-u"
+            "--update"
+        )
+
+        declare -gr arr_usage_args=(
+            "-S"
+            "--silent"
+        )
+
+        if CheckIfVarIsValid "${1}" &> /dev/null; then
+            case "${1}" in
+                "${arr_usage_opt[0]}" | "${arr_usage_opt[1]}" )
+                    bool_opt_help=true
+                    ;;
+                "${arr_usage_opt[2]}" | "${arr_usage_opt[3]}" )
+                    bool_opt_dynamic_VFIO_setup=true
+                    ;;
+                "${arr_usage_opt[4]}" | "${arr_usage_opt[5]}" )
+                    bool_opt_full_VFIO_setup=true
+                    ;;
+                "${arr_usage_opt[6]}" | "${arr_usage_opt[7]}" )
+                    bool_opt_post_setup=true
+                    ;;
+                "${arr_usage_opt[8]}" | "${arr_usage_opt[9]}" )
+                    bool_opt_pre_setup=true
+                    ;;
+                "${arr_usage_opt[10]}" | "${arr_usage_opt[11]}" )
+                    bool_opt_static_VFIO_setup=true
+                    ;;
+                "${arr_usage_opt[12]}" | "${arr_usage_opt[13]}" )
+                    bool_opt_update_VFIO_setup=true
+                    ;;
+                "${arr_usage_args[0]}" | "${arr_usage_args[1]}" )
+                    bool_arg_silent=true
+                    ;;
+                * )
+                    bool_opt_help=true
+                    echo -e "${str_output_var_is_not_valid}"
+                    return 1
+                    ;;
+            esac
+        fi
+
+        case "${2}" in
+            "${arr_usage_args[0]}" | "${arr_usage_args[1]}" )
+                bool_arg_silent=true
+                ;;
+        esac
+        # </params>
+
+        return 0
+    }
+
+    # <params>
+    declare -g bool_opt_dynamic_VFIO_setup=false
+    declare -g bool_opt_full_VFIO_setup=false
+    declare -g bool_opt_help=false
+    declare -g bool_opt_post_setup=false
+    declare -g bool_opt_pre_setup=false
+    declare -g bool_opt_static_VFIO_setup=false
+    declare -g bool_opt_update_VFIO_setup=false
+    declare -g bool_arg_silent=false
+
+    declare -gr str_repo_name="deploy-VFIO-setup"
+    declare -gr str_full_repo_name="portellam/${str_repo_name}"
+    GoToScriptDir; declare -gr str_files_dir="$( find . -name files | uniq | head -n1 )/"
+    declare -g bool_is_connected_to_Internet=false
+    # </params>
+
+    GetUsage "${1}" "${2}"
+    SaveExitCode
+
+    if "${bool_opt_help}"; then
+        PrintUsage
+        exit "${int_exit_code}"
+    fi
+
+    exit 0
+
+    # TODO: need to fix the booleans here
+    # TODO: need to add all funcs here
+
+    if ! Parse_IOMMU; then
+        ReadFromFile_IOMMU || return "${?}"
+    fi
+
+    if "${bool_opt_full_VFIO_setup}" || ! "${bool_pre_setup}"; then
+        SaveToFile_IOMMU
+        Select_IOMMU || return "${?}"
+    fi
+
+    if "${bool_opt_full_VFIO_setup}" || "${bool_pre_setup}"; then
+        AddUserToGroups
+        Allocate_CPU
+        Allocate_RAM
+        RAM_Swapfile
+        Virtual_KVM
+        ModifyQEMU
+    fi
+
+    if "${bool_opt_full_VFIO_setup}" && ( ! "${bool_pre_setup}" || ! "${bool_post_setup}" ); then
+        Setup_VFIO || return "${?}"
+    fi
+
+    if ( "${bool_opt_full_VFIO_setup}" || "${bool_post_setup}" ) && ! "${bool_pre_setup}"; then
+    VirtualAudioCapture
+    VirtualVideoCapture
+    
+
+    exit "${?}"
 # </code>
