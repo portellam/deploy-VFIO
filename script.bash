@@ -1977,7 +1977,7 @@
     }
 
     # <summary> libvirt-qemu: Append necessary changes to QEMU system file, including user groups, Evdev, Hugepages, and NVRAM (for UEFI VMs). </summary>
-    function ModifyQEMU
+    function Modify_QEMU
     {
         # <params>
         declare -a arr_file1_evdev_cgroups=()
@@ -2303,7 +2303,7 @@
         Allocate_RAM
         RAM_Swapfile
         Virtual_KVM
-        ModifyQEMU
+        Modify_QEMU
     fi
 
     if "${bool_opt_any_VFIO_setup}"; then
