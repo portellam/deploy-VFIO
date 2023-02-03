@@ -9,6 +9,8 @@
 # -Continuous Improvement: after conclusion of this script's dev. Propose a refactor using the bashful libraries and with better Bash principles in mind.
 # -demo the product: get a working, debuggable version ASAP.
 # -revise README, files
+# -pull down original system files from somewhere
+# -or provide checksum of my backups of system files
 
 # <summary> #1 - Command operation and validation, and Miscellaneous </summary>
 # <code>
@@ -1639,29 +1641,61 @@
         # <params>
         local readonly str_file1="/etc/default/grub"
         local readonly str_file2="/etc/grub.d/proxifiedScripts/custom"
-        local readonly str_file1_backup="./files/etc_default_grub"
-        local readonly str_file2_backup="./files/etc_grub.d_proxifiedScripts_custom"
+        local readonly str_file1_backup="etc_default_grub"
+        local readonly str_file2_backup="etc_grub.d_proxifiedScripts_custom"
         # </params>
 
-        GoToScriptDir && cd ""
+        GoToScriptDir && cd "${str_files_dir}"
 
-
-        if CheckIfFileExists "${}"; then
-            echo "peepeepoopoo"
+        if ! CheckIfFileExists "${str_file1_backup}" || CheckIfFileExists "${str_file2_backup}"; then
+            return "$?"
         fi
+
+
     }
 
     function Static_VFIO
     {
         # <params>
+        declare -a arr_file1_contents arr_file2_contents arr_file3_contents arr_file4_contents arr_file5_contents
         local readonly str_file1="/etc/default/grub"
         local readonly str_file2="/etc/initramfs-tools/modules"
         local readonly str_file3="/etc/modprobe.d/pci-blacklists.conf"
         local readonly str_file4="/etc/modprobe.d/vfio.conf"
         local readonly str_file5="/etc/modules"
-        local readonly str_file1_backup="./files/etc_default_grub"
+        local readonly str_file1_backup="etc_default_grub"
+        local readonly str_file2_backup="etc_initramfs-tools_modules"
+        local readonly str_file3_backup="etc_modprobe.d_pci-blacklists.conf"
+        local readonly str_file4_backup="etc_modprobe.d_vfio.conf"
+        local readonly str_file5_backup="etc_modules"
         # </params>
 
+        # <remarks> Check if backup files exist. </remarks>
+        GoToScriptDir && cd "${str_files_dir}"
+
+        if ! CheckIfFileExists "${str_file1_backup}" || CheckIfFileExists "${str_file2_backup}" || CheckIfFileExists "${str_file3_backup}" || CheckIfFileExists "${str_file4_backup}"|| CheckIfFileExists "${str_file5_backup}"; then
+            return "${?}"
+        fi
+
+        # <remarks> Backup existing system files. </remarks>
+        # NOTE: will a conflict exist should backup files exist in given directories (example: modprobe.d) and not others (ex: grub)
+        CreateBackupFile "${str_file1_backup}"
+        CreateBackupFile "${str_file2_backup}"
+        CreateBackupFile "${str_file3_backup}"
+        CreateBackupFile "${str_file4_backup}"
+        CreateBackupFile "${str_file5_backup}"
+
+        # <remarks> GRUB </remarks>
+
+
+        # <remarks> Modules </remarks>
+
+
+        # <remarks> Modprobe </remarks>
+
+
+
+        return 0
     }
 
     function Setup_VFIO
@@ -2152,7 +2186,7 @@
         # <params>
 
         # NOTE: it appears declaring inherited vars doesn't work here. As I have used this in other areas, test it for validity.
-        # declare -I bool_opt_dynamic_VFIO_setup bool_opt_full_VFIO_setup bool_opt_help bool_opt_post_setup bool_opt_pre_setup bool_opt_static_VFIO_setup bool_opt_update_VFIO_setup bool_arg_silent
+        # declare -I bool_opt_dynamic_VFIO_setup bool_opt_any_VFIO_setup bool_opt_help bool_opt_post_setup bool_opt_pre_setup bool_opt_static_VFIO_setup bool_opt_update_VFIO_setup bool_arg_silent
 
         declare -gr arr_usage_opt=(
             "-h"
@@ -2185,7 +2219,9 @@
                     bool_opt_dynamic_VFIO_setup=true
                     ;;
                 "${arr_usage_opt[4]}" | "${arr_usage_opt[5]}" )
-                    bool_opt_full_VFIO_setup=true
+                    bool_opt_any_VFIO_setup=true
+                    bool_opt_post_setup=true
+                    bool_opt_pre_setup=true
                     ;;
                 "${arr_usage_opt[6]}" | "${arr_usage_opt[7]}" )
                     bool_opt_post_setup=true
@@ -2222,7 +2258,7 @@
 
     # <params>
     declare -g bool_opt_dynamic_VFIO_setup=false
-    declare -g bool_opt_full_VFIO_setup=false
+    declare -g bool_opt_any_VFIO_setup=false
     declare -g bool_opt_help=false
     declare -g bool_opt_post_setup=false
     declare -g bool_opt_pre_setup=false
@@ -2248,17 +2284,20 @@
 
     # TODO: need to fix the booleans here
     # TODO: need to add all funcs here
+    # -add update setup
+    #   * automated, read from logfile and update on device change or kernel diff or exit on failure
+    #   * manual
 
     if ! Parse_IOMMU; then
         ReadFromFile_IOMMU || return "${?}"
     fi
 
-    if "${bool_opt_full_VFIO_setup}" || ! "${bool_pre_setup}"; then
+    if "${bool_opt_any_VFIO_setup}"; then
         SaveToFile_IOMMU
         Select_IOMMU || return "${?}"
     fi
 
-    if "${bool_opt_full_VFIO_setup}" || "${bool_pre_setup}"; then
+    if "${bool_opt_any_VFIO_setup}" || "${bool_opt_pre_setup}"; then
         AddUserToGroups
         Allocate_CPU
         Allocate_RAM
@@ -2267,14 +2306,14 @@
         ModifyQEMU
     fi
 
-    if "${bool_opt_full_VFIO_setup}" && ( ! "${bool_pre_setup}" || ! "${bool_post_setup}" ); then
+    if "${bool_opt_any_VFIO_setup}"; then
         Setup_VFIO || return "${?}"
     fi
 
-    if ( "${bool_opt_full_VFIO_setup}" || "${bool_post_setup}" ) && ! "${bool_pre_setup}"; then
-    VirtualAudioCapture
-    VirtualVideoCapture
-    
+    if "${bool_opt_post_setup}"; then
+        VirtualAudioCapture
+        VirtualVideoCapture
+    fi
 
     exit "${?}"
 # </code>
