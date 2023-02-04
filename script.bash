@@ -1364,128 +1364,156 @@
     # <summary> Parse PCI devices for all relevant information. If a parse fails, attempt again another way. If all parses fail, return error </summary>
     function Parse_PCI
     {
+        function Parse_PCI_Main
+        {
+            # <params>
+                # <remarks> Set Internal Field Separator </remarks>
+                IFS=$'\n'
+
+                # <remarks> Output statements </remarks>
+                local readonly str_output_lists_inequal="${var_prefix_error} System PCI lists' sizes are inequal."
+                local readonly str_output_list_empty="${var_prefix_error} One or more system PCI lists are empty."
+                local readonly str_output_parse_file="Parsing PCI from file..."
+                local readonly str_output_parse_internet="Parsing PCI devices from Internet database..."
+                local readonly str_output_parse_local="Parsing PCI devices from local database..."
+                local readonly str_output_is_setup_VFIO="${var_prefix_error} Found existing VFIO setup."
+
+                # <remarks> Set parse options </remarks>
+                local readonly str_opt_parse_file="FILE"
+                local readonly str_opt_parse_internet="DNS"
+                local readonly str_opt_parse_local="LOCAL"
+
+                # <remarks> Save input params </remarks>
+                local readonly var_opt="${1}"
+                local readonly str_file="${2}"
+
+                # <remarks> Declare lists </remarks>
+                declare -ag arr_class arr_device_ID arr_device_name arr_driver arr_IOMMU arr_vendor_ID arr_vendor_name
+
+                # <remarks> Set commands </remarks>
+                local readonly var_parse_local_all_ID='lspci -kmnv -s ${str_slot_ID}'
+                local readonly var_parse_local_name='lspci -kmv -s ${str_slot_ID}'
+                local readonly var_parse_local_slot_id='lspci -m | awk "{print $1}"'
+                local readonly var_parse_local_args='-m'
+
+                local readonly var_parse_file_all_ID='lspci -kmnv -f "${str_file}" -s ${str_slot_ID}'
+                local readonly var_parse_file_name='lspci -kmv -f "${str_file}" -s ${str_slot_ID}'
+                local readonly var_parse_file_slot_id='lspci -m -f "${str_file}" | awk "{print $1}"'
+                local readonly var_parse_file_args='-m -f "${str_file}"'
+
+                local readonly var_parse_internet_all_ID='lspci -kmnqv -s ${str_slot_ID}'
+                local readonly var_parse_internet_name='lspci -kmqv -s ${str_slot_ID}'
+                local readonly var_parse_internet_slot_id='lspci -mq | awk {print $1}'
+                local readonly var_parse_internet_args='-mq'
+            # </params>
+
+            # <remarks> Set commands for each parse type. </remarks>
+            case "${var_opt}" in
+
+                # <remarks> If internet is not available, exit. </remarks>
+                "${str_opt_parse_internet}" )
+                    str_output="${str_output_parse_internet}"
+                    local readonly var_parse_args="${var_parse_internet_args}"
+                    local readonly var_parse_all_ID="${var_parse_internet_all_ID}"
+                    local readonly var_parse_name="${var_parse_internet_name}"
+                    local readonly var_parse_slot_ID="${var_parse_file_slot_id}"
+                    TestNetwork || return "${?}"
+                    ;;
+
+                # <remarks> If parsing file and file does not exist, recursive call to parse internet. </remarks>
+                "${str_opt_parse_file}" )
+                    str_output="${str_output_parse_file}"
+                    local readonly var_parse_args="${var_parse_file_args}"
+                    local readonly var_parse_all_ID="${var_parse_file_all_ID}"
+                    local readonly var_parse_name="${var_parse_file_name}"
+                    local readonly var_parse_slot_ID="${var_parse_file_slot_id}"
+
+                    if ! CheckIfFileExists "${str_file}"; then
+                        Parse_PCI "${str_opt_parse_internet}" || return "${?}"
+                    fi
+                    ;;
+
+                "${str_opt_parse_local}" | * )
+                    str_output="${str_output_parse_local}"
+                    local readonly var_parse_args="${var_parse_local_args}"
+                    local readonly var_parse_all_ID="${var_parse_local_all_ID}"
+                    local readonly var_parse_name="${var_parse_local_name}"
+                    local readonly var_parse_slot_ID="${var_parse_local_slot_id}"
+                    ;;
+            esac
+
+            echo -e "${str_output}"
+
+            # <remarks> Get all devices from system. </remarks>
+            declare -a arr_devices=( $( lspci ${var_parse_args} | awk '{print $1}' ) )
+            lspci -m | awk '{print $1}'
+            exit
+            # declare -a arr_devices=( $( eval "${var_parse_slot_ID}" | awk "{print $1}" ) )
+
+            # <remarks> Save to lists each device's information. Lists should be of the same-size. </remarks>
+            for str_slot_ID in "${arr_devices[@]}"; do
+                echo -e "${str_slot_ID}"
+                # local str_class=$( eval "${var_parse_name}" )
+                # str_class=$( echo -e "${str_class}" | grep -i "Class:" | cut -d ':' -f 2 )
+                # local str_device_ID=$( eval "${var_parse_all_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | awk '{print $2}' )
+                # local str_device_name=$( eval "${var_parse_name}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | cut -d ':' -f 2 )
+                # local str_driver=$( eval "${var_parse_all_ID}" | grep -i "Driver:" | awk '{print $2}' )
+                # local str_IOMMU=$( eval "${var_parse_all_ID}"| grep -i "IOMMUGroup:" | awk '{print $2}' )
+                # local str_vendor_name=$( eval "${var_parse_name}" | grep -i "Vendor:" | cut -d ':' -f 2)
+                # local str_vendor_ID=$( eval "${var_parse_all_ID}" | grep -i "Vendor:" | awk '{print $2}' )
+
+                # echo -e "${str_device_name}"
+
+                # # <remarks> If parsing local and system is setup for VFIO, recursive call to parse file. </remarks>
+                # if [[ "${str_driver}" == "vfio-pci" && "${var_opt}" == "${str_opt_parse_local}" ]]; then
+                #     echo -e "${str_output_is_setup_VFIO}"
+                #     Parse_PCI "${str_opt_parse_file}" "${str_file}" || return "${?}"
+                # fi
+
+                # # <remarks> If parsing file and system is setup for VFIO, recursive call to parse internet. </remarks>
+                # if [[ "${str_driver}" == "vfio-pci" && "${var_opt}" == "${str_opt_parse_file}" ]]; then
+                #     echo -e "${str_output_is_setup_VFIO}"
+                #     Parse_PCI "${str_opt_parse_internet}" || return "${?}"
+                # fi
+
+                # # <remarks> Match invalid input, and save as known null value. </remarks>
+                # if ! CheckIfVarIsValid "${str_driver}" &> /dev/null; then
+                #     local str_driver="N/A"
+                # fi
+
+                # arr_class+=( "${str_class}" )
+                # arr_device_ID+=( "${str_device_ID}" )
+                arr_device_name+=( "${str_device_name}" )
+                # arr_driver+=( "${str_driver}" )
+                arr_IOMMU+=( "${str_IOMMU}" )
+                # arr_vendor_ID+=( "${str_vendor_ID}" )
+                # arr_vendor_name+=( "${str_vendor_name}" )
+                break
+            done
+
+            # <remarks> If any list is empty, fail. </remarks>
+            if ! CheckIfVarIsValid "${arr_class[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_device_ID[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_device_name[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_driver[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_IOMMU[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_vendor_ID[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_vendor_name[@]}" &> /dev/null; then
+                echo -e "${str_output_list_empty}"
+                return "${int_code_var_is_empty}"
+            fi
+
+            # <remarks> If lists' sizes are inequal, fail. </remarks>
+            if "${#arr_IOMMU[@]}" -ne "${#arr_class[@]}" || "${#arr_IOMMU[@]}" -ne "${#str_device_ID[@]}" || "${#arr_IOMMU[@]}" -ne "${#str_device_name[@]}" || "${#arr_IOMMU[@]}" -ne "${#str_driver[@]}" || "${#arr_IOMMU[@]}" -ne "${#str_IOMMU[@]}" || "${#arr_IOMMU[@]}" -ne "${#arr_vendor_ID[@]}" || "${#arr_IOMMU[@]}" -ne "${#arr_vendor_name[@]}"; then echo -e "${str_output_lists_inequal}"
+                echo -e "${str_output_lists_inequal}"
+                return 1
+            fi
+
+            readonly arr_class arr_device_ID arr_device_name arr_driver arr_IOMMU arr_vendor_ID arr_vendor_name
+            return 0
+        }
+
         # <params>
-            # <remarks> Output statements </remarks>
-            str_output_lists_inequal="${var_prefix_error} System PCI lists' sizes are inequal."
-            str_output_list_empty="${var_prefix_error} One or more system PCI lists are empty."
-
-            # <remarks> Set parse options </remarks>
-            local readonly str_opt_parse_file="FILE"
-            local readonly str_opt_parse_internet="DNS"
-            local readonly str_opt_parse_local="LOCAL"
-
-            # <remarks> Save input params </remarks>
-            local readonly var_opt="${1}"
-            local readonly str_file="${2}"
-
-            # <remarks> Declare lists </remarks>
-            declare -ag arr_class arr_device_ID arr_device_name arr_driver arr_IOMMU arr_vendor_ID arr_vendor_name
-
-            # <remarks> Set commands </remarks>
-            local readonly var_parse_local_all_ID='lspci -kmnv -s ${str_slot_ID}'
-            local readonly var_parse_local_name='lspci -kmv -s ${str_slot_ID}'
-            local readonly var_parse_local_slot_id='lspci -m | awk "{print $1}"'
-
-            local readonly var_parse_file_all_ID='lspci -kmnv -f "${str_file}" -s ${str_slot_ID}'
-            local readonly var_parse_file_name='lspci -kmv -f "${str_file}" -s ${str_slot_ID}'
-            local readonly var_parse_file_slot_id='lspci -mq | awk "{print $1}"'
-
-            local readonly var_parse_internet_all_ID='lspci -kmnqv -s ${str_slot_ID}'
-            local readonly var_parse_internet_name='lspci -kmqv -s ${str_slot_ID}'
-            local readonly var_parse_internet_slot_id='lspci -mq | awk "{print $1}"'
+        local str_output
         # </params>
 
-        # <remarks> Set commands for each parse type. </remarks>
-        case "${var_opt}" in
-
-            # <remarks> If internet is not available, exit. </remarks>
-            "${str_opt_parse_internet}" )
-                local readonly var_parse_all_ID="${var_parse_internet_all_ID}"
-                local readonly var_parse_name="${var_parse_internet_name}"
-                local readonly var_parse_slot_ID="${var_parse_file_slot_id}"
-                TestNetwork || return "${?}"
-                ;;
-
-            # <remarks> If parsing file and file does not exist, recursive call to parse internet. </remarks>
-            "${str_opt_parse_file}" )
-                local readonly var_parse_all_ID="${var_parse_file_all_ID}"
-                local readonly var_parse_name="${var_parse_file_name}"
-                local readonly var_parse_slot_ID="${var_parse_file_slot_id}"
-                CheckIfFileExists "${str_file}" || Parse_PCI "${str_opt_parse_internet}"
-                ;;
-
-            "${str_opt_parse_local}" | * )
-                local readonly var_parse_all_ID="${var_parse_local_all_ID}"
-                local readonly var_parse_name="${var_parse_local_name}"
-                local readonly var_parse_slot_ID="${var_parse_local_slot_id}"
-                ;;
-        esac
-
-        # <remarks> Get all devices from system. </remarks>
-        declare -a arr_devices=( $( eval "${var_parse_all_ID}" ) )
-
-        # <remarks> Save to lists each device's information. Lists should be of the same-size. </remarks>
-        for str_slot_ID in "${arr_devices[@]}"; do
-            local str_class=$( eval "${var_parse_name}" | grep -i "Class:" | cut -d ':' -f 2 )
-            local str_device_ID=$( eval "${var_parse_all_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | awk '{print $2}' )
-            local str_device_name=$( eval "${var_parse_name}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | cut -d ':' -f 2 )
-            local str_driver=$( eval "${var_parse_all_ID}" | grep -i "Driver:" | awk '{print $2}' )
-            local str_IOMMU=$( eval "${var_parse_all_ID}"| grep -i "IOMMUGroup:" | awk '{print $2}' )
-            local str_vendor_name=$( eval "${var_parse_name}" | grep -i "Vendor:" | cut -d ':' -f 2)
-            local str_vendor_ID=$( eval "${var_parse_all_ID}" | grep -i "Vendor:" | awk '{print $2}' )
-
-            # <remarks> If parsing local and system is setup for VFIO, recursive call to parse file. </remarks>
-            if [[ "${str_driver}" == "vfio-pci" && "${var_opt}" == "${str_opt_parse_local}" ]]; then
-                Parse_PCI "${str_opt_parse_file}" "${str_file}"
-            fi
-
-            # <remarks> If parsing file and system is setup for VFIO, recursive call to parse internet. </remarks>
-            if [[ "${str_driver}" == "vfio-pci" && "${var_opt}" == "${str_opt_parse_file}" ]]; then
-                Parse_PCI "${str_opt_parse_internet}"
-            fi
-
-            # <remarks> Match invalid input, and save as known null value. </remarks>
-            if ! CheckIfVarIsValid "${str_driver}" &> /dev/null; then
-                local str_driver="N/A"
-            fi
-
-            arr_class+=( "${str_class}" )
-            arr_device_ID+=( "${str_device_ID}" )
-            arr_device_name+=( "${str_device_name}" )
-            arr_driver+=( "${str_driver}" )
-            arr_IOMMU+=( "${str_IOMMU}" )
-            arr_vendor_ID+=( "${str_vendor_ID}" )
-            arr_vendor_name+=( "${str_vendor_name}" )
-        done
-
-        # <remarks> If any list is empty, fail. </remarks>
-        if ( ! CheckIfVarIsValid "${arr_class[@]}" &> /dev/null
-            || ! CheckIfVarIsValid "${arr_device_ID[@]}" &> /dev/null
-            || ! CheckIfVarIsValid "${arr_device_name[@]}" &> /dev/null
-            || ! CheckIfVarIsValid "${arr_driver[@]}" &> /dev/null
-            || ! CheckIfVarIsValid "${arr_IOMMU[@]}" &> /dev/null
-            || ! CheckIfVarIsValid "${arr_vendor_ID[@]}" &> /dev/null
-            || ! CheckIfVarIsValid "${arr_vendor_name[@]}" &> /dev/null
-            ); then
-            echo -e "${str_output_list_empty}"
-            return "${?}"
-        fi
-
-        # <remarks> If lists' sizes are inequal, fail. </remarks>
-        if ( "${#arr_IOMMU[@]}" -ne "${#arr_class[@]}"
-            || "${#arr_IOMMU[@]}" -ne "${#str_device_ID[@]}"
-            || "${#arr_IOMMU[@]}" -ne "${#str_device_name[@]}"
-            || "${#arr_IOMMU[@]}" -ne "${#str_driver[@]}"
-            || "${#arr_IOMMU[@]}" -ne "${#str_IOMMU[@]}"
-            || "${#arr_IOMMU[@]}" -ne "${#arr_vendor_ID[@]}"
-            || "${#arr_IOMMU[@]}" -ne "${#arr_vendor_name[@]}"
-            ); then
-            echo -e "${str_output_lists_inequal}"
-            return 1
-        fi
-
-        readonly arr_class arr_device_ID arr_device_name arr_driver arr_IOMMU arr_vendor_ID arr_vendor_name
-        return 0
+        Parse_PCI_Main
+        AppendPassOrFail "${str_output}"
+        return "${int_exit_code}"
     }
 
     function Parse_IOMMU
