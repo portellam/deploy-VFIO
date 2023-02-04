@@ -11,6 +11,9 @@
 # -revise README, files
 # -pull down original system files from somewhere
 # -or provide checksum of my backups of system files
+# this command 'lspci -vmnk' does exactly of what I need. All the relevant data in one output. easy to use grep.
+#   I need to make note of this. I am fucking beside myself.
+#   EIGHT MONTHS OF OFF AND ON DEV, ARE YOU SERIOUS?
 
 # <summary> #1 - Command operation and validation, and Miscellaneous </summary>
 # <code>
@@ -1357,6 +1360,18 @@
 
 # <summary> Business functions: Get IOMMU </summary>
 # <code>
+    function Parse_PCI
+    {
+        local readonly var_get_all_device_slot_id='var_get_device_by_slot_id'
+        local readonly var_get_device_by_slot_id='lspci -vmnk -s ${str_slot_id}'
+
+        for str_slot_id in eval "${var_get_device_by_slot_id}"; do
+            declare -a arr_device_info=( $( eval "${var_get_device_by_slot_id}" ) )
+
+            echo ${arr_device_info[@]}
+        done
+    }
+
     function Parse_IOMMU
     {
         # <summary> Return value given if a device's bus ID is Internal or External PCI. </summary>
@@ -1513,7 +1528,7 @@
         function Read_IOMMU_Group
         {
             # <params>
-            declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus arr_IOMMU_host arr_IOMMU_PCISTUB arr_IOMMU_VFIOPCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIOPCI_with_VGA
+            declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus arr_IOMMU_host arr_IOMMU_PCI-STUB arr_IOMMU_VFIO-PCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIO-PCI_with_VGA
             # </params>
 
             for int_key1 in "${!arr_IOMMU_groups_with_external_bus[@]}"; do
@@ -1558,7 +1573,7 @@
         function Prompt_IOMMU_Group
         {
             # <params>
-            declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus arr_IOMMU_host arr_IOMMU_PCISTUB arr_IOMMU_VFIOPCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIOPCI_with_VGA bool_IOMMU_has_USB bool_IOMMU_has_VGA
+            declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus arr_IOMMU_host arr_IOMMU_PCI-STUB arr_IOMMU_VFIO-PCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIO-PCI_with_VGA bool_IOMMU_has_USB bool_IOMMU_has_VGA
             local readonly str_output="IOMMU group #:\t${int_IOMMU}\n"
             # </params>
 
@@ -1586,31 +1601,31 @@
             # <remarks> Append to list a valid array or empty value. </remarks>
             if ReadInput "${str_output_select_IOMMU}"; then
                 if "${bool_IOMMU_has_USB}"; then
-                    arr_IOMMU_PCISTUB+=( "${arr_IOMMU_devices_has_USB[@]}" )
+                    arr_IOMMU_PCI-STUB+=( "${arr_IOMMU_devices_has_USB[@]}" )
                 else
-                    arr_IOMMU_PCISTUB+=("")
+                    arr_IOMMU_PCI-STUB+=("")
                 fi
 
                 if "${bool_IOMMU_has_VGA}"; then
-                    arr_IOMMU_VFIOPCI+=("")
-                    arr_IOMMU_VFIOPCI_with_VGA+=( "${arr_IOMMU_devices_has_VGA[@]}" )
+                    arr_IOMMU_VFIO-PCI+=("")
+                    arr_IOMMU_VFIO-PCI_with_VGA+=( "${arr_IOMMU_devices_has_VGA[@]}" )
                 else
-                    arr_IOMMU_VFIOPCI+=( "${arr_thisIOMMU_devices[@]}" )
-                    arr_IOMMU_VFIOPCI_with_VGA+=("")
+                    arr_IOMMU_VFIO-PCI+=( "${arr_thisIOMMU_devices[@]}" )
+                    arr_IOMMU_VFIO-PCI_with_VGA+=("")
                 fi
             else
                 if "${bool_IOMMU_has_USB}"; then
-                    arr_IOMMU_PCISTUB+=( "${arr_IOMMU_devices_has_USB[@]}" )
+                    arr_IOMMU_PCI-STUB+=( "${arr_IOMMU_devices_has_USB[@]}" )
                 else
-                    arr_IOMMU_PCISTUB+=("")
+                    arr_IOMMU_PCI-STUB+=("")
                 fi
 
                 if "${bool_IOMMU_has_VGA}"; then
-                    arr_IOMMU_VFIOPCI+=("")
-                    arr_IOMMU_VFIOPCI_with_VGA+=( "${arr_IOMMU_devices_has_VGA[@]}" )
+                    arr_IOMMU_VFIO-PCI+=("")
+                    arr_IOMMU_VFIO-PCI_with_VGA+=( "${arr_IOMMU_devices_has_VGA[@]}" )
                 else
-                    arr_IOMMU_VFIOPCI+=( "${arr_thisIOMMU_devices[@]}" )
-                    arr_IOMMU_VFIOPCI_with_VGA+=("")
+                    arr_IOMMU_VFIO-PCI+=( "${arr_thisIOMMU_devices[@]}" )
+                    arr_IOMMU_VFIO-PCI_with_VGA+=("")
                 fi
             fi
 
@@ -1619,13 +1634,13 @@
 
         # <params>
         local str_output="Reviewing IOMMU groups..."
-        declare -a arr_IOMMU_host arr_IOMMU_PCISTUB arr_IOMMU_VFIOPCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIOPCI_with_VGA
+        declare -a arr_IOMMU_host arr_IOMMU_PCI-STUB arr_IOMMU_VFIO-PCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIO-PCI_with_VGA
         declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus
         # </params>
 
         echo -e "${str_output}"
 
-        if ! Read_IOMMU_Group && ! CheckIfVarIsValid "${arr_IOMMU_host[@]}" &> /dev/null && ! CheckIfVarIsValid "${arr_IOMMU_VFIOPCI[@]}" &> /dev/null; then
+        if ! Read_IOMMU_Group && ! CheckIfVarIsValid "${arr_IOMMU_host[@]}" &> /dev/null && ! CheckIfVarIsValid "${arr_IOMMU_VFIO-PCI[@]}" &> /dev/null; then
             SaveExitCode
         fi
 
@@ -1668,6 +1683,11 @@
         local readonly str_file3_backup="etc_modprobe.d_pci-blacklists.conf"
         local readonly str_file4_backup="etc_modprobe.d_vfio.conf"
         local readonly str_file5_backup="etc_modules"
+
+
+        local readonly str_GRUB_driver_blacklist="modprobe.blacklist=${str_driverListForVFIO}"
+        local readonly str_GRUB_HW_ID_pci-stub="pci-stub.ids=${str_driverListForSTUB}"
+        local readonly str_GRUB_HW_ID_vfio-pci="pci-stub.ids=${str_driverListForSTUB}"
         # </params>
 
         # <remarks> Check if backup files exist. </remarks>
@@ -1686,7 +1706,13 @@
         CreateBackupFile "${str_file5_backup}"
 
         # <remarks> GRUB </remarks>
-
+        arr_file1_contents=(
+            "${str_GRUB_isolcpu}"
+            "${str_GRUB_hugepages}"
+            "modprobe.blacklist=${str_driverListForVFIO}"
+            "pci-stub.ids=${str_driverListForSTUB}"
+            "vfio_pci.ids=${str_HWID_list_forVFIO}"
+        )
 
         # <remarks> Modules </remarks>
 
