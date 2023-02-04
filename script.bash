@@ -1360,16 +1360,132 @@
 
 # <summary> Business functions: Get IOMMU </summary>
 # <code>
+
+    # <summary> Parse PCI devices for all relevant information. If a parse fails, attempt again another way. If all parses fail, return error </summary>
     function Parse_PCI
     {
-        local readonly var_get_all_device_slot_id='var_get_device_by_slot_id'
-        local readonly var_get_device_by_slot_id='lspci -vmnk -s ${str_slot_id}'
+        # <params>
+            # <remarks> Output statements </remarks>
+            str_output_lists_inequal="${var_prefix_error} System PCI lists' sizes are inequal."
+            str_output_list_empty="${var_prefix_error} One or more system PCI lists are empty."
 
-        for str_slot_id in eval "${var_get_device_by_slot_id}"; do
-            declare -a arr_device_info=( $( eval "${var_get_device_by_slot_id}" ) )
+            # <remarks> Set parse options </remarks>
+            local readonly str_opt_parse_file="FILE"
+            local readonly str_opt_parse_internet="DNS"
+            local readonly str_opt_parse_local="LOCAL"
 
-            echo ${arr_device_info[@]}
+            # <remarks> Save input params </remarks>
+            local readonly var_opt="${1}"
+            local readonly str_file="${2}"
+
+            # <remarks> Declare lists </remarks>
+            declare -ag arr_class arr_device_ID arr_device_name arr_driver arr_IOMMU arr_vendor_ID arr_vendor_name
+
+            # <remarks> Set commands </remarks>
+            local readonly var_parse_local_all_ID='lspci -kmnv -s ${str_slot_ID}'
+            local readonly var_parse_local_name='lspci -kmv -s ${str_slot_ID}'
+            local readonly var_parse_local_slot_id='lspci -m | awk "{print $1}"'
+
+            local readonly var_parse_file_all_ID='lspci -kmnv -f "${str_file}" -s ${str_slot_ID}'
+            local readonly var_parse_file_name='lspci -kmv -f "${str_file}" -s ${str_slot_ID}'
+            local readonly var_parse_file_slot_id='lspci -mq | awk "{print $1}"'
+
+            local readonly var_parse_internet_all_ID='lspci -kmnqv -s ${str_slot_ID}'
+            local readonly var_parse_internet_name='lspci -kmqv -s ${str_slot_ID}'
+            local readonly var_parse_internet_slot_id='lspci -mq | awk "{print $1}"'
+        # </params>
+
+        # <remarks> Set commands for each parse type. </remarks>
+        case "${var_opt}" in
+
+            # <remarks> If internet is not available, exit. </remarks>
+            "${str_opt_parse_internet}" )
+                local readonly var_parse_all_ID="${var_parse_internet_all_ID}"
+                local readonly var_parse_name="${var_parse_internet_name}"
+                local readonly var_parse_slot_ID="${var_parse_file_slot_id}"
+                TestNetwork || return "${?}"
+                ;;
+
+            # <remarks> If parsing file and file does not exist, recursive call to parse internet. </remarks>
+            "${str_opt_parse_file}" )
+                local readonly var_parse_all_ID="${var_parse_file_all_ID}"
+                local readonly var_parse_name="${var_parse_file_name}"
+                local readonly var_parse_slot_ID="${var_parse_file_slot_id}"
+                CheckIfFileExists "${str_file}" || Parse_PCI "${str_opt_parse_internet}"
+                ;;
+
+            "${str_opt_parse_local}" | * )
+                local readonly var_parse_all_ID="${var_parse_local_all_ID}"
+                local readonly var_parse_name="${var_parse_local_name}"
+                local readonly var_parse_slot_ID="${var_parse_local_slot_id}"
+                ;;
+        esac
+
+        # <remarks> Get all devices from system. </remarks>
+        declare -a arr_devices=( $( eval "${var_parse_all_ID}" ) )
+
+        # <remarks> Save to lists each device's information. Lists should be of the same-size. </remarks>
+        for str_slot_ID in "${arr_devices[@]}"; do
+            local str_class=$( eval "${var_parse_name}" | grep -i "Class:" | cut -d ':' -f 2 )
+            local str_device_ID=$( eval "${var_parse_all_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | awk '{print $2}' )
+            local str_device_name=$( eval "${var_parse_name}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | cut -d ':' -f 2 )
+            local str_driver=$( eval "${var_parse_all_ID}" | grep -i "Driver:" | awk '{print $2}' )
+            local str_IOMMU=$( eval "${var_parse_all_ID}"| grep -i "IOMMUGroup:" | awk '{print $2}' )
+            local str_vendor_name=$( eval "${var_parse_name}" | grep -i "Vendor:" | cut -d ':' -f 2)
+            local str_vendor_ID=$( eval "${var_parse_all_ID}" | grep -i "Vendor:" | awk '{print $2}' )
+
+            # <remarks> If parsing local and system is setup for VFIO, recursive call to parse file. </remarks>
+            if [[ "${str_driver}" == "vfio-pci" && "${var_opt}" == "${str_opt_parse_local}" ]]; then
+                Parse_PCI "${str_opt_parse_file}" "${str_file}"
+            fi
+
+            # <remarks> If parsing file and system is setup for VFIO, recursive call to parse internet. </remarks>
+            if [[ "${str_driver}" == "vfio-pci" && "${var_opt}" == "${str_opt_parse_file}" ]]; then
+                Parse_PCI "${str_opt_parse_internet}"
+            fi
+
+            # <remarks> Match invalid input, and save as known null value. </remarks>
+            if ! CheckIfVarIsValid "${str_driver}" &> /dev/null; then
+                local str_driver="N/A"
+            fi
+
+            arr_class+=( "${str_class}" )
+            arr_device_ID+=( "${str_device_ID}" )
+            arr_device_name+=( "${str_device_name}" )
+            arr_driver+=( "${str_driver}" )
+            arr_IOMMU+=( "${str_IOMMU}" )
+            arr_vendor_ID+=( "${str_vendor_ID}" )
+            arr_vendor_name+=( "${str_vendor_name}" )
         done
+
+        # <remarks> If any list is empty, fail. </remarks>
+        if ( ! CheckIfVarIsValid "${arr_class[@]}" &> /dev/null
+            || ! CheckIfVarIsValid "${arr_device_ID[@]}" &> /dev/null
+            || ! CheckIfVarIsValid "${arr_device_name[@]}" &> /dev/null
+            || ! CheckIfVarIsValid "${arr_driver[@]}" &> /dev/null
+            || ! CheckIfVarIsValid "${arr_IOMMU[@]}" &> /dev/null
+            || ! CheckIfVarIsValid "${arr_vendor_ID[@]}" &> /dev/null
+            || ! CheckIfVarIsValid "${arr_vendor_name[@]}" &> /dev/null
+            ); then
+            echo -e "${str_output_list_empty}"
+            return "${?}"
+        fi
+
+        # <remarks> If lists' sizes are inequal, fail. </remarks>
+        if ( "${#arr_IOMMU[@]}" -ne "${#arr_class[@]}"
+            || "${#arr_IOMMU[@]}" -ne "${#str_device_ID[@]}"
+            || "${#arr_IOMMU[@]}" -ne "${#str_device_name[@]}"
+            || "${#arr_IOMMU[@]}" -ne "${#str_driver[@]}"
+            || "${#arr_IOMMU[@]}" -ne "${#str_IOMMU[@]}"
+            || "${#arr_IOMMU[@]}" -ne "${#arr_vendor_ID[@]}"
+            || "${#arr_IOMMU[@]}" -ne "${#arr_vendor_name[@]}"
+            ); then
+            echo -e "${str_output_lists_inequal}"
+            return 1
+        fi
+
+        readonly arr_class arr_device_ID arr_device_name arr_driver arr_IOMMU arr_vendor_ID arr_vendor_name
+        return 0
     }
 
     function Parse_IOMMU
@@ -1528,7 +1644,7 @@
         function Read_IOMMU_Group
         {
             # <params>
-            declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus arr_IOMMU_host arr_IOMMU_PCI-STUB arr_IOMMU_VFIO-PCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIO-PCI_with_VGA
+            declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus arr_IOMMU_host arr_IOMMU_PCI_STUB arr_IOMMU_VFIO_PCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIO_PCI_with_VGA
             # </params>
 
             for int_key1 in "${!arr_IOMMU_groups_with_external_bus[@]}"; do
@@ -1573,7 +1689,7 @@
         function Prompt_IOMMU_Group
         {
             # <params>
-            declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus arr_IOMMU_host arr_IOMMU_PCI-STUB arr_IOMMU_VFIO-PCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIO-PCI_with_VGA bool_IOMMU_has_USB bool_IOMMU_has_VGA
+            declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus arr_IOMMU_host arr_IOMMU_PCI_STUB arr_IOMMU_VFIO_PCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIO_PCI_with_VGA bool_IOMMU_has_USB bool_IOMMU_has_VGA
             local readonly str_output="IOMMU group #:\t${int_IOMMU}\n"
             # </params>
 
@@ -1601,31 +1717,31 @@
             # <remarks> Append to list a valid array or empty value. </remarks>
             if ReadInput "${str_output_select_IOMMU}"; then
                 if "${bool_IOMMU_has_USB}"; then
-                    arr_IOMMU_PCI-STUB+=( "${arr_IOMMU_devices_has_USB[@]}" )
+                    arr_IOMMU_PCI_STUB+=( "${arr_IOMMU_devices_has_USB[@]}" )
                 else
-                    arr_IOMMU_PCI-STUB+=("")
+                    arr_IOMMU_PCI_STUB+=("")
                 fi
 
                 if "${bool_IOMMU_has_VGA}"; then
-                    arr_IOMMU_VFIO-PCI+=("")
-                    arr_IOMMU_VFIO-PCI_with_VGA+=( "${arr_IOMMU_devices_has_VGA[@]}" )
+                    arr_IOMMU_VFIO_PCI+=("")
+                    arr_IOMMU_VFIO_PCI_with_VGA+=( "${arr_IOMMU_devices_has_VGA[@]}" )
                 else
-                    arr_IOMMU_VFIO-PCI+=( "${arr_thisIOMMU_devices[@]}" )
-                    arr_IOMMU_VFIO-PCI_with_VGA+=("")
+                    arr_IOMMU_VFIO_PCI+=( "${arr_thisIOMMU_devices[@]}" )
+                    arr_IOMMU_VFIO_PCI_with_VGA+=("")
                 fi
             else
                 if "${bool_IOMMU_has_USB}"; then
-                    arr_IOMMU_PCI-STUB+=( "${arr_IOMMU_devices_has_USB[@]}" )
+                    arr_IOMMU_PCI_STUB+=( "${arr_IOMMU_devices_has_USB[@]}" )
                 else
-                    arr_IOMMU_PCI-STUB+=("")
+                    arr_IOMMU_PCI_STUB+=("")
                 fi
 
                 if "${bool_IOMMU_has_VGA}"; then
-                    arr_IOMMU_VFIO-PCI+=("")
-                    arr_IOMMU_VFIO-PCI_with_VGA+=( "${arr_IOMMU_devices_has_VGA[@]}" )
+                    arr_IOMMU_VFIO_PCI+=("")
+                    arr_IOMMU_VFIO_PCI_with_VGA+=( "${arr_IOMMU_devices_has_VGA[@]}" )
                 else
-                    arr_IOMMU_VFIO-PCI+=( "${arr_thisIOMMU_devices[@]}" )
-                    arr_IOMMU_VFIO-PCI_with_VGA+=("")
+                    arr_IOMMU_VFIO_PCI+=( "${arr_thisIOMMU_devices[@]}" )
+                    arr_IOMMU_VFIO_PCI_with_VGA+=("")
                 fi
             fi
 
@@ -1634,13 +1750,13 @@
 
         # <params>
         local str_output="Reviewing IOMMU groups..."
-        declare -a arr_IOMMU_host arr_IOMMU_PCI-STUB arr_IOMMU_VFIO-PCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIO-PCI_with_VGA
+        declare -a arr_IOMMU_host arr_IOMMU_PCI_STUB arr_IOMMU_VFIO_PCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIO_PCI_with_VGA
         declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus
         # </params>
 
         echo -e "${str_output}"
 
-        if ! Read_IOMMU_Group && ! CheckIfVarIsValid "${arr_IOMMU_host[@]}" &> /dev/null && ! CheckIfVarIsValid "${arr_IOMMU_VFIO-PCI[@]}" &> /dev/null; then
+        if ! Read_IOMMU_Group && ! CheckIfVarIsValid "${arr_IOMMU_host[@]}" &> /dev/null && ! CheckIfVarIsValid "${arr_IOMMU_VFIO_PCI[@]}" &> /dev/null; then
             SaveExitCode
         fi
 
@@ -2298,13 +2414,15 @@
     declare -g bool_is_connected_to_Internet=false
     # </params>
 
-    GetUsage "${1}" "${2}"
-    SaveExitCode
+    # GetUsage "${1}" "${2}"
+    # SaveExitCode
 
-    if "${bool_opt_help}"; then
-        PrintUsage
-        exit "${int_exit_code}"
-    fi
+    # if "${bool_opt_help}"; then
+    #     PrintUsage
+    #     exit "${int_exit_code}"
+    # fi
+
+    Parse_PCI
 
     exit 0
 
