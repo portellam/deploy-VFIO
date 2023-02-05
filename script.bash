@@ -1482,13 +1482,13 @@
             arr_vendor_ID+=( "${str_vendor_ID}" )
             arr_vendor_name+=( "${str_vendor_name}" )
 
-            echo -e $str_class
-            echo -e $str_device_ID
-            echo -e $str_device_name
-            echo -e $str_driver
-            echo -e $str_IOMMU
-            echo -e $str_vendor_ID
-            echo -e $str_vendor_name
+            # echo -e $str_class
+            # echo -e $str_device_ID
+            # echo -e $str_device_name
+            # echo -e $str_driver
+            # echo -e $str_IOMMU
+            # echo -e $str_vendor_ID
+            # echo -e $str_vendor_name
             # break
         done
 
@@ -2428,6 +2428,8 @@
                     return 1
                     ;;
             esac
+        else
+            bool_opt_any_VFIO_setup=true
         fi
 
         case "${2}" in
@@ -2449,9 +2451,9 @@
     }
 
     # <params>
-    readonly var_opt="${1}"
-    readonly var_args="${2}"
-    readonly var_file="${3}"
+    readonly var_input1="${1}"
+    readonly var_input2="${2}"
+    readonly var_input3="${3}"
 
     declare -g bool_opt_multiboot_VFIO_setup=false
     declare -g bool_opt_any_VFIO_setup=false
@@ -2470,7 +2472,7 @@
     declare -g bool_is_connected_to_Internet=false
     # </params>
 
-    GetUsage "${var_opt}" "${var_args}"
+    GetUsage "${var_input1}" "${var_input2}"
     SaveExitCode
 
     # <remarks> Output usage </remarks>
@@ -2479,30 +2481,30 @@
         exit "${int_exit_code}"
     fi
 
-    exit
-
     # <remarks> Get and ask user to select IOMMU groups. </remarks>
     if "${bool_opt_any_VFIO_setup}"; then
         case true in
             "${bool_arg_parse_file}" )
-                local readonly var_parse="FILE"
-                Parse_PCI "${var_parse}" "${var_file}"
+                readonly var_Parse_PCI="FILE"
                 ;;
 
             "${bool_arg_parse_online}" )
-                local readonly var_parse="DNS"
-                Parse_PCI "${var_parse}" "${var_file}"
+                readonly var_Parse_PCI="DNS"
                 ;;
 
             * )
-                local readonly var_parse="LOCAL"
-                Parse_PCI "${var_parse}" "${var_file}"
+                readonly var_Parse_PCI="LOCAL"
                 ;;
-
         esac
+
+        Parse_PCI "${var_Parse_PCI}" "${var_input1}"
+
+        exit
 
         Select_IOMMU || return "${?}"
     fi
+
+    exit
 
     # <remarks> Execute pre-setup </remarks>
     if "${bool_opt_any_VFIO_setup}" || "${bool_opt_pre_setup}"; then
