@@ -1364,154 +1364,158 @@
     # <summary> Parse PCI devices for all relevant information. If a parse fails, attempt again another way. If all parses fail, return error </summary>
     function Parse_PCI
     {
-        function Parse_PCI_Main
-        {
-            # <params>
-                # <remarks> Set Internal Field Separator </remarks>
-                IFS=$'\n'
-
-                # <remarks> Output statements </remarks>
-                local readonly str_output_lists_inequal="${var_prefix_error} System PCI lists' sizes are inequal."
-                local readonly str_output_list_empty="${var_prefix_error} One or more system PCI lists are empty."
-                local readonly str_output_parse_file="Parsing PCI from file..."
-                local readonly str_output_parse_internet="Parsing PCI devices from Internet database..."
-                local readonly str_output_parse_local="Parsing PCI devices from local database..."
-                local readonly str_output_is_setup_VFIO="${var_prefix_error} Found existing VFIO setup."
-
-                # <remarks> Set parse options </remarks>
-                local readonly str_opt_parse_file="FILE"
-                local readonly str_opt_parse_internet="DNS"
-                local readonly str_opt_parse_local="LOCAL"
-
-                # <remarks> Save input params </remarks>
-                local readonly var_opt="${1}"
-                local readonly str_file="${2}"
-
-                # <remarks> Declare lists </remarks>
-                declare -ag arr_class arr_device_ID arr_device_name arr_driver arr_IOMMU arr_vendor_ID arr_vendor_name
-
-                # <remarks> Set commands </remarks>
-                local readonly var_parse_local_all_ID='lspci -kmnv -s ${str_slot_ID}'
-                local readonly var_parse_local_name='lspci -kmv -s ${str_slot_ID}'
-                local readonly var_parse_local_slot_id='lspci -m | awk "{print $1}"'
-                local readonly var_parse_local_args='-m'
-
-                local readonly var_parse_file_all_ID='lspci -kmnv -f "${str_file}" -s ${str_slot_ID}'
-                local readonly var_parse_file_name='lspci -kmv -f "${str_file}" -s ${str_slot_ID}'
-                local readonly var_parse_file_slot_id='lspci -m -f "${str_file}" | awk "{print $1}"'
-                local readonly var_parse_file_args='-m -f "${str_file}"'
-
-                local readonly var_parse_internet_all_ID='lspci -kmnqv -s ${str_slot_ID}'
-                local readonly var_parse_internet_name='lspci -kmqv -s ${str_slot_ID}'
-                local readonly var_parse_internet_slot_id='lspci -mq | awk {print $1}'
-                local readonly var_parse_internet_args='-mq'
-            # </params>
-
-            # <remarks> Set commands for each parse type. </remarks>
-            case "${var_opt}" in
-
-                # <remarks> If internet is not available, exit. </remarks>
-                "${str_opt_parse_internet}" )
-                    str_output="${str_output_parse_internet}"
-                    local readonly var_parse_args="${var_parse_internet_args}"
-                    local readonly var_parse_all_ID="${var_parse_internet_all_ID}"
-                    local readonly var_parse_name="${var_parse_internet_name}"
-                    local readonly var_parse_slot_ID="${var_parse_file_slot_id}"
-                    TestNetwork || return "${?}"
-                    ;;
-
-                # <remarks> If parsing file and file does not exist, recursive call to parse internet. </remarks>
-                "${str_opt_parse_file}" )
-                    str_output="${str_output_parse_file}"
-                    local readonly var_parse_args="${var_parse_file_args}"
-                    local readonly var_parse_all_ID="${var_parse_file_all_ID}"
-                    local readonly var_parse_name="${var_parse_file_name}"
-                    local readonly var_parse_slot_ID="${var_parse_file_slot_id}"
-
-                    if ! CheckIfFileExists "${str_file}"; then
-                        Parse_PCI "${str_opt_parse_internet}" || return "${?}"
-                    fi
-                    ;;
-
-                "${str_opt_parse_local}" | * )
-                    str_output="${str_output_parse_local}"
-                    local readonly var_parse_args="${var_parse_local_args}"
-                    local readonly var_parse_all_ID="${var_parse_local_all_ID}"
-                    local readonly var_parse_name="${var_parse_local_name}"
-                    local readonly var_parse_slot_ID="${var_parse_local_slot_id}"
-                    ;;
-            esac
-
-            echo -e "${str_output}"
-
-            # <remarks> Get all devices from system. </remarks>
-            declare -a arr_devices=( $( lspci ${var_parse_args} | awk '{print $1}' ) )
-            lspci -m | awk '{print $1}'
-            exit
-            # declare -a arr_devices=( $( eval "${var_parse_slot_ID}" | awk "{print $1}" ) )
-
-            # <remarks> Save to lists each device's information. Lists should be of the same-size. </remarks>
-            for str_slot_ID in "${arr_devices[@]}"; do
-                echo -e "${str_slot_ID}"
-                # local str_class=$( eval "${var_parse_name}" )
-                # str_class=$( echo -e "${str_class}" | grep -i "Class:" | cut -d ':' -f 2 )
-                # local str_device_ID=$( eval "${var_parse_all_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | awk '{print $2}' )
-                # local str_device_name=$( eval "${var_parse_name}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | cut -d ':' -f 2 )
-                # local str_driver=$( eval "${var_parse_all_ID}" | grep -i "Driver:" | awk '{print $2}' )
-                # local str_IOMMU=$( eval "${var_parse_all_ID}"| grep -i "IOMMUGroup:" | awk '{print $2}' )
-                # local str_vendor_name=$( eval "${var_parse_name}" | grep -i "Vendor:" | cut -d ':' -f 2)
-                # local str_vendor_ID=$( eval "${var_parse_all_ID}" | grep -i "Vendor:" | awk '{print $2}' )
-
-                # echo -e "${str_device_name}"
-
-                # # <remarks> If parsing local and system is setup for VFIO, recursive call to parse file. </remarks>
-                # if [[ "${str_driver}" == "vfio-pci" && "${var_opt}" == "${str_opt_parse_local}" ]]; then
-                #     echo -e "${str_output_is_setup_VFIO}"
-                #     Parse_PCI "${str_opt_parse_file}" "${str_file}" || return "${?}"
-                # fi
-
-                # # <remarks> If parsing file and system is setup for VFIO, recursive call to parse internet. </remarks>
-                # if [[ "${str_driver}" == "vfio-pci" && "${var_opt}" == "${str_opt_parse_file}" ]]; then
-                #     echo -e "${str_output_is_setup_VFIO}"
-                #     Parse_PCI "${str_opt_parse_internet}" || return "${?}"
-                # fi
-
-                # # <remarks> Match invalid input, and save as known null value. </remarks>
-                # if ! CheckIfVarIsValid "${str_driver}" &> /dev/null; then
-                #     local str_driver="N/A"
-                # fi
-
-                # arr_class+=( "${str_class}" )
-                # arr_device_ID+=( "${str_device_ID}" )
-                arr_device_name+=( "${str_device_name}" )
-                # arr_driver+=( "${str_driver}" )
-                arr_IOMMU+=( "${str_IOMMU}" )
-                # arr_vendor_ID+=( "${str_vendor_ID}" )
-                # arr_vendor_name+=( "${str_vendor_name}" )
-                break
-            done
-
-            # <remarks> If any list is empty, fail. </remarks>
-            if ! CheckIfVarIsValid "${arr_class[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_device_ID[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_device_name[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_driver[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_IOMMU[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_vendor_ID[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_vendor_name[@]}" &> /dev/null; then
-                echo -e "${str_output_list_empty}"
-                return "${int_code_var_is_empty}"
-            fi
-
-            # <remarks> If lists' sizes are inequal, fail. </remarks>
-            if "${#arr_IOMMU[@]}" -ne "${#arr_class[@]}" || "${#arr_IOMMU[@]}" -ne "${#str_device_ID[@]}" || "${#arr_IOMMU[@]}" -ne "${#str_device_name[@]}" || "${#arr_IOMMU[@]}" -ne "${#str_driver[@]}" || "${#arr_IOMMU[@]}" -ne "${#str_IOMMU[@]}" || "${#arr_IOMMU[@]}" -ne "${#arr_vendor_ID[@]}" || "${#arr_IOMMU[@]}" -ne "${#arr_vendor_name[@]}"; then echo -e "${str_output_lists_inequal}"
-                echo -e "${str_output_lists_inequal}"
-                return 1
-            fi
-
-            readonly arr_class arr_device_ID arr_device_name arr_driver arr_IOMMU arr_vendor_ID arr_vendor_name
-            return 0
-        }
-
         # <params>
-        local str_output
+            # <remarks> Set Internal Field Separator </remarks>
+            IFS=$'\n'
+
+            # <remarks> Output statements </remarks>
+            local readonly str_output_lists_inequal="${var_prefix_error} System PCI lists' sizes are inequal."
+            local readonly str_output_list_empty="${var_prefix_error} One or more system PCI lists are empty."
+            local readonly str_output_parse_file="Parsing PCI from file..."
+            local readonly str_output_parse_internet="Parsing PCI devices from Internet database..."
+            local readonly str_output_parse_local="Parsing PCI devices from local database..."
+            local readonly str_output_is_setup_VFIO="${var_prefix_error} Found existing VFIO setup."
+
+            # <remarks> Set parse options </remarks>
+            local readonly str_opt_parse_file="FILE"
+            local readonly str_opt_parse_internet="DNS"
+            local readonly str_opt_parse_local="LOCAL"
+
+            # <remarks> Save input params </remarks>
+            local readonly var_opt="${1}"
+            local readonly str_file="${2}"
+
+            # <remarks> Declare lists </remarks>
+            declare -ag arr_class arr_device_ID arr_device_name arr_driver arr_IOMMU arr_vendor_ID arr_vendor_name
+
+            # <remarks> Set commands </remarks>
+            local readonly var_parse='lspci -k -m'
+            local readonly var_parse_args_file='-F "${str_file}"'
+            local readonly var_parse_args_online='-q'
+            local readonly var_parse_args_nums='-n'
+            local readonly var_parse_args_slot_ID='-s ${str_slot_ID}'
+            local readonly var_parse_args_verbose='-v'
         # </params>
 
-        Parse_PCI_Main
+        # <remarks> Set commands for each parse type. </remarks>
+        case "${var_opt}" in
+
+            # <remarks> If internet is not available, exit. </remarks>
+            "${str_opt_parse_internet}" )
+                str_output="${str_output_parse_internet}"
+                echo -e "${str_output}"
+
+                local readonly var_parse_all_ID="${var_parse} ${var_parse_args_nums} ${var_parse_args_verbose} ${var_parse_args_online} ${var_parse_args_slot_ID}"
+                local readonly var_parse_name="${var_parse} ${var_parse_args_verbose} ${var_parse_args_online} ${var_parse_args_slot_ID}"
+                local readonly var_parse_slot_ID="${var_parse} ${var_parse_args_online}"
+
+                TestNetwork || return "${?}"
+                ;;
+
+            # <remarks> If parsing file and file does not exist, recursive call to parse internet. </remarks>
+            "${str_opt_parse_file}" )
+                str_output="${str_output_parse_file}"
+                echo -e "${str_output}"
+
+                local readonly var_parse_all_ID="${var_parse} ${var_parse_args_nums} ${var_parse_args_verbose} ${var_parse_args_file} ${var_parse_args_slot_ID}"
+                local readonly var_parse_name="${var_parse} ${var_parse_args_verbose} ${var_parse_args_file} ${var_parse_args_slot_ID}"
+                local readonly var_parse_slot_ID="${var_parse} ${var_parse_args_file}"
+
+                CheckIfFileExists "${str_file}" || (
+                    AppendPassOrFail "${str_output}"
+                    Parse_PCI "${str_opt_parse_internet}" || return "${?}"
+                    exit
+                )
+                ;;
+
+            "${str_opt_parse_local}" | * )
+                str_output="${str_output_parse_local}"
+                echo -e "${str_output}"
+
+                local readonly var_parse_all_ID="${var_parse} ${var_parse_args_nums} ${var_parse_args_verbose} ${var_parse_args_slot_ID}"
+                local readonly var_parse_name="${var_parse} ${var_parse_args_verbose}  ${var_parse_args_slot_ID}"
+                local readonly var_parse_slot_ID="${var_parse}"
+                ;;
+        esac
+
+        # <remarks> Exit for real. Dude trust me. </remarks>
+        if [[ "${?}" -ne 0 ]]; then
+            return 1
+        fi
+
+        # <remarks> Get all devices from system. </remarks>
+        declare -a arr_devices=( $( eval ${var_parse_slot_ID} | awk '{print $1}' ) )
+
+        # <remarks> Save to lists each device's information. Lists should be of the same-size. </remarks>
+        for str_slot_ID in "${arr_devices[@]}"; do
+            local str_class=$( eval "${var_parse_name}" )
+            str_class=$( echo -e "${str_class}" | grep -i "Class:" | cut -d ':' -f 2 )
+            local str_device_ID=$( eval "${var_parse_all_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | awk '{print $2}' )
+            local str_device_name=$( eval "${var_parse_name}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | cut -d ':' -f 2 )
+            local str_driver=$( eval "${var_parse_all_ID}" | grep -i "Driver:" | awk '{print $2}' )
+            local str_IOMMU=$( eval "${var_parse_all_ID}"| grep -i "IOMMUGroup:" | awk '{print $2}' )
+            local str_vendor_name=$( eval "${var_parse_name}" | grep -i "Vendor:" | cut -d ':' -f 2)
+            local str_vendor_ID=$( eval "${var_parse_all_ID}" | grep -i "Vendor:" | awk '{print $2}' )
+
+            # <remarks> If parsing local and system is setup for VFIO, recursive call to parse file. </remarks>
+            if [[ "${str_driver}" == "vfio-pci" && "${var_opt}" == "${str_opt_parse_local}" ]]; then
+                echo -e "${str_output_is_setup_VFIO}"
+                Parse_PCI "${str_opt_parse_file}" "${str_file}" || return "${?}"
+            fi
+
+            # <remarks> If parsing file and system is setup for VFIO, recursive call to parse internet. </remarks>
+            if [[ "${str_driver}" == "vfio-pci" && "${var_opt}" == "${str_opt_parse_file}" ]]; then
+                echo -e "${str_output_is_setup_VFIO}"
+                Parse_PCI "${str_opt_parse_internet}" || return "${?}"
+            fi
+
+            # <remarks> Match invalid input, and save as known null value. </remarks>
+            if ! CheckIfVarIsValid "${str_driver}" &> /dev/null; then
+                local str_driver="N/A"
+            fi
+
+            arr_class+=( "${str_class}" )
+            arr_device_ID+=( "${str_device_ID}" )
+            arr_device_name+=( "${str_device_name}" )
+            arr_driver+=( "${str_driver}" )
+            arr_IOMMU+=( "${str_IOMMU}" )
+            arr_vendor_ID+=( "${str_vendor_ID}" )
+            arr_vendor_name+=( "${str_vendor_name}" )
+
+            echo -e $str_class
+            echo -e $str_device_ID
+            echo -e $str_device_name
+            echo -e $str_driver
+            echo -e $str_IOMMU
+            echo -e $str_vendor_ID
+            echo -e $str_vendor_name
+            # break
+        done
+
+        # <remarks> If any list is empty, fail. </remarks>
+        if ! CheckIfVarIsValid "${arr_class[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_device_ID[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_device_name[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_driver[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_IOMMU[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_vendor_ID[@]}" &> /dev/null || ! CheckIfVarIsValid "${arr_vendor_name[@]}" &> /dev/null; then
+            echo -e "${str_output_list_empty}"
+            ( return "${int_code_var_is_empty}" )
+            AppendPassOrFail "${str_output}"
+            return "${int_exit_code}"
+        fi
+
+        # <remarks> If lists' sizes are inequal, fail. </remarks>
+        if [[ "${#arr_IOMMU[@]}" -ne "${#arr_class[@]}" || "${#arr_IOMMU[@]}" -ne "${#arr_device_ID[@]}" || "${#arr_IOMMU[@]}" -ne "${#arr_device_name[@]}" || "${#arr_IOMMU[@]}" -ne "${#arr_driver[@]}" || "${#arr_IOMMU[@]}" -ne "${#arr_vendor_ID[@]}" || "${#arr_IOMMU[@]}" -ne "${#arr_vendor_name[@]}" ]]; then
+            echo -e "${str_output_lists_inequal}"
+            false
+            AppendPassOrFail "${str_output}"
+            return "${int_exit_code}"
+        fi
+
+        readonly arr_class arr_device_ID arr_device_name arr_driver arr_IOMMU arr_vendor_ID arr_vendor_name
+
+        # <remarks> Save output to file. </remarks>
+        if [[ "${?}" -eq 0 && "${var_opt}" != "${str_opt_parse_file}" ]]; then
+            CheckIfFileExists "${str_file}" &> /dev/null && lspci -x >> "${str_file}"
+        fi
+
+        true
         AppendPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
@@ -1795,7 +1799,7 @@
 
 # <summary> Business functions: Main setup </summary>
 # <code>
-    function Dynamic_VFIO
+    function Multiboot_VFIO
     {
         # <params>
         local readonly str_file1="/etc/default/grub"
@@ -1874,8 +1878,8 @@
 
         # </params>
 
-        # diff between static and dynamic => static: all IOMMU for VFIO with PCI STUB devices will be binded to VFIO PCI driver? append only to GRUB and system files.
-        # dynamic: PCI STUB devices will use PCI STUB driver? append only GRUB and multiple GRUB entries
+        # diff between static and multiboot => static: all IOMMU for VFIO with PCI STUB devices will be binded to VFIO PCI driver? append only to GRUB and system files.
+        # multiboot: PCI STUB devices will use PCI STUB driver? append only GRUB and multiple GRUB entries
 
         return 0
     }
@@ -2316,23 +2320,27 @@
         IFS=$'\n'
         local readonly var_get_script_name='basename "${0}"'
         local readonly str_script_name=$( eval "${var_get_script_name}" )
-        local readonly str_opt_dynamic_VFIO_setup="-d, --dynamic\texecute preferred VFIO setup: modify GRUB boot options only (excluding GRUB file and system files)"
         local readonly str_opt_full_setup="-f, --full\texecute pre-setup, VFIO setup, and post-setup"
         local readonly str_opt_help="-h, --help\tdisplay this help and exit"
+        local readonly str_opt_multiboot_VFIO_setup="-m, --multiboot\texecute preferred VFIO setup: modify GRUB boot options only (excluding GRUB file and system files)"
         local readonly str_opt_post_setup="-P, --post\texecute post-setup (LookingGlass, Scream)"
         local readonly str_opt_pre_setup="-p, --pre\texecute pre-setup (allocate CPU, hugepages, zramswap, Evdev)"
         local readonly str_opt_static_VFIO_setup="-s, --static\texecute preferred VFIO setup: modify GRUB file and system files only"
         local readonly str_opt_update_VFIO_setup="-u, --update\tdetect existing VFIO setup, execute new VFIO setup, and apply changes"
         local readonly str_arg_silent="-S, --silent\tdo not prompt before execution"
+        local readonly str_arg_file="-F, --file\tparse PCI from file"
+        local readonly str_arg_online="-O, --online\tparse PCI from internet"
 
         declare -ar arr_usage=(
             "Usage:\t${str_script_name} [OPTION]"
-            "\tor ${str_script_name} [OPTION]...[ARGUMENTS]"
+            "\tor ${str_script_name} [OPTION]...-S"
+            "\tor ${str_script_name} [d/m/s/u]...-F [FILE_NAME]"
+            "\tor ${str_script_name} [d/m/s/u]...-o"
             "\nRequired variables:"
             "\t${str_script_name}"
             "\nOptional variables:"
             "\t${str_opt_help}"
-            "\t${str_opt_dynamic_VFIO_setup}"
+            "\t${str_opt_multiboot_VFIO_setup}"
             "\t${str_opt_static_VFIO_setup}"
             "\t${str_opt_update_VFIO_setup}"
             "\t${str_opt_post_setup}"
@@ -2340,6 +2348,8 @@
             "\t${str_opt_full_setup}"
             "\nArguments:"
             "\t${str_arg_silent}"
+            "\t${str_arg_file}"
+            "\t${str_arg_online}"
         )
         # </params>
 
@@ -2356,13 +2366,13 @@
         # <params>
 
         # NOTE: it appears declaring inherited vars doesn't work here. As I have used this in other areas, test it for validity.
-        # declare -I bool_opt_dynamic_VFIO_setup bool_opt_any_VFIO_setup bool_opt_help bool_opt_post_setup bool_opt_pre_setup bool_opt_static_VFIO_setup bool_opt_update_VFIO_setup bool_arg_silent
+        # declare -I bool_opt_multiboot_VFIO_setup bool_opt_any_VFIO_setup bool_opt_help bool_opt_post_setup bool_opt_pre_setup bool_opt_static_VFIO_setup bool_opt_update_VFIO_setup bool_arg_silent
 
         declare -gr arr_usage_opt=(
             "-h"
             "--help"
-            "-d"
-            "--dynamic"
+            "-m"
+            "--multiboot"
             "-f"
             "--full"
             "-P"
@@ -2378,6 +2388,10 @@
         declare -gr arr_usage_args=(
             "-S"
             "--silent"
+            "-F"
+            "--file"
+            "-o"
+            "--online"
         )
 
         if CheckIfVarIsValid "${1}" &> /dev/null; then
@@ -2386,7 +2400,7 @@
                     bool_opt_help=true
                     ;;
                 "${arr_usage_opt[2]}" | "${arr_usage_opt[3]}" )
-                    bool_opt_dynamic_VFIO_setup=true
+                    bool_opt_multiboot_VFIO_setup=true
                     ;;
                 "${arr_usage_opt[4]}" | "${arr_usage_opt[5]}" )
                     bool_opt_any_VFIO_setup=true
@@ -2420,6 +2434,14 @@
             "${arr_usage_args[0]}" | "${arr_usage_args[1]}" )
                 bool_arg_silent=true
                 ;;
+
+            "${arr_usage_args[2]}" | "${arr_usage_args[3]}" )
+                bool_arg_parse_file=true
+                ;;
+
+            "${arr_usage_args[4]}" | "${arr_usage_args[5]}" )
+                bool_arg_parse_online=true
+                ;;
         esac
         # </params>
 
@@ -2427,7 +2449,11 @@
     }
 
     # <params>
-    declare -g bool_opt_dynamic_VFIO_setup=false
+    local readonly var_opt="${1}"
+    local readonly var_args="${2}"
+    local readonly var_file="${3}"
+
+    declare -g bool_opt_multiboot_VFIO_setup=false
     declare -g bool_opt_any_VFIO_setup=false
     declare -g bool_opt_help=false
     declare -g bool_opt_post_setup=false
@@ -2435,6 +2461,8 @@
     declare -g bool_opt_static_VFIO_setup=false
     declare -g bool_opt_update_VFIO_setup=false
     declare -g bool_arg_silent=false
+    declare -g bool_arg_parse_file=false
+    declare -g bool_arg_parse_online=false
 
     declare -gr str_repo_name="deploy-VFIO-setup"
     declare -gr str_full_repo_name="portellam/${str_repo_name}"
@@ -2442,33 +2470,41 @@
     declare -g bool_is_connected_to_Internet=false
     # </params>
 
-    # GetUsage "${1}" "${2}"
-    # SaveExitCode
+    GetUsage "${var_opt}" "${var_args}"
+    SaveExitCode
 
-    # if "${bool_opt_help}"; then
-    #     PrintUsage
-    #     exit "${int_exit_code}"
-    # fi
-
-    Parse_PCI
-
-    exit 0
-
-    # TODO: need to fix the booleans here
-    # TODO: need to add all funcs here
-    # -add update setup
-    #   * automated, read from logfile and update on device change or kernel diff or exit on failure
-    #   * manual
-
-    if ! Parse_IOMMU; then
-        ReadFromFile_IOMMU || return "${?}"
+    # <remarks> Output usage </remarks>
+    if "${bool_opt_help}"; then
+        PrintUsage
+        exit "${int_exit_code}"
     fi
 
+    exit
+
+    # <remarks> Get and ask user to select IOMMU groups. </remarks>
     if "${bool_opt_any_VFIO_setup}"; then
-        SaveToFile_IOMMU
+        case true in
+            "${bool_arg_parse_file}" )
+                local readonly var_parse="FILE"
+                Parse_PCI "${var_parse}" "${var_file}"
+                ;;
+
+            "${bool_arg_parse_online}" )
+                local readonly var_parse="DNS"
+                Parse_PCI "${var_parse}" "${var_file}"
+                ;;
+
+            * )
+                local readonly var_parse="LOCAL"
+                Parse_PCI "${var_parse}" "${var_file}"
+                ;;
+
+        esac
+
         Select_IOMMU || return "${?}"
     fi
 
+    # <remarks> Execute pre-setup </remarks>
     if "${bool_opt_any_VFIO_setup}" || "${bool_opt_pre_setup}"; then
         AddUserToGroups
         Allocate_CPU
@@ -2478,10 +2514,12 @@
         Modify_QEMU
     fi
 
+    # <remarks> Execute main setup </remarks>
     if "${bool_opt_any_VFIO_setup}"; then
         Setup_VFIO || return "${?}"
     fi
 
+    # <remarks> Execute post-setup </remarks>
     if "${bool_opt_post_setup}"; then
         VirtualAudioCapture
         VirtualVideoCapture
