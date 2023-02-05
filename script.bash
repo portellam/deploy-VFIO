@@ -1389,7 +1389,7 @@
             declare -ag arr_class arr_device_ID arr_device_name arr_driver arr_IOMMU arr_vendor_ID arr_vendor_name
 
             # <remarks> Set commands </remarks>
-            local readonly var_parse='lspci -k -m'
+            local readonly var_parse='lspci -k -mm'
             local readonly var_parse_args_file='-F "${str_file}"'
             local readonly var_parse_args_online='-q'
             local readonly var_parse_args_nums='-n'
@@ -1406,7 +1406,7 @@
                 echo -e "${str_output}"
 
                 local readonly var_parse_all_ID="${var_parse} ${var_parse_args_nums} ${var_parse_args_verbose} ${var_parse_args_online} ${var_parse_args_slot_ID}"
-                local readonly var_parse_name="${var_parse} ${var_parse_args_verbose} ${var_parse_args_online} ${var_parse_args_slot_ID}"
+                local readonly var_parse_name_ID="${var_parse} ${var_parse_args_verbose} ${var_parse_args_online} ${var_parse_args_slot_ID}"
                 local readonly var_parse_slot_ID="${var_parse} ${var_parse_args_online}"
 
                 TestNetwork || return "${?}"
@@ -1418,7 +1418,7 @@
                 echo -e "${str_output}"
 
                 local readonly var_parse_all_ID="${var_parse} ${var_parse_args_nums} ${var_parse_args_verbose} ${var_parse_args_file} ${var_parse_args_slot_ID}"
-                local readonly var_parse_name="${var_parse} ${var_parse_args_verbose} ${var_parse_args_file} ${var_parse_args_slot_ID}"
+                local readonly var_parse_name_ID="${var_parse} ${var_parse_args_verbose} ${var_parse_args_file} ${var_parse_args_slot_ID}"
                 local readonly var_parse_slot_ID="${var_parse} ${var_parse_args_file}"
 
                 CheckIfFileExists "${str_file}" || (
@@ -1433,7 +1433,7 @@
                 echo -e "${str_output}"
 
                 local readonly var_parse_all_ID="${var_parse} ${var_parse_args_nums} ${var_parse_args_verbose} ${var_parse_args_slot_ID}"
-                local readonly var_parse_name="${var_parse} ${var_parse_args_verbose}  ${var_parse_args_slot_ID}"
+                local readonly var_parse_name_ID="${var_parse} ${var_parse_args_verbose}  ${var_parse_args_slot_ID}"
                 local readonly var_parse_slot_ID="${var_parse}"
                 ;;
         esac
@@ -1448,14 +1448,14 @@
 
         # <remarks> Save to lists each device's information. Lists should be of the same-size. </remarks>
         for str_slot_ID in "${arr_devices[@]}"; do
-            local str_class=$( eval "${var_parse_name}" )
+            local str_class=$( eval "${var_parse_name_ID}" )
             str_class=$( echo -e "${str_class}" | grep -i "Class:" | cut -d ':' -f 2 )
-            local str_device_ID=$( eval "${var_parse_all_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | awk '{print $2}' )
-            local str_device_name=$( eval "${var_parse_name}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | cut -d ':' -f 2 )
-            local str_driver=$( eval "${var_parse_all_ID}" | grep -i "Driver:" | awk '{print $2}' )
-            local str_IOMMU=$( eval "${var_parse_all_ID}"| grep -i "IOMMUGroup:" | awk '{print $2}' )
-            local str_vendor_name=$( eval "${var_parse_name}" | grep -i "Vendor:" | cut -d ':' -f 2)
-            local str_vendor_ID=$( eval "${var_parse_all_ID}" | grep -i "Vendor:" | awk '{print $2}' )
+            local str_device_ID=$( eval "${var_parse_name_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | cut -d ':' -f 2 | uniq )
+            local str_device_name=$( eval "${var_parse_all_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | awk '{print $2}' | uniq )
+            local str_driver=$( eval "${var_parse_all_ID}" | grep -i "Driver:" | awk '{print $2}' | uniq )
+            local str_IOMMU=$( eval "${var_parse_all_ID}"| grep -i "IOMMUGroup:" | awk '{print $2}' | uniq )
+            local str_vendor_name=$( eval "${var_parse_name_ID}" | grep -i "Vendor:" | cut -d ':' -f 2 | uniq )
+            local str_vendor_ID=$( eval "${var_parse_all_ID}" | grep -i "Vendor:" | awk '{print $2}' | uniq )
 
             # <remarks> If parsing local and system is setup for VFIO, recursive call to parse file. </remarks>
             if [[ "${str_driver}" == "vfio-pci" && "${var_opt}" == "${str_opt_parse_local}" ]]; then
@@ -1481,15 +1481,6 @@
             arr_IOMMU+=( "${str_IOMMU}" )
             arr_vendor_ID+=( "${str_vendor_ID}" )
             arr_vendor_name+=( "${str_vendor_name}" )
-
-            # echo -e $str_class
-            # echo -e $str_device_ID
-            # echo -e $str_device_name
-            # echo -e $str_driver
-            # echo -e $str_IOMMU
-            # echo -e $str_vendor_ID
-            # echo -e $str_vendor_name
-            # break
         done
 
         # <remarks> If any list is empty, fail. </remarks>
@@ -1518,6 +1509,39 @@
         true
         AppendPassOrFail "${str_output}"
         return "${int_exit_code}"
+    }
+
+    function Select_PCI
+    {
+        # <params>
+        local str_output="Reviewing IOMMU groups..."
+        local readonly int_IOMMU_max=$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )
+        local readonly var_get_IOMMU='seq 0 "${int_IOMMU_max}"'
+        declare -ar arr_this_IOMMU=( $( eval "${var_get_IOMMU}" ) )
+        # </params>
+
+        echo -e "${str_output}"
+
+        for int_this_IOMMU_ID in ${arr_this_IOMMU[@]}; do
+            echo -e "${int_this_IOMMU_ID}"
+
+            for int_key in ${!arr_IOMMU[@]}; do
+                declare -i int_IOMMU="${arr_IOMMU[$int_key]}"
+
+                if [[ "${int_IOMMU}" -eq "${int_this_IOMMU_ID}" ]]; then
+                    echo -e "${arr_class[$int_key]}"
+                    echo -e "${arr_device_ID[$int_key]}"
+                    echo -e "${arr_device_name[$int_key]}"
+                    echo -e "${arr_driver[$int_key]}"
+                    echo -e "${arr_vendor_ID[$int_key]}"
+                    echo -e "${arr_vendor_name[$int_key]}"
+                fi
+            done
+
+                echo
+                echo
+                echo
+        done
     }
 
     function Parse_IOMMU
@@ -1661,22 +1685,12 @@
         return "${?}"
     }
 
-    function ReadFromFile_IOMMU
-    {
-        return 0
-    }
-
-    function SaveToFile_IOMMU
-    {
-        return 0
-    }
-
     function Select_IOMMU
     {
         function Read_IOMMU_Group
         {
             # <params>
-            declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus arr_IOMMU_host arr_IOMMU_PCI_STUB arr_IOMMU_VFIO_PCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIO_PCI_with_VGA
+            # declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus arr_IOMMU_host arr_IOMMU_PCI_STUB arr_IOMMU_VFIO_PCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIO_PCI_with_VGA
             # </params>
 
             for int_key1 in "${!arr_IOMMU_groups_with_external_bus[@]}"; do
@@ -1721,7 +1735,7 @@
         function Prompt_IOMMU_Group
         {
             # <params>
-            declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus arr_IOMMU_host arr_IOMMU_PCI_STUB arr_IOMMU_VFIO_PCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIO_PCI_with_VGA bool_IOMMU_has_USB bool_IOMMU_has_VGA
+            # declare -I arr_IOMMU_devices_has_USB arr_IOMMU_devices_has_VGA arr_IOMMU_groups_with_external_bus arr_IOMMU_host arr_IOMMU_PCI_STUB arr_IOMMU_VFIO_PCI arr_IOMMU_host_with_VGA arr_IOMMU_VFIO_PCI_with_VGA bool_IOMMU_has_USB bool_IOMMU_has_VGA
             local readonly str_output="IOMMU group #:\t${int_IOMMU}\n"
             # </params>
 
@@ -2498,10 +2512,7 @@
         esac
 
         Parse_PCI "${var_Parse_PCI}" "${var_input1}"
-
-        exit
-
-        Select_IOMMU || return "${?}"
+        Select_PCI || return "${?}"
     fi
 
     exit
