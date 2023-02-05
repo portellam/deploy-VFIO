@@ -2332,10 +2332,10 @@
         local readonly str_arg_online="-O, --online\tparse PCI from internet"
 
         declare -ar arr_usage=(
-            "Usage:\t${str_script_name} [OPTION]"
-            "\tor ${str_script_name} [OPTION]...-S"
-            "\tor ${str_script_name} [d/m/s/u]...-F [FILE_NAME]"
-            "\tor ${str_script_name} [d/m/s/u]...-o"
+            "Usage:\t${str_script_name} [OPTION] [ARGUMENTS]"
+            "\tor ${str_script_name} [OPTION] -S"
+            "\tor ${str_script_name} [d/m/s/u] -F [FILE_NAME]"
+            "\tor ${str_script_name} [d/m/s/u] -o"
             "\nRequired variables:"
             "\t${str_script_name}"
             "\nOptional variables:"
@@ -2449,9 +2449,9 @@
     }
 
     # <params>
-    local readonly var_opt="${1}"
-    local readonly var_args="${2}"
-    local readonly var_file="${3}"
+    readonly var_opt="${1}"
+    readonly var_args="${2}"
+    readonly var_file="${3}"
 
     declare -g bool_opt_multiboot_VFIO_setup=false
     declare -g bool_opt_any_VFIO_setup=false
