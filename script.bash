@@ -1287,8 +1287,8 @@
         declare -g bool_is_installed_systemd=false
         CheckIfCommandIsInstalled "systemd" &> /dev/null && bool_is_installed_systemd=true
 
-        declare -g bool_is_user_root=false
-        CheckIfUserIsRoot &> /dev/null && bool_is_user_root=true
+        # declare -g bool_is_user_root=false
+        # CheckIfUserIsRoot &> /dev/null && bool_is_user_root=true
 
         declare -gl str_package_manager=""
         CheckLinuxDistro &> /dev/null
@@ -1809,21 +1809,13 @@
     function AddUserToGroups
     {
         # <params>
-        declare -ar arr_user_groups=(
-            "input"
-            "libvirt"
-        )
-
-        local readonly var_add_user_to_group='adduser "${str_user_name}" "${str_user_group}"'
         local readonly var_get_first_valid_user='getent passwd {1000..60000} | cut -d ":" -f 1'
         local readonly str_username=$( eval "${var_get_first_valid_user}" )
         # </params>
 
         # <remarks> Add user(s) to groups. </remarks>
-        for str_user_group in "${arr_user_groups[@]}"; do
-            eval "${var_add_user_to_group}" || return "${?}"
-        done
-
+        adduser "${str_username}" "input"
+        adduser "${str_username}" "libvirt"
         return 0
     }
 
@@ -1854,7 +1846,7 @@
 
         # <remarks> Get values. </remarks>
         readonly arr_cores_by_thread=$( eval "${var_get_cores_by_thread}" )
-        readonly int_total_cores=$( eval "${int_total_cores}" )
+        readonly int_total_cores=$( eval "${var_get_total_cores}" )
         readonly int_total_threads=$( eval "${var_get_total_threads}" )
         readonly int_SMT_factor=$( eval "${var_get_SMT_factor}" )
 
@@ -2382,6 +2374,7 @@
     declare -g bool_is_connected_to_Internet=false
     # </params>
 
+    CheckIfUserIsRoot || exit "${?}"
     GetUsage "${var_input1}" "${var_input2}"
     SaveExitCode
 
@@ -2392,31 +2385,30 @@
     fi
 
     # <remarks> Get and ask user to select IOMMU groups. </remarks>
-    if "${bool_opt_any_VFIO_setup}"; then
-        case true in
-            "${bool_arg_parse_file}" )
-                readonly var_Parse_IOMMU="FILE"
-                ;;
+    # if "${bool_opt_any_VFIO_setup}"; then
+    #     case true in
+    #         "${bool_arg_parse_file}" )
+    #             readonly var_Parse_IOMMU="FILE"
+    #             ;;
 
-            "${bool_arg_parse_online}" )
-                readonly var_Parse_IOMMU="DNS"
-                ;;
+    #         "${bool_arg_parse_online}" )
+    #             readonly var_Parse_IOMMU="DNS"
+    #             ;;
 
-            * )
-                readonly var_Parse_IOMMU="LOCAL"
-                ;;
-        esac
+    #         * )
+    #             readonly var_Parse_IOMMU="LOCAL"
+    #             ;;
+    #     esac
 
-        Parse_IOMMU "${var_Parse_IOMMU}" "${var_input1}" || exit "${?}"
-        Select_IOMMU || exit "${?}"
-    fi
-
-    exit
+    #     Parse_IOMMU "${var_Parse_IOMMU}" "${var_input1}" || exit "${?}"
+    #     Select_IOMMU || exit "${?}"
+    # fi
 
     # <remarks> Execute pre-setup </remarks>
     if "${bool_opt_any_VFIO_setup}" || "${bool_opt_pre_setup}"; then
         AddUserToGroups
         Allocate_CPU
+        exit
         Allocate_RAM
         RAM_Swapfile
         Virtual_KVM
