@@ -2416,32 +2416,32 @@
         exit "${int_exit_code}"
     fi
 
-    # <remarks> Get and ask user to select IOMMU groups. </remarks>
-    # if "${bool_opt_any_VFIO_setup}"; then
-    #     case true in
-    #         "${bool_arg_parse_file}" )
-    #             readonly var_Parse_IOMMU="FILE"
-    #             ;;
+    <remarks> Get and ask user to select IOMMU groups. </remarks>
+    if "${bool_opt_any_VFIO_setup}"; then
+        case true in
+            "${bool_arg_parse_file}" )
+                readonly var_Parse_IOMMU="FILE"
+                ;;
 
-    #         "${bool_arg_parse_online}" )
-    #             readonly var_Parse_IOMMU="DNS"
-    #             ;;
+            "${bool_arg_parse_online}" )
+                readonly var_Parse_IOMMU="DNS"
+                ;;
 
-    #         * )
-    #             readonly var_Parse_IOMMU="LOCAL"
-    #             ;;
-    #     esac
+            * )
+                readonly var_Parse_IOMMU="LOCAL"
+                ;;
+        esac
 
-    #     Parse_IOMMU "${var_Parse_IOMMU}" "${var_input1}" || exit "${?}"
-    #     Select_IOMMU || exit "${?}"
-    # fi
+        Parse_IOMMU "${var_Parse_IOMMU}" "${var_input1}" || exit "${?}"
+        Select_IOMMU || exit "${?}"
+    fi
 
     # <remarks> Execute pre-setup </remarks>
     if "${bool_opt_any_VFIO_setup}" || "${bool_opt_pre_setup}"; then
         AddUserToGroups
         Allocate_CPU
-        exit
         Allocate_RAM
+        exit            # TODO: debug here!
         RAM_Swapfile
         Virtual_KVM
         Modify_QEMU
