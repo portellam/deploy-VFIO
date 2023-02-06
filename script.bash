@@ -210,6 +210,24 @@
         return 0
     }
 
+    # <summary> Check if the array is empty. </summary>
+    # <param name="${arr}"> array: the array </param>
+    # <returns> exit code </returns>
+    function CheckIfArrayIsEmpty
+    {
+        # <params>
+        local readonly str_output_var_is_null="${var_prefix_error} Null string."
+        local readonly str_output_var_is_empty="${var_prefix_error} Empty string."
+        # </params>
+
+        for var_element in "${arr[@]}"; do
+            CheckIfVarIsValid "${var_element}" &> /dev/null && return 0
+        done
+
+        echo -e "${str_output_var_is_empty}"
+        return "${int_code_var_is_empty}"
+    }
+
     # <summary> Check if the value is a valid bool. </summary>
     # <param name="${1}"> var: the boolean </param>
     # <returns> exit code </returns>
@@ -931,7 +949,7 @@
         # <summary> Minimum multiple choice are two answers. </summary>
         if ( ! CheckIfVarIsValid "${2}" || ! CheckIfVarIsValid "${3}" ) &> /dev/null; then
             SaveExitCode
-            echo -e "${str_output}"_multiple_choice_not_valid
+            echo -e "${str_output_multiple_choice_not_valid}"
             return "${int_exit_code}"
         fi
 
@@ -994,7 +1012,7 @@
 
         # <summary> Minimum multiple choice are two answers. </summary>
         if ( ! CheckIfVarIsValid "${2}" || ! CheckIfVarIsValid "${3}" ) &> /dev/null; then
-            echo -e "${str_output}"_multiple_choice_not_valid
+            echo -e "${str_output_multiple_choice_not_valid}"
             return 1;
         fi
 
@@ -1589,7 +1607,11 @@
             local readonly str_slot_ID="${arr_slot_ID[$int_key]}"
             # local readonly str_vendor_ID="${arr_vendor_ID[$int_key]}"
             local readonly str_vendor_name="${arr_vendor_name[$int_key]}"
+
             local readonly str_domain_ID=$( echo "${str_slot_ID}" | cut -d ':' -f 1 )
+
+            # <remarks> Regex: check if value is decimal or hexadecimal and greater than zero </remarks>
+            local readonly str_regex='[a-fA-F1-9]'
 
             # <remarks> Output statement </remarks>
             declare -ar arr_output=(
@@ -1607,8 +1629,8 @@
             # <remarks> Match IOMMU group </remarks>
             if [[ "${int_IOMMU}" -eq "${int_this_IOMMU_ID}" ]]; then
 
-                # <remarks> Extenrnal PCI devices have domain IDs of '01' or greater. </remarks>
-                if [[ "${str_domain_ID}" =~ [1-9] ]]; then
+                # <remarks> External PCI devices have domain IDs of '01' or greater. </remarks>
+                if [[ "${str_domain_ID}" =~ ${str_regex} ]]; then
                     bool_IOMMU_has_external_domain=true
                 fi
 
@@ -1640,36 +1662,25 @@
             # </params>
 
             # <remarks> Append to list a valid array or empty value. </remarks>
-            if ! "${bool_IOMMU_has_external_domain}" || ! ReadInput "${str_output_do_select}"; then
+            if "${bool_IOMMU_has_external_domain}" && ReadInput "${str_output_do_select}"; then
                 if "${bool_IOMMU_has_USB}"; then
                     arr_IOMMU_PCI_STUB+=( "${int_this_IOMMU_ID}" )
                 else
-                    arr_IOMMU_PCI_STUB+=("")
+                    arr_IOMMU_PCI_STUB+=( "" )
                 fi
 
                 if "${bool_IOMMU_has_VGA}"; then
-                    arr_IOMMU_VFIO_PCI+=("")
+                    arr_IOMMU_VFIO_PCI+=( "" )
                     arr_IOMMU_VFIO_PCI_with_VGA+=( "${int_this_IOMMU_ID}" )
                 else
                     arr_IOMMU_VFIO_PCI+=( "${int_this_IOMMU_ID}" )
-                    arr_IOMMU_VFIO_PCI_with_VGA+=("")
+                    arr_IOMMU_VFIO_PCI_with_VGA+=( "" )
                 fi
-
-                echo -e "${str_output_skip_select}"
             else
-                if "${bool_IOMMU_has_USB}"; then
-                    arr_IOMMU_PCI_STUB+=( "${int_this_IOMMU_ID}" )
-                else
-                    arr_IOMMU_PCI_STUB+=("")
-                fi
-
-                if "${bool_IOMMU_has_VGA}"; then
-                    arr_IOMMU_VFIO_PCI+=("")
-                    arr_IOMMU_VFIO_PCI_with_VGA+=( "${int_this_IOMMU_ID}" )
-                else
-                    arr_IOMMU_VFIO_PCI+=( "${int_this_IOMMU_ID}" )
-                    arr_IOMMU_VFIO_PCI_with_VGA+=("")
-                fi
+                arr_IOMMU_VFIO_PCI+=( "" )
+                arr_IOMMU_PCI_STUB+=( "" )
+                arr_IOMMU_VFIO_PCI_with_VGA+=( "" )
+                echo -e "${str_output_skip_select}"
             fi
 
             return 0
@@ -1685,7 +1696,7 @@
 
         echo -e "${str_output}"
 
-        for int_this_IOMMU_ID in ${arr_this_IOMMU[@]}; do
+        for int_this_IOMMU_ID in "${arr_this_IOMMU[@]}"; do
             local bool_IOMMU_has_external_domain=false
             local bool_IOMMU_PCI_STUB=false
             # local bool_IOMMU_VFIO_PCI=false
@@ -1700,9 +1711,11 @@
             Select_IOMMU_Prompt
         done
 
-        if [[ "${#arr_IOMMU_VFIO_PCI[@]}" -eq 0 ]]; then
-            false
-        fi
+        # TOOD: create a function that takes in a string, which is the name of another parameter (like a pointer) and perform validation given the var type (check prefix var, str, int, arr, etc.)
+
+        # <remarks> Check if list is empty </remarks>
+        declare -a arr=( "${arr_IOMMU_VFIO_PCI[@]}" )
+        CheckIfArrayIsEmpty
 
         AppendPassOrFail "${str_output}"
         echo
@@ -1910,11 +1923,23 @@
                 # <remarks> Save thread sets to delimited list. </remarks>
                 declare -i int_set_first_thread="${arr_host_threads_sets[0]}"
                 declare -i int_set_last_thread="${arr_host_threads_sets[-1]}"
-                str_host_thread_sets+="${int_set_first_thread}-${int_set_last_thread},"
+                local str_thread_set="${int_set_first_thread}"
+
+                if [[ "${int_set_first_thread}" -ne "${int_set_last_thread}" ]]; then
+                    local str_thread_set="${int_set_first_thread}-${int_set_last_thread}"
+                fi
+
+                str_host_thread_sets+="${str_thread_set},"
 
                 declare -i int_set_first_thread="${arr_virt_threads_sets[0]}"
                 declare -i int_set_last_thread="${arr_virt_threads_sets[-1]}"
-                str_virt_thread_sets+="${int_set_first_thread}-${int_set_last_thread},"
+                local str_thread_set="${int_set_first_thread}"
+
+                if [[ "${int_set_first_thread}" -ne "${int_set_last_thread}" ]]; then
+                    local str_thread_set="${int_set_first_thread}-${int_set_last_thread}"
+                fi
+
+                str_virt_thread_sets+="${str_thread_set},"
             done
 
             # <remarks> Truncate last delimiter. </remarks>
@@ -1973,8 +1998,8 @@
             declare -gr str_total_threads_hexadecimal=$( printf '%x\n' $int_total_threads_hexadecimal_mask )
 
         declare -a arr_output=(
-            "Allocated threads to host:\t${str_host_thread_sets}"
-            "Allocated threads to guest:\t${str_virt_thread_sets}"
+            "Allocated to Host\t${str_host_thread_sets}"
+            "Allocated to guest:\t${str_virt_thread_sets}"
         )
 
         PrintArray
@@ -2009,13 +2034,14 @@
 
         local readonly str_output1="Hugepages is a feature which statically allocates system memory to pagefiles.\n\tVirtual machines can use Hugepages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n"
         local readonly str_output2="Setup Hugepages?"
+        local readonly str_output3="Enter size of Hugepages (bytes):"
         local readonly var_get_host_max_mem='cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1'
         # </params>
 
         # <remarks> Ask user to proceed. </remarks>
         echo -e "${str_output1}"
         ReadInput "${str_output2}" || return "${?}"
-        ReadMultipleChoiceIgnoreCase "${arr_choices[@]}" || return "${?}"
+        ReadMultipleChoiceIgnoreCase "${str_output3}" "${arr_choices[@]}" || return "${?}"
         var_input=""
         str_huge_page_byte_prefix="${var_input}"
         int_huge_page_max_kbit_size=$( eval "${var_get_host_max_mem}" )
@@ -2038,10 +2064,10 @@
         # <remarks> Get values. </remarks>
         readonly int_huge_page_max=$(( $int_huge_page_min_kbit_size - $int_huge_page_min_kbit_size ))
         readonly int_HugePageMax=$(( $int_huge_page_max / $int_huge_page_kbit_size ))
-        local readonly str_output3="Enter number of Hugepages (n * ${str_huge_page_byte_prefix})"
+        local readonly str_output4="Enter number of Hugepages (n * ${str_huge_page_byte_prefix})"
 
         # <remarks> Ask user for preferred amount. </remarks>
-        ReadInputFromRangeOfTwoNums "${str_output3}" "${int_huge_page_min}" "${int_huge_page_max}" || return "${?}"
+        ReadInputFromRangeOfTwoNums "${str_output4}" "${int_huge_page_min}" "${int_huge_page_max}" || return "${?}"
         readonly int_huge_page_count="${var_input}"
 
         # <remarks> Save changes. </remarks>
