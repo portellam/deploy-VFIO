@@ -1364,7 +1364,6 @@
 
 # <summary> Business functions: Get IOMMU </summary>
 # <code>
-
     # <summary> Parse PCI devices for all relevant information. If a parse fails, attempt again another way. If all parses fail, return error </summary>
     function Parse_IOMMU
     {
@@ -1551,21 +1550,20 @@
             local readonly str_file="${2}"
         # </params>
 
-        Parse_IOMMU_Main "${var_opt}" "${str_file}" || (
-            case "${var_opt}" in
-                "${str_opt_parse_local}" | * )
-                    Parse_IOMMU_Main "${str_opt_parse_file}" "${str_file}" || Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
-                    ;;
+        # <remarks> If an operation fails, try another. </remarks>
+        case "${var_opt}" in
+            "${str_opt_parse_internet}" )
+                Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
+                ;;
 
-                "${str_opt_parse_file}" )
-                    Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
-                    ;;
+            "${str_opt_parse_file}" )
+                Parse_IOMMU_Main "${str_opt_parse_file}" "${str_file}" || Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
+                ;;
 
-                "${str_opt_parse_internet}" )
-                    false
-                    ;;
-            esac
-        )
+            "${str_opt_parse_local}" | * )
+                Parse_IOMMU_Main "${str_opt_parse_local}" "${str_file}" || Parse_IOMMU_Main "${str_opt_parse_file}" "${str_file}" || Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
+                ;;
+        esac
 
         AppendPassOrFail "${str_output}"
 
@@ -2409,7 +2407,7 @@
                 ;;
         esac
 
-        Parse_IOMMU "LOCAL" "${var_input1}" || exit "${?}"
+        Parse_IOMMU "FILE" "${var_input1}" || exit "${?}"
         Select_PCI || exit "${?}"
     fi
 
