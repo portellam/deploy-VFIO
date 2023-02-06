@@ -1705,6 +1705,7 @@
         fi
 
         AppendPassOrFail "${str_output}"
+        echo
         return "${int_exit_code}"
     }
 # </code>
@@ -1813,13 +1814,17 @@
     function AddUserToGroups
     {
         # <params>
+        local readonly str_output="Adding user to groups..."
         local readonly var_get_first_valid_user='getent passwd {1000..60000} | cut -d ":" -f 1'
         local readonly str_username=$( eval "${var_get_first_valid_user}" )
         # </params>
 
         # <remarks> Add user(s) to groups. </remarks>
-        adduser "${str_username}" "input"
-        adduser "${str_username}" "libvirt"
+        echo -e "${str_output}"
+        adduser "${str_username}" "input" || return 1
+        adduser "${str_username}" "libvirt" || return 1
+        AppendPassOrFail "${str_output}"
+        echo
         return 0
     }
 
@@ -1827,12 +1832,15 @@
     function Allocate_CPU
     {
         # <params>
+        local readonly str_output="Allocating CPU threads..."
         local readonly var_get_all_cores='seq 0 $(( ${int_total_cores} - 1 ))'
         local readonly var_get_total_threads='cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+"'
         local readonly var_get_total_cores='cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+"'
         declare -ir int_total_cores=$( eval "${var_get_total_cores}" )
         declare -ir int_total_threads=$( eval "${var_get_total_threads}" )
         # </params>
+
+        echo -e "${str_output}"
 
         # <summary> Set maximum number of cores allocated to host machine. </summary>
             # <params>
@@ -1851,7 +1859,9 @@
             # <remarks> If single-core CPU, fail. </remarks>
             else
                 readonly int_host_cores
-                return 1
+                false
+                AppendPassOrFail "${str_output}"
+                return "${int_exit_code}"
             fi
 
         # <summary> Get thread sets, for host and virtual machines. </summary>
@@ -1962,11 +1972,18 @@
             declare -ir int_total_threads_hexadecimal_mask=$(( ( 2 ** ${int_total_threads} ) - 1 ))
             declare -gr str_total_threads_hexadecimal=$( printf '%x\n' $int_total_threads_hexadecimal_mask )
 
-        echo -e "Allocated threads to host:\t${str_host_thread_sets}"
-        echo -e "Allocated threads to guest:\t${str_virt_thread_sets}"
+        declare -a arr_output=(
+            "Allocated threads to host:\t${str_host_thread_sets}"
+            "Allocated threads to guest:\t${str_virt_thread_sets}"
+        )
+
+        PrintArray
+        echo
 
         # <remarks> Save changes. </remarks>
         declare -gr str_GRUB_Allocate_CPU="isolcpus=${str_virt_thread_sets} nohz_full=${str_virt_thread_sets} rcu_nocbs=${str_virt_thread_sets}"
+        AppendPassOrFail "${str_output}"
+        echo
         return 0
     }
 
@@ -2416,7 +2433,7 @@
         exit "${int_exit_code}"
     fi
 
-    <remarks> Get and ask user to select IOMMU groups. </remarks>
+    # <remarks> Get and ask user to select IOMMU groups. </remarks>
     if "${bool_opt_any_VFIO_setup}"; then
         case true in
             "${bool_arg_parse_file}" )
