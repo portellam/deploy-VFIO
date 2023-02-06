@@ -1,7 +1,10 @@
 #!/bin/bash sh
 
 #
-# Author(s):    Alex Portell <github.com/portellam>
+# Filename:         deploy-VFIO-setup.bash
+# Description:      The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough).
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
 #
@@ -11,9 +14,8 @@
 # -revise README, files
 # -pull down original system files from somewhere
 # -or provide checksum of my backups of system files
-# this command 'lspci -vmnk' does exactly of what I need. All the relevant data in one output. easy to use grep.
-#   I need to make note of this. I am fucking beside myself.
-#   EIGHT MONTHS OF OFF AND ON DEV, ARE YOU SERIOUS?
+#
+#
 
 # <summary> #1 - Command operation and validation, and Miscellaneous </summary>
 # <code>
@@ -2224,6 +2226,8 @@
 
 # <summary> Main </summary>
 # <code>
+    # TODO: debug and fix usage (options and arguments)
+
     function PrintUsage
     {
         # <params>
@@ -2411,8 +2415,6 @@
         Select_IOMMU || exit "${?}"
     fi
 
-    exit
-
     # <remarks> Execute pre-setup </remarks>
     if "${bool_opt_any_VFIO_setup}" || "${bool_opt_pre_setup}"; then
         AddUserToGroups
@@ -2422,6 +2424,8 @@
         Virtual_KVM
         Modify_QEMU
     fi
+
+    exit
 
     # <remarks> Execute main setup </remarks>
     if "${bool_opt_any_VFIO_setup}"; then
