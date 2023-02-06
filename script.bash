@@ -821,9 +821,10 @@
     function ReadInput
     {
         # <params>
+        declare -i int_max_tries=3
+        declare -ar arr_count=( $( seq 0 "${int_max_tries}" ) )
         local readonly str_no="N"
         local readonly str_yes="Y"
-        declare -ar arr_count=( "1" "2" "3" )
         local str_output=""
         # </params>
 
@@ -869,7 +870,8 @@
     function ReadInputFromRangeOfTwoNums
     {
         # <params>
-        declare -ar arr_count=( "1" "2" "3" )
+        declare -i int_max_tries=3
+        declare -ar arr_count=( $( seq 0 "${int_max_tries}" ) )
         local readonly var_min="${2}"
         local readonly var_max="${3}"
         local str_output=""
@@ -918,7 +920,8 @@
     function ReadMultipleChoiceIgnoreCase
     {
         # <params>
-        declare -ar arr_count=( "1" "2" "3" )
+        declare -i int_max_tries=3
+        declare -ar arr_count=( $( seq 0 "${int_max_tries}" ) )
         declare -a arr_input=()
         local str_output=""
         local readonly str_output_multiple_choice_not_valid="${var_prefix_error} Insufficient multiple choice answers."
@@ -981,7 +984,8 @@
     function ReadMultipleChoiceMatchCase
     {
         # <params>
-        declare -ar arr_count=( "1" "2" "3" )
+        declare -i int_max_tries=3
+        declare -ar arr_count=( $( seq 0 "${int_max_tries}" ) )
         declare -a arr_input=()
         local str_output=""
         local readonly str_output_multiple_choice_not_valid="${var_prefix_error} Insufficient multiple choice answers."
@@ -1763,7 +1767,7 @@
 
         # <remarks> GRUB </remarks>
         arr_file1_contents=(
-            "${str_GRUB_isolcpu}"
+            "${str_GRUB_Allocate_CPU}"
             "${str_GRUB_hugepages}"
             "modprobe.blacklist=${str_driverListForVFIO}"
             "pci-stub.ids=${str_driverListForSTUB}"
@@ -1822,89 +1826,98 @@
     # <summary> isolcpus: Ask user to allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and virtual machine performance. </summary
     function Allocate_CPU
     {
-        # <params>
-        declare -a arr_cores_by_thread arr_host_cores arr_host_threads arr_host_thread_sets arr_virt_thread_sets
-        declare -i int_host_cores=1
-        declare -i int_host_threads_mask=0
-        declare -i int_SMT_factor=1
-        declare -i int_total_cores=1
-        declare -i int_total_threads=1
-        declare -i int_total_threads_mask=1
-        declare -g str_GRUB_isolcpu=""
-        declare -g str_host_threads_mask=""
-        declare -g str_total_threads_mask=""
-        local str_virt_thread_sets=""
+        # <summary> Set maximum number of cores allocated to host machine. </summary>
+            # <params>
+            local readonly var_get_all_cores='seq 0 $(( ${int_total_cores} - 1 ))'
+            declare -ir int_total_cores=$( eval "${var_get_total_cores}" )
+            declare -ar arr_all_cores=( $( eval "${var_get_all_cores}" ) )
+            declare -i int_host_cores=1
+            # </params>
 
-        local readonly var_get_arr_SMT_factors='{1..$int_SMT_factor}'
-        local readonly var_get_cores_by_thread='cat /proc/cpuinfo | grep "core id" | cut -d ":" -f2 | cut -d " " -f2'
-        local readonly var_get_SMT_factor='$(( "${int_total_threads}" / "${int_total_cores}" ))'
-        local readonly var_get_thread_mask='$(( 2 ** $int_thread ))'
-        local readonly var_get_total_threads_mask='$(( ( 2 ** $int_total_threads ) - 1 ))'
-        local readonly var_get_total_cores='cat /proc/cpuinfo | grep "cpu cores" "| uniq | grep -o "[0-9]\+"'
-        local readonly var_get_total_threads='cat /proc/cpuinfo | grep "siblings" "| uniq | grep -o "[0-9]\+"'
-        # </params>
+            # <remarks> quad-core or greater CPU </remarks>
+            if [[ "${int_total_cores}" -ge 4 ]]; then
+                readonly int_host_cores=2
 
-        # <remarks> Get values. </remarks>
-        readonly arr_cores_by_thread=$( eval "${var_get_cores_by_thread}" )
-        readonly int_total_cores=$( eval "${var_get_total_cores}" )
-        readonly int_total_threads=$( eval "${var_get_total_threads}" )
-        readonly int_SMT_factor=$( eval "${var_get_SMT_factor}" )
+            # <remarks> double-core/triple-core CPU </remarks>
+            elif [[ "${int_total_cores}" -le 3 && "${int_total_cores}" -ge 2 ]]; then
+                readonly int_host_cores
 
-        # <remarks> quad-core or greater CPU </remarks>
-        if [[ "${int_total_cores}" -ge 4 ]]; then
-            readonly int_host_cores=2
-
-        # <remarks> double-core/triple-core CPU </remarks>
-        elif [[ "${int_total_cores}" -le 3 && "${int_total_cores}" -ge 2 ]]; then
-            readonly int_host_cores=1
-
-        # <remarks> single-core CPU </remarks>
-        else
-            readonly int_host_cores="${int_total_cores}"
-            return 1
-        fi
-
-        # <remarks> Get thread sets for virtual machines. </remarks>
-        for (( int_i=0 ; int_i<$int_SMT_factor ; int_i++ )); do
-            declare -i int_first_host_thread=$(( int_host_cores + int_total_cores * int_index ))
-            declare -i int_last_host_core=$(( int_total_cores - 1 ))
-            declare -i int_last_host_thread=$(( int_last_host_core + int_total_cores * int_index ))
-
-            if [[ "${int_first_host_thread}" -eq "${int_lastHostThread}" ]]; then
-                str_virt_thread_sets+="${int_first_host_thread},"
+            # <remarks> single-core CPU </remarks>
             else
-                str_virt_thread_sets+="${int_first_host_thread}-${int_last_host_thread},"
+                readonly int_host_cores
+                return 1
             fi
-        done
 
-        # <remarks> Truncate last delimiter. </remarks>
-        if [[ ${str_virt_thread_sets: -1} == "," ]]; then
-            str_virt_thread_sets=${str_virt_thread_sets::-1}
-        fi
+        # <summary> Get thread sets, for host and virtual machines. </summary>
+            # <params>
+            local readonly var_get_thread='$(( int_core + ( int_SMT_factor * int_total_cores ) ))'
+            local readonly var_get_host_cores='seq 0 $(( ${int_host_cores} - 1 ))'
+            local readonly var_get_virt_cores='seq ${int_host_cores} $(( ${int_total_cores} - 1 ))'
+            declare -ar arr_host_cores=( $( eval "${var_get_host_cores}" ) )
+            declare -ar arr_virt_cores=( $( eval "${var_get_virt_cores}" ) )
+            # </params>
 
-        # <remarks> Get thread sets for virtual machines. </remarks>
-        for (( int_i=0 ; int_i<$int_total_cores ; int_i++ )); do
-            local str_line=""
-            declare -i int_core=${arr_cores_by_thread[int_i]}
+            function GetThreadByCoreAnd_SMT
+            {
+                int_thread=$(( int_core + ( int_SMT_factor * int_total_cores ) ))
+            }
 
-            # <remarks> Add threads to host. </remarks>
-            for (( int_j=0 ; int_j<$int_SMT_multiplier ; int_j++ )); do
-                declare -i int_thread=$(( int_core + int_total_cores * int_j ))
-                str_line="${int_thread},"
+            for int_SMT_factor in "${arr_SMT_factors[@]}"; do
+                # <remarks> Reset params </remarks>
+                declare -a arr_host_threads_sets=()
+                declare -a arr_virt_threads_sets=()
+                declare -i int_thread
 
-                if [[ $int_core -lt $int_host_cores ]]; then
-                    arr_host_threads+=("$int_thread")
-                fi
+                # <remarks> Find thread sets for host machine. </remarks>
+                for int_core in "${arr_host_cores[@]}"; do
+                    GetThreadByCoreAnd_SMT
+                    arr_host_threads_sets+=( "${int_thread}" )
+                done
+
+                # <remarks> Find thread sets for virtual machines. </remarks>
+                for int_core in "${arr_virt_cores[@]}"; do
+                    GetThreadByCoreAnd_SMT
+                    arr_virt_threads_sets+=( "${int_thread}" )
+                done
+
+                # <remarks> Save thread sets to delimited list. </remarks>
+                declare -i int_set_first_thread="${arr_host_threads_sets[0]}"
+                declare -i int_set_last_thread="${arr_host_threads_sets[-1]}"
+                str_host_threads_sets+="${int_set_first_thread}-${int_set_last_thread},"
+
+                declare -i int_set_first_thread="${arr_virt_threads_sets[0]}"
+                declare -i int_set_last_thread="${arr_virt_threads_sets[-1]}"
+                str_virt_thread_sets+="${int_set_first_thread}-${int_set_last_thread},"
             done
 
-            # <remarks> Add thread sets to host or virtual machine. </remarks>
-            if [[ "${int_core}" -eq "${int_host_cores}" ]]; then
-                arr_host_cores+=( "${int_core}" )
-                arr_host_thread_sets+=( "${str_line}" )
-            else
-                arr_virt_thread_sets+=( "${str_line}" )
+            # <remarks> Truncate last delimiter. </remarks>
+            if [[ ${str_host_threads_sets: -1} == "," ]]; then
+                str_host_threads_sets=${str_host_threads_sets::-1}
             fi
-        done
+
+            # <remarks> Ditto. </remarks>
+            if [[ ${str_virt_thread_sets: -1} == "," ]]; then
+                str_virt_thread_sets=${str_virt_thread_sets::-1}
+            fi
+
+            # <remarks> Save output </remarks>
+            readonly str_host_threads_sets str_virt_thread_sets
+
+        echo $str_host_threads_sets
+        echo $str_virt_thread_sets
+        exit
+
+        # <params>
+        declare -g str_GRUB_Allocate_CPU=""
+        local readonly var_get_thread_decimal_mask='$(( 2 ** ${int_thread} ))'
+        local readonly var_get_total_cores='cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+"'
+        local readonly var_get_total_threads='cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+"'
+        declare -ir int_total_threads=$( eval "${var_get_total_threads}" )
+        declare -ir int_total_threads_decimal_decimal_mask=$(( ( 2 ** ${int_total_threads} ) - 1 ))
+        declare -g str_host_threads_decimal_mask=""
+        declare -g str_total_threads_decimal_mask=""
+        declare -i int_host_threads_decimal_mask=0
+        # </params>
 
         # <remarks>
         # save output to string for cpuset and cpumask
@@ -1923,18 +1936,18 @@
         # </remarks>
 
         # <remarks> Find CPU mask. </remarks>
-        readonly int_total_threads_mask=$( eval "${var_get_total_threads_mask}" )
+        readonly int_total_threads_decimal_mask=$( eval "${var_get_total_threads_decimal_mask}" )
 
         for int_thread in ${arr_host_threads[@]}; do
-            int_host_threads_mask+=$( eval "${var_get_thread_mask}" )
+            int_host_threads_decimal_mask+=$( eval "${var_get_thread_decimal_mask}" )
         done
 
         # <remarks> Save changes. </remarks>
             # <remarks> Convert int to hex. </remarks>
-            readonly int_host_threads_mask
-            readonly str_total_threads_mask=$(printf '%x\n' $int_total_threads_mask)
-            readonly str_host_threads_mask=$(printf '%x\n' $int_host_threads_mask)
-        readonly str_GRUB_isolcpu="isolcpus=$str_virt_thread_sets nohz_full=$str_virt_thread_sets rcu_nocbs=$str_virt_thread_sets"
+            readonly int_host_threads_decimal_mask
+            readonly str_total_threads_decimal_mask=$(printf '%x\n' $int_total_threads_decimal_mask)
+            readonly str_host_threads_decimal_mask=$(printf '%x\n' $int_host_threads_decimal_mask)
+        readonly str_GRUB_Allocate_CPU="isolcpus=$str_virt_thread_sets nohz_full=$str_virt_thread_sets rcu_nocbs=$str_virt_thread_sets"
         return 0
     }
 
