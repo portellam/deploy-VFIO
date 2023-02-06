@@ -1366,11 +1366,11 @@
 # <code>
 
     # <summary> Parse PCI devices for all relevant information. If a parse fails, attempt again another way. If all parses fail, return error </summary>
-    function Parse_PCI
+    function Parse_IOMMU
     {
-        function Parse_PCI_Main
+        function Parse_IOMMU_Main
         {
-            function Parse_PCI_Are_Inequal_Lists_Sizes
+            function Parse_IOMMU_Are_Inequal_Lists_Sizes
             {
                 local bool_are_inequal_lists=false
                 [ "${#arr_IOMMU[@]}" -eq "${#arr_class[@]}" ] || bool_are_inequal_lists=true
@@ -1389,7 +1389,7 @@
                 return 0
             }
 
-            function Parse_PCI_Are_Not_Empty_Lists
+            function Parse_IOMMU_Are_Not_Empty_Lists
             {
                 # <remarks> If any list is empty, fail. </remarks>
                 local bool_is_empty_list=false
@@ -1410,7 +1410,7 @@
                 return 0
             }
 
-            function Parse_PCI_Save_Lists
+            function Parse_IOMMU_Save_Lists
             {
                 # <remarks> Save to lists each device's information. Lists should be of the same-size. </remarks>
                 for str_slot_ID in "${arr_devices[@]}"; do
@@ -1450,7 +1450,7 @@
                 return 0
             }
 
-            function Parse_PCI_Set_Operation
+            function Parse_IOMMU_Set_Operation
             {
                 # <remarks> Set commands for each parse type. </remarks>
                 case "${var_opt}" in
@@ -1523,14 +1523,14 @@
             # </params>
 
             # <remarks> Set commands for each parse type. </remarks>
-            Parse_PCI_Set_Operation || return "${?}"
+            Parse_IOMMU_Set_Operation || return "${?}"
 
             # <remarks> Get all devices from system. </remarks>
             declare -a arr_devices=( $( eval ${var_parse_slot_ID} | awk '{print $1}' ) )
-            Parse_PCI_Save_Lists || return "${?}"
+            Parse_IOMMU_Save_Lists || return "${?}"
 
-            Parse_PCI_Are_Not_Empty_Lists || return "${?}"
-            Parse_PCI_Are_Inequal_Lists_Sizes || return "${?}"
+            Parse_IOMMU_Are_Not_Empty_Lists || return "${?}"
+            Parse_IOMMU_Are_Inequal_Lists_Sizes || return "${?}"
 
             # <remarks> Save output to file. </remarks>
             if [[ "${?}" -eq 0 && "${var_opt}" != "${str_opt_parse_file}" ]]; then
@@ -1551,14 +1551,14 @@
             local readonly str_file="${2}"
         # </params>
 
-        Parse_PCI_Main "${var_opt}" "${str_file}" || (
+        Parse_IOMMU_Main "${var_opt}" "${str_file}" || (
             case "${var_opt}" in
                 "${str_opt_parse_local}" | * )
-                    Parse_PCI_Main "${str_opt_parse_file}" "${str_file}" || Parse_PCI_Main "${str_opt_parse_internet}" "${str_file}"
+                    Parse_IOMMU_Main "${str_opt_parse_file}" "${str_file}" || Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
                     ;;
 
                 "${str_opt_parse_file}" )
-                    Parse_PCI_Main "${str_opt_parse_internet}" "${str_file}"
+                    Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
                     ;;
 
                 "${str_opt_parse_internet}" )
@@ -2397,19 +2397,19 @@
     if "${bool_opt_any_VFIO_setup}"; then
         case true in
             "${bool_arg_parse_file}" )
-                readonly var_Parse_PCI="FILE"
+                readonly var_Parse_IOMMU="FILE"
                 ;;
 
             "${bool_arg_parse_online}" )
-                readonly var_Parse_PCI="DNS"
+                readonly var_Parse_IOMMU="DNS"
                 ;;
 
             * )
-                readonly var_Parse_PCI="LOCAL"
+                readonly var_Parse_IOMMU="LOCAL"
                 ;;
         esac
 
-        Parse_PCI "LOCAL" "${var_input1}" || exit "${?}"
+        Parse_IOMMU "LOCAL" "${var_input1}" || exit "${?}"
         Select_PCI || exit "${?}"
     fi
 
