@@ -566,8 +566,9 @@
     function PrintArray
     {
         # <params>
+        IFS=$'\n'
         declare -aI arr_output
-        local readonly var_command='echo -e "${var_yellow}${str_output[@]}${var_reset_color}"'
+        local readonly var_command='echo -e "${var_yellow}${arr_output[*]}${var_reset_color}"'
         # </params>
 
         if ! CheckIfVarIsValid "${arr_output[@]}" &> /dev/null; then
@@ -575,11 +576,7 @@
         fi
 
         echo
-
-        for str_output in "${arr_output[@]}"; do
-            eval "${var_command}" || return 1
-        done
-
+        eval "${var_command}" || return 1
         return 0
     }
 
@@ -1655,28 +1652,27 @@
                 fi
 
                 echo -e "${str_output_skip_select}"
-                return 1
-            fi
-
-            if "${bool_IOMMU_has_USB}"; then
-                arr_IOMMU_PCI_STUB+=( "${int_this_IOMMU_ID}" )
             else
-                arr_IOMMU_PCI_STUB+=("")
-            fi
+                if "${bool_IOMMU_has_USB}"; then
+                    arr_IOMMU_PCI_STUB+=( "${int_this_IOMMU_ID}" )
+                else
+                    arr_IOMMU_PCI_STUB+=("")
+                fi
 
-            if "${bool_IOMMU_has_VGA}"; then
-                arr_IOMMU_VFIO_PCI+=("")
-                arr_IOMMU_VFIO_PCI_with_VGA+=( "${int_this_IOMMU_ID}" )
-            else
-                arr_IOMMU_VFIO_PCI+=( "${int_this_IOMMU_ID}" )
-                arr_IOMMU_VFIO_PCI_with_VGA+=("")
+                if "${bool_IOMMU_has_VGA}"; then
+                    arr_IOMMU_VFIO_PCI+=("")
+                    arr_IOMMU_VFIO_PCI_with_VGA+=( "${int_this_IOMMU_ID}" )
+                else
+                    arr_IOMMU_VFIO_PCI+=( "${int_this_IOMMU_ID}" )
+                    arr_IOMMU_VFIO_PCI_with_VGA+=("")
+                fi
             fi
 
             return 0
         }
 
         # <params>
-        local str_output="Reviewing IOMMU groups..."
+        local readonly str_output="Reviewing IOMMU groups..."
         local readonly int_IOMMU_max=$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )
         local readonly var_get_IOMMU='seq 0 "${int_IOMMU_max}"'
         declare -a arr_IOMMU_PCI_STUB arr_IOMMU_VFIO_PCI arr_IOMMU_VFIO_PCI_with_VGA
@@ -1700,7 +1696,7 @@
             Select_IOMMU_Prompt
         done
 
-        if [[ "${#arr_IOMMU_VFIO_PCI[@]}" -ne 0 ]]; then
+        if [[ "${#arr_IOMMU_VFIO_PCI[@]}" -eq 0 ]]; then
             false
         fi
 
@@ -2411,9 +2407,11 @@
                 ;;
         esac
 
-        Parse_IOMMU "FILE" "${var_input1}" || exit "${?}"
+        Parse_IOMMU "${var_Parse_IOMMU}" "${var_input1}" || exit "${?}"
         Select_IOMMU || exit "${?}"
     fi
+
+    exit
 
     # <remarks> Execute pre-setup </remarks>
     if "${bool_opt_any_VFIO_setup}" || "${bool_opt_pre_setup}"; then
