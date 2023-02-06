@@ -1364,7 +1364,7 @@
 
 # <summary> Business functions: Get IOMMU </summary>
 # <code>
-    # <summary> Parse PCI devices for all relevant information. If a parse fails, attempt again another way. If all parses fail, return error </summary>
+    # <summary> Parse IOMMU groups for all relevant information. If a parse fails, attempt again another way. If all parses fail, return error </summary>
     function Parse_IOMMU
     {
         function Parse_IOMMU_Main
@@ -1573,9 +1573,9 @@
         return "${int_exit_code}"
     }
 
-    function Select_PCI
+    function Select_IOMMU
     {
-        function Select_PCI_Match_IOMMU_AndClass
+        function Select_IOMMU_Match_IOMMU_AndClass
         {
             # <params>
             local readonly str_class="${arr_class[$int_key]}"
@@ -1629,7 +1629,7 @@
             return 0
         }
 
-        function Select_PCI_Prompt
+        function Select_IOMMU_Prompt
         {
             # <params>
             local readonly str_output_do_select="Select IOMMU group '${int_this_IOMMU_ID}'?"
@@ -1692,10 +1692,10 @@
 
             for int_key in ${!arr_IOMMU[@]}; do
                 declare -i int_IOMMU="${arr_IOMMU[$int_key]}"
-                Select_PCI_Match_IOMMU_AndClass
+                Select_IOMMU_Match_IOMMU_AndClass
             done
 
-            Select_PCI_Prompt
+            Select_IOMMU_Prompt
         done
 
         if [[ "${#arr_IOMMU_VFIO_PCI[@]}" -ne 0 ]]; then
@@ -2408,7 +2408,7 @@
         esac
 
         Parse_IOMMU "FILE" "${var_input1}" || exit "${?}"
-        Select_PCI || exit "${?}"
+        Select_IOMMU || exit "${?}"
     fi
 
     exit
