@@ -481,7 +481,7 @@
     # <returns> exit code </returns>
     function CreateDir
     {
-        CheckIfDirExists "${1}" || return "${?}"
+        CheckIfDirExists "${1}"
 
         # <params>
         local readonly str_output_fail="${var_prefix_fail} Could not create directory '${1}'."
@@ -1268,20 +1268,25 @@
     # <returns> exit code </returns>
     function UpdateOrCloneGitRepo
     {
+        CreateDir "${1}${3}"
+
         # <summary> Update existing GitHub repository. </summary>
-        if CheckIfDirExists "${1}${2}"; then
-            local var_command="git pull"
-            cd "${1}${2}" && TryThisXTimesBeforeFail $( eval "${var_command}" )
+        if CheckIfDirExists "${1}${2}" &> /dev/null; then
+            local readonly var_command="git pull"
+
+            cd "${1}${2}" && TryThisXTimesBeforeFail $( eval "${var_command}" ) &> /dev/null
             return "${?}"
 
         # <summary> Clone new GitHub repository. </summary>
-        else
+        elif CheckIfDirExists "${1}${3}" &> /dev/null; then
             if ReadInput "Clone repo '${2}'?"; then
-                local var_command="git clone https://github.com/${2}"
+                local readonly var_command="git clone https://github.com/${2}"
 
-                cd "${1}${3}" && TryThisXTimesBeforeFail $( eval "${var_command}" )
+                cd "${1}${3}" && TryThisXTimesBeforeFail $( eval "${var_command}" ) &> /dev/null
                 return "${?}"
             fi
+        else
+            return 1
         fi
     }
 # </code>
@@ -2027,7 +2032,6 @@
             declare -gi int_huge_page_max=0
             declare -gi int_huge_page_min=0
             declare -g str_huge_page_byte_prefix=""
-            declare -g str_GRUB_hugepages=""
             declare -g str_hugepages_QEMU=""
 
             local readonly str_output1="Hugepages is a feature which statically allocates system memory to pagefiles.\n\tVirtual machines can use Hugepages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n\t${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n\t${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
@@ -2035,6 +2039,11 @@
             local readonly str_output3="Enter size of Hugepages (bytes):"
             local readonly var_get_host_max_mem='cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1'
             # </params>
+
+            if ! CheckIfVarIsNum "${int_max_mem}" &> /dev/null; then
+                local readonly str_output_could_not_parse_memory="${var_prefix_error} Could not parse system memory."
+                echo -e "${str_output_could_not_parse_memory}"
+            fi
 
             # <remarks> Ask user to proceed. </remarks>
             echo -e "${str_output1}"
@@ -2070,7 +2079,8 @@
             readonly int_huge_page_count="${var_input}"
 
             # <remarks> Save changes. </remarks>
-            readonly str_GRUB_hugepages="default_hugepagesz=${str_HugePageSize} hugepagesz=${str_HugePageSize} hugepages=${int_HugePageNum}"
+            declare -gr int_alloc_mem_hugepages=$(( $int_huge_page_count * $int_huge_page_kbit_size ))
+            declare -gr str_GRUB_hugepages="default_hugepagesz=${str_huge_page_byte_prefix} hugepagesz=${str_huge_page_byte_prefix} hugepages=${int_huge_page_count}"
             bool_is_setup_hugepages=true
             return 0
         }
@@ -2260,7 +2270,78 @@
     # <summary> zramswap: Ask user to setup a swap partition in host memory, to reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory. </summary>
     function RAM_Swapfile
     {
-        return 0
+        function RAM_Swapfile_Main
+        {
+            # <remarks> Install zram-swap </remarks>
+                # <params>
+                local readonly str_user_name1="foundObjects"
+                local readonly str_repo_name1="zram-swap"
+                local readonly str_full_repo1="${str_user_name1}/${str_repo_name1}"
+                local readonly str_script_name1="install.sh"
+                # </params>
+
+                GoToScriptDir
+                UpdateOrCloneGitRepo "${str_repos_dir}" "${str_full_repo1}" "${str_user_name1}"
+                cd "${str_repos_dir}${str_full_repo1}" || return "${?}"
+                CheckIfFileExists "${str_script_name1}" || return "${?}"
+                sudo bash "${str_script_name1}"
+
+            # <remarks> Modify zram-swap </remarks>
+                # <params>
+                declare -ir int_max_mem=$(cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )
+                local readonly str_file1="/etc/default/zram-swap"
+                # </params>
+
+                if ! CheckIfVarIsNum "${int_max_mem}" &> /dev/null; then
+                    local readonly str_output_could_not_parse_memory="${var_prefix_error} Could not parse system memory."
+                    echo -e "${str_output_could_not_parse_memory}"
+                fi
+
+                if CheckIfVarIsNum "${int_alloc_mem_hugepages}" &> /dev/null; then
+                    declare -ir int_usable_mem=$(( ( int_max_mem - int_alloc_mem_hugepages ) / 2 ))
+                else
+                    declare -ir int_usable_mem=$(( int_max_mem / 2 ))
+                fi
+
+                declare -i int_denominator=$( printf "%.0f" $( echo "scale=2;${int_max_mem}/${int_usable_mem}" | bc ) )
+
+                # <remarks> Round down to nearest even number. </remarks>
+                if [[ $( expr $int_denominator % 2 ) -eq 1 ]]; then
+                    (( int_denominator-- ))
+                fi
+
+                readonly int_denominator
+
+                # <remarks> Is fraction positive non-zero and not equal to one. </remarks>
+                if [[ "${int_denominator}" -gt 1 ]]; then
+                    local readonly str_fraction="1/${int_denominator}"
+
+                    declare -a arr_file=(
+                        ""
+                        "#"
+                        "# Generated by '${str_full_repo_name}'"
+                        "#"
+                        "# WARNING: Any modifications to this file will be modified by '${str_repo_name}'"
+                        "_zram_fraction=\"${str_fraction}\""
+                    )
+                else
+                    DeleteFile "${str_file1}" || return "${?}"
+                fi
+
+                WriteFile "${str_file1}" || return "${?}"
+
+            return 0
+        }
+
+        # <params>
+        local readonly str_output="Installing zram-swap..."
+        # </params>
+
+        echo
+        echo -e "${str_output}"
+        RAM_Swapfile_Main
+        AppendPassOrFail "${str_output}"
+        return "${int_exit_code}"
     }
 
     # <summary> Evdev: Ask user to setup a virtual Keyboard-Video-Mouse swich (excluding the Video). Will allow a user to swap between active virtual machines and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL'). </summary>
@@ -2474,7 +2555,11 @@
 
     declare -gr str_repo_name="deploy-VFIO-setup"
     declare -gr str_full_repo_name="portellam/${str_repo_name}"
-    GoToScriptDir; declare -gr str_files_dir="$( find . -name files | uniq | head -n1 )/"
+
+    GoToScriptDir
+    declare -gr str_files_dir="$( find . -name files | uniq | head -n1 | cut -c2- )/"
+    declare -gr str_repos_dir="$( find . -name git | uniq | head -n1 | cut -c2- )/"
+
     declare -g bool_is_connected_to_Internet=false
     # </params>
 
@@ -2488,25 +2573,25 @@
         exit "${int_exit_code}"
     fi
 
-    # # <remarks> Get and ask user to select IOMMU groups. </remarks>
-    # if "${bool_opt_any_VFIO_setup}"; then
-    #     case true in
-    #         "${bool_arg_parse_file}" )
-    #             readonly var_Parse_IOMMU="FILE"
-    #             ;;
+    # <remarks> Get and ask user to select IOMMU groups. </remarks>
+    if "${bool_opt_any_VFIO_setup}"; then
+        case true in
+            "${bool_arg_parse_file}" )
+                readonly var_Parse_IOMMU="FILE"
+                ;;
 
-    #         "${bool_arg_parse_online}" )
-    #             readonly var_Parse_IOMMU="DNS"
-    #             ;;
+            "${bool_arg_parse_online}" )
+                readonly var_Parse_IOMMU="DNS"
+                ;;
 
-    #         * )
-    #             readonly var_Parse_IOMMU="LOCAL"
-    #             ;;
-    #     esac
+            * )
+                readonly var_Parse_IOMMU="LOCAL"
+                ;;
+        esac
 
-    #     Parse_IOMMU "${var_Parse_IOMMU}" "${var_input1}" || exit "${?}"
-    #     Select_IOMMU || exit "${?}"
-    # fi
+        Parse_IOMMU "${var_Parse_IOMMU}" "${var_input1}" || exit "${?}"
+        Select_IOMMU || exit "${?}"
+    fi
 
     # <remarks> Execute pre-setup </remarks>
     if "${bool_opt_any_VFIO_setup}" || "${bool_opt_pre_setup}"; then
@@ -2515,11 +2600,10 @@
         Allocate_RAM
         Virtual_KVM
         Modify_QEMU
-        exit            # TODO: debug here!
         RAM_Swapfile
     fi
 
-    exit
+    exit # NOTE: debug below!
 
     # <remarks> Execute main setup </remarks>
     if "${bool_opt_any_VFIO_setup}"; then
