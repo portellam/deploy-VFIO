@@ -58,35 +58,6 @@
         return 0
     }
 
-    # <summary> Parse and execute from a list of command(s) </summary>
-    # <param name="${arr_commands}"> string of array: the list of command(s) </param>
-    # <param name="${arr_commands_output}"> string of array: the list of output statements for each command call </param>
-    # <returns> exit code </returns>
-    function ParseAndExecuteListOfCommands
-    {
-        # <params>
-        local readonly str_output_fail="${var_prefix_error} Execution of command failed."
-        # </params>
-
-        CheckIfVarIsValid "${arr_commands[@]}" || return "${?}"
-
-        for int_key in ${!arr_commands[@]}; do
-            local var_command="${arr_commands[$int_key]}"
-            local var_command_output="${arr_commands_output[$int_key]}"
-            local str_output="Execute '${var_command}'?"
-
-            if CheckIfVarIsValid "${var_command_output}" &> /dev/null; then
-                str_output="${var_command_output}"
-            fi
-
-            if ReadInput "${str_output}"; then
-                ( eval "${var_command}" ) || ( SaveExitCode; echo -e "${str_output_fail}" )
-            fi
-        done
-
-        return "${int_exit_code}"
-    }
-
     # <summary> Save last exit code. </summary>
     # <param name=""${int_exit_code}""> the exit code </param>
     # <returns> void </returns>
