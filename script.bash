@@ -1678,6 +1678,7 @@
         }
 
         # <params>
+        declare -g bool_VFIO_has_IOMMU=false
         local readonly str_output="Reviewing IOMMU groups..."
         local readonly int_IOMMU_max=$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )
         local readonly var_get_IOMMU='seq 0 "${int_IOMMU_max}"'
@@ -1703,10 +1704,15 @@
         done
 
         # TOOD: create a function that takes in a string, which is the name of another parameter (like a pointer) and perform validation given the var type (check prefix var, str, int, arr, etc.)
+        # TODO: create single line strings of arrays of drivers and HW IDs, with delimiters (commas)
+        # arr_IOMMU_VFIO_PCI
+        # str_driverListForVFIO
+        # str_driverListForSTUB
+        # str_HWID_list_forVFIO
 
         # <remarks> Check if list is empty </remarks>
         declare -a arr=( "${arr_IOMMU_VFIO_PCI[@]}" )
-        CheckIfArrayIsEmpty
+        CheckIfArrayIsEmpty && bool_VFIO_has_IOMMU=true
 
         AppendPassOrFail "${str_output}"
         echo
@@ -1748,11 +1754,10 @@
         local readonly str_file3_backup="etc_modprobe.d_pci-blacklists.conf"
         local readonly str_file4_backup="etc_modprobe.d_vfio.conf"
         local readonly str_file5_backup="etc_modules"
-
-
-        local readonly str_GRUB_driver_blacklist="modprobe.blacklist=${str_driverListForVFIO}"
-        local readonly str_GRUB_HW_ID_pci-stub="pci-stub.ids=${str_driverListForSTUB}"
-        local readonly str_GRUB_HW_ID_vfio-pci="pci-stub.ids=${str_driverListForSTUB}"
+        local readonly str_command_driver_blacklist="modprobe.blacklist="
+        local readonly str_command_PCI_STUB="pci-stub.ids="
+        local readonly str_command_VFIO_PCI="vfio_pci.ids="
+        local str_GRUB="GRUB_CMDLINE_LINUX_DEFAULT="
         # </params>
 
         # <remarks> Check if backup files exist. </remarks>
@@ -1771,13 +1776,15 @@
         CreateBackupFile "${str_file5_backup}"
 
         # <remarks> GRUB </remarks>
-        arr_file1_contents=(
-            "${str_GRUB_Allocate_CPU}"
-            "${str_GRUB_hugepages}"
-            "modprobe.blacklist=${str_driverListForVFIO}"
-            "pci-stub.ids=${str_driverListForSTUB}"
-            "vfio_pci.ids=${str_HWID_list_forVFIO}"
-        )
+        local str_GRUB_temp=""
+        CheckIfVarIsValid "${str_GRUB_Allocate_CPU}" &> /dev/null && str_GRUB_temp+=" ${str_GRUB_Allocate_CPU}"
+        CheckIfVarIsValid "${str_GRUB_hugepages}" &> /dev/null && str_GRUB_temp+=" ${str_GRUB_hugepages}"
+
+        if "${bool_VFIO_has_IOMMU}"; then
+            str_GRUB_temp+=" ${str_command_driver_blacklist}${str_driverListForVFIO} ${str_command_PCI_STUB}${str_driverListForSTUB} ${str_command_VFIO_PCI}${str_HWID_list_forVFIO}"
+        fi
+
+        readonly str_GRUB+="\"${str_GRUB_temp}\""
 
         # <remarks> Modules </remarks>
 
@@ -2273,97 +2280,95 @@
     # <summary> zramswap: Ask user to setup a swap partition in host memory, to reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory. </summary>
     function RAM_Swapfile
     {
-        # TODO: swapfile is not appearing on my system. Fix!!!
-
-        function RAM_Swapfile_Main
+        function RAM_Swapfile_Install
         {
-            function RAM_Swapfile_Install
-            {
-                # <params>
-                local readonly str_user_name1="foundObjects"
-                local readonly str_repo_name1="zram-swap"
-                local readonly str_full_repo1="${str_user_name1}/${str_repo_name1}"
-                local readonly str_script_name1="install.sh"
-                # </params>
+            # <params>
+            local readonly str_user_name1="foundObjects"
+            local readonly str_repo_name1="zram-swap"
+            local readonly str_full_repo1="${str_user_name1}/${str_repo_name1}"
+            local readonly str_script_name1="install.sh"
+            # </params>
 
-                GoToScriptDir
-                UpdateOrCloneGitRepo "${str_repos_dir}" "${str_full_repo1}" "${str_user_name1}"
-                cd "${str_repos_dir}${str_full_repo1}" || return "${?}"
-                CheckIfFileExists "${str_script_name1}" || return "${?}"
-                sudo bash "${str_script_name1}"
-                return "${?}"
-            }
+            GoToScriptDir
+            UpdateOrCloneGitRepo "${str_repos_dir}" "${str_full_repo1}" "${str_user_name1}"
+            cd "${str_repos_dir}${str_full_repo1}" || return "${?}"
+            CheckIfFileExists "${str_script_name1}" || return "${?}"
+            sudo bash "${str_script_name1}"
+            return "${?}"
+        }
 
-            function RAM_Swapfile_Modify
-            {
-                # <params>
-                declare -ir int_max_mem=$(cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )
-                local readonly str_file1="/etc/default/zram-swap"
-                local readonly str_match_line1="_zram_fraction="
-                local readonly var_command='cat "${str_file1}"'
-                declare -a arr_file=( $( eval "${var_command}" ) )
-                # </params>
+        function RAM_Swapfile_Modify
+        {
+            # <params>
+            declare -ir int_max_mem=$(cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )
+            local readonly str_file1="/etc/default/zram-swap"
+            local readonly str_match_line1="_zram_fraction="
+            local readonly var_command='cat "${str_file1}"'
+            local readonly var_enable_all_swap='sudo swapon -a'
+            local readonly var_restart_daemon='sudo systemctl restart zram-swap'
+            declare -a arr_file=( $( eval "${var_command}" ) )
+            # </params>
 
-                # <remarks> Replace matching line with comment of line </remarks>
-                for str_line in "${arr_file[@]}"; do
-                    case "${str_line}" in
-                        "${str_match_line1}"* )
-                            str_line="#${str_line}"
-                            ;;
-                    esac
-                done
-
-                if ! CheckIfVarIsNum "${int_max_mem}" &> /dev/null; then
-                    local readonly str_output_could_not_parse_memory="${var_prefix_error} Could not parse system memory."
-                    echo -e "${str_output_could_not_parse_memory}"
-                    return 1
+            # <remarks> Replace matching line with comment of line </remarks>
+            for int_key in "${!arr_file[@]}"; do
+                if [[ "${arr_file[$int_key]}" == *"${str_match_line1}"* ]]; then
+                    arr_file[$int_key]="#${arr_file[$int_key]}"
                 fi
+            done
 
-                if CheckIfVarIsNum "${int_alloc_mem_hugepages}" &> /dev/null; then
-                    declare -ir int_usable_mem=$(( ( int_max_mem - int_alloc_mem_hugepages ) / 2 ))
-                else
-                    declare -ir int_usable_mem=$(( int_max_mem / 2 ))
-                fi
+            if ! CheckIfVarIsNum "${int_max_mem}" &> /dev/null; then
+                local readonly str_output_could_not_parse_memory="${var_prefix_error} Could not parse system memory."
+                echo -e "${str_output_could_not_parse_memory}"
+                return 1
+            fi
 
-                declare -i int_denominator=$( printf "%.0f" $( echo "scale=2;${int_max_mem}/${int_usable_mem}" | bc ) )
+            if CheckIfVarIsNum "${int_alloc_mem_hugepages}" &> /dev/null; then
+                declare -ir int_usable_mem=$(( ( int_max_mem - int_alloc_mem_hugepages ) / 2 ))
+            else
+                declare -ir int_usable_mem=$(( int_max_mem / 2 ))
+            fi
 
-                # <remarks> Round down to nearest even number. </remarks>
-                if [[ $( expr $int_denominator % 2 ) -eq 1 ]]; then
-                    (( int_denominator-- ))
-                fi
+            declare -i int_denominator=$( printf "%.0f" $( echo "scale=2;${int_max_mem}/${int_usable_mem}" | bc ) )
 
-                readonly int_denominator
+            # <remarks> Round down to nearest even number. </remarks>
+            if [[ $( expr $int_denominator % 2 ) -eq 1 ]]; then
+                (( int_denominator-- ))
+            fi
 
-                # <remarks> Is fraction positive non-zero and not equal to one. </remarks>
-                if [[ "${int_denominator}" -gt 1 ]]; then
-                    local readonly str_fraction="1/${int_denominator}"
+            readonly int_denominator
 
-                    arr_file+=(
-                        ""
-                        "#"
-                        "# Generated by '${str_full_repo_name}'"
-                        "#"
-                        "# WARNING: Any modifications to this file will be modified by '${str_repo_name}'"
-                        ""
-                        "${str_match_line1}\"${str_fraction}\""
-                    )
-                else
-                    DeleteFile "${str_file1}" || return "${?}"
-                fi
+            # <remarks> Is fraction positive non-zero and not equal to one. </remarks>
+            if [[ "${int_denominator}" -gt 1 ]]; then
+                local readonly str_fraction="1/${int_denominator}"
 
-                WriteFile "${str_file1}"
-                return "${?}"
-            }
+                arr_file+=(
+                    ""
+                    "#"
+                    "# Generated by '${str_full_repo_name}'"
+                    "#"
+                    "# WARNING: Any modifications to this file will be modified by '${str_repo_name}'"
+                    "${str_match_line1}\"${str_fraction}\""
+                )
+            fi
+
+            OverwriteFile "${str_file1}" || return "${?}"
+            eval "${var_restart_daemon}" || return "${?}"
+            eval "${var_enable_all_swap}" || return "${?}"
+
+            return "${?}"
         }
 
         # <params>
         local readonly str_output="Installing zram-swap..."
-        local readonly var_enable_all_swap='sudo swapon -a'
         # </params>
 
         echo
         echo -e "${str_output}"
-        ( RAM_Swapfile_Install && RAM_Swapfile_Modify && eval "${var_enable_all_swap}" ) || false
+
+        if ! RAM_Swapfile_Install || ! RAM_Swapfile_Modify; then
+            false
+        fi
+
         AppendPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
@@ -2415,14 +2420,63 @@
     # <summary> LookingGlass: Ask user to setup direct-memory-access of video framebuffer from virtual machine to host. NOTE: Only supported for Win 7/10/11 virtual machines. </summary>
     function VirtualVideoCapture
     {
-        return 0
+        # TODO:
+        # -add disclaimer for end user in both README and output
+        # -point to LookingGlass website
+
+        function VirtualVideoCapture_Main
+        {
+            # <remarks> reference: https://looking-glass.io/docs/B6/install/#client-install </remarks>
+
+            # <params>
+            local readonly str_user_name1="gnif"
+            local readonly str_repo_name1="LookingGlass"
+            local readonly str_full_repo1="${str_user_name1}/${str_repo_name1}"
+            local readonly str_dependencies="cmake gcc g++ clang libegl-dev libgl-dev libgles-dev libfontconfig-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config"
+            # </params>
+
+            # <remarks> Install dependencies. </remarks>
+            if [[ "${str_package_manager}" == "apt" ]]; then
+                InstallPackage "${str_dependencies}" || return "${?}"
+            fi
+
+            # <remarks> Get repo </remarks>
+            GoToScriptDir
+            UpdateOrCloneGitRepo "${str_repos_dir}" "${str_full_repo1}" "${str_user_name1}"
+            cd "${str_repos_dir}${str_full_repo1}" || return "${?}"
+
+            # <remarks> Build client </remarks>
+            mkdir client/build || return 1
+            cd client/build || return 1
+            cmake ../ || return 1
+            make || return 1
+
+            # <remarks> Conclude build as root or user. </remarks>
+            if $bool_is_user_root; then
+                make install || return 1
+            else
+                cmake -DCMAKE_INSTALL_PREFIX=~/.local .. && make install
+            fi
+
+            return 0
+        }
+
+        # <params>
+        local readonly str_output="Executing LookingGlass setup..."
+        # </params>
+
+        echo
+        echo -e "${str_output}"
+        VirtualVideoCapture_Main
+        AppendPassOrFail "${str_output}"
+        return "${int_exit_code}"
     }
 
     # <summary> Scream: Ask user to setup audio loopback from virtual machine to host. NOTE: Only supported for Win 7/10/11 virtual machines. </summary>
-    function VirtualAudioCapture
-    {
-        return 0
-    }
+    # function VirtualAudioCapture
+    # {
+    #     return 0
+    # }
 # </code>
 
 # <summary> Main </summary>
@@ -2627,18 +2681,16 @@
         RAM_Swapfile
     fi
 
-    exit # NOTE: debug below!
-
     # <remarks> Execute main setup </remarks>
-    if "${bool_opt_any_VFIO_setup}"; then
-        Setup_VFIO || exit "${?}"
-    fi
+    # if "${bool_opt_any_VFIO_setup}"; then
+    #     Setup_VFIO || exit "${?}"
+    # fi
 
     # <remarks> Execute post-setup </remarks>
-    if "${bool_opt_post_setup}"; then
-        VirtualAudioCapture
-        VirtualVideoCapture
-    fi
+    # if "${bool_opt_post_setup}"; then
+    #     VirtualAudioCapture
+    #     VirtualVideoCapture
+    # fi
 
     exit "${?}"
 # </code>
