@@ -1754,10 +1754,15 @@
         local readonly str_file3_backup="etc_modprobe.d_pci-blacklists.conf"
         local readonly str_file4_backup="etc_modprobe.d_vfio.conf"
         local readonly str_file5_backup="etc_modules"
-        local readonly str_command_driver_blacklist="modprobe.blacklist="
-        local readonly str_command_PCI_STUB="pci-stub.ids="
-        local readonly str_command_VFIO_PCI="vfio_pci.ids="
+
+        local readonly str_driver_VFIO_PCI="vfio-pci"
         local str_GRUB="GRUB_CMDLINE_LINUX_DEFAULT="
+        local readonly str_GRUB_blacklist="modprobe.blacklist="
+        local readonly str_GRUB_PCI_STUB="pci-stub.ids="
+        local readonly str_GRUB_VFIO_PCI="vfio_pci.ids="
+        local readonly str_modprobe_blacklist="blacklist "
+        local readonly str_modules_VFIO_PCI="vfio_pci ids="
+        local readonly str_initramfs_modules_VFIO_PCI="options ${str_modules_VFIO_PCI}"
         # </params>
 
         # <remarks> Check if backup files exist. </remarks>
@@ -1777,21 +1782,30 @@
 
         # <remarks> GRUB </remarks>
         local str_GRUB_temp=""
-        CheckIfVarIsValid "${str_GRUB_Allocate_CPU}" &> /dev/null && str_GRUB_temp+=" ${str_GRUB_Allocate_CPU}"
+        CheckIfVarIsValid "${str_GRUB_Allocate_CPU}" &> /dev/null && str_GRUB_temp+="${str_GRUB_Allocate_CPU}"
         CheckIfVarIsValid "${str_GRUB_hugepages}" &> /dev/null && str_GRUB_temp+=" ${str_GRUB_hugepages}"
 
-        if "${bool_VFIO_has_IOMMU}"; then
-            str_GRUB_temp+=" ${str_command_driver_blacklist}${str_driverListForVFIO} ${str_command_PCI_STUB}${str_driverListForSTUB} ${str_command_VFIO_PCI}${str_HWID_list_forVFIO}"
+        if CheckIfVarIsValid "${str_driverListForVFIO}" &> /dev/null; then
+            str_GRUB_temp+=" ${str_GRUB_blacklist}${str_driverListForVFIO}"
+        fi
+
+        if CheckIfVarIsValid "${str_HWID_list_forSTUB}" &> /dev/null; then
+            str_GRUB_temp+=" ${str_GRUB_PCI_STUB}${str_HWID_list_forSTUB}"
+        fi
+
+        if CheckIfVarIsValid "${str_HWID_list_forVFIO}" &> /dev/null; then
+            str_GRUB_temp+=" ${str_GRUB_VFIO_PCI}${str_HWID_list_forVFIO}"
         fi
 
         readonly str_GRUB+="\"${str_GRUB_temp}\""
 
+        # <remarks> Initramfs </remarks>
+
         # <remarks> Modules </remarks>
 
+        # <remarks> Modprobe: blacklists </remarks>
 
-        # <remarks> Modprobe </remarks>
-
-
+        # <remarks> Modprobe: conf </remarks>
 
         return 0
     }
@@ -2682,7 +2696,7 @@
     fi
 
     # <remarks> Execute main setup </remarks>
-    # if "${bool_opt_any_VFIO_setup}"; then
+    # if "${bool_opt_any_VFIO_setup}" && "${bool_VFIO_has_IOMMU}"; then
     #     Setup_VFIO || exit "${?}"
     # fi
 
