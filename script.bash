@@ -10,6 +10,9 @@
 #
 # TODO
 #
+# - bash libraries, add input param to disable checks? to reduce recursive steps?
+#
+#
 # -append changes for sysctl.conf (shared memory, evdev, LookingGlass, Scream, etc.) to individual files?
 #
 # -Continuous Improvement: after conclusion of this script's dev. Propose a refactor using the bashful libraries and with better Bash principles in mind.
@@ -411,8 +414,14 @@
     # <returns> exit code </returns>
     function CheckIfTwoFilesAreSame
     {
+        # <remarks> Validation </remarks>
         ( CheckIfFileExists "${1}" && CheckIfFileExists "${2}" ) || return "${?}"
-        cmp -s "${1}" "${2}" || return 1
+
+        # <params>
+        local readonly var_command='cmp -s "${1}" "${2}"'
+        # </params>
+
+        eval "${var_command}" || return 1
         return 0
     }
 
@@ -484,13 +493,27 @@
     # <returns> exit code </returns>
     function CreateDir
     {
+        # # <remarks> Validation </remarks>
+        # CheckIfVarIsBool "${2}" &> /dev/null || local bool_disable_checks=true
+
+        # if "${2}"; then
+        #     bool_disable_checks=true
+        # else
+        #     bool_disable_checks=false
+        # fi
+
+        # if "${bool_disable_checks}"; then
+        #     CheckIfDirExists "${1}"
+        # fi
+
         CheckIfDirExists "${1}"
 
         # <params>
         local readonly str_output_fail="${var_prefix_fail} Could not create directory '${1}'."
+        local readonly var_command='mkdir -p "${1}"'
         # </params>
 
-        mkdir -p "${1}" || (
+        eval "${var_command}" || (
             echo -e "${str_output_fail}"
             return 1
         )
@@ -507,13 +530,31 @@
 
         # <params>
         local readonly str_output_fail="${var_prefix_fail} Could not create file '${1}'."
+        local readonly var_command='touch "${1}" &> /dev/null"'
         # </params>
 
-        if ! touch "${1}" &> /dev/null; then
+        if ! eval "${var_command}"; then
             echo -e "${str_output_fail}"
             return 1
         fi
 
+        return 0
+    }
+
+    # <summary> Create a file. </summary>
+    # <param name="${1}"> string: the file </param>
+    # <param name="${2}"> string: the line </param>
+    # <returns> exit code </returns>
+    function CheckIfFileContainsLine
+    {
+        CheckIfFileExists "${1}" || return "${?}"
+        CheckIfVarIsValid "${2}" || return "${?}"
+
+        # <params>
+        local readonly var_command='! -z $( grep -iF "${2}" "${1}" )'
+        # </params>
+
+        eval "${var_command}" || return 1
         return 0
     }
 
@@ -526,9 +567,10 @@
 
         # <params>
         local readonly str_output_fail="${var_prefix_fail} Could not delete file '${1}'."
+        local readonly var_command='rm "${1}"'
         # </params>
 
-        rm "${1}" || (
+        eval "${var_command}" || (
             echo -e "${str_output_fail}"
             return 1
         )
@@ -1798,6 +1840,14 @@
         fi
 
         readonly str_GRUB+="\"${str_GRUB_temp}\""
+
+        if grep -iF "${str_GRUB}"*; then
+            while read var_line; do
+                
+
+
+            done >> "${str_file1}"
+        fi
 
         # <remarks> Initramfs </remarks>
 
