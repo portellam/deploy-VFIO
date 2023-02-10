@@ -526,6 +526,7 @@
     # <returns> exit code </returns>
     function CreateFile
     {
+        # <remarks> Validation </remarks>
         CheckIfFileExists "${1}" &> /dev/null && return 0
 
         # <params>
@@ -547,6 +548,7 @@
     # <returns> exit code </returns>
     function CheckIfFileContainsLine
     {
+        # <remarks> Validation </remarks>
         CheckIfFileExists "${1}" || return "${?}"
         CheckIfVarIsValid "${2}" || return "${?}"
 
@@ -563,6 +565,7 @@
     # <returns> exit code </returns>
     function DeleteFile
     {
+        # <remarks> Validation </remarks>
         CheckIfFileExists "${1}" || return 0
 
         # <params>
@@ -583,6 +586,7 @@
     # <returns> exit code </returns>
     function PrintFile
     {
+        # <remarks> Validation </remarks>
         CheckIfFileExists "${1}" || return "${?}"
 
         # <params>
@@ -595,18 +599,31 @@
         echo "${var_yellow}"
         eval "${var_command}"
         echo -e "${var_reset_color}\n"
-
         return 0
     }
 
     # <summary> Output an array. Declare inherited params before calling this function. </summary>
-    # <param name="${arr_output[@]}"> string of array: the array </param>
+    # <param name="${1}"> string: name of the array </param>
     # <returns> exit code </returns>
     function PrintArray
     {
+        # how to?
+        # ${!var}
+        # declare -n ref=var
+
+
+        # <remarks> Validation </remarks>
+        CheckIfVarIsValid "${1}" || return "${?}"
+
         # <params>
         IFS=$'\n'
-        declare -I arr_output
+        echo
+        local readonly var_arr=$( echo '${!'"${1}"[@]'}' )
+        echo "var_arr == '$var_arr'"
+        # declare -a arr_output=$( eval "${var_arr}" )
+
+        echo "${var_arr}" && exit
+
         local readonly var_command='echo -e "${var_yellow}${arr_output[*]}${var_reset_color}"'
         # </params>
 
@@ -1647,7 +1664,7 @@
             local readonly str_regex='[a-fA-F1-9]'
 
             # <remarks> Output statement </remarks>
-            declare -ar arr_output=(
+            declare -ar arr_something=(
                 "Slot ID:\t'${str_slot_ID}'"
                 "Vendor name:\t'${str_vendor_name}'"
                 "Device name:\t'${str_device_name}'"
@@ -1668,7 +1685,7 @@
                 fi
 
                 local str_class=$( echo "${arr_class[$int_key]}" | tr '[:upper:]' '[:lower:]' )
-                PrintArray
+                PrintArray "arr_something"
 
                 # <remarks> Match Class </remarks>
                 case "${str_class}" in
@@ -1841,13 +1858,13 @@
 
         readonly str_GRUB+="\"${str_GRUB_temp}\""
 
-        if grep -iF "${str_GRUB}"*; then
-            while read var_line; do
+        # if grep -iF "${str_GRUB}"*; then
+        #     while read var_line; do
                 
 
 
-            done >> "${str_file1}"
-        fi
+        #     done >> "${str_file1}"
+        # fi
 
         # <remarks> Initramfs </remarks>
 
@@ -2736,14 +2753,14 @@
     fi
 
     # <remarks> Execute pre-setup </remarks>
-    if "${bool_opt_any_VFIO_setup}" || "${bool_opt_pre_setup}"; then
-        AddUserToGroups
-        Allocate_CPU
-        Allocate_RAM
-        Virtual_KVM
-        Modify_QEMU
-        RAM_Swapfile
-    fi
+    # if "${bool_opt_any_VFIO_setup}" || "${bool_opt_pre_setup}"; then
+    #     AddUserToGroups
+    #     Allocate_CPU
+    #     Allocate_RAM
+    #     Virtual_KVM
+    #     Modify_QEMU
+    #     RAM_Swapfile
+    # fi
 
     # <remarks> Execute main setup </remarks>
     # if "${bool_opt_any_VFIO_setup}" && "${bool_VFIO_has_IOMMU}"; then
