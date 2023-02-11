@@ -253,6 +253,16 @@
         return 0
     }
 
+    # <summary> Check if the variable is writable. If true, pass. </summary>
+    # <param name="${1}"> string: the name of a variable </param>
+    # <returns> exit code </returns>
+    function CheckIfVarIsWritableOrReadonly
+    {
+        local readonly var_command='"${1}+=" >2/dev/null'
+        eval "${var_command}"
+        return "${?}"
+    }
+
     # <summary> Check if the value is valid. </summary>
     # <param name="${1}"> string: the variable </param>
     # <returns> exit code </returns>
@@ -607,22 +617,13 @@
     # <returns> exit code </returns>
     function PrintArray
     {
-        # how to?
-        # ${!var}
-        # declare -n ref=var
-
-
         # <remarks> Validation </remarks>
         CheckIfVarIsValid "${1}" || return "${?}"
 
         # <params>
         IFS=$'\n'
-        echo
-        local readonly var_arr=$( echo '${!'"${1}"[@]'}' )
-        echo "var_arr == '$var_arr'"
-        # declare -a arr_output=$( eval "${var_arr}" )
-
-        echo "${var_arr}" && exit
+        local readonly str_name_ref="${1}"
+        declare -ar arr_output=$( "${str_name_ref[@]}" )
 
         local readonly var_command='echo -e "${var_yellow}${arr_output[*]}${var_reset_color}"'
         # </params>
@@ -637,26 +638,32 @@
     }
 
     # <summary> Read input from a file. Declare inherited params before calling this function. </summary>
-    # <param name="${1}"> string: the file </param>
-    # <param name="${arr_file[@]}"> string of array: the file contents </param>
+    # <param name="${1}"> string: the name of the array </param>
+    # <param name="${2}"> string: the name of the file </param>
     # <returns> exit code </returns>
     function ReadFile
     {
-        CheckIfFileExists "${1}" || return "${?}"
+        # <remarks> Validation </remarks>
+        CheckIfVarIsValid "${1}" || return "${?}"
+        CheckIfFileExists "${2}" || return "${?}"
 
         # <params>
-        declare -I arr_file
-        local readonly str_output_fail="${var_prefix_fail} Could not read from file '${1}'."
-        local readonly var_command='cat "${1}"'
+        IFS=$'\n'
+        local readonly str_output_fail="${var_prefix_fail} Could not read from file '${2}'."
+        local readonly var_get_file='cat "${2}"'
+        local readonly var_set_param="${1}"'=( $( echo -e "${arr_file[@]}" ) )'
+        declare -a arr_file=( $( eval "${var_get_file}" ) )
         # </params>
-
-        arr_file=( $( eval "${var_command}" ) )
 
         if ! CheckIfVarIsValid "${arr_file[@]}" &> /dev/null; then
             echo -e "${str_output_fail}"
             return 1
         fi
 
+        echo $var_set_param
+        exit
+
+        eval "${var_set_param}" || return 1
         return 0
     }
 
@@ -2722,35 +2729,42 @@
     declare -g bool_is_connected_to_Internet=false
     # </params>
 
-    CheckIfUserIsRoot || exit "${?}"
-    GetUsage "${var_input1}" "${var_input2}"
-    SaveExitCode
+    str_theFile="README.md"
+    declare -a arr_theFile
+    ReadFile "arr_theFile" "${str_theFile}"
+    echo -e "${arr_theFile[@]}"
+    exit
 
-    # <remarks> Output usage </remarks>
-    if "${bool_opt_help}"; then
-        PrintUsage
-        exit "${int_exit_code}"
-    fi
 
-    # <remarks> Get and ask user to select IOMMU groups. </remarks>
-    if "${bool_opt_any_VFIO_setup}"; then
-        case true in
-            "${bool_arg_parse_file}" )
-                readonly var_Parse_IOMMU="FILE"
-                ;;
+    # CheckIfUserIsRoot || exit "${?}"
+    # GetUsage "${var_input1}" "${var_input2}"
+    # SaveExitCode
 
-            "${bool_arg_parse_online}" )
-                readonly var_Parse_IOMMU="DNS"
-                ;;
+    # # <remarks> Output usage </remarks>
+    # if "${bool_opt_help}"; then
+    #     PrintUsage
+    #     exit "${int_exit_code}"
+    # fi
 
-            * )
-                readonly var_Parse_IOMMU="LOCAL"
-                ;;
-        esac
+    # # <remarks> Get and ask user to select IOMMU groups. </remarks>
+    # if "${bool_opt_any_VFIO_setup}"; then
+    #     case true in
+    #         "${bool_arg_parse_file}" )
+    #             readonly var_Parse_IOMMU="FILE"
+    #             ;;
 
-        Parse_IOMMU "${var_Parse_IOMMU}" "${var_input1}" || exit "${?}"
-        Select_IOMMU || exit "${?}"
-    fi
+    #         "${bool_arg_parse_online}" )
+    #             readonly var_Parse_IOMMU="DNS"
+    #             ;;
+
+    #         * )
+    #             readonly var_Parse_IOMMU="LOCAL"
+    #             ;;
+    #     esac
+
+    #     Parse_IOMMU "${var_Parse_IOMMU}" "${var_input1}" || exit "${?}"
+    #     Select_IOMMU || exit "${?}"
+    # fi
 
     # <remarks> Execute pre-setup </remarks>
     # if "${bool_opt_any_VFIO_setup}" || "${bool_opt_pre_setup}"; then
