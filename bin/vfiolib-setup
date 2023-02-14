@@ -26,7 +26,7 @@
 
         GoToScriptDir && cd "${str_files_dir}"
 
-        if ! CheckIfFileExists "${str_file1_backup}" || CheckIfFileExists "${str_file2_backup}"; then
+        if ! IsFile "${str_file1_backup}" || IsFile "${str_file2_backup}"; then
             return "$?"
         fi
 
@@ -61,32 +61,32 @@
         # <remarks> Check if backup files exist. </remarks>
         GoToScriptDir && cd "${str_files_dir}"
 
-        if ! CheckIfFileExists "${str_file1_backup}" || CheckIfFileExists "${str_file2_backup}" || CheckIfFileExists "${str_file3_backup}" || CheckIfFileExists "${str_file4_backup}"|| CheckIfFileExists "${str_file5_backup}"; then
+        if ! IsFile "${str_file1_backup}" || IsFile "${str_file2_backup}" || IsFile "${str_file3_backup}" || IsFile "${str_file4_backup}"|| IsFile "${str_file5_backup}"; then
             return "${?}"
         fi
 
         # <remarks> Backup existing system files. </remarks>
         # NOTE: will a conflict exist should backup files exist in given directories (example: modprobe.d) and not others (ex: grub)
-        CreateBackupFile "${str_file1_backup}"
-        CreateBackupFile "${str_file2_backup}"
-        CreateBackupFile "${str_file3_backup}"
-        CreateBackupFile "${str_file4_backup}"
-        CreateBackupFile "${str_file5_backup}"
+        BackupFile "${str_file1_backup}"
+        BackupFile "${str_file2_backup}"
+        BackupFile "${str_file3_backup}"
+        BackupFile "${str_file4_backup}"
+        BackupFile "${str_file5_backup}"
 
         # <remarks> GRUB </remarks>
         local str_GRUB_temp=""
-        CheckIfVarIsVar "${str_GRUB_Allocate_CPU}" &> /dev/null && str_GRUB_temp+="${str_GRUB_Allocate_CPU}"
-        CheckIfVarIsVar "${str_GRUB_hugepages}" &> /dev/null && str_GRUB_temp+=" ${str_GRUB_hugepages}"
+        IsString "${str_GRUB_Allocate_CPU}" &> /dev/null && str_GRUB_temp+="${str_GRUB_Allocate_CPU}"
+        IsString "${str_GRUB_hugepages}" &> /dev/null && str_GRUB_temp+=" ${str_GRUB_hugepages}"
 
-        if CheckIfVarIsVar "${str_driverListForVFIO}" &> /dev/null; then
+        if IsString "${str_driverListForVFIO}" &> /dev/null; then
             str_GRUB_temp+=" ${str_GRUB_blacklist}${str_driverListForVFIO}"
         fi
 
-        if CheckIfVarIsVar "${str_HWID_list_forSTUB}" &> /dev/null; then
+        if IsString "${str_HWID_list_forSTUB}" &> /dev/null; then
             str_GRUB_temp+=" ${str_GRUB_PCI_STUB}${str_HWID_list_forSTUB}"
         fi
 
-        if CheckIfVarIsVar "${str_HWID_list_forVFIO}" &> /dev/null; then
+        if IsString "${str_HWID_list_forVFIO}" &> /dev/null; then
             str_GRUB_temp+=" ${str_GRUB_VFIO_PCI}${str_HWID_list_forVFIO}"
         fi
 

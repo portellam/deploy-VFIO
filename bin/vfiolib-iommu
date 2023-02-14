@@ -58,14 +58,14 @@
             {
                 # <remarks> If any list is empty, fail. </remarks>
                 local bool_is_empty_list=false
-                CheckIfVarIsVar "${arr_class[@]}" &> /dev/null || bool_is_empty_list=true
-                # CheckIfVarIsVar "${arr_device_ID[@]}" &> /dev/null || bool_is_empty_list=true
-                CheckIfVarIsVar "${arr_device_name[@]}" &> /dev/null ||  bool_is_empty_list=true
-                CheckIfVarIsVar "${arr_driver[@]}" &> /dev/null || bool_is_empty_list=true
-                CheckIfVarIsVar "${arr_hardware_ID[@]}" &> /dev/null || bool_is_empty_list=true
-                CheckIfVarIsVar "${arr_IOMMU[@]}" &> /dev/null || bool_is_empty_list=true
-                # CheckIfVarIsVar "${arr_vendor_ID[@]}" &> /dev/null || bool_is_empty_list=true
-                CheckIfVarIsVar "${arr_vendor_name[@]}" &> /dev/null || bool_is_empty_list=true
+                IsString "${arr_class[@]}" &> /dev/null || bool_is_empty_list=true
+                # IsString "${arr_device_ID[@]}" &> /dev/null || bool_is_empty_list=true
+                IsString "${arr_device_name[@]}" &> /dev/null ||  bool_is_empty_list=true
+                IsString "${arr_driver[@]}" &> /dev/null || bool_is_empty_list=true
+                IsString "${arr_hardware_ID[@]}" &> /dev/null || bool_is_empty_list=true
+                IsString "${arr_IOMMU[@]}" &> /dev/null || bool_is_empty_list=true
+                # IsString "${arr_vendor_ID[@]}" &> /dev/null || bool_is_empty_list=true
+                IsString "${arr_vendor_name[@]}" &> /dev/null || bool_is_empty_list=true
 
                 if "${bool_is_empty_list}"; then
                     echo -e "${str_output_list_empty}"
@@ -97,7 +97,7 @@
                     fi
 
                     # <remarks> Match invalid input, and save as known null value. </remarks>
-                    if ! CheckIfVarIsVar "${str_driver}" &> /dev/null; then
+                    if ! IsString "${str_driver}" &> /dev/null; then
                         local str_driver="N/A"
                     fi
 
@@ -130,7 +130,7 @@
                         var_parse_slot_ID+="${var_parse_args_file}"
                         var_parse_quotes+="${var_parse_args_file}"
 
-                        CheckIfFileExists "${str_file}" &> /dev/null
+                        IsFile "${str_file}" &> /dev/null
                         return "${?}"
                         ;;
 
@@ -199,7 +199,7 @@
 
             # <remarks> Save output to file. </remarks>
             if [[ "${?}" -eq 0 && "${var_opt}" != "${str_opt_parse_file}" ]]; then
-                CheckIfFileExists "${str_file}" &> /dev/null && eval "${var_parse_to_file}"
+                IsFile "${str_file}" &> /dev/null && eval "${var_parse_to_file}"
             fi
 
             return 0
@@ -366,7 +366,7 @@
 
         # <remarks> Check if list is empty </remarks>
         declare -a arr=( "${arr_IOMMU_VFIO_PCI[@]}" )
-        CheckIfArrayIsEmpty && bool_VFIO_has_IOMMU=true
+        IsArray "arr" && bool_VFIO_has_IOMMU=true
 
         AppendPassOrFail "${str_output}"
         echo

@@ -89,7 +89,7 @@
             "--online"
         )
 
-        if CheckIfVarIsVar "${1}" &> /dev/null; then
+        if IsString "${1}" &> /dev/null; then
             case "${1}" in
                 "${arr_usage_opt[0]}" | "${arr_usage_opt[1]}" )
                     bool_opt_help=true

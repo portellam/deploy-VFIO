@@ -32,7 +32,7 @@
         echo
         echo -e "${str_output}"
         AddUserToGroups_Main
-        AppendPassOrFail "${str_output}"
+        PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
 
@@ -67,7 +67,7 @@
                 else
                     readonly int_host_cores
                     false
-                    AppendPassOrFail "${str_output}"
+                    PrintPassOrFail "${str_output}"
                     return "${int_exit_code}"
                 fi
 
@@ -196,7 +196,7 @@
                 "Allocated to guest:\t${str_virt_thread_sets}"
             )
 
-            PrintArray
+            PrintArray "arr_output"
             echo
 
             # <remarks> Save changes. </remarks>
@@ -211,7 +211,7 @@
         echo
         echo -e "${str_output}"
         Allocate_CPU_Main
-        AppendPassOrFail "${str_output}"
+        PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
 
@@ -241,7 +241,7 @@
             local readonly var_get_host_max_mem='cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1'
             # </params>
 
-            if ! CheckIfVarIsNum "${int_max_mem}" &> /dev/null; then
+            if ! IsNum "${int_max_mem}" &> /dev/null; then
                 local readonly str_output_could_not_parse_memory="${var_prefix_error} Could not parse system memory."
                 echo -e "${str_output_could_not_parse_memory}"
             fi
@@ -293,7 +293,7 @@
         echo
         echo -e "${str_output}"
         Allocate_RAM_Main
-        AppendPassOrFail "${str_output}"
+        PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
 
@@ -330,9 +330,9 @@
             # </params>
 
             # <remarks> Backup system file and grab clean file from repository. </remarks>
-            CreateBackupFile "${str_file1}"
+            BackupFile "${str_file1}"
             GoToScriptDir || return "${?}"
-            CheckIfFileExists "${str_file1_backup}" || return "${?}"
+            IsFile "${str_file1_backup}" || return "${?}"
             cp "${str_file1_backup}" "${str_file1}" || return 1
 
             # <remarks> Get Event devices. </remarks>
@@ -365,7 +365,7 @@
             # <remarks> Adds or omits specific user to use Evdev. </remarks>
             local readonly str_output4="Adding user..."
 
-            if CheckIfVarIsVar "${str_username}" &> /dev/null; then
+            if IsString "${str_username}" &> /dev/null; then
                 arr_file1_contents+=(
                     ""
                     "### User permissions ###"
@@ -383,7 +383,7 @@
                 ( return "${int_code_skipped_operation}" )
             fi
 
-            AppendPassOrFail "${str_output4}"
+            PrintPassOrFail "${str_output4}"
 
             # <remarks> Adds or omits validation for Hugepages. </remarks>
             local readonly str_output5="Adding Hugepages..."
@@ -404,7 +404,7 @@
                 ( return "${int_code_skipped_operation}" )
             fi
 
-            AppendPassOrFail "${str_output5}"
+            PrintPassOrFail "${str_output5}"
 
             # <remarks> Adds or omits Event devices. </remarks>
             local readonly str_output6="Adding Evdev..."
@@ -430,7 +430,7 @@
                 ( return "${int_code_skipped_operation}" )
             fi
 
-            AppendPassOrFail "${str_output6}"
+            PrintPassOrFail "${str_output6}"
 
             # <remarks> Adds NVRAM for EFI kernels in UEFI virtual machines. </remarks>
             arr_file1_contents+=(
@@ -449,11 +449,11 @@
             WriteFile "${str_file1}" || return "${?}"
 
             # <remarks> Check if daemon exists and restart it. </remarks>
-            CheckIfPackageExists "${str_daemon1_packages}" || return "${?}"
-            CheckIfDaemonIsActiveOrNot "${str_daemon1}" &> /dev/null || ( sudo systemctl enable "${str_daemon1}" || return 1 )
+            IsInstalledPackage "${str_daemon1_packages}" || return "${?}"
+            IsActiveDaemon "${str_daemon1}" &> /dev/null || ( sudo systemctl enable "${str_daemon1}" || return 1 )
 
             local readonly var_restart_daemon='sudo systemctl restart "${str_daemon1}"'
-            TryThisXTimesBeforeFail "${var_restart_daemon}"
+            StopEvalAfterThriceFail "${var_restart_daemon}"
             return "${?}"
         }
 
@@ -464,7 +464,7 @@
         echo
         echo -e "${str_output}"
         Modify_QEMU_Main
-        AppendPassOrFail "${str_output}"
+        PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
 
@@ -483,7 +483,7 @@
             GoToScriptDir
             UpdateOrCloneGitRepo "${str_repos_dir}" "${str_full_repo1}" "${str_user_name1}"
             cd "${str_repos_dir}${str_full_repo1}" || return "${?}"
-            CheckIfFileExists "${str_script_name1}" || return "${?}"
+            IsFile "${str_script_name1}" || return "${?}"
             sudo bash "${str_script_name1}"
             return "${?}"
         }
@@ -507,13 +507,13 @@
                 fi
             done
 
-            if ! CheckIfVarIsNum "${int_max_mem}" &> /dev/null; then
+            if ! IsNum "${int_max_mem}" &> /dev/null; then
                 local readonly str_output_could_not_parse_memory="${var_prefix_error} Could not parse system memory."
                 echo -e "${str_output_could_not_parse_memory}"
                 return 1
             fi
 
-            if CheckIfVarIsNum "${int_alloc_mem_hugepages}" &> /dev/null; then
+            if IsNum "${int_alloc_mem_hugepages}" &> /dev/null; then
                 declare -ir int_usable_mem=$(( ( int_max_mem - int_alloc_mem_hugepages ) / 2 ))
             else
                 declare -ir int_usable_mem=$(( int_max_mem / 2 ))
@@ -560,7 +560,7 @@
             false
         fi
 
-        AppendPassOrFail "${str_output}"
+        PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
 
@@ -589,7 +589,7 @@
             readonly arr_input_devices=( $( eval "${var_get_input_devices}") )
 
             # <remarks> Early-exit. </remarks>
-            if ! CheckIfVarIsVar "${arr_event_devices[@]}" && ! CheckIfVarIsVar "${var_get_input_devices[@]}"; then
+            if ! IsString "${arr_event_devices[@]}" && ! IsString "${var_get_input_devices[@]}"; then
                 return 1
             fi
 
@@ -604,7 +604,7 @@
         echo
         echo -e "${str_output}"
         Virtual_KVM_Main
-        AppendPassOrFail "${str_output}"
+        PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
 
@@ -659,7 +659,7 @@
         echo
         echo -e "${str_output}"
         VirtualVideoCapture_Main
-        AppendPassOrFail "${str_output}"
+        PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
 
