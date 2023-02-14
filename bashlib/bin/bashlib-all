@@ -1,0 +1,41 @@
+#!/bin/bash sh
+
+#
+# Filename:         bashlib-all
+# Description:      Collection of custom functions to be used as libraries for Bash scripts.
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <remarks> Using </remarks>
+# <code>
+    source bashlib-globals
+    source bashlib-dev
+    source bashlib-files
+    source bashlib-input
+    source bashlib-proc
+    source bashlib-vars
+# </code>
+
+# <code>
+    # <summary> Check if current user is sudo or root. </summary>
+    # <returns> exit code </returns>
+    function IsSudoUser
+    {
+        # <params>
+        local readonly str_fail="${var_prefix_warn} User is not sudo/root."
+        # </params>
+
+        if [[ $( whoami ) != "root" ]]; then
+            echo -e "${str_fail}"
+            return 1
+        fi
+
+        return 0
+    }
+# </code>
+
+# <params>
+declare -g bool_is_user_root=false
+IsSudoUser &> /dev/null && bool_is_user_root=true
+# </params>

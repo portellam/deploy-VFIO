@@ -1,0 +1,142 @@
+#!/bin/bash sh
+
+#
+# Filename:         bashlib-vars
+# Description:      Data-type and variable validation
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <remarks> Using </remarks>
+# <code>
+    source bashlib-globals
+# </code>
+
+# <code>
+    # <summary> Check if the array is empty. </summary>
+    # <paramref name=$1> string: name of the array </paramref>
+    # <returns> exit code </returns>
+    function IsArray
+    {
+        IsString $1 || return $?
+
+        # <params>
+        local readonly str_fail="${var_prefix_error} Empty array."
+        local readonly var_get_array='echo "${'$1'[@]}"'
+        local readonly var_get_array_len='echo "${#'$1'[@]}"'
+        # </params>
+
+        for var_element in $( eval "${var_get_array}" ); do
+            IsString "${var_element}" && return $?
+        done
+
+        if [[ $( eval "${var_get_array_len}" ) -eq 0 ]]; then
+            echo -e "${str_fail}"
+            return "${int_code_var_is_empty}"
+        fi
+
+        return 0
+    }
+
+    # <summary> Check if the variable is not empty. If true, pass. </summary>
+    # <param name=$1> var: the variable </param>
+    # <returns> exit code </returns>
+    function IsString
+    {
+        # <params>
+        local readonly str_fail="${var_prefix_error} Empty string."
+        local readonly var="${1}"
+        # </params>
+
+        if [[ "${#var}" -eq 0 && "${var}" == "" ]]; then
+            echo -e "${str_fail}"
+            return "${int_code_var_is_empty}"
+        fi
+
+        return 0
+    }
+
+    # <summary> Check if the value is a valid bool. </summary>
+    # <param name=$1> var: the boolean </param>
+    # <returns> exit code </returns>
+    function IsBool
+    {
+        IsString $1 || return $?
+
+        # <params>
+        local readonly str_fail="${var_prefix_error} Not a boolean."
+        # </params>
+
+        case $1 in
+            "true" | "false" )
+                return 0
+                ;;
+
+            * )
+                echo -e "${str_fail}"
+                return "${int_code_var_is_not_bool}"
+                ;;
+        esac
+    }
+
+    # <summary> Check if the value is a valid number. If true, pass.</summary>
+    # <param name=$1> var: the number </param>
+    # <returns> exit code </returns>
+    function IsNum
+    {
+        IsString $1 || return $?
+
+        # <params>
+        local readonly str_regex_numbers='^[0-9]+$'
+        local readonly str_fail="${var_prefix_error} NaN."
+        # </params>
+
+        if ! [[ $1 =~ $str_regex_numbers ]]; then
+            echo -e "${str_fail}"
+            return "${int_code_var_is_NAN}"
+        fi
+
+        return 0
+    }
+
+    # <summary> Check if the variable is writable. If true, pass. </summary>
+    # <paramref name=$1> string: the name of a variable </param>
+    # <returns> exit code </returns>
+    function IsVarWritable
+    {
+        IsString $1 || return $?
+
+        # <params>
+        local readonly str_fail="${var_prefix_error} Readonly variable."
+        local readonly var_is_readonly_var="unset ${1} 2> /dev/null"
+        # </params>
+
+        if ! eval "${var_is_readonly_var}"; then
+            echo -e "${str_fail}"
+            return 1
+        fi
+
+        return 0
+    }
+
+    # <summary> Output an array. Declare inherited params before calling this function. </summary>
+    # <paramref name=$1> string: name of the array </paramref>
+    # <returns> exit code </returns>
+    function PrintArray
+    {
+        IsString $1 || return $?
+
+        # <params>
+        IFS=$'\n'
+        local readonly var_print_array='echo -e "${var_yellow}${'$1'[*]}${var_reset_color}"'
+        # </params>
+
+        if ! IsArray "$1" &> /dev/null; then
+            return 1
+        fi
+
+        echo
+        eval "${var_print_array}" || return 1
+        return 0
+    }
+# </code>
