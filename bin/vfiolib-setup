@@ -1,0 +1,132 @@
+#!/bin/bash sh
+
+#
+# Filename:         vfiolib-setup
+# Description:      Select VFIO setup.
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <remarks> Using </remarks>
+# <code>
+    source ../bashlib/bin/bashlib-all
+    source vfiolib-extras
+    source vfiolib-iommu
+# </code>
+
+# <code>
+    function Multiboot_VFIO
+    {
+        # <params>
+        local readonly str_file1="/etc/default/grub"
+        local readonly str_file2="/etc/grub.d/proxifiedScripts/custom"
+        local readonly str_file1_backup="etc_default_grub"
+        local readonly str_file2_backup="etc_grub.d_proxifiedScripts_custom"
+        # </params>
+
+        GoToScriptDir && cd "${str_files_dir}"
+
+        if ! CheckIfFileExists "${str_file1_backup}" || CheckIfFileExists "${str_file2_backup}"; then
+            return "$?"
+        fi
+
+
+    }
+
+    function Static_VFIO
+    {
+        # <params>
+        declare -a arr_file1_contents arr_file2_contents arr_file3_contents arr_file4_contents arr_file5_contents
+        local readonly str_file1="/etc/default/grub"
+        local readonly str_file2="/etc/initramfs-tools/modules"
+        local readonly str_file3="/etc/modprobe.d/pci-blacklists.conf"
+        local readonly str_file4="/etc/modprobe.d/vfio.conf"
+        local readonly str_file5="/etc/modules"
+        local readonly str_file1_backup="etc_default_grub"
+        local readonly str_file2_backup="etc_initramfs-tools_modules"
+        local readonly str_file3_backup="etc_modprobe.d_pci-blacklists.conf"
+        local readonly str_file4_backup="etc_modprobe.d_vfio.conf"
+        local readonly str_file5_backup="etc_modules"
+
+        local readonly str_driver_VFIO_PCI="vfio-pci"
+        local str_GRUB="GRUB_CMDLINE_LINUX_DEFAULT="
+        local readonly str_GRUB_blacklist="modprobe.blacklist="
+        local readonly str_GRUB_PCI_STUB="pci-stub.ids="
+        local readonly str_GRUB_VFIO_PCI="vfio_pci.ids="
+        local readonly str_modprobe_blacklist="blacklist "
+        local readonly str_modules_VFIO_PCI="vfio_pci ids="
+        local readonly str_initramfs_modules_VFIO_PCI="options ${str_modules_VFIO_PCI}"
+        # </params>
+
+        # <remarks> Check if backup files exist. </remarks>
+        GoToScriptDir && cd "${str_files_dir}"
+
+        if ! CheckIfFileExists "${str_file1_backup}" || CheckIfFileExists "${str_file2_backup}" || CheckIfFileExists "${str_file3_backup}" || CheckIfFileExists "${str_file4_backup}"|| CheckIfFileExists "${str_file5_backup}"; then
+            return "${?}"
+        fi
+
+        # <remarks> Backup existing system files. </remarks>
+        # NOTE: will a conflict exist should backup files exist in given directories (example: modprobe.d) and not others (ex: grub)
+        CreateBackupFile "${str_file1_backup}"
+        CreateBackupFile "${str_file2_backup}"
+        CreateBackupFile "${str_file3_backup}"
+        CreateBackupFile "${str_file4_backup}"
+        CreateBackupFile "${str_file5_backup}"
+
+        # <remarks> GRUB </remarks>
+        local str_GRUB_temp=""
+        CheckIfVarIsVar "${str_GRUB_Allocate_CPU}" &> /dev/null && str_GRUB_temp+="${str_GRUB_Allocate_CPU}"
+        CheckIfVarIsVar "${str_GRUB_hugepages}" &> /dev/null && str_GRUB_temp+=" ${str_GRUB_hugepages}"
+
+        if CheckIfVarIsVar "${str_driverListForVFIO}" &> /dev/null; then
+            str_GRUB_temp+=" ${str_GRUB_blacklist}${str_driverListForVFIO}"
+        fi
+
+        if CheckIfVarIsVar "${str_HWID_list_forSTUB}" &> /dev/null; then
+            str_GRUB_temp+=" ${str_GRUB_PCI_STUB}${str_HWID_list_forSTUB}"
+        fi
+
+        if CheckIfVarIsVar "${str_HWID_list_forVFIO}" &> /dev/null; then
+            str_GRUB_temp+=" ${str_GRUB_VFIO_PCI}${str_HWID_list_forVFIO}"
+        fi
+
+        readonly str_GRUB+="\"${str_GRUB_temp}\""
+
+        # if grep -iF "${str_GRUB}"*; then
+        #     while read var_line; do
+
+        #     done >> "${str_file1}"
+        # fi
+
+        # <remarks> Initramfs </remarks>
+
+        # <remarks> Modules </remarks>
+
+        # <remarks> Modprobe: blacklists </remarks>
+
+        # <remarks> Modprobe: conf </remarks>
+
+        return 0
+    }
+
+    function Setup_VFIO
+    {
+        # <params>
+
+        # </params>
+
+        # diff between static and multiboot => static: all IOMMU for VFIO with PCI STUB devices will be binded to VFIO PCI driver? append only to GRUB and system files.
+        # multiboot: PCI STUB devices will use PCI STUB driver? append only GRUB and multiple GRUB entries
+
+        return 0
+    }
+
+    function UpdateExisting_VFIO
+    {
+        return 0
+    }
+# </code>
+
+# <params>
+# global vars go here
+# </params>

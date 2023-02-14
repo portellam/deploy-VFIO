@@ -1,0 +1,173 @@
+#!/bin/bash sh
+
+#
+# Filename:         vfiolib-usage
+# Description:      Usage
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <remarks> Using </remarks>
+# <code>
+    source ../bashlib/bin/bashlib-all
+# </code>
+
+# <code>
+    function PrintUsage
+    {
+        # <params>
+        IFS=$'\n'
+        local readonly var_get_script_name='basename "${0}"'
+        local readonly str_script_name=$( eval "${var_get_script_name}" )
+        local readonly str_opt_full_setup="-f, --full\texecute pre-setup, VFIO setup, and post-setup"
+        local readonly str_opt_help="-h, --help\tdisplay this help and exit"
+        local readonly str_opt_multiboot_VFIO_setup="-m, --multiboot\texecute preferred VFIO setup: modify GRUB boot options only (excluding GRUB file and system files)"
+        local readonly str_opt_post_setup="-P, --post\texecute post-setup (LookingGlass, Scream)"
+        local readonly str_opt_pre_setup="-p, --pre\texecute pre-setup (allocate CPU, hugepages, zramswap, Evdev)"
+        local readonly str_opt_static_VFIO_setup="-s, --static\texecute preferred VFIO setup: modify GRUB file and system files only"
+        local readonly str_opt_update_VFIO_setup="-u, --update\tdetect existing VFIO setup, execute new VFIO setup, and apply changes"
+        local readonly str_arg_silent="-S, --silent\tdo not prompt before execution"
+        local readonly str_arg_file="-F, --file\tparse PCI from file"
+        local readonly str_arg_online="-O, --online\tparse PCI from internet"
+
+        declare -ar arr_usage=(
+            "Usage:\t${str_script_name} [OPTION] [ARGUMENTS]"
+            "\tor ${str_script_name} [OPTION] -S"
+            "\tor ${str_script_name} [d/m/s/u] -F [FILE_NAME]"
+            "\tor ${str_script_name} [d/m/s/u] -o"
+            "\nRequired variables:"
+            "\t${str_script_name}"
+            "\nOptional variables:"
+            "\t${str_opt_help}"
+            "\t${str_opt_multiboot_VFIO_setup}"
+            "\t${str_opt_static_VFIO_setup}"
+            "\t${str_opt_update_VFIO_setup}"
+            "\t${str_opt_post_setup}"
+            "\t${str_opt_pre_setup}"
+            "\t${str_opt_full_setup}"
+            "\nArguments:"
+            "\t${str_arg_silent}"
+            "\t${str_arg_file}"
+            "\t${str_arg_online}"
+        )
+        # </params>
+
+        # <remarks> Display usage. </remarks>
+        for str_line in ${arr_usage[@]}; do
+            echo -e "${str_line}"
+        done
+
+        return 0
+    }
+
+    function GetUsage
+    {
+        # <params>
+        declare -gr arr_usage_opt=(
+            "-h"
+            "--help"
+            "-m"
+            "--multiboot"
+            "-f"
+            "--full"
+            "-P"
+            "--post"
+            "-p"
+            "--pre"
+            "-s"
+            "--static"
+            "-u"
+            "--update"
+        )
+
+        declare -gr arr_usage_args=(
+            "-S"
+            "--silent"
+            "-F"
+            "--file"
+            "-o"
+            "--online"
+        )
+
+        if CheckIfVarIsVar "${1}" &> /dev/null; then
+            case "${1}" in
+                "${arr_usage_opt[0]}" | "${arr_usage_opt[1]}" )
+                    bool_opt_help=true
+                    ;;
+                "${arr_usage_opt[2]}" | "${arr_usage_opt[3]}" )
+                    bool_opt_multiboot_VFIO_setup=true
+                    ;;
+                "${arr_usage_opt[4]}" | "${arr_usage_opt[5]}" )
+                    bool_opt_any_VFIO_setup=true
+                    bool_opt_post_setup=true
+                    bool_opt_pre_setup=true
+                    ;;
+                "${arr_usage_opt[6]}" | "${arr_usage_opt[7]}" )
+                    bool_opt_post_setup=true
+                    ;;
+                "${arr_usage_opt[8]}" | "${arr_usage_opt[9]}" )
+                    bool_opt_pre_setup=true
+                    ;;
+                "${arr_usage_opt[10]}" | "${arr_usage_opt[11]}" )
+                    bool_opt_static_VFIO_setup=true
+                    ;;
+                "${arr_usage_opt[12]}" | "${arr_usage_opt[13]}" )
+                    bool_opt_update_VFIO_setup=true
+                    ;;
+                "${arr_usage_args[0]}" | "${arr_usage_args[1]}" )
+                    bool_arg_silent=true
+                    ;;
+                * )
+                    bool_opt_help=true
+                    echo -e "${str_output_var_is_not_valid}"
+                    return 1
+                    ;;
+            esac
+        else
+            bool_opt_any_VFIO_setup=true
+        fi
+
+        case "${2}" in
+            "${arr_usage_args[0]}" | "${arr_usage_args[1]}" )
+                bool_arg_silent=true
+                ;;
+
+            "${arr_usage_args[2]}" | "${arr_usage_args[3]}" )
+                bool_arg_parse_file=true
+                ;;
+
+            "${arr_usage_args[4]}" | "${arr_usage_args[5]}" )
+                bool_arg_parse_online=true
+                ;;
+        esac
+        # </params>
+
+        return 0
+    }
+# </code>
+
+# <params>
+    readonly var_input1="${1}"
+    readonly var_input2="${2}"
+    readonly var_input3="${3}"
+
+    declare -g bool_opt_multiboot_VFIO_setup=false
+    declare -g bool_opt_any_VFIO_setup=false
+    declare -g bool_opt_help=false
+    declare -g bool_opt_post_setup=false
+    declare -g bool_opt_pre_setup=false
+    declare -g bool_opt_static_VFIO_setup=false
+    declare -g bool_opt_update_VFIO_setup=false
+    declare -g bool_arg_silent=false
+    declare -g bool_arg_parse_file=false
+    declare -g bool_arg_parse_online=false
+
+    declare -gr str_repo_name="deploy-vfio-setup"
+    declare -gr str_full_repo_name="portellam/${str_repo_name}"
+
+    GoToScriptDir
+    declare -gr str_files_dir="$( find . -name files | uniq | head -n1 | cut -c2- )/"
+    declare -gr str_repos_dir="$( find . -name git | uniq | head -n1 | cut -c2- )/"
+
+    declare -g bool_is_connected_to_Internet=false
+# </params>
