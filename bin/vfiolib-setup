@@ -74,37 +74,12 @@
         BackupFile "${str_file5_backup}"
 
         # <summary> GRUB </summary>
-            # <remarks> Read fileComment specified line. </remarks>
+            # <remarks> Get file. </remarks>
             declare -a arr_file1=()
+            # IsFileOriginal "${str_file1}" || return $?
+            ReadFile "arr_file1" "${str_file1}" || return $?
 
-            if FindLine "${str_GRUB}" &> /dev/null; then
-                ReadFile arr_file1 "${str_file1}"
-
-                for int_key in "${!arr_file1[@]}"; do
-                    local var_line="${arr_file1[$int_key]}"
-
-                    case "${var_line}" in
-                        "${str_GRUB}"* )
-                            arr_file1[$int_key]="#${str_GRUB}"
-                            ;;
-                    esac
-
-                    if [[ "${var_line}" == "${str_GRUB}"* ]]; then
-                        arr_file1[$int_key]="#${str_GRUB}"
-                    fi
-                done
-            fi
-            
-
-            
-            if grep -iF "${str_GRUB}"*; then
-                while read var_line; do
-                    if [[ "${var_line}" ~= "${str_GRUB}"* ]]; then
-                        var_line="#${str_GRUB}"
-                    fi
-                done >> "${str_file1}"
-            fi
-
+            # <remarks> Organize new line. </remarks>
             local str_GRUB_temp=""
             IsString "${str_GRUB_Allocate_CPU}" &> /dev/null && str_GRUB_temp+="${str_GRUB_Allocate_CPU}"
             IsString "${str_GRUB_hugepages}" &> /dev/null && str_GRUB_temp+=" ${str_GRUB_hugepages}"
@@ -121,7 +96,10 @@
                 str_GRUB_temp+=" ${str_GRUB_VFIO_PCI}${str_HWID_list_VFIO}"
             fi
 
-            readonly str_GRUB+="\"${str_GRUB_temp}\""
+            # <remarks> Write new line to file. </remarks>
+            readonly str_GRUB_temp+="\"${str_GRUB_temp}\""
+            ReplaceLineInArray "arr_file" "${str_GRUB}" "${str_GRUB_temp}" || return $?
+            OverwriteFile "${str_file1}" || return $?
 
         # <remarks> Initramfs </remarks>
 
