@@ -78,16 +78,16 @@
         IsString "${str_GRUB_Allocate_CPU}" &> /dev/null && str_GRUB_temp+="${str_GRUB_Allocate_CPU}"
         IsString "${str_GRUB_hugepages}" &> /dev/null && str_GRUB_temp+=" ${str_GRUB_hugepages}"
 
-        if IsString "${str_driverListForVFIO}" &> /dev/null; then
-            str_GRUB_temp+=" ${str_GRUB_blacklist}${str_driverListForVFIO}"
+        if IsString "${str_driver_list_VFIO}" &> /dev/null; then
+            str_GRUB_temp+=" ${str_GRUB_blacklist}${str_driver_list_VFIO}"
         fi
 
-        if IsString "${str_HWID_list_forSTUB}" &> /dev/null; then
-            str_GRUB_temp+=" ${str_GRUB_PCI_STUB}${str_HWID_list_forSTUB}"
+        if IsString "${str_driver_list_STUB}" &> /dev/null; then
+            str_GRUB_temp+=" ${str_GRUB_PCI_STUB}${str_HWID_list_STUB}"
         fi
 
-        if IsString "${str_HWID_list_forVFIO}" &> /dev/null; then
-            str_GRUB_temp+=" ${str_GRUB_VFIO_PCI}${str_HWID_list_forVFIO}"
+        if IsString "${str_HWID_list_VFIO}" &> /dev/null; then
+            str_GRUB_temp+=" ${str_GRUB_VFIO_PCI}${str_HWID_list_VFIO}"
         fi
 
         readonly str_GRUB+="\"${str_GRUB_temp}\""
