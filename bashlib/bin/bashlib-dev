@@ -84,7 +84,6 @@
         # <params>
         local bool_backup_file_exists=false
         local bool_system_file_is_original=false
-        local readonly str_backup_file="${1}.bak"
         # </params>
 
         # <remarks> Original system file does not exist. </remarks>
@@ -92,13 +91,13 @@
             InstallPackage $2 true && bool_system_file_is_original=true
         fi
 
-        # if BackupFile $1; then                                      # BackupFile is broken?
-        #     bool_backup_file_exists=true
-        # fi
-
-        if cp $1 "${str_backup_file}" && IsFile $1; then
+        # <remarks> Backup system file. </remarks>
+        if BackupFile $1; then
             bool_backup_file_exists=true
-        else
+        fi
+
+        # <remarks> Do no work. </remarks>
+        if ! $bool_backup_file_exists || ! $bool_system_file_is_original; then
             return 1
         fi
 
@@ -110,17 +109,8 @@
 
         # <remarks> System file *is not* original. Attempt to restore backup. </remarks>
         if $bool_backup_file_exists && ! $bool_system_file_is_original; then
-            # RestoreFile $1                                          # RestoreFile is broken?
-            cp "${str_backup_file}" $1 || return 1
-        fi
-
-        # <remarks> Do no work. </remarks>
-        # if ! $bool_backup_file_exists || ! $bool_system_file_is_original; then
-        #     return 1
-        # fi
-
-        if ! $bool_system_file_is_original; then
-            return 1
+            RestoreFile $1
+            return $?
         fi
 
         return 0
