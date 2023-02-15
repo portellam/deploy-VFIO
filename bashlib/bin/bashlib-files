@@ -166,18 +166,36 @@
         return 0
     }
 
-    # <summary> Create a file. If true, pass. </summary>
-    # <param name=$1> string: the file </param>
-    # <param name=$2> string: the line </param>
+    # <summary> Find line in array. If true, pass. </summary>
+    # <param name=$1> string: the line </param>
+    # <param name=$2> string: the name of the array </param>
     # <returns> exit code </returns>
-    function FindLine
+    function FindLineInArray
+    {
+        IsString $2 || return $?
+        IsArray $1 || return $?
+
+        # <params>
+        local readonly var_command='declare -a arr=( ${'$1'[@]} )'
+        # </params>
+
+        eval "${var_command}" || return 1
+
+        if [[ -z $( echo "${arr[@]}" | grep -iF $2 ) ]]; then
+            return 1
+        fi
+
+        return 0
+    }
+
+    # <summary> Find line in file. If true, pass. </summary>
+    # <param name=$1> string: the line </param>
+    # <param name=$2> string: the file </param>
+    # <returns> exit code </returns>
+    function FindLineInFile
     {
         IsString $2 || return $?
         IsFile $1 || return $?
-
-        # <params>
-        local readonly var_command='! -z $( grep -iF $2 $1 )'
-        # </params>
 
         if [[ -z $( grep -iF $2 $1 ) ]]; then
             return 1
@@ -374,6 +392,27 @@
         eval "${var_set_param}"
         return $?
     }
+
+    # function ReplaceLine
+    # {
+    #     IsString $1 || return $?
+    #     IsString $2 || return $?
+    #     FindLine $1 $2 || return $?
+
+    #     ReadFile arr_file1 "${str_file1}"
+
+    #         for int_key in "${!arr_file1[@]}"; do
+    #             local var_line="${arr_file1[$int_key]}"
+
+    #             case "${var_line}" in
+    #                 "${str_GRUB}"* )
+    #                     arr_file1[$int_key]="#${str_GRUB}"
+    #                     ;;
+    #             esac
+    #         done
+    #     fi
+
+    # }
 
     # <summary> Restore latest valid backup of given file. </summary>
     # <parameter name=$1> string: the name of the file </param>
