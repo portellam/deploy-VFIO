@@ -166,9 +166,9 @@
         return 0
     }
 
-    # <summary> Find line in array. If true, pass. </summary>
-    # <param name=$1> string: the line </param>
-    # <param name=$2> string: the name of the array </param>
+    # <summary> Find line in array. </summary>
+    # <paramref name=$1> string: the name of the array </paramref>
+    # <param name=$2> string: the line </param>
     # <returns> exit code </returns>
     function FindLineInArray
     {
@@ -188,9 +188,9 @@
         return 0
     }
 
-    # <summary> Find line in file. If true, pass. </summary>
-    # <param name=$1> string: the line </param>
-    # <param name=$2> string: the file </param>
+    # <summary> Find line in file. </summary>
+    # <param name=$1> string: the file </param>
+    # <param name=$2> string: the line </param>
     # <returns> exit code </returns>
     function FindLineInFile
     {
@@ -337,7 +337,7 @@
         return 0
     }
 
-    # <summary> Overwrite output to a file. Declare inherited params before calling this function. </summary>
+    # <summary> Overwrite output to a file. </summary>
     # <paramref name=$1> string: the name of the array </paramref>
     # <param name=$2> string: the name of the file </param>
     # <returns> exit code </returns>
@@ -380,11 +380,11 @@
         # <params>
         IFS=$'\n'
         local readonly str_fail="${var_prefix_fail} Could not read from file '${2}'."
-        local readonly var_mapfile='mapfile -t < <( cat '"$2"' )'
+        local readonly var_get_param='mapfile -t < <( cat '"$2"' )'
         local readonly var_set_param="$1"'=( "${MAPFILE[@]}" )'
         # </params>
 
-        if ! eval "${var_mapfile}" || ! IsArray "MAPFILE" &> /dev/null; then
+        if ! eval "${var_get_param}" || ! IsArray "MAPFILE" &> /dev/null; then
             echo -e "${str_fail}"
             return 1
         fi
@@ -393,26 +393,56 @@
         return $?
     }
 
-    # function ReplaceLine
-    # {
-    #     IsString $1 || return $?
-    #     IsString $2 || return $?
-    #     FindLine $1 $2 || return $?
+    # <summary> Replace line in an array. </summary>
+    # <paramref name=$1> string: the name of the array </paramref>
+    # <param name=$2> string: the line </param>
+    # <param name=$3> string: the new line </param>
+    # <returns> exit code </returns>
+    function ReplaceLineInArray
+    {
+        IsString $3 || return $?
+        FindLineInArray $1 $2 || return $?
 
-    #     ReadFile arr_file1 "${str_file1}"
+        # <params>
+        local readonly var_get_param='declare arr_replace_line=( ${!'$1'[@]} )'
+        local readonly var_set_param="$1"'=( "${arr_replace_line[@]}" )'
+        # </params>
 
-    #         for int_key in "${!arr_file1[@]}"; do
-    #             local var_line="${arr_file1[$int_key]}"
+        eval "${var_get_param}" || return 1
 
-    #             case "${var_line}" in
-    #                 "${str_GRUB}"* )
-    #                     arr_file1[$int_key]="#${str_GRUB}"
-    #                     ;;
-    #             esac
-    #         done
-    #     fi
+        for int_key in "${!arr_replace_line[@]}"; do
+            local var_line="${arr_replace_line[$int_key]}"
 
-    # }
+            case "${var_line}" in
+                $2* )
+                    arr_replace_line[$int_key]="$3"
+                    ;;
+            esac
+        done
+
+        eval "${var_set_param}" || return 1
+        return 0
+    }
+
+    # <summary> Replace line in an file. </summary>
+    # <param name=$1> string: the name of the file </param>
+    # <param name=$2> string: the line </param>
+    # <param name=$3> string: the new line </param>
+    # <returns> exit code </returns>
+    function ReplaceLineInFile
+    {
+        IsString $3 || return $?    # NOTE: keep. Exit early.
+        # IsString $2 || return $?  # TODO: remove. This parameter will be validated in ReplaceLineInArray.
+        # IsFile $1 || return $?    # TODO: remove. This parameter will be validated in ReadFile
+
+        # <params>
+        declare -a arr_replace_file=()
+        # </params>
+
+        ReadFile "arr_replace_file" $1 || return $?
+        ReplaceLineInArray "arr_replace_file" $2 $3 || return $?
+        return 0
+    }
 
     # <summary> Restore latest valid backup of given file. </summary>
     # <parameter name=$1> string: the name of the file </param>
@@ -438,8 +468,8 @@
 
             # <remarks> If newest backup is newer than file, restore. </remarks>
             if ! AreEqualFiles $1 "${arr_dir[0]}" &> /dev/null || IsFileNewer "${arr_dir[0]}" $1 &> /dev/null ; then
-                 cp "${1}${str_suffix}" $1
-                 return $?
+                cp "${1}${str_suffix}" $1
+                return $?
             fi
 
             return "${int_code_skipped_operation}"
@@ -466,10 +496,10 @@
 
         # <params>
         local readonly str_fail="${var_prefix_fail} Could not write to file '${1}'."
-        local readonly var_set_file='printf "%s\n" "${'$1'[@]}" >> $2'
+        local readonly var_set_param='printf "%s\n" "${'$1'[@]}" >> $2'
         # </params>
 
-        if ! eval "${var_set_file}"; then
+        if ! eval "${var_set_param}"; then
             echo -e "${str_fail}"
             return 1
         fi
