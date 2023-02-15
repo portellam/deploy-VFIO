@@ -360,9 +360,9 @@
         # TOOD: create a function that takes in a string, which is the name of another parameter (like a pointer) and perform validation given the var type (check prefix var, str, int, arr, etc.)
         # TODO: create single line strings of arrays of drivers and HW IDs, with delimiters (commas)
         # arr_IOMMU_VFIO_PCI
-        # str_driverListForVFIO
-        # str_driverListForSTUB
-        # str_HWID_list_forVFIO
+        # str_driver_list_VFIO
+        # str_HWID_list_STUB
+        # str_HWID_list_VFIO
 
         # <remarks> Check if list is empty </remarks>
         declare -a arr=( "${arr_IOMMU_VFIO_PCI[@]}" )
