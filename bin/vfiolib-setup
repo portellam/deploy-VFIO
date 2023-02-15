@@ -73,30 +73,55 @@
         BackupFile "${str_file4_backup}"
         BackupFile "${str_file5_backup}"
 
-        # <remarks> GRUB </remarks>
-        local str_GRUB_temp=""
-        IsString "${str_GRUB_Allocate_CPU}" &> /dev/null && str_GRUB_temp+="${str_GRUB_Allocate_CPU}"
-        IsString "${str_GRUB_hugepages}" &> /dev/null && str_GRUB_temp+=" ${str_GRUB_hugepages}"
+        # <summary> GRUB </summary>
+            # <remarks> Read fileComment specified line. </remarks>
+            declare -a arr_file1=()
 
-        if IsString "${str_driver_list_VFIO}" &> /dev/null; then
-            str_GRUB_temp+=" ${str_GRUB_blacklist}${str_driver_list_VFIO}"
-        fi
+            if FindLine "${str_GRUB}" &> /dev/null; then
+                ReadFile arr_file1 "${str_file1}"
 
-        if IsString "${str_driver_list_STUB}" &> /dev/null; then
-            str_GRUB_temp+=" ${str_GRUB_PCI_STUB}${str_HWID_list_STUB}"
-        fi
+                for int_key in "${!arr_file1[@]}"; do
+                    local var_line="${arr_file1[$int_key]}"
 
-        if IsString "${str_HWID_list_VFIO}" &> /dev/null; then
-            str_GRUB_temp+=" ${str_GRUB_VFIO_PCI}${str_HWID_list_VFIO}"
-        fi
+                    case "${var_line}" in
+                        "${str_GRUB}"* )
+                            arr_file1[$int_key]="#${str_GRUB}"
+                            ;;
+                    esac
 
-        readonly str_GRUB+="\"${str_GRUB_temp}\""
+                    if [[ "${var_line}" == "${str_GRUB}"* ]]; then
+                        arr_file1[$int_key]="#${str_GRUB}"
+                    fi
+                done
+            fi
+            
 
-        # if grep -iF "${str_GRUB}"*; then
-        #     while read var_line; do
+            
+            if grep -iF "${str_GRUB}"*; then
+                while read var_line; do
+                    if [[ "${var_line}" ~= "${str_GRUB}"* ]]; then
+                        var_line="#${str_GRUB}"
+                    fi
+                done >> "${str_file1}"
+            fi
 
-        #     done >> "${str_file1}"
-        # fi
+            local str_GRUB_temp=""
+            IsString "${str_GRUB_Allocate_CPU}" &> /dev/null && str_GRUB_temp+="${str_GRUB_Allocate_CPU}"
+            IsString "${str_GRUB_hugepages}" &> /dev/null && str_GRUB_temp+=" ${str_GRUB_hugepages}"
+
+            if IsString "${str_driver_list_VFIO}" &> /dev/null; then
+                str_GRUB_temp+=" ${str_GRUB_blacklist}${str_driver_list_VFIO}"
+            fi
+
+            if IsString "${str_driver_list_STUB}" &> /dev/null; then
+                str_GRUB_temp+=" ${str_GRUB_PCI_STUB}${str_HWID_list_STUB}"
+            fi
+
+            if IsString "${str_HWID_list_VFIO}" &> /dev/null; then
+                str_GRUB_temp+=" ${str_GRUB_VFIO_PCI}${str_HWID_list_VFIO}"
+            fi
+
+            readonly str_GRUB+="\"${str_GRUB_temp}\""
 
         # <remarks> Initramfs </remarks>
 
