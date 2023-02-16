@@ -7,6 +7,13 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
+# TODO:
+#
+# -create array of drivers, hw ids, names, etc. to come from vfio-iommu.
+# -add comments
+#
+
+
 # <remarks> Using </remarks>
 # <code>
     source ../bashlib/bin/bashlib-all
@@ -56,6 +63,9 @@
         local readonly str_modprobe_blacklist="blacklist "
         local readonly str_modules_VFIO_PCI="vfio_pci ids="
         local readonly str_initramfs_modules_VFIO_PCI="options ${str_modules_VFIO_PCI}"
+        local readonly str_VFIO_PCI_driver="vfio-pci"
+
+        local readonly var_get_softdep='softdep ${str_driver} pre: vfio-pci'
         # </params>
 
         # <remarks> Check if backup files exist. </remarks>
@@ -75,7 +85,7 @@
 
         # <summary> GRUB </summary>
             # <remarks> Get file. </remarks>
-            declare -a arr_file1=()
+            declare -a arr_file1=( "${arr_vfio_disclaimer[@]}" )
             # IsFileOriginal "${str_file1}" || return $?
             ReadFile "arr_file1" "${str_file1}" || return $?
 
@@ -88,7 +98,7 @@
                 str_GRUB_temp+=" ${str_GRUB_blacklist}${str_driver_list_VFIO}"
             fi
 
-            if IsString "${str_driver_list_STUB}" &> /dev/null; then
+            if IsString "${str_HWID_list_STUB}" &> /dev/null; then
                 str_GRUB_temp+=" ${str_GRUB_PCI_STUB}${str_HWID_list_STUB}"
             fi
 
@@ -98,16 +108,91 @@
 
             # <remarks> Write new line to file. </remarks>
             readonly str_GRUB_temp+="\"${str_GRUB_temp}\""
-            ReplaceLineInArray "arr_file" "${str_GRUB}" "${str_GRUB_temp}" || return $?
-            OverwriteFile "${str_file1}" || return $?
+            ReplaceLineInArray "arr_file1" "${str_GRUB}" "${str_GRUB_temp}" || return $?
+            OverwriteFile "arr_file1" "${str_file1}" || return $?
 
-        # <remarks> Initramfs </remarks>
+        # <summary> Initramfs and Modules </summary>
+            # <remarks> Organize new lines. </remarks>
+            declare -a arr_file2=( "${arr_vfio_disclaimer[@]}" )
+            declare -a arr_file5=( "${arr_vfio_disclaimer[@]}" )
+            declare -a arr_softdep=()
+            declare -a arr_initramfs_HWID=()
+            declare -a arr_modules_HWID=()
+            local str_new_line_VFIO_temp=""
 
-        # <remarks> Modules </remarks>
+            for str_driver in "${str_driver_list_VFIO[@]}"; do      # TODO: change to valid array
+                arr_softdep+=(
+                    $( eval "${var_get_softdep}" )
+                    "${str_driver}"
+                )
+            done
 
-        # <remarks> Modprobe: blacklists </remarks>
+            if IsString "${str_HWID_list_STUB}" &> /dev/null; then
+                str_new_line_VFIO_temp+="${str_HWID_list_STUB}"
+            fi
+
+            if [[ "${#str_new_line_VFIO_temp[@]}" == *","* ]] && IsString "${str_HWID_list_VFIO}" &> /dev/null; then
+                str_new_line_VFIO_temp+=",${str_HWID_list_VFIO}"
+            fi
+
+            readonly str_new_line_VFIO_temp
+
+            readonly arr_initramfs_HWID=(
+                "vfio"
+                "vfio_iommu_type1"
+                "vfio_virqfd"
+                "#"
+                "${arr_softdep[@]}"
+                "#"
+                "${str_modules_VFIO_PCI}${str_new_line_VFIO_temp}"
+                "${str_initramfs_modules_VFIO_PCI}${str_new_line_VFIO_temp}"
+                "${str_VFIO_PCI_driver}"
+            )
+
+            readonly arr_modules_HWID=(
+                "vfio"
+                "vfio_iommu_type1"
+                "vfio_pci"
+                "vfio_virqfd"
+                "kvm"
+                "kvm_intel"
+                "apm power_off=1"
+                "#"
+                "${str_modules_VFIO_PCI}${str_new_line_VFIO_temp}"
+            )
+
+            # <remarks> Set new lines. </remarks>
+            readonly arr_file2+=( "${arr_initramfs_HWID[@]}" )
+            readonly arr_file5+=( "${arr_modules_HWID[@]}" )
+
+            # <remarks> Write new line to file. </remarks>
+            OverwriteFile "arr_file2" "${str_file2}" || return $?
+            OverwriteFile "arr_file5" "${str_file5}" || return $?
+
+        # <summary> Modprobe: blacklists </summary>
+            # <remarks> Organize new lines. </remarks>
+            declare -a arr_file3=( "${arr_vfio_disclaimer[@]}" )
+
+            # <remarks> Set new lines. </remarks>
+            for str_driver in "${str_driver_list_VFIO[@]}"; do      # TODO: change to valid array
+                arr_file3+=( "${str_modprobe_blacklist}${str_driver}" )
+            done
+
+            readonly arr_file3
+
+            # <remarks> Write new lines to file. </remarks>
+            OverwriteFile "arr_file3" "${str_file3}" || return $?
 
         # <remarks> Modprobe: conf </remarks>
+            # <remarks> Organize new lines. </remarks>
+            declare -ar arr_file4=(
+                "${arr_vfio_disclaimer[@]}"
+                "${arr_softdep[@]}"
+                "${str_initramfs_modules_VFIO_PCI}${str_new_line_VFIO_temp}"
+            )
+
+            # <remarks> Write new lines to file. </remarks>
+            OverwriteFile "arr_file4" "${str_file4}" || return $?
 
         return 0
     }
