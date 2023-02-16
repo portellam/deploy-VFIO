@@ -7,6 +7,12 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
+# TODO:
+#
+# -create array of drivers, hw ids, names, etc. to be used in vfio-setup.
+# -add comments
+#
+
 # <remarks> Using </remarks>
 # <code>
     source ../bashlib/bin/bashlib-all
