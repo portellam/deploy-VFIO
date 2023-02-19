@@ -15,6 +15,7 @@
 
 # <code>
     # <summary> Add user to necessary user groups. </summary>
+    # <returns> exit code </returns>
     function AddUserToGroups
     {
         function AddUserToGroups_Main
@@ -37,6 +38,7 @@
     }
 
     # <summary> isolcpus: Ask user to allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and virtual machine performance. </summary
+    # <returns> exit code </returns>
     function Allocate_CPU
     {
         function Allocate_CPU_Main
@@ -298,17 +300,21 @@
     }
 
     # <summary> Ask user to setup audio loopback from the host's Line-in to active audio output. Useful for virtual machines with sound-cards (example: Creative SoundBlaster). </summary>
+    # <returns> exit code </returns>
     function HostAudioLineIn
     {
         return 0
     }
 
-    function LibvirtHooks
-    {
-        return 0
-    }
+    # # <summary> libvirt-hooks: ??? </summary>
+    # # <returns> exit code </returns>
+    # function LibvirtHooks
+    # {
+    #     return 0
+    # }
 
     # <summary> libvirt-qemu: Append necessary changes to QEMU system file, including user groups, Evdev, Hugepages, and NVRAM (for UEFI VMs). </summary>
+    # <returns> exit code </returns>
     function Modify_QEMU
     {
         function Modify_QEMU_Main
@@ -469,6 +475,7 @@
     }
 
     # <summary> zramswap: Ask user to setup a swap partition in host memory, to reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory. </summary>
+    # <returns> exit code </returns>
     function RAM_Swapfile
     {
         function RAM_Swapfile_Install
@@ -565,6 +572,7 @@
     }
 
     # <summary> Evdev: Ask user to setup a virtual Keyboard-Video-Mouse swich (excluding the Video). Will allow a user to swap between active virtual machines and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL'). </summary>
+    # <returns> exit code </returns>
     function Virtual_KVM
     {
         function Virtual_KVM_Main
@@ -609,6 +617,7 @@
     }
 
     # <summary> LookingGlass: Ask user to setup direct-memory-access of video framebuffer from virtual machine to host. NOTE: Only supported for Win 7/10/11 virtual machines. </summary>
+    # <returns> exit code </returns>
     function VirtualVideoCapture
     {
         # TODO:
@@ -664,6 +673,7 @@
     }
 
     # <summary> Scream: Ask user to setup audio loopback from virtual machine to host. NOTE: Only supported for Win 7/10/11 virtual machines. </summary>
+    # # <returns> exit code </returns>
     # function VirtualAudioCapture
     # {
     #     return 0
@@ -671,8 +681,11 @@
 # </code>
 
 # <params>
+    # <remarks> Evaluations </remarks>
     declare -gr var_get_first_valid_user='getent passwd {1000..60000} | cut -d ":" -f 1'
     declare -gr str_username=$( eval "${var_get_first_valid_user}" )
+
+    # <remarks> Flag progress of setups </remarks>
     declare -g bool_is_setup_evdev=false
     declare -g bool_is_setup_hugepages=false
 # </params>
