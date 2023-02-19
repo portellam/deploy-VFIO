@@ -120,7 +120,7 @@
             declare -a arr_modules_HWID=()
             local str_new_line_VFIO_temp=""
 
-            for str_driver in "${str_driver_list_VFIO[@]}"; do      # TODO: change to valid array
+            for str_driver in "${arr_drivers_VFIO_PCI[@]}"; do      # TODO: change to valid array
                 arr_softdep+=(
                     $( eval "${var_get_softdep}" )
                     "${str_driver}"
@@ -174,7 +174,7 @@
             declare -a arr_file3=( "${arr_vfio_disclaimer[@]}" )
 
             # <remarks> Set new lines. </remarks>
-            for str_driver in "${str_driver_list_VFIO[@]}"; do      # TODO: change to valid array
+            for str_driver in "${arr_drivers_VFIO_PCI[@]}"; do      # TODO: change to valid array
                 arr_file3+=( "${str_modprobe_blacklist}${str_driver}" )
             done
 
