@@ -23,7 +23,7 @@
 # </code>
 
 # <code>
-    # <summary> Setup VFIO with more flexibility in mind; Setup VFIO with (if available) multiple GRUB menu entries. Choose which VGA device to boot from; choose which menu entry that excludes a given IOMMU group that contains VGA device(s). </summary>
+    # <summary> Multiple GRUB menu entries for multiple VGA device (GPU) systems. Choose a GRUB menu entry with a VGA device to boot from (exclude that VGA device's IOMMU Group from VFIO). </summary>
     # <returns> exit code </returns>
     function Multiboot_VFIO
     {
