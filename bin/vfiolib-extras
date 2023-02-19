@@ -571,7 +571,7 @@
         return "${int_exit_code}"
     }
 
-    # <summary> Evdev: Ask user to setup a virtual Keyboard-Video-Mouse swich (excluding the Video). Will allow a user to swap between active virtual machines and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL'). </summary>
+    # <summary> Evdev: Ask user to setup a virtual Keyboard-Video-Mouse switch (excluding the Video). Will allow a user to swap between active virtual machines and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL'). </summary>
     # <returns> exit code </returns>
     function Virtual_KVM
     {
