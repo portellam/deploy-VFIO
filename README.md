@@ -11,7 +11,8 @@ The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-b
     * **VGA devices:** NVIDIA GTX 900-series, or AMD Radeon HD 7000-series (or before) for **Windows XP**.
     * **VGA devices:** NVIDIA 7000-series GTX (or before), or ATI (pre-AMD) for **Windows 98**.
     * **Sound devices:** Creative Soundblaster for that authentic, 1990s-2000s experience.
-* **If it's greater control of your privacy you want,** piss on *Zoom*, go use VFIO Passthrough **Now**.
+* **If it's greater control of your privacy you want**
+    * Piss on Bill Gates, go use VFIO Passthrough **Now**. [9]
 
 ## How-to
 To execute:
@@ -89,6 +90,8 @@ To execute:
 **[7]:**    https://github.com/duncanthrax/scream
 
 **[8]:**    https://looking-glass.io/docs/B5.0.1/
+
+**[9]:**    https://www.youtube.com/watch?v=ShiKM3OibGQ&t=30s
 
 ## Disclaimers
 Tested on Debian Linux. Works on my machine!
