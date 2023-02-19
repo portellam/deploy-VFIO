@@ -340,13 +340,16 @@
         function Get_IOMMU_Drivers
         {
             declare -ga arr_drivers_VFIO_PCI=()
+            declare -ga arr_hardware_ID_VFIO_PCI=()
 
-            for int_key in "${arr_driver[@]}"; do
+            for int_key in "${!arr_IOMMU[@]}"; do
                 local readonly str_driver="${arr_driver[$int_key]}"
+                local readonly str_hardware_ID="${arr_hardware_ID[$int_key]}"
                 local readonly str_IOMMU="${arr_IOMMU[$int_key]}"
 
                 if FindLineInArray "arr_IOMMU_PCI_STUB" "${str_IOMMU}" || FindLineInArray "arr_IOMMU_VFIO_PCI" "${str_IOMMU}" || FindLineInArray "arr_IOMMU_VFIO_PCI_with_VGA" "${str_IOMMU}"; then
                     arr_drivers_VFIO_PCI+=( "${str_driver}" )
+                    arr_hardware_ID_VFIO_PCI+=( "${str_hardware_ID}" )
                 fi
             done
 
