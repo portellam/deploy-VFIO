@@ -1,3 +1,6 @@
+## Status
+work-in-progress
+
 ## Description
 The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Swap the preferred host graphics (VGA) device at GRUB boot menu. VFIO: Run any OS with real hardware, under a virtual machine (VM), in the Linux desktop of your choice.
 
@@ -6,70 +9,79 @@ To execute:
 
         sudo bash deploy-vfio-setup.bash
 
-* Should one wish to **update** a system's VFIO setup (completely, with Evdev, Hugepages, Static or Multiboot, etc.), then review the **OPTIONS** above.
-
 ## What is VFIO?
 * see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 * VFIO community:       https://old.reddit.com/r/VFIO
 * a useful guide:       https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 
-## Functions
+## Main VFIO Setup (PCI Passthrough)
+* **Multi-boot VFIO Setup**
+    * Useful for systems with multiple VGA devices (one dummy for Host, and multiple for Guests). **Greater flexibility.**
+    * Multiple GRUB menu entries for multiple VGA device (GPU) systems. Choose a GRUB menu entry with a VGA device to boot from (exclude that VGA device's IOMMU Group from PCI Passthrough/VFIO).
+    * **Disclaimer:** For best results, use **Auto-Xorg**. [1]
+* **Static VFIO Setup**
+    * Meant for systems with a single VGA device (one dummy for Host, and one for Guests). **Lesser flexibility.**
+    * Traditional PCI Passthrough/VFIO Setup.
 
-* **Evdev (Event devices)** is a Virtual Keyboard-Video-Mouse switch (K.V.M w/o video). (good fall-back)
-* **Hugepages**
-    * Static allocation of system RAM to VMs for zero memory fragmentation and reduced memory latencies (best to use whole Memory channels/sticks, if possible).
-        * Outputs to logfile, for future reference by Multi-boot updater.
-* **Zram swapfile**
-    * Compressed swapfile to RAM disk, to reduce occurrences of Host lock-up from over-allocated Host memory.
-* **Static CPU isolation**
-    * Static isolation of system CPU threads. **(see 'post-install/Libvirt hooks' for Dynamic isolation)**
-    * Outputs to logfile, for future reference by VFIO setup.
-* **Auto-Xorg** system service to find and set a valid host boot VGA device for Xorg. [1]
-* Setup Multi-boot or static. Multi-boot: Swap the preferred host graphics (VGA) device at GRUB boot menu. **(see 'examples')**
-* **Loopback audio** user service, audio capture from VM to host (ex: PCI Line-out to on-board Line-in/Mic).
-* IVSHMEM (Inter-VM Shared Memory Device):
-    * **Evdev (Event devices)**
-    * **Looking Glass** is a video capture of the VM GPU primary output, to host. [2]
-    * **Scream** is audio capture (virtual audio cable) over virtual network bridge, from VM to host. [3]
-* **Libvirt hooks** [4]
-    * Invoke 'hooks' for individual VMs. **(w-i-p)** [4]
-    * Switch display input (video output) at VM start. **(w-i-p)**
-    * Prompt user to set/allocate system resources (CPU, memory) dynamically. **(w-i-p)**
-    * **Libvirt-nosleep** system service to prevent Host sleep while VM(s) are active. **(works standalone)** [5]
+## Extras (Pre- and Post-Setup)
+* **Allocate CPU (Static)**
+    * Reduce Host overhead, and improve both Host and Guest machine performance.
+    * Allocate Host CPU cores (and/or threads). [2]
+* **Allocate RAM (Static)**
+    * Eliminate the need to defragment Host memory (RAM) before allocating Guest machine memory.
+    * Reduce Host overhead, and improve both Host and Guest machine performance.
+    * Allocate Host memory to Guests.
+    * Implementation is known as **Hugepages** [3]
+* **Auto-Xorg** system service to find and set a valid Host boot VGA device for Xorg. [1]
+* **Guest Audio Capture**
+    * Useful for systems with multiple Audio devices.
+    * Create an Audio loopback device to the Host's Audio device Line-Out.
+    * Captures the audio stream from Guest machine PCI Audio device Line-Out to Host Sound device Line-In.
+    * For virtual implementation, see **Virtual Audio Capture**
+* **Libvirt Hooks**
+    * Invoke **"hooks"** for individual Guests. [4]
+    * Switch display input (video output) at Guest start.
+    * Allocate system resources (CPU, RAM) dynamically.
+    * **Libvirt-nosleep** system service to prevent Host sleep while Guest(s) are active.
+* **RAM as Swapfile/partition**
+    * Reduce swapiness to existing Host swap devices, and reduce chances of Host memory exhaustion (given an event of memory over-allocation).
+    * Create a Swap device in Host memory.
+    * Implementation is known as **zram-swap** [5]
+* **Virtual KVM (Keyboard Video Mouse) switch**
+    * Allow a user to swap a group of Input devices (as a whole) between active Guests and Host.
+    * Use the pre-defined macro (example: **'L-CTRL' + 'R-CTRL'**).
+    * Create a virtual Keyboard-Video-Mouse switch.
+    * Implementation is known as **Evdev (Event Devices)** [6]
+    * **Disclaimer:** Guest machine PCI USB is better, and both implementations together are Best.
+* **Virtual Audio Capture**
+    * Setup a virtual Audio driver for Windows that provides a discrete sound device.
+    * Implementation is known as **Scream** [7]
+* **Virtual Video Capture**
+    * Setup direct-memory-access (DMA) of a PCI VGA device output (Video and Audio) from Guest machine to host.
+    * Implementation is known as **LookingGlass** [8]
+    * **Disclaimer:** Only supported for Windows 7/10/11 Guest machines.
 
-## VFIO setup *(expanded)*
-* Parses list of PCI expansion devices (Bus IDs, Hardware IDs, and Kernel drivers), and 'IOMMU' groups of devices.
-    * Saves lists of external PCI devices, by order of IOMMU groups.
-    * Outputs to logfile, for future reference by updater.
-* **Install or Update from logfile**
-    * If parse fails (because of an existing VFIO setup or other reason), **read from existing logfile** and continue to VFIO setup.
-* Prompt user for VFIO passthrough setup:
-    * **Multi-boot**
-        * bind passthrough devices to **vfio-pci** and **pci-stub** (example types: VGA and USB, respectively).
-            * NOTE: 'lspci' may report a device is binded to its original driver.
-                * For devices binded to 'pci-stub', this is normal.
-                * For some child devices (VGA audio device) and/or devices that share drivers with onboard devices (onboard audio), this is normal.
-        * Select a host VGA boot device at GRUB menu.   (**Auto-Xorg** [1] is recommended)
-        * Creates up to three menu entries (for first three installed and latest Linux kernels), and **select default boot entry.**
-        * Appends to GRUB: **'/etc/grub.d/proxifiedScripts/custom'**
-    * **Static**
-        * bind all passthrough devices to **vfio-pci** and **pci-stub** (GRUB), or **vfio-pci** only (system files).
-        * Append to GRUB or system files:   **'/etc/default/grub'**, or **'/etc/initramfs-tools/modules'**, **'/etc/modules'**, and **'/etc/modprobe.d/*'**.
+## References
+**[1]:**    https://github.com/portellam/Auto-Xorg
 
-## Credits
-**[1]:** https://github.com/portellam/Auto-Xorg
+**[2]:**    https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning
 
-**[2]:** https://looking-glass.io/docs/B5.0.1/
+**[3]:**    https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages
 
-**[3]:** https://github.com/duncanthrax/scream
+**[4]:**    https://github.com/PassthroughPOST/VFIO-Tools
+            https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_guest_is_left_running_during_sleep
 
-**[4]:** modified, https://github.com/PassthroughPOST/VFIO-Tools
+**[5]:**    https://github.com/foundObjects/zram-swap
+            https://wiki.debian.org/ZRam
+            https://aur.archlinux.org/packages/zramswap
 
-**[5]:** https://old.reddit.com/r/VFIO/comments/8ypedp/for_anyone_getting_issues_with_their_guest_when/ (ArchWiki, /u/sm-Fifteen)
+**[6]:**    https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev
 
-## DISCLAIMER
-**DO NOT CREATE/ADD NEW FILES, OF SAME NAME OR OTHERWISE, TO REPO DIRECTORY. MAY CAUSE CONFLICT WITH SCRIPT(S), AND UNINTENDED OPERATION OF, BUT NOT LIMITED TO, LOG FILE READ/WRITES.**
+**[7]:**    https://github.com/duncanthrax/scream
 
+**[8]:**    https://looking-glass.io/docs/B5.0.1/
+
+## Disclaimers
 Tested on Debian Linux. Works on my machine!
 
 Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
