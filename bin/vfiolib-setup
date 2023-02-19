@@ -24,7 +24,6 @@
 # <code>
     function Multiboot_VFIO
     {
-
         # <summary> Multiboot: Parse all VGA and non VGA IOMMU Groups, except current VGA IOMMU Group. </summary>
         # <param name="$1"> int: the IOMMU group to ignore </param>
         # <param name="$str_multiboot_drivers"> string: current list of drivers </param>
@@ -159,7 +158,6 @@
         GoToScriptDir && cd "${str_files_dir}"
 
         # <remarks> Backup existing system files. </remarks>
-        # NOTE: will a conflict exist should backup files exist in given directories (example: modprobe.d) and not others (ex: grub)
         BackupFile "${str_file1}"
         BackupFile "${str_file2}"
         BackupFile "${str_file3}"
@@ -196,8 +194,8 @@
 
         # <summary> Initramfs and Modules </summary>
             # <remarks> Organize new lines. </remarks>
-            declare -a arr_file2=( "${arr_vfio_disclaimer[@]}" )
-            declare -a arr_file5=( "${arr_vfio_disclaimer[@]}" )
+            declare -a arr_file2=( "${arr_static_initramfs_file_template[@]}" )
+            declare -a arr_file5=( "${arr_static_modules_file_template[@]}" )
             declare -a arr_softdep=()
             declare -a arr_initramfs_HWID=()
             declare -a arr_modules_HWID=()
@@ -254,7 +252,7 @@
 
         # <summary> Modprobe: blacklists </summary>
             # <remarks> Organize new lines. </remarks>
-            declare -a arr_file3=( "${arr_vfio_disclaimer[@]}" )
+            declare -a arr_file3=( "${arr_static_modprobe_blacklist_file_template[@]}" )
 
             # <remarks> Set new lines. </remarks>
             for var_driver in "${arr_drivers_VFIO_PCI[@]}"; do      # TODO: change to valid array
@@ -269,7 +267,7 @@
         # <remarks> Modprobe: conf </remarks>
             # <remarks> Organize new lines. </remarks>
             declare -ar arr_file4=(
-                "${arr_vfio_disclaimer[@]}"
+                "${arr_static_modprobe_vfio_file_template[@]}"
                 "${arr_softdep[@]}"
                 "${str_initramfs_modules_VFIO_PCI}${str_new_line_VFIO_temp}"
             )
@@ -299,15 +297,93 @@
 # </code>
 
 # <params>
-declare -gr str_GRUB_required="iommu=1,pt amd_iommu=on intel_iommu=on "
-declare -gr str_GRUB_default="video=efifb:off,vesafb:off acpi=force apm=power_off rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 "
+    # <remarks> GRUB templates </remarks>
+    declare -gr str_GRUB_required="iommu=1,pt amd_iommu=on intel_iommu=on "
+    declare -gr str_GRUB_default="video=efifb:off,vesafb:off acpi=force apm=power_off rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 "
 
-declare -gr str_driver_VFIO_PCI="vfio-pci"
-declare -gr str_GRUB_blacklist="modprobe.blacklist="
-declare -gr str_GRUB_PCI_STUB="pci-stub.ids="
-declare -gr str_GRUB_VFIO_PCI="vfio_pci.ids="
-declare -gr str_modprobe_blacklist="blacklist "
-declare -gr str_modules_VFIO_PCI="vfio_pci ids="
-declare -gr str_initramfs_modules_VFIO_PCI="options ${str_modules_VFIO_PCI}"
-declare -gr str_VFIO_PCI_driver="vfio-pci"
+    # <remarks> VFIO command lines </remarks>
+    declare -gr str_driver_VFIO_PCI="vfio-pci"
+    declare -gr str_GRUB_blacklist="modprobe.blacklist="
+    declare -gr str_GRUB_PCI_STUB="pci-stub.ids="
+    declare -gr str_GRUB_VFIO_PCI="vfio_pci.ids="
+    declare -gr str_modprobe_blacklist="blacklist "
+    declare -gr str_modules_VFIO_PCI="vfio_pci ids="
+    declare -gr str_initramfs_modules_VFIO_PCI="options ${str_modules_VFIO_PCI}"
+    declare -gr str_VFIO_PCI_driver="vfio-pci"
+
+    # <remarks> File templates </remarks>
+    declare -agr arr_mulitboot_file_template=(
+        "${arr_file_disclaimer[@]}"
+        "#!/bin/sh"
+        "exec tail -n +3 \$0"
+        "# This file provides an easy way to add custom menu entries.  Simply type the"
+        "# menu entries you want to add after this comment.  Be careful not to change"
+        "# the 'exec tail' line above."
+    )
+
+    declare -agr arr_static_initramfs_file_template=(
+        "${arr_vfio_disclaimer[@]}"
+        "# List of modules that you want to include in your initramfs."
+        "# They will be loaded at boot time in the order below."
+        "#"
+        "# Syntax:  module_name [args ...]"
+        "#"
+        "# Examples:"
+        "#"
+        "# raid1"
+        "# sd_mod"
+        "#"
+        "# NOTE: Do not change the following lines, unless you know what you are doing!"
+        "vfio"
+        "vfio_iommu_type1"
+        "vfio_virqfd"
+        "#"
+        "# Soft dependencies:    (NOTE: repeat for each driver)"
+        "#   softdep 'DRIVER_NAME' pre: ${str_VFIO_PCI_driver}"
+        "#"
+        "# GRUB command line and PCI hardware IDs:"
+        "#   ${str_initramfs_modules_VFIO_PCI}"
+        "#   ${str_modules_VFIO_PCI}"
+        "#   vfio"
+        "#"
+    )
+
+    declare -agr arr_static_modprobe_blacklist_file_template=(
+        "${arr_vfio_disclaimer[@]}"
+        "# Kernel module blacklist:"
+        "#   blacklist 'DRIVER_NAME'"
+        "#"
+    )
+
+    declare -agr arr_static_modprobe_vfio_file_template=(
+        "${arr_vfio_disclaimer[@]}"
+        "# Soft dependencies:    (NOTE: repeat for each driver)"
+        "#   softdep 'DRIVER_NAME' pre: ${str_VFIO_PCI_driver}"
+        "#"
+        "# GRUB command line and PCI hardware IDs:"
+        "#   ${str_initramfs_modules_VFIO_PCI}"
+        "#"
+    )
+
+    declare -agr arr_static_modules_file_template=(
+        "${arr_vfio_disclaimer[@]}"
+        "#"
+        "# /etc/modules: kernel modules to load at boot time."
+        "#"
+        "# This file contains the names of kernel modules that should be loaded"
+        "# at boot time, one per line. Lines beginning with \"#\" are ignored."
+        "#"
+        "# NOTE: Do not change the following lines, unless you know what you are doing!"
+        "vfio"
+        "vfio_iommu_type1"
+        "${str_VFIO_PCI_driver}"
+        "vfio_virqfd"
+        "kvm"
+        "kvm_intel"
+        "apm power_off=1"
+        "#"
+        "# PCI hardware IDs:"
+        "#   ${str_modules_VFIO_PCI}"
+        "#"
+    )
 # </params>
