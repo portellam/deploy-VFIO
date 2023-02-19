@@ -8,11 +8,11 @@
 #
 
 # TODO:
-#
-# -create array of drivers, hw ids, names, etc. to come from vfio-iommu.
-# -add comments
-#
-
+# -keep /dev/null to nested functions. Omit it when in main functions.
+# -make functions for each file in both setups.
+# -make comments wherever needed (strive for easiest code-maintenance).
+# -rewrite functions/variables as needed.
+# -for loop elements shall have a prefix of variable, keys shall have int. Any declared variables inside shall have the correct prefix var.
 
 # <remarks> Using </remarks>
 # <code>
@@ -36,9 +36,9 @@
 
             # <remarks> Parse all IOMMU groups.  </remarks>
             for int_key in "${!arr_IOMMU[@]}"; do
-                local readonly str_driver="${arr_driver[$int_key]}"
-                local readonly str_hardware_ID="${arr_hardware_ID[$int_key]}"
-                local readonly str_IOMMU="${arr_IOMMU[$int_key]}"
+                local str_driver="${arr_driver[$int_key]}"
+                local str_hardware_ID="${arr_hardware_ID[$int_key]}"
+                local str_IOMMU="${arr_IOMMU[$int_key]}"
 
                 # <remarks> Add IOMMU group if it is not in the VGA list or if it does not match the given IOMMU group, and if it not in the current VFIO list. </remarks>
                 if ( ! FindLineInArray "arr_IOMMU_VFIO_PCI_with_VGA" "${str_IOMMU}" || [[ "${str_IOMMU} != $1" ]] ) ! [[ "${str_multiboot_drivers}" ~= *"${str_driver}"* ]]; then
@@ -62,15 +62,12 @@
             # <remarks> Validate lists. </remarks>
             readonly str_multiboot_drivers str_multiboot_hardware_ID
 
-            if ! IsString "${str_multiboot_drivers}" || ! IsString "${str_multiboot_hardware_ID}"; then
+            if ! IsString "${str_multiboot_drivers}" &> /dev/null || ! IsString "${str_multiboot_hardware_ID}" &> /dev/null; then
                 return $?
             fi
 
             return 0
         }
-
-        # <remarks> If no VGA groups are found, then execute Static setup. </remarks>
-        # Multiboot_VFIO_SortBy_VGA || Static_VFIO
 
         # <params>
         declare -ir int_max_num_parse_kernels=3
@@ -94,7 +91,6 @@
         # <summary> GRUB </summary>
             # <remarks> Get file. </remarks>
             declare -a arr_file1=( "${arr_vfio_disclaimer[@]}" )
-            # IsFileOriginal "${str_file1}" || return $?
             ReadFile "arr_file1" "${str_file1}" || return $?
 
             # <remarks> Organize new line. </remarks>
@@ -107,11 +103,12 @@
 
         # <summary> custom GRUB entries </summary>
             # <remarks> Get file. </remarks>
-            declare -a arr_file2=( "${arr_vfio_disclaimer[@]}" )
+            declare -a arr_file2=( "${arr_mulitboot_file_template[@]}" )
             ReadFile "arr_file2" "${str_file2}" || return $?
 
             # <remarks> Organize new lines. </remarks>
             local str_GRUB_temp="${str_GRUB_required}${str_GRUB_default}"
+            declare -a arr_file2_temp=()
 
             for var_IOMMU in "${arr_IOMMU_VFIO_PCI_with_VGA[@]}"; do
                 local str_multiboot_drivers=""
@@ -122,7 +119,7 @@
                         local str_GRUB_line="${str_GRUB_temp} ${str_GRUB_blacklist}${str_multiboot_drivers} ${str_modules_VFIO_PCI}${str_multiboot_hardware_ID}"
 
                         # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
-                        arr_file2+=(
+                        arr_file2_temp+=(
                             "menuentry ${str_system_distro}, with ${str_system_kernel} ${var_kernel} (VFIO, w/o IOMMU ${var_IOMMU}, w/ boot VGA \"${str_device_name}\") {"
                             "\tinsmod ${str_system_FSTYPE}"
                             "\tset root='/dev/disk/by-uuid/${str_system_UUID}'"
@@ -135,43 +132,25 @@
                 fi
             done
 
+            readonly arr_file2_temp
+
             # <remarks> Write new lines to file. </remarks>
+            IsArray "arr_file2_temp" || return $?
             OverwriteFile "arr_file2" "${str_file2}" || return $?
 
     }
 
     function Static_VFIO
     {
-        # <params>
-        declare -a arr_file1_contents arr_file2_contents arr_file3_contents arr_file4_contents arr_file5_contents
-        local readonly str_file1="/etc/default/grub"
-        local readonly str_file2="/etc/initramfs-tools/modules"
-        local readonly str_file3="/etc/modprobe.d/pci-blacklists.conf"
-        local readonly str_file4="/etc/modprobe.d/vfio.conf"
-        local readonly str_file5="/etc/modules"
-
-        local str_GRUB="GRUB_CMDLINE_LINUX_DEFAULT="
-        local readonly var_get_softdep='softdep ${str_driver} pre: vfio-pci'
-        # </params>
-
-        # <remarks> Check if backup files exist. </remarks>
-        GoToScriptDir && cd "${str_files_dir}"
-
-        # <remarks> Backup existing system files. </remarks>
-        BackupFile "${str_file1}"
-        BackupFile "${str_file2}"
-        BackupFile "${str_file3}"
-        BackupFile "${str_file4}"
-        BackupFile "${str_file5}"
-
-        # <summary> GRUB </summary>
+        function Static_VFIO_GRUB
+        {
             # <remarks> Get file. </remarks>
             declare -a arr_file1=( "${arr_vfio_disclaimer[@]}" )
             # IsFileOriginal "${str_file1}" || return $?
             ReadFile "arr_file1" "${str_file1}" || return $?
 
             # <remarks> Organize new line. </remarks>
-            local str_GRUB_temp="${str_GRUB_required}${str_GRUB_default}"
+            local str_GRUB_temp=""
             IsString "${str_GRUB_Allocate_CPU}" &> /dev/null && str_GRUB_temp+="${str_GRUB_Allocate_CPU}"
             IsString "${str_GRUB_hugepages}" &> /dev/null && str_GRUB_temp+=" ${str_GRUB_hugepages}"
 
@@ -188,9 +167,35 @@
             fi
 
             # <remarks> Write new line to file. </remarks>
-            readonly str_GRUB_temp+="\"${str_GRUB_temp}\""
+            IsString "${str_GRUB_temp}" &> /dev/null || return $?
+            readonly str_GRUB_temp+="${str_GRUB_template}\"${str_GRUB_required}${str_GRUB_default}${str_GRUB_temp}\""
             ReplaceLineInArray "arr_file1" "${str_GRUB}" "${str_GRUB_temp}" || return $?
             OverwriteFile "arr_file1" "${str_file1}" || return $?
+        }
+
+        # <params>
+        declare -a arr_file1_contents arr_file2_contents arr_file3_contents arr_file4_contents arr_file5_contents
+        local readonly str_file1="/etc/default/grub"
+        local readonly str_file2="/etc/initramfs-tools/modules"
+        local readonly str_file3="/etc/modprobe.d/pci-blacklists.conf"
+        local readonly str_file4="/etc/modprobe.d/vfio.conf"
+        local readonly str_file5="/etc/modules"
+
+        local readonly var_get_softdep='softdep ${str_driver} pre: vfio-pci'
+        # </params>
+
+        # <remarks> Check if backup files exist. </remarks>
+        GoToScriptDir && cd "${str_files_dir}"
+
+        # <remarks> Backup existing system files. </remarks>
+        BackupFile "${str_file1}"
+        BackupFile "${str_file2}"
+        BackupFile "${str_file3}"
+        BackupFile "${str_file4}"
+        BackupFile "${str_file5}"
+
+        # <remarks> GRUB </remarks>
+        Static_VFIO_GRUB || return $?
 
         # <summary> Initramfs and Modules </summary>
             # <remarks> Organize new lines. </remarks>
@@ -201,7 +206,7 @@
             declare -a arr_modules_HWID=()
             local str_new_line_VFIO_temp=""
 
-            for var_driver in "${arr_drivers_VFIO_PCI[@]}"; do      # TODO: change to valid array
+            for var_driver in "${arr_drivers_VFIO_PCI[@]}"; do
                 arr_softdep+=(
                     $( eval "${var_get_softdep}" )
                     "${var_driver}"
@@ -298,6 +303,7 @@
 
 # <params>
     # <remarks> GRUB templates </remarks>
+    declare -gr str_GRUB_template="GRUB_CMDLINE_LINUX_DEFAULT="
     declare -gr str_GRUB_required="iommu=1,pt amd_iommu=on intel_iommu=on "
     declare -gr str_GRUB_default="video=efifb:off,vesafb:off acpi=force apm=power_off rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 "
 
@@ -311,7 +317,7 @@
     declare -gr str_initramfs_modules_VFIO_PCI="options ${str_modules_VFIO_PCI}"
     declare -gr str_VFIO_PCI_driver="vfio-pci"
 
-    # <remarks> File templates </remarks>
+    # <remarks> File templates. Dependencies: VFIO command lines. </remarks>
     declare -agr arr_mulitboot_file_template=(
         "${arr_file_disclaimer[@]}"
         "#!/bin/sh"
