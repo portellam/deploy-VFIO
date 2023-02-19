@@ -12,7 +12,7 @@ The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-b
     * **VGA devices:** NVIDIA 7000-series GTX (or before), or ATI (pre-AMD) for **Windows 98**.
     * **Sound devices:** Creative Soundblaster for that authentic, 1990s-2000s experience.
 * **If it's greater control of your privacy you want**
-    * Piss on Bill Gates, go use VFIO Passthrough **Now**. [9]
+    * Piss on Bill Gates, go deploy VFIO **Now**. [9]
 
 ## How-to
 To execute:
