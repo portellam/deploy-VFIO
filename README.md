@@ -13,6 +13,7 @@ The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-b
     * **Sound devices:** Creative Soundblaster for that authentic, 1990s-2000s experience.
 * **If it's greater control of your privacy you want**
     * Piss on Microsoft, go deploy a VFIO setup **Now**. [9]
+    * For best results and paranoia, use **me_cleaner**. [10]
 
 ## How-to
 To execute:
@@ -69,8 +70,7 @@ To execute:
 * **Virtual Video Capture**
     * Setup direct-memory-access (DMA) of a PCI VGA device output (Video and Audio) from Guest machine to host.
     * Implementation is known as **LookingGlass**. [8]
-    * **Disclaimer:** Only supported for Windows 7/10/11 Guest machines.
-
+    * **Disclaimer:** Only supported for Windows 7/10/11 Guest machineshttps://github.com/dt-zero/me_cleaner
 ## References
 **[1]:**    https://github.com/portellam/Auto-Xorg
 
@@ -91,7 +91,10 @@ To execute:
 
 **[8]:**    https://looking-glass.io/docs/B5.0.1/
 
-**[9]:**    Ford Vhttps://www.youtube.com/watch?v=ShiKM3OibGQ&t=30s
+**[9]:**    Ford attacks Chevy: https://www.youtube.com/watch?v=ShiKM3OibGQ&t=30s
+
+**[10]:**   https://github.com/corna/me_cleaner
+            https://github.com/dt-zero/me_cleaner
 
 ## Disclaimers
 Tested on Debian Linux. Works on my machine!
