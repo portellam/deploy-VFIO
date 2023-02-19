@@ -24,8 +24,14 @@
 # <code>
     function Multiboot_VFIO
     {
-        function Multiboot_VFIO_SortBy_VGA
+
+        # <summary> Multiboot: Parse all VGA and non VGA IOMMU Groups, except one VGA IOMMU Group. </summary>
+        # <param name="$1"> int: the IOMMU group to ignore </param>
+        # <returns> exit code </returns>
+        function Multiboot_VFIO_ExcludeThis_VGA_Group
         {
+            IsNum $1 &> /dev/null || return $?
+
             # <params>
             declare -a arr_drivers_except_one arr_hardware_ID_except_one
             # </params>
@@ -51,13 +57,24 @@
         }
 
         # <remarks> If no VGA groups are found, then execute Static setup. </remarks>
-        Multiboot_VFIO_SortBy_VGA || Static_VFIO
+        # Multiboot_VFIO_SortBy_VGA || Static_VFIO
 
         # <params>
+        local readonly str_system_distro=$( lsb_release -i -s )
+        local readonly str_system_kernel=$( uname -o )
+        local readonly str_system_kernel_ver=$( uname -o )
         local readonly str_file1="/etc/default/grub"
         local readonly str_file2="/etc/grub.d/proxifiedScripts/custom"
         local readonly str_file1_backup="etc_default_grub"
         local readonly str_file2_backup="etc_grub.d_proxifiedScripts_custom"
+
+        str_output1="menuentry ${str_system_distro}, with ${str_system_kernel} $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIOVGA', w/ boot VGA '$str_thisFullName'\") {"
+        str_output2="\tinsmod $str_rootFSTYPE"
+        str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
+        str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$str_rootUUID\n\t"'fi'
+        str_output5="\techo    'Loading Linux $str_thisRootKernel ...'"
+        str_output6="\tlinux   /boot/vmlinuz-$str_thisRootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
+        str_output7="\tinitrd  /boot/initrd.img-$str_thisRootKernel"
         # </params>
 
         GoToScriptDir && cd "${str_files_dir}"
@@ -82,6 +99,12 @@
 
         # <summary> custom GRUB entries </summary>
             # <remarks> Get file. </remarks>
+            for var_IOMMU in "${arr_IOMMU_VFIO_PCI_with_VGA[@]}"; do
+                if Multiboot_VFIO_ExcludeThis_VGA_Group "${var_IOMMU}"; then
+                    arr_file2+=("
+                    ")
+                fi
+            done
 
     }
 
