@@ -7,18 +7,14 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-# TODO:
-#
-# -create array of drivers, hw ids, names, etc. to be used in vfio-setup.
-# -add comments
-#
-
 # <remarks> Using </remarks>
 # <code>
     source ../bashlib/bin/bashlib-all
 # </code>
 
 # <code>
+    # <summary> Is Virtualization enabled on the current system. If true, pass. </summary>
+    # <returns> exit code </returns>
     function IsEnabled_IOMMU
     {
         # <params>
@@ -36,7 +32,8 @@
         return 0
     }
 
-    # <summary> Parse IOMMU groups for all relevant information. If a parse fails, attempt again another way. If all parses fail, return error </summary>
+    # <summary> Parse IOMMU groups for all relevant information. If a parse fails, attempt again another way. If all parses fail, fail. </summary>
+    # <returns> exit code </returns>
     function Parse_IOMMU
     {
         function Parse_IOMMU_Main
@@ -245,8 +242,12 @@
         return "${int_exit_code}"
     }
 
+    # <summary> Select IOMMU groups for VFIO setup. </summary>
+    # <returns> exit code </returns>
     function Select_IOMMU
     {
+        # <summary> Print all relevant information about the IOMMU group. </summary>
+        # <returns> exit code </returns>
         function Select_IOMMU_Match_IOMMU_AndClass
         {
             # <params>
@@ -292,7 +293,7 @@
                 case "${str_class}" in
                     "graphics" | "vga" | "video" )
                         bool_IOMMU_has_VGA=true
-                        # bool_IOMMU_VFIO_PCI=true
+                        # bool_IOMMU_VFIO_PCI=true      # TODO: remove or replace?
                         ;;
 
                     "usb" )
@@ -305,6 +306,8 @@
             return 0
         }
 
+        # <summary> Ask user to Select/Skip IOMMU group. </summary>
+        # <returns> exit code </returns>
         function Select_IOMMU_Prompt
         {
             # <params>
@@ -337,6 +340,8 @@
             return 0
         }
 
+        # <summary> ??? </summary>
+        # <returns> exit code </returns>
         function Get_IOMMU_Drivers
         {
             declare -ga arr_drivers_VFIO_PCI=()
@@ -383,15 +388,8 @@
             Select_IOMMU_Prompt
         done
 
-        # TOOD: create a function that takes in a string, which is the name of another parameter (like a pointer) and perform validation given the var type (check prefix var, str, int, arr, etc.)
-        # TODO: create single line strings of arrays of drivers and HW IDs, with delimiters (commas)
-        # arr_IOMMU_VFIO_PCI
-        # str_driver_list_VFIO
-        # str_HWID_list_STUB
-        # str_HWID_list_VFIO
-
         # <remarks> Check if list is empty </remarks>
-        declare -a arr=( "${arr_IOMMU_VFIO_PCI[@]}" )
+        declare -ar arr=( "${arr_IOMMU_VFIO_PCI[@]}" )
         IsArray "arr" && bool_VFIO_has_IOMMU=true && Get_IOMMU_Drivers
 
         AppendPassOrFail "${str_output}"
