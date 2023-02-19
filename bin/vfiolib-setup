@@ -24,6 +24,35 @@
 # <code>
     function Multiboot_VFIO
     {
+        function Multiboot_VFIO_SortBy_VGA
+        {
+            # <params>
+            declare -a arr_drivers_except_one arr_hardware_ID_except_one
+            # </params>
+
+            IsArray "arr_IOMMU_VFIO_PCI_with_VGA" &> /dev/null || return 1
+
+            for int_key in "${!arr_IOMMU[@]}"; do
+                local readonly str_driver="${arr_driver[$int_key]}"
+                local readonly str_hardware_ID="${arr_hardware_ID[$int_key]}"
+                local readonly str_IOMMU="${arr_IOMMU[$int_key]}"
+
+                if ! FindLineInArray "arr_IOMMU_VFIO_PCI_with_VGA" "${var_IOMMU}"; then
+                    arr_drivers_except_one+=( "${str_driver}" )
+                    arr_hardware_ID_except_one+=( "${str_hardware_ID}" )
+                fi
+            done
+
+            if ! IsArray "arr_drivers_except_one" &> /dev/null && ! IsArray "arr_hardware_ID_except_one" &> /dev/null; then
+                return $?
+            fi
+
+            return 0
+        }
+
+        # <remarks> If no VGA groups are found, then execute Static setup. </remarks>
+        Multiboot_VFIO_SortBy_VGA || Static_VFIO
+
         # <params>
         local readonly str_file1="/etc/default/grub"
         local readonly str_file2="/etc/grub.d/proxifiedScripts/custom"
@@ -37,6 +66,22 @@
             return "$?"
         fi
 
+        # <summary> GRUB </summary>
+            # <remarks> Get file. </remarks>
+            declare -a arr_file1=( "${arr_vfio_disclaimer[@]}" )
+            # IsFileOriginal "${str_file1}" || return $?
+            ReadFile "arr_file1" "${str_file1}" || return $?
+
+            # <remarks> Organize new line. </remarks>
+            local str_GRUB_temp="${str_GRUB_required}${str_GRUB_default}"
+
+            # <remarks> Write new line to file. </remarks>
+            readonly str_GRUB_temp+="\"${str_GRUB_temp}\""
+            ReplaceLineInArray "arr_file1" "${str_GRUB}" "${str_GRUB_temp}" || return $?
+            OverwriteFile "arr_file1" "${str_file1}" || return $?
+
+        # <summary> custom GRUB entries </summary>
+            # <remarks> Get file. </remarks>
 
     }
 
@@ -77,11 +122,11 @@
 
         # <remarks> Backup existing system files. </remarks>
         # NOTE: will a conflict exist should backup files exist in given directories (example: modprobe.d) and not others (ex: grub)
-        BackupFile "${str_file1_backup}"
-        BackupFile "${str_file2_backup}"
-        BackupFile "${str_file3_backup}"
-        BackupFile "${str_file4_backup}"
-        BackupFile "${str_file5_backup}"
+        BackupFile "${str_file1}"
+        BackupFile "${str_file2}"
+        BackupFile "${str_file3}"
+        BackupFile "${str_file4}"
+        BackupFile "${str_file5}"
 
         # <summary> GRUB </summary>
             # <remarks> Get file. </remarks>
@@ -90,7 +135,7 @@
             ReadFile "arr_file1" "${str_file1}" || return $?
 
             # <remarks> Organize new line. </remarks>
-            local str_GRUB_temp=""
+            local str_GRUB_temp="${str_GRUB_required}${str_GRUB_default}"
             IsString "${str_GRUB_Allocate_CPU}" &> /dev/null && str_GRUB_temp+="${str_GRUB_Allocate_CPU}"
             IsString "${str_GRUB_hugepages}" &> /dev/null && str_GRUB_temp+=" ${str_GRUB_hugepages}"
 
@@ -216,5 +261,6 @@
 # </code>
 
 # <params>
-# global vars go here
+declare -gr str_GRUB_required="iommu=1,pt amd_iommu=on intel_iommu=on "
+declare -gr str_GRUB_default="video=efifb:off,vesafb:off acpi=force apm=power_off rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 "
 # </params>
