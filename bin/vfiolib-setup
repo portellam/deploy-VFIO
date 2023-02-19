@@ -33,7 +33,7 @@
 
         GoToScriptDir && cd "${str_files_dir}"
 
-        if ! IsFile "${str_file1_backup}" || IsFile "${str_file2_backup}"; then
+        if ! IsFile "${str_file1_backup}" || ! IsFile "${str_file2_backup}"; then
             return "$?"
         fi
 
