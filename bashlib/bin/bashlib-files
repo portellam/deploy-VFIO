@@ -166,28 +166,6 @@
         return 0
     }
 
-    # <summary> Find line in array. </summary>
-    # <paramref name=$1> string: the name of the array </paramref>
-    # <param name=$2> string: the line </param>
-    # <returns> exit code </returns>
-    function FindLineInArray
-    {
-        IsString $2 || return $?
-        IsArray $1 || return $?
-
-        # <params>
-        local readonly var_command='declare -a arr=( ${'$1'[@]} )'
-        # </params>
-
-        eval "${var_command}" || return 1
-
-        if [[ -z $( echo "${arr[@]}" | grep -iF $2 ) ]]; then
-            return 1
-        fi
-
-        return 0
-    }
-
     # <summary> Find line in file. </summary>
     # <param name=$1> string: the file </param>
     # <param name=$2> string: the line </param>
@@ -391,37 +369,6 @@
 
         eval "${var_set_param}"
         return $?
-    }
-
-    # <summary> Replace line in an array. </summary>
-    # <paramref name=$1> string: the name of the array </paramref>
-    # <param name=$2> string: the line </param>
-    # <param name=$3> string: the new line </param>
-    # <returns> exit code </returns>
-    function ReplaceLineInArray
-    {
-        IsString $3 || return $?
-        FindLineInArray $1 $2 || return $?
-
-        # <params>
-        local readonly var_get_param='declare arr_replace_line=( ${!'$1'[@]} )'
-        local readonly var_set_param="$1"'=( "${arr_replace_line[@]}" )'
-        # </params>
-
-        eval "${var_get_param}" || return 1
-
-        for int_key in "${!arr_replace_line[@]}"; do
-            local var_line="${arr_replace_line[$int_key]}"
-
-            case "${var_line}" in
-                $2* )
-                    arr_replace_line[$int_key]="$3"
-                    ;;
-            esac
-        done
-
-        eval "${var_set_param}" || return 1
-        return 0
     }
 
     # <summary> Replace line in an file. </summary>
