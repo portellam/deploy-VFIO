@@ -25,31 +25,45 @@
     function Multiboot_VFIO
     {
 
-        # <summary> Multiboot: Parse all VGA and non VGA IOMMU Groups, except one VGA IOMMU Group. </summary>
+        # <summary> Multiboot: Parse all VGA and non VGA IOMMU Groups, except current VGA IOMMU Group. </summary>
         # <param name="$1"> int: the IOMMU group to ignore </param>
+        # <param name="$str_multiboot_drivers"> string: current list of drivers </param>
+        # <param name="$str_multiboot_hardware_ID"> current list of hardware IDs </param>
         # <returns> exit code </returns>
         function Multiboot_VFIO_ExcludeThis_VGA_Group
         {
             IsNum $1 &> /dev/null || return $?
-
-            # <params>
-            declare -a arr_drivers_except_one arr_hardware_ID_except_one
-            # </params>
-
             IsArray "arr_IOMMU_VFIO_PCI_with_VGA" &> /dev/null || return 1
 
+            # <remarks> Parse all IOMMU groups.  </remarks>
             for int_key in "${!arr_IOMMU[@]}"; do
                 local readonly str_driver="${arr_driver[$int_key]}"
                 local readonly str_hardware_ID="${arr_hardware_ID[$int_key]}"
                 local readonly str_IOMMU="${arr_IOMMU[$int_key]}"
 
-                if ! FindLineInArray "arr_IOMMU_VFIO_PCI_with_VGA" "${var_IOMMU}"; then
-                    arr_drivers_except_one+=( "${str_driver}" )
-                    arr_hardware_ID_except_one+=( "${str_hardware_ID}" )
+                # <remarks> Add IOMMU group if it is not in the VGA list or if it does not match the given IOMMU group, and if it not in the current VFIO list. </remarks>
+                if ( ! FindLineInArray "arr_IOMMU_VFIO_PCI_with_VGA" "${str_IOMMU}" || [[ "${str_IOMMU} != $1" ]] ) ! [[ "${str_multiboot_drivers}" ~= *"${str_driver}"* ]]; then
+                    str_multiboot_drivers+="${str_driver}"
+                fi
+
+                if ( ! FindLineInArray "arr_IOMMU_VFIO_PCI_with_VGA" "${str_IOMMU}" || [[ "${str_IOMMU} != $1" ]] ) && ! [[ "${str_multiboot_hardware_ID}" ~= *"${str_hardware_ID}"* ]]; then
+                    str_multiboot_hardware_ID+="${str_hardware_ID}"
+                fi
+
+                # <remarks> Append a delimiter should the current element be not the last element. </remarks>
+                if IsString "${str_multiboot_drivers}" &> /dev/null && [[ "${str_IOMMU}" != "${arr_IOMMU[-1]}" ]]; then
+                    str_multiboot_drivers+=","
+                fi
+
+                if IsString "${str_multiboot_hardware_ID}" &> /dev/null && [[ "${str_IOMMU}" != "${arr_IOMMU[-1]}" ]]; then
+                    str_multiboot_hardware_ID+=","
                 fi
             done
 
-            if ! IsArray "arr_drivers_except_one" &> /dev/null && ! IsArray "arr_hardware_ID_except_one" &> /dev/null; then
+            # <remarks> Validate lists. </remarks>
+            readonly str_multiboot_drivers str_multiboot_hardware_ID
+
+            if ! IsString "${str_multiboot_drivers}" || ! IsString "${str_multiboot_hardware_ID}"; then
                 return $?
             fi
 
@@ -60,21 +74,16 @@
         # Multiboot_VFIO_SortBy_VGA || Static_VFIO
 
         # <params>
+        declare -ir int_max_num_parse_kernels=3
+        declare -ar arr_kernels=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | sort -r | head -n ${int_max_num_parse_kernels} ) )
+
         local readonly str_system_distro=$( lsb_release -i -s )
         local readonly str_system_kernel=$( uname -o )
-        local readonly str_system_kernel_ver=$( uname -o )
+        local readonly str_system_OS=$( uname )
         local readonly str_file1="/etc/default/grub"
         local readonly str_file2="/etc/grub.d/proxifiedScripts/custom"
         local readonly str_file1_backup="etc_default_grub"
         local readonly str_file2_backup="etc_grub.d_proxifiedScripts_custom"
-
-        str_output1="menuentry ${str_system_distro}, with ${str_system_kernel} $str_thisRootKernel (VFIO, w/o IOMMU '$int_IOMMU_VFIOVGA', w/ boot VGA '$str_thisFullName'\") {"
-        str_output2="\tinsmod $str_rootFSTYPE"
-        str_output3="\tset root='/dev/disk/by-uuid/$str_rootUUID'"
-        str_output4="\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$str_rootUUID\n\t"'fi'
-        str_output5="\techo    'Loading Linux $str_thisRootKernel ...'"
-        str_output6="\tlinux   /boot/vmlinuz-$str_thisRootKernel root=UUID=$str_rootUUID $str_GRUB_CMDLINE"
-        str_output7="\tinitrd  /boot/initrd.img-$str_thisRootKernel"
         # </params>
 
         GoToScriptDir && cd "${str_files_dir}"
@@ -93,18 +102,42 @@
             local str_GRUB_temp="${str_GRUB_required}${str_GRUB_default}"
 
             # <remarks> Write new line to file. </remarks>
-            readonly str_GRUB_temp+="\"${str_GRUB_temp}\""
+            str_GRUB_temp+="\"${str_GRUB_temp}\""
             ReplaceLineInArray "arr_file1" "${str_GRUB}" "${str_GRUB_temp}" || return $?
             OverwriteFile "arr_file1" "${str_file1}" || return $?
 
         # <summary> custom GRUB entries </summary>
             # <remarks> Get file. </remarks>
+            declare -a arr_file2=( "${arr_vfio_disclaimer[@]}" )
+            ReadFile "arr_file2" "${str_file2}" || return $?
+
+            # <remarks> Organize new lines. </remarks>
+            local str_GRUB_temp="${str_GRUB_required}${str_GRUB_default}"
+
             for var_IOMMU in "${arr_IOMMU_VFIO_PCI_with_VGA[@]}"; do
+                local str_multiboot_drivers=""
+                local str_multiboot_hardware_ID=""
+
                 if Multiboot_VFIO_ExcludeThis_VGA_Group "${var_IOMMU}"; then
-                    arr_file2+=("
-                    ")
+                    for var_kernel in "${arr_kernels}"; do
+                        local str_GRUB_line="${str_GRUB_temp} ${str_GRUB_blacklist}${str_multiboot_drivers} ${str_modules_VFIO_PCI}${str_multiboot_hardware_ID}"
+
+                        # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
+                        arr_file2+=(
+                            "menuentry ${str_system_distro}, with ${str_system_kernel} ${var_kernel} (VFIO, w/o IOMMU ${var_IOMMU}, w/ boot VGA \"${str_device_name}\") {"
+                            "\tinsmod ${str_system_FSTYPE}"
+                            "\tset root='/dev/disk/by-uuid/${str_system_UUID}'"
+                            "\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"${str_system_UUID}\n\t"'fi'
+                            "\techo    'Loading ${str_system_OS} ${var_kernel} ...'"
+                            "\tlinux   /boot/vmlinuz-${str_system_kernel} root=UUID=${str_system_UUID} ${str_GRUB_line}"
+                            "\tinitrd  /boot/initrd.img-${str_system_kernel}"
+                        )
+                    done
                 fi
             done
+
+            # <remarks> Write new lines to file. </remarks>
+            OverwriteFile "arr_file2" "${str_file2}" || return $?
 
     }
 
@@ -117,31 +150,13 @@
         local readonly str_file3="/etc/modprobe.d/pci-blacklists.conf"
         local readonly str_file4="/etc/modprobe.d/vfio.conf"
         local readonly str_file5="/etc/modules"
-        local readonly str_file1_backup="etc_default_grub"
-        local readonly str_file2_backup="etc_initramfs-tools_modules"
-        local readonly str_file3_backup="etc_modprobe.d_pci-blacklists.conf"
-        local readonly str_file4_backup="etc_modprobe.d_vfio.conf"
-        local readonly str_file5_backup="etc_modules"
 
-        local readonly str_driver_VFIO_PCI="vfio-pci"
         local str_GRUB="GRUB_CMDLINE_LINUX_DEFAULT="
-        local readonly str_GRUB_blacklist="modprobe.blacklist="
-        local readonly str_GRUB_PCI_STUB="pci-stub.ids="
-        local readonly str_GRUB_VFIO_PCI="vfio_pci.ids="
-        local readonly str_modprobe_blacklist="blacklist "
-        local readonly str_modules_VFIO_PCI="vfio_pci ids="
-        local readonly str_initramfs_modules_VFIO_PCI="options ${str_modules_VFIO_PCI}"
-        local readonly str_VFIO_PCI_driver="vfio-pci"
-
         local readonly var_get_softdep='softdep ${str_driver} pre: vfio-pci'
         # </params>
 
         # <remarks> Check if backup files exist. </remarks>
         GoToScriptDir && cd "${str_files_dir}"
-
-        if ! IsFile "${str_file1_backup}" || IsFile "${str_file2_backup}" || IsFile "${str_file3_backup}" || IsFile "${str_file4_backup}"|| IsFile "${str_file5_backup}"; then
-            return "${?}"
-        fi
 
         # <remarks> Backup existing system files. </remarks>
         # NOTE: will a conflict exist should backup files exist in given directories (example: modprobe.d) and not others (ex: grub)
@@ -188,10 +203,10 @@
             declare -a arr_modules_HWID=()
             local str_new_line_VFIO_temp=""
 
-            for str_driver in "${arr_drivers_VFIO_PCI[@]}"; do      # TODO: change to valid array
+            for var_driver in "${arr_drivers_VFIO_PCI[@]}"; do      # TODO: change to valid array
                 arr_softdep+=(
                     $( eval "${var_get_softdep}" )
-                    "${str_driver}"
+                    "${var_driver}"
                 )
             done
 
@@ -242,8 +257,8 @@
             declare -a arr_file3=( "${arr_vfio_disclaimer[@]}" )
 
             # <remarks> Set new lines. </remarks>
-            for str_driver in "${arr_drivers_VFIO_PCI[@]}"; do      # TODO: change to valid array
-                arr_file3+=( "${str_modprobe_blacklist}${str_driver}" )
+            for var_driver in "${arr_drivers_VFIO_PCI[@]}"; do      # TODO: change to valid array
+                arr_file3+=( "${str_modprobe_blacklist}${var_driver}" )
             done
 
             readonly arr_file3
@@ -286,4 +301,13 @@
 # <params>
 declare -gr str_GRUB_required="iommu=1,pt amd_iommu=on intel_iommu=on "
 declare -gr str_GRUB_default="video=efifb:off,vesafb:off acpi=force apm=power_off rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1 "
+
+declare -gr str_driver_VFIO_PCI="vfio-pci"
+declare -gr str_GRUB_blacklist="modprobe.blacklist="
+declare -gr str_GRUB_PCI_STUB="pci-stub.ids="
+declare -gr str_GRUB_VFIO_PCI="vfio_pci.ids="
+declare -gr str_modprobe_blacklist="blacklist "
+declare -gr str_modules_VFIO_PCI="vfio_pci ids="
+declare -gr str_initramfs_modules_VFIO_PCI="options ${str_modules_VFIO_PCI}"
+declare -gr str_VFIO_PCI_driver="vfio-pci"
 # </params>
