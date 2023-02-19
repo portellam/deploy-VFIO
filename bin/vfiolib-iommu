@@ -337,6 +337,23 @@
             return 0
         }
 
+        function Get_IOMMU_Drivers
+        {
+            declare -ga arr_drivers_VFIO_PCI=()
+
+            for int_key in "${arr_driver[@]}"; do
+                local readonly str_driver="${arr_driver[$int_key]}"
+                local readonly str_IOMMU="${arr_IOMMU[$int_key]}"
+
+                if FindLineInArray "arr_IOMMU_PCI_STUB" "${str_IOMMU}" || FindLineInArray "arr_IOMMU_VFIO_PCI" "${str_IOMMU}" || FindLineInArray "arr_IOMMU_VFIO_PCI_with_VGA" "${str_IOMMU}"; then
+                    arr_drivers_VFIO_PCI+=( "${str_driver}" )
+                fi
+            done
+
+            IsArray "arr_drivers_VFIO_PCI"
+            return $?
+        }
+
         # <params>
         declare -g bool_VFIO_has_IOMMU=false
         local readonly str_output="Reviewing IOMMU groups..."
@@ -372,7 +389,7 @@
 
         # <remarks> Check if list is empty </remarks>
         declare -a arr=( "${arr_IOMMU_VFIO_PCI[@]}" )
-        IsArray "arr" && bool_VFIO_has_IOMMU=true
+        IsArray "arr" && bool_VFIO_has_IOMMU=true && Get_IOMMU_Drivers
 
         AppendPassOrFail "${str_output}"
         echo
