@@ -9,7 +9,7 @@
 
 # <remarks> Using </remarks>
 # <code>
-    source ../bashlib/bin/bashlib-all
+    source bashlib-all
     source vfiolib-iommu
 # </code>
 
@@ -189,9 +189,9 @@
 
                 # <remarks> Save changes, convert hexadecimal mask into hexadecimal. </remarks>
                 readonly int_host_threads_hexadecimal_mask
-                declare -gr str_host_threads_hexadecimal=$( printf '%x\n' $int_host_threads_hexadecimal_mask )
+                declare -g str_host_threads_hexadecimal=$( printf '%x\n' $int_host_threads_hexadecimal_mask )
                 declare -ir int_total_threads_hexadecimal_mask=$(( ( 2 ** ${int_total_threads} ) - 1 ))
-                declare -gr str_total_threads_hexadecimal=$( printf '%x\n' $int_total_threads_hexadecimal_mask )
+                declare -g str_total_threads_hexadecimal=$( printf '%x\n' $int_total_threads_hexadecimal_mask )
 
             declare -a arr_output=(
                 "Allocated to Host\t${str_host_thread_sets}"
@@ -202,7 +202,7 @@
             echo
 
             # <remarks> Save changes. </remarks>
-            declare -gr str_GRUB_Allocate_CPU="isolcpus=${str_virt_thread_sets} nohz_full=${str_virt_thread_sets} rcu_nocbs=${str_virt_thread_sets}"
+            declare -g str_GRUB_Allocate_CPU="isolcpus=${str_virt_thread_sets} nohz_full=${str_virt_thread_sets} rcu_nocbs=${str_virt_thread_sets}"
             return 0
         }
 
@@ -231,7 +231,7 @@
             declare -gi int_huge_page_count=0
             declare -gi int_huge_page_kbit_size=0
             declare -gi int_huge_page_max_kbit_size=0
-            declare -gir int_huge_page_min_kbit_size=4194304
+            declare -gi int_huge_page_min_kbit_size=4194304
             declare -gi int_huge_page_max=0
             declare -gi int_huge_page_min=0
             declare -g str_huge_page_byte_prefix=""
@@ -252,7 +252,7 @@
             echo -e "${str_output1}"
             ReadInput "${str_output2}" || return "${int_code_skipped_operation}"
             var_input=""
-            ReadMultipleChoiceIgnoreCase "${str_output3}" "${arr_choices[@]}" || return "${?}"
+            ReadMultipleChoiceIgnoreCase "${str_output3}" "${arr_choices[@]}" || return $?
             # echo "${var_input}"
             str_huge_page_byte_prefix="${var_input}"
             int_huge_page_max_kbit_size=$( eval "${var_get_host_max_mem}" )
@@ -268,7 +268,7 @@
                     readonly int_huge_page_min=1
                     ;;
                 * )
-                    return "${?}"
+                    return $?
                     ;;
             esac
 
@@ -278,12 +278,12 @@
             local readonly str_output4="Enter number of Hugepages (num * ${str_huge_page_byte_prefix})"
 
             # <remarks> Ask user for preferred amount. </remarks>
-            ReadInputFromRangeOfTwoNums "${str_output4}" "${int_huge_page_min}" "${int_huge_page_max}" || return "${?}"
+            ReadInputFromRangeOfTwoNums "${str_output4}" "${int_huge_page_min}" "${int_huge_page_max}" || return $?
             readonly int_huge_page_count="${var_input}"
 
             # <remarks> Save changes. </remarks>
-            declare -gr int_alloc_mem_hugepages=$(( $int_huge_page_count * $int_huge_page_kbit_size ))
-            declare -gr str_GRUB_hugepages="default_hugepagesz=${str_huge_page_byte_prefix} hugepagesz=${str_huge_page_byte_prefix} hugepages=${int_huge_page_count}"
+            declare -g int_alloc_mem_hugepages=$(( $int_huge_page_count * $int_huge_page_kbit_size ))
+            declare -g str_GRUB_hugepages="default_hugepagesz=${str_huge_page_byte_prefix} hugepagesz=${str_huge_page_byte_prefix} hugepages=${int_huge_page_count}"
             bool_is_setup_hugepages=true
             return 0
         }
@@ -331,15 +331,15 @@
             local readonly str_daemon1="libvirtd"
             local readonly str_daemon1_packages="qemu"
             local readonly str_file1="/etc/libvirt/qemu.conf"
-            local readonly str_file1_backup="./files/etc_libvirt_qemu.conf"
+            local readonly str_file1_backup="etc_libvirt_qemu.conf"
             # local readonly var_set_event_device='"        \"/dev/input/by-id/${str_event_device}\",'
             # </params>
 
             # <remarks> Backup system file and grab clean file from repository. </remarks>
             BackupFile "${str_file1}"
-            GoToScriptDir || return "${?}"
-            IsFile "${str_file1_backup}" || return "${?}"
-            cp "${str_file1_backup}" "${str_file1}" || return 1
+            GoToScriptDir || return $?
+            cd "${str_files_dir}" || return $?
+            IsFileOriginal "${str_file1}" "libvirt-daemon-system" || return $?
 
             # <remarks> Get Event devices. </remarks>
             if "${bool_is_setup_evdev}"; then
@@ -452,15 +452,15 @@
             # <remarks> Save changes. </remarks>
             readonly arr_file1_contents
             declare -a arr_file=( "${arr_file1_contents[@]}" )
-            WriteFile "${str_file1}" || return "${?}"
+            WriteFile "${str_file1}" || return $?
 
             # <remarks> Check if daemon exists and restart it. </remarks>
-            IsInstalledPackage "${str_daemon1_packages}" || return "${?}"
+            IsInstalledPackage "${str_daemon1_packages}" || return $?
             IsActiveDaemon "${str_daemon1}" &> /dev/null || ( sudo systemctl enable "${str_daemon1}" || return 1 )
 
             local readonly var_restart_daemon='sudo systemctl restart "${str_daemon1}"'
             StopEvalAfterThriceFail "${var_restart_daemon}"
-            return "${?}"
+            return $?
         }
 
         # <params>
@@ -489,16 +489,15 @@
 
             GoToScriptDir
             UpdateOrCloneGitRepo "${str_repos_dir}" "${str_full_repo1}" "${str_user_name1}"
-            cd "${str_repos_dir}${str_full_repo1}" || return "${?}"
-            IsFile "${str_script_name1}" || return "${?}"
+            cd "${str_repos_dir}${str_full_repo1}" || return $?
+            IsFile "${str_script_name1}" || return $?
             sudo bash "${str_script_name1}"
-            return "${?}"
+            return $?
         }
 
         function RAM_Swapfile_Modify
         {
             # <params>
-            declare -ir int_max_mem=$(cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )
             local readonly str_file1="/etc/default/zram-swap"
             local readonly str_match_line1="_zram_fraction="
             local readonly var_command='cat "${str_file1}"'
@@ -549,11 +548,11 @@
                 )
             fi
 
-            OverwriteFile "${str_file1}" || return "${?}"
-            eval "${var_restart_daemon}" || return "${?}"
-            eval "${var_enable_all_swap}" || return "${?}"
+            OverwriteFile "${str_file1}" || return $?
+            eval "${var_restart_daemon}" || return $?
+            eval "${var_enable_all_swap}" || return $?
 
-            return "${?}"
+            return $?
         }
 
         # <params>
@@ -637,13 +636,13 @@
 
             # <remarks> Install dependencies. </remarks>
             if [[ "${str_package_manager}" == "apt" ]]; then
-                InstallPackage "${str_dependencies}" || return "${?}"
+                InstallPackage "${str_dependencies}" || return $?
             fi
 
             # <remarks> Get repo </remarks>
             GoToScriptDir
             UpdateOrCloneGitRepo "${str_repos_dir}" "${str_full_repo1}" "${str_user_name1}"
-            cd "${str_repos_dir}${str_full_repo1}" || return "${?}"
+            cd "${str_repos_dir}${str_full_repo1}" || return $?
 
             # <remarks> Build client </remarks>
             mkdir client/build || return 1
@@ -681,11 +680,17 @@
 # </code>
 
 # <params>
+    declare -g str_files_dir="files"
+
     # <remarks> Evaluations </remarks>
-    declare -gr var_get_first_valid_user='getent passwd {1000..60000} | cut -d ":" -f 1'
-    declare -gr str_username=$( eval "${var_get_first_valid_user}" )
+    declare -g var_get_first_valid_user='getent passwd {1000..60000} | cut -d ":" -f 1' &> /dev/null
+    declare -g str_username=$( eval "${var_get_first_valid_user}" ) &> /dev/null
 
     # <remarks> Flag progress of setups </remarks>
     declare -g bool_is_setup_evdev=false
     declare -g bool_is_setup_hugepages=false
+
+    # <remarks> Memory </remarks>
+    declare -g str_max_mem=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )
+    declare -gi int_max_mem=${str_max_mem## }
 # </params>
