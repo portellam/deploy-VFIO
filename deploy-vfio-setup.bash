@@ -25,12 +25,13 @@
 
 # <remarks> Using </remarks>
 # <code>
-    source bashlib/bin/bashlib-all
-    source bin/vfiolib-all
+    cd bin
+    source bashlib-all
+    source vfiolib-all
 # </code>
 
 # <code>
-    IsRootUser || exit "${?}"
+    IsSudoUser || exit "${?}"
     GetUsage "${var_input1}" "${var_input2}"
     SaveExitCode
 
@@ -74,6 +75,8 @@
     if "${bool_opt_any_VFIO_setup}" && "${bool_VFIO_has_IOMMU}"; then
         Setup_VFIO || exit "${?}"
     fi
+
+    exit 0
 
     # <remarks> Execute post-setup </remarks>
     if "${bool_opt_post_setup}"; then
