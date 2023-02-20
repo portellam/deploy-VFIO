@@ -15,24 +15,26 @@ The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-b
     * Piss on Microsoft, go deploy a VFIO setup **NOW**. [9]
     * Use **me_cleaner**. [10]
 
+## What is VFIO?
+* about:            https://www.kernel.org/doc/html/latest/driver-api/vfio.html
+* VFIO community:   https://old.reddit.com/r/VFIO
+* guide:            https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
+
 ## How-to
 To execute:
 
         sudo bash deploy-vfio-setup.bash
 
-## What is VFIO?
-* see hyperlink:        https://www.kernel.org/doc/html/latest/driver-api/vfio.html
-* VFIO community:       https://old.reddit.com/r/VFIO
-* a useful guide:       https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
+
 
 ## Features
 ### Main VFIO Setup (PCI Passthrough)
 * **Multi-boot VFIO Setup**
-    * Best for Multiple VGA PCI Passthrough (one VGA for Host, and multiple VGA for Guests). **Greater flexibility.**
+    * Best for Multiple VGA PCI Passthrough (one VGA for Host, and multiple VGA for Guests).    **More flexibility.**
     * Multiple GRUB menu entries for multiple VGA device systems. Choose a GRUB menu entry with a VGA device to boot from (exclude that VGA device's IOMMU Group from PCI Passthrough/VFIO).
     * **Disclaimer:** For best results, use **Auto-Xorg**. [1]
 * **Static VFIO Setup**
-    * Best for Single VGA PCI Passthrough (one VGA for Host, and one VGA for Guests). **Lesser flexibility.**
+    * Best for Single VGA PCI Passthrough (one VGA for Host, and one VGA for Guests).           **Less flexibility.**
     * Traditional PCI Passthrough/VFIO Setup.
 
 ### Extras (Pre- and Post-Setup)
@@ -64,7 +66,7 @@ To execute:
     * Use the pre-defined macro (example: **'L-CTRL' + 'R-CTRL'**).
     * Create a virtual Keyboard-Video-Mouse switch.
     * Implementation is known as **Evdev (Event Devices)**. [6]
-    * **Disclaimer:** Guest PCI USB is good, both implementations together are Best.
+    * **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 * **Virtual Audio Capture**
     * Setup a virtual Audio driver for Windows that provides a discrete Audio device.
     * Implementation is known as **Scream**. [7]
@@ -72,6 +74,7 @@ To execute:
     * Setup direct-memory-access (DMA) of a PCI VGA device output (Video and Audio) from a Guest to Host.
     * Implementation is known as **LookingGlass**. [8]
     * **Disclaimer:** Only supported for Windows 7/10/11 Guests.
+
 ### References
 **[1]:**    Auto-Xorg:  https://github.com/portellam/Auto-Xorg
 
