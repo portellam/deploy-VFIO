@@ -1,0 +1,52 @@
+#!/bin/bash sh
+
+#
+# Filename:         bashlib-globals
+# Description:      Global parameters
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <params>
+    # <summary> Exit codes </summary>
+    declare -gi int_code_partial_completion=255
+    declare -gi int_code_skipped_operation=254
+    declare -gi int_code_var_is_null=253
+    declare -gi int_code_var_is_empty=252
+    declare -gi int_code_var_is_not_bool=251
+    declare -gi int_code_var_is_NAN=250
+    declare -gi int_code_pointer_is_var=249
+    declare -gi int_code_dir_is_null=248
+    declare -gi int_code_file_is_null=247
+    declare -gi int_code_file_is_not_executable=246
+    declare -gi int_code_file_is_not_writable=245
+    declare -gi int_code_file_is_not_readable=244
+    declare -gi int_code_cmd_is_null=243
+    declare -gi int_exit_code=$?
+
+    # <summary>
+    # Color coding
+    # Reference URL: 'https://www.shellhacks.com/bash-colors'
+    # </summary>
+    declare -g var_blinking_red='\033[0;31;5m'
+    declare -g var_blinking_yellow='\033[0;33;5m'
+    declare -g var_green='\033[0;32m'
+    declare -g var_red='\033[0;31m'
+    declare -g var_yellow='\033[0;33m'
+    declare -g var_reset_color='\033[0m'
+
+    # <summary> Append output </summary>
+    declare -g var_prefix_error="${var_yellow}Error:${var_reset_color}"
+    declare -g var_prefix_fail="${var_red}Failure:${var_reset_color}"
+    declare -g var_prefix_pass="${var_green}Success:${var_reset_color}"
+    declare -g var_prefix_warn="${var_blinking_red}Warning:${var_reset_color}"
+    declare -g var_suffix_fail="${var_red}Failure${var_reset_color}"
+    declare -g var_suffix_maybe="${var_yellow}Incomplete${var_reset_color}"
+    declare -g var_suffix_pass="${var_green}Success${var_reset_color}"
+    declare -g var_suffix_skip="${var_yellow}Skipped${var_reset_color}"
+
+    # <summary> Output statement </summary>
+    declare -g str_output_partial_completion="${var_prefix_warn} One or more operations failed."
+    declare -g str_output_please_wait="The following operation may take a moment. ${var_blinking_yellow}Please wait.${var_reset_color}"
+    declare -g str_output_var_is_not_valid="${var_prefix_error} Invalid input."
+# </params>
