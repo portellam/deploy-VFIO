@@ -9,7 +9,7 @@
 
 # <remarks> Using </remarks>
 # <code>
-    source ../bashlib/bin/bashlib-all
+    source bashlib-all
 # </code>
 
 # <code>

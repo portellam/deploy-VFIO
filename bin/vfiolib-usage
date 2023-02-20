@@ -9,7 +9,7 @@
 
 # <remarks> Using </remarks>
 # <code>
-    source ../bashlib/bin/bashlib-all
+    source bashlib-all
 # </code>
 
 # <code>
@@ -30,7 +30,7 @@
         local readonly str_arg_file="-F, --file\tparse PCI from file"
         local readonly str_arg_online="-O, --online\tparse PCI from internet"
 
-        declare -ar arr_usage=(
+        declare -a arr_usage=(
             "Usage:\t${str_script_name} [OPTION] [ARGUMENTS]"
             "\tor ${str_script_name} [OPTION] -S"
             "\tor ${str_script_name} [d/m/s/u] -F [FILE_NAME]"
@@ -63,7 +63,7 @@
     function GetUsage
     {
         # <params>
-        declare -gr arr_usage_opt=(
+        declare -g arr_usage_opt=(
             "-h"
             "--help"
             "-m"
@@ -80,7 +80,7 @@
             "--update"
         )
 
-        declare -gr arr_usage_args=(
+        declare -g arr_usage_args=(
             "-S"
             "--silent"
             "-F"
@@ -162,12 +162,12 @@
     declare -g bool_arg_parse_file=false
     declare -g bool_arg_parse_online=false
 
-    declare -gr str_repo_name="deploy-vfio-setup"
-    declare -gr str_full_repo_name="portellam/${str_repo_name}"
+    declare -g str_repo_name="deploy-vfio-setup"
+    declare -g str_full_repo_name="portellam/${str_repo_name}"
 
     GoToScriptDir
-    declare -gr str_files_dir="$( find . -name files | uniq | head -n1 | cut -c2- )/"
-    declare -gr str_repos_dir="$( find . -name git | uniq | head -n1 | cut -c2- )/"
+    declare -g str_files_dir="$( find . -name files | uniq | head -n1 | cut -c2- )/"
+    declare -g str_repos_dir="$( find . -name git | uniq | head -n1 | cut -c2- )/"
 
     declare -g bool_is_connected_to_Internet=false
 # </params>
