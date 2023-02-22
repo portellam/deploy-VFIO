@@ -30,11 +30,11 @@ To execute:
 ## Features
 ### Main VFIO Setup (PCI Passthrough)
 * **Multi-boot VFIO Setup**
-    * Best for Multiple VGA PCI Passthrough (one VGA for Host, and multiple VGA for Guests).    **More flexibility.**
+    * Best for Multiple VGA PCI Passthrough (**one** VGA for Host, and **multiple** VGA for Guests).    **More flexibility.**
     * Multiple GRUB menu entries for multiple VGA device systems. Choose a GRUB menu entry with a VGA device to boot from (exclude that VGA device's IOMMU Group from PCI Passthrough/VFIO).
     * **Disclaimer:** For best results, use **Auto-Xorg**. [1]
 * **Static VFIO Setup**
-    * Best for Single VGA PCI Passthrough (one VGA for Host, and one VGA for Guests).           **Less flexibility.**
+    * Best for Single VGA PCI Passthrough (**one** VGA for Host, and **one** VGA for Guests).           **Less flexibility.**
     * Traditional PCI Passthrough/VFIO Setup.
 
 ### Extras (Pre- and Post-Setup)
@@ -59,7 +59,7 @@ To execute:
     * **Libvirt-nosleep** system service(s) per Guest to prevent Host sleep while Guest is active.
 * **RAM as Swapfile/partition**
     * Reduce swapiness to existing Host swap devices, and reduce chances of Host memory exhaustion (given an event of memory over-allocation).
-    * Create a Swap device in Host memory.
+    * Create a **compressed** Swap device in Host memory.
     * Implementation is known as **zram-swap**. [5]
 * **Virtual KVM (Keyboard Video Mouse) switch**
     * Allow a user to swap a group of Input devices (as a whole) between active Guest(s) and Host.
@@ -73,7 +73,7 @@ To execute:
 * **Virtual Video Capture**
     * Setup direct-memory-access (DMA) of a PCI VGA device output (Video and Audio) from a Guest to Host.
     * Implementation is known as **LookingGlass**. [8]
-    * **Disclaimer:** Only supported for Windows 7/10/11 Guests.
+    * **Disclaimer:** Only supported for Windows 7/8/10/11 Guests.
 
 ### References
 **[1]:**    Auto-Xorg:  https://github.com/portellam/Auto-Xorg
@@ -83,10 +83,13 @@ To execute:
 **[3]:**    Hugepages:  https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages
 
 **[4]:**    https://github.com/PassthroughPOST/VFIO-Tools
+
             libvirt-nosleep:    https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_guest_is_left_running_during_sleep
 
 **[5]:**    zram-swap:  https://github.com/foundObjects/zram-swap
+
             Debian:     https://wiki.debian.org/ZRam
+
             Arch:       https://aur.archlinux.org/packages/zramswap
 
 **[6]:**    Evdev:  https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev
@@ -98,6 +101,7 @@ To execute:
 **[9]:**    Ford attacks Chevy: https://www.youtube.com/watch?v=ShiKM3OibGQ&t=30s
 
 **[10]:**   original:       https://github.com/corna/me_cleaner
+
             updated fork:   https://github.com/dt-zero/me_cleaner
 
 ## Disclaimers
@@ -105,4 +109,4 @@ Use at your own risk.
 Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
 
 ## Contribution
-Should you find this script useful, please reach out via the discussion tab on GitHub. Thank you.
+Should you find this script useful, please reach out via the **Issues** tab on GitHub. Thank you.
