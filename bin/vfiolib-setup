@@ -37,7 +37,7 @@
 
             # <remarks> Get file. </remarks>
             declare -a arr_file2=( "${arr_mulitboot_file_template[@]}" )
-            ReadFile "arr_file2" "${str_file2}" || return $?
+            # ReadFile "arr_file2" "${str_file2}" || return $?
 
             # <remarks> Organize new lines. </remarks>
             local str_GRUB_temp="${str_GRUB_required}${str_GRUB_default}"
@@ -67,10 +67,14 @@
             done
 
             readonly arr_file2_temp
+            readonly arr_file2+=( "${arr_file2_temp[@]}" )
 
             # <remarks> Write new lines to file. </remarks>
             IsArray "arr_file2_temp" || return $?
+            IsArray "arr_file2" || return $?
             OverwriteFile "arr_file2" "${str_file2}" || return $?
+
+            return 0
         }
 
         # <summary> Parse all VGA and non VGA IOMMU Groups, except current VGA VFIO IOMMU Group. </summary>
@@ -124,11 +128,11 @@
         # <returns> exit code </returns>
         function Multiboot_VFIO_GRUB
         {
-            BackupFile "${str_file1}" || return $?
+            # BackupFile "${str_file1}" || return $?
 
             # <remarks> Get file. </remarks>
             declare -a arr_file1=( "${arr_vfio_disclaimer[@]}" )
-            ReadFile "arr_file1" "${str_file1}" || return $?
+            # ReadFile "arr_file1" "${str_file1}" || return $?
 
             # <params>
             local str_GRUB_temp="${str_GRUB_required}${str_GRUB_default}"
@@ -137,6 +141,8 @@
             # <remarks> Write new line to file. </remarks>
             IsString "${str_GRUB_temp}" &> /dev/null || return $?
             str_GRUB_temp+="\"${str_GRUB_temp}\""
+
+            # TODO: need to declare $str_GRUB
             ReplaceLineInArray "arr_file1" "${str_GRUB}" "${str_GRUB_temp}" || return $?
             OverwriteFile "arr_file1" "${str_file1}" || return $?
 
@@ -155,8 +161,10 @@
             local readonly str_system_UUID=`blkid -s UUID | grep ${str_system_disk} | cut -d '"' -f2`
 
             # <remarks> Filenames </remarks>
-            local readonly str_file1="/etc/default/grub"
-            local readonly str_file2="/etc/grub.d/proxifiedScripts/custom"
+            # local readonly str_file1="/etc/default/grub"
+            # local readonly str_file2="/etc/grub.d/proxifiedScripts/custom"
+            local readonly str_file1="etc_default_grub"
+            local readonly str_file2="etc_grub.d_proxifiedScripts_custom"
         # </params>
 
         # <remarks> Write to files. </remarks>
