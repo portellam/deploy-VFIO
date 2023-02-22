@@ -322,6 +322,7 @@
     # <returns> exit code </returns>
     function OverwriteFile
     {
+        IsFile $2 || return $?
         IsArray $1 || return $?
         DeleteFile $2
         CreateFile $2 || return $?
@@ -379,9 +380,7 @@
     # <returns> exit code </returns>
     function ReplaceLineInFile
     {
-        IsString $3 || return $?    # NOTE: keep. Exit early.
-        # IsString $2 || return $?  # TODO: remove. This parameter will be validated in ReplaceLineInArray.
-        # IsFile $1 || return $?    # TODO: remove. This parameter will be validated in ReadFile
+        IsString $3 || return $?
 
         # <params>
         declare -a arr_replace_file=()
