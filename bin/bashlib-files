@@ -215,8 +215,6 @@
         # </params>
 
         IsString "${str_dir}" && cd "${str_dir}"
-        echo "str_dir == '$str_dir'"
-        echo "str_file == '$str_file'"
 
         if [[ ! -e "${str_file}" ]]; then
             echo -e "${str_fail}"

@@ -343,19 +343,29 @@
         return 0
     }
 
-    # # <summary> ??? </summary>
-    # # <returns> exit code </returns>
-    # function Setup_VFIO
-    # {
-    #     # <params>
+    # <summary> ??? </summary>
+    # <returns> exit code </returns>
+    function Setup_VFIO
+    {
+        echo
+        ReadMultipleChoiceIgnoreCase "Setup VFIO? ${var_green}None / Multiboot / Static${var_reset_color}" "N" "M" "S"
 
-    #     # </params>
+        case "${var_input}" in
+            "M" )
+                Multiboot_VFIO || return $?
+                ;;
 
-    #     # diff between static and multiboot => static: all IOMMU for VFIO with PCI STUB devices will be binded to VFIO PCI driver? append only to GRUB and system files.
-    #     # multiboot: PCI STUB devices will use PCI STUB driver? append only GRUB and multiple GRUB entries
+            "S" )
+                Static_VFIO || return $?
+                ;;
 
-    #     return 0
-    # }
+            * )
+                return 1
+                ;;
+        esac
+
+        return 0
+    }
 
     # # <summary> ??? </summary>
     # # <returns> exit code </returns>
