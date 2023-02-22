@@ -142,8 +142,7 @@
             IsString "${str_GRUB_temp}" &> /dev/null || return $?
             str_GRUB_temp+="\"${str_GRUB_temp}\""
 
-            # TODO: need to declare $str_GRUB
-            ReplaceLineInArray "arr_file1" "${str_GRUB}" "${str_GRUB_temp}" || return $?
+            ReplaceLineInArray "arr_file1" "${str_GRUB_template}" "${str_GRUB_temp}" || return $?
             OverwriteFile "arr_file1" "${str_file1}" || return $?
 
             return 0
