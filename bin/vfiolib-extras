@@ -555,17 +555,19 @@
         }
 
         # <params>
-        local readonly str_output="Installing zram-swap..."
+        local readonly str_output1="Setup zram-swap?"
+        local readonly str_output2="Installing zram-swap..."
         # </params>
 
         echo
-        echo -e "${str_output}"
+        ReadInput "${str_output1}" || return $?
+        echo -e "${str_output2}"
 
         if ! RAM_Swapfile_Install || ! RAM_Swapfile_Modify; then
             false
         fi
 
-        PrintPassOrFail "${str_output}"
+        PrintPassOrFail "${str_output2}"
         return "${int_exit_code}"
     }
 
@@ -581,9 +583,10 @@
 
             local readonly str_output1="Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n\tHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
             local readonly str_output2="Setup Evdev?"
+            local readonly str_fail="${var_prefix_error} Cannot parse input devices (by ID)."
 
-            local readonly var_get_event_devices='ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0"'
-            local readonly var_get_input_devices='ls /dev/input/by-id'
+            local readonly var_get_event_devices='readonly arr_event_devices=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )'
+            local readonly var_get_input_devices='readonly arr_input_devices=( $( ls /dev/input/by-id ) )'
             # </params>
 
             # <remarks> Ask user to proceed. </remarks>
@@ -591,11 +594,12 @@
             ReadInput "${str_output2}" || return "${int_code_skipped_operation}"
 
             # <remarks> Get all devices for Evdev. </remarks>
-            readonly arr_event_devices=( $( eval "${var_get_event_devices}") )
-            readonly arr_input_devices=( $( eval "${var_get_input_devices}") )
+            eval "${var_get_event_devices}" &> /dev/null
+            eval "${var_get_input_devices}" &> /dev/null
 
             # <remarks> Early-exit. </remarks>
-            if ! IsString "${arr_event_devices[@]}" && ! IsString "${var_get_input_devices[@]}"; then
+            if ! IsArray "arr_event_devices" &> /dev/null && ! IsArray "arr_input_devices" &> /dev/null; then
+                echo -e "${str_fail}"
                 return 1
             fi
 
