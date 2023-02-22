@@ -76,37 +76,37 @@ To execute:
     * **Disclaimer:** Only supported for Windows 7/8/10/11 Guests.
 
 ### References
-* **[1]:**
+* **[1]**
     * **Auto-Xorg:**  https://github.com/portellam/Auto-Xorg
 
-**[2]:**
+* **[2]**
     * **isolcpu:**    https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning
 
-**[3]:**
+* **[3]**
     * **Hugepages:**  https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages
 
-**[4]:**
+* **[4]**
     * https://github.com/PassthroughPOST/VFIO-Tools
     * **libvirt-nosleep:**    https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_guest_is_left_running_during_sleep
 
-**[5]:**
+* **[5]**
     * **zram-swap:**  https://github.com/foundObjects/zram-swap
     * **Debian:**     https://wiki.debian.org/ZRam
     * **Arch:**       https://aur.archlinux.org/packages/zramswap
 
-**[6]:**
+* **[6]**
     * **Evdev:**  https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev
 
-**[7]:**
+* **[7]**
     * **Scream:** https://github.com/duncanthrax/scream
 
-**[8]:**
+* **[8]**
     * **LookingGlass:**   https://looking-glass.io/docs/B5.0.1/
 
-**[9]:**
+* **[9]**
     * **Ford attacks Chevy:** https://www.youtube.com/watch?v=ShiKM3OibGQ&t=30s
 
-**[10]:**
+* **[10]**
     * **original:**       https://github.com/corna/me_cleaner
     * **updated fork:**   https://github.com/dt-zero/me_cleaner
 
