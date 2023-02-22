@@ -57,9 +57,9 @@ To execute:
     * Switch display input (video output) at Guest start.
     * **Dynamically** allocate system resources (CPU, RAM).
     * **Libvirt-nosleep** system service(s) per Guest to prevent Host sleep while Guest is active.
-* **RAM as Swapfile/partition**
+* **RAM as Compressed Swapfile/partition**
     * Reduce swapiness to existing Host swap devices, and reduce chances of Host memory exhaustion (given an event of memory over-allocation).
-    * Create a **compressed** Swap device in Host memory.
+    * Create a compressed Swap device in Host memory, using the **lz4** algorithm **(compression ratio of about 2:1)**.
     * Implementation is known as **zram-swap**. [5]
 * **Virtual KVM (Keyboard Video Mouse) switch**
     * Allow a user to swap a group of Input devices (as a whole) between active Guest(s) and Host.
@@ -77,38 +77,40 @@ To execute:
 
 ## References
 ### [1]
-* **Auto-Xorg:**  https://github.com/portellam/Auto-Xorg
+* **Auto-Xorg:**    https://github.com/portellam/Auto-Xorg
 
 ### [2]
-* **isolcpu:**    https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning
+* **isolcpu:**  https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning
 
 ### [3]
-* **Hugepages:**  https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages
+* **Hugepages:**    https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages
 
 ### [4]
 * https://github.com/PassthroughPOST/VFIO-Tools
 * **libvirt-nosleep:**    https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_guest_is_left_running_during_sleep
 
 ### [5]
-* **zram-swap:**  https://github.com/foundObjects/zram-swap
-* **Debian:**     https://wiki.debian.org/ZRam
-* **Arch:**       https://aur.archlinux.org/packages/zramswap
+* **zram-swap:**    https://github.com/foundObjects/zram-swap
+* **Debian:**       https://wiki.debian.org/ZRam
+* **Arch:**         https://aur.archlinux.org/packages/zramswap
+* **about lz4:**    https://github.com/lz4/lz4
+* **benchmarks:**   https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/
 
 ### [6]
-* **Evdev:**  https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev
+* **Evdev:**    https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev
 
 ### [7]
-* **Scream:** https://github.com/duncanthrax/scream
+* **Scream:**   https://github.com/duncanthrax/scream
 
 ### [8]
-* **LookingGlass:**   https://looking-glass.io/docs/B5.0.1/
+* **LookingGlass:** https://looking-glass.io/docs/B5.0.1/
 
 ### [9]
-* **Ford attacks Chevy:** https://www.youtube.com/watch?v=ShiKM3OibGQ&t=30s
+* **Ford attacks Chevy:**   https://www.youtube.com/watch?v=ShiKM3OibGQ&t=30s
 
 ### [10]
-* **original:**       https://github.com/corna/me_cleaner
-* **updated fork:**   https://github.com/dt-zero/me_cleaner
+* **original:**     https://github.com/corna/me_cleaner
+* **updated fork:** https://github.com/dt-zero/me_cleaner
 
 ## Disclaimers
 Use at your own risk.
