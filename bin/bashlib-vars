@@ -28,12 +28,6 @@
 
         eval "${var_command}" || return 1
 
-        # if [[ -z $( echo "${arr[@]}" | grep -iF $2 ) ]]; then
-        #     return 1
-        # fi
-
-        # return 0
-
         for var_element in "${arr[@]}"; do
             if [[ "${var_element}" == $2 ]]; then
                 return 0
