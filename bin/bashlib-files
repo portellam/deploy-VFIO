@@ -322,7 +322,6 @@
     # <returns> exit code </returns>
     function OverwriteFile
     {
-        IsFile $2 || return $?
         IsArray $1 || return $?
         DeleteFile $2
         CreateFile $2 || return $?
