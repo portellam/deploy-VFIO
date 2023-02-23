@@ -234,11 +234,10 @@
                 ;;
         esac
 
-        AppendPassOrFail "${str_output}"
+        PrintPassOrFail "${str_output}"
 
         # <remarks> Save output. </remarks>
         readonly arr_class arr_device_ID arr_device_name arr_driver arr_hardware_ID arr_IOMMU arr_slot_ID arr_vendor_ID arr_vendor_name
-
         return "${int_exit_code}"
     }
 
@@ -291,12 +290,11 @@
 
                 # <remarks> Match Class </remarks>
                 case "${str_class}" in
-                    "graphics" | "vga" | "video" )
+                    *"graphics"* | *"vga"* | *"video"* )
                         bool_IOMMU_has_VGA=true
-                        # bool_IOMMU_VFIO_PCI=true      # TODO: remove or replace?
                         ;;
 
-                    "usb" )
+                    *"usb"* )
                         bool_IOMMU_has_USB=true
                         bool_IOMMU_PCI_STUB=true
                         ;;
@@ -340,13 +338,10 @@
             return 0
         }
 
-        # <summary> ??? </summary>
+        # <summary> Parse VFIO list for drivers and hardware IDs. </summary>
         # <returns> exit code </returns>
         function Get_IOMMU_Drivers
         {
-            declare -ga arr_drivers_VFIO_PCI=()
-            declare -ga arr_hardware_ID_VFIO_PCI=()
-
             for int_key in "${!arr_IOMMU[@]}"; do
                 local readonly str_driver="${arr_driver[$int_key]}"
                 local readonly str_hardware_ID="${arr_hardware_ID[$int_key]}"
@@ -363,11 +358,9 @@
         }
 
         # <params>
-        declare -g bool_VFIO_has_IOMMU=false
         local readonly str_output="Reviewing IOMMU groups..."
         local readonly int_IOMMU_max=$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )
         local readonly var_get_IOMMU='seq 0 "${int_IOMMU_max}"'
-        declare -a arr_IOMMU_PCI_STUB arr_IOMMU_VFIO_PCI arr_IOMMU_VFIO_PCI_with_VGA
         declare -ar arr_this_IOMMU=( $( eval "${var_get_IOMMU}" ) )
         # </params>
 
@@ -389,15 +382,13 @@
         done
 
         # <remarks> Check if list is empty </remarks>
-        declare -ar arr=( "${arr_IOMMU_VFIO_PCI[@]}" )
-        IsArray "arr" && bool_VFIO_has_IOMMU=true && Get_IOMMU_Drivers
-
-        AppendPassOrFail "${str_output}"
-        echo
+        IsArray "arr_IOMMU_VFIO_PCI" && bool_VFIO_has_IOMMU=true && Get_IOMMU_Drivers
+        PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
 # </code>
 
 # <params>
-# global vars go here
+declare -ga arr_drivers_VFIO_PCI arr_IOMMU_PCI_STUB arr_IOMMU_VFIO_PCI arr_IOMMU_VFIO_PCI_with_VGA arr_hardware_ID_VFIO_PCI
+declare -g bool_VFIO_has_IOMMU=false
 # </params>
