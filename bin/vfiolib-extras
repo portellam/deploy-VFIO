@@ -338,7 +338,7 @@
             local readonly str_daemon1="libvirtd"
             local readonly str_daemon1_packages="qemu"
             local readonly str_file1="/etc/libvirt/qemu.conf"
-            # local readonly str_file1_backup="etc_libvirt_qemu.conf"
+            local readonly str_file2="/etc/apparmor.d/local/abstractions/libvirt-qemu"
             # </params>
 
             # <remarks> Backup system file and grab clean file from repository. </remarks>
@@ -361,7 +361,7 @@
             readonly arr_file1_evdev_cgroups
 
             # <remarks> Begin append. </remarks>
-            delcare -a arr_file1=(
+            declare -a arr_file1=(
                 ""
                 ""
                 "#"
@@ -372,6 +372,8 @@
                 "# Run 'systemctl restart ${str_daemon1}.service' to update."
                 "#"
             )
+
+            declare -a arr_file2=()
 
             # <remarks> Adds or omits specific user to use Evdev. </remarks>
             local readonly str_output4="Adding user..."
@@ -429,6 +431,13 @@
                     "${arr_file1_default_cgroups[@]}"
                     "]"
                 )
+
+                arr_file2+=(
+                    ""
+                    "# EVDEV"
+                    "/dev/input/* rw,"
+                    "/dev/input/by-id/* rw,"
+                )
             else
                 arr_file1+=(
                     ""
@@ -455,9 +464,10 @@
             )
 
             # <remarks> Save changes. </remarks>
-            readonly arr_file1
+            readonly arr_file1 arr_file2
             # WriteFile "arr_file1" "${str_file1}" || return $?
             OverwriteFile "arr_file1" "${str_file1}" || return $?
+            WriteFile "arr_file2" "${str_file2}" || return $?
 
             # <remarks> Check if daemon exists and restart it. </remarks>
             IsInstalledPackage "${str_daemon1_packages}" || return $?
