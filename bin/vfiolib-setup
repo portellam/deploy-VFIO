@@ -331,11 +331,11 @@
         # </params>
 
         # <remarks> Backup existing system files. </remarks>
-        BackupFile "${str_file1}"
-        BackupFile "${str_file2}"
-        BackupFile "${str_file3}"
-        BackupFile "${str_file4}"
-        BackupFile "${str_file5}"
+        # BackupFile "${str_file1}"
+        # BackupFile "${str_file2}"
+        # BackupFile "${str_file3}"
+        # BackupFile "${str_file4}"
+        # BackupFile "${str_file5}"
 
         # <remarks> Write to files. </remarks>
         Static_VFIO_GRUB || return $?
