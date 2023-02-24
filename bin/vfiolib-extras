@@ -275,7 +275,7 @@
                     readonly int_huge_page_min=1
                     ;;
                 * )
-                    return $?
+                    return 1
                     ;;
             esac
 
@@ -464,8 +464,8 @@
             IsActiveDaemon "${str_daemon1}" &> /dev/null || ( sudo systemctl enable "${str_daemon1}" || return 1 )
 
             local readonly var_restart_daemon='sudo systemctl restart "${str_daemon1}"'
-            StopEvalAfterThriceFail "${var_restart_daemon}"
-            return $?
+            StopEvalAfterThriceFail "${var_restart_daemon}" || return $?
+            return 0
         }
 
         # <params>
@@ -496,8 +496,8 @@
             UpdateOrCloneGitRepo "${str_repos_dir}" "${str_full_repo1}" "${str_user_name1}"
             cd "${str_repos_dir}${str_full_repo1}" || return $?
             IsFile "${str_script_name1}" || return $?
-            sudo bash "${str_script_name1}"
-            return $?
+            sudo bash "${str_script_name1}" || return 1
+            return 0
         }
 
         function RAM_Swapfile_Modify
@@ -559,7 +559,7 @@
             eval "${var_find_zram_swap}" && eval "${var_disable_zram_swap}"
             eval "${var_restart_daemon}" || return $?
             eval "${var_enable_all_swap}" || return $?
-            return $?
+            return 0
         }
 
         # <params>
@@ -682,7 +682,7 @@
         return "${int_exit_code}"
     }
 
-    # <summary> Scream: Ask user to setup audio loopback from virtual machine to host. NOTE: Only supported for Win 7/10/11 virtual machines. </summary>
+    # <summary> Scream: Ask user to setup audio loopback from virtual machine to host. NOTE: Only supported for Win 7/8/10/11 virtual machines. </summary>
     # # <returns> exit code </returns>
     # function VirtualAudioCapture
     # {
