@@ -23,13 +23,43 @@
 # </code>
 
 # <code>
+    # <summary> Save default values to GRUB. </summary>
+    # <returns> exit code </returns>
+    function Reset_GRUB
+    {
+        # <params>
+        # local readonly str_file1="/etc/default/grub"
+        local readonly str_file1="etc_default_grub"
+        # <params>
+
+        # <remarks> Backup existing system files. </remarks>
+        if IsFile "${str_file1}" &> /dev/null; then
+            BackupFile "${str_file1}" || DeleteFile "${str_file1}" || return $?
+        fi
+
+        # <remarks> Get file. </remarks>
+        declare -a arr_file1=( "${arr_vfio_disclaimer[@]}" )
+        # ReadFile "arr_file1" "${str_file1}" || return $?
+
+        # <params>
+        local str_GRUB_temp="${str_GRUB_required}${str_GRUB_default}"
+        # </params>
+
+        # <remarks> Write new line to file. </remarks>
+        IsString "${str_GRUB_temp}" &> /dev/null || return $?
+        str_GRUB_temp+="\"${str_GRUB_temp}\""
+        ReplaceLineInArray "arr_file1" "${str_GRUB_template}" "${str_GRUB_temp}"
+        OverwriteFile "arr_file1" "${str_file1}" || return $?
+        return 0
+    }
+
     # <summary> Multiple GRUB menu entries for multiple VGA device (GPU) systems. Choose a GRUB menu entry with a VGA device to boot from (exclude that VGA device's IOMMU Group from VFIO). </summary>
     # <returns> exit code </returns>
     function Multiboot_VFIO
     {
         # <summary> Write custom GRUB entries. </summary>
         # <returns> exit code </returns>
-        function Multiboot_VFIO_Custom_GRUB
+        function Multiboot_VFIO_GRUB
         {
             # <params>
             # local readonly str_file1="/etc/grub.d/proxifiedScripts/custom"
@@ -129,36 +159,6 @@
             return 0
         }
 
-        # <summary> Save default values to GRUB. </summary>
-        # <returns> exit code </returns>
-        function Multiboot_VFIO_GRUB
-        {
-            # <params>
-            # local readonly str_file1="/etc/default/grub"
-            local readonly str_file1="etc_default_grub"
-            # <params>
-
-            # <remarks> Backup existing system files. </remarks>
-            if IsFile "${str_file1}" &> /dev/null; then
-                BackupFile "${str_file1}" || return $?
-            fi
-
-            # <remarks> Get file. </remarks>
-            declare -a arr_file1=( "${arr_vfio_disclaimer[@]}" )
-            # ReadFile "arr_file1" "${str_file1}" || return $?
-
-            # <params>
-            local str_GRUB_temp="${str_GRUB_required}${str_GRUB_default}"
-            # </params>
-
-            # <remarks> Write new line to file. </remarks>
-            IsString "${str_GRUB_temp}" &> /dev/null || return $?
-            str_GRUB_temp+="\"${str_GRUB_temp}\""
-            ReplaceLineInArray "arr_file1" "${str_GRUB_template}" "${str_GRUB_temp}"
-            OverwriteFile "arr_file1" "${str_file1}" || return $?
-            return 0
-        }
-
         # <params>
             # <remarks> System configuration </remarks>
             declare -ir int_max_num_parse_kernels=3
@@ -172,8 +172,8 @@
         # </params>
 
         # <remarks> Write to files. </remarks>
+        Reset_GRUB || return $?
         Multiboot_VFIO_GRUB || return $?
-        Multiboot_VFIO_Custom_GRUB || return $?
 
         # <remarks> Update system configuration </remarks>
         eval "${var_update_grub}" || return 1
@@ -365,6 +365,7 @@
 
         # <remarks> Write to files. </remarks>
         if ! Static_VFIO_GRUB; then
+            Reset_GRUB || return $?
             Static_VFIO_ModulesInitramfs || return $?
             Static_VFIO_Modprobe || return $?
         fi
