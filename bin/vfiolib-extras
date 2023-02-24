@@ -8,10 +8,10 @@
 #
 
 # TODO:
-# -write to abstractions file (EVDEV, HUGEPAGES, LOOKING GLASS?)
-#
-#
-#
+# -write to abstractions file
+#   -Evdev
+#   -Hugepages?
+#   -LookingGlass
 #
 
 # <remarks> Using </remarks>
