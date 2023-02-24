@@ -470,7 +470,7 @@
             WriteFile "arr_file2" "${str_file2}" || return $?
 
             # <remarks> Check if daemon exists and restart it. </remarks>
-            IsInstalledPackage "${str_daemon1_packages}" || return $?
+            # IsInstalledPackage "${str_daemon1_packages}" || return $?         # NOTE: is this causing a hangup? TODO: debug!
             IsActiveDaemon "${str_daemon1}" &> /dev/null || ( sudo systemctl enable "${str_daemon1}" || return 1 )
 
             local readonly var_restart_daemon='sudo systemctl restart "${str_daemon1}"'
