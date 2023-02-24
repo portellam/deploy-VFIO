@@ -361,7 +361,7 @@
             readonly arr_file1_evdev_cgroups
 
             # <remarks> Begin append. </remarks>
-            arr_file1_contents=(
+            delcare -a arr_file1=(
                 ""
                 ""
                 "#"
@@ -377,14 +377,14 @@
             local readonly str_output4="Adding user..."
 
             if IsString "${str_username}" &> /dev/null; then
-                arr_file1_contents+=(
+                arr_file1+=(
                     ""
                     "### User permissions ###"
                     "user = \"${str_username}\""
                     "group = \"user\""
                 )
             else
-                arr_file1_contents+=(
+                arr_file1+=(
                     ""
                     "### User permissions ###"
                     "#user = \"user\""
@@ -400,13 +400,13 @@
             local readonly str_output5="Adding Hugepages..."
 
             if "${bool_is_setup_hugepages}"; then
-                arr_file1_contents+=(
+                arr_file1+=(
                     ""
                     "### Hugepages ###"
                     "hugetlbfs_mount = \"/dev/hugepages\""
                 )
             else
-                arr_file1_contents+=(
+                arr_file1+=(
                     ""
                     "### Hugepages ###"
                     "#hugetlbfs_mount = \"/dev/hugepages\""
@@ -421,7 +421,7 @@
             local readonly str_output6="Adding Evdev..."
 
             if "${bool_is_setup_evdev}"; then
-                arr_file1_contents+=(
+                arr_file1+=(
                     ""
                     "### Devices ###"
                     "cgroup_device_acl = ["
@@ -430,7 +430,7 @@
                     "]"
                 )
             else
-                arr_file1_contents+=(
+                arr_file1+=(
                     ""
                     "### Devices ###"
                     "cgroup_device_acl = ["
@@ -444,7 +444,7 @@
             PrintPassOrFail "${str_output6}"
 
             # <remarks> Adds NVRAM for EFI kernels in UEFI virtual machines. </remarks>
-            arr_file1_contents+=(
+            arr_file1+=(
                 ""
                 "nvram = ["
                 "        \"/usr/share/OVMF/OVMF_CODE.fd:/usr/share/OVMF/OVMF_VARS.fd\","
@@ -455,9 +455,9 @@
             )
 
             # <remarks> Save changes. </remarks>
-            readonly arr_file1_contents
-            # WriteFile "arr_file1_contents" "${str_file1}" || return $?
-            OverwriteFile "arr_file1_contents" "${str_file1}" || return $?
+            readonly arr_file1
+            # WriteFile "arr_file1" "${str_file1}" || return $?
+            OverwriteFile "arr_file1" "${str_file1}" || return $?
 
             # <remarks> Check if daemon exists and restart it. </remarks>
             IsInstalledPackage "${str_daemon1_packages}" || return $?
