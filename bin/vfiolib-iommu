@@ -261,20 +261,20 @@
 
             local readonly str_domain_ID=$( echo "${str_slot_ID}" | cut -d ':' -f 1 )
 
-            # <remarks> Regex: check if value is decimal or hexadecimal and greater than zero </remarks>
-            local readonly str_regex='[a-fA-F1-9]'
+                # <remarks> Regex: check if value is decimal or hexadecimal and greater than zero </remarks>
+                local readonly str_regex='[a-fA-F1-9]'
 
-            # <remarks> Output statement </remarks>
-            declare -ar arr_something=(
-                "Slot ID:\t'${str_slot_ID}'"
-                "Vendor name:\t'${str_vendor_name}'"
-                "Device name:\t'${str_device_name}'"
-                "Class/Type:\t'${str_class}'"
-                # "Hardware ID:\t'${str_hardware_ID}'"
-                # "Vendor ID:\t'${str_vendor_ID}'"
-                # "Device ID:\t'${str_device_ID}'"
-                "Kernel driver:\t'${str_driver}'"
-            )
+                # <remarks> Output statement </remarks>
+                declare -ar arr_something=(
+                    "Slot ID:\t'${str_slot_ID}'"
+                    "Vendor name:\t'${str_vendor_name}'"
+                    "Device name:\t'${str_device_name}'"
+                    "Class/Type:\t'${str_class}'"
+                    # "Hardware ID:\t'${str_hardware_ID}'"
+                    # "Vendor ID:\t'${str_vendor_ID}'"
+                    # "Device ID:\t'${str_device_ID}'"
+                    "Kernel driver:\t'${str_driver}'"
+                )
             # </params>
 
             # <remarks> Match IOMMU group </remarks>
@@ -353,8 +353,8 @@
                 fi
             done
 
-            IsArray "arr_drivers_VFIO_PCI"
-            return $?
+            IsArray "arr_drivers_VFIO_PCI" || return $?
+            return 0
         }
 
         # <params>
