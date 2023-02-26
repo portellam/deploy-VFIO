@@ -49,7 +49,7 @@
 
             # <remarks> If none exist, create backup. </remarks>
             if ! IsArray arr_dir &> /dev/null; then
-                cp $1 "${1}${str_suffix}" || return 1
+                cp $1 "$1${str_suffix}" || return 1
             fi
 
             # <remarks> Delete all but the newest backup file. </remarks>
@@ -67,7 +67,7 @@
             fi
 
             # <remarks> Create backup. </remarks>
-            cp $1 "${1}${str_suffix}" || return 1
+            cp $1 "$1${str_suffix}" || return 1
 
             return 0
         }
@@ -91,7 +91,7 @@
         IsDir $1 &> /dev/null && return 0
 
         # <params>
-        local readonly str_fail="${var_prefix_fail} Could not create directory '${1}'."
+        local readonly str_fail="${var_prefix_fail} Could not create directory '$1'."
         local readonly var_command='mkdir -p $1 &> /dev/null'
         # </params>
 
@@ -112,7 +112,7 @@
         IsFile $1 &> /dev/null && return 0
 
         # <params>
-        local readonly str_fail="${var_prefix_fail} Could not create file '${1}'."
+        local readonly str_fail="${var_prefix_fail} Could not create file '$1'."
         local readonly var_command='touch '"$1"' &> /dev/null'
         # </params>
 
@@ -133,7 +133,7 @@
         IsDir $1 &> /dev/null || return 1
 
         # <params>
-        local readonly str_fail="${var_prefix_fail} Could not delete directory '${1}'."
+        local readonly str_fail="${var_prefix_fail} Could not delete directory '$1'."
         local readonly var_command='rm -r '"$1"' &> /dev/null'
         # </params>
 
@@ -154,7 +154,7 @@
         IsFile $1 &> /dev/null || return 1
 
         # <params>
-        local readonly str_fail="${var_prefix_fail} Could not delete file '${1}'."
+        local readonly str_fail="${var_prefix_fail} Could not delete file '$1'."
         local readonly var_command='rm '"$1"' &> /dev/null'
         # </params>
 
@@ -190,7 +190,7 @@
         IsString $1 || return $?
 
         # <params>
-        local readonly str_fail="${var_prefix_error} File '${1}' is not a directory."
+        local readonly str_fail="${var_prefix_error} File '$1' is not a directory."
         # </params>
 
         if [[ ! -d $1 ]]; then
@@ -209,14 +209,10 @@
         IsString $1 || return $?
 
         # <params>
-        local readonly str_fail="${var_prefix_error} '${1}' is not a file."
-        local readonly str_dir=$( dirname $1 )
-        local readonly str_file=$( basename $1 )
+        local readonly str_fail="${var_prefix_error} '$1' is not a file."
         # </params>
 
-        IsString "${str_dir}" && cd "${str_dir}"
-
-        if [[ ! -e "${str_file}" ]]; then
+        if [[ ! -e $1 ]]; then
             echo -e "${str_fail}"
             return "${int_code_dir_is_null}"
         fi
@@ -267,7 +263,7 @@
         IsFile $1 || return $?
 
         # <params>
-        local readonly str_fail="${var_prefix_error} File '${1}' is not executable."
+        local readonly str_fail="${var_prefix_error} File '$1' is not executable."
         # </params>
 
         if [[ ! -x $1 ]]; then
@@ -286,7 +282,7 @@
         IsFile $1 || return $?
 
         # <params>
-        local readonly str_fail="${var_prefix_error} File '${1}' is not readable."
+        local readonly str_fail="${var_prefix_error} File '$1' is not readable."
         # </params>
 
         if [[ ! -r $1 ]]; then
@@ -305,7 +301,7 @@
         IsFile $1 || return $?
 
         # <params>
-        local readonly str_fail="${var_prefix_error} File '${1}' is not writable."
+        local readonly str_fail="${var_prefix_error} File '$1' is not writable."
         # </params>
 
         if [[ ! -w $1 ]]; then
@@ -339,7 +335,7 @@
         # <params>
         IFS=$'\n'
         declare -a arr_print_file=( )
-        local readonly str_output="Contents for file ${var_yellow}'${1}'${var_reset_color}:"
+        local readonly str_output="Contents for file ${var_yellow}'$1'${var_reset_color}:"
         # </params>
 
         ReadFile "arr_print_file" $1 || return $?
@@ -358,7 +354,7 @@
 
         # <params>
         IFS=$'\n'
-        local readonly str_fail="${var_prefix_fail} Could not read from file '${2}'."
+        local readonly str_fail="${var_prefix_fail} Could not read from file '$2'."
         local readonly var_get_param='mapfile -t < <( cat '"$2"' )'
         local readonly var_set_param="$1"'=( "${MAPFILE[@]}" )'
         # </params>
@@ -414,7 +410,7 @@
 
             # <remarks> If newest backup is newer than file, restore. </remarks>
             if ! AreEqualFiles $1 "${arr_dir[0]}" &> /dev/null || IsFileNewer "${arr_dir[0]}" $1 &> /dev/null ; then
-                cp "${1}${str_suffix}" $1
+                cp "$1${str_suffix}" $1
                 return $?
             fi
 
@@ -441,7 +437,7 @@
         IsArray $1 || return $?
 
         # <params>
-        local readonly str_fail="${var_prefix_fail} Could not write to file '${1}'."
+        local readonly str_fail="${var_prefix_fail} Could not write to file '$1'."
         local readonly var_set_param='printf "%s\n" "${'$1'[@]}" >> $2'
         # </params>
 
