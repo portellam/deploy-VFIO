@@ -7,22 +7,6 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-#
-# TODO
-#
-# - bash libraries, add input param to disable checks? to reduce recursive steps?
-#
-#
-# -append changes for sysctl.conf (shared memory, evdev, LookingGlass, Scream, etc.) to individual files?
-#
-# -Continuous Improvement: after conclusion of this script's dev. Propose a refactor using the bashful libraries and with better Bash principles in mind.
-# -demo the product: get a working, debuggable version ASAP.
-# -revise README, files
-# -pull down original system files from somewhere
-# -or provide checksum of my backups of system files
-#
-#
-
 # <remarks> Using </remarks>
 # <code>
     cd bin
@@ -31,58 +15,55 @@
 # </code>
 
 # <code>
-    IsSudoUser || exit "${?}"
-    GetUsage "${var_input1}" "${var_input2}"
-    SaveExitCode
+    IsSudoUser || exit $?
+    if ! SetOptions $@; then GetUsage; exit $?; fi
+    if $bool_uninstall; then UninstallExisting_VFIO fi
 
-    # <remarks> Output usage </remarks>
-    if "${bool_opt_help}"; then
-        PrintUsage
-        exit "${int_exit_code}"
-    fi
+    # <remarks> Extras </remarks>
+    AddUserToGroups
+    if $bool_alloc_cpu; then Allocate_CPU; fi
+    if $bool_hugepages; then Allocate_RAM; fi
+    if $bool_audio_loopback; then GuestAudioLoopback; fi
+    if $bool_evdev; then Virtual_KVM; fi
+    Modify_QEMU
+    if $bool_zram_swap; then RAM_Swapfile; fi
+    if $bool_libvirt_hooks; then LibvirtHooks; fi
+    if $bool_looking_glass; then VirtualVideoCapture; fi
+    # if $bool_scream; then VirtualAudioCapture; fi
 
-    # <remarks> Get and ask user to select IOMMU groups. </remarks>
-    if "${bool_opt_any_VFIO_setup}"; then
-        case true in
-            "${bool_arg_parse_file}" )
-                readonly var_Parse_IOMMU="FILE"
-                ;;
+    # <remarks> Main setup </remarks>
+    case true in
+        $bool_parse_IOMMU_from_file )
+            Parse_IOMMU "FILE" || exit $?
+            ;;
 
-            "${bool_arg_parse_online}" )
-                readonly var_Parse_IOMMU="DNS"
-                ;;
+        $bool_parse_IOMMU_from_internet )
+            Parse_IOMMU "DNS" || exit $?
+            ;;
 
-            * )
-                readonly var_Parse_IOMMU="LOCAL"
-                ;;
-        esac
+        * )
+            Parse_IOMMU "LOCAL" || exit $?
+            ;;
+    esac
 
-        Parse_IOMMU "${var_Parse_IOMMU}" "${var_input1}" || exit "${?}"
-        Select_IOMMU || exit "${?}"
-    fi
+    Select_IOMMU || exit $?
 
-    # <remarks> Execute pre-setup </remarks>
-    if "${bool_opt_any_VFIO_setup}" || "${bool_opt_pre_setup}"; then
-        AddUserToGroups
-        Allocate_CPU
-        Allocate_RAM
-        Virtual_KVM
-        Modify_QEMU
-        RAM_Swapfile
-    fi
+    case true in
+        $bool_multiboot )
+            Multiboot_VFIO
+            exit $?
+            ;;
 
-    # <remarks> Execute main setup </remarks>
-    if "${bool_opt_any_VFIO_setup}" && "${bool_VFIO_has_IOMMU}"; then
-        Setup_VFIO || exit "${?}"
-    fi
+        $bool_static )
+            Static_VFIO
+            exit $?
+            ;;
 
-    exit 0
-
-    # <remarks> Execute post-setup </remarks>
-    if "${bool_opt_post_setup}"; then
-        VirtualAudioCapture
-        VirtualVideoCapture
-    fi
+        * )
+            Setup_VFIO
+            exit $?
+            ;;
+    esac
 # </code>
 
-exit "${?}"
+exit 0

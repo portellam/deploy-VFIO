@@ -25,12 +25,20 @@
                 bool_evdev=true
                 ;;
 
+            "-f" | "--file" )
+                bool_parse_IOMMU_from_file=true
+                ;;
+
             "-h" | "--help" )
                 return 1
                 ;;
 
             "-H" | "--hooks" )
                 bool_libvirt_hooks=true
+                ;;
+
+            "-i" | "--internet" )
+                bool_parse_IOMMU_from_internet=true
                 ;;
 
             "-l" | "--looking-glass" )
@@ -85,9 +93,12 @@
         IFS=$'\n'
 
         declare -ar arr_output=(
-            "Usage: bash vfiolib-all [OPTION]"
-            "Deploy a VFIO/PCI Passthrough installation.\n"
+            "Usage: bash vfiolib-all [OPTION]..."
+            "Deploy a PCI Passthrough (VFIO) setup.\n"
             "\t-h, --help\t\tPrint this usage statement"
+            "\nParse PCI:"
+            "\t-f, --file\t\tReference file database"
+            "\t-i, --internet\t\tReference online database"
             "\nSetup:"
             "\t-m, --multiboot\t\tCreate multiple GRUB entries for a Multi VGA VFIO setup"
             "\t-s, --static\t\tInstall a Single VGA VFIO setup"
@@ -96,14 +107,15 @@
             "\t-c, --cpu\t\tAllocate CPU (to guests)"
             "\t-e, --evdev\t\tSetup a virtual KVM (keyboard video mouse) switch"
             "\t-H, --hooks\t\tInstall recommended libvirt-hooks (scripts) and services"
-            "\t-l, --looking-glass\t\tInstall LookingGlass (Guest video and audio capture)"
+            "\t-l, --looking-glass\tInstall LookingGlass (Guest video and audio capture)"
             "\t-L, --loopback\t\tInstall the audio loopback service"
             "\t-p, --hugepages\t\tAllocate RAM (to guests)"
             "\t-S, --scream\t\tInstall Scream (Guest audio capture)"
             "\t-z, --zram-swap\t\tCreate swap in RAM (zram-swap)"
 
             "\nExample:"
-            "\tbash vfiolib-all -m -p Install a Multiboot setup, with hugepages."
+            "\tbash vfiolib-all -m \t\tParse PCI locally, then deploy a Multiboot VFIO setup."
+            "\tbash vfiolib-all -s -i -p\tParse PCI from Internet, to re-deploy a Static VFIO setup, with hugepages."
         )
 
         echo -e "${arr_output[*]}"
@@ -139,6 +151,8 @@
     declare -g bool_libvirt_hooks=false
     declare -g bool_looking_glass=false
     declare -g bool_multiboot=false
+    declare -g bool_parse_IOMMU_from_file=false
+    declare -g bool_parse_IOMMU_from_internet=false
     declare -g bool_scream=false
     declare -g bool_static=false
     declare -g bool_uninstall=false
