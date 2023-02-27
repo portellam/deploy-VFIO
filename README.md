@@ -25,8 +25,6 @@ To execute:
 
         sudo bash deploy-vfio-setup.bash
 
-
-
 ## Features
 ### Main VFIO Setup (PCI Passthrough)
 * **Multi-boot VFIO Setup**
