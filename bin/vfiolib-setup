@@ -24,7 +24,6 @@
 
 # <code>
     # <summary> Save default values to GRUB. </summary>
-    # <returns> exit code </returns>
     function Reset_GRUB
     {
         # <params>
@@ -54,7 +53,6 @@
     }
 
     # <summary> Multiple GRUB menu entries for multiple VGA device (GPU) systems. Choose a GRUB menu entry with a VGA device to boot from (exclude that VGA device's IOMMU Group from VFIO). </summary>
-    # <returns> exit code </returns>
     function Multiboot_VFIO
     {
         # <summary> Write custom GRUB entries. </summary>
@@ -73,7 +71,6 @@
 
             # <remarks> Get file. </remarks>
             declare -a arr_file1=( "${arr_mulitboot_file_template[@]}" )
-            # ReadFile "arr_file1" "${str_file1}" || return $?
 
             # <remarks> Organize new lines. </remarks>
             local str_GRUB_temp="${str_GRUB_required}${str_GRUB_default}"
@@ -103,7 +100,6 @@
             done
 
             # <params>
-            readonly arr_file1_temp
             readonly arr_file1+=( "${arr_file1_temp[@]}" )
             # </params>
 
@@ -172,8 +168,8 @@
         # </params>
 
         # <remarks> Write to files. </remarks>
-        Reset_GRUB || return $?
-        Multiboot_VFIO_GRUB || return $?
+        Reset_GRUB &> /dev/null || return $?
+        Multiboot_VFIO_GRUB &> /dev/null || return $?
 
         # <remarks> Update system configuration </remarks>
         eval "${var_update_grub}" || return 1
@@ -181,7 +177,6 @@
     }
 
     # <summary> Setup VFIO statically, with less flexibility. </summary>
-    # <returns> exit code </returns>
     function Static_VFIO
     {
         # <summary> Write to GRUB. </summary>
@@ -221,7 +216,7 @@
             # </params>
 
             # <remarks> Backup existing system files. </remarks>
-            # BackupFile "${str_file1}"
+            BackupFile "${str_file1}"
 
             # <remarks> Write new line to file. </remarks>
                 IsString "${str_GRUB_temp}" &> /dev/null || return $?
@@ -260,8 +255,6 @@
             fi
 
             # <params>
-            readonly str_new_line_VFIO_temp
-
             declare -ar arr_initramfs_HWID=(
                 "vfio"
                 "vfio_iommu_type1"
@@ -304,8 +297,8 @@
             # </params>
 
             # <remarks> Backup existing system files. </remarks>
-            # BackupFile "${str_file1}"
-            # BackupFile "${str_file2}"
+            BackupFile "${str_file1}"
+            BackupFile "${str_file2}"
 
             # <remarks> Write new line to file. </remarks>
             OverwriteFile "arr_file1" "${str_file1}" || return $?
@@ -364,10 +357,10 @@
         # </params>
 
         # <remarks> Write to files. </remarks>
-        if ! Static_VFIO_GRUB; then
-            Reset_GRUB || return $?
-            Static_VFIO_ModulesInitramfs || return $?
-            Static_VFIO_Modprobe || return $?
+        if ! Static_VFIO_GRUB &> /dev/null; then
+            Reset_GRUB &> /dev/null || return $?
+            Static_VFIO_ModulesInitramfs &> /dev/null || return $?
+            Static_VFIO_Modprobe &> /dev/null || return $?
         fi
 
         # <remarks> Update system configuration </remarks>
@@ -376,7 +369,6 @@
     }
 
     # <summary> Select a VFIO setup. </summary>
-    # <returns> exit code </returns>
     function Setup_VFIO
     {
         echo
