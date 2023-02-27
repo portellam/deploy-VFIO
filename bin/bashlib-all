@@ -19,7 +19,6 @@
 
 # <code>
     # <summary> Check if current user is sudo or root. </summary>
-    # <returns> exit code </returns>
     function IsSudoUser
     {
         # <params>

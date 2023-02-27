@@ -17,7 +17,6 @@
 # <code>
     # <summary> Distro-agnostic, Check if package exists on-line. </summary>
     # <param name=$1> string: the software package(s) </param>
-    # <returns> exit code </returns>
     function FindPackage
     {
         ( IsString $1 && IsString "${str_package_manager}" )|| return $?
@@ -73,7 +72,6 @@
 
     # <summary> Test network connection to Internet. Ping DNS servers by address and name. </summary>
     # <param name=$1> boolean: true/false toggle verbosity </param>
-    # <returns> exit code </returns>
     function GetInternetStatus
     {
         function GetInternetStatus_PingServer
@@ -126,7 +124,6 @@
     }
 
     # <summary> Check if current kernel and distro are supported, and if the expected Package Manager is installed. </summary>
-    # <returns> exit code </returns>
     function GetLinuxDistro
     {
         # <params>
@@ -196,7 +193,6 @@
     # <parameter name=$1> string: the system file </parameter>
     # <parameter name=$2> string: the software package(s) to install </parameter>
     # <parameter name="${bool_is_connected_to_Internet}"> boolean: GetInternetStatus </parameter>
-    # <returns> exit code </returns>
     function IsFileOriginal
     {
         IsString $2 || return $?
@@ -240,7 +236,6 @@
     # <summary> Distro-agnostic, check if package is installed. </summary>
     # <param name=$1> string: the software package(s) </param>
     # <param name="${str_package_manager}"> string: the package manager </param>
-    # <returns> exit code </returns>
     function IsInstalledPackage
     {
         IsString "${str_package_manager}" || return $?
@@ -269,7 +264,6 @@
     # <param name=$1> string: the software package(s) </param>
     # <param name=$2> boolean: true/false do/don't reinstall software package and configuration files (if possible) </param>
     # <param name="${str_package_manager}"> string: the package manager </param>
-    # <returns> exit code </returns>
     function InstallPackage
     {
         IsString "${str_package_manager}" || return $?
@@ -329,7 +323,6 @@
 
     # <summary> Update GetInternetStatus </summary>
     # <param name="${bool_is_connected_to_Internet}"> boolean: network status </param>
-    # <returns> exit code </returns>
     function SetInternetStatus
     {
         ( StopEvalAfterThriceFail "GetInternetStatus true" && bool_is_connected_to_Internet=true ) || bool_is_connected_to_Internet=false
@@ -338,7 +331,6 @@
     # <summary> Distro-agnostic, Uninstall a software package. </summary>
     # <param name=$1> string: the software package(s) </param>
     # <param name="${str_package_manager}"> string: the package manager </param>
-    # <returns> exit code </returns>
     function UninstallPackage
     {
         IsString "${str_package_manager}" || return $?
@@ -396,7 +388,6 @@
     # <param name=$1> string: the directory </param>
     # <param name=$2> string: the full repo name </param>
     # <param name=$3> string: the username </param>
-    # <returns> exit code </returns>
     function UpdateOrCloneGitRepo
     {
         CreateDir "${1}${3}"

@@ -16,7 +16,6 @@
     # <summary> Find line in array. </summary>
     # <paramref name=$1> string: the name of the array </paramref>
     # <param name=$2> string: the line </param>
-    # <returns> exit code </returns>
     function FindLineInArray
     {
         IsString $2 || return $?
@@ -39,7 +38,6 @@
 
     # <summary> Check if the array is empty. </summary>
     # <paramref name=$1> string: name of the array </paramref>
-    # <returns> exit code </returns>
     function IsArray
     {
         IsString $1 || return $?
@@ -64,7 +62,6 @@
 
     # <summary> Check if the variable is not empty. If true, pass. </summary>
     # <param name=$1> var: the variable </param>
-    # <returns> exit code </returns>
     function IsString
     {
         # <params>
@@ -82,7 +79,6 @@
 
     # <summary> Check if the value is a valid bool. </summary>
     # <param name=$1> var: the boolean </param>
-    # <returns> exit code </returns>
     function IsBool
     {
         IsString $1 || return $?
@@ -105,7 +101,6 @@
 
     # <summary> Check if the value is a valid number. If true, pass.</summary>
     # <param name=$1> var: the number </param>
-    # <returns> exit code </returns>
     function IsNum
     {
         IsString $1 || return $?
@@ -125,7 +120,6 @@
 
     # <summary> Check if the variable is writable. If true, pass. </summary>
     # <paramref name=$1> string: the name of a variable </param>
-    # <returns> exit code </returns>
     function IsVarWritable
     {
         IsString $1 || return $?
@@ -145,7 +139,6 @@
 
     # <summary> Output an array. Declare inherited params before calling this function. </summary>
     # <paramref name=$1> string: name of the array </paramref>
-    # <returns> exit code </returns>
     function PrintArray
     {
         IsString $1 || return $?
@@ -168,7 +161,6 @@
     # <paramref name=$1> string: the name of the array </paramref>
     # <param name=$2> string: the line </param>
     # <param name=$3> string: the new line </param>
-    # <returns> exit code </returns>
     function ReplaceLineInArray
     {
         IsString $3 || return $?

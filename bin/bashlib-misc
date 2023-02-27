@@ -16,7 +16,6 @@
 # <code>
     # <summary> Redirect current directory to shell script root directory. </summary>
     # <param name="${0}"> string: the shell script name </param>
-    # <returns> exit code </returns>
     function GoToScriptDir
     {
         # <params>
@@ -83,7 +82,6 @@
 
     # <summary> Attempt given command a given number of times before failure. </summary>
     # <param name=$1> string: the command to execute </param>
-    # <returns> exit code </returns>
     function StopEvalAfterThriceFail        # NEEDS WORK
     {
         IsString $1 || return $?

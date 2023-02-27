@@ -18,7 +18,6 @@
 # <code>
     # <summary> Ask user Yes/No, read input and return exit code given answer. </summary>
     # <param name=$1> string: the output statement </param>
-    # <returns> exit code </returns>
     function ReadInput
     {
         # <params>
