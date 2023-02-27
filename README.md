@@ -49,7 +49,7 @@ To execute:
 * **Auto-Xorg** system service to find and set a valid Host boot VGA (GPU) device for Xorg. [1]
 * **Guest Audio Capture**
     * Useful for systems with multiple Audio devices.
-    * Create an Audio loopback device to the **Host's** Audio device **Line-Out**.
+    * Create an **Audio loopback** to output on the **Host's** Audio device **Line-Out**.
     * Listen on **Host** Audio device **Line-In** (from **Guest** PCI Audio device **Line-Out**).
     * For virtual implementation, see **Virtual Audio Capture**.
 * **Libvirt Hooks**
