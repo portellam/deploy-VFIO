@@ -13,161 +13,134 @@
 # </code>
 
 # <code>
-    function PrintUsage
+    # <summary> Gets the current option </summary>
+    function GetOption
     {
-        # <params>
-        IFS=$'\n'
-        local readonly var_get_script_name='basename "${0}"'
-        local readonly str_script_name=$( eval "${var_get_script_name}" )
-        local readonly str_opt_full_setup="-f, --full\texecute pre-setup, VFIO setup, and post-setup"
-        local readonly str_opt_help="-h, --help\tdisplay this help and exit"
-        local readonly str_opt_multiboot_VFIO_setup="-m, --multiboot\texecute preferred VFIO setup: modify GRUB boot options only (excluding GRUB file and system files)"
-        local readonly str_opt_post_setup="-P, --post\texecute post-setup (LookingGlass, Scream)"
-        local readonly str_opt_pre_setup="-p, --pre\texecute pre-setup (allocate CPU, hugepages, zramswap, Evdev)"
-        local readonly str_opt_static_VFIO_setup="-s, --static\texecute preferred VFIO setup: modify GRUB file and system files only"
-        local readonly str_opt_update_VFIO_setup="-u, --update\tdetect existing VFIO setup, execute new VFIO setup, and apply changes"
-        local readonly str_arg_silent="-S, --silent\tdo not prompt before execution"
-        local readonly str_arg_file="-F, --file\tparse PCI from file"
-        local readonly str_arg_online="-O, --online\tparse PCI from internet"
+        while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
+            "-c" | "--cpu" )
+                bool_alloc_cpu=true
+                ;;
 
-        declare -a arr_usage=(
-            "Usage:\t${str_script_name} [OPTION] [ARGUMENTS]"
-            "\tor ${str_script_name} [OPTION] -S"
-            "\tor ${str_script_name} [d/m/s/u] -F [FILE_NAME]"
-            "\tor ${str_script_name} [d/m/s/u] -o"
-            "\nRequired variables:"
-            "\t${str_script_name}"
-            "\nOptional variables:"
-            "\t${str_opt_help}"
-            "\t${str_opt_multiboot_VFIO_setup}"
-            "\t${str_opt_static_VFIO_setup}"
-            "\t${str_opt_update_VFIO_setup}"
-            "\t${str_opt_post_setup}"
-            "\t${str_opt_pre_setup}"
-            "\t${str_opt_full_setup}"
-            "\nArguments:"
-            "\t${str_arg_silent}"
-            "\t${str_arg_file}"
-            "\t${str_arg_online}"
-        )
-        # </params>
+            "-e" | "--evdev" )
+                bool_evdev=true
+                ;;
 
-        # <remarks> Display usage. </remarks>
-        for str_line in ${arr_usage[@]}; do
-            echo -e "${str_line}"
-        done
+            "-h" | "--help" )
+                return 1
+                ;;
 
+            "-H" | "--hooks" )
+                bool_libvirt_hooks=true
+                ;;
+
+            "-l" | "--looking-glass" )
+                bool_looking_glass=true
+                ;;
+
+            "-L" | "--loopback" )
+                bool_audio_loopback=true
+                ;;
+
+            "-m" | "--multiboot" )
+                bool_multiboot=true
+                ;;
+
+            "-p" | "--hugepages" )
+                bool_hugepages=true
+                ;;
+
+            "-s" | "--static" )
+                bool_static=true
+                ;;
+
+            "-S" | "--scream" )
+                bool_scream=true
+                ;;
+
+            "-S" | "--uninstall" )
+                bool_uninstall=true
+                ;;
+
+            "-z" | "--zram-swap" )
+                bool_zram_swap=true
+                ;;
+
+            "" )
+                ;;
+
+            * )
+                echo -e "${var_prefix_warn} Invalid input."
+                return 1
+                ;;
+        esac; shift; done
+
+        if [[ "$1" == '--' ]]; then shift; fi
+        IsString "${var_get_preferred_vendor}" &> /dev/null || SetPreferredBrand
         return 0
     }
 
+    # <summary> Gets the usage. </summary>
     function GetUsage
     {
-        # <params>
-        declare -g arr_usage_opt=(
-            "-h"
-            "--help"
-            "-m"
-            "--multiboot"
-            "-f"
-            "--full"
-            "-P"
-            "--post"
-            "-p"
-            "--pre"
-            "-s"
-            "--static"
-            "-u"
-            "--update"
+        IFS=$'\n'
+
+        declare -ar arr_output=(
+            "Usage: bash vfiolib-all [OPTION]"
+            "Deploy a VFIO/PCI Passthrough installation.\n"
+            "\t-h, --help\t\tPrint this usage statement"
+            "\nSetup:"
+            "\t-m, --multiboot\t\tCreate multiple GRUB entries for a Multi VGA VFIO setup"
+            "\t-s, --static\t\tInstall a Single VGA VFIO setup"
+            "\t-u, --uninstall\t\tUndo an existing VFIO setup"
+            "\nExtras:"
+            "\t-c, --cpu\t\tAllocate CPU (to guests)"
+            "\t-e, --evdev\t\tSetup a virtual KVM (keyboard video mouse) switch"
+            "\t-H, --hooks\t\tInstall recommended libvirt-hooks (scripts) and services"
+            "\t-l, --looking-glass\t\tInstall LookingGlass (Guest video and audio capture)"
+            "\t-L, --loopback\t\tInstall the audio loopback service"
+            "\t-p, --hugepages\t\tAllocate RAM (to guests)"
+            "\t-S, --scream\t\tInstall Scream (Guest audio capture)"
+            "\t-z, --zram-swap\t\tCreate swap in RAM (zram-swap)"
+
+            "\nExample:"
+            "\tbash vfiolib-all -m -p Install a Multiboot setup, with hugepages."
         )
 
-        declare -g arr_usage_args=(
-            "-S"
-            "--silent"
-            "-F"
-            "--file"
-            "-o"
-            "--online"
-        )
+        echo -e "${arr_output[*]}"
+        return 0
+    }
 
-        if IsString "${1}" &> /dev/null; then
-            case "${1}" in
-                "${arr_usage_opt[0]}" | "${arr_usage_opt[1]}" )
-                    bool_opt_help=true
-                    ;;
-                "${arr_usage_opt[2]}" | "${arr_usage_opt[3]}" )
-                    bool_opt_multiboot_VFIO_setup=true
-                    ;;
-                "${arr_usage_opt[4]}" | "${arr_usage_opt[5]}" )
-                    bool_opt_any_VFIO_setup=true
-                    bool_opt_post_setup=true
-                    bool_opt_pre_setup=true
-                    ;;
-                "${arr_usage_opt[6]}" | "${arr_usage_opt[7]}" )
-                    bool_opt_post_setup=true
-                    ;;
-                "${arr_usage_opt[8]}" | "${arr_usage_opt[9]}" )
-                    bool_opt_pre_setup=true
-                    ;;
-                "${arr_usage_opt[10]}" | "${arr_usage_opt[11]}" )
-                    bool_opt_static_VFIO_setup=true
-                    ;;
-                "${arr_usage_opt[12]}" | "${arr_usage_opt[13]}" )
-                    bool_opt_update_VFIO_setup=true
-                    ;;
-                "${arr_usage_args[0]}" | "${arr_usage_args[1]}" )
-                    bool_arg_silent=true
-                    ;;
-                * )
-                    bool_opt_help=true
-                    echo -e "${str_output_var_is_not_valid}"
-                    return 1
-                    ;;
-            esac
-        else
-            bool_opt_any_VFIO_setup=true
-        fi
-
-        case "${2}" in
-            "${arr_usage_args[0]}" | "${arr_usage_args[1]}" )
-                bool_arg_silent=true
-                ;;
-
-            "${arr_usage_args[2]}" | "${arr_usage_args[3]}" )
-                bool_arg_parse_file=true
-                ;;
-
-            "${arr_usage_args[4]}" | "${arr_usage_args[5]}" )
-                bool_arg_parse_online=true
-                ;;
-        esac
-        # </params>
+    # <summary> Sets the options. Exit early (Pass) if input is null. Else, exit early (Fail) if input is invalid. </summary>
+    # <param name="$@"> array: the input parameters </param>
+    function SetOptions
+    {
+        for var_option in $@; do
+            IsString $var_option &> /dev/null || return 0
+            GetOption $var_option || return $?
+        done
 
         return 0
     }
 # </code>
 
 # <params>
-    readonly var_input1="${1}"
-    readonly var_input2="${2}"
-    readonly var_input3="${3}"
-
-    declare -g bool_opt_multiboot_VFIO_setup=false
-    declare -g bool_opt_any_VFIO_setup=false
-    declare -g bool_opt_help=false
-    declare -g bool_opt_post_setup=false
-    declare -g bool_opt_pre_setup=false
-    declare -g bool_opt_static_VFIO_setup=false
-    declare -g bool_opt_update_VFIO_setup=false
-    declare -g bool_arg_silent=false
-    declare -g bool_arg_parse_file=false
-    declare -g bool_arg_parse_online=false
-
-    declare -g str_repo_name="deploy-vfio-setup"
-    declare -g str_full_repo_name="portellam/${str_repo_name}"
-
+    # <remarks> Get script directories </remarks
     GoToScriptDir
     declare -g str_files_dir="$( find . -name files | uniq | head -n1 | cut -c2- )/"
-    declare -g str_repos_dir="$( find . -name git | uniq | head -n1 | cut -c2- )/"
 
+    # <remarks> Toggles </remarks
     declare -g bool_is_connected_to_Internet=false
+
+    # <remarks> Usage toggles </remarks
+    declare -g bool_alloc_cpu=false
+    declare -g bool_audio_loopback=false
+    declare -g bool_evdev=false
+    declare -g bool_hugepages=false
+    declare -g bool_libvirt_hooks=false
+    declare -g bool_looking_glass=false
+    declare -g bool_multiboot=false
+    declare -g bool_scream=false
+    declare -g bool_static=false
+    declare -g bool_uninstall=false
+    declare -g bool_zram_swap=false
 # </params>
