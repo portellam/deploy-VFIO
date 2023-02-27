@@ -28,26 +28,26 @@ The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-b
 
 #### Usage (Options)
 
-        h, --help Print this usage statement
+        h, --help               Print this usage statement
 
         Parse PCI:
-            f, --file Reference file database
-            i, --internet Reference online database
+            f, --file           Reference file database
+            i, --internet       Reference online database
 
         Setup:
-            m, --multiboot Create multiple GRUB entries for a Multi VGA VFIO setup
-            s, --static Install a Single VGA VFIO setup
-            u, --uninstall Undo an existing VFIO setup
+            m, --multiboot      Create multiple GRUB entries for a Multi VGA VFIO setup
+            s, --static         Install a Single VGA VFIO setup
+            u, --uninstall      Undo an existing VFIO setup
 
         Extras:
-            c, --cpu Allocate CPU (to guests)
-            e, --evdev Setup a virtual KVM (keyboard video mouse) switch
-            H, --hooks Install recommended libvirt-hooks (scripts) and services
-            l, --looking-glass\tInstall LookingGlass (Guest video and audio capture)
-            L, --loopback Install the audio loopback service
-            p, --hugepages Allocate RAM (to guests)
-            S, --scream Install Scream (Guest audio capture)
-            z, --zram-swap Create swap in RAM (zram-swap)
+            c, --cpu            Allocate CPU (to guests)
+            e, --evdev          Setup a virtual KVM (keyboard video mouse) switch
+            H, --hooks          Install recommended libvirt-hooks (scripts) and services
+            l, --looking-glass  Install LookingGlass (Guest video and audio capture)
+            L, --loopback       Install the audio loopback service
+            p, --hugepages      Allocate RAM (to guests)
+            S, --scream         Install Scream (Guest audio capture)
+            z, --zram-swap      Create swap in RAM (zram-swap)
 
 ## Features
 ### Main VFIO Setup (PCI Passthrough)
