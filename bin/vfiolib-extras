@@ -413,15 +413,15 @@
             if $bool_is_connected_to_Internet; then
                 if GoToScriptDir; then
                     cd "${str_files_dir}" || return 1
-                    curl -o $( basename "${str_file1}" ) "${str_backup1}" || return 1
+                    curl -o $( basename "${str_file1}" ) "${str_backup1}" || RestoreFile "${str_file1}" || return 1
                 else
-                    curl -o "${str_file1}" "${str_backup1}" || return 1
+                    curl -o "${str_file1}" "${str_backup1}" || RestoreFile "${str_file1}" || return 1
                     # curl -o "${str_file2}" "${str_backup2}" || return 1
                 fi
             fi
 
             if ! $bool_is_connected_to_Internet && GoToScriptDir; then
-                cp $( basename "${str_file1}" ) "${str_file1}" || return 1
+                cp $( basename "${str_file1}" ) "${str_file1}" || RestoreFile "${str_file1}" || return 1
             fi
 
             if "${bool_is_setup_evdev}"; then
