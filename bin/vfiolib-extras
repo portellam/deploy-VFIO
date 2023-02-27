@@ -41,7 +41,7 @@
         return "${int_exit_code}"
     }
 
-    # <summary> isolcpus: Ask user to allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and virtual machine performance. </summary
+    # <summary> isolcpus: Allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and virtual machine performance. </summary
     function Allocate_CPU
     {
         function Allocate_CPU_Main
@@ -219,7 +219,7 @@
         return "${int_exit_code}"
     }
 
-    # <summary> Hugepages: Ask user to allocate host memory (RAM) to 'hugepages', to eliminate the need to defragement memory, to reduce host overhead, and to improve both host and virtual machine performance. </summary
+    # <summary> Hugepages: Allocate host memory (RAM) to 'hugepages', to eliminate the need to defragement memory, to reduce host overhead, and to improve both host and virtual machine performance. </summary
     function Allocate_RAM
     {
         function Allocate_RAM_Main
@@ -299,7 +299,7 @@
         return "${int_exit_code}"
     }
 
-    # <summary> Ask user to setup audio loopback from the host's Line-in to active audio output. Useful for virtual machines with sound-cards (example: Creative SoundBlaster). </summary>
+    # <summary> Setup an audio loopback service from the host's Line-in to active audio output. Useful for virtual machines with sound-cards (example: Creative SoundBlaster). </summary>
     function GuestAudioLoopback
     {
         function GuestAudioLoopback_Main
@@ -341,24 +341,46 @@
         return "${int_exit_code}"
     }
 
-    # # <summary> libvirt-hooks: ??? </summary>
-    # # <returns> exit code </returns>
-    # function LibvirtHooks
-    # {
-    #     function LibvirtHooks_Main
-    #     {
-    #         return 0
-    #     }
+    # <summary> libvirt-hooks: Setup useful Quality-of-life improvements in the form of services and scripts (hooks) for QEMU virtual machines. </summary>
+    # <returns> exit code </returns>
+    function LibvirtHooks
+    {
+        function LibvirtHooks_Main
+        {
+            # <params>
+            declare -a arr_file1=(
+                "[Unit]"
+                "Description=Preventing sleep while libvirt domain "%i" is running"
+                ""
+                "[Service]"
+                "Type=simple"
+                "ExecStart=/usr/bin/systemd-inhibit --what=sleep --why="Libvirt domain \"%i\" is running" --who=%U --mode=block sleep infinity"
+            )
 
-    #     # <params>
-    #     local readonly str_output="Executing libvirt-hooks setup..."
-    #     # </params>
+            # declare -a arr_file2=()
 
-    #     echo -e "\n${str_output}"
-    #     LibvirtHooks_Main &> /dev/null
-    #     PrintPassOrFail "${str_output}"
-    #     return "${int_exit_code}"
-    # }
+            local readonly str_dir1="/etc/systemd/system/"
+            local readonly str_file1="libvirt-nosleep@.service"
+            # local readonly str_file1=""
+            # </params>
+
+            OverwriteFile "${str_dir1}${str_file1}" || return $?
+            # OverwriteFile "${str_dir1}${str_file2}" || return $?
+            systemctl daemon-reload || return 1
+            systemctl enable "${str_file1}" || return 1
+            systemctl restart "${str_file1}" || return 1
+            return 0
+        }
+
+        # <params>
+        local readonly str_output="Executing libvirt-hooks setup..."
+        # </params>
+
+        echo -e "\n${str_output}"
+        LibvirtHooks_Main &> /dev/null
+        PrintPassOrFail "${str_output}"
+        return "${int_exit_code}"
+    }
 
     # <summary> libvirt-qemu: Append necessary changes to QEMU system file, including user groups, Evdev, Hugepages, and NVRAM (for UEFI VMs). </summary>
     function Modify_QEMU
@@ -389,8 +411,17 @@
             SetInternetStatus
 
             if $bool_is_connected_to_Internet; then
-                curl -o "${str_file1}" "${str_backup1}" || return 1
-                # curl -o "${str_file2}" "${str_backup2}" || return 1
+                if GoToScriptDir; then
+                    cd "${str_files_dir}" || return 1
+                    curl -o $( basename "${str_file1}" ) "${str_backup1}" || return 1
+                else
+                    curl -o "${str_file1}" "${str_backup1}" || return 1
+                    # curl -o "${str_file2}" "${str_backup2}" || return 1
+                fi
+            fi
+
+            if ! $bool_is_connected_to_Internet && GoToScriptDir; then
+                cp $( basename "${str_file1}" ) "${str_file1}" || return 1
             fi
 
             if "${bool_is_setup_evdev}"; then
@@ -504,7 +535,7 @@
         return "${int_exit_code}"
     }
 
-    # <summary> zramswap: Ask user to setup a swap partition in host memory, to reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory. </summary>
+    # <summary> zramswap: Setup a swap partition in host memory, to reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory. </summary>
     function RAM_Swapfile
     {
         function RAM_Swapfile_Install
@@ -587,23 +618,20 @@
         }
 
         # <params>
-        local readonly str_output1="Setup zram-swap?"
-        local readonly str_output2="Installing zram-swap..."
+        local readonly str_output1="Installing zram-swap..."
         # </params>
 
-        echo
-        ReadInput "${str_output1}" || return $?
-        echo -e "${str_output2}"
+        echo -e "${str_output1}"
 
         if ! RAM_Swapfile_Install &> /dev/null || ! RAM_Swapfile_Modify &> /dev/null; then
             false
         fi
 
-        PrintPassOrFail "${str_output2}"
+        PrintPassOrFail "${str_output1}"
         return "${int_exit_code}"
     }
 
-    # <summary> Evdev: Ask user to setup a virtual Keyboard-Video-Mouse switch (excluding the Video). Will allow a user to swap between active virtual machines and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL'). </summary>
+    # <summary> Evdev: Setup a virtual Keyboard-Video-Mouse switch (excluding the Video). Will allow a user to swap between active virtual machines and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL'). </summary>
     function Virtual_KVM
     {
         function Virtual_KVM_Main
@@ -641,7 +669,7 @@
         return "${int_exit_code}"
     }
 
-    # <summary> LookingGlass: Ask user to setup direct-memory-access of video framebuffer from virtual machine to host. NOTE: Only supported for Win 7/10/11 virtual machines. </summary>
+    # <summary> LookingGlass: Setup direct-memory-access of video framebuffer from virtual machine to host. NOTE: Only supported for Win 7/10/11 virtual machines. </summary>
     # <remarks> reference: https://looking-glass.io/docs/B6/install/#client-install </remarks>
     function VirtualVideoCapture
     {
@@ -688,7 +716,7 @@
         return "${int_exit_code}"
     }
 
-    # # <summary> Scream: Ask user to setup audio loopback from virtual machine to host. NOTE: Only supported for Win 7/8/10/11 virtual machines. </summary>
+    # # <summary> Scream: Setup audio loopback from virtual machine to host. NOTE: Only supported for Win 7/8/10/11 virtual machines. </summary>
     # # <returns> exit code </returns>
     # function VirtualAudioCapture
     # {
