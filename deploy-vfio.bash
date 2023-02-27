@@ -1,7 +1,7 @@
 #!/bin/bash sh
 
 #
-# Filename:         deploy-vfio-setup.bash
+# Filename:         deploy-vfio.bash
 # Description:      The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough).
 # Author(s):        Alex Portell <github.com/portellam>
 # Maintainer(s):    Alex Portell <github.com/portellam>
@@ -22,7 +22,7 @@
     # <remarks> Extras </remarks>
     AddUserToGroups
     if $bool_alloc_cpu; then Allocate_CPU; fi
-    if $bool_hugepages; then Allocate_RAM; fi
+    if $bool_hugepages; then Allocate_RAM $@; fi
     if $bool_audio_loopback; then GuestAudioLoopback; fi
     if $bool_evdev; then Virtual_KVM; fi
     Modify_QEMU
@@ -46,7 +46,7 @@
             ;;
     esac
 
-    Select_IOMMU || exit $?
+    Select_IOMMU $@ || exit $?
 
     case true in
         $bool_multiboot )
