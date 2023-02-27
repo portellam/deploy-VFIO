@@ -40,14 +40,14 @@ The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-b
             u, --uninstall      Undo an existing VFIO setup
 
         Extras:
-            c, --cpu            Allocate CPU (to guests)
-            e, --evdev          Setup a virtual KVM (keyboard video mouse) switch
-            H, --hooks          Install recommended libvirt-hooks (scripts) and services
-            l, --looking-glass  Install LookingGlass (Guest video and audio capture)
+            c, --cpu            Allocate CPU
+            e, --evdev          Setup a virtual KVM switch
+            H, --hooks          Install recommended libvirt-hooks and services
+            l, --looking-glass  Install LookingGlass
             L, --loopback       Install the audio loopback service
-            p, --hugepages      Allocate RAM (to guests)
-            S, --scream         Install Scream (Guest audio capture)
-            z, --zram-swap      Create swap in RAM (zram-swap)
+            p, --hugepages      Allocate RAM
+            S, --scream         Install Scream
+            z, --zram-swap      Create swap in RAM
 
 ## Features
 ### Main VFIO Setup (PCI Passthrough)
