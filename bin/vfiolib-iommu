@@ -14,7 +14,6 @@
 
 # <code>
     # <summary> Is Virtualization enabled on the current system. If true, pass. </summary>
-    # <returns> exit code </returns>
     function IsEnabled_IOMMU
     {
         # <params>
@@ -33,7 +32,6 @@
     }
 
     # <summary> Parse IOMMU groups for all relevant information. If a parse fails, attempt again another way. If all parses fail, fail. </summary>
-    # <returns> exit code </returns>
     function Parse_IOMMU
     {
         function Parse_IOMMU_Main
@@ -84,14 +82,13 @@
                 for str_slot_ID in "${arr_devices[@]}"; do
                     local str_class=$( eval "${var_parse_name_ID}" )
                     str_class=$( echo -e "${str_class}" | grep -i "Class:" | cut -d ':' -f 2 | grep -oP "^\t\K.*" )
-                    # local str_device_ID=$( eval "${var_parse_all_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | awk '{print $2}' | uniq )
                     local str_device_ID=$( eval "${var_parse_quotes}" | cut -d '"' -f 6 | uniq )
                     local str_device_name=$( eval "${var_parse_name_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
                     local str_driver=$( eval "${var_parse_all_ID}" | grep -i "Driver:" | awk '{print $2}' | uniq )
                     local str_IOMMU=$( eval "${var_parse_all_ID}"| grep -i "IOMMUGroup:" | awk '{print $2}' | uniq )
                     local str_vendor_name=$( eval "${var_parse_name_ID}" | grep -i "Vendor:" | grep -Eiv "SVendor:" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
-                    # local str_vendor_ID=$( eval "${var_parse_all_ID}" | grep -i "Vendor:" | awk '{print $2}' | uniq )
                     local str_vendor_ID=$( eval "${var_parse_quotes}" | cut -d '"' -f 4 | uniq )
+                    local str_hardware_ID="${str_vendor_ID}:${str_device_ID}"
 
                     # <remarks> If system is setup for VFIO, exit. </remarks>
                     if [[ "${str_driver}" == "vfio-pci" ]]; then
@@ -105,14 +102,12 @@
                     fi
 
                     arr_class+=( "${str_class}" )
-                    # arr_device_ID+=( "${str_device_ID}" )
                     arr_device_name+=( "${str_device_name}" )
                     arr_driver+=( "${str_driver}" )
+                    arr_hardware_ID+=( "${str_hardware_ID}" )
                     arr_IOMMU+=( "${str_IOMMU}" )
                     arr_slot_ID+=( "${str_slot_ID}" )
-                    # arr_vendor_ID+=( "${str_vendor_ID}" )
                     arr_vendor_name+=( "${str_vendor_name}" )
-                    arr_hardware_ID+=( "${str_vendor_ID}:${str_device_ID}" )
                 done
 
                 return 0
@@ -125,35 +120,28 @@
 
                     # <remarks> If parsing file and file does not exist, recursive call to parse internet. </remarks>
                     "${str_opt_parse_file}" )
-                        str_output="${str_output_parse_file}"
-                        echo -e "${str_output}"
-
+                        echo -e "${str_output_parse_file}"
                         var_parse_all_ID+="${var_parse_args_file}"
                         var_parse_name_ID+="${var_parse_args_file}"
                         var_parse_slot_ID+="${var_parse_args_file}"
                         var_parse_quotes+="${var_parse_args_file}"
-
                         IsFile "${str_file}" &> /dev/null
                         return "${?}"
                         ;;
 
                     # <remarks> If internet is not available, exit. </remarks>
                     "${str_opt_parse_internet}" )
-                        str_output="${str_output_parse_internet}"
-                        echo -e "${str_output}"
-
+                        echo -e "${str_output_parse_internet}"
                         local readonly var_parse_all_ID+="${var_parse_args_online}"
                         local readonly var_parse_name_ID+="${var_parse_args_online}"
                         local readonly var_parse_slot_ID+="${var_parse_args_online}"
                         local readonly var_parse_quotes+="${var_parse_args_online}"
-
                         GetInternetStatus
                         return "${?}"
                         ;;
 
                     "${str_opt_parse_local}" | * )
-                        str_output="${str_output_parse_local}"
-                        echo -e "${str_output}"
+                        echo -e "${str_output_parse_local}"
                         ;;
                 esac
 
@@ -183,7 +171,6 @@
                 local readonly var_parse_args_slot_ID='-s ${str_slot_ID}'
                 local readonly var_parse_args_verbose='-v'
                 local readonly var_parse_to_file='lspci -x >> "${str_file}"'
-
                 local var_parse_all_ID="${var_parse} ${var_parse_args_nums} ${var_parse_args_verbose} ${var_parse_args_slot_ID}"
                 local var_parse_name_ID="${var_parse} ${var_parse_args_verbose} ${var_parse_args_slot_ID}"
                 local var_parse_slot_ID="${var_parse}"
@@ -196,7 +183,6 @@
             # <remarks> Get all devices from system. </remarks>
             declare -a arr_devices=( $( eval ${var_parse_slot_ID} | awk '{print $1}' ) )
             Parse_IOMMU_Save_Lists || return "${?}"
-
             Parse_IOMMU_Are_Not_Empty_Lists || return "${?}"
             Parse_IOMMU_Are_Inequal_Lists_Sizes || return "${?}"
 
@@ -235,14 +221,10 @@
         esac
 
         PrintPassOrFail "${str_output}"
-
-        # <remarks> Save output. </remarks>
-        readonly arr_class arr_device_ID arr_device_name arr_driver arr_hardware_ID arr_IOMMU arr_slot_ID arr_vendor_ID arr_vendor_name
         return "${int_exit_code}"
     }
 
     # <summary> Select IOMMU groups for VFIO setup. </summary>
-    # <returns> exit code </returns>
     function Select_IOMMU
     {
         # <summary> Print all relevant information about the IOMMU group. </summary>
@@ -251,12 +233,10 @@
         {
             # <params>
             local readonly str_class="${arr_class[$int_key]}"
-            # local readonly str_device_ID="${arr_device_ID[$int_key]}"
             local readonly str_device_name="${arr_device_name[$int_key]}"
             local readonly str_driver="${arr_driver[$int_key]}"
             local readonly str_hardware_ID="${arr_hardware_ID[$int_key]}"
             local readonly str_slot_ID="${arr_slot_ID[$int_key]}"
-            # local readonly str_vendor_ID="${arr_vendor_ID[$int_key]}"
             local readonly str_vendor_name="${arr_vendor_name[$int_key]}"
 
             local readonly str_domain_ID=$( echo "${str_slot_ID}" | cut -d ':' -f 1 )
@@ -265,14 +245,12 @@
                 local readonly str_regex='[a-fA-F1-9]'
 
                 # <remarks> Output statement </remarks>
-                declare -ar arr_something=(
+                declare -ar arr_output1=(
                     "Slot ID:\t'${str_slot_ID}'"
                     "Vendor name:\t'${str_vendor_name}'"
                     "Device name:\t'${str_device_name}'"
                     "Class/Type:\t'${str_class}'"
                     # "Hardware ID:\t'${str_hardware_ID}'"
-                    # "Vendor ID:\t'${str_vendor_ID}'"
-                    # "Device ID:\t'${str_device_ID}'"
                     "Kernel driver:\t'${str_driver}'"
                 )
             # </params>
@@ -286,7 +264,7 @@
                 fi
 
                 local str_class=$( echo "${arr_class[$int_key]}" | tr '[:upper:]' '[:lower:]' )
-                PrintArray "arr_something"
+                PrintArray "arr_output1"
 
                 # <remarks> Match Class </remarks>
                 case "${str_class}" in
