@@ -7,14 +7,6 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-# TODO:
-# -keep /dev/null to nested functions. Omit it when in main functions.
-# -make functions for each file in both setups.
-# -make comments wherever needed (strive for easiest code-maintenance). *****
-# -rewrite functions/variables as needed.
-# -for loop elements shall have a prefix of variable, keys shall have int. Any declared variables inside shall have the correct prefix var.
-# -params in for loops or conditionals shall not have the comment "<params>". However, any function (nested or not), may have it.
-
 # <remarks> Using </remarks>
 # <code>
     source bashlib-all
