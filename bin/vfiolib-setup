@@ -389,7 +389,7 @@
 
     # # <summary> ??? </summary>
     # # <returns> exit code </returns>
-    # function UpdateExisting_VFIO
+    # function UninstallExisting_VFIO
     # {
     #     return 0
     # }
