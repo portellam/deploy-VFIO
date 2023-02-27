@@ -4,7 +4,7 @@
 #
 # This hook allows automatically switch monitor inputs when starting/stopping a VM.
 # This file depends on the Passthrough POST hook helper script found in this repo.
-# Place this script in BOTH these directories (or symlink it): 
+# Place this script in BOTH these directories (or symlink it):
 # $SYSCONFDIR/libvirt/hooks/qemu.d/your_vm/started/begin/
 # $SYSCONFDIR/libvirt/hooks/qemu.d/your_vm/stopped/end/
 # $SYSCONFDIR usually is /etc/libvirt.
