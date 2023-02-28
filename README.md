@@ -2,11 +2,11 @@
 work-in-progress
 
 ## Description
-The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-boot: For multiple VGA **(GPU)** device systems, Swap the preferred Host VGA device at GRUB boot menu. VFIO: Run any OS with PCI hardware as a Virtual machine (VM), with your desktop OS untouched.
+Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA device for Host at GRUB boot menu. VFIO: Run any Guest OS with PCI hardware as a Virtual machine (VM), with your desktop OS untouched.
 
 ## Why?
 * **Separation-of-Concerns**
-    * Segregate your Work, Game, and School PC from your personal desktop computer.
+    * Segregate your Work, Game, or School PC from your personal desktop computer.
 * **Run a legacy OS** should your PCI hardware support it.
     * **VGA devices:** NVIDIA GTX 900-series, or AMD Radeon HD 7000-series (or before) (example: **Windows XP**).
     * **VGA devices:** NVIDIA 7000-series GTX (or before), or ATI (pre-AMD) (example: **Windows 98**).

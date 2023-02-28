@@ -2,7 +2,7 @@
 
 #
 # Filename:         deploy-vfio.bash
-# Description:      The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough).
+# Description:      Effortlessly deploy a VFIO setup (PCI passthrough).
 # Author(s):        Alex Portell <github.com/portellam>
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
