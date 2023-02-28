@@ -28,31 +28,31 @@ The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-b
 
 #### Usage (Options)
 
-        --help                  Print this usage statement
+        --help                      Print this usage statement
 
         Parse PCI:
-            f, --file           Reference file database
-            -i, --internal      Reference local database
-            -I, --internet      Reference online database
-                all             Select all IOMMU groups (useful for Multiboot VFIO)"
+            -f, --file              Reference file database
+            -i, --internal          Reference local database
+            -I, --internet          Reference online database
+                all                 Select all IOMMU groups (useful for Multiboot VFIO)"
 
         Setup:
-            m, --multiboot      Create multiple GRUB entries for a Multi VGA VFIO setup
-            s, --static         Install a Single VGA VFIO setup
-            u, --uninstall      Undo an existing VFIO setup
+            -m, --multiboot         Create multiple GRUB entries for a Multi VGA VFIO setup
+            -s, --static            Install a Single VGA VFIO setup
+            -u, --uninstall         Undo an existing VFIO setup
 
         Extras:
-            c, --cpu            Allocate CPU
-            e, --evdev          Setup a virtual KVM switch
-            h, --hugepages      Allocate RAM
-                2M, 1G          Hugepage size with byte prefix
-                (number)        Amount of Hugepages
+            -c, --cpu               Allocate CPU
+            -e, --evdev             Setup a virtual KVM switch
+            -h, --hugepages         Allocate RAM
+                2M, 1G              Hugepage size with byte prefix
+                (number)            Amount of Hugepages
 
-            H, --hooks          Install recommended libvirt-hooks and services
-            l, --looking-glass  Install LookingGlass
-            L, --audio-loopback Install the audio loopback service
-            S, --scream         Install Scream
-            z, --zram-swap      Create swap in RAM
+            -H, --hooks             Install recommended libvirt-hooks and services
+            -l, --looking-glass     Install LookingGlass
+            -L, --audio-loopback    Install the audio loopback service
+            -S, --scream            Install Scream
+            -z, --zram-swap         Create swap in RAM
 
 ## Features
 ### Main VFIO Setup (PCI Passthrough)
