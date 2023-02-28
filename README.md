@@ -34,7 +34,7 @@ The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-b
             -f, --file              Reference file database
             -i, --internal          Reference local database
             -I, --internet          Reference online database
-                all                 Select all IOMMU groups (useful for Multiboot VFIO)"
+                all                 Select all IOMMU groups (useful for Multiboot VFIO)
 
         Setup:
             -m, --multiboot         Create multiple GRUB entries for a Multi VGA VFIO setup
