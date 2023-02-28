@@ -17,8 +17,8 @@
     function IsEnabled_IOMMU
     {
         # <params>
-        local readonly str_output="Checking if Virtualization is enabled/supported..."
-        local readonly var_command='compgen -G "/sys/kernel/iommu_groups/*/devices/*"'
+        local str_output="Checking if Virtualization is enabled/supported..."
+        local var_command='compgen -G "/sys/kernel/iommu_groups/*/devices/*"'
         # </params>
 
         if eval "${var_command}";
@@ -47,7 +47,7 @@
                 # [ "${#arr_IOMMU[@]}" -eq "${#arr_vendor_ID[@]}" ] || bool_are_inequal_lists=true
                 [ "${#arr_IOMMU[@]}" -eq "${#arr_vendor_name[@]}" ] || bool_are_inequal_lists=true
 
-                if "${bool_are_inequal_lists}"; then
+                if $bool_are_inequal_lists; then
                     echo -e "${str_output_lists_inequal}"
                     return 1
                 fi
@@ -68,7 +68,7 @@
                 # IsString "${arr_vendor_ID[@]}" &> /dev/null || bool_is_empty_list=true
                 IsString "${arr_vendor_name[@]}" &> /dev/null || bool_is_empty_list=true
 
-                if "${bool_is_empty_list}"; then
+                if $bool_is_empty_list; then
                     echo -e "${str_output_list_empty}"
                     return 1
                 fi
@@ -126,18 +126,18 @@
                         var_parse_slot_ID+="${var_parse_args_file}"
                         var_parse_quotes+="${var_parse_args_file}"
                         IsFile "${str_file}" &> /dev/null
-                        return "${?}"
+                        return $?
                         ;;
 
                     # <remarks> If internet is not available, exit. </remarks>
                     "${str_opt_parse_internet}" )
                         echo -e "${str_output_parse_internet}"
-                        local readonly var_parse_all_ID+="${var_parse_args_online}"
-                        local readonly var_parse_name_ID+="${var_parse_args_online}"
-                        local readonly var_parse_slot_ID+="${var_parse_args_online}"
-                        local readonly var_parse_quotes+="${var_parse_args_online}"
+                        local var_parse_all_ID+="${var_parse_args_online}"
+                        local var_parse_name_ID+="${var_parse_args_online}"
+                        local var_parse_slot_ID+="${var_parse_args_online}"
+                        local var_parse_quotes+="${var_parse_args_online}"
                         GetInternetStatus
-                        return "${?}"
+                        return $?
                         ;;
 
                     "${str_opt_parse_local}" | * )
@@ -153,24 +153,24 @@
                 var_opt="${1}"
 
                 # <remarks> Output statements </remarks>
-                local readonly str_output_lists_inequal="${var_prefix_error} System PCI lists' sizes are inequal."
-                local readonly str_output_list_empty="${var_prefix_error} One or more system PCI lists are empty."
-                local readonly str_output_parse_file="Parsing PCI from file..."
-                local readonly str_output_parse_internet="Parsing PCI devices from Internet database..."
-                local readonly str_output_parse_local="Parsing PCI devices from local database..."
-                local readonly str_output_is_setup_VFIO="${var_prefix_error} Found existing VFIO setup."
+                local str_output_lists_inequal="${var_prefix_error} System PCI lists' sizes are inequal."
+                local str_output_list_empty="${var_prefix_error} One or more system PCI lists are empty."
+                local str_output_parse_file="Parsing PCI from file..."
+                local str_output_parse_internet="Parsing PCI devices from Internet database..."
+                local str_output_parse_local="Parsing PCI devices from local database..."
+                local str_output_is_setup_VFIO="${var_prefix_error} Found existing VFIO setup."
 
                 # <remarks> Declare lists </remarks>
                 declare -ag arr_class arr_device_ID arr_device_name arr_driver arr_hardware_ID arr_IOMMU arr_slot_ID arr_vendor_ID arr_vendor_name
 
                 # <remarks> Set commands </remarks>
-                local readonly var_parse='lspci -k -mm'
-                local readonly var_parse_args_file='-F "${str_file}"'
-                local readonly var_parse_args_online='-q'
-                local readonly var_parse_args_nums='-n'
-                local readonly var_parse_args_slot_ID='-s ${str_slot_ID}'
-                local readonly var_parse_args_verbose='-v'
-                local readonly var_parse_to_file='lspci -x >> "${str_file}"'
+                local var_parse='lspci -k -mm'
+                local var_parse_args_file='-F "${str_file}"'
+                local var_parse_args_online='-q'
+                local var_parse_args_nums='-n'
+                local var_parse_args_slot_ID='-s ${str_slot_ID}'
+                local var_parse_args_verbose='-v'
+                local var_parse_to_file='lspci -x >> "${str_file}"'
                 local var_parse_all_ID="${var_parse} ${var_parse_args_nums} ${var_parse_args_verbose} ${var_parse_args_slot_ID}"
                 local var_parse_name_ID="${var_parse} ${var_parse_args_verbose} ${var_parse_args_slot_ID}"
                 local var_parse_slot_ID="${var_parse}"
@@ -178,16 +178,16 @@
             # </params>
 
             # <remarks> Set commands for each parse type. </remarks>
-            Parse_IOMMU_Set_Operation || return "${?}"
+            Parse_IOMMU_Set_Operation || return $?
 
             # <remarks> Get all devices from system. </remarks>
             declare -a arr_devices=( $( eval ${var_parse_slot_ID} | awk '{print $1}' ) )
-            Parse_IOMMU_Save_Lists || return "${?}"
-            Parse_IOMMU_Are_Not_Empty_Lists || return "${?}"
-            Parse_IOMMU_Are_Inequal_Lists_Sizes || return "${?}"
+            Parse_IOMMU_Save_Lists || return $?
+            Parse_IOMMU_Are_Not_Empty_Lists || return $?
+            Parse_IOMMU_Are_Inequal_Lists_Sizes || return $?
 
             # <remarks> Save output to file. </remarks>
-            if [[ "${?}" -eq 0 && "${var_opt}" != "${str_opt_parse_file}" ]]; then
+            if [[ $? -eq 0 && "${var_opt}" != "${str_opt_parse_file}" ]]; then
                 IsFile "${str_file}" &> /dev/null && eval "${var_parse_to_file}"
             fi
 
@@ -196,13 +196,13 @@
 
         # <params>
             # <remarks> Set parse options </remarks>
-            local readonly str_opt_parse_file="FILE"
-            local readonly str_opt_parse_internet="DNS"
-            local readonly str_opt_parse_local="LOCAL"
+            local str_opt_parse_file="FILE"
+            local str_opt_parse_internet="DNS"
+            local str_opt_parse_local="LOCAL"
 
             # <remarks> Save input params </remarks>
             local var_opt="${1}"
-            local readonly str_file="${2}"
+            local str_file="${2}"
         # </params>
 
         # <remarks> If an operation fails, try another. </remarks>
@@ -232,17 +232,17 @@
         function Select_IOMMU_Match_IOMMU_AndClass
         {
             # <params>
-            local readonly str_class="${arr_class[$int_key]}"
-            local readonly str_device_name="${arr_device_name[$int_key]}"
-            local readonly str_driver="${arr_driver[$int_key]}"
-            local readonly str_hardware_ID="${arr_hardware_ID[$int_key]}"
-            local readonly str_slot_ID="${arr_slot_ID[$int_key]}"
-            local readonly str_vendor_name="${arr_vendor_name[$int_key]}"
+            local str_class="${arr_class[$int_key]}"
+            local str_device_name="${arr_device_name[$int_key]}"
+            local str_driver="${arr_driver[$int_key]}"
+            local str_hardware_ID="${arr_hardware_ID[$int_key]}"
+            local str_slot_ID="${arr_slot_ID[$int_key]}"
+            local str_vendor_name="${arr_vendor_name[$int_key]}"
 
-            local readonly str_domain_ID=$( echo "${str_slot_ID}" | cut -d ':' -f 1 )
+            local str_domain_ID=$( echo "${str_slot_ID}" | cut -d ':' -f 1 )
 
                 # <remarks> Regex: check if value is decimal or hexadecimal and greater than zero </remarks>
-                local readonly str_regex='[a-fA-F1-9]'
+                local str_regex='[a-fA-F1-9]'
 
                 # <remarks> Output statement </remarks>
                 declare -ar arr_output1=(
@@ -282,35 +282,53 @@
             return 0
         }
 
+        function Select_IOMMU_Group
+        {
+            if $bool_IOMMU_has_USB; then
+                arr_IOMMU_PCI_STUB+=( "${int_this_IOMMU_ID}" )
+            else
+                arr_IOMMU_PCI_STUB+=( "" )
+            fi
+
+            if $bool_IOMMU_has_VGA}; then
+                arr_IOMMU_VFIO_PCI+=( "" )
+                arr_IOMMU_VFIO_PCI_with_VGA+=( "${int_this_IOMMU_ID}" )
+            else
+                arr_IOMMU_VFIO_PCI+=( "${int_this_IOMMU_ID}" )
+                arr_IOMMU_VFIO_PCI_with_VGA+=( "" )
+            fi
+
+            return 0
+        }
+
+        function Skip_IOMMU_Group
+        {
+            arr_IOMMU_VFIO_PCI+=( "" )
+            arr_IOMMU_PCI_STUB+=( "" )
+            arr_IOMMU_VFIO_PCI_with_VGA+=( "" )
+            echo -e "${str_output_skip_select}"
+            return 0
+        }
+
         # <summary> Ask user to Select/Skip IOMMU group. </summary>
         # <returns> exit code </returns>
         function Select_IOMMU_Prompt
         {
             # <params>
-            local readonly str_output_do_select="Select IOMMU group '${int_this_IOMMU_ID}'?"
-            local readonly str_output_skip_select="Skipped IOMMU group '${int_this_IOMMU_ID}'."
+            local str_output_do_select="Select IOMMU group '${int_this_IOMMU_ID}'?"
+            local str_output_skip_select="Skipped IOMMU group '${int_this_IOMMU_ID}'."
             # </params>
 
             # <remarks> Append to list a valid array or empty value. </remarks>
-            if "${bool_IOMMU_has_external_domain}" && ReadInput "${str_output_do_select}"; then
-                if "${bool_IOMMU_has_USB}"; then
-                    arr_IOMMU_PCI_STUB+=( "${int_this_IOMMU_ID}" )
-                else
-                    arr_IOMMU_PCI_STUB+=( "" )
-                fi
+            if $bool_IOMMU_has_external_domain && $bool_select_all_IOMMU; then
+                Select_IOMMU_Group
+                return 0
+            fi
 
-                if "${bool_IOMMU_has_VGA}"; then
-                    arr_IOMMU_VFIO_PCI+=( "" )
-                    arr_IOMMU_VFIO_PCI_with_VGA+=( "${int_this_IOMMU_ID}" )
-                else
-                    arr_IOMMU_VFIO_PCI+=( "${int_this_IOMMU_ID}" )
-                    arr_IOMMU_VFIO_PCI_with_VGA+=( "" )
-                fi
+            if $bool_IOMMU_has_external_domain && ReadInput "${str_output_do_select}"; then
+                Select_IOMMU_Group
             else
-                arr_IOMMU_VFIO_PCI+=( "" )
-                arr_IOMMU_PCI_STUB+=( "" )
-                arr_IOMMU_VFIO_PCI_with_VGA+=( "" )
-                echo -e "${str_output_skip_select}"
+                Skip_IOMMU_Group
             fi
 
             return 0
@@ -321,9 +339,9 @@
         function Get_IOMMU_Drivers
         {
             for int_key in "${!arr_IOMMU[@]}"; do
-                local readonly str_driver="${arr_driver[$int_key]}"
-                local readonly str_hardware_ID="${arr_hardware_ID[$int_key]}"
-                local readonly str_IOMMU="${arr_IOMMU[$int_key]}"
+                local str_driver="${arr_driver[$int_key]}"
+                local str_hardware_ID="${arr_hardware_ID[$int_key]}"
+                local str_IOMMU="${arr_IOMMU[$int_key]}"
 
                 if FindLineInArray "arr_IOMMU_PCI_STUB" "${str_IOMMU}" || FindLineInArray "arr_IOMMU_VFIO_PCI" "${str_IOMMU}" || FindLineInArray "arr_IOMMU_VFIO_PCI_with_VGA" "${str_IOMMU}"; then
                     arr_drivers_VFIO_PCI+=( "${str_driver}" )
@@ -336,9 +354,9 @@
         }
 
         # <params>
-        local readonly str_output="Reviewing IOMMU groups..."
-        local readonly int_IOMMU_max=$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )
-        local readonly var_get_IOMMU='seq 0 "${int_IOMMU_max}"'
+        local str_output="Reviewing IOMMU groups..."
+        local int_IOMMU_max=$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )
+        local var_get_IOMMU='seq 0 "${int_IOMMU_max}"'
         declare -ar arr_this_IOMMU=( $( eval "${var_get_IOMMU}" ) )
         # </params>
 
