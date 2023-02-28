@@ -34,7 +34,6 @@ The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-b
             f, --file           Reference file database
             -i, --internal      Reference local database
             -I, --internet      Reference online database
-            [ARGS]...
                 all             Select all IOMMU groups (useful for Multiboot VFIO)"
 
         Setup:
@@ -46,9 +45,9 @@ The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-b
             c, --cpu            Allocate CPU
             e, --evdev          Setup a virtual KVM switch
             h, --hugepages      Allocate RAM
-            [ARGS]...
-                2M, 1G          Hugepage size with byte prefix"
-                0-9             Amount of Hugepages
+                2M, 1G          Hugepage size with byte prefix
+                (number)        Amount of Hugepages
+
             H, --hooks          Install recommended libvirt-hooks and services
             l, --looking-glass  Install LookingGlass
             L, --audio-loopback Install the audio loopback service
