@@ -32,7 +32,7 @@
         }
 
         # <params>
-        local readonly str_output="Adding user to groups..."
+        local str_output="Adding user to groups..."
         # </params>
 
         echo -e "\n${str_output}"
@@ -47,9 +47,9 @@
         function Allocate_CPU_Main
         {
             # <params>
-            local readonly var_get_all_cores='seq 0 $(( ${int_total_cores} - 1 ))'
-            local readonly var_get_total_threads='cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+"'
-            local readonly var_get_total_cores='cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+"'
+            local var_get_all_cores='seq 0 $(( ${int_total_cores} - 1 ))'
+            local var_get_total_threads='cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+"'
+            local var_get_total_cores='cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+"'
             declare -ir int_total_cores=$( eval "${var_get_total_cores}" )
             declare -ir int_total_threads=$( eval "${var_get_total_threads}" )
             # </params>
@@ -78,10 +78,10 @@
 
             # <summary> Get thread sets, for host and virtual machines. </summary>
                 # <params>
-                local readonly var_get_host_cores='seq 0 $(( ${int_host_cores} - 1 ))'
-                local readonly var_get_SMT_factors='seq 0 $(( ${int_SMT_factor} - 1 ))'
-                local readonly var_get_thread='$(( int_core + ( int_SMT_factor * int_total_cores ) ))'
-                local readonly var_get_virt_cores='seq ${int_host_cores} $(( ${int_total_cores} - 1 ))'
+                local var_get_host_cores='seq 0 $(( ${int_host_cores} - 1 ))'
+                local var_get_SMT_factors='seq 0 $(( ${int_SMT_factor} - 1 ))'
+                local var_get_thread='$(( int_core + ( int_SMT_factor * int_total_cores ) ))'
+                local var_get_virt_cores='seq ${int_host_cores} $(( ${int_total_cores} - 1 ))'
 
                 declare -ar arr_host_cores=( $( eval "${var_get_host_cores}" ) )
                 declare -a arr_host_threads=()
@@ -172,7 +172,7 @@
                 # </remarks>
 
                 # <params>
-                local readonly var_get_hexadecimal_mask_from_decimal='echo "obase=16; ${int_thread_decimal}" | bc'
+                local var_get_hexadecimal_mask_from_decimal='echo "obase=16; ${int_thread_decimal}" | bc'
                 declare -i int_host_threads_hexadecimal_mask=0
                 declare -i int_total_threads_hexadecimal_mask=0
                 # </params>
@@ -210,7 +210,7 @@
         }
 
         # <params>
-        local readonly str_output="Allocating CPU threads..."
+        local str_output="Allocating CPU threads..."
         # </params>
 
         echo -e "\n${str_output}"
@@ -224,49 +224,49 @@
     {
         function Allocate_RAM_Main
         {
-            # <params>
-            declare -ar arr_choices=(
-                "2M"
-                "1G"
-            )
-
-            declare -gi int_huge_page_count=0
-            declare -gi int_huge_page_kbit_size=0
-            declare -gi int_huge_page_max_kbit_size=0
-            declare -gi int_huge_page_min_kbit_size=4194304
-            declare -gi int_huge_page_max=0
-            declare -gi int_huge_page_min=0
-            declare -g str_huge_page_byte_prefix=""
-            declare -g str_hugepages_QEMU=""
-
-            local readonly str_output1="Hugepages is a feature which statically allocates system memory to pagefiles.\n\tVirtual machines can use Hugepages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n\t${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n\t${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
-            local readonly str_output2="Setup Hugepages?"
-            local readonly str_output3="Enter size of Hugepages (bytes):"
-            local readonly var_get_host_max_mem='cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1'
-            # </params>
-
             if ! IsNum "${int_max_mem}" &> /dev/null; then
-                local readonly str_output_could_not_parse_memory="${var_prefix_error} Could not parse system memory."
+                local str_output_could_not_parse_memory="${var_prefix_error} Could not parse system memory."
                 echo -e "${str_output_could_not_parse_memory}"
             fi
 
             # <remarks> Ask user to proceed. </remarks>
-            echo -e "${str_output1}"
-            ReadInput "${str_output2}" || return "${int_code_skipped_operation}"
-            var_input=""
-            ReadMultipleChoiceIgnoreCase "${str_output3}" "${arr_choices[@]}" || return $?
-            str_huge_page_byte_prefix="${var_input}"
-            int_huge_page_max_kbit_size=$( eval "${var_get_host_max_mem}" )
+            if ! $bool_hugepage_set_size; then
+                # <params>
+                declare -g str_huge_page_byte_prefix=""
+
+                local str_output1="Hugepages is a feature which statically allocates system memory to pagefiles.\n\tVirtual machines can use Hugepages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n\t${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n\t${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
+                local str_output2="Setup Hugepages?"
+                local str_output3="Enter size of Hugepages (bytes):"
+
+                declare -ar arr_choices=(
+                    "2M"
+                    "1G"
+                )
+                # </params>
+
+                echo -e "${str_output1}"
+                ReadInput "${str_output2}" || return "${int_code_skipped_operation}"
+                ReadMultipleChoiceIgnoreCase "${str_output3}" "${arr_choices[@]}" || return $?
+                str_huge_page_byte_prefix="${var_input}"
+            fi
 
             # <remarks> Validate hugepage size and byte-size. </remarks>
+            # <params>
+            local var_get_host_max_mem='cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1'
+            declare -gi int_huge_page_count=0
+            declare -gi int_huge_page_kbit_size=0
+            declare -gi int_huge_page_max_kbit_size=$( eval "${var_get_host_max_mem}" )
+            declare -gi int_huge_page_min=0
+            # </params>
+
             case "${str_huge_page_byte_prefix}" in
                 "${arr_choices[0]}" )
-                    readonly int_huge_page_kbit_size=2048
-                    readonly int_huge_page_min=2
+                    int_huge_page_kbit_size=2048
+                    int_huge_page_min=2
                     ;;
                 "${arr_choices[1]}" )
-                    readonly int_huge_page_kbit_size=1048576
-                    readonly int_huge_page_min=1
+                    int_huge_page_kbit_size=1048576
+                    int_huge_page_min=1
                     ;;
                 * )
                     return 1
@@ -274,23 +274,39 @@
             esac
 
             # <remarks> Get values. </remarks>
+            # <params>
+            declare -gi int_huge_page_min_kbit_size=4194304
+            declare -gi int_huge_page_max=0
             int_huge_page_max=$(( $int_huge_page_max_kbit_size - $int_huge_page_min_kbit_size ))
-            readonly int_huge_page_max=$(( $int_huge_page_max / $int_huge_page_kbit_size ))
-            local readonly str_output4="Enter number of Hugepages (num * ${str_huge_page_byte_prefix})"
+            int_huge_page_max=$(( $int_huge_page_max / $int_huge_page_kbit_size ))
+            # </params>
 
-            # <remarks> Ask user for preferred amount. </remarks>
-            ReadInputFromRangeOfTwoNums "${str_output4}" "${int_huge_page_min}" "${int_huge_page_max}" || return $?
-            readonly int_huge_page_count="${var_input}"
+            if ! $bool_hugepage_set_count; then
+                local str_output4="Enter number of Hugepages (num * ${str_huge_page_byte_prefix})"
+
+                # <remarks> Ask user for preferred amount. </remarks>
+                ReadInputFromRangeOfTwoNums "${str_output4}" "${int_huge_page_min}" "${int_huge_page_max}" || return $?
+                declare -gi int_huge_page_count="${var_input}"
+            fi
+
+            # <params>
+            declare -gi int_alloc_mem_hugepages=0
+            declare -g str_GRUB_hugepages=""
+            # </params>
+
+            if $bool_hugepage_set_count && [[ $int_huge_page_count -lt $int_huge_page_min || $int_huge_page_count -gt $int_huge_page_max ]]; then
+                return 1
+            fi
 
             # <remarks> Save changes. </remarks>
-            declare -g int_alloc_mem_hugepages=$(( $int_huge_page_count * $int_huge_page_kbit_size ))
-            declare -g str_GRUB_hugepages="default_hugepagesz=${str_huge_page_byte_prefix} hugepagesz=${str_huge_page_byte_prefix} hugepages=${int_huge_page_count}"
+            int_alloc_mem_hugepages=$(( $int_huge_page_count * $int_huge_page_kbit_size ))
+            str_GRUB_hugepages="default_hugepagesz=${str_huge_page_byte_prefix} hugepagesz=${str_huge_page_byte_prefix} hugepages=${int_huge_page_count}"
             bool_is_setup_hugepages=true
             return 0
         }
 
         # <params>
-        local readonly str_output="Executing Hugepages setup..."
+        local str_output="Executing Hugepages setup..."
         # </params>
 
         echo -e "\n${str_output}"
@@ -320,8 +336,8 @@
                 "WantedBy=default.target"
             )
 
-            local readonly str_dir1="/etc/systemd/system/"
-            local readonly str_file1="audio-loopback-user.service"
+            local str_dir1="/etc/systemd/system/"
+            local str_file1="audio-loopback-user.service"
             # </params>
 
             OverwriteFile "${str_dir1}${str_file1}" || return $?
@@ -332,7 +348,7 @@
         }
 
         # <params>
-        local readonly str_output="Creating audio loopback service..."
+        local str_output="Creating audio loopback service..."
         # </params>
 
         echo -e "\n${str_output}"
@@ -359,9 +375,9 @@
 
             # declare -a arr_file2=()
 
-            local readonly str_dir1="/etc/systemd/system/"
-            local readonly str_file1="libvirt-nosleep@.service"
-            # local readonly str_file1=""
+            local str_dir1="/etc/systemd/system/"
+            local str_file1="libvirt-nosleep@.service"
+            # local str_file1=""
             # </params>
 
             OverwriteFile "${str_dir1}${str_file1}" || return $?
@@ -373,7 +389,7 @@
         }
 
         # <params>
-        local readonly str_output="Executing libvirt-hooks setup..."
+        local str_output="Executing libvirt-hooks setup..."
         # </params>
 
         echo -e "\n${str_output}"
@@ -397,12 +413,12 @@
             )
 
             declare -a arr_file1 arr_file2
-            local readonly str_backup1="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"
-            # local readonly str_backup2=""
-            local readonly str_daemon1="libvirtd"
-            local readonly str_daemon1_packages="qemu"
-            local readonly str_file1="/etc/libvirt/qemu.conf"
-            local readonly str_file2="/etc/apparmor.d/local/abstractions/libvirt-qemu"
+            local str_backup1="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"
+            # local str_backup2=""
+            local str_daemon1="libvirtd"
+            local str_daemon1_packages="qemu"
+            local str_file1="/etc/libvirt/qemu.conf"
+            local str_file2="/etc/apparmor.d/local/abstractions/libvirt-qemu"
             # </params>
 
             IsInstalledPackage "${str_daemon1_packages}" || InstallPackage "${str_daemon1_packages}" || return $?
@@ -424,7 +440,7 @@
                 cp $( basename "${str_file1}" ) "${str_file1}" || RestoreFile "${str_file1}" || return 1
             fi
 
-            if "${bool_is_setup_evdev}"; then
+            if $bool_is_setup_evdev; then
                 for str_event_device in "${arr_event_devices[@]}"; do
                     arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${str_event_device}\"," )
                 done
@@ -467,7 +483,7 @@
                 "### Hugepages ###"
             )
 
-            if "${bool_is_setup_hugepages}"; then
+            if $bool_is_setup_hugepages; then
                 arr_file1+=(
                     "hugetlbfs_mount = \"/dev/hugepages\""
                 )
@@ -485,7 +501,7 @@
                 "cgroup_device_acl = ["
             )
 
-            if "${bool_is_setup_evdev}"; then
+            if $bool_is_setup_evdev; then
                 arr_file1+=(
                     "${arr_file1_evdev_cgroups[@]}"
                     "${arr_file1_default_cgroups[@]}"
@@ -526,7 +542,7 @@
         }
 
         # <params>
-        local readonly str_output="Appending changes to libvirt-qemu..."
+        local str_output="Appending changes to libvirt-qemu..."
         # </params>
 
         echo -e "\n${str_output}"
@@ -541,10 +557,10 @@
         function RAM_Swapfile_Install
         {
             # <params>
-            local readonly str_user_name1="foundObjects"
-            local readonly str_repo_name1="zram-swap"
-            local readonly str_full_repo1="${str_user_name1}/${str_repo_name1}"
-            local readonly str_script_name1="install.sh"
+            local str_user_name1="foundObjects"
+            local str_repo_name1="zram-swap"
+            local str_full_repo1="${str_user_name1}/${str_repo_name1}"
+            local str_script_name1="install.sh"
             # </params>
 
             GoToScriptDir
@@ -558,13 +574,13 @@
         function RAM_Swapfile_Modify
         {
             # <params>
-            local readonly str_file1="/etc/default/zram-swap"
-            local readonly str_match_line1="_zram_fraction="
-            local readonly var_command='cat "${str_file1}"'
-            local readonly var_find_zram_swap='sudo swapon -v | grep zram'
-            local readonly var_disable_zram_swap='sudo swapoff /dev/zram*'
-            local readonly var_enable_all_swap='sudo swapon -a'
-            local readonly var_restart_daemon='sudo systemctl restart zram-swap'
+            local str_file1="/etc/default/zram-swap"
+            local str_match_line1="_zram_fraction="
+            local var_command='cat "${str_file1}"'
+            local var_find_zram_swap='sudo swapon -v | grep zram'
+            local var_disable_zram_swap='sudo swapoff /dev/zram*'
+            local var_enable_all_swap='sudo swapon -a'
+            local var_restart_daemon='sudo systemctl restart zram-swap'
             declare -a arr_file_contents=( $( eval "${var_command}" ) )
             # </params>
 
@@ -576,7 +592,7 @@
             done
 
             if ! IsNum "${int_max_mem}"; then
-                local readonly str_output_could_not_parse_memory="${var_prefix_error} Could not parse system memory."
+                local str_output_could_not_parse_memory="${var_prefix_error} Could not parse system memory."
                 echo -e "${str_output_could_not_parse_memory}"
                 return 1
             fi
@@ -598,7 +614,7 @@
 
             # <remarks> Is fraction positive non-zero and not equal to one. </remarks>
             if [[ "${int_denominator}" -gt 1 ]]; then
-                local readonly str_fraction="1/${int_denominator}"
+                local str_fraction="1/${int_denominator}"
 
                 arr_file_contents+=(
                     ""
@@ -618,7 +634,7 @@
         }
 
         # <params>
-        local readonly str_output1="Installing zram-swap..."
+        local str_output1="Installing zram-swap..."
         # </params>
 
         echo -e "${str_output1}"
@@ -638,10 +654,10 @@
         {
             # <params>
             declare -ga arr_event_devices arr_input_devices
-            local readonly str_output1="Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n\tHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
-            local readonly str_fail="${var_prefix_error} Cannot parse input devices (by ID)."
-            local readonly var_get_event_devices='readonly arr_event_devices=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )'
-            local readonly var_get_input_devices='readonly arr_input_devices=( $( ls /dev/input/by-id ) )'
+            local str_output1="Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n\tHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
+            local str_fail="${var_prefix_error} Cannot parse input devices (by ID)."
+            local var_get_event_devices='readonly arr_event_devices=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )'
+            local var_get_input_devices='readonly arr_input_devices=( $( ls /dev/input/by-id ) )'
             # </params>
 
             echo -e "${str_output1}"
@@ -658,7 +674,7 @@
         }
 
         # <params>
-        local readonly str_output="Executing Evdev setup..."
+        local str_output="Executing Evdev setup..."
         # </params>
 
         echo -e "\n${str_output}"
@@ -674,10 +690,10 @@
         function VirtualVideoCapture_Main
         {
             # <params>
-            local readonly str_user_name1="gnif"
-            local readonly str_repo_name1="LookingGlass"
-            local readonly str_full_repo1="${str_user_name1}/${str_repo_name1}"
-            local readonly str_dependencies="cmake gcc g++ clang libegl-dev libgl-dev libgles-dev libfontconfig-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config"
+            local str_user_name1="gnif"
+            local str_repo_name1="LookingGlass"
+            local str_full_repo1="${str_user_name1}/${str_repo_name1}"
+            local str_dependencies="cmake gcc g++ clang libegl-dev libgl-dev libgles-dev libfontconfig-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config"
             # </params>
 
             if [[ "${str_package_manager}" == "apt" ]]; then
@@ -705,7 +721,7 @@
         }
 
         # <params>
-        local readonly str_output="Executing LookingGlass setup..."
+        local str_output="Executing LookingGlass setup..."
         # </params>
 
         echo -e "\n${str_output}"
@@ -724,7 +740,7 @@
     #     }
 
     #     # <params>
-    #     local readonly str_output="Executing Scream setup..."
+    #     local str_output="Executing Scream setup..."
     #     # </params>
 
     #     echo -e "\n${str_output}"
