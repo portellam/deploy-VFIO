@@ -41,7 +41,7 @@
             Parse_IOMMU "DNS" || exit $?
             ;;
 
-        * )
+        $bool_parse_IOMMU_from_local | * )
             Parse_IOMMU "LOCAL" || exit $?
             ;;
     esac
