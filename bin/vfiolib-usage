@@ -13,10 +13,10 @@
 # </code>
 
 # <code>
-    # <summary> Gets the current option </summary>
     function GetOption
     {
         while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
+            # <remarks> Options </remarks>
             "-c" | "--cpu" )
                 bool_alloc_cpu=true
                 ;;
@@ -27,18 +27,31 @@
 
             "-f" | "--file" )
                 bool_parse_IOMMU_from_file=true
+                GetSelect_IOMMU_Args $2
                 ;;
 
-            "-h" | "--help" )
+            "--help" )
                 return 1
+                ;;
+
+            "-h" | "--hugepages" )
+                bool_hugepages=true
+                GetHugepageByteSize $2 || GetHugepageCount $2
+                GetHugepageByteSize $3 || GetHugepageCount $3
                 ;;
 
             "-H" | "--hooks" )
                 bool_libvirt_hooks=true
                 ;;
 
-            "-i" | "--internet" )
+            "-i" | "--internal" )
+                bool_parse_IOMMU_from_local=true
+                GetSelect_IOMMU_Args $2
+                ;;
+
+            "-I" | "--internet" )
                 bool_parse_IOMMU_from_internet=true
+                GetSelect_IOMMU_Args $2
                 ;;
 
             "-l" | "--looking-glass" )
@@ -51,10 +64,6 @@
 
             "-m" | "--multiboot" )
                 bool_multiboot=true
-                ;;
-
-            "-p" | "--hugepages" )
-                bool_hugepages=true
                 ;;
 
             "-s" | "--static" )
@@ -73,6 +82,7 @@
                 bool_zram_swap=true
                 ;;
 
+            # <remarks> Else </remarks>
             "" )
                 ;;
 
@@ -87,7 +97,41 @@
         return 0
     }
 
-    # <summary> Gets the usage. </summary>
+    function GetHugepageByteSize
+    {
+        if IsString $1 &> /dev/null && ( [[ $1 == "2M" ]] || [[ $1 == "1G" ]] ); then
+            bool_hugepage_set_size=true
+            declare -g str_huge_page_byte_prefix=$1
+            return 0
+        fi
+
+        return 1
+    }
+
+    function GetHugepageCount
+    {
+        if IsNum $1 &> /dev/null && [[ $1 -gt 0 ]]; then
+            bool_hugepages_set_count=true
+            declare -g int_huge_page_count=$1
+        fi
+
+        return 1
+    }
+
+    function GetSelect_IOMMU_Args
+    {
+        case $1 in
+            "all" )
+                bool_select_all_IOMMU=true
+                ;;
+
+            * )
+                ;;
+        esac
+
+        return 0
+    }
+
     function GetUsage
     {
         IFS=$'\n'
@@ -115,8 +159,6 @@
             "\t\t0-9\t\tAmount of Hugepages"
             "\t-H, --hooks\t\tInstall recommended libvirt-hooks and services"
             "\t-l, --looking-glass\tInstall LookingGlass"
-            "\t[ARGS]..."
-            "\t\t0-9\t\tVideo framebuffer size in Megabytes"
             "\t-L, --audio-loopback\tInstall the audio loopback service"
             "\t-S, --scream\t\tInstall Scream"
             "\t-z, --zram-swap\t\tCreate swap in RAM"
@@ -156,12 +198,15 @@
     declare -g bool_audio_loopback=false
     declare -g bool_evdev=false
     declare -g bool_hugepages=false
+    declare -g bool_hugepages_set_count=false
     declare -g bool_libvirt_hooks=false
     declare -g bool_looking_glass=false
     declare -g bool_multiboot=false
     declare -g bool_parse_IOMMU_from_file=false
+    declare -g bool_parse_IOMMU_from_local=false
     declare -g bool_parse_IOMMU_from_internet=false
     declare -g bool_scream=false
+    declare -g bool_select_all_IOMMU
     declare -g bool_static=false
     declare -g bool_uninstall=false
     declare -g bool_zram_swap=false
