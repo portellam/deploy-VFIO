@@ -28,11 +28,14 @@ The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-b
 
 #### Usage (Options)
 
-        h, --help               Print this usage statement
+        --help                  Print this usage statement
 
         Parse PCI:
             f, --file           Reference file database
-            i, --internet       Reference online database
+            -i, --internal      Reference local database
+            -I, --internet      Reference online database
+            [ARGS]...
+                all             Select all IOMMU groups (useful for Multiboot VFIO)"
 
         Setup:
             m, --multiboot      Create multiple GRUB entries for a Multi VGA VFIO setup
@@ -42,10 +45,13 @@ The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-b
         Extras:
             c, --cpu            Allocate CPU
             e, --evdev          Setup a virtual KVM switch
+            h, --hugepages      Allocate RAM
+            [ARGS]...
+                2M, 1G          Hugepage size with byte prefix"
+                0-9             Amount of Hugepages
             H, --hooks          Install recommended libvirt-hooks and services
             l, --looking-glass  Install LookingGlass
-            L, --loopback       Install the audio loopback service
-            p, --hugepages      Allocate RAM
+            L, --audio-loopback Install the audio loopback service
             S, --scream         Install Scream
             z, --zram-swap      Create swap in RAM
 
