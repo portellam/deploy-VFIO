@@ -22,7 +22,7 @@
         IsArray $1 || return $?
 
         # <params>
-        local readonly var_command='declare -a arr=( ${'$1'[@]} )'
+        local var_command='declare -a arr=( ${'$1'[@]} )'
         # </params>
 
         eval "${var_command}" || return 1
@@ -43,9 +43,9 @@
         IsString $1 || return $?
 
         # <params>
-        local readonly str_fail="${var_prefix_error} Empty array."
-        local readonly var_get_array='echo "${'$1'[@]}"'
-        local readonly var_get_array_len='echo "${#'$1'[@]}"'
+        local str_fail="${var_prefix_error} Empty array."
+        local var_get_array='echo "${'$1'[@]}"'
+        local var_get_array_len='echo "${#'$1'[@]}"'
         # </params>
 
         for var_element in $( eval "${var_get_array}" ); do
@@ -65,8 +65,8 @@
     function IsString
     {
         # <params>
-        local readonly str_fail="${var_prefix_error} Empty string."
-        local readonly var="${1}"
+        local str_fail="${var_prefix_error} Empty string."
+        local var="${1}"
         # </params>
 
         if [[ "${#var}" -eq 0 && "${var}" == "" ]]; then
@@ -84,7 +84,7 @@
         IsString $1 || return $?
 
         # <params>
-        local readonly str_fail="${var_prefix_error} Not a boolean."
+        local str_fail="${var_prefix_error} Not a boolean."
         # </params>
 
         case $1 in
@@ -106,8 +106,8 @@
         IsString $1 || return $?
 
         # <params>
-        local readonly str_regex_numbers='^[0-9]+$'
-        local readonly str_fail="${var_prefix_error} NaN."
+        local str_regex_numbers='^[0-9]+$'
+        local str_fail="${var_prefix_error} NaN."
         # </params>
 
         if ! [[ $1 =~ $str_regex_numbers ]]; then
@@ -125,8 +125,8 @@
         IsString $1 || return $?
 
         # <params>
-        local readonly str_fail="${var_prefix_error} Readonly variable."
-        local readonly var_is_readonly_var="unset ${1} 2> /dev/null"
+        local str_fail="${var_prefix_error} Readonly variable."
+        local var_is_readonly_var="unset ${1} 2> /dev/null"
         # </params>
 
         if ! eval "${var_is_readonly_var}"; then
@@ -145,7 +145,7 @@
 
         # <params>
         IFS=$'\n'
-        local readonly var_print_array='echo -e "${var_yellow}${'$1'[*]}${var_reset_color}"'
+        local var_print_array='echo -e "${var_yellow}${'$1'[*]}${var_reset_color}"'
         # </params>
 
         if ! IsArray "$1" &> /dev/null; then
@@ -167,8 +167,8 @@
         FindLineInArray $1 $2 || return $?
 
         # <params>
-        local readonly var_get_param='declare arr_replace_line=( ${!'$1'[@]} )'
-        local readonly var_set_param="$1"'=( "${arr_replace_line[@]}" )'
+        local var_get_param='declare arr_replace_line=( ${!'$1'[@]} )'
+        local var_set_param="$1"'=( "${arr_replace_line[@]}" )'
         # </params>
 
         eval "${var_get_param}" || return 1

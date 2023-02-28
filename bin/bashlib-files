@@ -23,7 +23,7 @@
         IsFile $1 || return $?
 
         # <params>
-        local readonly var_command='cmp -s $1 $2'
+        local var_command='cmp -s $1 $2'
         # </params>
 
         eval "${var_command}" || return 1
@@ -39,9 +39,9 @@
             IsFile $1 || return $?
 
             # <params>
-            local readonly str_dir=$( dirname $1 )
-            local readonly str_suffix=".old"
-            local readonly var_get_backups='ls -t '"${str_dir}"' | grep '$1' | grep -i '"${str_suffix}"' | uniq'
+            local str_dir=$( dirname $1 )
+            local str_suffix=".old"
+            local var_get_backups='ls -t '"${str_dir}"' | grep '$1' | grep -i '"${str_suffix}"' | uniq'
             declare -a arr_dir=( $( eval "${var_get_backups}" ) )
             # </params>
 
@@ -71,7 +71,7 @@
         }
 
         # <params>
-        local readonly str_output="Creating backup file..."
+        local str_output="Creating backup file..."
         # </params>
 
         echo -e "${str_output}"
@@ -88,8 +88,8 @@
         IsDir $1 &> /dev/null && return 0
 
         # <params>
-        local readonly str_fail="${var_prefix_fail} Could not create directory '$1'."
-        local readonly var_command='mkdir -p $1 &> /dev/null'
+        local str_fail="${var_prefix_fail} Could not create directory '$1'."
+        local var_command='mkdir -p $1 &> /dev/null'
         # </params>
 
         if ! eval "${var_command}"; then
@@ -108,8 +108,8 @@
         IsFile $1 &> /dev/null && return 0
 
         # <params>
-        local readonly str_fail="${var_prefix_fail} Could not create file '$1'."
-        local readonly var_command='touch '"$1"' &> /dev/null'
+        local str_fail="${var_prefix_fail} Could not create file '$1'."
+        local var_command='touch '"$1"' &> /dev/null'
         # </params>
 
         if ! eval "${var_command}"; then
@@ -128,8 +128,8 @@
         IsDir $1 &> /dev/null || return 1
 
         # <params>
-        local readonly str_fail="${var_prefix_fail} Could not delete directory '$1'."
-        local readonly var_command='rm -r '"$1"' &> /dev/null'
+        local str_fail="${var_prefix_fail} Could not delete directory '$1'."
+        local var_command='rm -r '"$1"' &> /dev/null'
         # </params>
 
         if ! eval "${var_command}"; then
@@ -148,8 +148,8 @@
         IsFile $1 &> /dev/null || return 1
 
         # <params>
-        local readonly str_fail="${var_prefix_fail} Could not delete file '$1'."
-        local readonly var_command='rm '"$1"' &> /dev/null'
+        local str_fail="${var_prefix_fail} Could not delete file '$1'."
+        local var_command='rm '"$1"' &> /dev/null'
         # </params>
 
         if ! eval "${var_command}"; then
@@ -182,7 +182,7 @@
         IsString $1 || return $?
 
         # <params>
-        local readonly str_fail="${var_prefix_error} File '$1' is not a directory."
+        local str_fail="${var_prefix_error} File '$1' is not a directory."
         # </params>
 
         if [[ ! -d $1 ]]; then
@@ -200,7 +200,7 @@
         IsString $1 || return $?
 
         # <params>
-        local readonly str_fail="${var_prefix_error} '$1' is not a file."
+        local str_fail="${var_prefix_error} '$1' is not a file."
         # </params>
 
         if [[ ! -e $1 ]]; then
@@ -220,7 +220,7 @@
         IsFile $1 || return $?
 
         # <params>
-        local readonly var_command='$1 -nt $2'
+        local var_command='$1 -nt $2'
         # </params>
 
         eval "${var_command}" || return 1
@@ -236,7 +236,7 @@
         IsFile $1 || return $?
 
         # <params>
-        local readonly var_command='$2 -nt $1'
+        local var_command='$2 -nt $1'
         # </params>
 
         eval "${var_command}" || return 1
@@ -251,7 +251,7 @@
         IsFile $1 || return $?
 
         # <params>
-        local readonly str_fail="${var_prefix_error} File '$1' is not executable."
+        local str_fail="${var_prefix_error} File '$1' is not executable."
         # </params>
 
         if [[ ! -x $1 ]]; then
@@ -269,7 +269,7 @@
         IsFile $1 || return $?
 
         # <params>
-        local readonly str_fail="${var_prefix_error} File '$1' is not readable."
+        local str_fail="${var_prefix_error} File '$1' is not readable."
         # </params>
 
         if [[ ! -r $1 ]]; then
@@ -287,7 +287,7 @@
         IsFile $1 || return $?
 
         # <params>
-        local readonly str_fail="${var_prefix_error} File '$1' is not writable."
+        local str_fail="${var_prefix_error} File '$1' is not writable."
         # </params>
 
         if [[ ! -w $1 ]]; then
@@ -319,7 +319,7 @@
         # <params>
         IFS=$'\n'
         declare -a arr_print_file=( )
-        local readonly str_output="Contents for file ${var_yellow}'$1'${var_reset_color}:"
+        local str_output="Contents for file ${var_yellow}'$1'${var_reset_color}:"
         # </params>
 
         ReadFile "arr_print_file" $1 || return $?
@@ -337,9 +337,9 @@
 
         # <params>
         IFS=$'\n'
-        local readonly str_fail="${var_prefix_fail} Could not read from file '$2'."
-        local readonly var_get_param='mapfile -t < <( cat '"$2"' )'
-        local readonly var_set_param="$1"'=( "${MAPFILE[@]}" )'
+        local str_fail="${var_prefix_fail} Could not read from file '$2'."
+        local var_get_param='mapfile -t < <( cat '"$2"' )'
+        local var_set_param="$1"'=( "${MAPFILE[@]}" )'
         # </params>
 
         if ! eval "${var_get_param}" || ! IsArray "MAPFILE" &> /dev/null; then
@@ -377,9 +377,9 @@
             IsFile $1 || return $?
 
             # <params>
-            local readonly str_dir=$( dirname $1 )
-            local readonly str_suffix=".old"
-            local readonly var_get_backups='ls -t '"${str_dir}"' | grep '$1' | grep -i '"${str_suffix}"' | uniq'
+            local str_dir=$( dirname $1 )
+            local str_suffix=".old"
+            local var_get_backups='ls -t '"${str_dir}"' | grep '$1' | grep -i '"${str_suffix}"' | uniq'
             declare -a arr_dir=( $( eval "${var_get_backups}" ) )
             # </params>
 
@@ -399,7 +399,7 @@
         }
 
         # <params>
-        local readonly str_output="Restoring backup file..."
+        local str_output="Restoring backup file..."
         # </params>
 
         echo -e "${str_output}"
@@ -417,8 +417,8 @@
         IsArray $1 || return $?
 
         # <params>
-        local readonly str_fail="${var_prefix_fail} Could not write to file '$1'."
-        local readonly var_set_param='printf "%s\n" "${'$1'[@]}" >> $2'
+        local str_fail="${var_prefix_fail} Could not write to file '$1'."
+        local var_set_param='printf "%s\n" "${'$1'[@]}" >> $2'
         # </params>
 
         if ! eval "${var_set_param}"; then

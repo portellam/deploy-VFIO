@@ -22,7 +22,7 @@
     function IsSudoUser
     {
         # <params>
-        local readonly str_fail="${var_prefix_warn} User is not sudo/root."
+        local str_fail="${var_prefix_warn} User is not sudo/root."
         # </params>
 
         if [[ $( whoami ) != "root" ]]; then

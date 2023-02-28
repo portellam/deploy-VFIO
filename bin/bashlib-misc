@@ -19,7 +19,7 @@
     function GoToScriptDir
     {
         # <params>
-        local readonly str_dir=$( dirname "${0}" )
+        local str_dir=$( dirname "${0}" )
         # </params>
 
         cd "${str_dir}" || return 1
@@ -90,7 +90,7 @@
         declare -ir int_min_count=1
         declare -ir int_max_count=3
         declare -ar arr_count=$( eval echo {$int_min_count..$int_max_count} )
-        local readonly str_fail="${var_prefix_error} Execution of command failed."
+        local str_fail="${var_prefix_error} Execution of command failed."
         # </params>
 
         for int_count in ${arr_count[@]}; do
