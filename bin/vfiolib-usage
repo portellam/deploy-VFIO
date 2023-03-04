@@ -110,7 +110,7 @@
     function GetHugepageCount
     {
         if IsNum $1 &> /dev/null && [[ $1 -gt 0 ]]; then
-            bool_hugepages_set_count=true
+            bool_hugepage_set_count=true
             declare -g int_huge_page_count=$1
         fi
 
@@ -185,7 +185,7 @@
 
 # <params>
     # <remarks> Get script directories </remarks
-    GoToScriptDir
+    GetScriptDir
     declare -g str_files_dir="$( find . -name files | uniq | head -n1 | cut -c2- )/"
 
     # <remarks> Toggles </remarks
@@ -196,7 +196,8 @@
     declare -g bool_audio_loopback=false
     declare -g bool_evdev=false
     declare -g bool_hugepages=false
-    declare -g bool_hugepages_set_count=false
+    declare -g bool_hugepage_set_count=false
+    declare -g bool_hugepage_set_size=false
     declare -g bool_libvirt_hooks=false
     declare -g bool_looking_glass=false
     declare -g bool_multiboot=false
