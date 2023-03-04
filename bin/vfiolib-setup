@@ -368,7 +368,7 @@
 
         case "${var_input}" in
             "M" )
-                local readonly str_output="Executing Multiboot VFIO setup..."
+                local readonly str_output="Installing Multiboot VFIO..."
                 echo -e "${str_output}"
                 Multiboot_VFIO
                 PrintPassOrFail "${str_output}"
@@ -376,7 +376,7 @@
                 ;;
 
             "S" )
-                local readonly str_output="Executing Multiboot VFIO setup..."
+                local readonly str_output="Installing Static VFIO..."
                 echo -e "${str_output}"
                 Static_VFIO
                 PrintPassOrFail "${str_output}"
