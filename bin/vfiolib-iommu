@@ -17,7 +17,7 @@
     function IsEnabled_IOMMU
     {
         # <params>
-        local str_output="Checking if Virtualization is enabled/supported..."
+        local str_output="Validating Virtualization..."
         local var_command='compgen -G "/sys/kernel/iommu_groups/*/devices/*"'
         # </params>
 
