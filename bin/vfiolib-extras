@@ -35,7 +35,6 @@
         local str_output="Adding user to groups..."
         # </params>
 
-        echo -e "\n${str_output}"
         AddUserToGroups_Main &> /dev/null
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
@@ -213,7 +212,6 @@
         local str_output="Allocating CPU threads..."
         # </params>
 
-        echo -e "\n${str_output}"
         Allocate_CPU_Main $@ &> /dev/null
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
@@ -234,7 +232,7 @@
                 # <params>
                 declare -g str_huge_page_byte_prefix=""
 
-                local str_output1="Hugepages is a feature which statically allocates system memory to pagefiles.\n\tVirtual machines can use Hugepages to a peformance benefit.\n\tThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n\t${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n\t${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
+                local str_output1="Hugepages is a feature which statically allocates system memory to pagefiles.\nVirtual machines can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
                 local str_output2="Setup Hugepages?"
                 local str_output3="Enter size of Hugepages (bytes):"
 
@@ -306,10 +304,10 @@
         }
 
         # <params>
-        local str_output="Executing Hugepages setup..."
+        local str_output="Allocating RAM to pages..."
         # </params>
 
-        echo -e "\n${str_output}"
+        echo -e "${str_output}\n"
         Allocate_RAM_Main
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
@@ -348,10 +346,9 @@
         }
 
         # <params>
-        local str_output="Creating audio loopback service..."
+        local str_output="Creating audio loopback..."
         # </params>
 
-        echo -e "\n${str_output}"
         GuestAudioLoopback_Main &> /dev/null
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
@@ -389,10 +386,9 @@
         }
 
         # <params>
-        local str_output="Executing libvirt-hooks setup..."
+        local str_output="Installing libvirt-hooks..."
         # </params>
 
-        echo -e "\n${str_output}"
         LibvirtHooks_Main &> /dev/null
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
@@ -427,17 +423,19 @@
             SetInternetStatus
 
             if $bool_is_connected_to_Internet; then
-                if GoToScriptDir; then
+                if GetScriptDir; then
                     cd "${str_files_dir}" || return 1
-                    curl -o $( basename "${str_file1}" ) "${str_backup1}" || RestoreFile "${str_file1}" || return 1
+                    curl -o $( basename "${str_file1}" ) "${str_backup1}" || ( RestoreFile "${str_file1}" && return 1 )
+                    # curl -o $( basename "${str_file2}" ) "${str_backup2}" || ( RestoreFile "${str_file2}" && return 1 )
                 else
-                    curl -o "${str_file1}" "${str_backup1}" || RestoreFile "${str_file1}" || return 1
-                    # curl -o "${str_file2}" "${str_backup2}" || return 1
+                    curl -o "${str_file1}" "${str_backup1}" || ( RestoreFile "${str_file1}" && return 1 )
+                    # curl -o "${str_file2}" "${str_backup2}" || ( RestoreFile "${str_file2}" && return 1 )
                 fi
             fi
 
-            if ! $bool_is_connected_to_Internet && GoToScriptDir; then
-                cp $( basename "${str_file1}" ) "${str_file1}" || RestoreFile "${str_file1}" || return 1
+            if ! $bool_is_connected_to_Internet && GetScriptDir; then
+                cp $( basename "${str_file1}" ) "${str_file1}" || ( RestoreFile "${str_file1}" && return 1 )
+                # curl -o "${str_file2}" "${str_backup2}" || ( RestoreFile "${str_file2}" && return 1 )
             fi
 
             if $bool_is_setup_evdev; then
@@ -542,10 +540,9 @@
         }
 
         # <params>
-        local str_output="Appending changes to libvirt-qemu..."
+        local str_output="Appending libvirt-qemu..."
         # </params>
 
-        echo -e "\n${str_output}"
         Modify_QEMU_Main &> /dev/null
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
@@ -563,7 +560,7 @@
             local str_script_name1="install.sh"
             # </params>
 
-            GoToScriptDir
+            GetScriptDir
             UpdateOrCloneGitRepo "${str_repos_dir}" "${str_full_repo1}" "${str_user_name1}"
             cd "${str_repos_dir}${str_full_repo1}" || return $?
             IsFile "${str_script_name1}" || return $?
@@ -610,8 +607,6 @@
                 (( int_denominator-- ))
             fi
 
-            readonly int_denominator
-
             # <remarks> Is fraction positive non-zero and not equal to one. </remarks>
             if [[ "${int_denominator}" -gt 1 ]]; then
                 local str_fraction="1/${int_denominator}"
@@ -634,16 +629,16 @@
         }
 
         # <params>
-        local str_output1="Installing zram-swap..."
+        local str_output="Allocating RAM to swap..."
         # </params>
 
-        echo -e "${str_output1}"
+        echo -e "${str_output}\n"
 
-        if ! RAM_Swapfile_Install &> /dev/null || ! RAM_Swapfile_Modify &> /dev/null; then
+        if ! RAM_Swapfile_Install || ! RAM_Swapfile_Modify; then
             false
         fi
 
-        PrintPassOrFail "${str_output1}"
+        PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
 
@@ -654,7 +649,7 @@
         {
             # <params>
             declare -ga arr_event_devices arr_input_devices
-            local str_output1="Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n\tHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
+            local str_output1="Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\nHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
             local str_fail="${var_prefix_error} Cannot parse input devices (by ID)."
             local var_get_event_devices='readonly arr_event_devices=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )'
             local var_get_input_devices='readonly arr_input_devices=( $( ls /dev/input/by-id ) )'
@@ -677,7 +672,6 @@
         local str_output="Executing Evdev setup..."
         # </params>
 
-        echo -e "\n${str_output}"
         Virtual_KVM_Main &> /dev/null
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
@@ -700,7 +694,7 @@
                 InstallPackage "${str_dependencies}" || return $?
             fi
 
-            GoToScriptDir
+            GetScriptDir
             UpdateOrCloneGitRepo "${str_repos_dir}" "${str_full_repo1}" "${str_user_name1}"
             cd "${str_repos_dir}${str_full_repo1}" || return $?
 
@@ -721,10 +715,9 @@
         }
 
         # <params>
-        local str_output="Executing LookingGlass setup..."
+        local str_output="Installing LookingGlass..."
         # </params>
 
-        echo -e "\n${str_output}"
         VirtualVideoCapture_Main &> /dev/null
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
@@ -740,7 +733,7 @@
     #     }
 
     #     # <params>
-    #     local str_output="Executing Scream setup..."
+    #     local str_output="Installing Scream..."
     #     # </params>
 
     #     echo -e "\n${str_output}"
