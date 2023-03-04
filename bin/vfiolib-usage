@@ -93,7 +93,6 @@
         esac; shift; done
 
         if [[ "$1" == '--' ]]; then shift; fi
-        IsString "${var_get_preferred_vendor}" &> /dev/null || SetPreferredBrand
         return 0
     }
 
@@ -153,8 +152,8 @@
             "\t-c, --cpu\t\tAllocate CPU"
             "\t-e, --evdev\t\tSetup a virtual KVM switch"
             "\t-h, --hugepages\t\tAllocate RAM"
-            "\t\t2M, 1G\t\tHugepage size with byte prefix"
-            "\t\t(number)\tAmount of Hugepages"
+            "\t-h\t2M, 1G [Amount]\tHugepage [size]"
+            "\t-h\t[size] [1-?]\t[Amount] of Hugepages"
             ""
             "\t-H, --hooks\t\tInstall recommended libvirt-hooks and services"
             "\t-l, --looking-glass\tInstall LookingGlass"
