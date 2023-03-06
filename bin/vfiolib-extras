@@ -560,11 +560,12 @@
             local str_script_name1="install.sh"
             # </params>
 
-            GetScriptDir
-            UpdateOrCloneGitRepo "${str_repos_dir}" "${str_full_repo1}" "${str_user_name1}"
-            cd "${str_repos_dir}${str_full_repo1}" || return $?
+            GetScriptDir || return $?
+            UpdateOrCloneGitRepo "${str_files_dir}" "${str_full_repo1}" "${str_user_name1}" || return $?
+            cd "${str_files_dir}${str_full_repo1}" || return $?
             IsFile "${str_script_name1}" || return $?
             sudo bash "${str_script_name1}" || return 1
+            GetScriptDir || return $?
             return 0
         }
 
@@ -622,7 +623,7 @@
             fi
 
             OverwriteFile "arr_file_contents" "${str_file1}" || return $?
-            eval "${var_find_zram_swap}" && eval "${var_disable_zram_swap}"
+            eval "${var_find_zram_swap}" &> /dev/null && eval "${var_disable_zram_swap}" &> /dev/null
             eval "${var_restart_daemon}" || return $?
             eval "${var_enable_all_swap}" || return $?
             return 0
@@ -632,12 +633,8 @@
         local str_output="Allocating RAM to swap..."
         # </params>
 
-        echo -e "${str_output}\n"
-
-        if ! RAM_Swapfile_Install || ! RAM_Swapfile_Modify; then
-            false
-        fi
-
+        RAM_Swapfile_Install &> /dev/null
+        RAM_Swapfile_Modify &> /dev/null
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
