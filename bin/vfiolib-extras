@@ -720,24 +720,23 @@
         return "${int_exit_code}"
     }
 
-    # # <summary> Scream: Setup audio loopback from virtual machine to host. NOTE: Only supported for Win 7/8/10/11 virtual machines. </summary>
-    # # <returns> exit code </returns>
-    # function VirtualAudioCapture
-    # {
-    #     function VirtualAudioCapture_Main
-    #     {
-    #         return 0
-    #     }
+    # <summary> Scream: Setup audio loopback from virtual machine to host. NOTE: Only supported for Win 7/8/10/11 virtual machines. </summary>
+    # <returns> exit code </returns>
+    function VirtualAudioCapture
+    {
+        function VirtualAudioCapture_Main
+        {
+            return $int_code_skipped_operation
+        }
 
-    #     # <params>
-    #     local str_output="Installing Scream..."
-    #     # </params>
+        # <params>
+        local str_output="Installing Scream...\t"
+        # </params>
 
-    #     echo -e "\n${str_output}"
-    #     VirtualAudioCapture_Main &> /dev/null
-    #     PrintPassOrFail "${str_output}"
-    #     return "${int_exit_code}"
-    # }
+        VirtualAudioCapture_Main &> /dev/null
+        PrintPassOrFail "${str_output}"
+        return "${int_exit_code}"
+    }
 # </code>
 
 # <params>
