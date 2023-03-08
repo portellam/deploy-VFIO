@@ -15,9 +15,11 @@
 # </code>
 
 # <code>
-    SetScriptDir || exit $?
-    IsSudoUser || exit $?
-    if ! SetOptions $@; then GetUsage; exit $?; fi
+function Main
+{
+    SetScriptDir || return $?
+    IsSudoUser || return $?
+    if ! SetOptions $@; then GetUsage; return $?; fi
     # if $bool_uninstall; then UninstallExisting_VFIO fi
 
     # <remarks> Extras </remarks>
@@ -29,42 +31,47 @@
     RAM_Swapfile
     LibvirtHooks
     VirtualVideoCapture
-    # VirtualAudioCapture
+    VirtualAudioCapture
     GuestAudioLoopback
 
     # <remarks> Main setup </remarks>
     case true in
         $bool_parse_IOMMU_from_file )
-            Parse_IOMMU "FILE" || exit $?
+            Parse_IOMMU "FILE" || return $?
             ;;
 
         $bool_parse_IOMMU_from_internet )
-            Parse_IOMMU "DNS" || exit $?
+            Parse_IOMMU "DNS" || return $?
             ;;
 
         $bool_parse_IOMMU_from_local | * )
-            Parse_IOMMU "LOCAL" || exit $?
+            Parse_IOMMU "LOCAL" || return $?
             ;;
     esac
 
-    Select_IOMMU $@ || exit $?
+    Select_IOMMU $@ || return $?
 
     case true in
         $bool_multiboot )
             Multiboot_VFIO
-            exit $?
             ;;
 
         $bool_static )
             Static_VFIO
-            exit $?
             ;;
 
         * )
             Setup_VFIO
-            exit $?
             ;;
     esac
+
+    return $?
+}
 # </code>
 
-exit 0
+while [[ $? -eq 0 || $? -eq $int_code_partial_completion || $? -eq $int_code_skipped_operation ]]; do
+    Main $@
+    break
+done
+
+exit $?
