@@ -120,7 +120,7 @@
 
                     # <remarks> If parsing file and file does not exist, recursive call to parse internet. </remarks>
                     "${str_opt_parse_file}" )
-                        echo -e "${str_output_parse_file}"
+                        str_output="${str_output_parse_file}"
                         var_parse_all_ID+="${var_parse_args_file}"
                         var_parse_name_ID+="${var_parse_args_file}"
                         var_parse_slot_ID+="${var_parse_args_file}"
@@ -131,7 +131,7 @@
 
                     # <remarks> If internet is not available, exit. </remarks>
                     "${str_opt_parse_internet}" )
-                        echo -e "${str_output_parse_internet}"
+                        str_output="${str_output_parse_internet}"
                         local var_parse_all_ID+="${var_parse_args_online}"
                         local var_parse_name_ID+="${var_parse_args_online}"
                         local var_parse_slot_ID+="${var_parse_args_online}"
@@ -141,7 +141,7 @@
                         ;;
 
                     "${str_opt_parse_local}" | * )
-                        echo -e "${str_output_parse_local}"
+                        str_output="${str_output_parse_local}"
                         ;;
                 esac
 
@@ -156,8 +156,8 @@
                 local str_output_lists_inequal="${var_prefix_error} System PCI lists' sizes are inequal."
                 local str_output_list_empty="${var_prefix_error} One or more system PCI lists are empty."
                 local str_output_parse_file="Parsing PCI from file..."
-                local str_output_parse_internet="Parsing PCI devices from Internet database..."
-                local str_output_parse_local="Parsing PCI devices from local database..."
+                local str_output_parse_internet="Parsing PCI from Internet..."
+                local str_output_parse_local="Parsing PCI from system..."
                 local str_output_is_setup_VFIO="${var_prefix_error} Found existing VFIO setup."
 
                 # <remarks> Declare lists </remarks>
@@ -195,6 +195,8 @@
         }
 
         # <params>
+            local str_output=""
+
             # <remarks> Set parse options </remarks>
             local str_opt_parse_file="FILE"
             local str_opt_parse_internet="DNS"
@@ -208,15 +210,15 @@
         # <remarks> If an operation fails, try another. </remarks>
         case "${var_opt}" in
             "${str_opt_parse_internet}" )
-                Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
+                Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}" &> /dev/null
                 ;;
 
             "${str_opt_parse_file}" )
-                Parse_IOMMU_Main "${str_opt_parse_file}" "${str_file}" || Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
+                Parse_IOMMU_Main "${str_opt_parse_file}" "${str_file}" &> /dev/null || Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}" &> /dev/null
                 ;;
 
             "${str_opt_parse_local}" | * )
-                Parse_IOMMU_Main "${str_opt_parse_local}" "${str_file}" || Parse_IOMMU_Main "${str_opt_parse_file}" "${str_file}" || Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
+                Parse_IOMMU_Main "${str_opt_parse_local}" "${str_file}" &> /dev/null || Parse_IOMMU_Main "${str_opt_parse_file}" "${str_file}" &> /dev/null || Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}" &> /dev/null
                 ;;
         esac
 
@@ -290,7 +292,7 @@
                 arr_IOMMU_PCI_STUB+=( "" )
             fi
 
-            if $bool_IOMMU_has_VGA}; then
+            if $bool_IOMMU_has_VGA; then
                 arr_IOMMU_VFIO_PCI+=( "" )
                 arr_IOMMU_VFIO_PCI_with_VGA+=( "${int_this_IOMMU_ID}" )
             else
