@@ -2,18 +2,15 @@
 work-in-progress
 
 ## Description
-The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-boot: For multiple VGA **(GPU)** device systems, Swap the preferred Host VGA device at GRUB boot menu. VFIO: Run any OS with PCI hardware as a Virtual machine (VM), with your desktop OS untouched.
+Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA device for Host at GRUB boot menu. VFIO: Run any Guest OS with PCI hardware as a Virtual machine (VM), with your desktop OS untouched.
 
 ## Why?
 * **Separation-of-Concerns**
-    * Segregate your Work, Game, and School PC from your personal desktop computer.
+    * Segregate your Work, Game, or School PC from your personal desktop computer.
 * **Run a legacy OS** should your PCI hardware support it.
     * **VGA devices:** NVIDIA GTX 900-series, or AMD Radeon HD 7000-series (or before) (example: **Windows XP**).
     * **VGA devices:** NVIDIA 7000-series GTX (or before), or ATI (pre-AMD) (example: **Windows 98**).
     * **Audio devices:** Creative Soundblaster for that authentic, 1990s-2000s experience (example: **Windows 98**).
-* **If it's greater control of your privacy you want**
-    * Piss on Microsoft, go deploy a VFIO setup **NOW**. [9]
-    * Use **me_cleaner**. [10]
 
 ## What is VFIO?
 * about:            https://www.kernel.org/doc/html/latest/driver-api/vfio.html
@@ -23,31 +20,36 @@ The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-b
 ## How-to
 #### To install, execute:
 
-        sudo bash deploy-vfio-setup.bash [OPTION]...
+        sudo bash deploy-vfio.bash [OPTION]...
         sudo bash vfiolib-all [OPTION]...
 
 #### Usage (Options)
 
-        h, --help               Print this usage statement
+        --help                      Print this usage statement
 
         Parse PCI:
-            f, --file           Reference file database
-            i, --internet       Reference online database
+            -f, --file              Reference file database
+            -i, --internal          Reference local database
+            -I, --internet          Reference online database
+                all                 Select all IOMMU groups (useful for Multiboot VFIO)
 
         Setup:
-            m, --multiboot      Create multiple GRUB entries for a Multi VGA VFIO setup
-            s, --static         Install a Single VGA VFIO setup
-            u, --uninstall      Undo an existing VFIO setup
+            -m, --multiboot         Create multiple GRUB entries for a Multi VGA VFIO setup
+            -s, --static            Install a Single VGA VFIO setup
+            -u, --uninstall         Undo an existing VFIO setup
 
         Extras:
-            c, --cpu            Allocate CPU
-            e, --evdev          Setup a virtual KVM switch
-            H, --hooks          Install recommended libvirt-hooks and services
-            l, --looking-glass  Install LookingGlass
-            L, --loopback       Install the audio loopback service
-            p, --hugepages      Allocate RAM
-            S, --scream         Install Scream
-            z, --zram-swap      Create swap in RAM
+            -c, --cpu               Allocate CPU
+            -e, --evdev             Setup a virtual KVM switch
+            -h, --hugepages         Allocate RAM
+                2M, 1G              Hugepage size with byte prefix
+                (number)            Amount of Hugepages
+
+            -H, --hooks             Install recommended libvirt-hooks and services
+            -l, --looking-glass     Install LookingGlass
+            -L, --audio-loopback    Install the audio loopback service
+            -S, --scream            Install Scream
+            -z, --zram-swap         Create swap in RAM
 
 ## Features
 ### Main VFIO Setup (PCI Passthrough)
@@ -126,13 +128,6 @@ The Ultimate script to seamlessly deploy a VFIO setup (PCI passthrough). Multi-b
 
 ### [8]
 * **LookingGlass:** https://looking-glass.io/docs/B5.0.1/
-
-### [9]
-* **Ford attacks Chevy:**   https://www.youtube.com/watch?v=ShiKM3OibGQ&t=30s
-
-### [10]
-* **original:**     https://github.com/corna/me_cleaner
-* **updated fork:** https://github.com/dt-zero/me_cleaner
 
 ## Disclaimers
 Use at your own risk.
