@@ -8,7 +8,11 @@
 #
 
 # <params>
-    # <summar> Directories </summary>
+    # <summary> Constants </summary>
+    declare -gi int_max_tries=2
+    declare -ag arr_count_tries=( $( seq 0 "${int_max_tries}" ) )
+
+    # <summary> Directories </summary>
     declare -g str_script_dir
 
     # <summary> Exit codes </summary>
