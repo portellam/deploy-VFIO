@@ -23,7 +23,6 @@
 
         # <params>
         local str_commands_to_execute=""
-        local str_output_invalid_package_manager="${var_prefix_fail}: Command '${str_package_manager}' is not supported."
         local str_output_invalid_package="${var_prefix_fail}: Package(s) '${str_package_manager}' was/were not found."
         # </params>
 
@@ -233,33 +232,6 @@
         return 0
     }
 
-    # <summary> Distro-agnostic, check if package is installed. </summary>
-    # <param name=$1> string: the software package(s) </param>
-    # <param name="${str_package_manager}"> string: the package manager </param>
-    function IsInstalledPackage
-    {
-        IsString "${str_package_manager}" || return $?
-        IsString $1 || return $?
-
-        # <params>
-        local str_fail="${var_prefix_fail}: Command '${str_package_manager}' is not supported."
-        # </params>
-
-        # <remarks> Check if package is not installed </remarks>
-        case "${str_package_manager}" in
-            "apt" )
-                dpkg -s $1 &> /dev/null || InstallPackage $1 || return $?
-                ;;
-
-            * )
-                echo -e "${str_fail}"
-                return 1
-                ;;
-        esac
-
-        return 0
-    }
-
     # <summary> Distro-agnostic, Install a software package. </summary>
     # <param name=$1> string: the software package(s) </param>
     # <param name=$2> boolean: true/false do/don't reinstall software package and configuration files (if possible) </param>
@@ -273,10 +245,10 @@
         local bool_option_reinstall=false
         local str_commands_to_execute=""
         local str_output="Installing software packages..."
-        local str_fail="${var_prefix_fail}: Command '${str_package_manager}' is not supported."
         # </params>
 
         IsBool $2 &> /dev/null && bool_option_reinstall=true
+        IsInstalledPackage $1 && return 0
 
         # <remarks> Auto-update and auto-install selected packages </remarks>
         case "${str_package_manager}" in
@@ -319,6 +291,33 @@
         eval "${str_commands_to_execute}" || ( return 1 )
         PrintPassOrFail "${str_output}"
         return $?
+    }
+
+    # <summary> Distro-agnostic, check if package is installed. </summary>
+    # <param name=$1> string: the software package(s) </param>
+    # <param name="${str_package_manager}"> string: the package manager </param>
+    function IsInstalledPackage
+    {
+        IsString "${str_package_manager}" || return $?
+        IsString $1 || return $?
+
+        # <params>
+        local str_fail="${var_prefix_fail}: Command '${str_package_manager}' is not supported."
+        # </params>
+
+        # <remarks> Check if package is not installed </remarks>
+        case "${str_package_manager}" in
+            "apt" )
+                dpkg -s $1 &> /dev/null || InstallPackage $1 || return $?
+                ;;
+
+            * )
+                echo -e "${str_fail}"
+                return 1
+                ;;
+        esac
+
+        return 0
     }
 
     # <summary> Update GetInternetStatus </summary>
@@ -417,6 +416,8 @@
 # </code>
 
 # <params>
+    declare -g str_output_invalid_package_manager="${var_prefix_fail}: Command '${str_package_manager}' is not supported."
+
     # <summary> System validation </summary>
     declare -g bool_is_installed_systemd=false
     IsInstalledCommand "systemd" &> /dev/null && bool_is_installed_systemd=true
