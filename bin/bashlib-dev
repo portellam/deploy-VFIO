@@ -417,9 +417,10 @@
 # </code>
 
 # <params>
-declare -g bool_is_installed_systemd=false
-IsInstalledCommand "systemd" &> /dev/null && bool_is_installed_systemd=true
+    # <summary> System validation </summary>
+    declare -g bool_is_installed_systemd=false
+    IsInstalledCommand "systemd" &> /dev/null && bool_is_installed_systemd=true
 
-declare -gl str_package_manager=""
-GetLinuxDistro &> /dev/null
+    declare -gl str_package_manager=""
+    GetLinuxDistro &> /dev/null
 # </params>
