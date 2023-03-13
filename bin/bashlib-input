@@ -21,8 +21,6 @@
     function ReadInput
     {
         # <params>
-        declare -i int_max_tries=2
-        declare -ar arr_count=( $( seq 0 "${int_max_tries}" ) )
         local str_no="N"
         local str_yes="Y"
         local str_output=""
@@ -31,7 +29,7 @@
         IsString $1 &> /dev/null && str_output="${1} "
         str_output+="${var_green}[Y/n]:${var_reset_color}"
 
-        for int_count in ${arr_count[@]}; do
+        for int_count in ${arr_count_tries[@]}; do
 
             # <summary> Append output. </summary>
             echo -en "${str_output} "
@@ -70,17 +68,14 @@
     function ReadInputFromRangeOfTwoNums
     {
         # <params>
-        declare -i int_max_tries=2
-        declare -ar arr_count=( $( seq 0 "${int_max_tries}" ) )
         local var_min=$2
         local var_max=$3
         local str_output=""
-        local str_fail="${var_prefix_error} Extrema are not valid."
         var_input=""
         # </params>
 
         if ( ! IsNum $var_min || ! IsNum $var_max ) &> /dev/null; then
-            echo -e "${str_output}"_extrema_are_not_valid
+            echo -e "${str_fail_invalid_extrema}"
             return 1
         fi
 
@@ -88,7 +83,7 @@
 
         str_output+="${var_green}[${var_min}-${var_max}]:${var_reset_color}"
 
-        for int_count in ${arr_count[@]}; do
+        for int_count in ${arr_count_tries[@]}; do
 
             # <summary> Append output. </summary>
             echo -en "${str_output} "
@@ -120,18 +115,15 @@
     function ReadMultipleChoiceIgnoreCase
     {
         # <params>
-        declare -i int_max_tries=2
-        declare -ar arr_count=( $( seq 0 "${int_max_tries}" ) )
         declare -a arr_input=( )
         local str_output=""
-        local str_fail="${var_prefix_error} Insufficient multiple choice answers."
         var_input=""
         # </params>
 
         # <summary> Minimum multiple choice are two answers. </summary>
         if ( ! IsString $2 || ! IsString $3 ) &> /dev/null; then
             SaveExitCode
-            echo -e "${str_fail}"
+            echo -e "${str_fail_not_enough_answers}"
             return "${int_exit_code}"
         fi
 
@@ -148,7 +140,7 @@
         IsString $1 &> /dev/null && str_output="${1} "
         str_output+="${var_green}[${arr_input[@]}]:${var_reset_color}"
 
-        for int_count in ${arr_count[@]}; do
+        for int_count in ${arr_count_tries[@]}; do
             echo -en "${str_output} "
             read var_input
 
@@ -184,17 +176,14 @@
     function ReadMultipleChoiceMatchCase
     {
         # <params>
-        declare -i int_max_tries=2
-        declare -ar arr_count=( $( seq 0 "${int_max_tries}" ) )
         declare -a arr_input=( )
         local str_output=""
-        local str_fail="${var_prefix_error} Insufficient multiple choice answers."
         var_input=""
         # </params>
 
         # <summary> Minimum multiple choice are two answers. </summary>
         if ( ! IsString $2 || ! IsString $3 ) &> /dev/null; then
-            echo -e "${str_fail}"
+            echo -e "${str_fail_not_enough_answers}"
             return 1;
         fi
 
@@ -211,7 +200,7 @@
         IsString $1 &> /dev/null && str_output="${1} "
         str_output+="${var_green}[${arr_input[@]}]:${var_reset_color}"
 
-        for int_count in ${arr_count[@]}; do
+        for int_count in ${arr_count_tries[@]}; do
             echo -en "${str_output} "
             read var_input
 
@@ -233,3 +222,9 @@
         return 1
     }
 # </code>
+
+# <params>
+    # <summary> Output statement </summary>
+    declare -g str_fail_invalid_extrema="${var_prefix_error} Extrema are not valid."
+    declare -g str_fail_not_enough_answers="${var_prefix_error} Insufficient multiple choice answers."
+# </params>

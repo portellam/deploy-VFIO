@@ -90,21 +90,19 @@
 
     # <summary> Attempt given command a given number of times before failure. </summary>
     # <param name=$1> string: the command to execute </param>
-    function StopEvalAfterThriceFail        # NEEDS WORK
+    function StopEvalAfterThriceFail
     {
         IsString $1 || return $?
 
-        # <params>
-        declare -ir int_min_count=1
-        declare -ir int_max_count=3
-        declare -ar arr_count=$( eval echo {$int_min_count..$int_max_count} )
-        local str_fail="${var_prefix_error} Execution of command failed."
-        # </params>
-
         for int_count in ${arr_count[@]}; do
-            eval $1 && return 0 || echo -e "${str_fail}"
+            eval $1 && return 0 || echo -e "${str_fail_command}"
         done
 
         return 1
     }
 # </code>
+
+# <params>
+    # <summary> Output statement </summary>
+    declare -g str_fail_command="${var_prefix_error} Execution of command failed."
+# </params>
