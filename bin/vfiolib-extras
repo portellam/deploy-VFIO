@@ -702,7 +702,7 @@
     # <remarks> reference: https://looking-glass.io/docs/B6/install/#client-install </remarks>
     function VirtualVideoCapture
     {
-        function VirtualVideoCapture_Main
+        function VirtualVideoCapture_Get
         {
             # <params>
             local str_user_name1="gnif"
@@ -711,21 +711,26 @@
             local str_dependencies="cmake gcc g++ clang libegl-dev libgl-dev libgles-dev libfontconfig-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config"
             # </params>
 
-            if [[ "${str_package_manager}" == "apt" ]]; then
+            if ! IsInstalledPackage "${str_dependencies}"; then
                 echo
                 InstallPackage "${str_dependencies}" || return $?
                 echo
             fi
 
             GetScriptDir
-            UpdateOrCloneGitRepo "${str_repos_dir}" "${str_full_repo1}" "${str_user_name1}"
-            cd "${str_repos_dir}${str_full_repo1}" || return $?
+            UpdateOrCloneGitRepo "${str_files_dir}" "${str_full_repo1}" "${str_user_name1}" || return $?
+            GetScriptDir
+            cd "${str_files_dir}${str_full_repo1}" || return $?
+            return 0
+        }
 
+        function VirtualVideoCapture_Install
+        {
             # <remarks> Build client </remarks>
-            mkdir client/build || return 1
+            IsFile "client/build" || ( mkdir client/build || return 1 )
             cd client/build || return 1
-            cmake ../ || return 1
-            make || return 1
+            cmake ../ || ( git submodule update --init --recursive ) || return 1
+            make || return 1                                                            # TODO: fix here!
 
             # <remarks> Conclude build as root or user. </remarks>
             if $bool_is_user_root; then
@@ -738,11 +743,14 @@
         }
 
         # <params>
-        local str_output="Installing LookingGlass..."
+        local str_output1="Updating LookingGlass..."
+        local str_output2="Installing LookingGlass..."
         # </params>
 
-        VirtualVideoCapture_Main
-        PrintPassOrFail "${str_output}"
+        VirtualVideoCapture_Get
+        PrintPassOrFail "${str_output1}"
+        VirtualVideoCapture_Install
+        PrintPassOrFail "${str_output2}"
         return "${int_exit_code}"
     }
 # </code>
