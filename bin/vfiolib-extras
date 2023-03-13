@@ -49,13 +49,13 @@
             local var_get_all_cores='seq 0 $(( ${int_total_cores} - 1 ))'
             local var_get_total_threads='cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+"'
             local var_get_total_cores='cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+"'
-            declare -ir int_total_cores=$( eval "${var_get_total_cores}" )
-            declare -ir int_total_threads=$( eval "${var_get_total_threads}" )
+            declare -i int_total_cores=$( eval "${var_get_total_cores}" )
+            declare -i int_total_threads=$( eval "${var_get_total_threads}" )
             # </params>
 
             # <summary> Set maximum number of cores allocated to host machine. </summary>
                 # <params>
-                declare -ar arr_all_cores=( $( eval "${var_get_all_cores}" ) )
+                declare -a arr_all_cores=( $( eval "${var_get_all_cores}" ) )
                 declare -i int_host_cores=1
                 # </params>
 
@@ -82,9 +82,9 @@
                 local var_get_thread='$(( int_core + ( int_SMT_factor * int_total_cores ) ))'
                 local var_get_virt_cores='seq ${int_host_cores} $(( ${int_total_cores} - 1 ))'
 
-                declare -ar arr_host_cores=( $( eval "${var_get_host_cores}" ) )
+                declare -a arr_host_cores=( $( eval "${var_get_host_cores}" ) )
                 declare -a arr_host_threads=()
-                declare -ar arr_virt_cores=( $( eval "${var_get_virt_cores}" ) )
+                declare -a arr_virt_cores=( $( eval "${var_get_virt_cores}" ) )
                 declare -a arr_virt_threads=()
                 declare -i int_SMT_factor=$(( "${int_total_threads}" / "${int_total_cores}" ))
                 declare -a arr_SMT_factors=( $( eval "${var_get_SMT_factors}" ) )
@@ -192,7 +192,7 @@
                 # <remarks> Save changes, convert hexadecimal mask into hexadecimal. </remarks>
                 readonly int_host_threads_hexadecimal_mask
                 declare -g str_host_threads_hexadecimal=$( printf '%x\n' $int_host_threads_hexadecimal_mask )
-                declare -ir int_total_threads_hexadecimal_mask=$(( ( 2 ** ${int_total_threads} ) - 1 ))
+                declare -i int_total_threads_hexadecimal_mask=$(( ( 2 ** ${int_total_threads} ) - 1 ))
                 declare -g str_total_threads_hexadecimal=$( printf '%x\n' $int_total_threads_hexadecimal_mask )
 
             declare -a arr_output1=(
@@ -236,7 +236,7 @@
                 local str_output2="Setup Hugepages?"
                 local str_output3="Enter size of Hugepages (bytes):"
 
-                declare -ar arr_choices=(
+                declare -a arr_choices=(
                     "2M"
                     "1G"
                 )
@@ -319,7 +319,7 @@
         function GuestAudioLoopback_Main
         {
             # <params>
-            declare -a arr_file1=(
+            declare -a arr_file1_current arr_file1_contents=(
                 "[Unit]"
                 "Description=Load audio loopback module"
                 "After=pulseaudio.service"
@@ -338,7 +338,10 @@
             local str_file1="audio-loopback-user.service"
             # </params>
 
-            OverwriteFile "${str_dir1}${str_file1}" || return $?
+            if ! IsFile $str_file1 || ( ReadFile arr_file1_current $str_file1 && IsArray arr_file1_current && ! AreEqualArrays arr_file1_current arr_file1_contents ); then
+                OverwriteFile arr_file1_contents "${str_dir1}${str_file1}" || return $?
+            fi
+
             systemctl daemon-reload || return 1
             systemctl enable "${str_file1}" || return 1
             systemctl restart "${str_file1}" || return 1
@@ -355,13 +358,12 @@
     }
 
     # <summary> libvirt-hooks: Setup useful Quality-of-life improvements in the form of services and scripts (hooks) for QEMU virtual machines. </summary>
-    # <returns> exit code </returns>
     function LibvirtHooks
     {
         function LibvirtHooks_Main
         {
             # <params>
-            declare -a arr_file1=(
+            declare -a arr_file1_current arr_file1_contents=(
                 "[Unit]"
                 "Description=Preventing sleep while libvirt domain "%i" is running"
                 ""
@@ -370,18 +372,15 @@
                 "ExecStart=/usr/bin/systemd-inhibit --what=sleep --why="Libvirt domain \"%i\" is running" --who=%U --mode=block sleep infinity"
             )
 
-            # declare -a arr_file2=()
-
             local str_dir1="/etc/systemd/system/"
             local str_file1="libvirt-nosleep@.service"
-            # local str_file1=""
             # </params>
 
-            OverwriteFile "${str_dir1}${str_file1}" || return $?
-            # OverwriteFile "${str_dir1}${str_file2}" || return $?
+            if ! IsFile $str_file1 || ( ReadFile arr_file1_current $str_file1 && IsArray arr_file1_current && ! AreEqualArrays arr_file1_current arr_file1_contents ); then
+                OverwriteFile arr_file1_contents "${str_dir1}${str_file1}" || return $?
+            fi
+
             systemctl daemon-reload || return 1
-            systemctl enable "${str_file1}" || return 1
-            systemctl restart "${str_file1}" || return 1
             return 0
         }
 
@@ -392,6 +391,8 @@
         LibvirtHooks_Main &> /dev/null
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
+
+        exit 0
     }
 
     # <summary> libvirt-qemu: Append necessary changes to QEMU system file, including user groups, Evdev, Hugepages, and NVRAM (for UEFI VMs). </summary>
@@ -401,14 +402,14 @@
         {
             # <params>
             declare -a arr_file1_evdev_cgroups=()
-            declare -ar arr_file1_default_cgroups=(
+            declare -a arr_file1_default_cgroups=(
                 "        \"/dev/null\", \"/dev/full\", \"/dev/zero\","
                 "        \"/dev/random\", \"/dev/urandom\","
                 "        \"/dev/ptmx\", \"/dev/kvm\","
                 "        \"/dev/rtc\", \"/dev/hpet\""
             )
 
-            declare -a arr_file1 arr_file2
+            declare -a arr_file1_contents arr_file1_current arr_file2_contents arr_file2_current
             local str_backup1="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"
             # local str_backup2=""
             local str_daemon1="libvirtd"
@@ -448,7 +449,7 @@
                 done
             fi
 
-            arr_file1=(
+            arr_file1_contents=(
                 ""
                 "# Generated by '${str_full_repo_name}'"
                 "# WARNING: Any modifications to this file will be modified by '${str_repo_name}'"
@@ -456,19 +457,19 @@
                 "#"
             )
 
-            arr_file2=()
-            arr_file1+=(
+            arr_file2_contents=()
+            arr_file1_contents+=(
                 ""
                 "### User permissions ###"
             )
 
             if IsString "${str_username}"; then
-                arr_file1+=(
+                arr_file1_contents+=(
                     "user = \"${str_username}\""
                     "group = \"user\""
                 )
             else
-                arr_file1+=(
+                arr_file1_contents+=(
                     "#user = \"user\""
                     "#group = \"user\""
                 )
@@ -476,44 +477,44 @@
                 ( return "${int_code_skipped_operation}" )
             fi
 
-            arr_file1+=(
+            arr_file1_contents+=(
                 ""
                 "### Hugepages ###"
             )
 
             if $bool_is_setup_hugepages; then
-                arr_file1+=(
+                arr_file1_contents+=(
                     "hugetlbfs_mount = \"/dev/hugepages\""
                 )
             else
-                arr_file1+=(
+                arr_file1_contents+=(
                     "#hugetlbfs_mount = \"/dev/hugepages\""
                 )
 
                 ( return "${int_code_skipped_operation}" )
             fi
 
-            arr_file1+=(
+            arr_file1_contents+=(
                 ""
                 "### Devices ###"
                 "cgroup_device_acl = ["
             )
 
             if $bool_is_setup_evdev; then
-                arr_file1+=(
+                arr_file1_contents+=(
                     "${arr_file1_evdev_cgroups[@]}"
                     "${arr_file1_default_cgroups[@]}"
                     "]"
                 )
 
-                arr_file2+=(
+                arr_file2_contents+=(
                     ""
                     "# EVDEV"
                     "/dev/input/* rw,"
                     "/dev/input/by-id/* rw,"
                 )
             else
-                arr_file1+=(
+                arr_file1_contents+=(
                     "${arr_file1_default_cgroups[@]}"
                     "]"
                 )
@@ -522,7 +523,7 @@
             fi
 
             # <remarks> Adds NVRAM for EFI kernels in UEFI virtual machines. </remarks>
-            arr_file1+=(
+            arr_file1_contents+=(
                 ""
                 "nvram = ["
                 "        \"/usr/share/OVMF/OVMF_CODE.fd:/usr/share/OVMF/OVMF_VARS.fd\","
@@ -532,8 +533,14 @@
                 "]"
             )
 
-            WriteFile "arr_file1" "${str_file1}" || return $?
-            WriteFile "arr_file2" "${str_file2}" || return $?
+            if ! IsFile $str_file1 || ( ReadFile arr_file1_current $str_file1 && IsArray arr_file1_current && ! AreEqualArrays arr_file1_current arr_file1_contents ); then
+                OverwriteFile arr_file1_contents "${str_file1}" || return $?
+            fi
+
+            if ! IsFile $str_file1 || ( ReadFile arr_file2_current $str_file1 && IsArray arr_file2_current && ! AreEqualArrays arr_file2_current arr_file2_contents ); then
+                OverwriteFile arr_file2_contents "${str_file2}" || return $?
+            fi
+
             IsActiveDaemon "${str_daemon1}" || ( systemctl enable "${str_daemon1}" || return 1 )
             systemctl restart "${str_daemon1}" || return 1
             return 0
@@ -596,9 +603,9 @@
             fi
 
             if IsNum "${int_alloc_mem_hugepages}"; then
-                declare -ir int_usable_mem=$(( ( int_max_mem - int_alloc_mem_hugepages ) / 2 ))
+                declare -i int_usable_mem=$(( ( int_max_mem - int_alloc_mem_hugepages ) / 2 ))
             else
-                declare -ir int_usable_mem=$(( int_max_mem / 2 ))
+                declare -i int_usable_mem=$(( int_max_mem / 2 ))
             fi
 
             declare -i int_denominator=$( printf "%.0f" $( echo "scale=2;${int_max_mem}/${int_usable_mem}" | bc ) )
@@ -721,7 +728,6 @@
     }
 
     # <summary> Scream: Setup audio loopback from virtual machine to host. NOTE: Only supported for Win 7/8/10/11 virtual machines. </summary>
-    # <returns> exit code </returns>
     function VirtualAudioCapture
     {
         function VirtualAudioCapture_Main
