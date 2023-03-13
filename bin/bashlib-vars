@@ -13,6 +13,31 @@
 # </code>
 
 # <code>
+    # <summary> Check if two given files are the same. If true, pass. </summary>
+    # <parameter name=$1> string: the file </parameter>
+    # <parameter name=$2> string: the other file </parameter>
+    function AreEqualArrays
+    {
+        IsArray $2 || return $?
+        IsArray $1 || return $?
+
+        # <params>
+        local var_get_param1='declare -a arr1=( ${'$1'[@]} )'
+        local var_get_param2='declare -a arr2=( ${'$1'[@]} )'
+        # </params>
+
+        eval "${var_get_param}" || return 1
+        eval "${var_get_param2}" || return 1
+
+        for int_key in "${!arr1[@]}"; do
+            if [[ "${arr1[$int_key]}" == "${arr2[$int_key]}" ]]; then
+                return 1
+            fi
+        done
+
+        return 0
+    }
+
     # <summary> Find line in array. </summary>
     # <paramref name=$1> string: the name of the array </paramref>
     # <param name=$2> string: the line </param>
@@ -22,10 +47,10 @@
         IsArray $1 || return $?
 
         # <params>
-        local var_command='declare -a arr=( ${'$1'[@]} )'
+        local var_get_param='declare -a arr=( ${'$1'[@]} )'
         # </params>
 
-        eval "${var_command}" || return 1
+        eval "${var_get_param}" || return 1
 
         for var_element in "${arr[@]}"; do
             if [[ "${var_element}" == $2 ]]; then
@@ -43,17 +68,16 @@
         IsString $1 || return $?
 
         # <params>
-        local str_fail="${var_prefix_error} Empty array."
-        local var_get_array='echo "${'$1'[@]}"'
-        local var_get_array_len='echo "${#'$1'[@]}"'
+        local var_get_param='echo "${'$1'[@]}"'
+        local var_get_param_len='echo "${#'$1'[@]}"'
         # </params>
 
-        for var_element in $( eval "${var_get_array}" ); do
+        for var_element in $( eval "${var_get_param}" ); do
             IsString "${var_element}" && return $?
         done
 
-        if [[ $( eval "${var_get_array_len}" ) -eq 0 ]]; then
-            echo -e "${str_fail}"
+        if [[ $( eval "${var_get_param_len}" ) -eq 0 ]]; then
+            echo -e "${str_fail_var_is_empty_array}"
             return "${int_code_var_is_empty}"
         fi
 
@@ -64,13 +88,8 @@
     # <param name=$1> var: the variable </param>
     function IsString
     {
-        # <params>
-        local str_fail="${var_prefix_error} Empty string."
-        local var="${1}"
-        # </params>
-
-        if [[ "${#var}" -eq 0 && "${var}" == "" ]]; then
-            echo -e "${str_fail}"
+        if [[ ${#1} -eq 0 && "${1}" == "" ]]; then
+            echo -e "${str_fail_var_is_empty_var}"
             return "${int_code_var_is_empty}"
         fi
 
@@ -83,17 +102,13 @@
     {
         IsString $1 || return $?
 
-        # <params>
-        local str_fail="${var_prefix_error} Not a boolean."
-        # </params>
-
         case $1 in
             "true" | "false" )
                 return 0
                 ;;
 
             * )
-                echo -e "${str_fail}"
+                echo -e "${str_fail_var_is_not_bool}"
                 return "${int_code_var_is_not_bool}"
                 ;;
         esac
@@ -105,13 +120,8 @@
     {
         IsString $1 || return $?
 
-        # <params>
-        local str_regex_numbers='^[0-9]+$'
-        local str_fail="${var_prefix_error} NaN."
-        # </params>
-
         if ! [[ $1 =~ $str_regex_numbers ]]; then
-            echo -e "${str_fail}"
+            echo -e "${str_fail_var_is_NAN}"
             return "${int_code_var_is_NAN}"
         fi
 
@@ -125,12 +135,11 @@
         IsString $1 || return $?
 
         # <params>
-        local str_fail="${var_prefix_error} Readonly variable."
         local var_is_readonly_var="unset ${1} 2> /dev/null"
         # </params>
 
         if ! eval "${var_is_readonly_var}"; then
-            echo -e "${str_fail}"
+            echo -e "${str_fail_var_is_RO}"
             return 1
         fi
 
@@ -187,3 +196,15 @@
         return 0
     }
 # </code>
+
+# <params>
+    # <summary> Constants </summary>
+    declare -g str_regex_numbers='^[0-9]+$'
+
+    # <summary> Output statement </summary>
+    declare -g str_fail_var_is_empty_array="${var_prefix_error} Empty array."
+    declare -g str_fail_var_is_empty_var="${var_prefix_error} Empty string."
+    declare -g str_fail_var_is_not_bool="${var_prefix_error} Not a boolean."
+    declare -g str_fail_var_is_NAN="${var_prefix_error} NaN."
+    declare -g str_fail_var_is_RO="${var_prefix_error} Readonly variable."
+# </params>
