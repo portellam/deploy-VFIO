@@ -338,7 +338,7 @@
             local str_file1="audio-loopback-user.service"
             # </params>
 
-            if ! IsFile $str_file1 || ( ReadFile arr_file1_current $str_file1 && IsArray arr_file1_current && ! AreEqualArrays arr_file1_current arr_file1_contents ); then
+            if ! IsFile $str_file1 &> /dev/null || ( ReadFile arr_file1_current $str_file1 && IsArray arr_file1_current && ! AreEqualArrays arr_file1_current arr_file1_contents ); then
                 OverwriteFile arr_file1_contents "${str_dir1}${str_file1}" || return $?
             fi
 
@@ -352,7 +352,7 @@
         local str_output="Creating audio loopback..."
         # </params>
 
-        GuestAudioLoopback_Main &> /dev/null
+        GuestAudioLoopback_Main
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
@@ -376,7 +376,7 @@
             local str_file1="libvirt-nosleep@.service"
             # </params>
 
-            if ! IsFile $str_file1 || ( ReadFile arr_file1_current $str_file1 && IsArray arr_file1_current && ! AreEqualArrays arr_file1_current arr_file1_contents ); then
+            if ! IsFile $str_file1 &> /dev/null || ( ReadFile arr_file1_current $str_file1 && IsArray arr_file1_current && ! AreEqualArrays arr_file1_current arr_file1_contents ); then
                 OverwriteFile arr_file1_contents "${str_dir1}${str_file1}" || return $?
             fi
 
@@ -388,7 +388,7 @@
         local str_output="Installing libvirt-hooks..."
         # </params>
 
-        LibvirtHooks_Main &> /dev/null
+        LibvirtHooks_Main
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
 
@@ -533,11 +533,11 @@
                 "]"
             )
 
-            if ! IsFile $str_file1 || ( ReadFile arr_file1_current $str_file1 && IsArray arr_file1_current && ! AreEqualArrays arr_file1_current arr_file1_contents ); then
+            if ! IsFile $str_file1 &> /dev/null || ( ReadFile arr_file1_current $str_file1 && IsArray arr_file1_current && ! AreEqualArrays arr_file1_current arr_file1_contents ); then
                 OverwriteFile arr_file1_contents "${str_file1}" || return $?
             fi
 
-            if ! IsFile $str_file1 || ( ReadFile arr_file2_current $str_file1 && IsArray arr_file2_current && ! AreEqualArrays arr_file2_current arr_file2_contents ); then
+            if ! IsFile $str_file1 &> /dev/null || ( ReadFile arr_file2_current $str_file1 && IsArray arr_file2_current && ! AreEqualArrays arr_file2_current arr_file2_contents ); then
                 OverwriteFile arr_file2_contents "${str_file2}" || return $?
             fi
 
@@ -681,6 +681,23 @@
         return "${int_exit_code}"
     }
 
+    # <summary> Scream: Setup audio loopback from virtual machine to host. NOTE: Only supported for Win 7/8/10/11 virtual machines. </summary>
+    function VirtualAudioCapture
+    {
+        function VirtualAudioCapture_Main
+        {
+            return $int_code_skipped_operation
+        }
+
+        # <params>
+        local str_output="Installing Scream...\t"
+        # </params>
+
+        VirtualAudioCapture_Main &> /dev/null
+        PrintPassOrFail "${str_output}"
+        return "${int_exit_code}"
+    }
+
     # <summary> LookingGlass: Setup direct-memory-access of video framebuffer from virtual machine to host. NOTE: Only supported for Win 7/10/11 virtual machines. </summary>
     # <remarks> reference: https://looking-glass.io/docs/B6/install/#client-install </remarks>
     function VirtualVideoCapture
@@ -695,7 +712,9 @@
             # </params>
 
             if [[ "${str_package_manager}" == "apt" ]]; then
+                echo
                 InstallPackage "${str_dependencies}" || return $?
+                echo
             fi
 
             GetScriptDir
@@ -722,24 +741,7 @@
         local str_output="Installing LookingGlass..."
         # </params>
 
-        VirtualVideoCapture_Main &> /dev/null
-        PrintPassOrFail "${str_output}"
-        return "${int_exit_code}"
-    }
-
-    # <summary> Scream: Setup audio loopback from virtual machine to host. NOTE: Only supported for Win 7/8/10/11 virtual machines. </summary>
-    function VirtualAudioCapture
-    {
-        function VirtualAudioCapture_Main
-        {
-            return $int_code_skipped_operation
-        }
-
-        # <params>
-        local str_output="Installing Scream...\t"
-        # </params>
-
-        VirtualAudioCapture_Main &> /dev/null
+        VirtualVideoCapture_Main
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
