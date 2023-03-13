@@ -14,8 +14,8 @@
 
 # <code>
     # <summary> Check if two given files are the same. If true, pass. </summary>
-    # <parameter name=$1> string: the file </parameter>
-    # <parameter name=$2> string: the other file </parameter>
+    # <paramref name=$1> string: name of the array </paramref>
+    # <paramref name=$2> string: name of the array </paramref>
     function AreEqualArrays
     {
         IsArray $2 || return $?
