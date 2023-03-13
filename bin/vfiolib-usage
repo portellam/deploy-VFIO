@@ -186,7 +186,7 @@
 # <params>
     # <remarks> Get script directories </remarks
     GetScriptDir
-    declare -g str_files_dir="$( find . -name files | uniq | head -n1 | cut -c2- )/"
+    declare -g str_files_dir="$( find .. -name files | uniq | head -n1 | cut -c2- )/"
 
     # <remarks> Toggles </remarks
     declare -g bool_is_connected_to_Internet=false
