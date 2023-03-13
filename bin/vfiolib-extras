@@ -26,8 +26,8 @@
     {
         function AddUserToGroups_Main
         {
-            adduser "${str_username}" "input" || return 1
-            adduser "${str_username}" "libvirt" || return 1
+            adduser "${str_first_user}" "input" || return 1
+            adduser "${str_first_user}" "libvirt" || return 1
             return 0
         }
 
@@ -463,9 +463,9 @@
                 "### User permissions ###"
             )
 
-            if IsString "${str_username}"; then
+            if IsString "${str_first_user}"; then
                 arr_file1_contents+=(
-                    "user = \"${str_username}\""
+                    "user = \"${str_first_user}\""
                     "group = \"user\""
                 )
             else
@@ -568,8 +568,8 @@
             # </params>
 
             GetScriptDir || return $?
-            UpdateOrCloneGitRepo "${str_files_dir}" "${str_full_repo1}" "${str_user_name1}" || return $?
-            cd "${str_files_dir}${str_full_repo1}" || return $?
+            UpdateOrCloneGitRepo "${str_git_dir}" "${str_full_repo1}" "${str_user_name1}" || return $?
+            cd "${str_git_dir}${str_full_repo1}" || return $?
             IsFile "${str_script_name1}" || return $?
             sudo bash "${str_script_name1}" || return 1
             GetScriptDir || return $?
@@ -718,9 +718,9 @@
             fi
 
             GetScriptDir
-            UpdateOrCloneGitRepo "${str_files_dir}" "${str_full_repo1}" "${str_user_name1}" || return $?
+            UpdateOrCloneGitRepo "${str_git_dir}" "${str_full_repo1}" "${str_user_name1}" || return $?
             GetScriptDir
-            cd "${str_files_dir}${str_full_repo1}" || return $?
+            cd "${str_git_dir}${str_full_repo1}" || return $?
             return 0
         }
 
@@ -729,7 +729,7 @@
             # <remarks> Build client </remarks>
             IsFile "client/build" || ( mkdir client/build || return 1 )
             cd client/build || return 1
-            cmake ../ || ( git submodule update --init --recursive ) || return 1
+            cmake ../ || ( git submodule update --init --recursive && cmake ../) || return 1
             make || return 1                                                            # TODO: fix here!
 
             # <remarks> Conclude build as root or user. </remarks>
@@ -756,11 +756,13 @@
 # </code>
 
 # <params>
-    declare -g str_files_dir="files"
+    declare -g str_this_homedir=$( getent passwd "$( whoami )" | cut -d: -f6 )
+    declare -g str_git_dir="$(str_this_homedir)/source/"
+    declare -g str_files_dir="$(str_this_homedir)/Downloads/"
 
     # <remarks> Evaluations </remarks>
     declare -g var_get_first_valid_user='getent passwd {1000..60000} | cut -d ":" -f 1' &> /dev/null
-    declare -g str_username=$( eval "${var_get_first_valid_user}" ) &> /dev/null
+    declare -g str_first_user=$( eval "${var_get_first_valid_user}" ) &> /dev/null
 
     # <remarks> Flag progress of setups </remarks>
     declare -g bool_is_setup_evdev=false
