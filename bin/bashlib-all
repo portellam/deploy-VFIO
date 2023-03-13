@@ -35,6 +35,7 @@
 # </code>
 
 # <params>
-declare -g bool_is_user_root=false
-IsSudoUser &> /dev/null && bool_is_user_root=true
+    # <summary> User validation </summary>
+    declare -g bool_is_user_root=false
+    IsSudoUser &> /dev/null && bool_is_user_root=true
 # </params>
