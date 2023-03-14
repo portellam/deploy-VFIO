@@ -410,45 +410,55 @@
             )
 
             declare -a arr_file1_contents arr_file1_current arr_file2_contents arr_file2_current
-            local str_backup1="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"
+            local str_file1="/etc/libvirt/qemu.conf"
+            local str_file2="/etc/apparmor.d/local/abstractions/libvirt-qemu"
+            local str_backup_file1="${str_file1}.bak"
+            local str_orig_file1="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"
             # local str_backup2=""
             local str_daemon1="libvirtd"
             local str_daemon1_packages="qemu"
-            local str_file1="/etc/libvirt/qemu.conf"
-            local str_file2="/etc/apparmor.d/local/abstractions/libvirt-qemu"
+            
             # </params>
 
             # TODO: scan existing file if it has already been modified. Remove existing text and append new.
 
             # IsInstalledPackage "${str_daemon1_packages}" || InstallPackage "${str_daemon1_packages}" || return $?     # TODO: fix this.
-            BackupFile "${str_file1}" || return $?
-            BackupFile "${str_file2}" || return $?
-            SetInternetStatus
+            BackupFile $str_file1 || return $?
+            BackupFile $str_file2 || return $?
 
             # TODO: file is not being downloaded, nor being found.
 
-            if $bool_is_connected_to_Internet; then
-                if GetScriptDir; then
-                    cd "${str_files_dir}" || return 1
-                    curl $( basename "${str_file1}" ) -o "${str_backup1}" || ( RestoreFile "${str_file1}" && return 1 )
-                    # curl $( basename "${str_file2}" ) -o "${str_backup2}" || ( RestoreFile "${str_file2}" && return 1 )
-                else
-                    curl "${str_file1}" -o "${str_backup1}" || ( RestoreFile "${str_file1}" && return 1 )
-                    # curl "${str_file2}" -o "${str_backup2}" || ( RestoreFile "${str_file2}" && return 1 )
-                fi
+            if SetInternetStatus && $bool_is_connected_to_Internet; then
+                curl $str_backup_file1 -o $str_orig_file1
+                # curl $str_backup_file2 -o $str_orig_file2
             fi
 
-            if ! $bool_is_connected_to_Internet && GetScriptDir; then
-                cp "${str_backup1}" "${str_file1}" || ( RestoreFile "${str_file1}" && return 1 )
-                # curl -o "${str_file2}" "${str_backup2}" || ( RestoreFile "${str_file2}" && return 1 )
-            fi
+            # if sys file does not contain hints of mod, go ahead with writing to it. otherwise, execute lines below
+
+            # elif IsFile $str_backup_file1 && ! AreEqualFiles $str_backup_file1 $str_file1; then
+            #     cp $str_orig_file1 $str_file1 || (
+            #         RestoreFile "${str_file1}"
+            #         return $?
+            #     )
+            # elif ! IsFile $str_backup_file1; then
+            #     RestoreFile "${str_file1}" || return $?
+            # fi
+
+            # if IsFile $str_backup_file2 && ! AreEqualFiles $str_backup_file2 $str_file2; then
+            #     cp $str_orig_file2 $str_file2 || (
+            #         RestoreFile "${str_file2}"
+            #         return $?
+            #     )
+            # elif ! IsFile $str_backup_file2; then
+            #     RestoreFile "${str_file2}" || return $?
+            # fi
 
             if $bool_is_setup_evdev; then
-                for str_event_device in "${arr_event_devices[@]}"; do
+                for str_event_device in ${arr_event_devices[@]}; do
                     arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${str_event_device}\"," )
                 done
 
-                for str_event_device in "${arr_input_devices[@]}"; do
+                for str_event_device in ${arr_input_devices[@]}; do
                     arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${str_event_device}\"," )
                 done
             fi
@@ -478,7 +488,7 @@
                     "#group = \"user\""
                 )
 
-                ( return "${int_code_skipped_operation}" )
+                ( return $int_code_skipped_operation )
             fi
 
             arr_file1_contents+=(
@@ -495,7 +505,7 @@
                     "#hugetlbfs_mount = \"/dev/hugepages\""
                 )
 
-                ( return "${int_code_skipped_operation}" )
+                ( return $int_code_skipped_operation )
             fi
 
             arr_file1_contents+=(
@@ -523,7 +533,7 @@
                     "]"
                 )
 
-                ( return "${int_code_skipped_operation}" )
+                ( return $int_code_skipped_operation )
             fi
 
             # <remarks> Adds NVRAM for EFI kernels in UEFI virtual machines. </remarks>
@@ -545,9 +555,12 @@
                 OverwriteFile arr_file2_contents "${str_file2}" || return $?
             fi
 
-            IsActiveDaemon "${str_daemon1}" || ( systemctl enable "${str_daemon1}" || return 1 )
-            systemctl restart "${str_daemon1}" || return 1
-            return 0
+            IsActiveDaemon $str_daemon1 || (
+                systemctl enable $str_daemon1 || return 1
+            )
+
+            systemctl restart $str_daemon1
+            return $?
         }
 
         # <params>
