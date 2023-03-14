@@ -71,10 +71,9 @@
         }
 
         # <params>
-        local str_output="Creating backup file..."
+        local str_output="Creating backup file...\t"
         # </params>
 
-        echo -e "${str_output}"
         BackupFile_Main $1
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
@@ -402,7 +401,6 @@
         local str_output="Restoring backup file..."
         # </params>
 
-        echo -e "${str_output}"
         RestoreFile_Main $1
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
