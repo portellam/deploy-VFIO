@@ -418,24 +418,28 @@
             local str_file2="/etc/apparmor.d/local/abstractions/libvirt-qemu"
             # </params>
 
-            IsInstalledPackage "${str_daemon1_packages}" || InstallPackage "${str_daemon1_packages}" || return $?
+            # TODO: scan existing file if it has already been modified. Remove existing text and append new.
+
+            # IsInstalledPackage "${str_daemon1_packages}" || InstallPackage "${str_daemon1_packages}" || return $?     # TODO: fix this.
             BackupFile "${str_file1}" || return $?
             BackupFile "${str_file2}" || return $?
             SetInternetStatus
 
+            # TODO: file is not being downloaded, nor being found.
+
             if $bool_is_connected_to_Internet; then
                 if GetScriptDir; then
                     cd "${str_files_dir}" || return 1
-                    curl -o $( basename "${str_file1}" ) "${str_backup1}" || ( RestoreFile "${str_file1}" && return 1 )
-                    # curl -o $( basename "${str_file2}" ) "${str_backup2}" || ( RestoreFile "${str_file2}" && return 1 )
+                    curl $( basename "${str_file1}" ) -o "${str_backup1}" || ( RestoreFile "${str_file1}" && return 1 )
+                    # curl $( basename "${str_file2}" ) -o "${str_backup2}" || ( RestoreFile "${str_file2}" && return 1 )
                 else
-                    curl -o "${str_file1}" "${str_backup1}" || ( RestoreFile "${str_file1}" && return 1 )
-                    # curl -o "${str_file2}" "${str_backup2}" || ( RestoreFile "${str_file2}" && return 1 )
+                    curl "${str_file1}" -o "${str_backup1}" || ( RestoreFile "${str_file1}" && return 1 )
+                    # curl "${str_file2}" -o "${str_backup2}" || ( RestoreFile "${str_file2}" && return 1 )
                 fi
             fi
 
             if ! $bool_is_connected_to_Internet && GetScriptDir; then
-                cp $( basename "${str_file1}" ) "${str_file1}" || ( RestoreFile "${str_file1}" && return 1 )
+                cp "${str_backup1}" "${str_file1}" || ( RestoreFile "${str_file1}" && return 1 )
                 # curl -o "${str_file2}" "${str_backup2}" || ( RestoreFile "${str_file2}" && return 1 )
             fi
 
@@ -550,7 +554,7 @@
         local str_output="Appending libvirt-qemu..."
         # </params>
 
-        Modify_QEMU_Main &> /dev/null
+        Modify_QEMU_Main
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
@@ -568,6 +572,7 @@
             # </params>
 
             GetScriptDir || return $?
+            echo
             UpdateOrCloneGitRepo "${str_git_dir}" "${str_full_repo1}" "${str_user_name1}" || return $?
             cd "${str_git_dir}${str_full_repo1}" || return $?
             IsFile "${str_script_name1}" || return $?
@@ -640,7 +645,7 @@
         local str_output="Allocating RAM to swap..."
         # </params>
 
-        RAM_Swapfile_Install &> /dev/null
+        RAM_Swapfile_Install
         RAM_Swapfile_Modify &> /dev/null
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
