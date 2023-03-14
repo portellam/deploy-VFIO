@@ -205,7 +205,7 @@
     declare -g bool_parse_IOMMU_from_local=false
     declare -g bool_parse_IOMMU_from_internet=false
     declare -g bool_scream=false
-    declare -g bool_select_all_IOMMU
+    declare -g bool_select_all_IOMMU=false
     declare -g bool_static=false
     declare -g bool_uninstall=false
     declare -g bool_zram_swap=false
