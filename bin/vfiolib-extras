@@ -757,8 +757,8 @@
 
 # <params>
     declare -g str_this_homedir=$( getent passwd "$( whoami )" | cut -d: -f6 )
-    declare -g str_git_dir="$(str_this_homedir)/source/"
-    declare -g str_files_dir="$(str_this_homedir)/Downloads/"
+    declare -g str_git_dir="${str_this_homedir}/source/"
+    declare -g str_files_dir="${str_this_homedir}/Downloads/"
 
     # <remarks> Evaluations </remarks>
     declare -g var_get_first_valid_user='getent passwd {1000..60000} | cut -d ":" -f 1' &> /dev/null
