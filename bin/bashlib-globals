@@ -46,7 +46,7 @@
     declare -g var_prefix_error="${var_yellow}Error:${var_reset_color}"
     declare -g var_prefix_fail="${var_red}Failure:${var_reset_color}"
     declare -g var_prefix_pass="${var_green}Success:${var_reset_color}"
-    declare -g var_prefix_warn="${var_blinking_red}Warning:${var_reset_color}"
+    declare -g var_prefix_warn="${var_red}Warning:${var_reset_color}"
     declare -g var_suffix_fail="${var_red}[Failure]${var_reset_color}"
     declare -g var_suffix_maybe="${var_yellow}[Incomplete]${var_reset_color}"
     declare -g var_suffix_pass="${var_green}[Success]${var_reset_color}"
