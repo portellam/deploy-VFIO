@@ -7,7 +7,7 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-# <remarks>Using </remarks>
+# <remarks> Using </remarks>
 # <code>
     source bashlib-globals
     source bashlib-proc
@@ -202,7 +202,7 @@
         case $str_package_manager in
             "apt" )
                 local str_option="--reinstall -o Dpkg::Options::=--force-confmiss"
-                apt update && apt full-upgrade -y && apt install ${str_option} -y $1
+                apt update && apt full-upgrade -y && apt install $str_option -y $1
                 ;;
 
             "dnf" )
@@ -313,7 +313,7 @@
         while true; do
             local str_package=$( echo $1 | cut -d ' ' -f $int_delim )
             IsString $str_package &> /dev/null || return 0
-            eval "${var_get_command}" &> /dev/null || break
+            eval $var_get_command &> /dev/null || break
             (( int_delim++ ))
         done
 
@@ -386,17 +386,17 @@
         IsString $1 || return $?
         CreateDir "${1}${3}"
 
-        # <summary> Update existing GitHub repository. </summary>
+        # <remarks> Update existing GitHub repository. </remarks>
         if IsDir "${1}${2}"; then
             cd "${1}${2}"
             git pull &> /dev/null
             return $?
 
-        # <summary> Clone new GitHub repository. </summary>
+        # <remarks> Clone new GitHub repository. </remarks>
         elif IsDir "${1}${3}"; then
-            if ReadInput "Clone repo '$2'?"; then
+            if ReadInput "Clone repo '${2}'?"; then
                 cd "${1}${3}"
-                git clone https://github.com/$2 &> /dev/null
+                git clone "https://github.com/${2}" &> /dev/null
                 return $?
             fi
 
@@ -410,7 +410,7 @@
 # <params>
     declare -g str_output_invalid_package_manager="${var_prefix_fail}: Command '${str_package_manager}' is not supported."
 
-    # <summary> System validation </summary>
+    # <remarks> System validation </remarks>
     declare -g bool_is_installed_systemd=false
     IsInstalledCommand "systemd" &> /dev/null && bool_is_installed_systemd=true
 

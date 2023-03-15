@@ -41,25 +41,25 @@
 
             # <remarks> If none exist, create backup. </remarks>
             if ! IsArray arr_dir &> /dev/null; then
-                cp $1 "$1${str_suffix}" || return 1
+                cp $1 "${1}${str_suffix}" || return 1
             fi
 
             # <remarks> Delete all but the newest backup file. </remarks>
             if [[ "${#arr_dir[@]}" -gt 1 ]]; then
                 for int_key in "${arr_dir[@]}"; do
-                    if [[ "$int_key" -gt 0 ]]; then
-                        DeleteFile "${arr_dir[$int_key]}" &> /dev/null
+                    if [[ $int_key -gt 0 ]]; then
+                        DeleteFile ${arr_dir[$int_key]} &> /dev/null
                     fi
                 done
             fi
 
             # <remarks> If newest backup is same as file, exit. </remarks>
-            if AreEqualFiles $1 "${arr_dir[0]}" &> /dev/null || IsFileOlder "${arr_dir[0]}" $1 &> /dev/null; then
+            if AreEqualFiles $1 ${arr_dir[0]} &> /dev/null || IsFileOlder ${arr_dir[0]} $1 &> /dev/null; then
                 return $int_code_skipped_operation
             fi
 
             # <remarks> Create backup. </remarks>
-            cp $1 "$1${str_suffix}" || return 1
+            cp $1 "${1}${str_suffix}" || return 1
 
             return 0
         }

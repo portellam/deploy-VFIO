@@ -14,23 +14,17 @@
 
 # <code>
     # <summary> Check if two given files are the same. If true, pass. </summary>
-    # <paramref name=$1> string: name of the array </paramref>
-    # <paramref name=$2> string: name of the array </paramref>
+    # <paramref name=1> string: name of the array </paramref>
+    # <paramref name=2> string: name of the array </paramref>
     function AreEqualArrays
     {
         IsArray $2 || return $?
         IsArray $1 || return $?
+        eval 'declare -a arr1=( ${'$1'[@]} )' || return 1
+        eval 'declare -a arr2=( ${'$2'[@]} )' || return 1
 
-        # <params>
-        local var_get_param1='declare -a arr1=( ${'$1'[@]} )'
-        local var_get_param2='declare -a arr2=( ${'$1'[@]} )'
-        # </params>
-
-        eval "${var_get_param}" || return 1
-        eval "${var_get_param2}" || return 1
-
-        for int_key in "${!arr1[@]}"; do
-            if [[ "${arr1[$int_key]}" == "${arr2[$int_key]}" ]]; then
+        for int_key in ${!arr1[@]}; do
+            if [[ ${arr1[$int_key]} == ${arr2[$int_key]} ]]; then
                 return 1
             fi
         done
@@ -39,21 +33,16 @@
     }
 
     # <summary> Find line in array. </summary>
-    # <paramref name=$1> string: the name of the array </paramref>
-    # <param name=$2> string: the line </param>
+    # <paramref name=1> string: the name of the array </paramref>
+    # <param name=2> string: the line </param>
     function FindLineInArray
     {
         IsString $2 || return $?
         IsArray $1 || return $?
+        eval 'declare -a arr=( ${'$1'[@]} )' || return 1
 
-        # <params>
-        local var_get_param='declare -a arr=( ${'$1'[@]} )'
-        # </params>
-
-        eval "${var_get_param}" || return 1
-
-        for var_element in "${arr[@]}"; do
-            if [[ "${var_element}" == $2 ]]; then
+        for var_value in ${arr[@]}; do
+            if [[ $var_value == $2 ]]; then
                 return 0
             fi
         done
@@ -62,42 +51,37 @@
     }
 
     # <summary> Check if the array is empty. </summary>
-    # <paramref name=$1> string: name of the array </paramref>
+    # <paramref name=1> string: name of the array </paramref>
     function IsArray
     {
         IsString $1 || return $?
 
-        # <params>
-        local var_get_param='echo "${'$1'[@]}"'
-        local var_get_param_len='echo "${#'$1'[@]}"'
-        # </params>
-
-        for var_element in $( eval "${var_get_param}" ); do
-            IsString "${var_element}" && return $?
+        for var_value in $( eval 'echo "${'$1'[@]}"' ); do
+            IsString $var_value && return $?
         done
 
-        if [[ $( eval "${var_get_param_len}" ) -eq 0 ]]; then
-            echo -e "${str_fail_var_is_empty_array}"
-            return "${int_code_var_is_empty}"
+        if [[ $( eval 'echo "${#'$1'[@]}"' ) -eq 0 ]]; then
+            echo -e $str_fail_var_is_empty_array
+            return $int_code_var_is_empty
         fi
 
         return 0
     }
 
     # <summary> Check if the variable is not empty. If true, pass. </summary>
-    # <param name=$1> var: the variable </param>
+    # <param name=1> var: the variable </param>
     function IsString
     {
         if [[ ${#1} -eq 0 && "${1}" == "" ]]; then
-            echo -e "${str_fail_var_is_empty_var}"
-            return "${int_code_var_is_empty}"
+            echo -e $str_fail_var_is_empty_var
+            return $int_code_var_is_empty
         fi
 
         return 0
     }
 
     # <summary> Check if the value is a valid bool. </summary>
-    # <param name=$1> var: the boolean </param>
+    # <param name=1> var: the boolean </param>
     function IsBool
     {
         IsString $1 || return $?
@@ -108,38 +92,34 @@
                 ;;
 
             * )
-                echo -e "${str_fail_var_is_not_bool}"
-                return "${int_code_var_is_not_bool}"
+                echo -e $str_fail_var_is_not_bool
+                return $int_code_var_is_not_bool
                 ;;
         esac
     }
 
     # <summary> Check if the value is a valid number. If true, pass.</summary>
-    # <param name=$1> var: the number </param>
+    # <param name=1> var: the number </param>
     function IsNum
     {
         IsString $1 || return $?
 
         if ! [[ $1 =~ $str_regex_numbers ]]; then
-            echo -e "${str_fail_var_is_NAN}"
-            return "${int_code_var_is_NAN}"
+            echo -e $str_fail_var_is_NAN
+            return $int_code_var_is_NAN
         fi
 
         return 0
     }
 
     # <summary> Check if the variable is writable. If true, pass. </summary>
-    # <paramref name=$1> string: the name of a variable </param>
+    # <paramref name=1> string: the name of a variable </param>
     function IsVarWritable
     {
         IsString $1 || return $?
 
-        # <params>
-        local var_is_readonly_var="unset ${1} 2> /dev/null"
-        # </params>
-
-        if ! eval "${var_is_readonly_var}"; then
-            echo -e "${str_fail_var_is_RO}"
+        if ! eval "unset ${1} 2> /dev/null"; then
+            echo -e $str_fail_var_is_RO
             return 1
         fi
 
@@ -147,14 +127,13 @@
     }
 
     # <summary> Output an array. Declare inherited params before calling this function. </summary>
-    # <paramref name=$1> string: name of the array </paramref>
+    # <paramref name=1> string: name of the array </paramref>
     function PrintArray
     {
         IsString $1 || return $?
 
         # <params>
         IFS=$'\n'
-        local var_print_array='echo -e "${var_yellow}${'$1'[*]}${var_reset_color}"'
         # </params>
 
         if ! IsArray "$1" &> /dev/null; then
@@ -162,46 +141,41 @@
         fi
 
         echo
-        eval "${var_print_array}" || return 1
+        eval 'echo -e "${var_yellow}${'$1'[*]}${var_reset_color}"' || return 1
         return 0
     }
 
     # <summary> Replace line in an array. </summary>
-    # <paramref name=$1> string: the name of the array </paramref>
-    # <param name=$2> string: the line </param>
-    # <param name=$3> string: the new line </param>
+    # <paramref name=1> string: the name of the array </paramref>
+    # <param name=2> string: the line </param>
+    # <param name=3> string: the new line </param>
     function ReplaceLineInArray
     {
         IsString $3 || return $?
         FindLineInArray $1 $2 || return $?
 
-        # <params>
-        local var_get_param='declare arr_replace_line=( ${!'$1'[@]} )'
-        local var_set_param="$1"'=( "${arr_replace_line[@]}" )'
-        # </params>
+        eval 'declare arr_replace_line=( ${!'$1'[@]} )' || return 1
 
-        eval "${var_get_param}" || return 1
+        for int_key in ${!arr_replace_line[@]}; do
+            local var_value=${arr_replace_line[$int_key]}
 
-        for int_key in "${!arr_replace_line[@]}"; do
-            local var_line="${arr_replace_line[$int_key]}"
-
-            case "${var_line}" in
+            case $var_value in
                 $2* )
-                    arr_replace_line[$int_key]="$3"
+                    arr_replace_line[$int_key]=$3
                     ;;
             esac
         done
 
-        eval "${var_set_param}" || return 1
+        eval "$1"'=( "${arr_replace_line[@]}" )' || return 1
         return 0
     }
 # </code>
 
 # <params>
-    # <summary> Constants </summary>
+    # <remarks> Constants </remarks>
     declare -g str_regex_numbers='^[0-9]+$'
 
-    # <summary> Output statement </summary>
+    # <remarks> Output statement </remarks>
     declare -g str_fail_var_is_empty_array="${var_prefix_error} Empty array."
     declare -g str_fail_var_is_empty_var="${var_prefix_error} Empty string."
     declare -g str_fail_var_is_not_bool="${var_prefix_error} Not a boolean."

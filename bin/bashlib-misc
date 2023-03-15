@@ -15,45 +15,45 @@
 
 # <code>
     # <summary> Redirect current directory to shell script root directory. </summary>
-    # <param name="${0}"> string: the shell script name </param>
+    # <param name=0> string: the shell script name </param>
     function GetScriptDir
     {
-        cd "${str_script_dir}" || return 1
+        cd $str_script_dir || return 1
         return 0
     }
 
     # <summary> Append Pass or Fail given exit code. </summary>
-    # <param name="${int_exit_code}"> the last exit code </param>
-    # <param name=$1> string: the output statement </param>
+    # <param name=int_exit_code> the last exit code </param>
+    # <param name=1> string: the output statement </param>
     # <returns> output statement </returns>
     function PrintPassOrFail
     {
         SaveExitCode
-        IsString $1 &> /dev/null && echo -en "$1\t"
+        IsString $1 &> /dev/null && echo -en "${1}\t"
 
-        case "${int_exit_code}" in
+        case $int_exit_code in
             0 )
-                echo -e "${var_suffix_pass}"
+                echo -e $var_suffix_pass
                 ;;
 
-            "${int_code_partial_completion}" )
-                echo -e "${var_suffix_maybe}"
+            $int_code_partial_completion )
+                echo -e $var_suffix_maybe
                 ;;
 
-            "${int_code_skipped_operation}" )
-                echo -e "${var_suffix_skip}"
+            $int_code_skipped_operation )
+                echo -e $var_suffix_skip
                 ;;
 
             * )
-                echo -e "${var_suffix_fail}"
+                echo -e $var_suffix_fail
                 ;;
         esac
 
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary> Parse exit code as boolean. If zero, return true. Else, return false. </summary>
-    # <param name=$?> int: the exit code </param>
+    # <param name=?> int: the exit code </param>
     # <returns> boolean </returns>
     function ParseExitCodeAsBool
     {
@@ -67,17 +67,15 @@
     }
 
     # <summary> Save last exit code. </summary>
-    # <param name=""${int_exit_code}""> the exit code </param>
+    # <param name=int_exit_code> the exit code </param>
     # <returns> void </returns>
     function SaveExitCode
     {
-        # <params>
         int_exit_code=$?
-        # </params>
     }
 
     # <summary> Set script directory. Call this function before calling Getter. </summary>
-    # <param name="${0}"> string: the shell script name </param>
+    # <param name=0> string: the shell script name </param>
     function SetScriptDir
     {
         # <params>
@@ -89,20 +87,15 @@
     }
 
     # <summary> Attempt given command a given number of times before failure. </summary>
-    # <param name=$1> string: the command to execute </param>
+    # <param name=1> string: the command to execute </param>
     function StopEvalAfterThriceFail
     {
         IsString $1 || return $?
 
         for int_count in ${arr_count[@]}; do
-            eval $1 && return 0 || echo -e "${str_fail_command}"
+            eval $1 && return 0 || echo -e "${var_prefix_error} Execution of command failed."
         done
 
         return 1
     }
 # </code>
-
-# <params>
-    # <summary> Output statement </summary>
-    declare -g str_fail_command="${var_prefix_error} Execution of command failed."
-# </params>
