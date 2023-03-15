@@ -21,12 +21,8 @@
     # <summary> Check if current user is sudo or root. </summary>
     function IsSudoUser
     {
-        # <params>
-        local str_fail="${var_prefix_warn} User is not sudo/root."
-        # </params>
-
         if [[ $( whoami ) != "root" ]]; then
-            echo -e "${str_fail}"
+            echo -e "${var_prefix_warn} User is not sudo/root."
             return 1
         fi
 
