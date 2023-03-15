@@ -15,8 +15,8 @@
 
 # <code>
     # <summary> Check if two given files are the same. If true, pass. </summary>
-    # <parameter name=1> string: the file </parameter>
-    # <parameter name=2> string: the other file </parameter>
+    # <parameter name="1"> string: the file </parameter>
+    # <parameter name="2"> string: the other file </parameter>
     function AreEqualFiles
     {
         IsFile $2 || return $?
@@ -26,7 +26,7 @@
     }
 
     # <summary> Create latest backup of given file. </summary>
-    # <parameter name=1> string: the file </parameter>
+    # <parameter name="1"> string: the file </parameter>
     function BackupFile
     {
         function BackupFile_Main
@@ -70,7 +70,7 @@
     }
 
     # <summary> Create a directory. </summary>
-    # <param name=1> string: the directory </param>
+    # <param name="1"> string: the directory </param>
     function CreateDir
     {
         IsString $1 || return $?
@@ -85,7 +85,7 @@
     }
 
     # <summary> Create a file. </summary>
-    # <param name=1> string: the file </param>
+    # <param name="1"> string: the file </param>
     function CreateFile
     {
         IsString $1 || return $?
@@ -100,7 +100,7 @@
     }
 
     # <summary> Delete a directory. </summary>
-    # <param name=1> string: the file </param>
+    # <param name="1"> string: the file </param>
     function DeleteDir
     {
         IsString $1 || return $?
@@ -115,7 +115,7 @@
     }
 
     # <summary> Delete a file. </summary>
-    # <param name=1> string: the file </param>
+    # <param name="1"> string: the file </param>
     function DeleteFile
     {
         IsString $1 || return $?
@@ -130,8 +130,8 @@
     }
 
     # <summary> Find line in file. </summary>
-    # <param name=1> string: the file </param>
-    # <param name=2> string: the line </param>
+    # <param name="1"> string: the file </param>
+    # <param name="2"> string: the line </param>
     function FindLineInFile
     {
         IsString $2 || return $?
@@ -141,7 +141,7 @@
     }
 
     # <summary> Check if the directory exists. If true, pass. </summary>
-    # <param name=1> string: the directory name </param>
+    # <param name="1"> string: the directory name </param>
     function IsDir
     {
         IsString $1 || return $?
@@ -155,7 +155,7 @@
     }
 
     # <summary> Check if the file exists. If true, pass. </summary>
-    # <param name=1> string: the file name </param>
+    # <param name="1"> string: the file name </param>
     function IsFile
     {
         IsString $1 || return $?
@@ -169,8 +169,8 @@
     }
 
     # <summary> Check if first file is newer than second file. If true, pass. </summary>
-    # <parameter name=1> string: the file </parameter>
-    # <parameter name=2> string: the other file </parameter>
+    # <parameter name="1"> string: the file </parameter>
+    # <parameter name="2"> string: the other file </parameter>
     function IsFileNewer
     {
         IsFile $2 || return $?
@@ -180,8 +180,8 @@
     }
 
     # <summary> Check if first file is older than second file. If true, pass. </summary>
-    # <parameter name=1> string: the file </parameter>
-    # <parameter name=2> string: the other file </parameter>
+    # <parameter name="1"> string: the file </parameter>
+    # <parameter name="2"> string: the other file </parameter>
     function IsFileOlder
     {
         IsFile $2 || return $?
@@ -192,7 +192,7 @@
 
 
     # <summary> Check if the file is executable. If true, pass. </summary>
-    # <param name=1> string: the file name </param>
+    # <param name="1"> string: the file name </param>
     function IsFileExecutable
     {
         IsFile $1 || return $?
@@ -206,7 +206,7 @@
     }
 
     # <summary> Check if the file is readable. If true, pass. </summary>
-    # <param name=1> string: the file name </param>
+    # <param name="1"> string: the file name </param>
     function IsFileReadable
     {
         IsFile $1 || return $?
@@ -220,7 +220,7 @@
     }
 
     # <summary> Check if the file is writable. If true, pass. </summary>
-    # <param name=1> string: the file name </param>
+    # <param name="1"> string: the file name </param>
     function IsFileWritable
     {
         IsFile $1 || return $?
@@ -234,8 +234,8 @@
     }
 
     # <summary> Overwrite output to a file. </summary>
-    # <paramref name=1> string: the name of the array </paramref>
-    # <param name=2> string: the name of the file </param>
+    # <paramref name="1"> string: the name of the array </paramref>
+    # <param name="2"> string: the name of the file </param>
     function OverwriteFile
     {
         IsArray $1 || return $?
@@ -246,7 +246,7 @@
     }
 
     # <summary> Output a file. </summary>
-    # <param name=1> string: the file </param>
+    # <param name="1"> string: the file </param>
     function PrintFile
     {
         IsFile $1 || return $?
@@ -262,8 +262,8 @@
     }
 
     # <summary> Read input from a file. Declare inherited params before calling this function. </summary>
-    # <paramref name=1> string: the name of the array </paramref>
-    # <param name=2> string: the name of the file </param>
+    # <paramref name="1"> string: the name of the array </paramref>
+    # <param name="2"> string: the name of the file </param>
     function ReadFile
     {
         IsFile $2 || return $?
@@ -283,9 +283,9 @@
     }
 
     # <summary> Replace line in an file. </summary>
-    # <param name=1> string: the name of the file </param>
-    # <param name=2> string: the line </param>
-    # <param name=3> string: the new line </param>
+    # <param name="1"> string: the name of the file </param>
+    # <param name="2"> string: the line </param>
+    # <param name="3"> string: the new line </param>
     function ReplaceLineInFile
     {
         IsString $3 || return $?
@@ -300,7 +300,7 @@
     }
 
     # <summary> Restore latest valid backup of given file. </summary>
-    # <parameter name=1> string: the name of the file </param>
+    # <parameter name="1"> string: the name of the file </param>
     function RestoreFile
     {
         function RestoreFile_Main
@@ -334,8 +334,8 @@
     }
 
     # <summary> Write output to a file. Declare inherited params before calling this function. </summary>
-    # <paramref name=1> string: the name of the array </paramref>
-    # <param name=2> string: the name of the file </param>
+    # <paramref name="1"> string: the name of the array </paramref>
+    # <param name="2"> string: the name of the file </param>
     function WriteFile
     {
         IsFile $2 || return $?

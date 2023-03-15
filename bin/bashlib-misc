@@ -15,7 +15,7 @@
 
 # <code>
     # <summary> Redirect current directory to shell script root directory. </summary>
-    # <param name=0> string: the shell script name </param>
+    # <param name="0"> string: the shell script name </param>
     function GetScriptDir
     {
         cd $str_script_dir || return 1
@@ -23,8 +23,8 @@
     }
 
     # <summary> Append Pass or Fail given exit code. </summary>
-    # <param name=int_exit_code> the last exit code </param>
-    # <param name=1> string: the output statement </param>
+    # <param name="int_exit_code"> the last exit code </param>
+    # <param name="1"> string: the output statement </param>
     # <returns> output statement </returns>
     function PrintPassOrFail
     {
@@ -53,7 +53,7 @@
     }
 
     # <summary> Parse exit code as boolean. If zero, return true. Else, return false. </summary>
-    # <param name=?> int: the exit code </param>
+    # <param name="?"> int: the exit code </param>
     # <returns> boolean </returns>
     function ParseExitCodeAsBool
     {
@@ -67,7 +67,7 @@
     }
 
     # <summary> Save last exit code. </summary>
-    # <param name=int_exit_code> the exit code </param>
+    # <param name="int_exit_code"> the exit code </param>
     # <returns> void </returns>
     function SaveExitCode
     {
@@ -75,7 +75,7 @@
     }
 
     # <summary> Set script directory. Call this function before calling Getter. </summary>
-    # <param name=0> string: the shell script name </param>
+    # <param name="0"> string: the shell script name </param>
     function SetScriptDir
     {
         # <params>
@@ -87,7 +87,7 @@
     }
 
     # <summary> Attempt given command a given number of times before failure. </summary>
-    # <param name=1> string: the command to execute </param>
+    # <param name="1"> string: the command to execute </param>
     function StopEvalAfterThriceFail
     {
         IsString $1 || return $?

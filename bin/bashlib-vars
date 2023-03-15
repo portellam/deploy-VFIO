@@ -14,8 +14,8 @@
 
 # <code>
     # <summary> Check if two given files are the same. If true, pass. </summary>
-    # <paramref name=1> string: name of the array </paramref>
-    # <paramref name=2> string: name of the array </paramref>
+    # <paramref name="1"> string: name of the array </paramref>
+    # <paramref name="2"> string: name of the array </paramref>
     function AreEqualArrays
     {
         IsArray $2 || return $?
@@ -33,8 +33,8 @@
     }
 
     # <summary> Find line in array. </summary>
-    # <paramref name=1> string: the name of the array </paramref>
-    # <param name=2> string: the line </param>
+    # <paramref name="1"> string: the name of the array </paramref>
+    # <param name="2"> string: the line </param>
     function FindLineInArray
     {
         IsString $2 || return $?
@@ -51,7 +51,7 @@
     }
 
     # <summary> Check if the array is empty. </summary>
-    # <paramref name=1> string: name of the array </paramref>
+    # <paramref name="1"> string: name of the array </paramref>
     function IsArray
     {
         IsString $1 || return $?
@@ -69,7 +69,7 @@
     }
 
     # <summary> Check if the variable is not empty. If true, pass. </summary>
-    # <param name=1> var: the variable </param>
+    # <param name="1"> var: the variable </param>
     function IsString
     {
         if [[ ${#1} -eq 0 && "${1}" == "" ]]; then
@@ -81,7 +81,7 @@
     }
 
     # <summary> Check if the value is a valid bool. </summary>
-    # <param name=1> var: the boolean </param>
+    # <param name="1"> var: the boolean </param>
     function IsBool
     {
         IsString $1 || return $?
@@ -99,7 +99,7 @@
     }
 
     # <summary> Check if the value is a valid number. If true, pass.</summary>
-    # <param name=1> var: the number </param>
+    # <param name="1"> var: the number </param>
     function IsNum
     {
         IsString $1 || return $?
@@ -113,7 +113,7 @@
     }
 
     # <summary> Check if the variable is writable. If true, pass. </summary>
-    # <paramref name=1> string: the name of a variable </param>
+    # <paramref name="1"> string: the name of a variable </param>
     function IsVarWritable
     {
         IsString $1 || return $?
@@ -127,7 +127,7 @@
     }
 
     # <summary> Output an array. Declare inherited params before calling this function. </summary>
-    # <paramref name=1> string: name of the array </paramref>
+    # <paramref name="1"> string: name of the array </paramref>
     function PrintArray
     {
         IsString $1 || return $?
@@ -146,9 +146,9 @@
     }
 
     # <summary> Replace line in an array. </summary>
-    # <paramref name=1> string: the name of the array </paramref>
-    # <param name=2> string: the line </param>
-    # <param name=3> string: the new line </param>
+    # <paramref name="1"> string: the name of the array </paramref>
+    # <param name="2"> string: the line </param>
+    # <param name="3"> string: the new line </param>
     function ReplaceLineInArray
     {
         IsString $3 || return $?

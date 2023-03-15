@@ -15,7 +15,7 @@
 
 # <code>
     # <summary> Check if the command is active. </summary>
-    # <param name=1> string: the command </param>
+    # <param name="1"> string: the command </param>
     function IsActiveCommand
     {
         IsString $1 || return $?
@@ -29,7 +29,7 @@
     }
 
     # <summary> Check if the daemon is active or not. </summary>
-    # <param name=1> string: the command </param>
+    # <param name="1"> string: the command </param>
     function IsActiveDaemon
     {
         IsString $1 || return $?
@@ -47,7 +47,7 @@
     }
 
     # <summary> Check if the command is installed. </summary>
-    # <param name=1> string: the command </param>
+    # <param name="1"> string: the command </param>
     function IsInstalledCommand
     {
         IsString $1 || return $?
@@ -61,7 +61,7 @@
     }
 
     # <summary> Check if the daemon is installed. </summary>
-    # <param name=1> string: the command </param>
+    # <param name="1"> string: the command </param>
     function IsInstalledDaemon
     {
         IsString $1 || return $?

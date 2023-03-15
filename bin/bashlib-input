@@ -17,7 +17,7 @@
 # <summary> User input </summary>
 # <code>
     # <summary> Ask user Yes/No, read input and return exit code given answer. </summary>
-    # <param name=1> string: the output statement </param>
+    # <param name="1"> string: the output statement </param>
     function ReadInput
     {
         # <params>
@@ -62,9 +62,9 @@
     # Ask for a number, within a given range, and return given number.
     # If input is not valid, return minimum value. Declare '$var_input' before calling this function.
     # </summary>
-    # <parameter name=1> string: the output statement </parameter>
-    # <parameter name=2> num: absolute minimum </parameter>
-    # <parameter name=3> num: absolute maximum </parameter>
+    # <parameter name="1"> string: the output statement </parameter>
+    # <parameter name="2"> num: absolute minimum </parameter>
+    # <parameter name="3"> num: absolute maximum </parameter>
     # <parameter name=var_input> the answer </parameter>
     # <returns> $var_input </returns>
     function ReadInputFromRangeOfTwoNums
@@ -110,8 +110,8 @@
     # Ask user for multiple choice, and return choice given answer.
     # If input is not valid, return first value. Declare '$var_input' before calling this function.
     # </summary>
-    # <parameter name=1> string: the output statement </parameter>
-    # <param name=2 name=3 name=4 name=5 name=6 name=7 name=8> multiple choice </param>
+    # <parameter name="1"> string: the output statement </parameter>
+    # <param name="2" name="3" name="4" name="5" name="6" name="7" name="8"> multiple choice </param>
     # <param name=var_input> the answer </param>
     # <returns> the answer </returns>
     function ReadMultipleChoiceIgnoreCase
@@ -171,8 +171,8 @@
     # If input is not valid, return first value.
     # Declare '$var_input' before calling this function.
     # </summary>
-    # <parameter name=1> string: the output statement </parameter>
-    # <param name=2 name=3 name=4 name=5 name=6 name=7 name=8> multiple choice </param>
+    # <parameter name="1"> string: the output statement </parameter>
+    # <param name="2" name="3" name="4" name="5" name="6" name="7" name="8"> multiple choice </param>
     # <param name=var_input> the answer </param>
     # <returns> the answer </returns>
     function ReadMultipleChoiceMatchCase
