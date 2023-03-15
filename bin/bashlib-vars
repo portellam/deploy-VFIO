@@ -21,7 +21,7 @@
         IsArray $2 || return $?
         IsArray $1 || return $?
         eval 'declare -a arr1=( ${'${1}'[@]} )' || return 1
-        eval 'declare -a arr2=( ${'$2'[@]} )' || return 1
+        eval 'declare -a arr2=( ${'${2}'[@]} )' || return 1
 
         for int_key in ${!arr1[@]}; do
             if [[ ${arr1[$int_key]} == ${arr2[$int_key]} ]]; then
