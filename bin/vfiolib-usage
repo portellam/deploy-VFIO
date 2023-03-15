@@ -13,6 +13,8 @@
 # </code>
 
 # <code>
+    # <summary> Set arguments and options. </summary>
+    # <param name="@"> array: the input parameters </param>
     function GetOption
     {
         while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
@@ -92,10 +94,12 @@
                 ;;
         esac; shift; done
 
-        if [[ "$1" == '--' ]]; then shift; fi
+        [ "$1" == '--' ] && shift
         return 0
     }
 
+    # <summary> Set option for given argument. </summary>
+    # <param name="1"> string: the option </param>
     function GetHugepageByteSize
     {
         if IsString $1 &> /dev/null && ( [[ $1 == "2M" ]] || [[ $1 == "1G" ]] ); then
@@ -107,6 +111,8 @@
         return 1
     }
 
+    # <summary> Set option for given argument. </summary>
+    # <param name="1"> int: the option </param>
     function GetHugepageCount
     {
         if IsNum $1 &> /dev/null && [[ $1 -gt 0 ]]; then
@@ -117,6 +123,8 @@
         return 1
     }
 
+    # <summary> Set option for given argument. </summary>
+    # <param name="1"> string: the option </param>
     function GetSelect_IOMMU_Args
     {
         case $1 in
@@ -131,11 +139,12 @@
         return 0
     }
 
+    # <summary> Prints the usage. </summary>
     function GetUsage
     {
         IFS=$'\n'
 
-        declare -ar arr_output=(
+        declare -a arr_output=(
             "Usage:\tbash vfiolib-all [OPTION]... [ARGS]..."
             "Deploy a PCI Passthrough (VFIO) setup."
             "\t--help\t\t\tPrint this usage statement"
@@ -171,7 +180,7 @@
     }
 
     # <summary> Sets the options. Exit early (Pass) if input is null. Else, exit early (Fail) if input is invalid. </summary>
-    # <param name="$@"> array: the input parameters </param>
+    # <param name="@"> array: the input parameters </param>
     function SetOptions
     {
         for var_option in $@; do
