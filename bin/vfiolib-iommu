@@ -72,11 +72,11 @@
             function Parse_IOMMU_Save_Lists
             {
                 # <remarks> Save to lists each device's information. Lists should be of the same-size. </remarks>
-                for str_slot_ID in ${arr_devices[@]}; do
+                for var_device in ${arr_devices[@]}; do
                     local str_class=$( eval "${var_parse_name_ID}" )
                     str_class=$( echo -e "${str_class}" | grep -i "Class:" | cut -d ':' -f 2 | grep -oP "^\t\K.*" )
                     local str_device_ID=$( eval "${var_parse_quotes}" | cut -d '"' -f 6 | uniq )
-                    local str_device_name=$( eval "${var_parse_name_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${str_slot_ID}" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
+                    local str_device_name=$( eval "${var_parse_name_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${var_device}" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
                     local str_driver=$( eval "${var_parse_all_ID}" | grep -i "Driver:" | awk '{print $2}' | uniq )
                     local str_IOMMU=$( eval "${var_parse_all_ID}"| grep -i "IOMMUGroup:" | awk '{print $2}' | uniq )
                     local str_vendor_name=$( eval "${var_parse_name_ID}" | grep -i "Vendor:" | grep -Eiv "SVendor:" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
@@ -99,7 +99,7 @@
                     arr_driver+=( "${str_driver}" )
                     arr_hardware_ID+=( "${str_hardware_ID}" )
                     arr_IOMMU+=( "${str_IOMMU}" )
-                    arr_slot_ID+=( "${str_slot_ID}" )
+                    arr_slot_ID+=( "${var_device}" )
                     arr_vendor_name+=( "${str_vendor_name}" )
                 done
 
@@ -353,7 +353,7 @@
 
         echo -e $str_output
 
-        for int_this_IOMMU_ID in ${arr_this_IOMMU[@]}; do
+        for var_IOMMU in ${arr_this_IOMMU[@]}; do
             local bool_IOMMU_has_external_domain=false
             local bool_IOMMU_PCI_STUB=false
             # local bool_IOMMU_VFIO_PCI=false

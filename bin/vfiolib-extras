@@ -94,24 +94,24 @@
                     int_thread=$( int_core + ( int_SMT_factor * int_total_cores ) )
                 }
 
-                for int_SMT_factor in ${arr_SMT_factors[@]}; do
+                for var_SMT_factor in ${arr_SMT_factors[@]}; do
                     # <remarks> Reset params </remarks>
                     declare -a arr_host_threads_sets=()
                     declare -a arr_virt_threads_sets=()
                     declare -i int_thread
 
                     # <remarks> Find thread sets for host machine. </remarks>
-                    for int_core in ${arr_host_cores[@]}; do
+                    for var_core in ${arr_host_cores[@]}; do
                         GetThreadByCoreAnd_SMT
-                        arr_host_threads+=( "${int_thread}" )
-                        arr_host_threads_sets+=( "${int_thread}" )
+                        arr_host_threads+=( "${var_core}" )
+                        arr_host_threads_sets+=( "${var_core}" )
                     done
 
                     # <remarks> Find thread sets for virtual machines. </remarks>
-                    for int_core in ${arr_virt_cores[@]}; do
+                    for var_core in ${arr_virt_cores[@]}; do
                         GetThreadByCoreAnd_SMT
-                        arr_virt_threads+=( "${int_thread}" )
-                        arr_virt_threads_sets+=( "${int_thread}" )
+                        arr_virt_threads+=( "${var_core}" )
+                        arr_virt_threads_sets+=( "${var_core}" )
                     done
 
                     # <remarks> Save thread sets to delimited list. </remarks>
@@ -119,7 +119,7 @@
                     declare -i int_set_last_thread=${arr_host_threads_sets[-1]}
                     local str_thread_set=$int_set_first_thread
 
-                    if [[ ${int_set_first_thread} -ne ${int_set_last_thread} ]]; then
+                    if [[ $int_set_first_thread -ne $int_set_last_thread ]]; then
                         local str_thread_set="${int_set_first_thread}-${int_set_last_thread}"
                     fi
 
@@ -173,22 +173,22 @@
                 # </params>
 
                 # <remarks> Add each decimal mask to sum. </remarks>
-                for int_thread in "${arr_host_threads[@]}"; do
-                    declare -i int_thread_decimal=$(( 2 ** ${int_thread} ))
+                for var_thread in ${arr_host_threads[@]}; do
+                    declare -i int_thread_decimal=$(( 2 ** $var_thread ))
                     declare -i int_thread_hexadecimal_mask=$( eval "${var_get_hexadecimal_mask_from_decimal}" )
-                    int_host_threads_hexadecimal_mask+="${int_thread_hexadecimal_mask}"
+                    int_host_threads_hexadecimal_mask+=$int_thread_hexadecimal_mask
                 done
 
-                for int_thread in "${arr_total[@]}"; do
-                    declare -i int_thread_decimal=$(( 2 ** ${int_thread} ))
+                for var_thread in ${arr_total[@]}; do
+                    declare -i int_thread_decimal=$(( 2 ** $var_thread ))
                     declare -i int_thread_hexadecimal_mask=$( eval "${var_get_hexadecimal_mask_from_decimal}" )
-                    int_host_threads_hexadecimal_mask+="${int_thread_hexadecimal_mask}"
+                    int_host_threads_hexadecimal_mask+=$int_thread_hexadecimal_mask
                 done
 
                 # <remarks> Save changes, convert hexadecimal mask into hexadecimal. </remarks>
                 int_host_threads_hexadecimal_mask
                 declare -g str_host_threads_hexadecimal=$( printf '%x\n' $int_host_threads_hexadecimal_mask )
-                declare -i int_total_threads_hexadecimal_mask=$(( ( 2 ** ${int_total_threads} ) - 1 ))
+                declare -i int_total_threads_hexadecimal_mask=$(( ( 2 ** $int_total_threads ) - 1 ))
                 declare -g str_total_threads_hexadecimal=$( printf '%x\n' $int_total_threads_hexadecimal_mask )
 
             declare -a arr_output1=(
@@ -419,12 +419,12 @@
             local bool_is_file1_original=true
             local bool_is_file2_original=true
 
-            for var_value in ${arr_file_disclaimer[@]}; do
-                FindLineInFile $str_file1 $var_value || bool_is_file1_original=false
+            for var_line in ${arr_file_disclaimer[@]}; do
+                FindLineInFile $str_file1 $var_line || bool_is_file1_original=false
             done
 
-            for var_value in ${arr_file_disclaimer[@]}; do
-                FindLineInFile $str_file2 $var_value || bool_is_file2_original=false
+            for var_line in ${arr_file_disclaimer[@]}; do
+                FindLineInFile $str_file2 $var_line || bool_is_file2_original=false
             done
 
             # <remarks> Overwrite system file with a backup or original copy. </remarks>
@@ -456,12 +456,12 @@
 
             # <remarks> Format input for Evdev. </remarks>
             if $bool_is_setup_evdev; then
-                for str_event_device in ${arr_event_devices[@]}; do
-                    arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${str_event_device}\"," )
+                for var_device in ${arr_event_devices[@]}; do
+                    arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${var_device}\"," )
                 done
 
-                for str_event_device in ${arr_input_devices[@]}; do
-                    arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${str_event_device}\"," )
+                for var_device in ${arr_input_devices[@]}; do
+                    arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${var_device}\"," )
                 done
             fi
 

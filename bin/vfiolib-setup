@@ -72,7 +72,7 @@
                 local str_multiboot_drivers=""
                 local str_multiboot_hardware_ID=""
 
-                if Multiboot_VFIO_ExcludeThis_VGA_Group "${var_IOMMU}"; then
+                if Multiboot_VFIO_ExcludeThis_VGA_Group $var_IOMMU; then
                     for var_kernel in $arr_kernels; do
                         local str_GRUB_line="${str_GRUB_temp} ${str_GRUB_blacklist}${str_multiboot_drivers} ${str_modules_VFIO_PCI}${str_multiboot_hardware_ID}"
 
@@ -223,10 +223,10 @@
             # </params>
 
             # <remarks> Organize new lines. </remarks>
-            for var_value in "${arr_drivers_VFIO_PCI[@]}"; do
+            for var_driver in "${arr_drivers_VFIO_PCI[@]}"; do
                 arr_softdep+=(
                     $( eval "${var_get_softdep}" )
-                    "${var_value}"
+                    "${var_driver}"
                 )
             done
 
@@ -305,11 +305,9 @@
                     declare -a arr_file1=( "${arr_static_modprobe_blacklist_file_template[@]}" )
 
                     # <remarks> Set new lines. </remarks>
-                    for var_value in "${arr_drivers_VFIO_PCI[@]}"; do
-                        arr_file1+=( "${str_modprobe_blacklist}${var_value}" )
+                    for var_driver in ${arr_drivers_VFIO_PCI[@]}; do
+                        arr_file1+=( "${str_modprobe_blacklist}${var_driver}" )
                     done
-
-                arr_file1
                 # </params>
 
                 # <remarks> Backup existing system files. </remarks>
@@ -361,7 +359,7 @@
         echo
         ReadMultipleChoiceIgnoreCase "Setup VFIO? ${var_green}None / Multiboot / Static${var_reset_color}" "N" "M" "S"
 
-        case "${var_input}" in
+        case $var_input in
             "M" )
                 Multiboot_VFIO
                 rintPassOrFail "Installing Multiboot VFIO..."
