@@ -51,7 +51,7 @@
                 ;;
 
             * )
-                echo -e $str_output_invalid_package_manager
+                echo -e "$str_output_invalid_package_manager"
                 return 1
                 ;;
         esac

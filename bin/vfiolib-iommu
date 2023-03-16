@@ -351,8 +351,6 @@
         declare -ar arr_this_IOMMU=( $( eval "${var_get_IOMMU}" ) )
         # </params>
 
-        echo -e $str_output
-
         for var_IOMMU in ${arr_this_IOMMU[@]}; do
             local bool_IOMMU_has_external_domain=false
             local bool_IOMMU_PCI_STUB=false
@@ -370,7 +368,7 @@
 
         # <remarks> Check if list is empty </remarks>
         IsArray "arr_IOMMU_VFIO_PCI" && bool_VFIO_has_IOMMU=true && Get_IOMMU_Drivers
-        PrintPassOrFail $str_output
+        PrintPassOrFail "Reviewing IOMMU groups..."
         return $int_exit_code
     }
 # </code>

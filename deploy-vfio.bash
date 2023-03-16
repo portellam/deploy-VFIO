@@ -75,9 +75,10 @@ function Main
 }
 # </code>
 
-while [[ $? -eq 0 || $? -eq $int_code_partial_completion || $? -eq $int_code_skipped_operation ]]; do
-    Main $@
-    break
-done
+# while [[ $? -eq 0 || $? -eq $int_code_partial_completion || $? -eq $int_code_skipped_operation ]]; do
+#     Main $@
+#     break
+# done
 
+Main $@
 exit $?

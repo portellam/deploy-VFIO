@@ -49,12 +49,12 @@
             fi
 
             # <remarks> Input is not valid. </remarks>
-            echo -e $str_output_var_is_not_valid
+            echo -e "$str_output_var_is_not_valid"
         done
 
         # <remarks> After given number of attempts, input is set to default. </remarks>
         str_output="Exceeded max attempts. Choice is set to default: ${var_yellow}${str_no}${var_reset_color}"
-        echo -e $str_output
+        echo -e "$str_output"
         return 1
     }
 
@@ -102,7 +102,7 @@
 
         var_input=$var_min
         str_output="Exceeded max attempts. Choice is set to default: ${var_yellow}${var_input}${var_reset_color}"
-        echo -e $str_output
+        echo -e "$str_output"
         return 1
     }
 
@@ -157,12 +157,12 @@
                 done
             fi
 
-            echo -e $str_output_var_is_not_valid
+            echo -e "$str_output_var_is_not_valid"
         done
 
         var_input=${arr_input[0]}
         str_output="Exceeded max attempts. Choice is set to default: ${var_yellow}${var_input}${var_reset_color}"
-        echo -e $str_output
+        echo -e "$str_output"
         return 1
     }
 
@@ -215,12 +215,12 @@
                 done
             fi
 
-            echo -e $str_output_var_is_not_valid
+            echo -e "$str_output_var_is_not_valid"
         done
 
         var_input=${arr_input[0]}
         str_output="Exceeded max attempts. Choice is set to default: ${var_yellow}${var_input}${var_reset_color}"
-        echo -e $str_output
+        echo -e "$str_output"
         return 1
     }
 # </code>
