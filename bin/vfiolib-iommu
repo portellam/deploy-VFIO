@@ -16,7 +16,7 @@
     # <summary> Is Virtualization enabled on the current system. If true, pass. </summary>
     function IsEnabled_IOMMU
     {
-        if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*";
+        if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*"; then
             false
         fi
 
