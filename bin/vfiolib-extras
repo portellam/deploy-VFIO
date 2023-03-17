@@ -31,12 +31,8 @@
             return 0
         }
 
-        # <params>
-        local str_output="Adding user to groups..."
-        # </params>
-
         AddUserToGroups_Main &> /dev/null
-        PrintPassOrFail "${str_output}"
+        PrintPassOrFail "Adding user to groups..."
         return "${int_exit_code}"
     }
 
@@ -61,18 +57,15 @@
 
                 # <remarks> quad-core or greater CPU </remarks>
                 if [[ "${int_total_cores}" -ge 4 ]]; then
-                    readonly int_host_cores=2
+                    int_host_cores=2
 
                 # <remarks> double-core/triple-core CPU </remarks>
                 elif [[ "${int_total_cores}" -le 3 && "${int_total_cores}" -ge 2 ]]; then
-                    readonly int_host_cores
+                    int_host_cores=1
 
                 # <remarks> If single-core CPU, fail. </remarks>
                 else
-                    readonly int_host_cores
-                    false
-                    PrintPassOrFail "${str_output}"
-                    return "${int_exit_code}"
+                    return 1
                 fi
 
             # <summary> Get thread sets, for host and virtual machines. </summary>
@@ -150,9 +143,6 @@
                     str_virt_thread_sets=${str_virt_thread_sets::-1}
                 fi
 
-                # <remarks> Save output </remarks>
-                readonly str_host_thread_sets str_virt_thread_sets
-
             # <summary> Find CPU mask. </summary>
                 # <remarks>
                 # save output to string for cpuset and cpumask
@@ -190,7 +180,6 @@
                 done
 
                 # <remarks> Save changes, convert hexadecimal mask into hexadecimal. </remarks>
-                readonly int_host_threads_hexadecimal_mask
                 declare -g str_host_threads_hexadecimal=$( printf '%x\n' $int_host_threads_hexadecimal_mask )
                 declare -i int_total_threads_hexadecimal_mask=$(( ( 2 ** ${int_total_threads} ) - 1 ))
                 declare -g str_total_threads_hexadecimal=$( printf '%x\n' $int_total_threads_hexadecimal_mask )
@@ -208,12 +197,8 @@
             return 0
         }
 
-        # <params>
-        local str_output="Allocating CPU threads..."
-        # </params>
-
         Allocate_CPU_Main $@ &> /dev/null
-        PrintPassOrFail "${str_output}"
+        PrintPassOrFail "Allocating CPU threads..."
         return "${int_exit_code}"
     }
 
@@ -223,28 +208,23 @@
         function Allocate_RAM_Main
         {
             if ! IsNum "${int_max_mem}" &> /dev/null; then
-                local str_output_could_not_parse_memory="${var_prefix_error} Could not parse system memory."
-                echo -e "${str_output_could_not_parse_memory}"
+                echo -e "${var_prefix_error} Could not parse system memory."
+                return 1
             fi
 
             # <remarks> Ask user to proceed. </remarks>
             if ! $bool_hugepage_set_size; then
                 # <params>
                 declare -g str_huge_page_byte_prefix=""
-
-                local str_output1="Hugepages is a feature which statically allocates system memory to pagefiles.\nVirtual machines can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
-                local str_output2="Setup Hugepages?"
-                local str_output3="Enter size of Hugepages (bytes):"
-
                 declare -a arr_choices=(
                     "2M"
                     "1G"
                 )
                 # </params>
 
-                echo -e "${str_output1}"
-                ReadInput "${str_output2}" || return "${int_code_skipped_operation}"
-                ReadMultipleChoiceIgnoreCase "${str_output3}" "${arr_choices[@]}" || return $?
+                echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\nVirtual machines can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
+                ReadInput "Setup Hugepages?" || return "${int_code_skipped_operation}"
+                ReadMultipleChoiceIgnoreCase "Enter size of Hugepages (bytes):" "${arr_choices[@]}" || return $?
                 str_huge_page_byte_prefix="${var_input}"
             fi
 
@@ -303,13 +283,9 @@
             return 0
         }
 
-        # <params>
-        local str_output="Allocating RAM to pages..."
-        # </params>
-
-        echo -e "${str_output}\n"
+        echo
         Allocate_RAM_Main
-        PrintPassOrFail "${str_output}"
+        PrintPassOrFail "Allocating RAM to pages..."
         return "${int_exit_code}"
     }
 
@@ -338,8 +314,8 @@
             local str_file1="audio-loopback-user.service"
             # </params>
 
-            if ! IsFile $str_file1 &> /dev/null || ( ReadFile arr_file1_current $str_file1 && IsArray arr_file1_current && ! AreEqualArrays arr_file1_current arr_file1_contents ); then
-                OverwriteFile arr_file1_contents "${str_dir1}${str_file1}" || return $?
+            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file1_current" "${str_file1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
+                OverwriteFile "arr_file1_contents" "${str_dir1}${str_file1}" || return $?
             fi
 
             systemctl daemon-reload || return 1
@@ -348,12 +324,8 @@
             return 0
         }
 
-        # <params>
-        local str_output="Creating audio loopback..."
-        # </params>
-
         GuestAudioLoopback_Main
-        PrintPassOrFail "${str_output}"
+        PrintPassOrFail "Creating audio loopback..."
         return "${int_exit_code}"
     }
 
@@ -376,20 +348,16 @@
             local str_file1="libvirt-nosleep@.service"
             # </params>
 
-            if ! IsFile $str_file1 &> /dev/null || ( ReadFile arr_file1_current $str_file1 && IsArray arr_file1_current && ! AreEqualArrays arr_file1_current arr_file1_contents ); then
-                OverwriteFile arr_file1_contents "${str_dir1}${str_file1}" || return $?
+            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file1_current" "${str_file1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
+                OverwriteFile "arr_file1_contents" "${str_dir1}${str_file1}" || return $?
             fi
 
             systemctl daemon-reload || return 1
             return 0
         }
 
-        # <params>
-        local str_output="Installing libvirt-hooks..."
-        # </params>
-
         LibvirtHooks_Main
-        PrintPassOrFail "${str_output}"
+        PrintPassOrFail "Installing libvirt-hooks..."
         return "${int_exit_code}"
 
         exit 0
@@ -418,55 +386,84 @@
             local str_file2="/etc/apparmor.d/local/abstractions/libvirt-qemu"
             # </params>
 
-            # TODO: scan existing file if it has already been modified. Remove existing text and append new.
+            echo hello
+            # <remarks> Check if Libvirt is installed. </remarks>
+            IsInstalledPackage "${str_daemon1_packages}" || InstallPackage "${str_daemon1_packages}" || return $?
+            # NOTE: this is where the code hangs
 
-            # IsInstalledPackage "${str_daemon1_packages}" || InstallPackage "${str_daemon1_packages}" || return $?     # TODO: fix this.
-            BackupFile "${str_file1}" || return $?
-            BackupFile "${str_file2}" || return $?
-            SetInternetStatus
 
-            # TODO: file is not being downloaded, nor being found.
+            echo hello
+            # <remarks> Save file before work. </remarks>
+            BackupFile $str_file1 || return $?
+            BackupFile $str_file2 || return $?
 
-            if $bool_is_connected_to_Internet; then
-                if GetScriptDir; then
-                    cd "${str_files_dir}" || return 1
-                    curl $( basename "${str_file1}" ) -o "${str_backup1}" || ( RestoreFile "${str_file1}" && return 1 )
-                    # curl $( basename "${str_file2}" ) -o "${str_backup2}" || ( RestoreFile "${str_file2}" && return 1 )
+            echo hello
+             # <remarks> Grab original system files. </remarks>
+            if SetInternetStatus && $bool_is_connected_to_Internet; then
+                curl "${str_backup_file1}" -o "${str_orig_file1}"
+                # curl "${str_backup_file2}" -o "${str_orig_file2}"
+            fi
+
+            echo hello
+            # <remarks> Check if system files are unmodified. </remarks>
+            local bool_is_file1_original=true
+            local bool_is_file2_original=true
+
+            for var_line in ${arr_file_disclaimer[@]}; do
+                FindLineInFile "${str_file1}" "${var_line}" || bool_is_file1_original=false
+            done
+
+            for var_line in ${arr_file_disclaimer[@]}; do
+                FindLineInFile "${str_file2}" "${var_line}" || bool_is_file2_original=false
+            done
+
+            # <remarks> Overwrite system file with a backup or original copy. </remarks>
+            if ! $bool_is_file1_original; then
+                if IsFile "${str_backup_file1}" && ! AreEqualFiles "${str_backup_file1}" $str_file1; then
+                    cp "${str_orig_file1}" "${str_file1}" || (
+                        RestoreFile "${str_file1}"
+                        return $?
+                    )
+                elif ! IsFile "${str_backup_file1}"; then
+                    RestoreFile "${str_file1}" || return $?
                 else
-                    curl "${str_file1}" -o "${str_backup1}" || ( RestoreFile "${str_file1}" && return 1 )
-                    # curl "${str_file2}" -o "${str_backup2}" || ( RestoreFile "${str_file2}" && return 1 )
+                    return 1
                 fi
             fi
 
-            if ! $bool_is_connected_to_Internet && GetScriptDir; then
-                cp "${str_backup1}" "${str_file1}" || ( RestoreFile "${str_file1}" && return 1 )
-                # curl -o "${str_file2}" "${str_backup2}" || ( RestoreFile "${str_file2}" && return 1 )
+            if ! $bool_is_file2_original; then
+                if IsFile "${str_backup_file2}" && ! AreEqualFiles "${str_backup_file2}" "${str_file2}"; then
+                    cp "${str_orig_file2}" "${str_file2}" || (
+                        RestoreFile "${str_file2}"
+                        return $?
+                    )
+                elif ! IsFile "${str_backup_file2}"; then
+                    RestoreFile "${str_file2}" || return $?
+                else
+                    return 1
+                fi
             fi
 
+            # <remarks> Format input for Evdev. </remarks>
             if $bool_is_setup_evdev; then
-                for str_event_device in "${arr_event_devices[@]}"; do
-                    arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${str_event_device}\"," )
+                for var_device in "${arr_event_devices[@]}"; do
+                    arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${var_device}\"," )
                 done
 
-                for str_event_device in "${arr_input_devices[@]}"; do
-                    arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${str_event_device}\"," )
+                for var_device in "${arr_input_devices[@]}"; do
+                    arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${var_device}\"," )
                 done
             fi
 
-            arr_file1_contents=(
-                ""
-                "# Generated by '${str_full_repo_name}'"
-                "# WARNING: Any modifications to this file will be modified by '${str_repo_name}'"
-                "# Run 'systemctl restart ${str_daemon1}.service' to update."
-                "#"
-            )
-
-            arr_file2_contents=()
+            # <remarks> Preface file contents. </remarks>
+            arr_file1_contents=( "${arr_file_disclaimer[@]}" )
+            arr_file2_contents=( "${arr_file_disclaimer[@]}" )
             arr_file1_contents+=(
                 ""
                 "### User permissions ###"
             )
 
+            # <remarks> Add user and group for Evdev. </remarks>
             if IsString "${str_first_user}"; then
                 arr_file1_contents+=(
                     "user = \"${str_first_user}\""
@@ -481,6 +478,7 @@
                 ( return "${int_code_skipped_operation}" )
             fi
 
+            # <remarks> Hugepages </remarks>
             arr_file1_contents+=(
                 ""
                 "### Hugepages ###"
@@ -498,6 +496,7 @@
                 ( return "${int_code_skipped_operation}" )
             fi
 
+            # <remarks> Add cgroups for Evdev. </remarks>
             arr_file1_contents+=(
                 ""
                 "### Devices ###"
@@ -537,25 +536,25 @@
                 "]"
             )
 
-            if ! IsFile $str_file1 &> /dev/null || ( ReadFile arr_file1_current $str_file1 && IsArray arr_file1_current && ! AreEqualArrays arr_file1_current arr_file1_contents ); then
-                OverwriteFile arr_file1_contents "${str_file1}" || return $?
+            # <remarks> Append changes to file(s). </remarks>
+            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file1_current""${str_file1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
+                OverwriteFile "arr_file1_contents" "${str_file1}" || return $?
             fi
 
-            if ! IsFile $str_file1 &> /dev/null || ( ReadFile arr_file2_current $str_file1 && IsArray arr_file2_current && ! AreEqualArrays arr_file2_current arr_file2_contents ); then
-                OverwriteFile arr_file2_contents "${str_file2}" || return $?
+            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file2_current" "${str_file1}" && IsArray "arr_file2_current" && ! AreEqualArrays "arr_file2_current" "arr_file2_contents" ); then
+                OverwriteFile "arr_file2_contents" "${str_file2}" || return $?
             fi
 
-            IsActiveDaemon "${str_daemon1}" || ( systemctl enable "${str_daemon1}" || return 1 )
-            systemctl restart "${str_daemon1}" || return 1
-            return 0
+            # <remarks> Libvirtd service </remarks>
+            IsActiveDaemon "${str_daemon1}" || (
+                systemctl enable "${str_daemon1}" || return 1
+            )
+            systemctl restart "${str_daemon1}"
+            return $?
         }
 
-        # <params>
-        local str_output="Appending libvirt-qemu..."
-        # </params>
-
         Modify_QEMU_Main
-        PrintPassOrFail "${str_output}"
+        PrintPassOrFail "Appending libvirt-qemu..."
         return "${int_exit_code}"
     }
 
@@ -576,7 +575,7 @@
             UpdateOrCloneGitRepo "${str_git_dir}" "${str_full_repo1}" "${str_user_name1}" || return $?
             cd "${str_git_dir}${str_full_repo1}" || return $?
             IsFile "${str_script_name1}" || return $?
-            sudo bash "${str_script_name1}" || return 1
+            bash "${str_script_name1}" || return 1
             GetScriptDir || return $?
             return 0
         }
@@ -586,12 +585,11 @@
             # <params>
             local str_file1="/etc/default/zram-swap"
             local str_match_line1="_zram_fraction="
-            local var_command='cat "${str_file1}"'
-            local var_find_zram_swap='sudo swapon -v | grep zram'
-            local var_disable_zram_swap='sudo swapoff /dev/zram*'
-            local var_enable_all_swap='sudo swapon -a'
-            local var_restart_daemon='sudo systemctl restart zram-swap'
-            declare -a arr_file_contents=( $( eval "${var_command}" ) )
+            local var_find_zram_swap='swapon -v | grep zram'
+            local var_disable_zram_swap='swapoff /dev/zram*'
+            local var_enable_all_swap='swapon -a'
+            local var_restart_daemon='systemctl restart zram-swap'
+            declare -a arr_file_contents=( $( cat "${str_file1}" ) )
             # </params>
 
             # <remarks> Replace matching line with comment of line </remarks>
@@ -641,13 +639,9 @@
             return 0
         }
 
-        # <params>
-        local str_output="Allocating RAM to swap..."
-        # </params>
-
         RAM_Swapfile_Install
         RAM_Swapfile_Modify &> /dev/null
-        PrintPassOrFail "${str_output}"
+        PrintPassOrFail "Allocating RAM to swap..."
         return "${int_exit_code}"
     }
 
@@ -658,31 +652,26 @@
         {
             # <params>
             declare -ga arr_event_devices arr_input_devices
-            local str_output1="Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\nHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
-            local str_fail="${var_prefix_error} Cannot parse input devices (by ID)."
-            local var_get_event_devices='readonly arr_event_devices=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )'
-            local var_get_input_devices='readonly arr_input_devices=( $( ls /dev/input/by-id ) )'
+            local var_get_event_devices='arr_event_devices=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )'
+            local var_get_input_devices='arr_input_devices=( $( ls /dev/input/by-id ) )'
             # </params>
 
-            echo -e "${str_output1}"
-            eval "${var_get_event_devices}"
-            eval "${var_get_input_devices}"
+            eval "${var_get_event_devices}" || return 1
+            eval "${var_get_input_devices}" || return 1
 
             if ! IsArray "arr_event_devices" && ! IsArray "arr_input_devices"; then
-                echo -e "${str_fail}"
+                echo -e "${var_prefix_error} Cannot parse input devices (by ID)."
                 return 1
             fi
 
+            echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n${var_yellow}HOW-TO:${var_reset_color} Press 'L-CTRL' and 'R-CTRL' simultaneously."
             bool_is_setup_evdev=true
             return 0
         }
 
-        # <params>
-        local str_output="Executing Evdev setup..."
-        # </params>
-
-        Virtual_KVM_Main &> /dev/null
-        PrintPassOrFail "${str_output}"
+        echo
+        Virtual_KVM_Main
+        PrintPassOrFail "Executing Evdev setup..."
         return "${int_exit_code}"
     }
 
@@ -694,12 +683,8 @@
             return $int_code_skipped_operation
         }
 
-        # <params>
-        local str_output="Installing Scream...\t"
-        # </params>
-
         VirtualAudioCapture_Main &> /dev/null
-        PrintPassOrFail "${str_output}"
+        PrintPassOrFail "Installing Scream...\t"
         return "${int_exit_code}"
     }
 
@@ -734,7 +719,7 @@
             # <remarks> Build client </remarks>
             IsFile "client/build" || ( mkdir client/build || return 1 )
             cd client/build || return 1
-            cmake ../ || ( git submodule update --init --recursive && cmake ../) || return 1
+            cmake ../ || ( git submodule update --init --recursive && cmake ../ ) || return 1
             make || return 1                                                            # TODO: fix here!
 
             # <remarks> Conclude build as root or user. </remarks>
@@ -747,15 +732,10 @@
             return 0
         }
 
-        # <params>
-        local str_output1="Updating LookingGlass..."
-        local str_output2="Installing LookingGlass..."
-        # </params>
-
         VirtualVideoCapture_Get
-        PrintPassOrFail "${str_output1}"
+        PrintPassOrFail "Updating LookingGlass..."
         VirtualVideoCapture_Install
-        PrintPassOrFail "${str_output2}"
+        PrintPassOrFail "Installing LookingGlass..."
         return "${int_exit_code}"
     }
 # </code>
