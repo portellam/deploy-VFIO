@@ -386,28 +386,24 @@
             local str_file2="/etc/apparmor.d/local/abstractions/libvirt-qemu"
             # </params>
 
-            echo hello
             # <remarks> Check if Libvirt is installed. </remarks>
-            IsInstalledPackage "${str_daemon1_packages}" || InstallPackage "${str_daemon1_packages}" || return $?
-            # NOTE: this is where the code hangs
+            IsInstalledPackage "${str_daemon1_packages}" &> /dev/null || InstallPackage "${str_daemon1_packages}" || return $?
 
-
-            echo hello
             # <remarks> Save file before work. </remarks>
-            BackupFile $str_file1 || return $?
-            BackupFile $str_file2 || return $?
+            BackupFile "${str_file1}" || return $?
+            BackupFile "${str_file2}" || return $?
 
-            echo hello
              # <remarks> Grab original system files. </remarks>
             if SetInternetStatus && $bool_is_connected_to_Internet; then
                 curl "${str_backup_file1}" -o "${str_orig_file1}"
                 # curl "${str_backup_file2}" -o "${str_orig_file2}"
             fi
 
-            echo hello
             # <remarks> Check if system files are unmodified. </remarks>
             local bool_is_file1_original=true
             local bool_is_file2_original=true
+
+            # TODO: delete lines the exist within range of the disclaimer and and end cap.
 
             for var_line in ${arr_file_disclaimer[@]}; do
                 FindLineInFile "${str_file1}" "${var_line}" || bool_is_file1_original=false
@@ -419,12 +415,12 @@
 
             # <remarks> Overwrite system file with a backup or original copy. </remarks>
             if ! $bool_is_file1_original; then
-                if IsFile "${str_backup_file1}" && ! AreEqualFiles "${str_backup_file1}" $str_file1; then
+                if IsFile "${str_backup_file1}" &> /dev/null && ! AreEqualFiles "${str_backup_file1}" "${str_file2}"; then
                     cp "${str_orig_file1}" "${str_file1}" || (
                         RestoreFile "${str_file1}"
                         return $?
                     )
-                elif ! IsFile "${str_backup_file1}"; then
+                elif ! IsFile "${str_backup_file1}" &> /dev/null; then  # TODO: to be revised
                     RestoreFile "${str_file1}" || return $?
                 else
                     return 1
@@ -432,12 +428,12 @@
             fi
 
             if ! $bool_is_file2_original; then
-                if IsFile "${str_backup_file2}" && ! AreEqualFiles "${str_backup_file2}" "${str_file2}"; then
+                if IsFile "${str_backup_file2}" &> /dev/null && ! AreEqualFiles "${str_backup_file2}" "${str_file2}"; then
                     cp "${str_orig_file2}" "${str_file2}" || (
                         RestoreFile "${str_file2}"
                         return $?
                     )
-                elif ! IsFile "${str_backup_file2}"; then
+                elif ! IsFile "${str_backup_file2}" &> /dev/null; then  # TODO: to be revised
                     RestoreFile "${str_file2}" || return $?
                 else
                     return 1
@@ -537,11 +533,11 @@
             )
 
             # <remarks> Append changes to file(s). </remarks>
-            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file1_current""${str_file1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
+            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file1_current" "${str_file1}" &> /dev/null && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
                 OverwriteFile "arr_file1_contents" "${str_file1}" || return $?
             fi
 
-            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file2_current" "${str_file1}" && IsArray "arr_file2_current" && ! AreEqualArrays "arr_file2_current" "arr_file2_contents" ); then
+            if ! IsFile "${str_file2}" &> /dev/null || ( ReadFile "arr_file2_current" "${str_file1}" &> /dev/null && IsArray "arr_file2_current" && ! AreEqualArrays "arr_file2_current" "arr_file2_contents" ); then
                 OverwriteFile "arr_file2_contents" "${str_file2}" || return $?
             fi
 
@@ -553,7 +549,7 @@
             return $?
         }
 
-        Modify_QEMU_Main
+        Modify_QEMU_Main &> /dev/null
         PrintPassOrFail "Appending libvirt-qemu..."
         return "${int_exit_code}"
     }
@@ -664,7 +660,7 @@
                 return 1
             fi
 
-            echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n${var_yellow}HOW-TO:${var_reset_color} Press 'L-CTRL' and 'R-CTRL' simultaneously."
+            echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n${var_yellow}HOW-TO:${var_reset_color} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
             bool_is_setup_evdev=true
             return 0
         }
