@@ -34,7 +34,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
             -f, --file              Reference file database
             -i, --internal          Reference local database
             -I, --internet          Reference online database
-                all                 Select all IOMMU groups (useful for Multiboot VFIO)
+            -f/i/I    all           Select all IOMMU groups (useful for Multiboot VFIO)
 
         Setup:
             -m, --multiboot         Create multiple GRUB entries for a Multi VGA VFIO setup
@@ -45,8 +45,8 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
             -c, --cpu               Allocate CPU
             -e, --evdev             Setup a virtual KVM switch
             -h, --hugepages         Allocate RAM
-                2M, 1G              Hugepage size with byte prefix
-                (number)            Amount of Hugepages
+            -h    2M, 1G [Amount]   Hugepage [size]
+            -h    [size] [1-?]      [Amount] of Hugepages
 
             -H, --hooks             Install recommended libvirt-hooks and services
             -l, --looking-glass     Install LookingGlass

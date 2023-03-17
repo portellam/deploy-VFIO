@@ -152,7 +152,7 @@
             "\t-f, --file\t\tReference file database"
             "\t-i, --internal\t\tReference local database"
             "\t-I, --internet\t\tReference online database"
-            "\t\tall\t\tSelect all IOMMU groups (useful for Multiboot VFIO)"
+            "\t-f/i/I\tall\t\tSelect all IOMMU groups (useful for Multiboot VFIO)"
             "\nSetup:"
             "\t-m, --multiboot\t\tCreate multiple GRUB entries for a Multi VGA VFIO setup"
             "\t-s, --static\t\tInstall a Single VGA VFIO setup"
