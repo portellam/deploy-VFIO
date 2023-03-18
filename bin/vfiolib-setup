@@ -149,12 +149,12 @@
             # <remarks> System configuration </remarks>
             declare -ir int_max_num_parse_kernels=3
             declare -ar arr_kernels=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | sort -r | head -n ${int_max_num_parse_kernels} ) )
-            local str_system_disk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
+            local str_system_disk=$( df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1 )
             local str_system_distro=$( lsb_release -i -s )
-            local str_system_filesystem_type=`blkid -s TYPE | grep ${str_system_disk} | cut -d '"' -f2`
+            local str_system_filesystem_type=$( blkid -s TYPE | grep ${str_system_disk} | cut -d '"' -f2 )
             local str_system_kernel=$( uname -o )
             local str_system_OS=$( uname )
-            local str_system_UUID=`blkid -s UUID | grep ${str_system_disk} | cut -d '"' -f2`
+            local str_system_UUID=$( blkid -s UUID | grep ${str_system_disk} | cut -d '"' -f2 )
         # </params>
 
         # <remarks> Write to files. </remarks>
