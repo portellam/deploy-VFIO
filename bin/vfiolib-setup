@@ -19,8 +19,8 @@
     function Reset_GRUB
     {
         # <params>
-        # local readonly str_file1="/etc/default/grub"
-        local readonly str_file1="etc_default_grub"
+        # local str_file1="/etc/default/grub"
+        local str_file1="etc_default_grub"         # NOTE: for debug.
         # <params>
 
         # <remarks> Backup existing system files. </remarks>
@@ -48,12 +48,11 @@
     function Multiboot_VFIO
     {
         # <summary> Write custom GRUB entries. </summary>
-        # <returns> exit code </returns>
         function Multiboot_VFIO_GRUB
         {
             # <params>
-            # local readonly str_file1="/etc/grub.d/proxifiedScripts/custom"
-            local readonly str_file1="etc_grub.d_proxifiedScripts_custom"
+            # local str_file1="/etc/grub.d/proxifiedScripts/custom"
+            local str_file1="etc_grub.d_proxifiedScripts_custom"   # NOTE: for debug.
             # <params>
 
             # <remarks> Backup existing system files. </remarks>
@@ -92,7 +91,7 @@
             done
 
             # <params>
-            readonly arr_file1+=( "${arr_file1_temp[@]}" )
+            arr_file1+=( "${arr_file1_temp[@]}" )
             # </params>
 
             # <remarks> Write new lines to file. </remarks>
@@ -103,10 +102,9 @@
         }
 
         # <summary> Parse all VGA and non VGA IOMMU Groups, except current VGA VFIO IOMMU Group. </summary>
-        # <param name="$1"> int: the IOMMU group to ignore </param>
-        # <param name="$str_multiboot_drivers"> string: current list of drivers </param>
-        # <param name="$str_multiboot_hardware_ID"> current list of hardware IDs </param>
-        # <returns> exit code </returns>
+        # <param name="1"> int: the IOMMU group to ignore </param>
+        # <param name="str_multiboot_drivers"> string: current list of drivers </param>
+        # <param name="str_multiboot_hardware_ID"> current list of hardware IDs </param>
         function Multiboot_VFIO_ExcludeThis_VGA_Group
         {
             IsNum $1 &> /dev/null || return $?
@@ -151,12 +149,12 @@
             # <remarks> System configuration </remarks>
             declare -ir int_max_num_parse_kernels=3
             declare -ar arr_kernels=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | sort -r | head -n ${int_max_num_parse_kernels} ) )
-            local readonly str_system_disk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
-            local readonly str_system_distro=$( lsb_release -i -s )
-            local readonly str_system_filesystem_type=`blkid -s TYPE | grep ${str_system_disk} | cut -d '"' -f2`
-            local readonly str_system_kernel=$( uname -o )
-            local readonly str_system_OS=$( uname )
-            local readonly str_system_UUID=`blkid -s UUID | grep ${str_system_disk} | cut -d '"' -f2`
+            local str_system_disk=`df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1`
+            local str_system_distro=$( lsb_release -i -s )
+            local str_system_filesystem_type=`blkid -s TYPE | grep ${str_system_disk} | cut -d '"' -f2`
+            local str_system_kernel=$( uname -o )
+            local str_system_OS=$( uname )
+            local str_system_UUID=`blkid -s UUID | grep ${str_system_disk} | cut -d '"' -f2`
         # </params>
 
         # <remarks> Write to files. </remarks>
@@ -172,7 +170,6 @@
     function Static_VFIO
     {
         # <summary> Write to GRUB. </summary>
-        # <returns> exit code </returns>
         function Static_VFIO_GRUB
         {
             # <params>
@@ -203,8 +200,8 @@
             fi
 
             # <params>
-            # local readonly str_file1="/etc/default/grub"
-            local readonly str_file1="grub"
+            # local str_file1="/etc/default/grub"
+            local str_file1="grub"
             # </params>
 
             # <remarks> Backup existing system files. </remarks>
@@ -212,14 +209,13 @@
 
             # <remarks> Write new line to file. </remarks>
                 IsString "${str_GRUB_temp}" &> /dev/null || return $?
-                readonly str_GRUB_temp+="${str_GRUB_template}\"${str_GRUB_required}${str_GRUB_default}${str_GRUB_temp}\""
+                str_GRUB_temp+="${str_GRUB_template}\"${str_GRUB_required}${str_GRUB_default}${str_GRUB_temp}\""
                 ReplaceLineInArray "arr_file1" "${str_GRUB}" "${str_GRUB_temp}" || return $?
                 OverwriteFile "arr_file1" "${str_file1}" || return $?
             return 0
         }
 
         # <summary> Write to Modules. </summary>
-        # <returns> exit code </returns>
         function Static_VFIO_ModulesInitramfs
         {
             # <params>
@@ -282,10 +278,10 @@
                     "${arr_modules_HWID[@]}"
                 )
 
-            # local readonly str_file1="/etc/initramfs-tools/modules"
-            # local readonly str_file2="/etc/modules"
-            local readonly str_file1="initramfs-tools_modules"
-            local readonly str_file2="modules"
+            # local str_file1="/etc/initramfs-tools/modules"   # NOTE: for debug.
+            # local str_file2="/etc/modules"                   # NOTE: for debug.
+            local str_file1="initramfs-tools_modules"
+            local str_file2="modules"
             # </params>
 
             # <remarks> Backup existing system files. </remarks>
@@ -299,12 +295,11 @@
         }
 
         # <summary> Write to Modprobe. </summary>
-        # <returns> exit code </returns>
         function Static_VFIO_Modprobe
         {
             # <summary> Modprobe: blacklists </summary>
                 # <params>
-                local readonly str_file1="pci-blacklists.conf"
+                local str_file1="pci-blacklists.conf"
 
                     # <remarks> Organize new lines. </remarks>
                     declare -a arr_file1=( "${arr_static_modprobe_blacklist_file_template[@]}" )
@@ -314,7 +309,7 @@
                         arr_file1+=( "${str_modprobe_blacklist}${var_driver}" )
                     done
 
-                readonly arr_file1
+                arr_file1
                 # </params>
 
                 # <remarks> Backup existing system files. </remarks>
@@ -325,7 +320,7 @@
 
             # <summary> Modprobe: conf </summary>
                 # <params>
-                local readonly str_file2="vfio.conf"
+                local str_file2="vfio.conf"
 
                     # <remarks> Organize new lines. </remarks>
                     declare -ar arr_file2=(
@@ -345,7 +340,7 @@
         }
 
         # <params>
-        local readonly var_get_softdep='softdep ${str_driver} pre: vfio-pci'
+        local var_get_softdep='softdep ${str_driver} pre: vfio-pci'
         # </params>
 
         # <remarks> Write to files. </remarks>
@@ -368,7 +363,7 @@
 
         case "${var_input}" in
             "M" )
-                local readonly str_output="Installing Multiboot VFIO..."
+                local str_output="Installing Multiboot VFIO..."
                 echo -e "${str_output}"
                 Multiboot_VFIO
                 PrintPassOrFail "${str_output}"
@@ -376,7 +371,7 @@
                 ;;
 
             "S" )
-                local readonly str_output="Installing Static VFIO..."
+                local str_output="Installing Static VFIO..."
                 echo -e "${str_output}"
                 Static_VFIO
                 PrintPassOrFail "${str_output}"
@@ -388,7 +383,6 @@
     }
 
     # # <summary> ??? </summary>
-    # # <returns> exit code </returns>
     # function UninstallExisting_VFIO
     # {
     #     return 0
