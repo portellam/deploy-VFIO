@@ -14,8 +14,8 @@
 
 # <code>
     # <summary> Check if two given files are the same. If true, pass. </summary>
-    # <paramref name=$1> string: name of the array </paramref>
-    # <paramref name=$2> string: name of the array </paramref>
+    # <paramref name="1"> string: name of the array </paramref>
+    # <paramref name="2"> string: name of the array </paramref>
     function AreEqualArrays
     {
         IsArray $2 || return $?
@@ -39,8 +39,8 @@
     }
 
     # <summary> Find line in array. </summary>
-    # <paramref name=$1> string: the name of the array </paramref>
-    # <param name=$2> string: the line </param>
+    # <paramref name="1"> string: the name of the array </paramref>
+    # <param name="2"> string: the line </param>
     function FindLineInArray
     {
         IsString $2 || return $?
@@ -62,7 +62,7 @@
     }
 
     # <summary> Check if the array is empty. </summary>
-    # <paramref name=$1> string: name of the array </paramref>
+    # <paramref name="1"> string: name of the array </paramref>
     function IsArray
     {
         IsString $1 || return $?
@@ -77,7 +77,7 @@
         done
 
         if [[ $( eval "${var_get_param_len}" ) -eq 0 ]]; then
-            echo -e "${str_fail_var_is_empty_array}"
+            echo -e "${var_prefix_error} Empty array."
             return "${int_code_var_is_empty}"
         fi
 
@@ -85,11 +85,11 @@
     }
 
     # <summary> Check if the variable is not empty. If true, pass. </summary>
-    # <param name=$1> var: the variable </param>
+    # <param name="1"> var: the variable </param>
     function IsString
     {
         if [[ ${#1} -eq 0 && "${1}" == "" ]]; then
-            echo -e "${str_fail_var_is_empty_var}"
+            echo -e "${var_prefix_error} Empty string."
             return "${int_code_var_is_empty}"
         fi
 
@@ -97,7 +97,7 @@
     }
 
     # <summary> Check if the value is a valid bool. </summary>
-    # <param name=$1> var: the boolean </param>
+    # <param name="1"> var: the boolean </param>
     function IsBool
     {
         IsString $1 || return $?
@@ -108,20 +108,20 @@
                 ;;
 
             * )
-                echo -e "${str_fail_var_is_not_bool}"
+                echo -e "${var_prefix_error} Not a boolean."
                 return "${int_code_var_is_not_bool}"
                 ;;
         esac
     }
 
     # <summary> Check if the value is a valid number. If true, pass.</summary>
-    # <param name=$1> var: the number </param>
+    # <param name="1"> var: the number </param>
     function IsNum
     {
         IsString $1 || return $?
 
-        if ! [[ $1 =~ $str_regex_numbers ]]; then
-            echo -e "${str_fail_var_is_NAN}"
+        if ! [[ $1 =~ '^[0-9]+$' ]]; then
+            echo -e "${var_prefix_error} NaN."
             return "${int_code_var_is_NAN}"
         fi
 
@@ -129,7 +129,7 @@
     }
 
     # <summary> Check if the variable is writable. If true, pass. </summary>
-    # <paramref name=$1> string: the name of a variable </param>
+    # <paramref name="1"> string: the name of a variable </param>
     function IsVarWritable
     {
         IsString $1 || return $?
@@ -139,7 +139,7 @@
         # </params>
 
         if ! eval "${var_is_readonly_var}"; then
-            echo -e "${str_fail_var_is_RO}"
+            echo -e "${var_prefix_error} Readonly variable."
             return 1
         fi
 
@@ -147,7 +147,7 @@
     }
 
     # <summary> Output an array. Declare inherited params before calling this function. </summary>
-    # <paramref name=$1> string: name of the array </paramref>
+    # <paramref name="1"> string: name of the array </paramref>
     function PrintArray
     {
         IsString $1 || return $?
@@ -167,8 +167,8 @@
     }
 
     # <summary> Replace line in an array. </summary>
-    # <paramref name=$1> string: the name of the array </paramref>
-    # <param name=$2> string: the line </param>
+    # <paramref name="1"> string: the name of the array </paramref>
+    # <param name="2"> string: the line </param>
     # <param name=$3> string: the new line </param>
     function ReplaceLineInArray
     {
@@ -196,15 +196,3 @@
         return 0
     }
 # </code>
-
-# <params>
-    # <summary> Constants </summary>
-    declare -g str_regex_numbers='^[0-9]+$'
-
-    # <summary> Output statement </summary>
-    declare -g str_fail_var_is_empty_array="${var_prefix_error} Empty array."
-    declare -g str_fail_var_is_empty_var="${var_prefix_error} Empty string."
-    declare -g str_fail_var_is_not_bool="${var_prefix_error} Not a boolean."
-    declare -g str_fail_var_is_NAN="${var_prefix_error} NaN."
-    declare -g str_fail_var_is_RO="${var_prefix_error} Readonly variable."
-# </params>

@@ -21,12 +21,7 @@
     {
         IsFile $2 || return $?
         IsFile $1 || return $?
-
-        # <params>
-        local var_command='cmp -s $1 $2'
-        # </params>
-
-        eval "${var_command}" || return 1
+        [ cmp -s $1 $2 ] || return 1
         return 0
     }
 
@@ -70,12 +65,8 @@
             return 0
         }
 
-        # <params>
-        local str_output="Creating backup file...\t"
-        # </params>
-
         BackupFile_Main $1
-        PrintPassOrFail "${str_output}"
+        PrintPassOrFail "Creating backup file...\t"
         return "${int_exit_code}"
     }
 
@@ -86,13 +77,8 @@
         IsString $1 || return $?
         IsDir $1 &> /dev/null && return 0
 
-        # <params>
-        local str_fail="${var_prefix_fail} Could not create directory '$1'."
-        local var_command='mkdir -p $1 &> /dev/null'
-        # </params>
-
-        if ! eval "${var_command}"; then
-            echo -e "${str_fail}"
+        if ! mkdir -p $1 &> /dev/null; then
+            echo -e "${var_prefix_fail} Could not create directory '$1'."
             return 1
         fi
 
@@ -106,13 +92,8 @@
         IsString $1 || return $?
         IsFile $1 &> /dev/null && return 0
 
-        # <params>
-        local str_fail="${var_prefix_fail} Could not create file '$1'."
-        local var_command='touch '"$1"' &> /dev/null'
-        # </params>
-
-        if ! eval "${var_command}"; then
-            echo -e "${str_fail}"
+        if ! touch $1 &> /dev/null; then
+            echo -e "${var_prefix_fail} Could not create file '$1'."
             return 1
         fi
 
@@ -126,13 +107,8 @@
         IsString $1 || return $?
         IsDir $1 &> /dev/null || return 1
 
-        # <params>
-        local str_fail="${var_prefix_fail} Could not delete directory '$1'."
-        local var_command='rm -r '"$1"' &> /dev/null'
-        # </params>
-
-        if ! eval "${var_command}"; then
-            echo -e "${str_fail}"
+        if ! rm $1 &> /dev/null; then
+            echo -e "${var_prefix_fail} Could not delete directory '$1'."
             return 1
         fi
 
@@ -146,13 +122,8 @@
         IsString $1 || return $?
         IsFile $1 &> /dev/null || return 1
 
-        # <params>
-        local str_fail="${var_prefix_fail} Could not delete file '$1'."
-        local var_command='rm '"$1"' &> /dev/null'
-        # </params>
-
-        if ! eval "${var_command}"; then
-            echo -e "${str_fail}"
+        if ! rm $1 &> /dev/null; then
+            echo -e "${var_prefix_fail} Could not delete file '$1'."
             return 1
         fi
 
@@ -180,12 +151,8 @@
     {
         IsString $1 || return $?
 
-        # <params>
-        local str_fail="${var_prefix_error} File '$1' is not a directory."
-        # </params>
-
         if [[ ! -d $1 ]]; then
-            echo -e "${str_fail}"
+            echo -e "${var_prefix_error} File '$1' is not a directory."
             return "${int_code_dir_is_null}"
         fi
 
@@ -198,12 +165,8 @@
     {
         IsString $1 || return $?
 
-        # <params>
-        local str_fail="${var_prefix_error} '$1' is not a file."
-        # </params>
-
         if [[ ! -e $1 ]]; then
-            echo -e "${str_fail}"
+            echo -e "${var_prefix_error} '$1' is not a file."
             return "${int_code_dir_is_null}"
         fi
 
@@ -217,12 +180,7 @@
     {
         IsFile $2 || return $?
         IsFile $1 || return $?
-
-        # <params>
-        local var_command='$1 -nt $2'
-        # </params>
-
-        eval "${var_command}" || return 1
+        [ $1 -nt $2 ] || return 1
         return 0
     }
 
@@ -233,12 +191,7 @@
     {
         IsFile $2 || return $?
         IsFile $1 || return $?
-
-        # <params>
-        local var_command='$2 -nt $1'
-        # </params>
-
-        eval "${var_command}" || return 1
+        [ $2 -nt $1 ] || return 1
         return 0
     }
 
@@ -249,12 +202,8 @@
     {
         IsFile $1 || return $?
 
-        # <params>
-        local str_fail="${var_prefix_error} File '$1' is not executable."
-        # </params>
-
         if [[ ! -x $1 ]]; then
-            echo -e "${str_fail}"
+            echo -e "${var_prefix_error} File '$1' is not executable."
             return "${int_code_file_is_not_executable}"
         fi
 
@@ -267,12 +216,8 @@
     {
         IsFile $1 || return $?
 
-        # <params>
-        local str_fail="${var_prefix_error} File '$1' is not readable."
-        # </params>
-
         if [[ ! -r $1 ]]; then
-            echo -e "${str_fail}"
+            echo -e "${var_prefix_error} File '$1' is not readable."
             return "${int_code_file_is_not_readable}"
         fi
 
@@ -285,12 +230,8 @@
     {
         IsFile $1 || return $?
 
-        # <params>
-        local str_fail="${var_prefix_error} File '$1' is not writable."
-        # </params>
-
         if [[ ! -w $1 ]]; then
-            echo -e "${str_fail}"
+            echo -e "${var_prefix_error} File '$1' is not readable."
             return "${int_code_file_is_not_writable}"
         fi
 
@@ -318,7 +259,6 @@
         # <params>
         IFS=$'\n'
         declare -a arr_print_file=( )
-        local str_output="Contents for file ${var_yellow}'$1'${var_reset_color}:"
         # </params>
 
         ReadFile "arr_print_file" $1 || return $?
@@ -412,12 +352,11 @@
         IsArray $1 || return $?
 
         # <params>
-        local str_fail="${var_prefix_fail} Could not write to file '$1'."
         local var_set_param='printf "%s\n" "${'$1'[@]}" >> $2'
         # </params>
 
         if ! eval "${var_set_param}"; then
-            echo -e "${str_fail}"
+            echo -e "${var_prefix_fail} Could not write to file '$1'."
             return 1
         fi
 
