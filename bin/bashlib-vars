@@ -120,7 +120,7 @@
     {
         IsString $1 || return $?
 
-        if ! [[ $1 =~ '^[0-9]+$' ]]; then
+        if ! [[ $1 =~ $str_regex_numbers ]]; then
             echo -e "${var_prefix_error} NaN."
             return "${int_code_var_is_NAN}"
         fi
@@ -196,3 +196,8 @@
         return 0
     }
 # </code>
+
+# <params>
+    # <summary> Constants </summary>
+    declare -g str_regex_numbers='^[0-9]+$'
+# </params>
