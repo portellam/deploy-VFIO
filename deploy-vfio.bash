@@ -30,9 +30,8 @@ function Main
     RAM_Swapfile
     LibvirtHooks
     GuestVideoCapture
-    GuestAudioCapture
     GuestAudioLoopback
-    GuestAudioStream
+    GuestAudioCapture && GuestAudioStream
     Modify_QEMU
 
     exit $?
