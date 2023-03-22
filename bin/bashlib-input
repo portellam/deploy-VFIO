@@ -18,6 +18,7 @@
 # <code>
     # <summary> Ask user Yes/No, read input and return exit code given answer. </summary>
     # <param name="1"> string: the output statement </param>
+    # <returns> int: the exit code </returns>
     function ReadInput
     {
         # <params>
@@ -39,22 +40,20 @@
             # <remarks> Check if input is valid. </remarks>
             if IsString $var_input; then
                 case $var_input in
-                    $str_yes )
-                        return 0
-                        ;;
-                    $str_no )
-                        return 1
-                        ;;
+                    ""${str_yes}"" )
+                        return 0;;
+                    "${str_no}" )
+                        return 1;;
                 esac
             fi
 
             # <remarks> Input is not valid. </remarks>
-            echo -e "$str_output_var_is_not_valid"
+            echo -e "${str_output_var_is_not_valid}"
         done
 
         # <remarks> After given number of attempts, input is set to default. </remarks>
         str_output="Exceeded max attempts. Choice is set to default: ${var_yellow}${str_no}${var_reset_color}"
-        echo -e "$str_output"
+        echo -e "${str_output}"
         return 1
     }
 
@@ -62,22 +61,22 @@
     # Ask for a number, within a given range, and return given number.
     # If input is not valid, return minimum value. Declare '$var_input' before calling this function.
     # </summary>
-    # <parameter name="1"> string: the output statement </parameter>
-    # <parameter name="2"> num: absolute minimum </parameter>
-    # <parameter name="3"> num: absolute maximum </parameter>
-    # <parameter name=var_input> the answer </parameter>
-    # <returns> $var_input </returns>
+    # <param name="1"> string: the output statement </param>
+    # <param name="2"> num: absolute minimum </param>
+    # <param name="3"> num: absolute maximum </param>
+    # <param name="var_input"> var: the answer </param>
+    # <returns> var: the answer </returns>
     function ReadInputFromRangeOfTwoNums
     {
         # <params>
-        local var_min=2
-        local var_max=3
+        local var_min=$2
+        local var_max=$3
         local str_output=""
         var_input=""
         # </params>
 
         if ( ! IsNum $var_min || ! IsNum $var_max ) &> /dev/null; then
-            echo -e $str_fail_invalid_extrema
+            echo -e "${str_fail_invalid_extrema}"
             return 1
         fi
 
@@ -102,7 +101,7 @@
 
         var_input=$var_min
         str_output="Exceeded max attempts. Choice is set to default: ${var_yellow}${var_input}${var_reset_color}"
-        echo -e "$str_output"
+        echo -e "${str_output}"
         return 1
     }
 
@@ -110,10 +109,10 @@
     # Ask user for multiple choice, and return choice given answer.
     # If input is not valid, return first value. Declare '$var_input' before calling this function.
     # </summary>
-    # <parameter name="1"> string: the output statement </parameter>
-    # <param name="2" name="3" name="4" name="5" name="6" name="7" name="8"> multiple choice </param>
-    # <param name=var_input> the answer </param>
-    # <returns> the answer </returns>
+    # <param name="1"> string: the output statement </param>
+    # <param name="2" name="3" name="4" name="5" name="6" name="7" name="8"> var: multiple choice </param>
+    # <param name="var_input"> var: the answer </param>
+    # <returns> var: the answer </returns>
     function ReadMultipleChoiceIgnoreCase
     {
         # <params>
@@ -125,8 +124,8 @@
         # <remarks> Minimum multiple choice are two answers. </remarks>
         if ( ! IsString $2 || ! IsString $3 ) &> /dev/null; then
             SaveExitCode
-            echo -e $str_fail_not_enough_answers
-            return $int_exit_code
+            echo -e "${str_fail_not_enough_answers}"
+            return "${int_exit_code}"
         fi
 
         arr_input+=( $2 )
@@ -150,19 +149,19 @@
                 var_input=$( echo $var_input | tr '[:lower:]' '[:upper:]' )
 
                 for var_element in ${arr_input[@]}; do
-                    if [[ $var_input == $( echo $var_element | tr '[:lower:]' '[:upper:]' ) ]]; then
+                    if [[ "${var_input}" == $( echo $var_element | tr '[:lower:]' '[:upper:]' ) ]]; then
                         var_input=$var_element
                         return 0
                     fi
                 done
             fi
 
-            echo -e "$str_output_var_is_not_valid"
+            echo -e "${str_output_var_is_not_valid}"
         done
 
         var_input=${arr_input[0]}
         str_output="Exceeded max attempts. Choice is set to default: ${var_yellow}${var_input}${var_reset_color}"
-        echo -e "$str_output"
+        echo -e "${str_output}"
         return 1
     }
 
@@ -171,10 +170,10 @@
     # If input is not valid, return first value.
     # Declare '$var_input' before calling this function.
     # </summary>
-    # <parameter name="1"> string: the output statement </parameter>
-    # <param name="2" name="3" name="4" name="5" name="6" name="7" name="8"> multiple choice </param>
-    # <param name=var_input> the answer </param>
-    # <returns> the answer </returns>
+    # <param name="1"> string: the output statement </param>
+    # <param name="2" name="3" name="4" name="5" name="6" name="7" name="8"> var: multiple choice </param>
+    # <param name="var_input"> var: the answer </param>
+    # <returns> var: the answer </returns>
     function ReadMultipleChoiceMatchCase
     {
         # <params>
@@ -185,8 +184,8 @@
 
         # <remarks> Minimum multiple choice are two answers. </remarks>
         if ( ! IsString $2 || ! IsString $3 ) &> /dev/null; then
-            echo -e $str_fail_not_enough_answers
-            return 1
+            echo -e "${str_fail_not_enough_answers}"
+            return 1;
         fi
 
         arr_input+=( $2 )
@@ -215,18 +214,18 @@
                 done
             fi
 
-            echo -e "$str_output_var_is_not_valid"
+            echo -e "${str_output_var_is_not_valid}"
         done
 
         var_input=${arr_input[0]}
         str_output="Exceeded max attempts. Choice is set to default: ${var_yellow}${var_input}${var_reset_color}"
-        echo -e "$str_output"
+        echo -e "${str_output}"
         return 1
     }
 # </code>
 
 # <params>
-    # <remarks> Output statement </remarks>
+    # <remarks> Output statements </remarks>
     declare -g str_fail_invalid_extrema="${var_prefix_error} Extrema are not valid."
     declare -g str_fail_not_enough_answers="${var_prefix_error} Insufficient multiple choice answers."
 # </params>

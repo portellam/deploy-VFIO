@@ -8,6 +8,8 @@
 #
 
 # <params>
+    declare -g str_user_home_dir=$( grep $( echo $USER ) /etc/passwd | cut -d: -f 6 )
+
     # <summary> Constants </summary>
     declare -gi int_max_tries=2
     declare -ag arr_count_tries=( $( seq 0 "${int_max_tries}" ) )

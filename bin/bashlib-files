@@ -36,37 +36,38 @@
             # <params>
             local str_dir=$( dirname $1 )
             local str_suffix=".old"
-            declare -a arr_dir=( $( eval 'ls -t '"${str_dir}"' | grep '${1}' | grep -i '"${str_suffix}"' | uniq' ) )
+            local var_get_backups='ls -t '"${str_dir}"' | grep '$1' | grep -i '"${str_suffix}"' | uniq'
+            declare -a arr_dir=( $( eval "${var_get_backups}" ) )
             # </params>
 
             # <remarks> If none exist, create backup. </remarks>
             if ! IsArray arr_dir &> /dev/null; then
-                cp $1 "${1}${str_suffix}" || return 1
+                cp $1 "$1${str_suffix}" || return 1
             fi
 
             # <remarks> Delete all but the newest backup file. </remarks>
             if [[ "${#arr_dir[@]}" -gt 1 ]]; then
                 for int_key in "${arr_dir[@]}"; do
-                    if [[ $int_key -gt 0 ]]; then
-                        DeleteFile ${arr_dir[$int_key]} &> /dev/null
+                    if [[ "$int_key" -gt 0 ]]; then
+                        DeleteFile "${arr_dir[$int_key]}" &> /dev/null
                     fi
                 done
             fi
 
             # <remarks> If newest backup is same as file, exit. </remarks>
-            if AreEqualFiles $1 ${arr_dir[0]} &> /dev/null || IsFileOlder ${arr_dir[0]} $1 &> /dev/null; then
-                return $int_code_skipped_operation
+            if AreEqualFiles $1 "${arr_dir[0]}" &> /dev/null || IsFileOlder "${arr_dir[0]}" $1 &> /dev/null; then
+                return "${int_code_skipped_operation}"
             fi
 
             # <remarks> Create backup. </remarks>
-            cp $1 "${1}${str_suffix}" || return 1
+            cp $1 "$1${str_suffix}" || return 1
 
             return 0
         }
 
         BackupFile_Main $1
         PrintPassOrFail "Creating backup file...\t"
-        return $int_exit_code
+        return "${int_exit_code}"
     }
 
     # <summary> Create a directory. </summary>
@@ -77,7 +78,7 @@
         IsDir $1 &> /dev/null && return 0
 
         if ! mkdir -p $1 &> /dev/null; then
-            echo -e "${var_prefix_fail} Could not create directory '${1}'."
+            echo -e "${var_prefix_fail} Could not create directory '$1'."
             return 1
         fi
 
@@ -92,7 +93,7 @@
         IsFile $1 &> /dev/null && return 0
 
         if ! touch $1 &> /dev/null; then
-            echo -e "${var_prefix_fail} Could not create file '${1}'."
+            echo -e "${var_prefix_fail} Could not create file '$1'."
             return 1
         fi
 
@@ -106,8 +107,8 @@
         IsString $1 || return $?
         IsDir $1 &> /dev/null || return 1
 
-        if ! rm -r '"$1"' &> /dev/null; then
-            echo -e "${var_prefix_fail} Could not delete directory '${1}'."
+        if ! rm $1 &> /dev/null; then
+            echo -e "${var_prefix_fail} Could not delete directory '$1'."
             return 1
         fi
 
@@ -121,8 +122,8 @@
         IsString $1 || return $?
         IsFile $1 &> /dev/null || return 1
 
-        if ! rm '"$1"' &> /dev/null; then
-            echo -e "${var_prefix_fail} Could not delete file '${1}'."
+        if ! rm $1 &> /dev/null; then
+            echo -e "${var_prefix_fail} Could not delete file '$1'."
             return 1
         fi
 
@@ -136,8 +137,12 @@
     {
         IsString $2 || return $?
         IsFile $1 || return $?
-        [ -z $( grep -iF $2 $1 ) ]
-        return $?
+
+        if [[ -z $( grep -iF $2 $1 ) ]]; then
+            return 1
+        fi
+
+        return 0
     }
 
     # <summary> Check if the directory exists. If true, pass. </summary>
@@ -147,8 +152,8 @@
         IsString $1 || return $?
 
         if [[ ! -d $1 ]]; then
-            echo -e "${var_prefix_error} File '${1}' is not a directory."
-            return $int_code_dir_is_null
+            echo -e "${var_prefix_error} File '$1' is not a directory."
+            return "${int_code_dir_is_null}"
         fi
 
         return 0
@@ -161,8 +166,8 @@
         IsString $1 || return $?
 
         if [[ ! -e $1 ]]; then
-            echo -e "${var_prefix_error} '${1}' is not a file."
-            return $int_code_dir_is_null
+            echo -e "${var_prefix_error} '$1' is not a file."
+            return "${int_code_dir_is_null}"
         fi
 
         return 0
@@ -175,8 +180,8 @@
     {
         IsFile $2 || return $?
         IsFile $1 || return $?
-        [ $1 -nt $2 ]
-        return $?
+        [ $1 -nt $2 ] || return 1
+        return 0
     }
 
     # <summary> Check if first file is older than second file. If true, pass. </summary>
@@ -186,8 +191,8 @@
     {
         IsFile $2 || return $?
         IsFile $1 || return $?
-        [ $2 -nt $1 ]
-        return $?
+        [ $2 -nt $1 ] || return 1
+        return 0
     }
 
 
@@ -198,8 +203,8 @@
         IsFile $1 || return $?
 
         if [[ ! -x $1 ]]; then
-            echo -e "${var_prefix_error} File '${1}' is not executable."
-            return $int_code_file_is_not_executable
+            echo -e "${var_prefix_error} File '$1' is not executable."
+            return "${int_code_file_is_not_executable}"
         fi
 
         return 0
@@ -212,8 +217,8 @@
         IsFile $1 || return $?
 
         if [[ ! -r $1 ]]; then
-            echo -e "${var_prefix_error} File '${1}' is not readable."
-            return $int_code_file_is_not_readable
+            echo -e "${var_prefix_error} File '$1' is not readable."
+            return "${int_code_file_is_not_readable}"
         fi
 
         return 0
@@ -226,8 +231,8 @@
         IsFile $1 || return $?
 
         if [[ ! -w $1 ]]; then
-            echo -e "${var_prefix_error} File '${1}' is not writable."
-            return $int_code_file_is_not_writable
+            echo -e "${var_prefix_error} File '$1' is not readable."
+            return "${int_code_file_is_not_writable}"
         fi
 
         return 0
@@ -271,14 +276,17 @@
 
         # <params>
         IFS=$'\n'
+        local str_fail="${var_prefix_fail} Could not read from file '$2'."
+        local var_get_param='mapfile -t < <( cat '"$2"' )'
+        local var_set_param="$1"'=( "${MAPFILE[@]}" )'
         # </params>
 
-        if ! mapfile -t < <( cat $2 ) || ! IsArray "MAPFILE" &> /dev/null; then
-            echo -e "${var_prefix_fail} Could not read from file '${2}'."
+        if ! eval "${var_get_param}" || ! IsArray "MAPFILE" &> /dev/null; then
+            echo -e "${str_fail}"
             return 1
         fi
 
-        eval "$1"'=( "${MAPFILE[@]}" )'
+        eval "${var_set_param}"
         return $?
     }
 
@@ -310,27 +318,29 @@
             # <params>
             local str_dir=$( dirname $1 )
             local str_suffix=".old"
-            declare -a arr_dir=( $( eval 'ls -t '"${str_dir}"' | grep '${1}' | grep -i '"${str_suffix}"' | uniq' ) )
+            local var_get_backups='ls -t '"${str_dir}"' | grep '$1' | grep -i '"${str_suffix}"' | uniq'
+            declare -a arr_dir=( $( eval "${var_get_backups}" ) )
             # </params>
 
+            # TODO: to be removed.
             # <remarks> If none exist, create backup. </remarks>
-            if ! IsArray arr_dir &> /dev/null; then
-                BackupFile $1
-                return $?
-            fi
+            # if ! IsArray "arr_dir" &> /dev/null; then
+            #     BackupFile $1
+            #     return $?
+            # fi
 
             # <remarks> If newest backup is newer than file, restore. </remarks>
-            if ! AreEqualFiles $1 "${arr_dir[0]}" &> /dev/null || IsFileNewer "${arr_dir[0]}" $1 &> /dev/null ; then
+            if ! AreEqualFiles $1 "${arr_dir[0]}" &> /dev/null || IsFileNewer "${arr_dir[0]}" $1 &> /dev/null; then
                 cp "$1${str_suffix}" $1
                 return $?
             fi
 
-            return $int_code_skipped_operation
+            return "${int_code_skipped_operation}"
         }
 
         RestoreFile_Main $1
         PrintPassOrFail "Restoring backup file..."
-        return $int_exit_code
+        return "${int_exit_code}"
     }
 
     # <summary> Write output to a file. Declare inherited params before calling this function. </summary>
@@ -341,8 +351,12 @@
         IsFile $2 || return $?
         IsArray $1 || return $?
 
-        if ! printf "%s\n" "${'${1}'[@]}" >> $2; then
-            echo -e "${var_prefix_fail} Could not write to file '${1}'."
+        # <params>
+        local var_set_param='printf "%s\n" "${'$1'[@]}" >> $2'
+        # </params>
+
+        if ! eval "${var_set_param}"; then
+            echo -e "${var_prefix_fail} Could not write to file '$1'."
             return 1
         fi
 

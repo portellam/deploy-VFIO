@@ -9,7 +9,7 @@
 
 # TODO:
 # -write to abstractions file
-#   -Evdev?
+#   -Evdev
 #   -Hugepages?
 #   -LookingGlass
 #
@@ -21,22 +21,26 @@
 # </code>
 
 # <code>
-    # <summary> Add user to necessary user groups. </summary>
+    # <summary>
+    # Add user to necessary user groups.
+    # </summary>
     function AddUserToGroups
     {
         function AddUserToGroups_Main
         {
-            adduser $str_first_user "input" || return 1
-            adduser $str_first_user "libvirt" || return 1
+            adduser "${str_first_user}" "input" || return 1
+            adduser "${str_first_user}" "libvirt" || return 1
             return 0
         }
 
         AddUserToGroups_Main &> /dev/null
         PrintPassOrFail "Adding user to groups..."
-        return $int_exit_code
+        return "${int_exit_code}"
     }
 
-    # <summary> isolcpus: Allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and virtual machine performance. </summary
+    # <summary>
+    # isolcpus: Allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and guest performance.
+    # </summary
     function Allocate_CPU
     {
         function Allocate_CPU_Main
@@ -45,45 +49,42 @@
             local var_get_all_cores='seq 0 $(( ${int_total_cores} - 1 ))'
             local var_get_total_threads='cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+"'
             local var_get_total_cores='cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+"'
-            declare -i int_total_cores=$( eval $var_get_total_cores )
-            declare -i int_total_threads=$( eval $var_get_total_threads )
+            declare -i int_total_cores=$( eval "${var_get_total_cores}" )
+            declare -i int_total_threads=$( eval "${var_get_total_threads}" )
             # </params>
 
-            # <summary> Set maximum number of cores allocated to host machine. </summary>
+            # <summary> Set maximum number of cores allocated to host. </summary>
                 # <params>
-                declare -a arr_all_cores=( $( eval $var_get_all_cores ) )
+                declare -a arr_all_cores=( $( eval "${var_get_all_cores}" ) )
                 declare -i int_host_cores=1
                 # </params>
 
                 # <remarks> quad-core or greater CPU </remarks>
-                if [[ $int_total_cores -ge 4 ]]; then
+                if [[ "${int_total_cores}" -ge 4 ]]; then
                     int_host_cores=2
 
                 # <remarks> double-core/triple-core CPU </remarks>
-                elif [[ $int_total_cores -le 3 && $int_total_cores -ge 2 ]]; then
-                    int_host_cores
+                elif [[ "${int_total_cores}" -le 3 && "${int_total_cores}" -ge 2 ]]; then
+                    int_host_cores=1
 
                 # <remarks> If single-core CPU, fail. </remarks>
                 else
-                    int_host_cores
-                    false
-                    PrintPassOrFail $str_output
-                    return $int_exit_code
+                    return 1
                 fi
 
-            # <summary> Get thread sets, for host and virtual machines. </summary>
+            # <summary> Get thread sets, for host and guest(s). </summary>
                 # <params>
                 local var_get_host_cores='seq 0 $(( ${int_host_cores} - 1 ))'
                 local var_get_SMT_factors='seq 0 $(( ${int_SMT_factor} - 1 ))'
                 local var_get_thread='$(( int_core + ( int_SMT_factor * int_total_cores ) ))'
                 local var_get_virt_cores='seq ${int_host_cores} $(( ${int_total_cores} - 1 ))'
 
-                declare -a arr_host_cores=( $( eval $var_get_host_cores ) )
+                declare -a arr_host_cores=( $( eval "${var_get_host_cores}" ) )
                 declare -a arr_host_threads=()
-                declare -a arr_virt_cores=( $( eval $var_get_virt_cores ) )
+                declare -a arr_virt_cores=( $( eval "${var_get_virt_cores}" ) )
                 declare -a arr_virt_threads=()
-                declare -i int_SMT_factor=$(( $int_total_threads / $int_total_cores ))
-                declare -a arr_SMT_factors=( $( eval $var_get_SMT_factors ) )
+                declare -i int_SMT_factor=$(( "${int_total_threads}" / "${int_total_cores}" ))
+                declare -a arr_SMT_factors=( $( eval "${var_get_SMT_factors}" ) )
 
                 declare -g str_host_thread_sets
                 declare -g str_virt_thread_sets
@@ -91,35 +92,35 @@
 
                 function GetThreadByCoreAnd_SMT
                 {
-                    int_thread=$( int_core + ( int_SMT_factor * int_total_cores ) )
+                    int_thread=$(( int_core + ( int_SMT_factor * int_total_cores ) ))
                 }
 
-                for var_SMT_factor in ${arr_SMT_factors[@]}; do
+                for int_SMT_factor in "${arr_SMT_factors[@]}"; do
                     # <remarks> Reset params </remarks>
                     declare -a arr_host_threads_sets=()
                     declare -a arr_virt_threads_sets=()
                     declare -i int_thread
 
-                    # <remarks> Find thread sets for host machine. </remarks>
-                    for var_core in ${arr_host_cores[@]}; do
+                    # <remarks> Find thread sets for host. </remarks>
+                    for int_core in "${arr_host_cores[@]}"; do
                         GetThreadByCoreAnd_SMT
-                        arr_host_threads+=( "${var_core}" )
-                        arr_host_threads_sets+=( "${var_core}" )
+                        arr_host_threads+=( "${int_thread}" )
+                        arr_host_threads_sets+=( "${int_thread}" )
                     done
 
-                    # <remarks> Find thread sets for virtual machines. </remarks>
-                    for var_core in ${arr_virt_cores[@]}; do
+                    # <remarks> Find thread sets for guest(s). </remarks>
+                    for int_core in "${arr_virt_cores[@]}"; do
                         GetThreadByCoreAnd_SMT
-                        arr_virt_threads+=( "${var_core}" )
-                        arr_virt_threads_sets+=( "${var_core}" )
+                        arr_virt_threads+=( "${int_thread}" )
+                        arr_virt_threads_sets+=( "${int_thread}" )
                     done
 
                     # <remarks> Save thread sets to delimited list. </remarks>
-                    declare -i int_set_first_thread=${arr_host_threads_sets[0]}
-                    declare -i int_set_last_thread=${arr_host_threads_sets[-1]}
-                    local str_thread_set=$int_set_first_thread
+                    declare -i int_set_first_thread="${arr_host_threads_sets[0]}"
+                    declare -i int_set_last_thread="${arr_host_threads_sets[-1]}"
+                    local str_thread_set="${int_set_first_thread}"
 
-                    if [[ $int_set_first_thread -ne $int_set_last_thread ]]; then
+                    if [[ "${int_set_first_thread}" -ne "${int_set_last_thread}" ]]; then
                         local str_thread_set="${int_set_first_thread}-${int_set_last_thread}"
                     fi
 
@@ -127,9 +128,9 @@
 
                     declare -i int_set_first_thread="${arr_virt_threads_sets[0]}"
                     declare -i int_set_last_thread="${arr_virt_threads_sets[-1]}"
-                    local str_thread_set=$int_set_first_thread
+                    local str_thread_set="${int_set_first_thread}"
 
-                    if [[ $int_set_first_thread -ne $int_set_last_thread ]]; then
+                    if [[ "${int_set_first_thread}" -ne "${int_set_last_thread}" ]]; then
                         local str_thread_set="${int_set_first_thread}-${int_set_last_thread}"
                     fi
 
@@ -145,9 +146,6 @@
                 if [[ ${str_virt_thread_sets: -1} == "," ]]; then
                     str_virt_thread_sets=${str_virt_thread_sets::-1}
                 fi
-
-                # <remarks> Save output </remarks>
-                str_host_thread_sets str_virt_thread_sets
 
             # <summary> Find CPU mask. </summary>
                 # <remarks>
@@ -173,22 +171,21 @@
                 # </params>
 
                 # <remarks> Add each decimal mask to sum. </remarks>
-                for var_thread in ${arr_host_threads[@]}; do
-                    declare -i int_thread_decimal=$(( 2 ** $var_thread ))
+                for int_thread in "${arr_host_threads[@]}"; do
+                    declare -i int_thread_decimal=$(( 2 ** ${int_thread} ))
                     declare -i int_thread_hexadecimal_mask=$( eval "${var_get_hexadecimal_mask_from_decimal}" )
-                    int_host_threads_hexadecimal_mask+=$int_thread_hexadecimal_mask
+                    int_host_threads_hexadecimal_mask+="${int_thread_hexadecimal_mask}"
                 done
 
-                for var_thread in ${arr_total[@]}; do
-                    declare -i int_thread_decimal=$(( 2 ** $var_thread ))
+                for int_thread in "${arr_total[@]}"; do
+                    declare -i int_thread_decimal=$(( 2 ** ${int_thread} ))
                     declare -i int_thread_hexadecimal_mask=$( eval "${var_get_hexadecimal_mask_from_decimal}" )
-                    int_host_threads_hexadecimal_mask+=$int_thread_hexadecimal_mask
+                    int_host_threads_hexadecimal_mask+="${int_thread_hexadecimal_mask}"
                 done
 
                 # <remarks> Save changes, convert hexadecimal mask into hexadecimal. </remarks>
-                int_host_threads_hexadecimal_mask
                 declare -g str_host_threads_hexadecimal=$( printf '%x\n' $int_host_threads_hexadecimal_mask )
-                declare -i int_total_threads_hexadecimal_mask=$(( ( 2 ** $int_total_threads ) - 1 ))
+                declare -i int_total_threads_hexadecimal_mask=$(( ( 2 ** ${int_total_threads} ) - 1 ))
                 declare -g str_total_threads_hexadecimal=$( printf '%x\n' $int_total_threads_hexadecimal_mask )
 
             declare -a arr_output1=(
@@ -206,37 +203,35 @@
 
         Allocate_CPU_Main $@ &> /dev/null
         PrintPassOrFail "Allocating CPU threads..."
-        return $int_exit_code
+        return "${int_exit_code}"
     }
 
-    # <summary> Hugepages: Allocate host memory (RAM) to 'hugepages', to eliminate the need to defragement memory, to reduce host overhead, and to improve both host and virtual machine performance. </summary
+    # <summary>
+    # Hugepages: Allocate host memory (RAM) to 'hugepages'.
+    # Eliminate the need to defragement memory, reduce host overhead, and improve both host and guest performance.
+    # </summary
     function Allocate_RAM
     {
         function Allocate_RAM_Main
         {
             if ! IsNum "${int_max_mem}" &> /dev/null; then
-                local str_output_could_not_parse_memory="${var_prefix_error} Could not parse system memory."
-                echo -e "${str_output_could_not_parse_memory}"
+                echo -e "${var_prefix_error} Could not parse system memory."
+                return 1
             fi
 
             # <remarks> Ask user to proceed. </remarks>
             if ! $bool_hugepage_set_size; then
                 # <params>
                 declare -g str_huge_page_byte_prefix=""
-
-                local str_output1="Hugepages is a feature which statically allocates system memory to pagefiles.\nVirtual machines can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
-                local str_output2="Setup Hugepages?"
-                local str_output3="Enter size of Hugepages (bytes):"
-
                 declare -a arr_choices=(
                     "2M"
                     "1G"
                 )
                 # </params>
 
-                echo -e $str_output1
-                ReadInput $str_output2 || return $int_code_skipped_operation
-                ReadMultipleChoiceIgnoreCase $str_output3 ${arr_choices[@]} || return $?
+                echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\nguest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
+                ReadInput "Setup Hugepages?" || return "${int_code_skipped_operation}"
+                ReadMultipleChoiceIgnoreCase "Enter size of Hugepages (bytes):" "${arr_choices[@]}" || return $?
                 str_huge_page_byte_prefix="${var_input}"
             fi
 
@@ -250,11 +245,11 @@
             # </params>
 
             case "${str_huge_page_byte_prefix}" in
-                ${arr_choices[0]} )
+                "${arr_choices[0]}" )
                     int_huge_page_kbit_size=2048
                     int_huge_page_min=2
                     ;;
-                ${arr_choices[1]} )
+                "${arr_choices[1]}" )
                     int_huge_page_kbit_size=1048576
                     int_huge_page_min=1
                     ;;
@@ -295,16 +290,76 @@
             return 0
         }
 
+        echo
         Allocate_RAM_Main
         PrintPassOrFail "Allocating RAM to pages..."
-        return $int_exit_code
+        return "${int_exit_code}"
     }
 
-    # <summary> Setup an audio loopback service from the host's Line-in to active audio output. Useful for virtual machines with sound-cards (example: Creative SoundBlaster). </summary>
+    # <summary>
+    # Setup an audio capture from guest emulated audio device to host audio backend.
+    # Requires PulseAudio or ALSA.
+    # </summary>
+    # <remarks>
+    # References:
+    #   URL="https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_audio_from_virtual_machine_to_host_via_PulseAudio"
+    #   URL="https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_audio_from_virtual_machine_to_host_via_JACK_and_PipeWire"
+    #
+    # TODO:
+    #   * work out!
+    #   * test!
+    # </remarks>
+    function GuestAudioCapture
+    {
+        function GuestAudioCapture_Install
+        {
+            # <params>
+            declare -a arr_file1_current arr_file1_contents arr_file2_contents
+            local str_audio_backend_command str_audio_backend_name
+            local str_dir1="/etc/systemd/system/"
+            local str_file1="audio-loopback-user.service"
+            local str_dir2="${str_user_home_dir}/config/systemd/user/"
+            local str_file2="scream-ivshmem-pulse.service"
+            # </params>
+
+            # <remarks> Install package version if available. </remarks>
+            case "${str_package_manager}" in
+                "pacman" )
+                    local str_package="qemu-audio-pa"
+                    return $?
+                    ;;
+            esac
+
+            IsInstalledPackage "${str_package}" || InstallPackage "${str_package}"
+
+            return 0
+        }
+
+        GuestAudioLoopback_Main
+        PrintPassOrFail "Creating audio capture..." && bool_is_setup_audio_capture=true || bool_is_setup_audio_capture=false
+        return "${int_exit_code}"
+    }
+
+    # <summary>
+    # Setup an audio loopback service from physical guest audio device (Line-Out) to physical host audio device (Line-In).
+    # Requires physical connection between Line-Out and Line-In, and audio backend with JACK support (requires PulseAudio or ALSA).
+    # </summary>
+    # <remarks>
+    # TODO:
+    #   * work out!
+    #   * add support for ALSA.
+    #   * is JACK actually required? Install?
+    #   * test!
+    # </remarks>
     function GuestAudioLoopback
     {
         function GuestAudioLoopback_Main
         {
+            # <remarks> Get audio backend. </remarks>
+            if ! IsInstalledCommand "pulseaudio"; then
+                return $?
+            fi
+
             # <params>
             declare -a arr_file1_current arr_file1_contents=(
                 "[Unit]"
@@ -325,22 +380,278 @@
             local str_file1="audio-loopback-user.service"
             # </params>
 
-            if ! IsFile $str_file1 &> /dev/null || ( ReadFile "arr_file1_current" $str_file1 && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
+            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file1_current" "${str_file1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
                 OverwriteFile "arr_file1_contents" "${str_dir1}${str_file1}" || return $?
             fi
 
             systemctl daemon-reload || return 1
-            systemctl enable $str_file1 || return 1
-            systemctl restart $str_file1 || return 1
+            systemctl enable "${str_file1}" || return 1
+            systemctl restart "${str_file1}" || return 1
             return 0
         }
 
         GuestAudioLoopback_Main
         PrintPassOrFail "Creating audio loopback..."
-        return $int_exit_code
+        return "${int_exit_code}"
     }
 
-    # <summary> libvirt-hooks: Setup useful Quality-of-life improvements in the form of services and scripts (hooks) for QEMU virtual machines. </summary>
+    # <summary>
+    # Scream: Setup an audio stream from guest to host.
+    # Requires virtual network bridge between guest and host, and operating systems Windows 7/8/10/11.
+    # </summary>
+    # <remarks>
+    # References:
+    #   URL="https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_audio_from_virtual_machine_to_host_via_Scream"
+    #
+    # TODO:
+    #   * work out!
+    # </remarks>
+    function GuestAudioStream
+    {
+        function GuestAudioStream_Build
+        {
+            echo
+
+            # <remarks> Build client </remarks>
+            IsFile "build" || ( mkdir build || return 1 )
+            cd build || return 1
+            cmake .. || return 1
+            make || return 1
+            return 0
+        }
+
+        function GuestAudioStream_Get
+        {
+            # <params>
+            local str_user_name1="duncanthrax"
+            local str_repo_name1="scream"
+            local str_full_repo1="${str_user_name1}/${str_repo_name1}"
+            local str_dependencies=""
+            # </params>
+
+            # <remarks> Set dependencies for successful build. </remarks>
+            case "${str_package_manager}" in
+                "apt" )
+                    str_dependencies="cmake "
+                    ;;
+
+                "yum" )
+                    str_dependencies="cmake "
+                    ;;
+
+                * )
+                    return $?
+                    ;;
+            esac
+
+            # <remarks> Set dependencies for available audio backend. </remarks>
+            if IsInstalledCommand "pulseaudio"; then
+                case "${str_package_manager}" in
+                    "apt" )
+                        str_dependencies+="libpulse-dev "
+                        ;;
+
+                    "yum" )
+                        str_dependencies+="pulseaudio-libs-devel "
+                        ;;
+
+                   * )
+                        return $?
+                        ;;
+                esac
+            elif IsInstalledCommand "pipewire-alsa"; then
+                case "${str_package_manager}" in
+                    "apt" )
+                        str_dependencies+="ibasound2-dev "
+                        ;;
+
+                    "yum" )
+                        str_dependencies+="alsa-lib-devel "
+                        ;;
+
+                    * )
+                        return $?
+                        ;;
+                esac
+            else
+                return 1
+            fi
+
+            # <remarks> Get dependencies. </remarks>
+            if ! IsInstalledPackage "${str_dependencies}" &> /dev/null; then
+                echo
+                InstallPackage "${str_dependencies}" || return $?
+                echo
+            fi
+
+            GetScriptDir
+            echo
+            UpdateOrCloneGitRepo "${str_git_dir}" "${str_full_repo1}" "${str_user_name1}" || return $?
+            GetScriptDir
+            cd "${str_git_dir}${str_full_repo1}" || return $?
+            return 0
+        }
+
+        function GuestAudioStream_Install
+        {
+            # <params>
+            declare -a arr_file1_current arr_file1_contents arr_file2_contents
+            local str_audio_backend_command str_audio_backend_name
+            local str_dir1="/etc/systemd/system/"
+            local str_file1="audio-loopback-user.service"
+            local str_dir2="${str_user_home_dir}/config/systemd/user/"
+            local str_file2="scream-ivshmem-pulse.service"
+            # </params>
+
+            # <remarks> Get audio backend. </remarks>
+            if ! IsInstalledCommand "pulseaudio" && ! IsInstalledCommand "pipewire"; then
+                return $?
+            elif IsInstalledCommand "pulseaudio" &> /dev/null; then
+                str_audio_backend_name="PulseAudio"
+            else
+                str_audio_backend_name="PipeWire"
+            fi
+
+            str_audio_backend_command=$( echo $str_audio_backend_name | tr '[:upper:]' '[:lower:]' )
+
+            arr_file_contents=(
+                "[Unit]"
+                "Description=${str_audio_backend_name} - QEMU"
+                "ConditionUser=!root"
+                ""
+                "[Socket]"
+                "Service=${str_audio_backend_command}-pulse.service"
+                "Priority=6"
+                "ListenStream=%T/${str_audio_backend_command}-qemu"
+                "SocketGroup=libvirt-qemu"
+                "SocketMode=0660"
+                ""
+                "[Install]"
+                "RequiredBy=${str_audio_backend_command}-pulse.service"
+                "WantedBy=sockets.target"
+            )
+
+            declare -a arr_file2_contents=(
+                "[Unit]"
+                "Description=Scream IVSHMEM pulse receiver"
+                "After=${str_audio_backend_command}.service"
+                "Wants=${str_audio_backend_command}.service"
+                ""
+                "[Service]"
+                "Type=simple"
+                "ExecStartPre=/usr/bin/truncate -s 0 /dev/shm/scream-ivshmem"
+                "ExecStartPre=/usr/bin/dd if=/dev/zero of=/dev/shm/scream-ivshmem bs=1M count=2"
+                "ExecStart=/usr/bin/scream -m /dev/shm/scream-ivshmem"
+                ""
+                "[Install]"
+                "WantedBy=default.target"
+            )
+
+            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file1_current" "${str_file1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
+                OverwriteFile "arr_file1_contents" "${str_dir1}${str_file1}" || return $?
+            fi
+
+            if ! IsFile "${str_file2}" &> /dev/null || ( ReadFile "arr_file2_current" "${str_file2}" && IsArray "arr_file2_current" && ! AreEqualArrays "arr_file2_current" "arr_file2_contents" ); then
+                OverwriteFile "arr_file2_contents" "${str_dir2}${str_file2}" || return $?
+            fi
+
+            systemctl daemon-reload || return 1
+            systemctl enable "${str_file1}" || return 1
+            systemctl restart "${str_file1}" || return 1
+            return 0
+        }
+
+        GuestAudioStream_Get
+        PrintPassOrFail "Updating Scream..."
+        GuestAudioStream_Build
+
+        if GuestAudioStream_Build; then
+            PrintPassOrFail "Building Scream..."
+            GuestAudioStream_Install
+            PrintPassOrFail "Installing Scream...\t" && bool_is_setup_scream=true || bool_is_setup_scream=false
+        else
+            PrintPassOrFail "Building Scream..."
+            bool_is_setup_scream=false
+        fi
+
+        return "${int_exit_code}"
+    }
+
+    # <summary>
+    # LookingGlass: Setup direct-memory-access of video framebuffer (and audio?) from guest to host.
+    # Requires operating systems Windows 7/8/10/11.
+    # </summary>
+    # <remarks>
+    # References:
+    #   URL="https://looking-glass.io/docs/B6/install/#client-install
+    #
+    # TODO: fix!
+    # </remarks>
+    function GuestVideoCapture
+    {
+        function GuestVideoCapture_Get
+        {
+            # <params>
+            local str_user_name1="gnif"
+            local str_repo_name1="LookingGlass"
+            local str_full_repo1="${str_user_name1}/${str_repo_name1}"
+            local str_dependencies=""
+            # </params>
+
+            case "${str_package_manager}" in
+                "apt" )
+                    str_dependencies="cmake gcc g++ clang libegl-dev libgl-dev libgles-dev libfontconfig-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config"
+                    ;;
+
+                # "yum" )
+                #     local str_package=""
+                #     ;;
+            esac
+
+            if ! IsInstalledPackage "${str_dependencies}" &> /dev/null; then
+                echo
+                InstallPackage "${str_dependencies}" || return $?
+                echo
+            fi
+
+            GetScriptDir
+            echo
+            UpdateOrCloneGitRepo "${str_git_dir}" "${str_full_repo1}" "${str_user_name1}" || return $?
+            GetScriptDir
+            cd "${str_git_dir}${str_full_repo1}" || return $?
+            return 0
+        }
+
+        function GuestVideoCapture_Install
+        {
+            echo
+
+            # <remarks> Build client </remarks>
+            IsFile "client/build" || ( mkdir client/build || return 1 )
+            cd client/build || return 1
+            cmake ../ || ( git submodule update --init --recursive && cmake ../ ) || return 1
+            make || return 1                                                            # TODO: fix here!
+
+            # <remarks> Conclude build as root or user. </remarks>
+            if $bool_is_user_root; then
+                make install || return 1
+            else
+                cmake -DCMAKE_INSTALL_PREFIX=~/.local .. && make install
+            fi
+
+            return 0
+        }
+
+        GuestVideoCapture_Get
+        PrintPassOrFail "Updating LookingGlass..."
+        GuestVideoCapture_Install
+        PrintPassOrFail "Installing LookingGlass..."
+        return "${int_exit_code}"
+    }
+
+    # <summary>
+    # libvirt-hooks: Setup useful Quality-of-life improvements in the form of services and scripts (hooks) for QEMU guest(s).
+    # </summary>
     function LibvirtHooks
     {
         function LibvirtHooks_Main
@@ -359,7 +670,7 @@
             local str_file1="libvirt-nosleep@.service"
             # </params>
 
-            if ! IsFile $str_file1 &> /dev/null || ( ReadFile "arr_file1_current" $str_file1 && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
+            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file1_current" "${str_file1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
                 OverwriteFile "arr_file1_contents" "${str_dir1}${str_file1}" || return $?
             fi
 
@@ -367,18 +678,16 @@
             return 0
         }
 
-        # <params>
-        local str_output="Installing libvirt-hooks..."
-        # </params>
-
         LibvirtHooks_Main
-        PrintPassOrFail $str_output
-        return $int_exit_code
+        PrintPassOrFail "Installing libvirt-hooks..."
+        return "${int_exit_code}"
 
         exit 0
     }
 
-    # <summary> libvirt-qemu: Append necessary changes to QEMU system file, including user groups, Evdev, Hugepages, and NVRAM (for UEFI VMs). </summary>
+    # <summary>
+    # libvirt-qemu: Append necessary changes to QEMU system file, including user groups, Evdev, Hugepages, and NVRAM (for UEFI guest(s)).
+    # </summary>
     function Modify_QEMU
     {
         function Modify_QEMU_Main
@@ -388,67 +697,68 @@
             declare -a arr_file1_default_cgroups=(
                 "        \"/dev/null\", \"/dev/full\", \"/dev/zero\","
                 "        \"/dev/random\", \"/dev/urandom\","
-                "        \"/dev/ptmx\", \"/dev/kvm\","
+                "        \"/dev/ptmx\", \"/dev/KVM\","
                 "        \"/dev/rtc\", \"/dev/hpet\""
             )
 
             declare -a arr_file1_contents arr_file1_current arr_file2_contents arr_file2_current
-            local str_file1="/etc/libvirt/qemu.conf"
-            local str_file2="/etc/apparmor.d/local/abstractions/libvirt-qemu"
-            local str_backup_file1="$str_file1}.bak"
-            local str_orig_file1="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"
-            # local str_orig_file2=""
+            local str_backup1="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"
+            # local str_backup2=""
             local str_daemon1="libvirtd"
             local str_daemon1_packages="qemu"
+            local str_file1="/etc/libvirt/qemu.conf"
+            local str_file2="/etc/apparmor.d/local/abstractions/libvirt-qemu"
             # </params>
 
             # <remarks> Check if Libvirt is installed. </remarks>
-            IsInstalledPackage $str_daemon1_packages || InstallPackage $str_daemon1_packages || return $?
+            IsInstalledPackage "${str_daemon1_packages}" &> /dev/null || InstallPackage "${str_daemon1_packages}" || return $?
 
             # <remarks> Save file before work. </remarks>
-            BackupFile $str_file1 || return $?
-            BackupFile $str_file2 || return $?
+            BackupFile "${str_file1}" || return $?
+            BackupFile "${str_file2}" || return $?
 
              # <remarks> Grab original system files. </remarks>
             if SetInternetStatus && $bool_is_connected_to_Internet; then
-                curl $str_backup_file1 -o $str_orig_file1
-                # curl $str_backup_file2 -o $str_orig_file2
+                curl "${str_backup_file1}" -o "${str_orig_file1}"
+                # curl "${str_backup_file2}" -o "${str_orig_file2}"
             fi
 
             # <remarks> Check if system files are unmodified. </remarks>
             local bool_is_file1_original=true
             local bool_is_file2_original=true
 
+            # TODO: delete lines the exist within range of the disclaimer and and end cap.
+
             for var_line in ${arr_file_disclaimer[@]}; do
-                FindLineInFile $str_file1 $var_line || bool_is_file1_original=false
+                FindLineInFile "${str_file1}" "${var_line}" || bool_is_file1_original=false
             done
 
             for var_line in ${arr_file_disclaimer[@]}; do
-                FindLineInFile $str_file2 $var_line || bool_is_file2_original=false
+                FindLineInFile "${str_file2}" "${var_line}" || bool_is_file2_original=false
             done
 
             # <remarks> Overwrite system file with a backup or original copy. </remarks>
             if ! $bool_is_file1_original; then
-                if IsFile $str_backup_file1 && ! AreEqualFiles $str_backup_file1 $str_file1; then
-                    cp $str_orig_file1 $str_file1 || (
-                        RestoreFile $str_file1
+                if IsFile "${str_backup_file1}" &> /dev/null && ! AreEqualFiles "${str_backup_file1}" "${str_file2}"; then
+                    cp "${str_orig_file1}" "${str_file1}" || (
+                        RestoreFile "${str_file1}"
                         return $?
                     )
-                elif ! IsFile $str_backup_file1; then
-                    RestoreFile $str_file1 || return $?
+                elif ! IsFile "${str_backup_file1}" &> /dev/null; then  # TODO: to be revised
+                    RestoreFile "${str_file1}" || return $?
                 else
                     return 1
                 fi
             fi
 
             if ! $bool_is_file2_original; then
-                if IsFile $str_backup_file2 && ! AreEqualFiles $str_backup_file2 $str_file2; then
-                    cp $str_orig_file2 $str_file2 || (
-                        RestoreFile $str_file2
+                if IsFile "${str_backup_file2}" &> /dev/null && ! AreEqualFiles "${str_backup_file2}" "${str_file2}"; then
+                    cp "${str_orig_file2}" "${str_file2}" || (
+                        RestoreFile "${str_file2}"
                         return $?
                     )
-                elif ! IsFile $str_backup_file2; then
-                    RestoreFile $str_file2 || return $?
+                elif ! IsFile "${str_backup_file2}" &> /dev/null; then  # TODO: to be revised
+                    RestoreFile "${str_file2}" || return $?
                 else
                     return 1
                 fi
@@ -456,11 +766,11 @@
 
             # <remarks> Format input for Evdev. </remarks>
             if $bool_is_setup_evdev; then
-                for var_device in ${arr_event_devices[@]}; do
+                for var_device in "${arr_event_devices[@]}"; do
                     arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${var_device}\"," )
                 done
 
-                for var_device in ${arr_input_devices[@]}; do
+                for var_device in "${arr_input_devices[@]}"; do
                     arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${var_device}\"," )
                 done
             fi
@@ -474,7 +784,7 @@
             )
 
             # <remarks> Add user and group for Evdev. </remarks>
-            if IsString "${str_first_user}"; then
+            if IsString "${str_first_user}" && ($bool_is_setup_evdev || $bool_is_setup_scream); then
                 arr_file1_contents+=(
                     "user = \"${str_first_user}\""
                     "group = \"user\""
@@ -485,7 +795,7 @@
                     "#group = \"user\""
                 )
 
-                ( return $int_code_skipped_operation )
+                ( return "${int_code_skipped_operation}" )
             fi
 
             # <remarks> Hugepages </remarks>
@@ -503,7 +813,7 @@
                     "#hugetlbfs_mount = \"/dev/hugepages\""
                 )
 
-                ( return $int_code_skipped_operation )
+                ( return "${int_code_skipped_operation}" )
             fi
 
             # <remarks> Add cgroups for Evdev. </remarks>
@@ -532,44 +842,46 @@
                     "]"
                 )
 
-                ( return $int_code_skipped_operation )
+                ( return "${int_code_skipped_operation}" )
             fi
 
-            # <remarks> Adds NVRAM for EFI kernels in UEFI virtual machines. </remarks>
+            # <remarks> Adds NVRAM for EFI kernels in UEFI guest(s). </remarks>
             arr_file1_contents+=(
                 ""
                 "nvram = ["
-                "        \"/usr/share/OVMF/OVMF_CODE.fd:/usr/share/OVMF/OVMF_VARS.fd\","
-                "        \"/usr/share/OVMF/OVMF_CODE.secboot.fd:/usr/share/OVMF/OVMF_VARS.fd\","
-                "        \"/usr/share/AAVMF/AAVMF_CODE.fd:/usr/share/AAVMF/AAVMF_VARS.fd\","
-                "        \"/usr/share/AAVMF/AAVMF32_CODE.fd:/usr/share/AAVMF/AAVMF32_VARS.fd\""
+                "        \"/usr/share/OguestF/OguestF_CODE.fd:/usr/share/OguestF/OguestF_VARS.fd\","
+                "        \"/usr/share/OguestF/OguestF_CODE.secboot.fd:/usr/share/OguestF/OguestF_VARS.fd\","
+                "        \"/usr/share/AAguestF/AAguestF_CODE.fd:/usr/share/AAguestF/AAguestF_VARS.fd\","
+                "        \"/usr/share/AAguestF/AAguestF32_CODE.fd:/usr/share/AAguestF/AAguestF32_VARS.fd\""
                 "]"
             )
 
             # <remarks> Append changes to file(s). </remarks>
-            if ! IsFile $str_file1 &> /dev/null || ( ReadFile arr_file1_current $str_file1 && IsArray arr_file1_current && ! AreEqualArrays arr_file1_current arr_file1_contents ); then
-                OverwriteFile arr_file1_contents $str_file1 || return $?
+            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file1_current" "${str_file1}" &> /dev/null && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
+                OverwriteFile "arr_file1_contents" "${str_file1}" || return $?
             fi
 
-            if ! IsFile $str_file2 &> /dev/null || ( ReadFile arr_file2_current $str_file2 && IsArray arr_file2_current && ! AreEqualArrays arr_file2_current arr_file2_contents ); then
-                OverwriteFile arr_file2_contents "${str_file2}" || return $?
+            if ! IsFile "${str_file2}" &> /dev/null || ( ReadFile "arr_file2_current" "${str_file1}" &> /dev/null && IsArray "arr_file2_current" && ! AreEqualArrays "arr_file2_current" "arr_file2_contents" ); then
+                OverwriteFile "arr_file2_contents" "${str_file2}" || return $?
             fi
 
             # <remarks> Libvirtd service </remarks>
-            IsActiveDaemon $str_daemon1 || (
-                systemctl enable $str_daemon1 || return 1
+            IsActiveDaemon "${str_daemon1}" || (
+                systemctl enable "${str_daemon1}" || return 1
             )
-
-            systemctl restart $str_daemon1
+            systemctl restart "${str_daemon1}"
             return $?
         }
 
-        Modify_QEMU_Main
+        Modify_QEMU_Main &> /dev/null
         PrintPassOrFail "Appending libvirt-qemu..."
-        return $int_exit_code
+        return "${int_exit_code}"
     }
 
-    # <summary> zramswap: Setup a swap partition in host memory, to reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory. </summary>
+    # <summary>
+    # zramswap: Setup a swap partition in host memory.
+    # Reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory.
+    # </summary>
     function RAM_Swapfile
     {
         function RAM_Swapfile_Install
@@ -583,10 +895,10 @@
 
             GetScriptDir || return $?
             echo
-            UpdateOrCloneGitRepo $str_git_dir $str_full_repo1 $str_user_name1 || return $?
+            UpdateOrCloneGitRepo "${str_git_dir}" "${str_full_repo1}" "${str_user_name1}" || return $?
             cd "${str_git_dir}${str_full_repo1}" || return $?
-            IsFile $str_script_name1 || return $?
-            bash $str_script_name1 || return 1
+            IsFile "${str_script_name1}" || return $?
+            bash "${str_script_name1}" || return 1
             GetScriptDir || return $?
             return 0
         }
@@ -600,23 +912,23 @@
             local var_disable_zram_swap='swapoff /dev/zram*'
             local var_enable_all_swap='swapon -a'
             local var_restart_daemon='systemctl restart zram-swap'
-            declare -a arr_file_contents=( $( cat $str_file1 ) )
+            declare -a arr_file_contents=( $( cat "${str_file1}" ) )
             # </params>
 
             # <remarks> Replace matching line with comment of line </remarks>
             for int_key in "${!arr_file_contents[@]}"; do
-                if [[ ${arr_file_contents[$int_key]} == *"${str_match_line1}"* ]]; then
+                if [[ "${arr_file_contents[$int_key]}" == *"${str_match_line1}"* ]]; then
                     arr_file_contents[$int_key]="#${arr_file_contents[$int_key]}"
                 fi
             done
 
-            if ! IsNum $int_max_mem; then
+            if ! IsNum "${int_max_mem}"; then
                 local str_output_could_not_parse_memory="${var_prefix_error} Could not parse system memory."
-                echo -e $str_output_could_not_parse_memory
+                echo -e "${str_output_could_not_parse_memory}"
                 return 1
             fi
 
-            if IsNum $int_alloc_mem_hugepages; then
+            if IsNum "${int_alloc_mem_hugepages}"; then
                 declare -i int_usable_mem=$(( ( int_max_mem - int_alloc_mem_hugepages ) / 2 ))
             else
                 declare -i int_usable_mem=$(( int_max_mem / 2 ))
@@ -630,7 +942,7 @@
             fi
 
             # <remarks> Is fraction positive non-zero and not equal to one. </remarks>
-            if [[ $int_denominator -gt 1 ]]; then
+            if [[ "${int_denominator}" -gt 1 ]]; then
                 local str_fraction="1/${int_denominator}"
 
                 arr_file_contents+=(
@@ -643,114 +955,50 @@
                 )
             fi
 
-            OverwriteFile "arr_file_contents" $str_file1 || return $?
-            eval $var_find_zram_swap &> /dev/null && eval $var_disable_zram_swap &> /dev/null
-            eval $var_restart_daemon || return $?
-            eval $var_enable_all_swap || return $?
+            OverwriteFile "arr_file_contents" "${str_file1}" || return $?
+            eval "${var_find_zram_swap}" &> /dev/null && eval "${var_disable_zram_swap}" &> /dev/null
+            eval "${var_restart_daemon}" || return $?
+            eval "${var_enable_all_swap}" || return $?
             return 0
         }
 
         RAM_Swapfile_Install
         RAM_Swapfile_Modify &> /dev/null
         PrintPassOrFail "Allocating RAM to swap..."
-        return $int_exit_code
+        return "${int_exit_code}"
     }
 
-    # <summary> Evdev: Setup a virtual Keyboard-Video-Mouse switch (excluding the Video). Will allow a user to swap between active virtual machines and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL'). </summary>
+    # <summary>
+    # Evdev: Setup a virtual Keyboard-Video-Mouse switch (excluding the Video).
+    # Will allow a user to swap between active guest(s) and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL').
+    # </summary>
     function Virtual_KVM
     {
         function Virtual_KVM_Main
         {
             # <params>
             declare -ga arr_event_devices arr_input_devices
-            local str_output1="Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\nHOW-TO: Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
-            local str_fail="${var_prefix_error} Cannot parse input devices (by ID)."
             local var_get_event_devices='arr_event_devices=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )'
             local var_get_input_devices='arr_input_devices=( $( ls /dev/input/by-id ) )'
             # </params>
 
-            echo -e $str_output1
-            eval $var_get_event_devices
-            eval $var_get_input_devices
+            eval "${var_get_event_devices}" || return 1
+            eval "${var_get_input_devices}" || return 1
 
             if ! IsArray "arr_event_devices" && ! IsArray "arr_input_devices"; then
-                echo -e $str_fail
+                echo -e "${var_prefix_error} Cannot parse input devices (by ID)."
                 return 1
             fi
 
+            echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and guest(s).\n${var_yellow}HOW-TO:${var_reset_color} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
             bool_is_setup_evdev=true
             return 0
         }
 
-        Virtual_KVM_Main &> /dev/null
+        echo
+        Virtual_KVM_Main
         PrintPassOrFail "Executing Evdev setup..."
-        return $int_exit_code
-    }
-
-    # <summary> Scream: Setup audio loopback from virtual machine to host. NOTE: Only supported for Win 7/8/10/11 virtual machines. </summary>
-    function VirtualAudioCapture
-    {
-        function VirtualAudioCapture_Main
-        {
-            return $int_code_skipped_operation
-        }
-
-        VirtualAudioCapture_Main &> /dev/null
-        PrintPassOrFail "Installing Scream...\t"
-        return $int_exit_code
-    }
-
-    # <summary> LookingGlass: Setup direct-memory-access of video framebuffer from virtual machine to host. NOTE: Only supported for Win 7/10/11 virtual machines. </summary>
-    # <remarks> reference: https://looking-glass.io/docs/B6/install/#client-install </remarks>
-    function VirtualVideoCapture
-    {
-        function VirtualVideoCapture_Get
-        {
-            # <params>
-            local str_user_name1="gnif"
-            local str_repo_name1="LookingGlass"
-            local str_full_repo1="${str_user_name1}/${str_repo_name1}"
-            local str_dependencies="cmake gcc g++ clang libegl-dev libgl-dev libgles-dev libfontconfig-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config"
-            # </params>
-
-            # <remarks> Check if dependencies are installed. </remarks>
-            if ! IsInstalledPackage $str_dependencies; then
-                echo
-                InstallPackage $str_dependencies || return $?
-                echo
-            fi
-
-            # <remarks> Update local repo. </remarks>
-            GetScriptDir
-            UpdateOrCloneGitRepo $str_git_dir $str_full_repo1 $str_user_name1 || return $?
-            GetScriptDir
-            cd "${str_git_dir}${str_full_repo1}" || return $?
-            return 0
-        }
-
-        function VirtualVideoCapture_Install
-        {
-            # <remarks> Build client </remarks>
-            IsFile "client/build" || ( mkdir client/build || return 1 )
-            cd client/build || return 1
-            cmake ../ || ( git submodule update --init --recursive && cmake ../ ) || return 1
-            make || return 1                                                            # TODO: fix here!
-
-            # <remarks> Conclude build as root or user. </remarks>
-            if $bool_is_user_root; then
-                make install || return 1
-            else
-                cmake -DCMAKE_INSTALL_PREFIX=~/.local .. && make install
-            fi
-
-            return 0
-        }
-
-        VirtualVideoCapture_Get
-        PrintPassOrFail "Updating LookingGlass..."
-        VirtualVideoCapture_Install
-        PrintPassOrFail "Installing LookingGlass..."
-        return $int_exit_code
+        return "${int_exit_code}"
     }
 # </code>
 
@@ -764,8 +1012,10 @@
     declare -g str_first_user=$( eval "${var_get_first_valid_user}" ) &> /dev/null
 
     # <remarks> Flag progress of setups </remarks>
+    declare -g bool_is_setup_audio_capture=false
     declare -g bool_is_setup_evdev=false
     declare -g bool_is_setup_hugepages=false
+    declare -g bool_is_setup_scream=false
 
     # <remarks> Memory </remarks>
     declare -g str_max_mem=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )

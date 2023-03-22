@@ -9,11 +9,7 @@
 
 # <remarks> Using </remarks>
 # <code>
-    if ! cd bin; then
-        echo -e "\033[0;31mFailure:\033[0m Could not load required libraries."
-        exit 1
-    fi
-
+    cd bin
     source bashlib-all
     source vfiolib-all
 # </code>
@@ -24,21 +20,22 @@ function Main
     SetScriptDir || return $?
     IsSudoUser || return $?
     if ! SetOptions $@; then GetUsage; return $?; fi
-    # if $bool_uninstall; then UninstallExisting_VFIO; fi
+    # if $bool_uninstall; then UninstallExisting_VFIO fi
 
     # <remarks> Extras </remarks>
     AddUserToGroups
     Allocate_CPU
     Allocate_RAM
     Virtual_KVM
-    Modify_QEMU
     RAM_Swapfile
     LibvirtHooks
-    VirtualVideoCapture
-    # VirtualAudioCapture
+    GuestVideoCapture
+    GuestAudioCapture
     GuestAudioLoopback
+    GuestAudioStream
+    Modify_QEMU
 
-    exit 0
+    exit $?
 
     # <remarks> Main setup </remarks>
     case true in
@@ -75,10 +72,9 @@ function Main
 }
 # </code>
 
-# while [[ $? -eq 0 || $? -eq $int_code_partial_completion || $? -eq $int_code_skipped_operation ]]; do
-#     Main $@
-#     break
-# done
+while [[ $? -eq 0 || $? -eq $int_code_partial_completion || $? -eq $int_code_skipped_operation ]]; do
+    Main $@
+    break
+done
 
-Main $@
 exit $?
