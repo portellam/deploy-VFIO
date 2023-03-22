@@ -21,7 +21,9 @@
 # </code>
 
 # <code>
-    # <summary> Add user to necessary user groups. </summary>
+    # <summary>
+    # Add user to necessary user groups.
+    # </summary>
     function AddUserToGroups
     {
         function AddUserToGroups_Main
@@ -36,7 +38,9 @@
         return "${int_exit_code}"
     }
 
-    # <summary> isolcpus: Allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and virtual machine performance. </summary
+    # <summary>
+    # isolcpus: Allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and guest performance.
+    # </summary
     function Allocate_CPU
     {
         function Allocate_CPU_Main
@@ -49,7 +53,7 @@
             declare -i int_total_threads=$( eval "${var_get_total_threads}" )
             # </params>
 
-            # <summary> Set maximum number of cores allocated to host machine. </summary>
+            # <summary> Set maximum number of cores allocated to host. </summary>
                 # <params>
                 declare -a arr_all_cores=( $( eval "${var_get_all_cores}" ) )
                 declare -i int_host_cores=1
@@ -68,7 +72,7 @@
                     return 1
                 fi
 
-            # <summary> Get thread sets, for host and virtual machines. </summary>
+            # <summary> Get thread sets, for host and guest(s). </summary>
                 # <params>
                 local var_get_host_cores='seq 0 $(( ${int_host_cores} - 1 ))'
                 local var_get_SMT_factors='seq 0 $(( ${int_SMT_factor} - 1 ))'
@@ -97,14 +101,14 @@
                     declare -a arr_virt_threads_sets=()
                     declare -i int_thread
 
-                    # <remarks> Find thread sets for host machine. </remarks>
+                    # <remarks> Find thread sets for host. </remarks>
                     for int_core in "${arr_host_cores[@]}"; do
                         GetThreadByCoreAnd_SMT
                         arr_host_threads+=( "${int_thread}" )
                         arr_host_threads_sets+=( "${int_thread}" )
                     done
 
-                    # <remarks> Find thread sets for virtual machines. </remarks>
+                    # <remarks> Find thread sets for guest(s). </remarks>
                     for int_core in "${arr_virt_cores[@]}"; do
                         GetThreadByCoreAnd_SMT
                         arr_virt_threads+=( "${int_thread}" )
@@ -202,7 +206,10 @@
         return "${int_exit_code}"
     }
 
-    # <summary> Hugepages: Allocate host memory (RAM) to 'hugepages', to eliminate the need to defragement memory, to reduce host overhead, and to improve both host and virtual machine performance. </summary
+    # <summary>
+    # Hugepages: Allocate host memory (RAM) to 'hugepages'.
+    # Eliminate the need to defragement memory, reduce host overhead, and improve both host and guest performance.
+    # </summary
     function Allocate_RAM
     {
         function Allocate_RAM_Main
@@ -222,7 +229,7 @@
                 )
                 # </params>
 
-                echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\nVirtual machines can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
+                echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\nguest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
                 ReadInput "Setup Hugepages?" || return "${int_code_skipped_operation}"
                 ReadMultipleChoiceIgnoreCase "Enter size of Hugepages (bytes):" "${arr_choices[@]}" || return $?
                 str_huge_page_byte_prefix="${var_input}"
@@ -289,11 +296,70 @@
         return "${int_exit_code}"
     }
 
-    # <summary> Setup an audio loopback service from the host's Line-in to active audio output. Useful for virtual machines with sound-cards (example: Creative SoundBlaster). </summary>
+    # <summary>
+    # Setup an audio capture from guest emulated audio device to host audio backend.
+    # Requires PulseAudio or ALSA.
+    # </summary>
+    # <remarks>
+    # References:
+    #   URL="https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_audio_from_virtual_machine_to_host_via_PulseAudio"
+    #   URL="https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_audio_from_virtual_machine_to_host_via_JACK_and_PipeWire"
+    #
+    # TODO:
+    #   * work out!
+    #   * test!
+    # </remarks>
+    function GuestAudioCapture
+    {
+        function GuestAudioCapture_Install
+        {
+            # <params>
+            declare -a arr_file1_current arr_file1_contents arr_file2_contents
+            local str_audio_backend_command str_audio_backend_name
+            local str_dir1="/etc/systemd/system/"
+            local str_file1="audio-loopback-user.service"
+            local str_dir2="${str_user_home_dir}/config/systemd/user/"
+            local str_file2="scream-ivshmem-pulse.service"
+            # </params>
+
+            # <remarks> Install package version if available. </remarks>
+            case "${str_package_manager}" in
+                "pacman" )
+                    local str_package="qemu-audio-pa"
+                    return $?
+                    ;;
+            esac
+
+            IsInstalledPackage "${str_package}" || InstallPackage "${str_package}"
+
+            return 0
+        }
+
+        GuestAudioLoopback_Main
+        PrintPassOrFail "Creating audio capture..." && bool_is_setup_audio_capture=true || bool_is_setup_audio_capture=false
+        return "${int_exit_code}"
+    }
+
+    # <summary>
+    # Setup an audio loopback service from physical guest audio device (Line-Out) to physical host audio device (Line-In).
+    # Requires physical connection between Line-Out and Line-In, and audio backend with JACK support (requires PulseAudio or ALSA).
+    # </summary>
+    # <remarks>
+    # TODO:
+    #   * work out!
+    #   * add support for ALSA.
+    #   * is JACK actually required? Install?
+    #   * test!
+    # </remarks>
     function GuestAudioLoopback
     {
         function GuestAudioLoopback_Main
         {
+            # <remarks> Get audio backend. </remarks>
+            if ! IsInstalledCommand "pulseaudio"; then
+                return $?
+            fi
+
             # <params>
             declare -a arr_file1_current arr_file1_contents=(
                 "[Unit]"
@@ -329,7 +395,263 @@
         return "${int_exit_code}"
     }
 
-    # <summary> libvirt-hooks: Setup useful Quality-of-life improvements in the form of services and scripts (hooks) for QEMU virtual machines. </summary>
+    # <summary>
+    # Scream: Setup an audio stream from guest to host.
+    # Requires virtual network bridge between guest and host, and operating systems Windows 7/8/10/11.
+    # </summary>
+    # <remarks>
+    # References:
+    #   URL="https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_audio_from_virtual_machine_to_host_via_Scream"
+    #
+    # TODO:
+    #   * work out!
+    # </remarks>
+    function GuestAudioStream
+    {
+        function GuestAudioStream_Build
+        {
+            echo
+
+            # <remarks> Build client </remarks>
+            IsFile "build" || ( mkdir build || return 1 )
+            cd build || return 1
+            cmake .. || return 1
+            make || return 1
+            return 0
+        }
+
+        function GuestAudioStream_Get
+        {
+            # <params>
+            local str_user_name1="duncanthrax"
+            local str_repo_name1="scream"
+            local str_full_repo1="${str_user_name1}/${str_repo_name1}"
+            local str_dependencies=""
+            # </params>
+
+            # <remarks> Set dependencies for successful build. </remarks>
+            case "${str_package_manager}" in
+                "apt" )
+                    str_dependencies="cmake "
+                    ;;
+
+                "yum" )
+                    str_dependencies="cmake "
+                    ;;
+
+                * )
+                    return $?
+                    ;;
+            esac
+
+            # <remarks> Set dependencies for available audio backend. </remarks>
+            if IsInstalledCommand "pulseaudio"; then
+                case "${str_package_manager}" in
+                    "apt" )
+                        str_dependencies+="libpulse-dev "
+                        ;;
+
+                    "yum" )
+                        str_dependencies+="pulseaudio-libs-devel "
+                        ;;
+
+                   * )
+                        return $?
+                        ;;
+                esac
+            elif IsInstalledCommand "pipewire-alsa"; then
+                case "${str_package_manager}" in
+                    "apt" )
+                        str_dependencies+="ibasound2-dev "
+                        ;;
+
+                    "yum" )
+                        str_dependencies+="alsa-lib-devel "
+                        ;;
+
+                    * )
+                        return $?
+                        ;;
+                esac
+            else
+                return 1
+            fi
+
+            # <remarks> Get dependencies. </remarks>
+            if ! IsInstalledPackage "${str_dependencies}" &> /dev/null; then
+                echo
+                InstallPackage "${str_dependencies}" || return $?
+                echo
+            fi
+
+            GetScriptDir
+            echo
+            UpdateOrCloneGitRepo "${str_git_dir}" "${str_full_repo1}" "${str_user_name1}" || return $?
+            GetScriptDir
+            cd "${str_git_dir}${str_full_repo1}" || return $?
+            return 0
+        }
+
+        function GuestAudioStream_Install
+        {
+            # <params>
+            declare -a arr_file1_current arr_file1_contents arr_file2_contents
+            local str_audio_backend_command str_audio_backend_name
+            local str_dir1="/etc/systemd/system/"
+            local str_file1="audio-loopback-user.service"
+            local str_dir2="${str_user_home_dir}/config/systemd/user/"
+            local str_file2="scream-ivshmem-pulse.service"
+            # </params>
+
+            # <remarks> Get audio backend. </remarks>
+            if ! IsInstalledCommand "pulseaudio" && ! IsInstalledCommand "pipewire"; then
+                return $?
+            elif IsInstalledCommand "pulseaudio" &> /dev/null; then
+                str_audio_backend_name="PulseAudio"
+            else
+                str_audio_backend_name="PipeWire"
+            fi
+
+            str_audio_backend_command=$( echo $str_audio_backend_name | tr '[:upper:]' '[:lower:]' )
+
+            arr_file_contents=(
+                "[Unit]"
+                "Description=${str_audio_backend_name} - QEMU"
+                "ConditionUser=!root"
+                ""
+                "[Socket]"
+                "Service=${str_audio_backend_command}-pulse.service"
+                "Priority=6"
+                "ListenStream=%T/${str_audio_backend_command}-qemu"
+                "SocketGroup=libvirt-qemu"
+                "SocketMode=0660"
+                ""
+                "[Install]"
+                "RequiredBy=${str_audio_backend_command}-pulse.service"
+                "WantedBy=sockets.target"
+            )
+
+            declare -a arr_file2_contents=(
+                "[Unit]"
+                "Description=Scream IVSHMEM pulse receiver"
+                "After=${str_audio_backend_command}.service"
+                "Wants=${str_audio_backend_command}.service"
+                ""
+                "[Service]"
+                "Type=simple"
+                "ExecStartPre=/usr/bin/truncate -s 0 /dev/shm/scream-ivshmem"
+                "ExecStartPre=/usr/bin/dd if=/dev/zero of=/dev/shm/scream-ivshmem bs=1M count=2"
+                "ExecStart=/usr/bin/scream -m /dev/shm/scream-ivshmem"
+                ""
+                "[Install]"
+                "WantedBy=default.target"
+            )
+
+            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file1_current" "${str_file1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
+                OverwriteFile "arr_file1_contents" "${str_dir1}${str_file1}" || return $?
+            fi
+
+            if ! IsFile "${str_file2}" &> /dev/null || ( ReadFile "arr_file2_current" "${str_file2}" && IsArray "arr_file2_current" && ! AreEqualArrays "arr_file2_current" "arr_file2_contents" ); then
+                OverwriteFile "arr_file2_contents" "${str_dir2}${str_file2}" || return $?
+            fi
+
+            systemctl daemon-reload || return 1
+            systemctl enable "${str_file1}" || return 1
+            systemctl restart "${str_file1}" || return 1
+            return 0
+        }
+
+        GuestAudioStream_Get
+        PrintPassOrFail "Updating Scream..."
+        GuestAudioStream_Build
+
+        if GuestAudioStream_Build; then
+            PrintPassOrFail "Building Scream..."
+            GuestAudioStream_Install
+            PrintPassOrFail "Installing Scream...\t" && bool_is_setup_scream=true || bool_is_setup_scream=false
+        else
+            PrintPassOrFail "Building Scream..."
+            bool_is_setup_scream=false
+        fi
+
+        return "${int_exit_code}"
+    }
+
+    # <summary>
+    # LookingGlass: Setup direct-memory-access of video framebuffer (and audio?) from guest to host.
+    # Requires operating systems Windows 7/8/10/11.
+    # </summary>
+    # <remarks>
+    # References:
+    #   URL="https://looking-glass.io/docs/B6/install/#client-install
+    #
+    # TODO: fix!
+    # </remarks>
+    function GuestVideoCapture
+    {
+        function GuestVideoCapture_Get
+        {
+            # <params>
+            local str_user_name1="gnif"
+            local str_repo_name1="LookingGlass"
+            local str_full_repo1="${str_user_name1}/${str_repo_name1}"
+            local str_dependencies=""
+            # </params>
+
+            case "${str_package_manager}" in
+                "apt" )
+                    str_dependencies="cmake gcc g++ clang libegl-dev libgl-dev libgles-dev libfontconfig-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config"
+                    ;;
+
+                # "yum" )
+                #     local str_package=""
+                #     ;;
+            esac
+
+            if ! IsInstalledPackage "${str_dependencies}" &> /dev/null; then
+                echo
+                InstallPackage "${str_dependencies}" || return $?
+                echo
+            fi
+
+            GetScriptDir
+            echo
+            UpdateOrCloneGitRepo "${str_git_dir}" "${str_full_repo1}" "${str_user_name1}" || return $?
+            GetScriptDir
+            cd "${str_git_dir}${str_full_repo1}" || return $?
+            return 0
+        }
+
+        function GuestVideoCapture_Install
+        {
+            echo
+
+            # <remarks> Build client </remarks>
+            IsFile "client/build" || ( mkdir client/build || return 1 )
+            cd client/build || return 1
+            cmake ../ || ( git submodule update --init --recursive && cmake ../ ) || return 1
+            make || return 1                                                            # TODO: fix here!
+
+            # <remarks> Conclude build as root or user. </remarks>
+            if $bool_is_user_root; then
+                make install || return 1
+            else
+                cmake -DCMAKE_INSTALL_PREFIX=~/.local .. && make install
+            fi
+
+            return 0
+        }
+
+        GuestVideoCapture_Get
+        PrintPassOrFail "Updating LookingGlass..."
+        GuestVideoCapture_Install
+        PrintPassOrFail "Installing LookingGlass..."
+        return "${int_exit_code}"
+    }
+
+    # <summary>
+    # libvirt-hooks: Setup useful Quality-of-life improvements in the form of services and scripts (hooks) for QEMU guest(s).
+    # </summary>
     function LibvirtHooks
     {
         function LibvirtHooks_Main
@@ -363,7 +685,9 @@
         exit 0
     }
 
-    # <summary> libvirt-qemu: Append necessary changes to QEMU system file, including user groups, Evdev, Hugepages, and NVRAM (for UEFI VMs). </summary>
+    # <summary>
+    # libvirt-qemu: Append necessary changes to QEMU system file, including user groups, Evdev, Hugepages, and NVRAM (for UEFI guest(s)).
+    # </summary>
     function Modify_QEMU
     {
         function Modify_QEMU_Main
@@ -373,7 +697,7 @@
             declare -a arr_file1_default_cgroups=(
                 "        \"/dev/null\", \"/dev/full\", \"/dev/zero\","
                 "        \"/dev/random\", \"/dev/urandom\","
-                "        \"/dev/ptmx\", \"/dev/kvm\","
+                "        \"/dev/ptmx\", \"/dev/KVM\","
                 "        \"/dev/rtc\", \"/dev/hpet\""
             )
 
@@ -460,7 +784,7 @@
             )
 
             # <remarks> Add user and group for Evdev. </remarks>
-            if IsString "${str_first_user}"; then
+            if IsString "${str_first_user}" && ($bool_is_setup_evdev || $bool_is_setup_scream); then
                 arr_file1_contents+=(
                     "user = \"${str_first_user}\""
                     "group = \"user\""
@@ -521,14 +845,14 @@
                 ( return "${int_code_skipped_operation}" )
             fi
 
-            # <remarks> Adds NVRAM for EFI kernels in UEFI virtual machines. </remarks>
+            # <remarks> Adds NVRAM for EFI kernels in UEFI guest(s). </remarks>
             arr_file1_contents+=(
                 ""
                 "nvram = ["
-                "        \"/usr/share/OVMF/OVMF_CODE.fd:/usr/share/OVMF/OVMF_VARS.fd\","
-                "        \"/usr/share/OVMF/OVMF_CODE.secboot.fd:/usr/share/OVMF/OVMF_VARS.fd\","
-                "        \"/usr/share/AAVMF/AAVMF_CODE.fd:/usr/share/AAVMF/AAVMF_VARS.fd\","
-                "        \"/usr/share/AAVMF/AAVMF32_CODE.fd:/usr/share/AAVMF/AAVMF32_VARS.fd\""
+                "        \"/usr/share/OguestF/OguestF_CODE.fd:/usr/share/OguestF/OguestF_VARS.fd\","
+                "        \"/usr/share/OguestF/OguestF_CODE.secboot.fd:/usr/share/OguestF/OguestF_VARS.fd\","
+                "        \"/usr/share/AAguestF/AAguestF_CODE.fd:/usr/share/AAguestF/AAguestF_VARS.fd\","
+                "        \"/usr/share/AAguestF/AAguestF32_CODE.fd:/usr/share/AAguestF/AAguestF32_VARS.fd\""
                 "]"
             )
 
@@ -554,7 +878,10 @@
         return "${int_exit_code}"
     }
 
-    # <summary> zramswap: Setup a swap partition in host memory, to reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory. </summary>
+    # <summary>
+    # zramswap: Setup a swap partition in host memory.
+    # Reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory.
+    # </summary>
     function RAM_Swapfile
     {
         function RAM_Swapfile_Install
@@ -641,7 +968,10 @@
         return "${int_exit_code}"
     }
 
-    # <summary> Evdev: Setup a virtual Keyboard-Video-Mouse switch (excluding the Video). Will allow a user to swap between active virtual machines and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL'). </summary>
+    # <summary>
+    # Evdev: Setup a virtual Keyboard-Video-Mouse switch (excluding the Video).
+    # Will allow a user to swap between active guest(s) and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL').
+    # </summary>
     function Virtual_KVM
     {
         function Virtual_KVM_Main
@@ -660,7 +990,7 @@
                 return 1
             fi
 
-            echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and VM's.\n${var_yellow}HOW-TO:${var_reset_color} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
+            echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and guest(s).\n${var_yellow}HOW-TO:${var_reset_color} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
             bool_is_setup_evdev=true
             return 0
         }
@@ -668,138 +998,6 @@
         echo
         Virtual_KVM_Main
         PrintPassOrFail "Executing Evdev setup..."
-        return "${int_exit_code}"
-    }
-
-    # <summary> Scream: Setup audio loopback from virtual machine to host. NOTE: Only supported for Win 7/8/10/11 virtual machines. </summary>
-    # TODO: fix!
-    function VirtualAudioCapture
-    {
-        function GuestAudioLoopback_Main
-        {
-            # <params>
-            declare -a arr_file1_current arr_file1_contents arr_file2_contents
-            local str_audio_backend_command str_audio_backend_name
-            local str_dir1="/etc/systemd/system/"
-            local str_file1="audio-loopback-user.service"
-            local str_dir2="${str_user_home_dir}/config/systemd/user/"
-            local str_file2="scream-ivshmem-pulse.service"
-            # </params>
-
-            if ! IsInstalledCommand "pulseaudio" && ! IsInstalledCommand "pipewire"; then
-                return $?
-            elif IsInstalledCommand "pulseaudio" &> /dev/null; then
-                str_audio_backend_name="PulseAudio"
-            else
-                str_audio_backend_name="PipeWire"
-            fi
-
-            str_audio_backend_command=$( echo $str_audio_backend_name | tr '[:upper:]' '[:lower:]' )
-
-            arr_file_contents=(
-                "[Unit]"
-                "Description=${str_audio_backend_name} - QEMU"
-                "ConditionUser=!root"
-                ""
-                "[Socket]"
-                "Service=${str_audio_backend_command}-pulse.service"
-                "Priority=6"
-                "ListenStream=%T/${str_audio_backend_command}-qemu"
-                "SocketGroup=libvirt-qemu"
-                "SocketMode=0660"
-                ""
-                "[Install]"
-                "RequiredBy=${str_audio_backend_command}-pulse.service"
-                "WantedBy=sockets.target"
-            )
-
-            declare -a arr_file2_contents=(
-                "[Unit]"
-                "Description=Scream IVSHMEM pulse receiver"
-                "After=${str_audio_backend_command}.service"
-                "Wants=${str_audio_backend_command}.service"
-                ""
-                "[Service]"
-                "Type=simple"
-                "ExecStartPre=/usr/bin/truncate -s 0 /dev/shm/scream-ivshmem"
-                "ExecStartPre=/usr/bin/dd if=/dev/zero of=/dev/shm/scream-ivshmem bs=1M count=2"
-                "ExecStart=/usr/bin/scream -m /dev/shm/scream-ivshmem"
-                ""
-                "[Install]"
-                "WantedBy=default.target"
-            )
-
-            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file1_current" "${str_file1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
-                OverwriteFile "arr_file1_contents" "${str_dir1}${str_file1}" || return $?
-            fi
-
-            if ! IsFile "${str_file2}" &> /dev/null || ( ReadFile "arr_file2_current" "${str_file2}" && IsArray "arr_file2_current" && ! AreEqualArrays "arr_file2_current" "arr_file2_contents" ); then
-                OverwriteFile "arr_file2_contents" "${str_dir2}${str_file2}" || return $?
-            fi
-
-            systemctl daemon-reload || return 1
-            systemctl enable "${str_file1}" || return 1
-            systemctl restart "${str_file1}" || return 1
-            return 0
-        }
-
-        VirtualAudioCapture_Main &> /dev/null
-        PrintPassOrFail "Installing Scream...\t"
-        return "${int_exit_code}"
-    }
-
-    # <summary> LookingGlass: Setup direct-memory-access of video framebuffer from virtual machine to host. NOTE: Only supported for Win 7/10/11 virtual machines. </summary>
-    # <remarks> reference: https://looking-glass.io/docs/B6/install/#client-install </remarks>
-    # TODO: fix!
-    function VirtualVideoCapture
-    {
-        function VirtualVideoCapture_Get
-        {
-            # <params>
-            local str_user_name1="gnif"
-            local str_repo_name1="LookingGlass"
-            local str_full_repo1="${str_user_name1}/${str_repo_name1}"
-            local str_dependencies="cmake gcc g++ clang libegl-dev libgl-dev libgles-dev libfontconfig-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config"
-            # </params>
-
-            if ! IsInstalledPackage "${str_dependencies}" &> /dev/null; then
-                echo
-                InstallPackage "${str_dependencies}" || return $?
-                echo
-            fi
-
-            GetScriptDir
-            echo
-            UpdateOrCloneGitRepo "${str_git_dir}" "${str_full_repo1}" "${str_user_name1}" || return $?
-            GetScriptDir
-            cd "${str_git_dir}${str_full_repo1}" || return $?
-            return 0
-        }
-
-        function VirtualVideoCapture_Install
-        {
-            echo
-
-            # <remarks> Build client </remarks>
-            IsFile "client/build" || ( mkdir client/build || return 1 )
-            cd client/build || return 1
-            cmake ../ || ( git submodule update --init --recursive && cmake ../ ) || return 1
-            make || return 1                                                            # TODO: fix here!
-
-            # <remarks> Conclude build as root or user. </remarks>
-            if $bool_is_user_root; then
-                make install || return 1
-            else
-                cmake -DCMAKE_INSTALL_PREFIX=~/.local .. && make install
-            fi
-
-            return 0
-        }
-
-        VirtualVideoCapture_Get
-        PrintPassOrFail "Updating LookingGlass..."
-        VirtualVideoCapture_Install
-        PrintPassOrFail "Installing LookingGlass..."
         return "${int_exit_code}"
     }
 # </code>
@@ -814,8 +1012,10 @@
     declare -g str_first_user=$( eval "${var_get_first_valid_user}" ) &> /dev/null
 
     # <remarks> Flag progress of setups </remarks>
+    declare -g bool_is_setup_audio_capture=false
     declare -g bool_is_setup_evdev=false
     declare -g bool_is_setup_hugepages=false
+    declare -g bool_is_setup_scream=false
 
     # <remarks> Memory </remarks>
     declare -g str_max_mem=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )
