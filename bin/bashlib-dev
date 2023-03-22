@@ -187,52 +187,59 @@
     # <param name="str_package_manager"> string: the package manager </param>
     function InstallPackage
     {
-        IsString "${str_package_manager}" || return $?
-        IsString $1 || return $?
+        function InstallPackage_Main
+        {
+            IsString "${str_package_manager}" || return $?
+            IsString $1 || return $?
 
-        # <params>
-        local bool_option_reinstall=false
-        # </params>
+            # <params>
+            local bool_option_reinstall=false
+            local str_option=""
+            # </params>
 
-        IsBool $2 &> /dev/null && bool_option_reinstall=true
+            IsBool $2 &> /dev/null && bool_option_reinstall=true
 
-        # <remarks> Auto-update and auto-install selected packages </remarks>
-        case "${str_package_manager}" in
-            "apt" )
-                local str_option="--reinstall -o Dpkg::Options::=--force-confmiss"
-                apt update && apt full-upgrade -y && apt install "${str_option}" -y $1
-                ;;
+            # <remarks> Auto-update and auto-install selected packages </remarks>
+            case "${str_package_manager}" in
+                "apt" )
+                    $bool_option_reinstall && str_option="--reinstall -o Dpkg::Options::=--force-confmiss"
+                    apt update && apt full-upgrade -y && apt install -y "${str_option}" $1 || return 1
+                    ;;
 
-            "dnf" )
-                dnf upgrade && dnf install $1
-                ;;
+                "dnf" )
+                    dnf upgrade && dnf install $1 || return 1
+                    ;;
 
-            "pacman" )
-                pacman -Syu && pacman -S $1
-                ;;
+                "pacman" )
+                    pacman -Syu && pacman -S $1 || return 1
+                    ;;
 
-            "gentoo" )
-                emerge -u @world && emerge $1
-                ;;
+                "gentoo" )
+                    emerge -u @world && emerge $1 || return 1
+                    ;;
 
-            "urpmi" )
-                urpmi --auto-update && urpmi $1
-                ;;
+                "urpmi" )
+                    urpmi --auto-update && urpmi $1 || return 1
+                    ;;
 
-            "yum" )
-                yum update && yum install $1
-                ;;
+                "yum" )
+                    yum update && yum install $1 || return 1
+                    ;;
 
-            "zypper" )
-                zypper refresh && zypper in $1
-                ;;
+                "zypper" )
+                    zypper refresh && zypper in $1 || return 1
+                    ;;
 
-            * )
-                echo -e "${str_output_invalid_package_manager}"
-                false
-                ;;
-        esac
+                * )
+                    echo -e "${str_output_invalid_package_manager}"
+                    return 1
+                    ;;
+            esac
 
+            return 0
+        }
+
+        InstallPackage_Main $1 $2
         PrintPassOrFail "Installing software packages..."
         return $?
     }
