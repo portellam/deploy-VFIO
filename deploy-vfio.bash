@@ -27,12 +27,13 @@ function Main
     Allocate_CPU
     Allocate_RAM
     Virtual_KVM
-    Modify_QEMU
     RAM_Swapfile
     LibvirtHooks
-    # VirtualVideoCapture
-    # VirtualAudioCapture
+    GuestVideoCapture
+    GuestAudioCapture
     GuestAudioLoopback
+    GuestAudioStream
+    Modify_QEMU
 
     exit $?
 
