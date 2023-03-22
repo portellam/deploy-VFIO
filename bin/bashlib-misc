@@ -53,6 +53,17 @@
         return "${int_exit_code}"
     }
 
+    # <summary> Append wait given output. </summary>
+    # <param name="1"> string: the output statement </param>
+    # <returns> string: output statement </returns>
+    function PrintWait
+    {
+        SaveExitCode
+        IsString $1 &> /dev/null && echo -en "$1\t"
+        echo -e "${var_suffix_wait}"
+        return 0
+    }
+
     # <summary> Parse exit code as boolean. If zero, return true. Else, return false. </summary>
     # <param name="?"> int: the exit code </param>
     # <returns> bool: the exit status </returns>
