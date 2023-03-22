@@ -297,46 +297,75 @@
     }
 
     # <summary>
-    # Setup an audio capture from guest emulated audio device to host audio backend.
-    # Requires PulseAudio or ALSA.
+    # Install necessary depenencies to setup an audio capture from guest emulated audio device to host audio backend.
+    # Installs PulseAudio or ALSA.
     # </summary>
     # <remarks>
     # References:
-    #   URL="https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_audio_from_virtual_machine_to_host_via_PulseAudio"
-    #   URL="https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_audio_from_virtual_machine_to_host_via_JACK_and_PipeWire"
-    #
-    # TODO:
-    #   * work out!
-    #   * test!
+    # https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_through_other_devices
     # </remarks>
     function GuestAudioCapture
     {
-        function GuestAudioCapture_Install
+        function GuestAudioCapture_Main
         {
             # <params>
-            declare -a arr_file1_current arr_file1_contents arr_file2_contents
-            local str_audio_backend_command str_audio_backend_name
-            local str_dir1="/etc/systemd/system/"
-            local str_file1="audio-loopback-user.service"
-            local str_dir2="${str_user_home_dir}/config/systemd/user/"
-            local str_file2="scream-ivshmem-pulse.service"
+            local str_dependencies=""
             # </params>
 
-            # <remarks> Install package version if available. </remarks>
-            case "${str_package_manager}" in
-                "pacman" )
-                    local str_package="qemu-audio-pa"
-                    return $?
-                    ;;
-            esac
+            # <remarks> Install JACK and PipeWire. </remarks>
+            if ! IsInstalledCommand "pipewire"; then
+                case "${str_package_manager}" in
+                    "apt" )
+                        str_dependencies+="pipewire pipewire-jack "
+                        ;;
 
-            IsInstalledPackage "${str_package}" || InstallPackage "${str_package}"
+                    "pacman" )
+                        str_dependencies+="pipewire pipewire-jack "
+                        ;;
+                        
+                    * )
+                        return 1
+                esac
+            fi
+            
+            # <remarks> Include PulseAudio (and QEMU driver if available). </remarks>
+            if IsInstalled "pulseaudio"; then
+                case "${str_package_manager}" in
+                    "apt" )
+                        str_dependencies+="pipewire-pulse qemu-audio-pa"
+                        ;;
 
+                    "pacman" )
+                        str_dependencies+="pipewire-pulse "
+                        ;;
+                        
+                    * )
+                        return 1
+                esac
+                
+            # <remarks> Fallback to factory driver. </remarks>
+            else
+                case "${str_package_manager}" in
+                    "apt" )
+                        str_dependencies+="pipewire-alsa "
+                        
+                        ;;
+
+                    "pacman" )
+                        str_dependencies+="pipewire-alsa "
+                        ;;
+                        
+                    * )
+                        return 1
+                esac
+            fi
+
+            IsInstalledPackage "str_dependencies" || InstallPackage "str_dependencies"
             return 0
         }
 
-        GuestAudioLoopback_Main
-        PrintPassOrFail "Creating audio capture..." && bool_is_setup_audio_capture=true || bool_is_setup_audio_capture=false
+        GuestAudioCapture_Main
+        PrintPassOrFail "Getting audio lib's..." && bool_is_setup_audio_capture=true || bool_is_setup_audio_capture=false
         return "${int_exit_code}"
     }
 
@@ -344,13 +373,6 @@
     # Setup an audio loopback service from physical guest audio device (Line-Out) to physical host audio device (Line-In).
     # Requires physical connection between Line-Out and Line-In, and audio backend with JACK support (requires PulseAudio or ALSA).
     # </summary>
-    # <remarks>
-    # TODO:
-    #   * work out!
-    #   * add support for ALSA.
-    #   * is JACK actually required? Install?
-    #   * test!
-    # </remarks>
     function GuestAudioLoopback
     {
         function GuestAudioLoopback_Main
