@@ -29,12 +29,10 @@ function Main
     Virtual_KVM
     RAM_Swapfile
     LibvirtHooks
-    GuestVideoCapture
+    # GuestVideoCapture     # currently failing.
     GuestAudioLoopback
-    GuestAudioCapture && GuestAudioStream
+    # GuestAudioStream      # currently failing.
     Modify_QEMU
-
-    exit $?
 
     # <remarks> Main setup </remarks>
     case true in

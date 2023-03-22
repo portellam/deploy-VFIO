@@ -201,8 +201,10 @@
             return 0
         }
 
+        local str_output="Allocating CPU threads..."
+        # PrintWait "${str_output}"
         Allocate_CPU_Main $@ &> /dev/null
-        PrintPassOrFail "Allocating CPU threads..."
+        PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
 
@@ -313,30 +315,28 @@
             # </params>
 
             # <remarks> Install JACK and PipeWire. </remarks>
-            if ! IsInstalledCommand "pipewire"; then
-                case "${str_package_manager}" in
-                    "apt" )
-                        str_dependencies+="pipewire pipewire-jack "
-                        ;;
+            case "${str_package_manager}" in
+                "apt" )
+                    str_dependencies+="pipewire pipewire-jack "
+                    ;;
 
-                    "pacman" )
-                        str_dependencies+="pipewire pipewire-jack "
-                        ;;
+                "pacman" )
+                    str_dependencies+="pipewire pipewire-jack "
+                    ;;
 
-                    * )
-                        return 1
-                esac
-            fi
+                * )
+                    return 1
+            esac
 
             # <remarks> Include PulseAudio (and QEMU driver if available). </remarks>
-            if IsInstalled "pulseaudio"; then
+            if IsInstalledCommand "pulseaudio" &> /dev/null; then
                 case "${str_package_manager}" in
                     "apt" )
-                        str_dependencies+="pipewire-pulse qemu-audio-pa"
+                        str_dependencies+="pipewire-pulse "
                         ;;
 
                     "pacman" )
-                        str_dependencies+="pipewire-pulse "
+                        str_dependencies+="pipewire-pulse qemu-audio-pa "
                         ;;
 
                     * )
@@ -360,12 +360,14 @@
                 esac
             fi
 
-            IsInstalledPackage "str_dependencies" || InstallPackage "str_dependencies"
-            return 0
+            IsInstalledPackage "${str_dependencies}" || InstallPackage "${str_dependencies}"
+            return $?
         }
 
-        GuestAudioCapture_Main
-        PrintPassOrFail "Getting audio lib's..." && bool_is_setup_audio_capture=true || bool_is_setup_audio_capture=false
+        local str_output="Installing audio drivers..."
+        # PrintWait "${str_output}"
+        GuestAudioCapture_Main &> /dev/null
+        PrintPassOrFail "${str_output}" && bool_is_setup_audio_capture=true || bool_is_setup_audio_capture=false
         return "${int_exit_code}"
     }
 
@@ -412,8 +414,10 @@
             return 0
         }
 
-        GuestAudioLoopback_Main
-        PrintPassOrFail "Creating audio loopback..."
+        local str_output="Creating audio loopback..."
+        # PrintWait "${str_output}"
+        GuestAudioLoopback_Main &> /dev/null
+        PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
 
@@ -580,19 +584,28 @@
             return 0
         }
 
-        GuestAudioStream_Get
-        PrintPassOrFail "Updating Scream..."
-        GuestAudioStream_Build
-
-        if GuestAudioStream_Build; then
-            PrintPassOrFail "Building Scream..."
-            GuestAudioStream_Install
-            PrintPassOrFail "Installing Scream...\t" && bool_is_setup_scream=true || bool_is_setup_scream=false
+        if ! GuestAudioCapture; then
+            local str_output="Installing Scream...\t"
+            (return "${int_code_skipped_operation}")
         else
-            PrintPassOrFail "Building Scream..."
-            bool_is_setup_scream=false
+            local str_output="Updating Scream..."
+            # PrintWait "${str_output}"
+            GuestAudioStream_Get &> /dev/null
+            PrintPassOrFail "${str_output}"
+
+            local str_output="Building Scream..."
+            # PrintWait "${str_output}"
+
+            if GuestAudioStream_Build; then
+                PrintPassOrFail "${str_output}"
+
+                local str_output="Installing Scream...\t"
+                # PrintWait "${str_output}"
+                GuestAudioStream_Install
+            fi
         fi
 
+        PrintPassOrFail "${str_output}" && bool_is_setup_scream=true
         return "${int_exit_code}"
     }
 
@@ -695,11 +708,11 @@
             return 0
         }
 
-        LibvirtHooks_Main
-        PrintPassOrFail "Installing libvirt-hooks..."
+        local str_output="Installing libvirt-hooks..."
+        # PrintWait "${str_output}"
+        LibvirtHooks_Main &> /dev/null
+        PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
-
-        exit 0
     }
 
     # <summary>
@@ -890,8 +903,10 @@
             return $?
         }
 
+        local str_output="Appending libvirt-qemu..."
+        # PrintWait "${str_output}"
         Modify_QEMU_Main &> /dev/null
-        PrintPassOrFail "Appending libvirt-qemu..."
+        PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
 
@@ -1013,8 +1028,10 @@
         }
 
         echo
-        Virtual_KVM_Main
-        PrintPassOrFail "Executing Evdev setup..."
+        local str_output="Executing Evdev setup..."
+        # PrintWait "${str_output}"
+        Virtual_KVM_Main &> /dev/null
+        PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
 # </code>
