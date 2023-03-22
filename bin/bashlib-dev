@@ -122,7 +122,6 @@
     {
         # <params>
         local str_kernel="$( uname -o | tr '[:upper:]' '[:lower:]' )"
-        local str_operating_system="$( lsb_release -is | tr '[:upper:]' '[:lower:]' )"
         local str_output_distro_is_not_valid="${var_prefix_error} Distribution '$( lsb_release -is )' is not supported."
         local str_output_kernel_is_not_valid="${var_prefix_error} Kernel '$( uname -o )' is not supported."
         local str_OS_with_apt="debian bodhi deepin knoppix mint peppermint pop ubuntu kubuntu lubuntu xubuntu "
@@ -413,5 +412,6 @@
     IsInstalledCommand "systemd" &> /dev/null && bool_is_installed_systemd=true
 
     declare -gl str_package_manager=""
+    declare -gl str_operating_system="$( lsb_release -is )"
     GetLinuxDistro &> /dev/null
 # </params>
