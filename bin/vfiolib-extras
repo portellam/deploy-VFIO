@@ -302,7 +302,7 @@
     # </summary>
     # <remarks>
     # References:
-    # https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_through_other_devices
+    #   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_through_other_devices
     # </remarks>
     function GuestAudioCapture
     {
@@ -322,12 +322,12 @@
                     "pacman" )
                         str_dependencies+="pipewire pipewire-jack "
                         ;;
-                        
+
                     * )
                         return 1
                 esac
             fi
-            
+
             # <remarks> Include PulseAudio (and QEMU driver if available). </remarks>
             if IsInstalled "pulseaudio"; then
                 case "${str_package_manager}" in
@@ -338,23 +338,23 @@
                     "pacman" )
                         str_dependencies+="pipewire-pulse "
                         ;;
-                        
+
                     * )
                         return 1
                 esac
-                
+
             # <remarks> Fallback to factory driver. </remarks>
             else
                 case "${str_package_manager}" in
                     "apt" )
                         str_dependencies+="pipewire-alsa "
-                        
+
                         ;;
 
                     "pacman" )
                         str_dependencies+="pipewire-alsa "
                         ;;
-                        
+
                     * )
                         return 1
                 esac
@@ -423,10 +423,7 @@
     # </summary>
     # <remarks>
     # References:
-    #   URL="https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_audio_from_virtual_machine_to_host_via_Scream"
-    #
-    # TODO:
-    #   * work out!
+    #   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_audio_from_virtual_machine_to_host_via_Scream
     # </remarks>
     function GuestAudioStream
     {
@@ -605,9 +602,7 @@
     # </summary>
     # <remarks>
     # References:
-    #   URL="https://looking-glass.io/docs/B6/install/#client-install
-    #
-    # TODO: fix!
+    #   https://looking-glass.io/docs/B6/install/#client-install
     # </remarks>
     function GuestVideoCapture
     {
