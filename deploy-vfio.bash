@@ -50,6 +50,9 @@ function Main
     esac
 
     Select_IOMMU $@ || return $?
+    local str_output="Installing VFIO setup..."
+
+    # TODO: pci ids, and other info are not being written to files. Need to fix setup!
 
     case true in
         $bool_multiboot )
@@ -65,6 +68,7 @@ function Main
             ;;
     esac
 
+    PrintPassOrFail "${str_output}"
     return $?
 }
 # </code>
