@@ -75,25 +75,11 @@
                 for var_device in ${arr_devices[@]}; do
                     local str_class=$( eval "${var_parse_name_ID}" )
                     str_class=$( echo -e "${str_class}" | grep -i "Class:" | cut -d ':' -f 2 | grep -oP "^\t\K.*" )
-                    # local str_device_ID=$( eval "${var_parse_quotes}" | cut -d '"' -f 6 | uniq )                      # this is shit.
                     local str_device_name=$( eval "${var_parse_name_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${var_device}" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
                     local str_driver=$( eval "${var_parse_all_ID}" | grep -i "Driver:" | awk '{print $2}' | uniq )
                     local str_IOMMU=$( eval "${var_parse_all_ID}"| grep -i "IOMMUGroup:" | awk '{print $2}' | uniq )
                     local str_vendor_name=$( eval "${var_parse_name_ID}" | grep -i "Vendor:" | grep -Eiv "SVendor:" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
-                    # local str_vendor_ID=$( eval "${var_parse_quotes}" | cut -d '"' -f 4 | uniq )                      # ditto.
-                    # local str_hardware_ID="${str_vendor_ID}:${str_device_ID}"                                         # not necessary.
                     local str_hardware_ID=$( lspci -n -s "${var_device}" | cut -d ' ' -f 3 )                            # this works.
-                    # local str_hardware_ID=$( eval "${var_parse_hardware_ID}" | cut -d ' ' -f 3 )                      # this doesn't (only diff is that args are separated, not joined).
-
-                    # verifies that Parse_IOMMU works. need to check lists.
-                    echo "var_device == '$var_device'"
-                    echo "str_class == '$str_class'"
-                    echo "str_device_name == '$str_device_name'"
-                    echo "str_driver == '$str_driver'"
-                    echo "str_IOMMU == '$str_IOMMU'"
-                    echo "str_vendor_name == '$str_vendor_name'"
-                    echo "str_hardware_ID == '$str_hardware_ID'"
-                    echo
 
                     # <remarks> If system is setup for VFIO, exit. </remarks>
                     if [[ $str_driver == "vfio-pci" ]]; then
@@ -254,7 +240,7 @@
                 local str_regex='[a-fA-F1-9]'
 
                 # <remarks> Output statement </remarks>
-                declare -ar arr_output1=(
+                declare -a arr_output1=(
                     "Slot ID:\t'${str_slot_ID}'"
                     "Vendor name:\t'${str_vendor_name}'"
                     "Device name:\t'${str_device_name}'"
@@ -315,27 +301,24 @@
             arr_IOMMU_VFIO_PCI+=( "" )
             arr_IOMMU_PCI_STUB+=( "" )
             arr_IOMMU_VFIO_PCI_with_VGA+=( "" )
-            echo -e $str_output_skip_select
+            echo -e "Skipped IOMMU group '${int_this_IOMMU_ID}'."
             return 0
         }
 
         # <summary> Ask user to Select/Skip IOMMU group. </summary>
         function Select_IOMMU_Prompt
         {
-            # <params>
-            local str_output_do_select="Select IOMMU group '${int_this_IOMMU_ID}'?"
-            local str_output_skip_select="Skipped IOMMU group '${int_this_IOMMU_ID}'."
-            # </params>
-
             # <remarks> Append to list a valid array or empty value. </remarks>
             if $bool_IOMMU_has_external_domain && $bool_select_all_IOMMU; then
                 Select_IOMMU_Group
                 return 0
             fi
 
-            if $bool_IOMMU_has_external_domain && ReadInput $str_output_do_select; then
+            if $bool_IOMMU_has_external_domain && ReadInput "Select IOMMU group '${int_this_IOMMU_ID}'?"; then
                 Select_IOMMU_Group
-            else
+            fi
+
+            if ! $bool_IOMMU_has_external_domain; then
                 Skip_IOMMU_Group
             fi
 
@@ -364,7 +347,7 @@
         local str_output="Reviewing IOMMU groups..."
         local int_IOMMU_max=$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )
         local var_get_IOMMU='seq 0 "${int_IOMMU_max}"'
-        declare -ar arr_this_IOMMU=( $( eval "${var_get_IOMMU}" ) )
+        declare -a arr_this_IOMMU=( $( eval "${var_get_IOMMU}" ) )
         # </params>
 
         for var_IOMMU in ${arr_this_IOMMU[@]}; do
