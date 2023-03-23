@@ -72,7 +72,7 @@
             function Parse_IOMMU_Save_Lists
             {
                 # <remarks> Save to lists each device's information. Lists should be of the same-size. </remarks>
-                for var_device in ${arr_devices[@]}; do
+                for var_device in "${arr_devices[@]}"; do
                     local str_class=$( eval "${var_parse_name_ID}" )
                     str_class=$( echo -e "${str_class}" | grep -i "Class:" | cut -d ':' -f 2 | grep -oP "^\t\K.*" )
                     local str_device_name=$( eval "${var_parse_name_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${var_device}" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
@@ -328,7 +328,7 @@
         # <summary> Parse VFIO list for drivers and hardware IDs. </summary>
         function Get_IOMMU_Drivers
         {
-            for int_key in ${!arr_IOMMU[@]}; do
+            for int_key in "${!arr_IOMMU[@]}"; do
                 local str_driver=${arr_driver[$int_key]}
                 local str_hardware_ID=${arr_hardware_ID[$int_key]}
                 local str_IOMMU=${arr_IOMMU[$int_key]}
@@ -350,7 +350,9 @@
         declare -a arr_this_IOMMU=( $( eval "${var_get_IOMMU}" ) )
         # </params>
 
-        for var_IOMMU in ${arr_this_IOMMU[@]}; do
+        PrintWait "${str_output}"
+
+        for var_IOMMU in "${arr_this_IOMMU[@]}"; do
             local bool_IOMMU_has_external_domain=false
             local bool_IOMMU_PCI_STUB=false
             # local bool_IOMMU_VFIO_PCI=false
@@ -366,8 +368,8 @@
         done
 
         # <remarks> Check if list is empty </remarks>
-        IsArray "arr_IOMMU_VFIO_PCI" && bool_VFIO_has_IOMMU=true && Get_IOMMU_Drivers
-        PrintPassOrFail "Reviewing IOMMU groups..."
+        IsArray "arr_IOMMU_VFIO_PCI" &> /dev/null && bool_VFIO_has_IOMMU=true && Get_IOMMU_Drivers
+        PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
 # </code>
