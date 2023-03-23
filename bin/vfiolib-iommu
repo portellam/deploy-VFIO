@@ -245,13 +245,13 @@
                     "Vendor name:\t'${str_vendor_name}'"
                     "Device name:\t'${str_device_name}'"
                     "Class/Type:\t'${str_class}'"
-                    # "Hardware ID:\t'${str_hardware_ID}'"
+                    "Hardware ID:\t'${str_hardware_ID}'"
                     "Kernel driver:\t'${str_driver}'"
                 )
             # </params>
 
             # <remarks> Match IOMMU group </remarks>
-            if [[ $int_IOMMU -eq $int_this_IOMMU_ID ]]; then
+            if [[ $int_IOMMU -eq $var_IOMMU ]]; then
 
                 # <remarks> External PCI devices have domain IDs of '01' or greater. </remarks>
                 if [[ $str_domain_ID =~ ${str_regex} ]]; then
@@ -280,16 +280,16 @@
         function Select_IOMMU_Group
         {
             if $bool_IOMMU_has_USB; then
-                arr_IOMMU_PCI_STUB+=( "${int_this_IOMMU_ID}" )
+                arr_IOMMU_PCI_STUB+=( "${var_IOMMU}" )
             else
                 arr_IOMMU_PCI_STUB+=( "" )
             fi
 
             if $bool_IOMMU_has_VGA; then
                 arr_IOMMU_VFIO_PCI+=( "" )
-                arr_IOMMU_VFIO_PCI_with_VGA+=( "${int_this_IOMMU_ID}" )
+                arr_IOMMU_VFIO_PCI_with_VGA+=( "${var_IOMMU}" )
             else
-                arr_IOMMU_VFIO_PCI+=( "${int_this_IOMMU_ID}" )
+                arr_IOMMU_VFIO_PCI+=( "${var_IOMMU}" )
                 arr_IOMMU_VFIO_PCI_with_VGA+=( "" )
             fi
 
@@ -301,7 +301,7 @@
             arr_IOMMU_VFIO_PCI+=( "" )
             arr_IOMMU_PCI_STUB+=( "" )
             arr_IOMMU_VFIO_PCI_with_VGA+=( "" )
-            echo -e "Skipped IOMMU group '${int_this_IOMMU_ID}'."
+            echo -e "Skipped IOMMU group '${var_IOMMU}'."
             return 0
         }
 
@@ -314,7 +314,7 @@
                 return 0
             fi
 
-            if $bool_IOMMU_has_external_domain && ReadInput "Select IOMMU group '${int_this_IOMMU_ID}'?"; then
+            if $bool_IOMMU_has_external_domain && ! $bool_select_all_IOMMU && ReadInput "Select IOMMU group '${var_IOMMU}'?"; then
                 Select_IOMMU_Group
             fi
 
@@ -358,7 +358,7 @@
             local bool_IOMMU_has_VGA=false
 
             for int_key in ${!arr_IOMMU[@]}; do
-                declare -i int_IOMMU=${arr_IOMMU[$int_key]}
+                declare -i int_IOMMU="${arr_IOMMU[$int_key]}"
                 Select_IOMMU_Match_IOMMU_AndClass
             done
 
