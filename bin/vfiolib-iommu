@@ -21,7 +21,7 @@
         fi
 
         PrintPassOrFail "Validating Virtualization..."
-        return $int_exit_code
+        return "${int_exit_code}"
     }
 
     # <summary> Parse IOMMU groups for all relevant information. If a parse fails, attempt again another way. If all parses fail, fail. </summary>
@@ -75,13 +75,25 @@
                 for var_device in ${arr_devices[@]}; do
                     local str_class=$( eval "${var_parse_name_ID}" )
                     str_class=$( echo -e "${str_class}" | grep -i "Class:" | cut -d ':' -f 2 | grep -oP "^\t\K.*" )
-                    local str_device_ID=$( eval "${var_parse_quotes}" | cut -d '"' -f 6 | uniq )
+                    # local str_device_ID=$( eval "${var_parse_quotes}" | cut -d '"' -f 6 | uniq )                      # this is shit.
                     local str_device_name=$( eval "${var_parse_name_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${var_device}" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
                     local str_driver=$( eval "${var_parse_all_ID}" | grep -i "Driver:" | awk '{print $2}' | uniq )
                     local str_IOMMU=$( eval "${var_parse_all_ID}"| grep -i "IOMMUGroup:" | awk '{print $2}' | uniq )
                     local str_vendor_name=$( eval "${var_parse_name_ID}" | grep -i "Vendor:" | grep -Eiv "SVendor:" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
-                    local str_vendor_ID=$( eval "${var_parse_quotes}" | cut -d '"' -f 4 | uniq )
-                    local str_hardware_ID="${str_vendor_ID}:${str_device_ID}"
+                    # local str_vendor_ID=$( eval "${var_parse_quotes}" | cut -d '"' -f 4 | uniq )                      # ditto.
+                    # local str_hardware_ID="${str_vendor_ID}:${str_device_ID}"                                         # not necessary.
+                    local str_hardware_ID=$( lspci -n -s "${var_device}" | cut -d ' ' -f 3 )                            # this works.
+                    # local str_hardware_ID=$( eval "${var_parse_hardware_ID}" | cut -d ' ' -f 3 )                      # this doesn't (only diff is that args are separated, not joined).
+
+                    # verifies that Parse_IOMMU works. need to check lists.
+                    echo "var_device == '$var_device'"
+                    echo "str_class == '$str_class'"
+                    echo "str_device_name == '$str_device_name'"
+                    echo "str_driver == '$str_driver'"
+                    echo "str_IOMMU == '$str_IOMMU'"
+                    echo "str_vendor_name == '$str_vendor_name'"
+                    echo "str_hardware_ID == '$str_hardware_ID'"
+                    echo
 
                     # <remarks> If system is setup for VFIO, exit. </remarks>
                     if [[ $str_driver == "vfio-pci" ]]; then
@@ -114,10 +126,11 @@
                     # <remarks> If parsing file and file does not exist, recursive call to parse internet. </remarks>
                     $str_opt_parse_file )
                         str_output=$str_output_parse_file
-                        var_parse_all_ID+=$var_parse_args_file
-                        var_parse_name_ID+=$var_parse_args_file
-                        var_parse_slot_ID+=$var_parse_args_file
-                        var_parse_quotes+=$var_parse_args_file
+                        var_parse_all_ID+=" ${var_parse_args_file}"
+                        var_parse_name_ID+=" ${var_parse_args_file}"
+                        var_parse_slot_ID+=" ${var_parse_args_file}"
+                        var_parse_quotes+=" ${var_parse_args_file}"
+                        PrintWait "${str_output}"
                         IsFile $str_file &> /dev/null
                         return $?
                         ;;
@@ -125,16 +138,18 @@
                     # <remarks> If internet is not available, exit. </remarks>
                     $str_opt_parse_internet )
                         str_output=$str_output_parse_internet
-                        local var_parse_all_ID+=$var_parse_args_online
-                        local var_parse_name_ID+=$var_parse_args_online
-                        local var_parse_slot_ID+=$var_parse_args_online
-                        local var_parse_quotes+=$var_parse_args_online
-                        GetInternetStatus
+                        local var_parse_all_ID+=" ${var_parse_args_online}"
+                        local var_parse_name_ID+=" ${var_parse_args_online}"
+                        local var_parse_slot_ID+=" ${var_parse_args_online}"
+                        local var_parse_quotes+=" ${var_parse_args_online}"
+                        PrintWait "${str_output}"
+                        GetInternetStatus &> /dev/null
                         return $?
                         ;;
 
                     $str_output_parse_local | * )
                         str_output=$str_output_parse_local
+                        PrintWait "${str_output}"
                         ;;
                 esac
 
@@ -161,10 +176,11 @@
                 local var_parse_args_file='-F "${str_file}"'
                 local var_parse_args_online='-q'
                 local var_parse_args_nums='-n'
-                local var_parse_args_slot_ID='-s ${str_slot_ID}'
+                local var_parse_args_slot_ID='-s ${var_device}'
                 local var_parse_args_verbose='-v'
                 local var_parse_to_file='lspci -x >> "${str_file}"'
                 local var_parse_all_ID="${var_parse} ${var_parse_args_nums} ${var_parse_args_verbose} ${var_parse_args_slot_ID}"
+                local var_parse_hardware_ID="${var_parse} ${var_parse_args_nums} ${var_parse_args_slot_ID}"
                 local var_parse_name_ID="${var_parse} ${var_parse_args_verbose} ${var_parse_args_slot_ID}"
                 local var_parse_slot_ID="${var_parse}"
                 local var_parse_quotes="${var_parse} ${var_parse_args_nums}"
@@ -203,20 +219,20 @@
         # <remarks> If an operation fails, try another. </remarks>
         case $var_opt in
             $str_opt_parse_internet )
-                Parse_IOMMU_Main $str_opt_parse_internet $str_file &> /dev/null
+                Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
                 ;;
 
             $str_opt_parse_file )
-                Parse_IOMMU_Main $str_opt_parse_file $str_file &> /dev/null || Parse_IOMMU_Main $str_opt_parse_internet $str_file &> /dev/null
+                Parse_IOMMU_Main "${str_opt_parse_file}" "${str_file}" || Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
                 ;;
 
             $str_opt_parse_local | * )
-                Parse_IOMMU_Main $str_opt_parse_local $str_file &> /dev/null || Parse_IOMMU_Main $str_opt_parse_file $str_file &> /dev/null || Parse_IOMMU_Main $str_opt_parse_internet $str_file &> /dev/null
+                Parse_IOMMU_Main "${str_opt_parse_local}" "${str_file}" || Parse_IOMMU_Main "${str_opt_parse_file}" "${str_file}" || Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
                 ;;
         esac
 
-        PrintPassOrFail $str_output
-        return $int_exit_code
+        PrintPassOrFail "${str_output}"
+        return "${int_exit_code}"
     }
 
     # <summary> Select IOMMU groups for VFIO setup. </summary>
@@ -369,7 +385,7 @@
         # <remarks> Check if list is empty </remarks>
         IsArray "arr_IOMMU_VFIO_PCI" && bool_VFIO_has_IOMMU=true && Get_IOMMU_Drivers
         PrintPassOrFail "Reviewing IOMMU groups..."
-        return $int_exit_code
+        return "${int_exit_code}"
     }
 # </code>
 
