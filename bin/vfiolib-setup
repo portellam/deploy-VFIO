@@ -73,7 +73,7 @@
                 local str_multiboot_hardware_ID=""
 
                 if Multiboot_VFIO_ExcludeThis_VGA_Group "${var_IOMMU}"; then
-                    for var_kernel in "${arr_kernels}"; do
+                    for var_kernel in "${arr_kernels[@]}"; do
                         local str_GRUB_line="${str_GRUB_temp} ${str_GRUB_blacklist}${str_multiboot_drivers} ${str_modules_VFIO_PCI}${str_multiboot_hardware_ID}"
 
                         # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
@@ -146,6 +146,8 @@
         }
 
         # <params>
+        str_output="Installing Multiboot VFIO..."
+
             # <remarks> System configuration </remarks>
             declare -ir int_max_num_parse_kernels=3
             declare -ar arr_kernels=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | sort -r | head -n ${int_max_num_parse_kernels} ) )
@@ -156,6 +158,9 @@
             local str_system_OS=$( uname )
             local str_system_UUID=$( blkid -s UUID | grep ${str_system_disk} | cut -d '"' -f2 )
         # </params>
+
+        echo
+        PrintWait "${str_output}"
 
         # <remarks> Write to files. </remarks>
         Reset_GRUB &> /dev/null || return $?
@@ -340,8 +345,12 @@
         }
 
         # <params>
+        str_output="Installing Static VFIO..."
         local var_get_softdep='softdep ${str_driver} pre: vfio-pci'
         # </params>
+
+        echo
+        PrintWait "${str_output}"
 
         # <remarks> Write to files. </remarks>
         if ! Static_VFIO_GRUB &> /dev/null; then
@@ -363,23 +372,17 @@
 
         case "${var_input}" in
             "M" )
-                local str_output="Installing Multiboot VFIO..."
-                echo -e "${str_output}"
                 Multiboot_VFIO
-                PrintPassOrFail "${str_output}"
                 return "${int_exit_code}"
                 ;;
 
             "S" )
-                local str_output="Installing Static VFIO..."
-                echo -e "${str_output}"
                 Static_VFIO
-                PrintPassOrFail "${str_output}"
                 return "${int_exit_code}"
                 ;;
         esac
 
-        return 1
+        return "${int_code_skipped_operation}"
     }
 
     # # <summary> ??? </summary>
