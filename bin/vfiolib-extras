@@ -935,6 +935,8 @@
             return 0
         }
 
+        # TODO: check for existing zram swap file, if occupied or exists, pause setup. ask user to continue or skip.
+
         function RAM_Swapfile_Modify
         {
             # <params>
