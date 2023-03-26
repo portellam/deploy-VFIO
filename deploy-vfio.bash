@@ -17,10 +17,13 @@
 # <code>
 function Main
 {
+    # <remarks> Gather arguments. </remarks>
     SetScriptDir || return $?
     IsSudoUser || return $?
     if ! SetOptions $@; then GetUsage; return $?; fi
-    # if $bool_uninstall_vfio; then UninstallExisting_VFIO fi
+
+    # <remarks> Exit early. </remarks>
+    if $bool_uninstall_vfio; then Setup_VFIO; fi
 
     # <remarks> Extras </remarks>
     AddUserToGroups
@@ -50,10 +53,7 @@ function Main
     esac
 
     Select_IOMMU $@ || return $?
-    local str_output="Installing VFIO setup..."
-    PrintWait "${str_output}"
     Setup_VFIO
-    PrintPassOrFail "${str_output}"
     return $?
 }
 # </code>
