@@ -197,7 +197,7 @@
             echo
 
             # <remarks> Save changes. </remarks>
-            declare -g str_GRUB_Allocate_CPU="isolcpus=${str_virt_thread_sets} nohz_full=${str_virt_thread_sets} rcu_nocbs=${str_virt_thread_sets}"
+            declare -g str_output_allocate_cpu_GRUB="isolcpus=${str_virt_thread_sets} nohz_full=${str_virt_thread_sets} rcu_nocbs=${str_virt_thread_sets}"
             return 0
         }
 
@@ -278,7 +278,7 @@
 
             # <params>
             declare -gi int_alloc_mem_hugepages=0
-            declare -g str_GRUB_hugepages=""
+            declare -g str_output_hugepages_GRUB=""
             # </params>
 
             if $bool_hugepage_set_count && [[ $int_huge_page_count -lt $int_huge_page_min || $int_huge_page_count -gt $int_huge_page_max ]]; then
@@ -287,7 +287,7 @@
 
             # <remarks> Save changes. </remarks>
             int_alloc_mem_hugepages=$(( $int_huge_page_count * $int_huge_page_kbit_size ))
-            str_GRUB_hugepages="default_hugepagesz=${str_huge_page_byte_prefix} hugepagesz=${str_huge_page_byte_prefix} hugepages=${int_huge_page_count}"
+            str_output_hugepages_GRUB="default_hugepagesz=${str_huge_page_byte_prefix} hugepagesz=${str_huge_page_byte_prefix} hugepages=${int_huge_page_count}"
             bool_is_setup_hugepages=true
             return 0
         }

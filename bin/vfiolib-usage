@@ -65,19 +65,19 @@
                 ;;
 
             "-m" | "--multiboot" )
-                bool_multiboot=true
+                bool_multiboot_vfio=true
                 ;;
 
             "-s" | "--static" )
-                bool_static=true
+                bool_static_vfio=true
                 ;;
 
             "-S" | "--scream" )
                 bool_scream=true
                 ;;
 
-            "-S" | "--uninstall" )
-                bool_uninstall=true
+            "-u" | "--uninstall" )
+                bool_uninstall_vfio=true
                 ;;
 
             "-z" | "--zram-swap" )
@@ -209,13 +209,13 @@
     declare -g bool_hugepage_set_size=false
     declare -g bool_libvirt_hooks=false
     declare -g bool_looking_glass=false
-    declare -g bool_multiboot=false
+    declare -g bool_multiboot_vfio=false
     declare -g bool_parse_IOMMU_from_file=false
     declare -g bool_parse_IOMMU_from_local=false
     declare -g bool_parse_IOMMU_from_internet=false
     declare -g bool_scream=false
     declare -g bool_select_all_IOMMU=false
-    declare -g bool_static=false
-    declare -g bool_uninstall=false
+    declare -g bool_static_vfio=false
+    declare -g bool_uninstall_vfio=false
     declare -g bool_zram_swap=false
 # </params>
