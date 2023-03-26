@@ -36,7 +36,7 @@
                 # [ ${#arr_IOMMU[@]} -eq ${#arr_device_ID[@]" ] || bool_are_inequal_lists=true
                 [ ${#arr_IOMMU[@]} -eq ${#arr_device_name[@]} ] || bool_are_inequal_lists=true
                 [ ${#arr_IOMMU[@]} -eq ${#arr_driver[@]} ] || bool_are_inequal_lists=true
-                [ ${#arr_IOMMU[@]} -eq ${#arr_hardware_ID[@]} ] || bool_are_inequal_lists=true
+                [ ${#arr_IOMMU[@]} -eq ${#arr_HWID[@]} ] || bool_are_inequal_lists=true
                 # [ ${#arr_IOMMU[@]} -eq ${#arr_vendor_ID[@]} ] || bool_are_inequal_lists=true
                 [ ${#arr_IOMMU[@]} -eq ${#arr_vendor_name[@]} ] || bool_are_inequal_lists=true
 
@@ -56,7 +56,7 @@
                 # IsString "${arr_device_ID[@]} &> /dev/null || bool_is_empty_list=true
                 IsString ${arr_device_name[@]} &> /dev/null ||  bool_is_empty_list=true
                 IsString ${arr_driver[@]} &> /dev/null || bool_is_empty_list=true
-                IsString ${arr_hardware_ID[@]} &> /dev/null || bool_is_empty_list=true
+                IsString ${arr_HWID[@]} &> /dev/null || bool_is_empty_list=true
                 IsString ${arr_IOMMU[@]} &> /dev/null || bool_is_empty_list=true
                 # IsString ${arr_vendor_ID[@]} &> /dev/null || bool_is_empty_list=true
                 IsString ${arr_vendor_name[@]} &> /dev/null || bool_is_empty_list=true
@@ -79,7 +79,7 @@
                     local str_driver=$( eval "${var_parse_all_ID}" | grep -i "Driver:" | awk '{print $2}' | uniq )
                     local str_IOMMU=$( eval "${var_parse_all_ID}"| grep -i "IOMMUGroup:" | awk '{print $2}' | uniq )
                     local str_vendor_name=$( eval "${var_parse_name_ID}" | grep -i "Vendor:" | grep -Eiv "SVendor:" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
-                    local str_hardware_ID=$( lspci -n -s "${var_device}" | cut -d ' ' -f 3 )                            # this works.
+                    local str_HWID=$( lspci -n -s "${var_device}" | cut -d ' ' -f 3 )                            # this works.
 
                     # <remarks> If system is setup for VFIO, exit. </remarks>
                     if [[ $str_driver == "vfio-pci" ]]; then
@@ -95,7 +95,7 @@
                     arr_class+=( "${str_class}" )
                     arr_device_name+=( "${str_device_name}" )
                     arr_driver+=( "${str_driver}" )
-                    arr_hardware_ID+=( "${str_hardware_ID}" )
+                    arr_HWID+=( "${str_HWID}" )
                     arr_IOMMU+=( "${str_IOMMU}" )
                     arr_slot_ID+=( "${var_device}" )
                     arr_vendor_name+=( "${str_vendor_name}" )
@@ -155,7 +155,7 @@
                 local str_output_is_setup_VFIO="${var_prefix_error} Found existing VFIO setup."
 
                 # <remarks> Declare lists </remarks>
-                declare -ag arr_class arr_device_ID arr_device_name arr_driver arr_hardware_ID arr_IOMMU arr_slot_ID arr_vendor_ID arr_vendor_name
+                declare -ag arr_class arr_device_ID arr_device_name arr_driver arr_HWID arr_IOMMU arr_slot_ID arr_vendor_ID arr_vendor_name
 
                 # <remarks> Set commands </remarks>
                 local var_parse='lspci -k -mm'
@@ -166,7 +166,7 @@
                 local var_parse_args_verbose='-v'
                 local var_parse_to_file='lspci -x >> "${str_file}"'
                 local var_parse_all_ID="${var_parse} ${var_parse_args_nums} ${var_parse_args_verbose} ${var_parse_args_slot_ID}"
-                local var_parse_hardware_ID="${var_parse} ${var_parse_args_nums} ${var_parse_args_slot_ID}"
+                local var_parse_HWID="${var_parse} ${var_parse_args_nums} ${var_parse_args_slot_ID}"
                 local var_parse_name_ID="${var_parse} ${var_parse_args_verbose} ${var_parse_args_slot_ID}"
                 local var_parse_slot_ID="${var_parse}"
                 local var_parse_quotes="${var_parse} ${var_parse_args_nums}"
@@ -231,7 +231,7 @@
             local str_class="${arr_class[$int_key]}"
             local str_device_name="${arr_device_name[$int_key]}"
             local str_driver="${arr_driver[$int_key]}"
-            local str_hardware_ID="${arr_hardware_ID[$int_key]}"
+            local str_HWID="${arr_HWID[$int_key]}"
             local str_slot_ID="${arr_slot_ID[$int_key]}"
             local str_vendor_name="${arr_vendor_name[$int_key]}"
             local str_domain_ID=$( echo "${str_slot_ID}" | cut -d ':' -f 1 )
@@ -245,7 +245,7 @@
                     "Vendor name:\t'${str_vendor_name}'"
                     "Device name:\t'${str_device_name}'"
                     "Class/Type:\t'${str_class}'"
-                    "Hardware ID:\t'${str_hardware_ID}'"
+                    "Hardware ID:\t'${str_HWID}'"
                     "Kernel driver:\t'${str_driver}'"
                 )
             # </params>
@@ -326,44 +326,34 @@
         }
 
         # <summary> Parse VFIO list for drivers and hardware IDs. </summary>
-        function Get_IOMMU_Drivers
+        function Get_IOMMU_Lists
         {
-            # for int_key in "${!arr_IOMMU[@]}"; do
-            #     local str_driver=${arr_driver[$int_key]}
-            #     local str_hardware_ID=${arr_hardware_ID[$int_key]}
-            #     local str_IOMMU=${arr_IOMMU[$int_key]}
-
-            #     if FindLineInArray "arr_IOMMU_PCI_STUB" "${str_IOMMU}" || FindLineInArray "arr_IOMMU_VFIO_PCI" "${str_IOMMU}" || FindLineInArray "arr_IOMMU_VFIO_PCI_with_VGA" "${str_IOMMU}"; then
-            #         arr_drivers_VFIO_PCI+=( "${str_driver}" )
-            #         arr_hardware_ID_VFIO_PCI+=( "${str_hardware_ID}" )
-            #     fi
-            # done
-
             for int_key in "${!arr_IOMMU[@]}"; do
                 local str_slot_ID="${arr_slot_ID[$int_key]}"
                 local str_domain_ID=$( echo "${str_slot_ID}" | cut -d ':' -f 1 )
+                declare -i int_domain_ID="${str_domain_ID##*0}"
                 local str_driver=""
-                local str_hardware_ID=""
+                local str_HWID=""
                 local var_IOMMU=""
 
-                if IsNum "${str_domain_ID}" &> /dev/null && [[ "${str_domain_ID}" -gt 0 ]]; then
+                if IsNum "${int_domain_ID}" &> /dev/null && [[ "${int_domain_ID}" -gt 0 ]]; then
                     local str_driver="${arr_driver[$int_key]}"
-                    local str_hardware_ID="${arr_hardware_ID[$int_key]}"
+                    local str_HWID="${arr_HWID[$int_key]}"
                     local var_IOMMU="${arr_IOMMU[$int_key]}"
                 fi
 
                 # <remarks> Check if any IOMMU group exists in a given list. </remarks>
                 if FindLineInArray "arr_IOMMU_PCI_STUB" "${var_IOMMU}" &> /dev/null; then
-                    arr_hardware_ID_PCI_STUB+=( "${str_hardware_ID}" )
+                    arr_HWID_PCI_STUB+=( "${str_HWID}" )
                 fi
 
                 if FindLineInArray "arr_IOMMU_VFIO_PCI" "${var_IOMMU}" &> /dev/null; then
-                    arr_hardware_ID_VFIO_PCI+=( "${str_hardware_ID}" )
+                    arr_HWID_VFIO_PCI+=( "${str_HWID}" )
                 fi
 
-                if FindLineInArray "arr_drivers_VFIO_PCI_with_VGA" "${var_IOMMU}" &> /dev/null; then
+                if FindLineInArray "arr_IOMMU_VFIO_PCI_with_VGA" "${var_IOMMU}" &> /dev/null; then
                     arr_drivers_VFIO_PCI_with_VGA+=( "${str_driver}" )
-                    arr_hardware_ID_VFIO_PCI_with_VGA+=( "${str_hardware_ID}" )
+                    arr_HWID_VFIO_PCI_with_VGA+=( "${str_HWID}" )
                 fi
 
                 if FindLineInArray "arr_IOMMU_PCI_STUB" "${var_IOMMU}" &> /dev/null || FindLineInArray "arr_IOMMU_VFIO_PCI" "${var_IOMMU}" &> /dev/null || FindLineInArray "arr_IOMMU_VFIO_PCI_with_VGA" "${var_IOMMU}" &> /dev/null; then
@@ -371,8 +361,47 @@
                 fi
             done
 
-            # <remarks> Check if any list is empty </remarks>
-            IsArray "arr_drivers_VFIO_PCI" || return $?
+            if ! IsArray "arr_drivers_VFIO_PCI" &> /dev/null && ! IsArray "arr_drivers_VFIO_PCI_with_VGA" &> /dev/null && ! IsArray "arr_HWID_PCI_STUB" &> /dev/null && ! IsArray "arr_HWID_VFIO_PCI" &> /dev/null && ! IsArray "arr_drivers_VFIO_PCI_with_VGA" &> /dev/null; then
+                return $?
+            fi
+
+            return 0
+        }
+
+        function Set_IOMMU_Lists
+        {
+            # <remarks> Remove duplicate entries. </remarks>
+            for int_key in "${!arr_drivers_VFIO_PCI[@]}"; do
+                local var_driver="${arr_drivers_VFIO_PCI[$int_key]}"
+
+                if FindLineInArray "arr_drivers_VFIO_PCI" "${var_driver}" &> /dev/null; then
+                    arr_drivers_VFIO_PCI[int_key]=""
+                fi
+            done
+
+            # <remarks> Remove duplicate entries. </remarks>
+            for int_key in "${!arr_HWID_VFIO_PCI[@]}"; do
+                local var_HWID="${arr_HWID_VFIO_PCI[$int_key]}"
+
+                if FindLineInArray "arr_HWID_PCI_STUB" "${var_HWID}" &> /dev/null || FindLineInArray "arr_HWID_VFIO_PCI_with_VGA" "${var_HWID}" &> /dev/null; then
+                    arr_HWID_VFIO_PCI[int_key]=""
+                fi
+            done
+
+            # <remarks> Remove duplicate entries. </remarks>
+            for int_key in "${!arr_HWID_PCI_STUB[@]}"; do
+                local var_HWID="${arr_HWID_VFIO_PCI[$int_key]}"
+
+                if FindLineInArray "arr_HWID_VFIO_PCI_with_VGA" "${var_HWID}" &> /dev/null; then
+                    arr_HWID_PCI_STUB[int_key]=""
+                fi
+            done
+
+            TrimArray "arr_drivers_VFIO_PCI" || return $?
+            TrimArray "arr_drivers_VFIO_PCI_with_VGA" || return $?
+            TrimArray "arr_HWID_PCI_STUB" || return $?
+            TrimArray "arr_HWID_VFIO_PCI" || return $?
+            TrimArray "arr_HWID_VFIO_PCI_with_VGA" || return $?
             return 0
         }
 
@@ -401,13 +430,13 @@
         done
 
         # <remarks> Check if list is empty </remarks>
-        IsArray "arr_IOMMU_VFIO_PCI" &> /dev/null && bool_VFIO_has_IOMMU=true && Get_IOMMU_Drivers
+        IsArray "arr_IOMMU_VFIO_PCI" &> /dev/null && bool_VFIO_has_IOMMU=true && Get_IOMMU_Lists && Set_IOMMU_Lists
         PrintPassOrFail "${str_output}"
         return "${int_exit_code}"
     }
 # </code>
 
 # <params>
-declare -ga arr_drivers_VFIO_PCI arr_IOMMU_PCI_STUB arr_IOMMU_VFIO_PCI arr_IOMMU_VFIO_PCI_with_VGA arr_hardware_ID_PCI_STUB arr_hardware_ID_VFIO_PCI arr_hardware_ID_VFIO_PCI_with_VGA
+declare -ga arr_drivers_VFIO_PCI arr_IOMMU_PCI_STUB arr_IOMMU_VFIO_PCI arr_IOMMU_VFIO_PCI_with_VGA arr_HWID_PCI_STUB arr_HWID_VFIO_PCI arr_HWID_VFIO_PCI_with_VGA
 declare -g bool_VFIO_has_IOMMU=false
 # </params>
