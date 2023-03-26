@@ -69,14 +69,14 @@
 
         # <params>
         local var_get_param='echo "${'$1'[@]}"'
-        local var_get_param_len='echo "${#'$1'[@]}"'
+        declare -a arr=( $( eval "${var_get_param}" ) )
         # </params>
 
-        for var_element in $( eval "${var_get_param}" ); do
-            IsString "${var_element}" && return $?
+        for var_element in "${arr[@]}"; do
+            IsString "${var_element}" &> /dev/null && return $?
         done
 
-        if [[ $( eval "${var_get_param_len}" ) -eq 0 ]]; then
+        if [[ "${#arr[@]}" -eq 0 ]]; then
             echo -e "${var_prefix_error} Empty array."
             return "${int_code_var_is_empty}"
         fi
@@ -88,7 +88,7 @@
     # <param name="1"> var: the variable </param>
     function IsString
     {
-        if [[ ${#1} -eq 0 && "${1}" == "" ]]; then
+        if [[ ${#1} -eq 0 || "${1}" == "" ]]; then
             echo -e "${var_prefix_error} Empty string."
             return "${int_code_var_is_empty}"
         fi
@@ -193,6 +193,30 @@
         done
 
         eval "${var_set_param}" || return 1
+        return 0
+    }
+
+    # <summary> Clear empty elements from array. </summary>
+    # <paramref name="1"> string: name of the array </paramref>
+    function TrimArray
+    {
+        IsString $1 || return $?
+
+        # <params>
+        local var_get_param='declare -a arr1=( "${'$1'[@]}" )'
+        local var_del_param="$1"'=()'
+        local var_set_param="$1"'+=( "${var_element}" )'
+        # </params>
+
+        eval "${var_get_param}" || return $?
+        eval "${var_del_param}" || return $?
+
+        for var_element in "${arr1[@]}"; do
+            if IsString "${var_element}" &> /dev/null; then
+                eval "${var_set_param}"
+            fi
+        done
+
         return 0
     }
 # </code>
