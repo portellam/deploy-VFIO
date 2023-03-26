@@ -24,7 +24,7 @@
         "#"
     )
 
-    declare -g arr_vfio_disclaimer=(
+    declare -g arr_file_template_vfio_disclaimer=(
         "${arr_file_disclaimer[@]}"
         "# Run lspci to view hardware information."
         "# You must run update-initramfs(8) to effect this change."

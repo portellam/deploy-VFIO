@@ -20,7 +20,7 @@ function Main
     SetScriptDir || return $?
     IsSudoUser || return $?
     if ! SetOptions $@; then GetUsage; return $?; fi
-    # if $bool_uninstall; then UninstallExisting_VFIO fi
+    # if $bool_uninstall_vfio; then UninstallExisting_VFIO fi
 
     # <remarks> Extras </remarks>
     AddUserToGroups
@@ -51,23 +51,8 @@ function Main
 
     Select_IOMMU $@ || return $?
     local str_output="Installing VFIO setup..."
-
-    # TODO: pci ids, and other info are not being written to files. Need to fix setup!
-
-    case true in
-        $bool_multiboot )
-            Multiboot_VFIO
-            ;;
-
-        $bool_static )
-            Static_VFIO
-            ;;
-
-        * )
-            Setup_VFIO
-            ;;
-    esac
-
+    PrintWait "${str_output}"
+    Setup_VFIO
     PrintPassOrFail "${str_output}"
     return $?
 }
