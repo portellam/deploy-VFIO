@@ -67,14 +67,16 @@
             local str_GRUB_temp="${str_GRUB_required}${str_GRUB_default}"
             declare -a arr_file1_temp=()
 
+            exit 1
+
             # <remarks> Parse VGA VFIO IOMMU Groups. </remarks>
             for var_IOMMU in "${arr_IOMMU_VFIO_PCI_with_VGA[@]}"; do
-                local str_multiboot_drivers=""
-                local str_multiboot_hardware_ID="${str_}"
+                local str_multiboot_drivers=""                          # TODO: complete!
+                local str_multiboot_HWID="${str_}"
 
                 if Multiboot_VFIO_ExcludeThis_VGA_Group "${var_IOMMU}"; then
                     for var_kernel in "${arr_kernels[@]}"; do
-                        local str_GRUB_line="${str_GRUB_temp} ${str_GRUB_blacklist}${str_multiboot_drivers} ${str_modules_VFIO_PCI}${str_multiboot_hardware_ID}"
+                        local str_GRUB_line="${str_GRUB_temp} ${str_GRUB_blacklist}${str_multiboot_drivers} ${str_modules_VFIO_PCI}${str_multiboot_HWID}"
 
                         # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
                         arr_file1_temp+=(
@@ -104,7 +106,7 @@
         # <summary> Parse all VGA and non VGA IOMMU Groups, except current VGA VFIO IOMMU Group. </summary>
         # <param name="1"> int: the IOMMU group to ignore </param>
         # <param name="str_multiboot_drivers"> string: current list of drivers </param>
-        # <param name="str_multiboot_hardware_ID"> current list of hardware IDs </param>
+        # <param name="str_multiboot_HWID"> current list of hardware IDs </param>
         function Multiboot_VFIO_ExcludeThis_VGA_Group
         {
             IsNum $1 &> /dev/null || return $?
@@ -113,7 +115,7 @@
             # <remarks> Parse all IOMMU groups.  </remarks>
             for int_key in "${!arr_IOMMU[@]}"; do
                 local str_driver="${arr_driver[$int_key]}"
-                local str_hardware_ID="${arr_hardware_ID[$int_key]}"
+                local str_HWID="${arr_HWID[$int_key]}"
                 local str_IOMMU="${arr_IOMMU[$int_key]}"
 
                 # <remarks> Add IOMMU group if it is not in the VGA list or if it does not match the given IOMMU group, and if it not in the current VFIO list. </remarks>
@@ -122,8 +124,8 @@
                 fi
 
                 # <remarks> Add IOMMU group if it is not in the VGA list or if it does not match the given IOMMU group, and if it not in the current VFIO list. </remarks>
-                if ( ! FindLineInArray "arr_IOMMU_VFIO_PCI_with_VGA" "${str_IOMMU}" || [[ "${str_IOMMU} != $1" ]] ) && ! [[ "${str_multiboot_hardware_ID}" =~ *"${str_hardware_ID}"* ]]; then
-                    str_multiboot_hardware_ID+="${str_hardware_ID}"
+                if ( ! FindLineInArray "arr_IOMMU_VFIO_PCI_with_VGA" "${str_IOMMU}" || [[ "${str_IOMMU} != $1" ]] ) && ! [[ "${str_multiboot_HWID}" =~ *"${str_HWID}"* ]]; then
+                    str_multiboot_HWID+="${str_HWID}"
                 fi
 
                 # <remarks> Append a delimiter should the current element be not the last element. </remarks>
@@ -132,13 +134,13 @@
                 fi
 
                 # <remarks> Append a delimiter should the current element be not the last element. </remarks>
-                if IsString "${str_multiboot_hardware_ID}" &> /dev/null && [[ "${str_IOMMU}" != "${arr_IOMMU[-1]}" ]]; then
-                    str_multiboot_hardware_ID+=","
+                if IsString "${str_multiboot_HWID}" &> /dev/null && [[ "${str_IOMMU}" != "${arr_IOMMU[-1]}" ]]; then
+                    str_multiboot_HWID+=","
                 fi
             done
 
             # <remarks> Validate lists. </remarks>
-            if ! IsString "${str_multiboot_drivers}" &> /dev/null || ! IsString "${str_multiboot_hardware_ID}" &> /dev/null; then
+            if ! IsString "${str_multiboot_drivers}" &> /dev/null || ! IsString "${str_multiboot_HWID}" &> /dev/null; then
                 return $?
             fi
 
@@ -224,25 +226,7 @@
         function Static_VFIO_ModulesInitramfs
         {
             # <params>
-            declare -a arr_softdep=()
-            # </params>
-
-            # <remarks> Organize new lines. </remarks>
-            for var_driver in "${arr_drivers_VFIO_PCI[@]}"; do
-                local str_softdep="softdep ${var_driver} pre: vfio-pci"
-
-                arr_softdep+=(
-                    "${str_softdep}"
-                    "${var_driver}"
-                )
-            done
-
-            # <params>
             declare -ar arr_initramfs_HWID=(
-                "vfio"
-                "vfio_iommu_type1"
-                "vfio_virqfd"
-                "#"
                 "${arr_softdep[@]}"
                 "#"
                 "${str_modules_VFIO_PCI}${str_HWID_list_all}"
@@ -251,14 +235,6 @@
             )
 
             declare -ar arr_modules_HWID=(
-                "vfio"
-                "vfio_iommu_type1"
-                "vfio_pci"
-                "vfio_virqfd"
-                "kvm"
-                "kvm_intel"
-                "apm power_off=1"
-                "#"
                 "${str_modules_VFIO_PCI}${str_HWID_list_all}"
             )
 
@@ -300,11 +276,9 @@
                     declare -a arr_file1=( "${arr_static_modprobe_blacklist_file_template[@]}" )
 
                     # <remarks> Set new lines. </remarks>
-                    for var_driver in "${arr_drivers_VFIO_PCI[@]}"; do
+                    for var_driver in "${arr_drivers_all[@]}"; do
                         arr_file1+=( "${str_modprobe_blacklist}${var_driver}" )
                     done
-
-                arr_file1
                 # </params>
 
                 # <remarks> Backup existing system files. </remarks>
@@ -320,7 +294,9 @@
                     # <remarks> Organize new lines. </remarks>
                     declare -ar arr_file2=(
                         "${arr_static_modprobe_vfio_file_template[@]}"
+                        "#"
                         "${arr_softdep[@]}"
+                        "#"
                         "${str_initramfs_modules_VFIO_PCI}${str_HWID_list_all}"
                     )
                 # </params>
@@ -336,44 +312,62 @@
 
         # <params>
         str_output="Installing Static VFIO..."
+        declare -a arr_drivers_all=()
+        declare -a arr_softdep=( )
         local str_HWID_list_VFIO=""
         local str_HWID_list_STUB=""
+        local str_HWID_list_VFIO_with_VGA=""
+        local str_HWID_list_all=""
+        # </params>
 
-        for var_HWID in "${arr_hardware_ID_PCI_STUB[@]}"; do
+        IsArray "arr_drivers_VFIO_PCI" &> /dev/null && arr_drivers_all+=( "${arr_drivers_VFIO_PCI[@]}" )
+        IsArray "arr_drivers_VFIO_PCI_with_VGA" &> /dev/null && arr_drivers_all+=( "${arr_drivers_VFIO_PCI_with_VGA[@]}" )
+
+        for var_HWID in "${arr_HWID_PCI_STUB[@]}"; do
             str_HWID_list_STUB+="${var_HWID},"
         done
-
-        # <remarks> Truncate last delimiter. </remarks>
-        if [[ ${str_HWID_list_STUB: -1} == "," ]]; then
-            str_HWID_list_STUB="${str_HWID_list_STUB::-1}"
-        fi
-
-        for var_HWID in "${arr_hardware_ID_VFIO_PCI[@]}"; do
-            str_HWID_list_VFIO+="${var_HWID},"
-        done
-
-        # <remarks> Truncate last delimiter. </remarks>
-        if [[ ${str_HWID_list_VFIO: -1} == "," ]]; then
-            str_HWID_list_VFIO="${str_HWID_list_VFIO::-1}"
-        fi
-
-        local str_HWID_list_all=""
 
         if IsString "${str_HWID_list_STUB}" &> /dev/null; then
             str_HWID_list_all+="${str_HWID_list_STUB}"
         fi
 
-        if [[ "${#str_HWID_list_all[@]}" == *","* ]] && IsString "${str_HWID_list_VFIO}" &> /dev/null; then
-            str_HWID_list_all+=",${str_HWID_list_VFIO}"
-        fi
+        for var_HWID in "${arr_HWID_VFIO_PCI[@]}"; do
+            str_HWID_list_VFIO+="${var_HWID},"
+        done
 
-        if ! IsString "${str_HWID_list_all}" &> /dev/null && IsString "${str_HWID_list_VFIO}" &> /dev/null; then
+        if IsString "${str_HWID_list_VFIO}" &> /dev/null; then
             str_HWID_list_all+="${str_HWID_list_VFIO}"
         fi
-        # </params>
+
+        for var_HWID in "${arr_HWID_VFIO_PCI_with_VGA[@]}"; do
+            str_HWID_list_VFIO_with_VGA+="${var_HWID},"
+        done
+
+        if IsString "${str_HWID_list_VFIO_with_VGA}" &> /dev/null; then
+            str_HWID_list_all+="${str_HWID_list_VFIO_with_VGA}"
+        fi
+
+        # <remarks> Truncate last delimiter. </remarks>
+        if IsString "${str_HWID_list_all}" &> /dev/null && [[ "${str_HWID_list_all: -1}" == "," ]]; then
+            str_HWID_list_all="${str_HWID_list_all::-1}"
+        fi
 
         echo
         PrintWait "${str_output}"
+
+        if ! IsString "${str_HWID_list_all}" || ! IsArray "arr_drivers_all" || ! IsArray "arr_drivers_all"; then
+            return $?
+        fi
+
+        # <remarks> Organize new lines. </remarks>
+        for var_driver in "${arr_drivers_all[@]}"; do
+            local str_softdep="softdep ${var_driver} pre: vfio-pci"
+
+            arr_softdep+=(
+                "${str_softdep}"
+                "${var_driver}"
+            )
+        done
 
         # <remarks> Write to files. </remarks>
         if ! Static_VFIO_GRUB &> /dev/null; then
@@ -390,28 +384,6 @@
     # <summary> Select a VFIO setup. </summary>
     function Setup_VFIO
     {
-        # echo "arr_drivers_VFIO_PCI"
-        # PrintArray 'arr_drivers_VFIO_PCI'
-        # echo
-
-        # echo "arr_IOMMU_PCI_STUB"
-        # PrintArray 'arr_IOMMU_PCI_STUB'
-        # echo
-
-        # echo "arr_IOMMU_VFIO_PCI"
-        # PrintArray 'arr_IOMMU_VFIO_PCI'
-        # echo
-
-        # echo "arr_IOMMU_VFIO_PCI_with_VGA"
-        # PrintArray 'arr_IOMMU_VFIO_PCI_with_VGA'
-        # echo
-
-        # echo "arr_hardware_ID_VFIO_PCI"
-        # PrintArray 'arr_hardware_ID_VFIO_PCI'
-        # echo
-
-        # return 1
-
         echo
         ReadMultipleChoiceIgnoreCase "Setup VFIO? ${var_green}None / Multiboot / Static${var_reset_color}" "N" "M" "S"
 
@@ -484,10 +456,10 @@
         "vfio_iommu_type1"
         "vfio_virqfd"
         "#"
-        "# Soft dependencies:    (NOTE: repeat for each driver)"
+        "# Module dependencies:"
         "#   softdep 'DRIVER_NAME' pre: ${str_VFIO_PCI_driver}"
         "#"
-        "# GRUB command line and PCI hardware IDs:"
+        "# Hardware IDs:"
         "#   ${str_initramfs_modules_VFIO_PCI}"
         "#   ${str_modules_VFIO_PCI}"
         "#   vfio"
@@ -503,10 +475,10 @@
 
     declare -ag arr_static_modprobe_vfio_file_template=(
         "${arr_vfio_disclaimer[@]}"
-        "# Soft dependencies:    (NOTE: repeat for each driver)"
+        "# Module dependencies:"
         "#   softdep 'DRIVER_NAME' pre: ${str_VFIO_PCI_driver}"
         "#"
-        "# GRUB command line and PCI hardware IDs:"
+        "# Hardware IDs:"
         "#   ${str_initramfs_modules_VFIO_PCI}"
         "#"
     )
@@ -528,7 +500,7 @@
         "kvm_intel"
         "apm power_off=1"
         "#"
-        "# PCI hardware IDs:"
+        "# Hardware IDs:"
         "#   ${str_modules_VFIO_PCI}"
         "#"
     )
