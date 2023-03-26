@@ -497,7 +497,7 @@
         }
 
         # <params>
-        local str_output="Updating system configuration..."
+        local str_output="Updating system config..."
         # </params>
 
         PrintWait "${str_output}"
