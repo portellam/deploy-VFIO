@@ -19,18 +19,22 @@
     function Reset_GRUB
     {
         # <params>
+        local bool_is_file_present=false
         # local str_file1="/etc/default/grub"
-        local str_file1="etc_default_grub"         # NOTE: for debug.
+        local str_file1="grub"         # NOTE: for debug.
         # <params>
 
         # <remarks> Backup existing system files. </remarks>
         if IsFile "${str_file1}" &> /dev/null; then
             BackupFile "${str_file1}" || DeleteFile "${str_file1}" || return $?
+        else
+            return 1
+            # TODO: instead of failing here, create new file from scratch (from template?)
         fi
 
         # <remarks> Get file. </remarks>
         declare -a arr_file1=( "${arr_vfio_disclaimer[@]}" )
-        # ReadFile "arr_file1" "${str_file1}" || return $?
+        ReadFile "arr_file1" "${str_file1}" &> /dev/null
 
         # <params>
         local str_GRUB_temp="${str_GRUB_required}${str_GRUB_default}"
@@ -39,7 +43,8 @@
         # <remarks> Write new line to file. </remarks>
         IsString "${str_GRUB_temp}" &> /dev/null || return $?
         str_GRUB_temp+="\"${str_GRUB_temp}\""
-        ReplaceLineInArray "arr_file1" "${str_GRUB_template}" "${str_GRUB_temp}"
+        ReplaceLineInArray "arr_file1" "${str_GRUB_template}" "${str_GRUB_temp}" || return $?
+
         OverwriteFile "arr_file1" "${str_file1}" || return $?
         return 0
     }
@@ -180,23 +185,22 @@
         function Static_VFIO_GRUB
         {
             # <params>
-            declare -a arr_file1=( "${arr_vfio_disclaimer[@]}" )
+            local bool_is_file_present=false
+            declare -a arr_file1=( )
             # </params>
 
             # <remarks> Get file. </remarks>
-            ReadFile "arr_file1" "${str_file1}" || return $?
+            ReadFile "arr_file1" "${str_file1}" &> /dev/null && bool_is_file_present=true
 
             # <params>
+            arr_file1+=( "${arr_vfio_disclaimer[@]}" )
             local str_GRUB_temp=""
             # </params>
 
             # <remarks> Organize new line. </remarks>
             IsString "${str_GRUB_Allocate_CPU}" &> /dev/null && str_GRUB_temp+="${str_GRUB_Allocate_CPU}"
             IsString "${str_GRUB_hugepages}" &> /dev/null && str_GRUB_temp+=" ${str_GRUB_hugepages}"
-
-            if IsString "${str_driver_list_VFIO}" &> /dev/null; then
-                str_GRUB_temp+=" ${str_GRUB_blacklist}${str_driver_list_VFIO}"
-            fi
+            str_GRUB_temp+=" ${str_GRUB_blacklist}${str_driver_list_all}"
 
             if IsString "${str_HWID_list_STUB}" &> /dev/null; then
                 str_GRUB_temp+=" ${str_GRUB_PCI_STUB}${str_HWID_list_STUB}"
@@ -215,11 +219,17 @@
             BackupFile "${str_file1}"
 
             # <remarks> Write new line to file. </remarks>
-                IsString "${str_GRUB_temp}" &> /dev/null || return $?
-                str_GRUB_temp+="${str_GRUB_template}\"${str_GRUB_required}${str_GRUB_default}${str_GRUB_temp}\""
-                ReplaceLineInArray "arr_file1" "${str_GRUB}" "${str_GRUB_temp}" || return $?
-                OverwriteFile "arr_file1" "${str_file1}" || return $?
-            return 0
+            IsString "${str_GRUB_temp}" &> /dev/null || return $?
+            str_GRUB_temp+="${str_GRUB_template}\"${str_GRUB_required}${str_GRUB_default}${str_GRUB_temp}\""
+
+            if $bool_is_file_present; then
+                ReplaceLineInArray "arr_file1" "${str_GRUB_template}" "${str_GRUB_temp}" || return $?
+            else
+                arr_file1+=( "${str_GRUB_temp[@]}" )
+            fi
+
+            OverwriteFile "arr_file1" "${str_file1}"
+            return $?
         }
 
         # <summary> Write to Modules. </summary>
@@ -314,6 +324,7 @@
         str_output="Installing Static VFIO..."
         declare -a arr_drivers_all=()
         declare -a arr_softdep=( )
+        local str_drivers_list_all=""
         local str_HWID_list_VFIO=""
         local str_HWID_list_STUB=""
         local str_HWID_list_VFIO_with_VGA=""
@@ -322,6 +333,15 @@
 
         IsArray "arr_drivers_VFIO_PCI" &> /dev/null && arr_drivers_all+=( "${arr_drivers_VFIO_PCI[@]}" )
         IsArray "arr_drivers_VFIO_PCI_with_VGA" &> /dev/null && arr_drivers_all+=( "${arr_drivers_VFIO_PCI_with_VGA[@]}" )
+
+        for var_HWID in "${arr_drivers_all[@]}"; do
+            str_drivers_list_all+="${var_HWID},"
+        done
+
+        # <remarks> Truncate last delimiter. </remarks>
+        if IsString "${str_drivers_list_all}" &> /dev/null && [[ "${str_drivers_list_all: -1}" == "," ]]; then
+            str_drivers_list_all="${str_drivers_list_all::-1}"
+        fi
 
         for var_HWID in "${arr_HWID_PCI_STUB[@]}"; do
             str_HWID_list_STUB+="${var_HWID},"
@@ -355,7 +375,7 @@
         echo
         PrintWait "${str_output}"
 
-        if ! IsString "${str_HWID_list_all}" || ! IsArray "arr_drivers_all" || ! IsArray "arr_drivers_all"; then
+        if ! IsString "${str_drivers_list_all}" || ! IsString "${str_HWID_list_all}" || ! IsArray "arr_drivers_all"; then
             return $?
         fi
 
@@ -370,11 +390,13 @@
         done
 
         # <remarks> Write to files. </remarks>
-        if ! Static_VFIO_GRUB &> /dev/null; then
-            Reset_GRUB &> /dev/null || return $?
-            Static_VFIO_ModulesInitramfs &> /dev/null || return $?
-            Static_VFIO_Modprobe &> /dev/null || return $?
-        fi
+        Static_VFIO_GRUB || return $?
+
+        # if ! Static_VFIO_GRUB &> /dev/null; then
+        #     Reset_GRUB &> /dev/null || return $?
+        #     Static_VFIO_ModulesInitramfs &> /dev/null || return $?
+        #     Static_VFIO_Modprobe &> /dev/null || return $?
+        # fi
 
         # <remarks> Update system configuration </remarks>
         eval "${var_update_grub}" && eval "${var_update_initramfs}" || return 1
