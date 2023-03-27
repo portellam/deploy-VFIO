@@ -78,17 +78,17 @@
         return 0
     }
 
-     # <summary> Restore all system configuration files. </summary>
+    # <summary> Restore all system configuration files. </summary>
     function Restore_VFIO
     {
         # <params>
         declare -a arr_files=(
-            "str_dir_static_VFIO_modprobe"
-            "str_file_multiboot_VFIO_GRUB"
-            "str_file_static_VFIO_initramfs_modules"
-            "str_file_static_VFIO_modprobe_blacklists"
-            "str_file_static_VFIO_modprobe_vfio"
-            "str_file_static_VFIO_modules"
+            "${str_file_multiboot_VFIO_GRUB}"
+            "${str_file_static_VFIO_GRUB}"
+            "${str_file_static_VFIO_initramfs_modules}"
+            "${str_file_static_VFIO_modprobe_blacklists}"
+            "${str_file_static_VFIO_modprobe_vfio}"
+            "${str_file_static_VFIO_modules}"
         )
         # </params>
 
@@ -98,7 +98,6 @@
             fi
         done
 
-        IsFile "${str_file_static_VFIO_GRUB}" || Reset_GRUB || return $?
         return 0
     }
 
@@ -121,7 +120,7 @@
             declare -a arr_file1_temp=()
 
             # <remarks> Parse VGA VFIO IOMMU Groups. </remarks>
-            for var_IOMMU in "${arr_IOMMU_VFIO_PCI_with_VGA[@]}"; do
+            for var_IOMMU in "${arr_IOMMU_VFIOPCI_with_VGA[@]}"; do
                 local str_output_VFIOPCI_drivers=""
                 local str_output_VFIOPCI_HWID=""
 
@@ -169,12 +168,12 @@
                 local var_IOMMU="${arr_IOMMU[$int_key]}"
 
                 # <remarks> Add IOMMU group if it is not in the VGA list or if it does not match the given IOMMU group, and if it not in the current VFIO list. </remarks>
-                if ( ! FindLineInArray "arr_IOMMU_VFIO_PCI_with_VGA" "${var_IOMMU}" || [[ "${var_IOMMU} != $1" ]] ) && ! [[ "${str_output_VFIOPCI_drivers}" =~ *"${var_driver}"* ]]; then
+                if ( ! FindLineInArray "arr_IOMMU_VFIOPCI_with_VGA" "${var_IOMMU}" || [[ "${var_IOMMU} != $1" ]] ) && ! [[ "${str_output_VFIOPCI_drivers}" =~ *"${var_driver}"* ]]; then
                     str_output_VFIOPCI_drivers+="${var_driver}"
                 fi
 
                 # <remarks> Add IOMMU group if it is not in the VGA list or if it does not match the given IOMMU group, and if it not in the current VFIO list. </remarks>
-                if ( ! FindLineInArray "arr_IOMMU_VFIO_PCI_with_VGA" "${var_IOMMU}" || [[ "${var_IOMMU} != $1" ]] ) && ! [[ "${str_output_VFIOPCI_HWID}" =~ *"${var_HWID}"* ]]; then
+                if ( ! FindLineInArray "arr_IOMMU_VFIOPCI_with_VGA" "${var_IOMMU}" || [[ "${var_IOMMU} != $1" ]] ) && ! [[ "${str_output_VFIOPCI_HWID}" =~ *"${var_HWID}"* ]]; then
                     str_output_VFIOPCI_HWID+="${var_HWID}"
                 fi
 
@@ -196,7 +195,7 @@
 
         function Multiboot_VFIO_Main
         {
-            IsArray "arr_IOMMU_VFIO_PCI_with_VGA" || return $?
+            IsArray "arr_IOMMU_VFIOPCI_with_VGA" || return $?
             Backup_VFIO || return $?
             UninstallExisting_VFIO || return $?
             Multiboot_VFIO_GRUB || return $?
@@ -219,7 +218,7 @@
 
         # <remarks> Output statement </remarks>
         echo
-        PrintWait "${str_output}"
+        # PrintWait "${str_output}"
         Multiboot_VFIO_Main
         PrintPassOrFail "${str_output}"
         return $?
@@ -233,21 +232,21 @@
             # <summary> Output: Hardware IDs </summary>
             # <code>
                 # <remarks> Driver lists with PCI-STUB </remarks>
-                for var_HWID in "${arr_HWID_PCI_STUB[@]}"; do
+                for var_HWID in "${arr_HWID_PCISTUB[@]}"; do
                     str_output_PCISTUB_HWID+="${var_HWID},"
                 done
 
                 IsString "${str_output_PCISTUB_HWID}" &> /dev/null && str_output_all_HWID+="${str_output_PCISTUB_HWID}"
 
                 # <remarks> Driver lists with VFIO-PCI </remarks>
-                for var_HWID in "${arr_HWID_VFIO_PCI[@]}"; do
+                for var_HWID in "${arr_HWID_VFIOPCI[@]}"; do
                     str_output_VFIOPCI_HWID+="${var_HWID},"
                 done
 
                 IsString "${str_output_VFIOPCI_HWID}" &> /dev/null && str_output_all_HWID+="${str_output_PCISTUB_HWID}"
 
                 # <remarks> Driver lists with VFIO-PCI of device type of VGA </remarks>
-                for var_HWID in "${arr_HWID_VFIO_PCI_with_VGA[@]}"; do
+                for var_HWID in "${arr_HWID_VFIOPCI_with_VGA[@]}"; do
                     str_output_VFIOPCI_with_VGA_HWID+="${var_HWID},"
                 done
 
@@ -261,8 +260,9 @@
 
             # <summary> Output: Drivers </summary>
             # <code>
-                IsArray "arr_drivers_VFIO_PCI" && &> /dev/null arr_all_drivers+=( "${arr_drivers_VFIO_PCI[@]}" )
-                IsArray "arr_drivers_VFIO_PCI_with_VGA" &> /dev/null && arr_all_drivers+=( "${arr_drivers_VFIO_PCI_with_VGA[@]}" )
+                IsArray "arr_drivers_PCISTUB" && &> /dev/null arr_all_drivers+=( "${arr_drivers_PCISTUB[@]}" )
+                IsArray "arr_drivers_VFIOPCI" && &> /dev/null arr_all_drivers+=( "${arr_drivers_VFIOPCI[@]}" )
+                IsArray "arr_drivers_VFIOPCI_with_VGA" &> /dev/null && arr_all_drivers+=( "${arr_drivers_VFIOPCI_with_VGA[@]}" )
 
                 for var_HWID in "${arr_all_drivers[@]}"; do
                     str_output_all_drivers+="${var_HWID},"
@@ -448,7 +448,7 @@
         # </params>
 
         echo
-        PrintWait "${str_output}"
+        # PrintWait "${str_output}"
         Static_VFIO_Main $1
         PrintPassOrFail "${str_output}" || return $?
         return $?
@@ -499,9 +499,8 @@
     {
         function UninstallExisting_VFIO_Main
         {
-            Reset_GRUB || return $?
             Reset_VFIO || return $?
-            Reset_Multiboot_GRUB || return $?
+            # Reset_GRUB || return $?
             return 0
         }
 
@@ -509,7 +508,7 @@
         local str_output="Uninstalling VFIO setup..."
         # </params>
 
-        PrintWait "${str_output}"
+        # PrintWait "${str_output}"
         UninstallExisting_VFIO_Main
         PrintPassOrFail "${str_output}"
         return $?
@@ -528,7 +527,7 @@
         local str_output="Updating system config..."
         # </params>
 
-        PrintWait "${str_output}"
+        # PrintWait "${str_output}"
         Update_VFIO_Main
         PrintPassOrFail "${str_output}" || return $?
         return 0
