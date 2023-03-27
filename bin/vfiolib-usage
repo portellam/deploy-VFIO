@@ -29,7 +29,7 @@
 
             "-f" | "--file" )
                 bool_parse_IOMMU_from_file=true
-                GetSelect_IOMMU_Args $2
+                GetSelect_IOMMU_Args $2 || return $?
                 ;;
 
             "--help" )
@@ -38,8 +38,8 @@
 
             "-h" | "--hugepages" )
                 bool_hugepages=true
-                GetHugepageByteSize $2 || GetHugepageCount $2
-                GetHugepageByteSize $3 || GetHugepageCount $3
+                GetHugepageByteSize $2 || GetHugepageCount $2 || return $?
+                GetHugepageByteSize $3 || GetHugepageCount $3 || return $?
                 ;;
 
             "-H" | "--hooks" )
@@ -48,12 +48,12 @@
 
             "-i" | "--internal" )
                 bool_parse_IOMMU_from_local=true
-                GetSelect_IOMMU_Args $2
+                GetSelect_IOMMU_Args $2 || return $?
                 ;;
 
             "-I" | "--internet" )
                 bool_parse_IOMMU_from_internet=true
-                GetSelect_IOMMU_Args $2
+                GetSelect_IOMMU_Args $2 || return $?
                 ;;
 
             "-l" | "--looking-glass" )
@@ -66,6 +66,7 @@
 
             "-m" | "--multiboot" )
                 bool_multiboot_vfio=true
+                GetArgsForStatic_VFIO $2 || return $?
                 ;;
 
             "-s" | "--static" )
@@ -100,9 +101,32 @@
 
     # <summary> Set option for given argument. </summary>
     # <param name="1"> string: the option </param>
+    function GetArgsForStatic_VFIO
+    {
+        IsString $1 &> /dev/null || return 0
+
+        case $1 in
+            "grub" )
+                bool_static_vfio_grub=true
+                return 0
+                ;;
+
+            "file" )
+                bool_static_vfio_file=true
+                return 0
+                ;;
+        esac
+
+        return 1
+}
+
+    # <summary> Set option for given argument. </summary>
+    # <param name="1"> string: the option </param>
     function GetHugepageByteSize
     {
-        if IsString $1 &> /dev/null && ( [[ $1 == "2M" ]] || [[ $1 == "1G" ]] ); then
+        IsString $1 &> /dev/null || return 0
+
+        if [[ $1 == "2M" ]] || [[ $1 == "1G" ]]; then
             bool_hugepage_set_size=true
             declare -g str_huge_page_byte_prefix=$1
             return 0
@@ -131,9 +155,6 @@
             "all" )
                 bool_select_all_IOMMU=true
                 ;;
-
-            * )
-                ;;
         esac
 
         return 0
@@ -147,28 +168,34 @@
         declare -a arr_output=(
             "Usage:\tbash vfiolib-all [OPTION]... [ARGS]..."
             "Deploy a PCI Passthrough (VFIO) setup."
-            "\t--help\t\t\tPrint this usage statement"
+            "\t--help\t\t\tPrint this usage statement."
+
             "\nParse PCI:"
-            "\t-f, --file\t\tReference file database"
-            "\t-i, --internal\t\tReference local database"
-            "\t-I, --internet\t\tReference online database"
-            "\t-f/i/I\tall\t\tSelect all IOMMU groups (useful for Multiboot VFIO)"
+            "\t-f, --file\t\tReference file database."
+            "\t-i, --internal\t\tReference local database."
+            "\t-I, --internet\t\tReference online database."
+            "\t-f/i/I\tall\t\tSelect all IOMMU groups (useful for Multiboot VFIO)."
+
             "\nSetup:"
-            "\t-m, --multiboot\t\tCreate multiple GRUB entries for a Multi VGA VFIO setup"
-            "\t-s, --static\t\tInstall a Single VGA VFIO setup"
-            "\t-u, --uninstall\t\tUndo an existing VFIO setup"
+            "\t-m, --multiboot\t\tCreate multiple GRUB entries for a Multi VGA VFIO setup."
+            "\t-s, --static\t\tInstall a Single VGA VFIO setup."
+            "\t-s\tgrub\t\tCreate a GRUB entry only."
+            "\t-s\tfile\t\tWrite changes to system configuration files only."
+            ""
+            "\t-u, --uninstall\t\tUndo an existing VFIO setup."
+
             "\nExtras:"
-            "\t-c, --cpu\t\tAllocate CPU"
-            "\t-e, --evdev\t\tSetup a virtual KVM switch"
-            "\t-h, --hugepages\t\tAllocate RAM"
+            "\t-c, --cpu\t\tAllocate CPU."
+            "\t-e, --evdev\t\tSetup a virtual KVM switch."
+            "\t-h, --hugepages\t\tAllocate RAM to Hugepages."
             "\t-h\t2M, 1G [Amount]\tHugepage [size]"
             "\t-h\t[size] [1-?]\t[Amount] of Hugepages"
             ""
-            "\t-H, --hooks\t\tInstall recommended libvirt-hooks and services"
-            "\t-l, --looking-glass\tInstall LookingGlass"
-            "\t-L, --audio-loopback\tInstall the audio loopback service"
-            "\t-S, --scream\t\tInstall Scream"
-            "\t-z, --zram-swap\t\tCreate swap in RAM"
+            "\t-H, --hooks\t\tInstall recommended libvirt-hooks and services."
+            "\t-l, --looking-glass\tInstall LookingGlass."
+            "\t-L, --audio-loopback\tInstall the audio loopback service."
+            "\t-S, --scream\t\tInstall Scream."
+            "\t-z, --zram-swap\t\tCreate swap in RAM."
 
             "\nExample:"
             "\tbash vfiolib-all -m \t\tParse PCI locally, then deploy a Multiboot VFIO setup."
