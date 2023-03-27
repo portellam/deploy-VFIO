@@ -23,7 +23,10 @@ function Main
     if ! SetOptions $@; then GetUsage; return $?; fi
 
     # <remarks> Exit early. </remarks>
-    if $bool_uninstall_vfio; then Setup_VFIO; fi
+    if $bool_uninstall_vfio; then
+        Setup_VFIO
+        return $?
+    fi
 
     # <remarks> Extras </remarks>
     AddUserToGroups
