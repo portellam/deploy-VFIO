@@ -1010,7 +1010,7 @@
         function Virtual_KVM_Main
         {
             # <params>
-            declare -ga arr_event_devices arr_input_devices
+            declare -ag arr_event_devices arr_input_devices
             local var_get_event_devices='arr_event_devices=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )'
             local var_get_input_devices='arr_input_devices=( $( ls /dev/input/by-id ) )'
             # </params>

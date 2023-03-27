@@ -79,18 +79,20 @@
                     local str_driver=$( eval "${var_parse_all_ID}" | grep -i "Driver:" | awk '{print $2}' | uniq )
                     local str_IOMMU=$( eval "${var_parse_all_ID}"| grep -i "IOMMUGroup:" | awk '{print $2}' | uniq )
                     local str_vendor_name=$( eval "${var_parse_name_ID}" | grep -i "Vendor:" | grep -Eiv "SVendor:" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
-                    local str_HWID=$( lspci -n -s "${var_device}" | cut -d ' ' -f 3 )                            # this works.
+                    local str_HWID=$( lspci -n -s "${var_device}" | cut -d ' ' -f 3 )
 
-                    # <remarks> If system is setup for VFIO, exit. </remarks>
-                    if [[ $str_driver == "vfio-pci" ]]; then
-                        echo -e $str_output_is_setup_VFIO
-                        return 1
-                    fi
+                    case "${str_driver}" in
+                         # <remarks> Match invalid input, and save as known null value. </remarks>
+                        "" )
+                            str_driver="N/A"
+                            ;;
 
-                    # <remarks> Match invalid input, and save as known null value. </remarks>
-                    if ! IsString $str_driver &> /dev/null; then
-                        local str_driver="N/A"
-                    fi
+                        # <remarks> If system is setup for VFIO, exit. </remarks>
+                        "vfio-pci" )
+                            echo -e $str_output_is_setup_VFIO
+                            return 1
+                            ;;
+                    esac
 
                     arr_class+=( "${str_class}" )
                     arr_device_name+=( "${str_device_name}" )
@@ -342,6 +344,13 @@
                     local var_IOMMU="${arr_IOMMU[$int_key]}"
                 fi
 
+                for var_driver_to_ignore in "${arr_drivers_to_ignore[@]}"; do
+                    if [[ "${var_driver_to_ignore}" == "${str_driver}" ]]; then
+                        str_driver=""
+                        break
+                    fi
+                done
+
                 # <remarks> Check if any IOMMU group exists in a given list. </remarks>
                 if FindLineInArray "arr_IOMMU_PCISTUB" "${var_IOMMU}" &> /dev/null; then
                     arr_HWID_PCISTUB+=( "${str_HWID}" )
@@ -437,6 +446,11 @@
 # </code>
 
 # <params>
-declare -ga arr_drivers_VFIOPCI arr_IOMMU_PCISTUB arr_IOMMU_VFIOPCI arr_IOMMU_VFIOPCI_with_VGA arr_HWID_PCISTUB arr_HWID_VFIOPCI arr_HWID_VFIOPCI_with_VGA
+declare -ag arr_drivers_VFIOPCI arr_IOMMU_PCISTUB arr_IOMMU_VFIOPCI arr_IOMMU_VFIOPCI_with_VGA arr_HWID_PCISTUB arr_HWID_VFIOPCI arr_HWID_VFIOPCI_with_VGA
 declare -g bool_VFIO_has_IOMMU=false
+
+    # <remarks> Known kernel drivers to ignore; drivers that cause issues when binded to vfio-pci/pci-stub. </remarks>
+    declare -ag arr_drivers_to_ignore=(
+        "snd_hda_intel"
+    )
 # </params>
