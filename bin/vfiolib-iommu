@@ -411,6 +411,20 @@
             TrimArray "arr_HWID_PCISTUB" || return $?
             TrimArray "arr_HWID_VFIOPCI" || return $?
             TrimArray "arr_HWID_VFIOPCI_with_VGA" || return $?
+
+            SortArray "arr_drivers_VFIOPCI" || return $?
+            SortArray "arr_drivers_VFIOPCI_with_VGA" || return $?
+            SortArray "arr_HWID_PCISTUB" || return $?
+            SortArray "arr_HWID_VFIOPCI" || return $?
+            SortArray "arr_HWID_VFIOPCI_with_VGA" || return $?
+
+            PrintArray "arr_drivers_VFIOPCI"
+            PrintArray "arr_drivers_VFIOPCI_with_VGA"
+            PrintArray "arr_HWID_PCISTUB"
+            PrintArray "arr_HWID_VFIOPCI"
+            PrintArray "arr_HWID_VFIOPCI_with_VGA"
+
+            exit 0
             return 0
         }
 
