@@ -184,9 +184,9 @@
         eval "$1"'=()' || return $?
 
         if $bool_sort_in_order; then
-            eval 'arr_sort=( $( sort <<< "${'"$1"'[*]}" ) )' || return $?
+            eval 'arr=( $( sort <<< "${'"$1"'[*]}" ) )' || return $?
         else
-            eval 'arr_sort=( $( sort -r <<< "${'"$1"'[*]}" ) )' || return $?
+            eval 'arr=( $( sort -r <<< "${'"$1"'[*]}" ) )' || return $?
         fi
 
         eval "$1"'=( "${arr[@]}" )' || return $?
@@ -200,7 +200,7 @@
     {
         IsString $1 || return $?
         IFS=$'\n'
-        eval 'declare -a ar=( "${'$1'[@]}" )' || return $?
+        eval 'declare -a arr=( "${'$1'[@]}" )' || return $?
         eval "$1"'=()' || return $?
 
         for var_element in "${arr[@]}"; do

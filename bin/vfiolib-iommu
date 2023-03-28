@@ -406,17 +406,19 @@
                 fi
             done
 
+            # NOTE: possibly breaking here, because I just revised the array functions (undeclared vars, should declare.)
+
             TrimArray "arr_drivers_VFIOPCI" || return $?
             TrimArray "arr_drivers_VFIOPCI_with_VGA" || return $?
             TrimArray "arr_HWID_PCISTUB" || return $?
             TrimArray "arr_HWID_VFIOPCI" || return $?
             TrimArray "arr_HWID_VFIOPCI_with_VGA" || return $?
 
-            SortArray "arr_drivers_VFIOPCI" || return $?
-            SortArray "arr_drivers_VFIOPCI_with_VGA" || return $?
-            SortArray "arr_HWID_PCISTUB" || return $?
-            SortArray "arr_HWID_VFIOPCI" || return $?
-            SortArray "arr_HWID_VFIOPCI_with_VGA" || return $?
+            SortArray "arr_drivers_VFIOPCI"
+            SortArray "arr_drivers_VFIOPCI_with_VGA"
+            SortArray "arr_HWID_PCISTUB"
+            SortArray "arr_HWID_VFIOPCI"
+            SortArray "arr_HWID_VFIOPCI_with_VGA"
 
             PrintArray "arr_drivers_VFIOPCI"
             PrintArray "arr_drivers_VFIOPCI_with_VGA"
