@@ -1,0 +1,25 @@
+TODO:
+
+23/03/27
+
+* when user selects IOMMU groups, stop and warn user when user selects all groups with VGA.
+    -explain that if user continues, no VGA devices will remain for the host to use.
+    -this will create a headless system, which the user may not want.
+    -this is only an issue for static vfio setups, not multiboot.
+    -to automate this process, set a flag that bypasses the VFIO setup prompt, and install Multiboot setup.
+
+* when user asks to update conf files for a service, stop and warn user if the service has active processes.
+    -example: zram-swap, if a zram-swap device is active AND is has data, stop.
+    -example: libvirtd, if a user is updating evdev, and a VM is running, stop.
+
+23/03/28
+
+* make it so that this script may be automated:
+    -in its entireity, use opts/args. Figure out how the binaries/source files will come into play.
+    -at minimum, the VFIO setup.
+
+* for automatic recall and redelpoyment, save important vars to logfile:
+    -size of hugepages
+    -amount of hugepages
+    -IOMMU groups, and the devices' infos
+    -etc.
