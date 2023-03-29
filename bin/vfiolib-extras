@@ -35,7 +35,7 @@
 
         AddUserToGroups_Main &> /dev/null
         PrintPassOrFail "Adding user to groups..."
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary>
@@ -205,7 +205,7 @@
         # PrintWait "${str_output}"
         Allocate_CPU_Main $@ &> /dev/null
         PrintPassOrFail "${str_output}"
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary>
@@ -295,7 +295,7 @@
         echo
         Allocate_RAM_Main
         PrintPassOrFail "Allocating RAM to pages..."
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary>
@@ -368,7 +368,7 @@
         # PrintWait "${str_output}"
         GuestAudioCapture_Main &> /dev/null
         PrintPassOrFail "${str_output}" && bool_is_setup_audio_capture=true || bool_is_setup_audio_capture=false
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary>
@@ -418,7 +418,7 @@
         # PrintWait "${str_output}"
         GuestAudioLoopback_Main &> /dev/null
         PrintPassOrFail "${str_output}"
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary>
@@ -606,7 +606,7 @@
         fi
 
         PrintPassOrFail "${str_output}" && bool_is_setup_scream=true
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary>
@@ -676,7 +676,7 @@
         PrintPassOrFail "Updating LookingGlass..."
         GuestVideoCapture_Install
         PrintPassOrFail "Installing LookingGlass..."
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary>
@@ -712,7 +712,7 @@
         # PrintWait "${str_output}"
         LibvirtHooks_Main &> /dev/null
         PrintPassOrFail "${str_output}"
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary>
@@ -907,7 +907,7 @@
         # PrintWait "${str_output}"
         Modify_QEMU_Main &> /dev/null
         PrintPassOrFail "${str_output}"
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # TODO: check for existing zram swap file, if occupied or exists, pause setup. ask user to continue or skip.
@@ -998,7 +998,7 @@
         RAM_Swapfile_Install
         RAM_Swapfile_Modify &> /dev/null
         PrintPassOrFail "Allocating RAM to swap..."
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary>
@@ -1033,7 +1033,7 @@
         # PrintWait "${str_output}"
         Virtual_KVM_Main &> /dev/null
         PrintPassOrFail "${str_output}"
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 # </code>
 

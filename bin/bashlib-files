@@ -67,7 +67,7 @@
 
         BackupFile_Main $1
         PrintPassOrFail "Creating backup file...\t"
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary> Create a directory. </summary>
@@ -340,7 +340,7 @@
 
         RestoreFile_Main $1
         PrintPassOrFail "Restoring backup file..."
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary> Write output to a file. Declare inherited params before calling this function. </summary>
