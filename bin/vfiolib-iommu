@@ -21,7 +21,7 @@
         fi
 
         PrintPassOrFail "Validating Virtualization..."
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary> Parse IOMMU groups for all relevant information. If a parse fails, attempt again another way. If all parses fail, fail. </summary>
@@ -220,7 +220,7 @@
         esac
 
         PrintPassOrFail "${str_output}"
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary> Select IOMMU groups for VFIO setup. </summary>
@@ -457,7 +457,7 @@
         # <remarks> Check if list is empty </remarks>
         IsArray "arr_IOMMU_VFIOPCI" &> /dev/null && bool_VFIO_has_IOMMU=true && Get_IOMMU_Lists && Set_IOMMU_Lists
         PrintPassOrFail "${str_output}"
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 # </code>
 
