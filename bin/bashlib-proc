@@ -20,14 +20,9 @@
     {
         IsString $1 || return $?
 
-        # <params>
-        local var_command='ps -e | grep ${1}'
-        local str_output=$( eval "${var_command}" )
-        # </params>
-
-        if ! IsString "${str_output}" &> /dev/null; then
-            echo -e "${var_prefix_error} Process '${1}' is not active."
-            return "${int_code_cmd_is_null}"
+        if ! IsString $( eval 'ps -e | grep $1' ) &> /dev/null; then
+            echo -e "${var_prefix_error} Process '$1' is not active."
+            return $int_code_cmd_is_null
         fi
 
         return 0
@@ -39,16 +34,9 @@
     {
         IsString $1 || return $?
 
-        # <params>
-        local var_command='systemctl status ${1} | grep "active"'
-        local str_output=$( eval "${var_command}" )
-        # </params>
-
-        IsString "${var_command}" || return $?
-
-        case $( eval "${var_command}" ) in
+        case $( eval 'systemctl status $1 | grep "active"' ) in
             *"failed"* | *"inactive"* )
-                return "${int_code_partial_completion}"
+                return $int_code_partial_completion
                 ;;
 
             * )
@@ -65,9 +53,9 @@
     {
         IsString $1 || return $?
 
-        if [[ $( command -v $1 ) != "/usr/bin/${1}" ]]; then
-            echo -e "${var_prefix_error} Command '${1}' is not installed."
-            return "${int_code_cmd_is_null}"
+        if [[ $( command -v $1 ) != "/usr/bin/$1" ]]; then
+            echo -e "${var_prefix_error} Command '$1' is not installed."
+            return $int_code_cmd_is_null
         fi
 
         return 0
@@ -79,14 +67,9 @@
     {
         IsString $1 || return $?
 
-        # <params>
-        local var_command='systemctl status ${1} | grep -Eiv "not"'
-        local str_output=$( eval "${var_command}" )
-        # </params>
-
-        if ! IsString "${str_output}"; then
-            echo -e "${var_prefix_error} Daemon '${1}' is not installed."
-            return "${int_code_cmd_is_null}"
+        if ! IsString $( eval 'systemctl status ${1} | grep -Eiv "not"' ); then
+            echo -e "${var_prefix_error} Daemon '$1' is not installed."
+            return $int_code_cmd_is_null
         fi
 
         return 0
