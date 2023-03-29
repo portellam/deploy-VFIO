@@ -16,6 +16,7 @@
     # <summary> Check if two given files are the same. If true, pass. </summary>
     # <paramref name="1"> string: the name of the array </paramref>
     # <paramref name="2"> string: the name of the array </paramref>
+    # <returns> the exit code </returns>
     function AreEqualArrays
     {
         IsArray $2 || return $?
@@ -33,6 +34,7 @@
     # <summary> Find line in array. </summary>
     # <paramref name="1"> string: the name of the array </paramref>
     # <param name="2"> string: the line </param>
+    # <returns> the exit code </returns>
     function FindLineInArray
     {
         IsString $2 || return $?
@@ -49,6 +51,7 @@
 
     # <summary> Check if the array is empty. </summary>
     # <paramref name="1"> string: the name of the array </paramref>
+    # <returns> the exit code </returns>
     function IsArray
     {
         function Main
@@ -76,7 +79,8 @@
     }
 
     # <summary> Check if the array is writable. If true, pass. </summary>
-    # <paramref name="1"> string: the name of a array </param>
+    # <paramref name="1"> string: the name of a array </paramref>
+    # <returns> the exit code </returns>
     function IsArrayWritable
     {
         IsArray $1 || return $?
@@ -91,6 +95,7 @@
 
     # <summary> Check if the variable is not empty. If true, pass. </summary>
     # <param name="1"> var: the variable </param>
+    # <returns> the exit code </returns>
     function IsString
     {
         if [[ -z $1 ]]; then
@@ -103,6 +108,7 @@
 
     # <summary> Check if the value is a valid bool. </summary>
     # <param name="1"> var: the boolean </param>
+    # <returns> the exit code </returns>
     function IsBool
     {
         IsString $1 || return $?
@@ -121,6 +127,7 @@
 
     # <summary> Check if the value is a valid number. If true, pass.</summary>
     # <param name="1"> var: the number </param>
+    # <returns> the exit code </returns>
     function IsNum
     {
         IsString $1 || return $?
@@ -135,12 +142,13 @@
 
     # <summary> Check if the value is a pointer. If true, pass.</summary>
     # <paramref name="1"> var: the name of the variable </param>
+    # <returns> the exit code </returns>
     function IsPointer
     {
         IsString $1 || return $?
 
         if ! IsString $( eval '$'"$1" ) &> /dev/null; then
-            echo -e "${var_prefix_error} Not a pointer."
+            echo -e "${var_prefix_error} Null pointer."
             return $int_code_var_is_pointer
         fi
 
@@ -148,7 +156,8 @@
     }
 
     # <summary> Check if the variable is writable. If true, pass. </summary>
-    # <paramref name="1"> string: the name of a variable </param>
+    # <paramref name="1"> string: the name of a variable </paramref>
+    # <returns> the exit code </returns>
     function IsVarWritable
     {
         IsString $1 || return $?
@@ -164,6 +173,7 @@
     # <summary> Output an array. Declare inherited params before calling this function. </summary>
     # <paramref name="1"> string: name of the array </paramref>
     # <param name="2"> bool: True, enable text color. False, no change. </param>
+    # <returns> the exit code </returns>
     function PrintArray
     {
         function Main
@@ -192,6 +202,7 @@
     # <paramref name="1"> string: the name of the array </paramref>
     # <param name="2"> string: the line to find </param>
     # <param name="3"> string: the new line </param>
+    # <returns> the exit code </returns>
     function ReplaceLineInArray
     {
         function Main
@@ -225,6 +236,7 @@
     # <summary> Sort an array. </summary>
     # <paramref name="1"> string: the name of the array </paramref>
     # <param name="2"> bool: True, reverse sort order. False, no change. </param>
+    # <returns> the exit code </returns>
     function SortArray
     {
         function Main
@@ -255,6 +267,7 @@
 
     # <summary> Clear empty elements from array. </summary>
     # <paramref name="1"> string: the name of the array </paramref>
+    # <returns> the exit code </returns>
     function TrimArray
     {
         function Main

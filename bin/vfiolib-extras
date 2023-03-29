@@ -24,6 +24,7 @@
     # <summary>
     # Add user to necessary user groups.
     # </summary>
+    # <returns> the exit code </returns>
     function AddUserToGroups
     {
         function AddUserToGroups_Main
@@ -41,6 +42,7 @@
     # <summary>
     # isolcpus: Allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and guest performance.
     # </summary
+    # <returns> the exit code </returns>
     function Allocate_CPU
     {
         function Allocate_CPU_Main
@@ -80,9 +82,9 @@
                 local var_get_virt_cores='seq ${int_host_cores} $(( ${int_total_cores} - 1 ))'
 
                 declare -a arr_host_cores=( $( eval "${var_get_host_cores}" ) )
-                declare -a arr_host_threads=()
+                declare -a arr_host_threads=( )
                 declare -a arr_virt_cores=( $( eval "${var_get_virt_cores}" ) )
-                declare -a arr_virt_threads=()
+                declare -a arr_virt_threads=( )
                 declare -i int_SMT_factor=$(( "${int_total_threads}" / "${int_total_cores}" ))
                 declare -a arr_SMT_factors=( $( eval "${var_get_SMT_factors}" ) )
 
@@ -95,21 +97,21 @@
                     int_thread=$(( int_core + ( int_SMT_factor * int_total_cores ) ))
                 }
 
-                for int_SMT_factor in "${arr_SMT_factors[@]}"; do
+                for int_SMT_factor in ${arr_SMT_factors[@]}; do
                     # <remarks> Reset params </remarks>
-                    declare -a arr_host_threads_sets=()
-                    declare -a arr_virt_threads_sets=()
+                    declare -a arr_host_threads_sets=( )
+                    declare -a arr_virt_threads_sets=( )
                     declare -i int_thread
 
                     # <remarks> Find thread sets for host. </remarks>
-                    for int_core in "${arr_host_cores[@]}"; do
+                    for int_core in ${arr_host_cores[@]}; do
                         GetThreadByCoreAnd_SMT
                         arr_host_threads+=( "${int_thread}" )
                         arr_host_threads_sets+=( "${int_thread}" )
                     done
 
                     # <remarks> Find thread sets for guest(s). </remarks>
-                    for int_core in "${arr_virt_cores[@]}"; do
+                    for int_core in ${arr_virt_cores[@]}; do
                         GetThreadByCoreAnd_SMT
                         arr_virt_threads+=( "${int_thread}" )
                         arr_virt_threads_sets+=( "${int_thread}" )
@@ -171,13 +173,13 @@
                 # </params>
 
                 # <remarks> Add each decimal mask to sum. </remarks>
-                for int_thread in "${arr_host_threads[@]}"; do
+                for int_thread in ${arr_host_threads[@]}; do
                     declare -i int_thread_decimal=$(( 2 ** ${int_thread} ))
                     declare -i int_thread_hexadecimal_mask=$( eval "${var_get_hexadecimal_mask_from_decimal}" )
                     int_host_threads_hexadecimal_mask+="${int_thread_hexadecimal_mask}"
                 done
 
-                for int_thread in "${arr_total[@]}"; do
+                for int_thread in ${arr_total[@]}; do
                     declare -i int_thread_decimal=$(( 2 ** ${int_thread} ))
                     declare -i int_thread_hexadecimal_mask=$( eval "${var_get_hexadecimal_mask_from_decimal}" )
                     int_host_threads_hexadecimal_mask+="${int_thread_hexadecimal_mask}"
@@ -212,6 +214,7 @@
     # Hugepages: Allocate host memory (RAM) to 'hugepages'.
     # Eliminate the need to defragement memory, reduce host overhead, and improve both host and guest performance.
     # </summary
+    # <returns> the exit code </returns>
     function Allocate_RAM
     {
         function Allocate_RAM_Main
@@ -306,6 +309,7 @@
     # References:
     #   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_through_other_devices
     # </remarks>
+    # <returns> the exit code </returns>
     function GuestAudioCapture
     {
         function GuestAudioCapture_Main
@@ -375,6 +379,7 @@
     # Setup an audio loopback service from physical guest audio device (Line-Out) to physical host audio device (Line-In).
     # Requires physical connection between Line-Out and Line-In, and audio backend with JACK support (requires PulseAudio or ALSA).
     # </summary>
+    # <returns> the exit code </returns>
     function GuestAudioLoopback
     {
         function GuestAudioLoopback_Main
@@ -429,6 +434,7 @@
     # References:
     #   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_audio_from_virtual_machine_to_host_via_Scream
     # </remarks>
+    # <returns> the exit code </returns>
     function GuestAudioStream
     {
         function GuestAudioStream_Build
@@ -617,6 +623,7 @@
     # References:
     #   https://looking-glass.io/docs/B6/install/#client-install
     # </remarks>
+    # <returns> the exit code </returns>
     function GuestVideoCapture
     {
         function GuestVideoCapture_Get
@@ -682,6 +689,7 @@
     # <summary>
     # libvirt-hooks: Setup useful Quality-of-life improvements in the form of services and scripts (hooks) for QEMU guest(s).
     # </summary>
+    # <returns> the exit code </returns>
     function LibvirtHooks
     {
         function LibvirtHooks_Main
@@ -718,12 +726,13 @@
     # <summary>
     # libvirt-qemu: Append necessary changes to QEMU system file, including user groups, Evdev, Hugepages, and NVRAM (for UEFI guest(s)).
     # </summary>
+    # <returns> the exit code </returns>
     function Modify_QEMU
     {
         function Modify_QEMU_Main
         {
             # <params>
-            declare -a arr_file1_evdev_cgroups=()
+            declare -a arr_file1_evdev_cgroups=( )
             declare -a arr_file1_default_cgroups=(
                 "        \"/dev/null\", \"/dev/full\", \"/dev/zero\","
                 "        \"/dev/random\", \"/dev/urandom\","
@@ -796,11 +805,11 @@
 
             # <remarks> Format input for Evdev. </remarks>
             if $bool_is_setup_evdev; then
-                for var_device in "${arr_event_devices[@]}"; do
+                for var_device in ${arr_event_devices[@]}; do
                     arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${var_device}\"," )
                 done
 
-                for var_device in "${arr_input_devices[@]}"; do
+                for var_device in ${arr_input_devices[@]}; do
                     arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${var_device}\"," )
                 done
             fi
@@ -915,6 +924,7 @@
     # zramswap: Setup a swap partition in host memory.
     # Reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory.
     # </summary>
+    # <returns> the exit code </returns>
     function RAM_Swapfile
     {
         function RAM_Swapfile_Install
@@ -949,7 +959,7 @@
             # </params>
 
             # <remarks> Replace matching line with comment of line </remarks>
-            for int_key in "${!arr_file_contents[@]}"; do
+            for int_key in ${!arr_file_contents[@]}; do
                 if [[ "${arr_file_contents[$int_key]}" == *"${str_match_line1}"* ]]; then
                     arr_file_contents[$int_key]="#${arr_file_contents[$int_key]}"
                 fi
@@ -1005,6 +1015,7 @@
     # Evdev: Setup a virtual Keyboard-Video-Mouse switch (excluding the Video).
     # Will allow a user to swap between active guest(s) and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL').
     # </summary>
+    # <returns> the exit code </returns>
     function Virtual_KVM
     {
         function Virtual_KVM_Main

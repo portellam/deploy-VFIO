@@ -47,7 +47,7 @@
 
             # <remarks> Delete all but the newest backup file. </remarks>
             if [[ "${#arr_dir[@]}" -gt 1 ]]; then
-                for int_key in "${arr_dir[@]}"; do
+                for int_key in ${arr_dir[@]}; do
                     if [[ "$int_key" -gt 0 ]]; then
                         DeleteFile "${arr_dir[$int_key]}" &> /dev/null
                     fi
@@ -299,7 +299,7 @@
         IsString $3 || return $?
 
         # <params>
-        declare -a arr_replace_file=()
+        declare -a arr_replace_file=( )
         # </params>
 
         ReadFile "arr_replace_file" $1 || return $?

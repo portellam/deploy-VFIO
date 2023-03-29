@@ -14,6 +14,7 @@
 
 # <code>
     # <summary> Is Virtualization enabled on the current system. If true, pass. </summary>
+    # <returns> the exit code </returns>
     function IsEnabled_IOMMU
     {
         if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*"; then
@@ -24,7 +25,11 @@
         return $int_exit_code
     }
 
-    # <summary> Parse IOMMU groups for all relevant information. If a parse fails, attempt again another way. If all parses fail, fail. </summary>
+    # <summary>
+    # Parse IOMMU groups for all relevant information.
+    # If a parse fails, attempt again another way. If all parses fail, fail.
+    # </summary>
+    # <returns> the exit code </returns>
     function Parse_IOMMU
     {
         function Parse_IOMMU_Main
@@ -72,7 +77,7 @@
             function Parse_IOMMU_Save_Lists
             {
                 # <remarks> Save to lists each device's information. Lists should be of the same-size. </remarks>
-                for var_device in "${arr_devices[@]}"; do
+                for var_device in ${arr_devices[@]}; do
                     local str_class=$( eval "${var_parse_name_ID}" )
                     str_class=$( echo -e "${str_class}" | grep -i "Class:" | cut -d ':' -f 2 | grep -oP "^\t\K.*" )
                     local str_device_name=$( eval "${var_parse_name_ID}" | grep -i "Device:" | grep -Eiv "SDevice:|${var_device}" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
@@ -224,6 +229,7 @@
     }
 
     # <summary> Select IOMMU groups for VFIO setup. </summary>
+    # <returns> the exit code </returns>
     function Select_IOMMU
     {
         # <summary> Print all relevant information about the IOMMU group. </summary>
@@ -330,7 +336,7 @@
         # <summary> Parse VFIO list for drivers and hardware IDs. </summary>
         function Get_IOMMU_Lists
         {
-            for int_key in "${!arr_IOMMU[@]}"; do
+            for int_key in ${!arr_IOMMU[@]}; do
                 local str_slot_ID="${arr_slot_ID[$int_key]}"
                 local str_domain_ID=$( echo "${str_slot_ID}" | cut -d ':' -f 1 )
                 declare -i int_domain_ID="${str_domain_ID##*0}"
@@ -344,7 +350,7 @@
                     local var_IOMMU="${arr_IOMMU[$int_key]}"
                 fi
 
-                for var_driver_to_ignore in "${arr_drivers_to_ignore[@]}"; do
+                for var_driver_to_ignore in ${arr_drivers_to_ignore[@]}; do
                     if [[ "${var_driver_to_ignore}" == "${str_driver}" ]]; then
                         str_driver=""
                         break
@@ -380,7 +386,7 @@
         function Set_IOMMU_Lists
         {
             # <remarks> Remove duplicate entries. </remarks>
-            for int_key in "${!arr_drivers_VFIOPCI[@]}"; do
+            for int_key in ${!arr_drivers_VFIOPCI[@]}; do
                 local var_driver="${arr_drivers_VFIOPCI[$int_key]}"
 
                 if FindLineInArray "arr_drivers_VFIOPCI" "${var_driver}" &> /dev/null; then
@@ -389,7 +395,7 @@
             done
 
             # <remarks> Remove duplicate entries. </remarks>
-            for int_key in "${!arr_HWID_VFIOPCI[@]}"; do
+            for int_key in ${!arr_HWID_VFIOPCI[@]}; do
                 local var_HWID="${arr_HWID_VFIOPCI[$int_key]}"
 
                 if FindLineInArray "arr_HWID_PCISTUB" "${var_HWID}" &> /dev/null || FindLineInArray "arr_HWID_VFIOPCI_with_VGA" "${var_HWID}" &> /dev/null; then
@@ -398,7 +404,7 @@
             done
 
             # <remarks> Remove duplicate entries. </remarks>
-            for int_key in "${!arr_HWID_PCISTUB[@]}"; do
+            for int_key in ${!arr_HWID_PCISTUB[@]}; do
                 local var_HWID="${arr_HWID_VFIOPCI[$int_key]}"
 
                 if FindLineInArray "arr_HWID_VFIOPCI_with_VGA" "${var_HWID}" &> /dev/null; then
@@ -439,7 +445,7 @@
 
         # PrintWait "${str_output}"
 
-        for var_IOMMU in "${arr_this_IOMMU[@]}"; do
+        for var_IOMMU in ${arr_this_IOMMU[@]}; do
             local bool_IOMMU_has_external_domain=false
             local bool_IOMMU_PCISTUB=false
             # local bool_IOMMU_VFIOPCI=false

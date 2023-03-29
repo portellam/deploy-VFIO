@@ -16,6 +16,7 @@
 
 # <code>
     # <summary> Backup all system configuration files. </summary>
+    # <returns> the exit code </returns>
     function Backup_VFIO
     {
         # <params>
@@ -29,7 +30,7 @@
         )
         # </params>
 
-        for var_file in "${arr_files}"; do
+        for var_file in ${arr_files[@]}; do
             if IsFile "${var_file}"; then
                 BackupFile "${var_file}" || return $?
             fi
@@ -39,6 +40,7 @@
     }
 
     # <summary> Save default values to GRUB. </summary>     # TODO: fix!
+    # <returns> the exit code </returns>
     function Reset_GRUB
     {
         # <params>
@@ -57,6 +59,7 @@
     }
 
     # <summary> Remove changes to system configuration files. </summary>
+    # <returns> the exit code </returns>
     function Reset_VFIO
     {
         IsArray "arr_file_template_mulitboot" || return $?
@@ -78,6 +81,7 @@
     }
 
     # <summary> Restore all system configuration files. </summary>
+    # <returns> the exit code </returns>
     function Restore_VFIO
     {
         # <params>
@@ -91,7 +95,7 @@
         )
         # </params>
 
-        for var_file in "${arr_files}"; do
+        for var_file in ${arr_files[@]}; do
             if IsFile "${var_file}"; then
                 RestoreFile "${var_file}" || return $?
             fi
@@ -100,7 +104,11 @@
         return 0
     }
 
-    # <summary> Multiple GRUB menu entries for multiple VGA device (GPU) systems. Choose a GRUB menu entry with a VGA device to boot from (exclude that VGA device's IOMMU Group from VFIO). </summary>
+    # <summary>
+    # Multiple GRUB menu entries for multiple VGA device (GPU) systems.
+    # Choose a GRUB menu entry with a VGA device to boot from (exclude that VGA device's IOMMU Group from VFIO).
+    # </summary>
+    # <returns> the exit code </returns>
     function Multiboot_VFIO
     {
         # <summary> Write custom GRUB entries. </summary>
@@ -116,15 +124,15 @@
 
             # <remarks> Organize new lines. </remarks>
             local str_output_temp_GRUB="${str_kernel_required_args_GRUB}${str_kernel_optional_args_GRUB}"
-            declare -a arr_file1_temp=()
+            declare -a arr_file1_temp=( )
 
             # <remarks> Parse VGA VFIO IOMMU Groups. </remarks>
-            for var_IOMMU in "${arr_IOMMU_VFIOPCI_with_VGA[@]}"; do
+            for var_IOMMU in ${arr_IOMMU_VFIOPCI_with_VGA[@]}; do
                 local str_output_VFIOPCI_drivers=""
                 local str_output_VFIOPCI_HWID=""
 
                 if Multiboot_VFIO_ExcludeThis_VGA_Group "${var_IOMMU}"; then
-                    for var_kernel in "${arr_kernels[@]}"; do
+                    for var_kernel in ${arr_kernels[@]}; do
                         local str_GRUB_line="${str_output_temp_GRUB} ${str_kernel_blacklist_GRUB}${str_output_VFIOPCI_drivers} ${str_kernel_VFIOPCI_modules}${str_output_VFIOPCI_HWID}"
 
                         # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
@@ -161,7 +169,7 @@
             IsNum $1 || return $?
 
             # <remarks> Parse all IOMMU groups.  </remarks>
-            for int_key in "${!arr_IOMMU[@]}"; do
+            for int_key in ${!arr_IOMMU[@]}; do
                 local var_driver="${arr_driver[$int_key]}"
                 local var_HWID="${arr_HWID[$int_key]}"
                 local var_IOMMU="${arr_IOMMU[$int_key]}"
@@ -224,6 +232,7 @@
     }
 
     # <summary> Setup VFIO statically, with less flexibility. </summary>
+    # <returns> the exit code </returns>
     function Static_VFIO
     {
         function Static_VFIO_GetParams
@@ -231,21 +240,21 @@
             # <summary> Output: Hardware IDs </summary>
             # <code>
                 # <remarks> Driver lists with PCI-STUB </remarks>
-                for var_HWID in "${arr_HWID_PCISTUB[@]}"; do
+                for var_HWID in ${arr_HWID_PCISTUB[@]}; do
                     str_output_PCISTUB_HWID+="${var_HWID},"
                 done
 
                 IsString "${str_output_PCISTUB_HWID}" &> /dev/null && str_output_all_HWID+="${str_output_PCISTUB_HWID}"
 
                 # <remarks> Driver lists with VFIO-PCI </remarks>
-                for var_HWID in "${arr_HWID_VFIOPCI[@]}"; do
+                for var_HWID in ${arr_HWID_VFIOPCI[@]}; do
                     str_output_VFIOPCI_HWID+="${var_HWID},"
                 done
 
                 IsString "${str_output_VFIOPCI_HWID}" &> /dev/null && str_output_all_HWID+="${str_output_VFIOPCI_HWID}"
 
                 # <remarks> Driver lists with VFIO-PCI of device type of VGA </remarks>
-                for var_HWID in "${arr_HWID_VFIOPCI_with_VGA[@]}"; do
+                for var_HWID in ${arr_HWID_VFIOPCI_with_VGA[@]}; do
                     str_output_VFIOPCI_with_VGA_HWID+="${var_HWID},"
                 done
 
@@ -275,7 +284,7 @@
                 IsArray "arr_drivers_VFIOPCI" &> /dev/null && arr_all_drivers+=( "${arr_drivers_VFIOPCI[@]}" )
                 IsArray "arr_drivers_VFIOPCI_with_VGA" &> /dev/null && arr_all_drivers+=( "${arr_drivers_VFIOPCI_with_VGA[@]}" )
 
-                for var_HWID in "${arr_all_drivers[@]}"; do
+                for var_HWID in ${arr_all_drivers[@]}; do
                     str_output_all_drivers+="${var_HWID},"
                 done
 
@@ -285,7 +294,7 @@
                 fi
 
                 # <remarks> Organize new lines. </remarks>
-                for var_name_driver in "${arr_all_drivers[@]}"; do
+                for var_name_driver in ${arr_all_drivers[@]}; do
                     local str_kernel_softdep="softdep ${var_name_driver} pre: vfio-pci"
 
                     if IsString "${str_kernel_softdep}"; then
@@ -394,7 +403,7 @@
                     declare -a arr_file1=( "${arr_file_template_static_modprobe_blacklist[@]}" )
 
                     # <remarks> Set new lines. </remarks>
-                    for var_name_driver in "${arr_all_drivers[@]}"; do
+                    for var_name_driver in ${arr_all_drivers[@]}; do
                         arr_file1+=( "${str_kernel_blacklist_modprobe}${var_name_driver}" )
                     done
                 # </params>
@@ -435,9 +444,9 @@
             # UninstallExisting_VFIO || return $?
 
             # <params>
-            declare -a arr_all_drivers=()
-            declare -a arr_all_softdep_without_driver=()
-            declare -a arr_all_softdep_with_driver=()
+            declare -a arr_all_drivers=( )
+            declare -a arr_all_softdep_without_driver=( )
+            declare -a arr_all_softdep_with_driver=( )
             local bool_do_not_read_input=false
             local str_output_all_drivers=""
             local str_output_VFIOPCI_HWID=""
@@ -484,6 +493,7 @@
     }
 
     # <summary> Select a VFIO setup. </summary>
+    # <returns> the exit code </returns>
     function Setup_VFIO
     {
         if ! $bool_multiboot_vfio && ! $bool_static_vfio && ! $bool_uninstall_vfio; then
@@ -526,6 +536,7 @@
     }
 
     # <summary> Delete changes from system configuration files. </summary>
+    # <returns> the exit code </returns>
     function UninstallExisting_VFIO
     {
         function UninstallExisting_VFIO_Main
@@ -546,6 +557,7 @@
     }
 
     # <summary> Update system configuration. </summary>
+    # <returns> the exit code </returns>
     function Update_VFIO
     {
         function Update_VFIO_Main

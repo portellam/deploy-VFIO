@@ -18,7 +18,7 @@
 # <code>
     # <summary> Ask user Yes/No, read input and return exit code given answer. </summary>
     # <param name="1"> string: the output statement </param>
-    # <returns> int: the exit code </returns>
+    # <returns> the exit code </returns>
     function ReadInput
     {
         # <params>
@@ -27,7 +27,7 @@
         local str_output=""
         # </params>
 
-        IsString $1 &> /dev/null && str_output="${1} "
+        IsString $1 &> /dev/null && str_output="$1 "
         str_output+="${var_green}[Y/n]:${var_reset_color}"
 
         for int_count in ${arr_count_tries[@]}; do
@@ -57,100 +57,86 @@
         return 1
     }
 
-    # <summary>
-    # Ask for a number, within a given range, and return given number.
-    # If input is not valid, return minimum value. Declare '$var_input' before calling this function.
-    # </summary>
+    # <summary> Ask for a number, within a given range, and return given number. </summary>
     # <param name="1"> string: the output statement </param>
-    # <param name="2"> num: absolute minimum </param>
-    # <param name="3"> num: absolute maximum </param>
-    # <param name="var_input"> var: the answer </param>
-    # <returns> var: the answer </returns>
+    # <paramref name="2"> int: the answer </paramref>
+    # <param name="3"> num: absolute minimum </param>
+    # <param name="4"> num: absolute maximum </param>
+    # <returns> the answer </returns>
     function ReadInputFromRangeOfTwoNums
     {
-        # <params>
-        local var_min=$2
-        local var_max=$3
-        local str_output=""
-        var_input=""
-        # </params>
-
-        if ( ! IsNum $var_min || ! IsNum $var_max ) &> /dev/null; then
+        if ( ! IsNum $3 || ! IsNum $4 ) &> /dev/null; then
+            SaveExitCode
             echo -e "${str_fail_invalid_extrema}"
-            return 1
+            return $int_exit_code
         fi
 
-        IsString $1 &> /dev/null && str_output="${1} "
+        IsPointer $2 || return $?
 
-        str_output+="${var_green}[${var_min}-${var_max}]:${var_reset_color}"
+        # <params>
+        local str_output=""
+        # </params>
+
+        IsString $1 &> /dev/null && str_output="$1 "
+        str_output+="${var_green}[${3}-${4}]:${var_reset_color}"
 
         for int_count in ${arr_count_tries[@]}; do
-
-            # <remarks> Append output. </remarks>
             echo -en "${str_output} "
-            read var_input
+            eval 'read $'"$2"
 
-            # <remarks> Check if input is valid. </remarks>
-            if IsNum $var_input && [[ $var_input -ge $var_min && $var_input -le $var_max ]]; then
+            if IsNum $( eval '$'"$2" ) && [[ $( eval '$'"$2" ) -ge $3 && $( eval '$'"$2" ) -le $4 ]]; then
                 return 0
             fi
 
-            # <remarks> Input is not valid. </remarks>
-            echo -e "${str_fail}"
+            echo -e "${str_output_var_is_not_valid}"
         done
 
-        var_input=$var_min
-        str_output="Exceeded max attempts. Choice is set to default: ${var_yellow}${var_input}${var_reset_color}"
+        # <remarks> After given number of attempts, input is set to default. </remarks>
+        eval $( "$2"'="$3"' ) || return 1
+        str_output="Exceeded max attempts. Choice is set to default: ${var_yellow}$( eval '$'"$2" )${var_reset_color}"
         echo -e "${str_output}"
         return 1
     }
 
-    # <summary>
-    # Ask user for multiple choice, and return choice given answer.
-    # If input is not valid, return first value. Declare '$var_input' before calling this function.
-    # </summary>
+    # <summary> Ask user for multiple choice, and return chosen answer. </summary>
     # <param name="1"> string: the output statement </param>
-    # <param name="2" name="3" name="4" name="5" name="6" name="7" name="8"> var: multiple choice </param>
-    # <param name="var_input"> var: the answer </param>
-    # <returns> var: the answer </returns>
+    # <paramref name="2"> string: the answer </paramref>
+    # <param name="3" name="4" name="5" name="6" name="7" name="8" name="9"> var: multiple choice </param>
+    # <param name="arr_count_tries"> array: the countdown list </param>
+    # <returns> the answer </returns>
     function ReadMultipleChoiceIgnoreCase
     {
-        # <params>
-        declare -a arr_input=( )
-        local str_output=""
-        var_input=""
-        # </params>
-
         # <remarks> Minimum multiple choice are two answers. </remarks>
-        if ( ! IsString $2 || ! IsString $3 ) &> /dev/null; then
+        if ( ! IsString $3 || ! IsString $4 ) &> /dev/null; then
             SaveExitCode
             echo -e "${str_fail_not_enough_answers}"
-            return "${int_exit_code}"
+            return $int_exit_code
         fi
 
-        arr_input+=( $2 )
-        arr_input+=( $3 )
+        IsPointer $2 || return $?
 
-        if IsString $4 &> /dev/null; then arr_input+=( $4 ); fi
-        if IsString $5 &> /dev/null; then arr_input+=( $5 ); fi
-        if IsString $6 &> /dev/null; then arr_input+=( $6 ); fi
-        if IsString $7 &> /dev/null; then arr_input+=( $7 ); fi
-        if IsString $8 &> /dev/null; then arr_input+=( $8 ); fi
-        if IsString $9 &> /dev/null; then arr_input+=( $9 ); fi
+        # <params>
+        declare -a arr_list_of_answers=( )
+        local str_output=""
+        # </params>
 
-        IsString $1 &> /dev/null && str_output="${1} "
-        str_output+="${var_green}[${arr_input[@]}]:${var_reset_color}"
+        arr_list_of_answers+=( $3 )
+        arr_list_of_answers+=( $4 )
+        IsString $9 &> /dev/null && arr_list_of_answers+=( $5 )
+        IsString $9 &> /dev/null && arr_list_of_answers+=( $6 )
+        IsString $9 &> /dev/null && arr_list_of_answers+=( $7 )
+        IsString $9 &> /dev/null && arr_list_of_answers+=( $8 )
+        IsString $1 &> /dev/null && str_output="$1 "
+        str_output+="${var_green}[${arr_list_of_answers[@]}]:${var_reset_color}"
 
         for int_count in ${arr_count_tries[@]}; do
             echo -en "${str_output} "
-            read var_input
+            eval 'read $'"$2"
 
-            if IsString $var_input; then
-                var_input=$( echo $var_input | tr '[:lower:]' '[:upper:]' )
-
-                for var_element in ${arr_input[@]}; do
-                    if [[ "${var_input}" == $( echo $var_element | tr '[:lower:]' '[:upper:]' ) ]]; then
-                        var_input=$var_element
+            if IsString $( eval '$'"$2" ); then
+                for var_element in ${arr_list_of_answers[@]}; do
+                    if [[ $( echo $var_element | tr '[:lower:]' '[:upper:]' ) == $( eval '$'"$2" ) ]]; then
+                        eval "$2"'="${var_element}"' || return 1
                         return 0
                     fi
                 done
@@ -159,56 +145,52 @@
             echo -e "${str_output_var_is_not_valid}"
         done
 
-        var_input=${arr_input[0]}
-        str_output="Exceeded max attempts. Choice is set to default: ${var_yellow}${var_input}${var_reset_color}"
+        # <remarks> After given number of attempts, input is set to default. </remarks>
+        eval $( "$2"'="${arr_list_of_answers[0]}"' ) || return 1
+        str_output="Exceeded max attempts. Choice is set to default: ${var_yellow}$( eval '$'"$2" )${var_reset_color}"
         echo -e "${str_output}"
         return 1
     }
 
-    # <summary>
-    # Ask user for multiple choice, and return given choice.
-    # If input is not valid, return first value.
-    # Declare '$var_input' before calling this function.
-    # </summary>
+    # <summary> Ask user for multiple choice, and return chosen answer. </summary>
     # <param name="1"> string: the output statement </param>
-    # <param name="2" name="3" name="4" name="5" name="6" name="7" name="8"> var: multiple choice </param>
-    # <param name="var_input"> var: the answer </param>
-    # <returns> var: the answer </returns>
+    # <paramref name="2"> string: the answer </paramref>
+    # <param name="3" name="4" name="5" name="6" name="7" name="8" name="9"> var: multiple choice </param>
+    # <param name="arr_count_tries"> array: the countdown list </param>
+    # <returns> the answer </returns>
     function ReadMultipleChoiceMatchCase
     {
-        # <params>
-        declare -a arr_input=( )
-        local str_output=""
-        var_input=""
-        # </params>
-
         # <remarks> Minimum multiple choice are two answers. </remarks>
-        if ( ! IsString $2 || ! IsString $3 ) &> /dev/null; then
+        if ( ! IsString $3 || ! IsString $4 ) &> /dev/null; then
+            SaveExitCode
             echo -e "${str_fail_not_enough_answers}"
-            return 1;
+            return $int_exit_code
         fi
 
-        arr_input+=( $2 )
-        arr_input+=( $3 )
+        IsPointer $2 || return $?
 
-        if IsString $4 &> /dev/null; then arr_input+=( $4 ); fi
-        if IsString $5 &> /dev/null; then arr_input+=( $5 ); fi
-        if IsString $6 &> /dev/null; then arr_input+=( $6 ); fi
-        if IsString $7 &> /dev/null; then arr_input+=( $7 ); fi
-        if IsString $8 &> /dev/null; then arr_input+=( $8 ); fi
-        if IsString $9 &> /dev/null; then arr_input+=( $9 ); fi
+        # <params>
+        declare -a arr_list_of_answers=( )
+        local str_output=""
+        # </params>
 
-        IsString $1 &> /dev/null && str_output="${1} "
-        str_output+="${var_green}[${arr_input[@]}]:${var_reset_color}"
+        arr_list_of_answers+=( $3 )
+        arr_list_of_answers+=( $4 )
+        IsString $9 &> /dev/null && arr_list_of_answers+=( $5 )
+        IsString $9 &> /dev/null && arr_list_of_answers+=( $6 )
+        IsString $9 &> /dev/null && arr_list_of_answers+=( $7 )
+        IsString $9 &> /dev/null && arr_list_of_answers+=( $8 )
+        IsString $1 &> /dev/null && str_output="$1 "
+        str_output+="${var_green}[${arr_list_of_answers[@]}]:${var_reset_color}"
 
         for int_count in ${arr_count_tries[@]}; do
             echo -en "${str_output} "
-            read var_input
+            eval 'read $'"$2"
 
-            if IsString $var_input &> /dev/null; then
-                for var_element in ${arr_input[@]}; do
-                    if [[ "${var_input}" == "${var_element}" ]]; then
-                        var_input=$var_element
+            if IsString $( eval '$'"$2" ); then
+                for var_element in ${arr_list_of_answers[@]}; do
+                    if [[ "${var_element}" == $( eval '$'"$2" ) ]]; then
+                        eval "$2"'="${var_element}"' || return 1
                         return 0
                     fi
                 done
@@ -217,8 +199,9 @@
             echo -e "${str_output_var_is_not_valid}"
         done
 
-        var_input=${arr_input[0]}
-        str_output="Exceeded max attempts. Choice is set to default: ${var_yellow}${var_input}${var_reset_color}"
+        # <remarks> After given number of attempts, input is set to default. </remarks>
+        eval $( "$2"'="${arr_list_of_answers[0]}"' ) || return 1
+        str_output="Exceeded max attempts. Choice is set to default: ${var_yellow}$( eval '$'"$2" )${var_reset_color}"
         echo -e "${str_output}"
         return 1
     }
