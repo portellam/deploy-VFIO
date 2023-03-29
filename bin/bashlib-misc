@@ -16,7 +16,6 @@
 # <code>
     # <summary> Redirect current directory to shell script root directory. </summary>
     # <param name="0"> string: the shell script name </param>
-    # <returns> int: the exit code </returns>
     function GetScriptDir
     {
         cd "${str_script_dir}" || return 1
@@ -32,16 +31,16 @@
         SaveExitCode
         IsString $1 &> /dev/null && echo -en "$1\t"
 
-        case "${int_exit_code}" in
+        case $int_exit_code in
             0 )
                 echo -e "${var_suffix_pass}"
                 ;;
 
-            "${int_code_partial_completion}" )
+            $int_code_partial_completion )
                 echo -e "${var_suffix_maybe}"
                 ;;
 
-            "${int_code_skipped_operation}" )
+            $int_code_skipped_operation )
                 echo -e "${var_suffix_skip}"
                 ;;
 
@@ -50,7 +49,7 @@
                 ;;
         esac
 
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary> Append wait given output. </summary>
@@ -80,7 +79,6 @@
 
     # <summary> Save last exit code. </summary>
     # <param name="int_exit_code"> the exit code </param>
-    # <returns> void </returns>
     function SaveExitCode
     {
         # <params>
@@ -90,7 +88,6 @@
 
     # <summary> Set script directory. Call this function before calling Getter. </summary>
     # <param name="0"> string: the shell script name </param>
-    # <returns> int: the exit code </returns>
     function SetScriptDir
     {
         # <params>
@@ -103,20 +100,15 @@
 
     # <summary> Attempt given command a given number of times before failure. </summary>
     # <param name="1"> string: the command to execute </param>
-    # <returns> int: the exit code </returns>
+    # <param name="arr_count"> array: the countdown list </param>
     function StopEvalAfterThriceFail
     {
         IsString $1 || return $?
 
         for int_count in ${arr_count[@]}; do
-            eval $1 && return 0 || echo -e "${str_fail_command}"
+            eval $1 && return 0 || echo -e "${var_prefix_error} Execution of command failed."
         done
 
         return 1
     }
 # </code>
-
-# <params>
-    # <summary> Output statement </summary>
-    declare -g str_fail_command="${var_prefix_error} Execution of command failed."
-# </params>
