@@ -15,6 +15,7 @@
 # <code>
     # <summary> Set arguments and options. </summary>
     # <param name="@"> array: the input parameters </param>
+    # <returns> the exit code </returns>
     function GetOption
     {
         while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
@@ -101,6 +102,7 @@
 
     # <summary> Set option for given argument. </summary>
     # <param name="1"> string: the option </param>
+    # <returns> the exit code </returns>
     function GetArgsForStatic_VFIO
     {
         IsString $1 &> /dev/null || return 0
@@ -122,6 +124,7 @@
 
     # <summary> Set option for given argument. </summary>
     # <param name="1"> string: the option </param>
+    # <returns> the exit code </returns>
     function GetHugepageByteSize
     {
         IsString $1 &> /dev/null || return 0
@@ -137,6 +140,7 @@
 
     # <summary> Set option for given argument. </summary>
     # <param name="1"> int: the option </param>
+    # <returns> the exit code </returns>
     function GetHugepageCount
     {
         if IsNum $1 &> /dev/null && [[ $1 -gt 0 ]]; then
@@ -149,6 +153,7 @@
 
     # <summary> Set option for given argument. </summary>
     # <param name="1"> string: the option </param>
+    # <returns> the exit code </returns>
     function GetSelect_IOMMU_Args
     {
         case $1 in
@@ -161,6 +166,7 @@
     }
 
     # <summary> Prints the usage. </summary>
+    # <returns> the exit code </returns>
     function GetUsage
     {
         IFS=$'\n'
@@ -208,6 +214,7 @@
 
     # <summary> Sets the options. Exit early (Pass) if input is null. Else, exit early (Fail) if input is invalid. </summary>
     # <param name="@"> array: the input parameters </param>
+    # <returns> the exit code </returns>
     function SetOptions
     {
         for var_option in $@; do

@@ -19,6 +19,7 @@
 
 # <code>
     # <summary> Check if current user is sudo or root. </summary>
+    # <returns> the exit code </returns>
     function IsSudoUser
     {
         if [[ $( whoami ) != "root" ]]; then

@@ -17,6 +17,7 @@
 # <code>
     # <summary> Distro-agnostic, Check if package exists on-line. </summary>
     # <param name="1"> string: the software package(s) </param>
+    # <returns> the exit code </returns>
     function FindPackage
     {
         IsString $1 || return $?
@@ -74,6 +75,7 @@
 
     # <summary> Test network connection to Internet. Ping DNS servers by address and name. </summary>
     # <param name="1"> bool: True, enable verbosity. False, no change. </param>
+    # <returns> the exit code </returns>
     function GetInternetStatus
     {
         function GetInternetStatus_PingServer
@@ -190,6 +192,7 @@
     # <param name="1"> string: the software package(s) </param>
     # <param name="2"> bool: true/false do/don't reinstall software package and configuration files (if possible) </param>
     # <param name="str_package_manager"> string: the package manager </param>
+    # <returns> the exit code </returns>
     function InstallPackage
     {
         function InstallPackage_Main
@@ -253,6 +256,7 @@
     # <parameter name="1"> string: the system file </parameter>
     # <parameter name="2"> string: the software package(s) to install </parameter>
     # <parameter name="bool_is_connected_to_Internet"> bool: GetInternetStatus </parameter>
+    # <returns> the exit code </returns>
     function IsFileOriginal
     {
         IsString $2 || return $?
@@ -296,6 +300,7 @@
     # <summary> Distro-agnostic, check if package is installed. </summary>
     # <param name="1"> string: the software package(s) </param>
     # <param name="str_package_manager"> string: the package manager </param>
+    # <returns> the exit code </returns>
     function IsInstalledPackage
     {
         IsString "${str_package_manager}" || return $?
@@ -331,6 +336,7 @@
 
     # <summary> Update GetInternetStatus </summary>
     # <param name="bool_is_connected_to_Internet"> bool: network status </param>
+    # <returns> the exit code </returns>
     function SetInternetStatus
     {
         ( StopEvalAfterThriceFail "GetInternetStatus true" && bool_is_connected_to_Internet=true ) || bool_is_connected_to_Internet=false
@@ -339,6 +345,7 @@
     # <summary> Distro-agnostic, Uninstall a software package. </summary>
     # <param name="1"> string: the software package(s) </param>
     # <param name="str_package_manager"> string: the package manager </param>
+    # <returns> the exit code </returns>
     function UninstallPackage
     {
         IsString "${str_package_manager}" || return $?
@@ -388,6 +395,7 @@
     # <param name="1"> string: the directory </param>
     # <param name="2"> string: the full repo name </param>
     # <param name="3"> string: the username </param>
+    # <returns> the exit code </returns>
     function UpdateOrCloneGitRepo
     {
         IsString $3 || return $?
