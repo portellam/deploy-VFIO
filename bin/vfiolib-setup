@@ -498,9 +498,10 @@
     {
         if ! $bool_multiboot_vfio && ! $bool_static_vfio && ! $bool_uninstall_vfio; then
             echo
-            ReadMultipleChoiceIgnoreCase "Setup VFIO? ${var_green} Multiboot / Static / Uninstall ${var_reset_color}" "M" "S" "U"
+            local var_choice=""
+            ReadMultipleChoiceIgnoreCase "Setup VFIO? ${var_green} Multiboot / Static / Uninstall ${var_reset_color}" "var_choice" "M" "S" "U"
 
-            case "${var_input}" in
+            case "${var_choice}" in
                 "M" )
                     bool_multiboot_vfio=true
                     ;;
