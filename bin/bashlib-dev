@@ -19,7 +19,8 @@
     # <param name="1"> string: the software package(s) </param>
     function FindPackage
     {
-        ( IsString $1 && IsString "${str_package_manager}" ) || return $?
+        IsString $1 || return $?
+        IsString "${str_package_manager}" || return $?
 
         case "${str_package_manager}" in
             "apt" )
@@ -56,16 +57,23 @@
                 ;;
         esac
 
-        if [[ $? -ne 0 ]]; then
-            echo -e "${var_prefix_fail}: Package(s) '${str_package_manager}' was/were not found."
-            false
+        SaveExitCode
+
+        if [[ $? -ne 0 ]] && [[ "${str_package_manager}" ~= ' ' ]]; then
+            echo -e "${var_prefix_fail}: Packages '${str_package_manager}' were not found."
+            return 1
         fi
 
-        return $?
+        if [[ $? -ne 0 ]] && ! [[ "${str_package_manager}" ~= ' ' ]]; then
+            echo -e "${var_prefix_fail}: Package '${str_package_manager}' was not found."
+            return 1
+        fi
+
+        return $int_exit_code
     }
 
     # <summary> Test network connection to Internet. Ping DNS servers by address and name. </summary>
-    # <param name="1"> bool: true/false toggle verbosity </param>
+    # <param name="1"> bool: True, enable verbosity. False, no change. </param>
     function GetInternetStatus
     {
         function GetInternetStatus_PingServer
@@ -76,14 +84,12 @@
         }
 
         # <params>
-        local bool=false
+        local bool_is_verbose=false
         # </params>
 
-        if IsBool $1 &>/dev/null && $1; then
-            bool=$1
-        fi
+        IsBool $1 &>/dev/null && bool_is_verbose=$1
 
-        if $bool; then
+        if $bool_is_verbose; then
             echo -en "Testing Internet connection...\t"
         fi
 
@@ -93,8 +99,8 @@
 
         SaveExitCode
 
-        if $bool; then
-            ( return "${int_exit_code}" )
+        if $bool_is_verbose; then
+            ( return $int_exit_code )
             PrintPassOrFail
             echo -en "Testing connection to DNS...\t"
         fi
@@ -105,42 +111,22 @@
 
         SaveExitCode
 
-        if $bool; then
-            ( return "${int_exit_code}" )
+        if $bool_is_verbose; then
+            ( return $int_exit_code )
             PrintPassOrFail
         fi
 
-        if [[ "${int_exit_code}" -ne 0 ]]; then
+        if [[ $int_exit_code -ne 0 ]]; then
             echo -e "Failed to ping Internet/DNS servers. Check network settings or firewall, and try again."
         fi
 
-        return "${int_exit_code}"
+        return $int_exit_code
     }
 
     # <summary> Check if current kernel and distro are supported, and if the expected Package Manager is installed. </summary>
+    # <param name="str_operating_system"> string: the operating system </param>
     function GetLinuxDistro
     {
-        # <params>
-        local str_kernel="$( uname -o | tr '[:upper:]' '[:lower:]' )"
-        local str_output_distro_is_not_valid="${var_prefix_error} Distribution '$( lsb_release -is )' is not supported."
-        local str_output_kernel_is_not_valid="${var_prefix_error} Kernel '$( uname -o )' is not supported."
-        local str_OS_with_apt="debian bodhi deepin knoppix mint peppermint pop ubuntu kubuntu lubuntu xubuntu "
-        local str_OS_with_dnf_yum="redhat berry centos cern clearos elastix fedora fermi frameos mageia opensuse oracle scientific suse"
-        local str_OS_with_pacman="arch manjaro"
-        local str_OS_with_portage="gentoo"
-        local str_OS_with_urpmi="opensuse"
-        local str_OS_with_zypper="mandriva mageia"
-        # </params>
-
-        if ! IsString "${str_kernel}" &>/dev/null || ! IsString "${str_operating_system}" &>/dev/null; then
-            return $?
-        fi
-
-        if [[ $str_kernel != *"linux"* ]]; then
-            echo -e "${str_output_distro_is_not_valid}"
-            return 1
-        fi
-
         # <summary> Check if current Operating System matches Package Manager, and Check if PM is installed. </summary>
         function GetLinuxDistro_GetPackageManagerByOS
         {
@@ -173,8 +159,27 @@
             return $?
         }
 
+        # <params>
+        local str_kernel="$( uname -o | tr '[:upper:]' '[:lower:]' )"
+        local str_OS_with_apt="debian bodhi deepin knoppix mint peppermint pop ubuntu kubuntu lubuntu xubuntu "
+        local str_OS_with_dnf_yum="redhat berry centos cern clearos elastix fedora fermi frameos mageia opensuse oracle scientific suse"
+        local str_OS_with_pacman="arch manjaro"
+        local str_OS_with_portage="gentoo"
+        local str_OS_with_urpmi="opensuse"
+        local str_OS_with_zypper="mandriva mageia"
+        # </params>
+
+        if ! IsString "${str_kernel}" &>/dev/null || ! IsString "${str_operating_system}" &>/dev/null; then
+            return $?
+        fi
+
+        if [[ $str_kernel != *"linux"* ]]; then
+            echo -e "${var_prefix_error} Kernel '$( uname -o )' is not supported."
+            return 1
+        fi
+
         if ! GetLinuxDistro_GetPackageManagerByOS; then
-            echo -e "${str_output_distro_is_not_valid}"
+            echo -e "${var_prefix_error} Distribution '$( lsb_release -is )' is not supported."
             return 1
         fi
 
@@ -398,9 +403,9 @@
 
         # <remarks> Clone new GitHub repository. </remarks>
         elif IsDir "${1}${3}"; then
-            if ReadInput "Clone repo '${2}'?"; then
+            if ReadInput "Clone repo '$2'?"; then
                 cd "${1}${3}"
-                git clone "https://github.com/${2}" &> /dev/null
+                git clone "https://github.com/$2" &> /dev/null
                 return $?
             fi
 
@@ -412,12 +417,12 @@
 # </code>
 
 # <params>
+    # <remarks> Output statement </remarks>
     declare -g str_output_invalid_package_manager="${var_prefix_fail}: Command '${str_package_manager}' is not supported."
 
     # <remarks> System validation </remarks>
     declare -g bool_is_installed_systemd=false
     IsInstalledCommand "systemd" &> /dev/null && bool_is_installed_systemd=true
-
     declare -gl str_package_manager=""
     declare -gl str_operating_system="$( lsb_release -is )"
     GetLinuxDistro &> /dev/null
