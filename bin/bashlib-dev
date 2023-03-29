@@ -60,13 +60,17 @@
 
         SaveExitCode
 
-        if [[ $? -ne 0 ]] && [[ "${str_package_manager}" ~= ' ' ]]; then
-            echo -e "${var_prefix_fail}: Packages '${str_package_manager}' were not found."
-            return 1
-        fi
+        if [[ $int_exit_code -ne 0 ]]; then
+            case "${str_package_manager}" in
+                *" "* )
+                    echo -e "${var_prefix_fail}: Packages '${str_package_manager}' were not found."
+                    ;;
 
-        if [[ $? -ne 0 ]] && ! [[ "${str_package_manager}" ~= ' ' ]]; then
-            echo -e "${var_prefix_fail}: Package '${str_package_manager}' was not found."
+                * )
+                    echo -e "${var_prefix_fail}: Package '${str_package_manager}' was not found."
+                    ;;
+            esac
+
             return 1
         fi
 

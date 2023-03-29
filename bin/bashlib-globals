@@ -24,7 +24,7 @@
     declare -gi int_code_var_is_empty=252
     declare -gi int_code_var_is_not_bool=251
     declare -gi int_code_var_is_NAN=250
-    declare -gi int_code_var_is_pointer=249
+    declare -gi int_code_var_is_not_a_reference=249
     declare -gi int_code_var_is_readonly=248
     declare -gi int_code_dir_is_null=247
     declare -gi int_code_file_is_null=246

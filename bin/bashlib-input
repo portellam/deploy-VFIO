@@ -71,7 +71,7 @@
             return $int_exit_code
         fi
 
-        IsPointer $2 || return $?
+        IsReference $2 || return $?
 
         # <params>
         local str_output=""
@@ -113,7 +113,7 @@
             return $int_exit_code
         fi
 
-        IsPointer $2 || return $?
+        IsReference $2 || return $?
 
         # <params>
         declare -a arr_list_of_answers=( )
@@ -167,7 +167,7 @@
             return $int_exit_code
         fi
 
-        IsPointer $2 || return $?
+        IsReference $2 || return $?
 
         # <params>
         declare -a arr_list_of_answers=( )
