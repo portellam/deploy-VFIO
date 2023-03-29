@@ -23,3 +23,6 @@ TODO:
     -amount of hugepages
     -IOMMU groups, and the devices' infos
     -etc.
+
+* add new opts/args
+    -specify user for libvirtd, otherwise check for first valid user
