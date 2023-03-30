@@ -28,34 +28,45 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 
 #### Usage (Options)
 
-        --help                      Print this usage statement
+        --help                      print this help and exit
+        --version                   output version information and exit
 
-        Parse PCI:
-            -f, --file              Reference file database
-            -i, --internal          Reference local database
-            -I, --internet          Reference online database
-            -f/i/I    all           Select all IOMMU groups (useful for Multiboot VFIO)
+        Parse IOMMU groups and reference chosen database for the system's PCI devices.  ARGUMENTS:
+            -f, --file              Reference file database.
+            -i, --internal          Reference local database.
+            -o, --online            Reference online database.
 
-        Setup:
-            -m, --multiboot         Create multiple GRUB entries for a Multi VGA VFIO setup
-            -s, --static            Install a Single VGA VFIO setup
-            -u, --uninstall         Undo an existing VFIO setup
+        Select (valid) IOMMU groups.    OPTIONS:
+            all                     Select all IOMMU groups (exclusive).
+            no-vga                  Select all IOMMU groups without VGA devices.
+            [x,y,z]                 Select specific IOMMU groups.
 
-        Extras:
-            -c, --cpu               Allocate CPU
-            -e, --evdev             Setup a virtual KVM switch
-            -h, --hugepages         Allocate RAM
-            -h    2M, 1G [Amount]   Hugepage [size]
-            -h    [size] [1-?]      [Amount] of Hugepages
+        VFIO setup ARGUMENTS:
+            -m, --multiboot         Create multiple GRUB entries for a Multi VGA VFIO setup.
+            -s, --static            Install a Single VGA VFIO setup.
+            -u, --uninstall         Undo an existing VFIO setup.
 
-            -H, --hooks             Install recommended libvirt-hooks and services
-            -l, --looking-glass     Install LookingGlass
-            -L, --audio-loopback    Install the audio loopback service
-            -S, --scream            Install Scream
-            -z, --zram-swap         Create swap in RAM
+        Pre-setup ARGUMENTS:
+            -c, --cpu               Allocate CPU.
+            -e, --evdev             Setup a virtual KVM switch.
+            -h, --hugepages         Create static pages in RAM to allocate RAM for guests.
+            --uninstall-pre-setup   Undo changes made by preliminay setup.
+
+        Hugepages OPTIONS:
+            2M, 1G [Amount]         Hugepage *size* (2 MiB or 1 GiB).
+            [size] [1-?]            *Amount* of Hugepages (maximum amount is total memory subtracted by 4 GiB).
+
+        Post-setup ARGUMENTS:
+            -H, --hooks             Install recommended libvirt-hooks and services.
+            -l, --looking-glass     Install LookingGlass; stream video (and audio) from guest to host over PCI bus using shared-memory device.
+            -L, --audio-loopback    Install the audio loopback service; loopback audio from guest to host (over Line-out to Line-in).
+            -S, --scream            Install Scream; stream audio from guest to host over virtual LAN.
+            -z, --zram-swap         Create swap in RAM to reduce events of memory exhaustion on host.
+            --uninstall-extras      Undo changes made by post-setup.
+
 
 ## Features
-### Main VFIO Setup (PCI Passthrough)
+### Main VFIO Setup (vfiolib-setup)
 * **Multi-boot VFIO Setup**
     * Best for Multiple VGA PCI Passthrough (**one** VGA for Host, and **multiple** VGA for Guests).    **More flexibility.**
     * Multiple GRUB menu entries for multiple VGA device systems. Choose a GRUB menu entry with a VGA device to boot from (exclude that VGA device's IOMMU Group from PCI Passthrough/VFIO).
@@ -64,7 +75,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
     * Best for Single VGA PCI Passthrough (**one** VGA for Host, and **one** VGA for Guests).           **Less flexibility.**
     * Traditional PCI Passthrough/VFIO Setup.
 
-### Extras (Pre- and Post-Setup)
+### Pre-setup  (vfiolib-important)
 * **Allocate CPU**
     * Reduce Host overhead, and improve both Host and Guest performance.
     * **Statically** allocate Host CPU cores (and/or threads). [2]
@@ -73,6 +84,14 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
     * Reduce Host overhead, and improve both Host and Guest performance.
     * **Statically** allocate Host memory to Guests.
     * Implementation is known as **Hugepages**. [3]
+* **Virtual KVM (Keyboard Video Mouse) switch**
+    * Allow a user to swap a group of Input devices (as a whole) between active Guest(s) and Host.
+    * Use the pre-defined macro (example: **'L-CTRL' + 'R-CTRL'**).
+    * Create a virtual Keyboard-Video-Mouse switch.
+    * Implementation is known as **Evdev (Event Devices)**. [6]
+    * **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
+
+### Post-setup  (vfiolib-extras)
 * **Auto-Xorg** system service to find and set a valid Host boot VGA (GPU) device for Xorg. [1]
 * **Guest Audio Capture**
     * Useful for systems with multiple Audio devices.
@@ -88,12 +107,6 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
     * Reduce swapiness to existing Host swap devices, and reduce chances of Host memory exhaustion (given an event of memory over-allocation).
     * Create a compressed Swap device in Host memory, using the **lz4** algorithm **(compression ratio of about 2:1)**.
     * Implementation is known as **zram-swap**. [5]
-* **Virtual KVM (Keyboard Video Mouse) switch**
-    * Allow a user to swap a group of Input devices (as a whole) between active Guest(s) and Host.
-    * Use the pre-defined macro (example: **'L-CTRL' + 'R-CTRL'**).
-    * Create a virtual Keyboard-Video-Mouse switch.
-    * Implementation is known as **Evdev (Event Devices)**. [6]
-    * **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 * **Virtual Audio Capture**
     * Setup a virtual Audio driver for Windows that provides a discrete Audio device.
     * Implementation is known as **Scream**. [7]
