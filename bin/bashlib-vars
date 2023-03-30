@@ -19,13 +19,13 @@
     # <returns> the exit code </returns>
     function AreEqualArrays
     {
-        declare -an arr_are_equal_arrays_reference_2=$2
-        declare -an arr_are_equal_arrays_reference_1=$1
-        IsArray "arr_are_equal_arrays_reference_2" || return $?
-        IsArray "arr_are_equal_arrays_reference_1" || return $?
+        IsArray $2 || return $?
+        IsArray $1 || return $?
+        eval 'declare -a arr1=( ${'${1}'[@]} )' || return 1
+        eval 'declare -a arr2=( ${'${2}'[@]} )' || return 1
 
-        for int_key in ${!arr_are_equal_arrays_reference_1[@]}; do
-            if [[ "${arr_are_equal_arrays_reference_1[$int_key]}" != "${arr_are_equal_arrays_reference_2[$int_key]}" ]]; then
+        for int_key in ${!arr1[@]}; do
+            if [[ ${arr1[$int_key]} == ${arr2[$int_key]} ]]; then
                 return 1
             fi
         done
@@ -40,11 +40,11 @@
     function FindLineInArray
     {
         IsString $2 || return $?
-        declare -an arr_find_line_in_array_reference=$1
-        IsArray "arr_find_line_in_array_reference" || return $?
+        IsArray $1 || return $?
+        eval 'declare -a arr=( ${'${1}'[@]} )' || return 1
 
-        for var_element in ${arr_find_line_in_array_reference[@]}; do
-            if [[ "${var_element}" == $2 ]]; then
+        for var_element in ${arr[@]}; do
+            if [[ $var_element == $2 ]]; then
                 return 0
             fi
         done
@@ -57,29 +57,19 @@
     # <returns> the exit code </returns>
     function IsArray
     {
-        function Main
-        {
-            IsString $1 || return $?
-            declare -an arr_is_array_reference=$1
+        IsString $1 || return $?
 
-            if [[ ${#arr_is_array_reference[@]} -eq 0 ]]; then
-                echo -e "${str_fail_array_is_empty}"
-                return $int_code_var_is_empty
-            fi
+        if [[ $( eval 'echo "${#'$1'[@]}"' ) -eq 0 ]]; then
+            echo -e $str_fail_array_is_empty
+            return $int_code_var_is_empty
+        fi
 
-            for var_element in ${arr_is_array_reference[@]}; do
-                IsString "${var_element}" &> /dev/null && return 0
-            done
+        for var_element in $( eval 'echo "${'$1'[@]}"' ); do
+            IsString $var_element &> /dev/null && return 0
+        done
 
-            echo -e "${str_fail_array_is_empty}"
-            return 1
-        }
-
-        IFS=$'\n'
-        Main $@
-        SaveExitCode
-        unset IFS
-        return $int_exit_code
+        echo -e $str_fail_array_is_empty
+        return 1
     }
 
     # <summary> Check if the variable is not empty. If true, pass. </summary>
@@ -129,15 +119,15 @@
         return 0
     }
 
-    # <summary> Check if the value is a reference. If true, pass.</summary>
+    # <summary> Check if the variable is a reference. If true, pass.</summary>
     # <paramref name="1"> var: the name of the variable </param>
     # <returns> the exit code </returns>
     function IsReference
     {
         IsString $1 || return $?
-        declare -n var_reference=$1
+        declare -n var_ref=$1
 
-        if ! IsString $var_reference &> /dev/null; then
+        if ! IsString $var_ref &> /dev/null; then
             echo -e "${var_prefix_error} Null reference."
             return $int_code_var_is_not_a_reference
         fi
@@ -166,27 +156,15 @@
     # <returns> the exit code </returns>
     function PrintArray
     {
-        function Main
-        {
-            declare -an arr_print_array_reference=$1
-            IsArray "arr_print_array_reference" || return $?
-            local bool_toggle_color=false
-            IsBool $2 && bool_toggle_color=$2
+        IsArray $1 || return $?
 
-            if $bool_toggle_color; then
-                echo -e "${var_yellow}${arr_print_array_reference[*]}${var_reset_color}" || return $?
-            else
-                echo "${arr_print_array_reference[*]}" || return $?
-            fi
+        if IsBool $2 &> /dev/null && $2; then
+            ( IFS=$'\n'; eval 'echo -e "${var_yellow}${'$1'[*]}${var_reset_color}"' ) || return 1
+        else
+            ( IFS=$'\n'; eval 'echo -e "${'$1'[*]}"' ) || return 1
+        fi
 
-            return 0
-        }
-
-        IFS=$'\n'
-        Main $@
-        SaveExitCode
-        unset IFS
-        return $int_exit_code
+        return 0
     }
 
     # <summary> Replace line in an array. </summary>
