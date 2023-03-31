@@ -36,10 +36,14 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
             -i, --internal          Reference local database.
             -o, --online            Reference online database.
 
-        Select (valid) IOMMU groups.    OPTIONS:
+        Select (valid) IOMMU groups. Process will ignore groups with internal devices.    OPTIONS:
             all                     Select all IOMMU groups (exclusive).
             no-vga                  Select all IOMMU groups without VGA devices.
             [x,y,z]                 Select specific IOMMU groups.
+
+        Example:
+            no-vga,14               Select group 14 and all non-VGA groups.
+            1,14-16                 Select groups 1, 14, 15, and 16.
 
         VFIO setup ARGUMENTS:
             -m, --multiboot         Create multiple GRUB entries for a Multi VGA VFIO setup.
@@ -56,13 +60,24 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
             2M, 1G [Amount]         Hugepage *size* (2 MiB or 1 GiB).
             [size] [1-?]            *Amount* of Hugepages (maximum amount is total memory subtracted by 4 GiB).
 
+        Example:
+            1G 16                   16 hugepages * 1 GiB    == 16 GiB
+            2M 8192                 8912 hugepages * 2 MiB  == 16 GiB
+
         Post-setup ARGUMENTS:
             -H, --hooks             Install recommended libvirt-hooks and services.
             -l, --looking-glass     Install LookingGlass; stream video (and audio) from guest to host over PCI bus using shared-memory device.
             -L, --audio-loopback    Install the audio loopback service; loopback audio from guest to host (over Line-out to Line-in).
             -S, --scream            Install Scream; stream audio from guest to host over virtual LAN.
-            -z, --zram-swap         Create swap in RAM to reduce events of memory exhaustion on host.
             --uninstall-extras      Undo changes made by post-setup.
+            -z, --zram-swap         Create compressed swap in RAM to reduce events of memory exhaustion on host.
+
+        zram-swap OPTIONS:
+            force                  Force changes, even if zram-swap is allocated and in use.
+            [fraction]             Set the fraction of total available memory, to allocate (recommended to use even number fractions).
+
+        Example, assume a system with 4x8 (32) GiB of RAM, with 16 GiB allocated to Hugepages:
+            force 1/4              Reserve 8 GiB of RAM to zram, (2:1 compression) creating 16 GiB of swap for host, with 8 GiB free.
 
 
 ## Features
