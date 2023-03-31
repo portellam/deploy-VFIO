@@ -21,11 +21,9 @@
     {
         IsArray $2 || return $?
         IsArray $1 || return $?
-        eval 'declare -a arr1=( ${'${1}'[@]} )' || return 1
-        eval 'declare -a arr2=( ${'${2}'[@]} )' || return 1
 
-        for int_key in ${!arr1[@]}; do
-            if [[ ${arr1[$int_key]} == ${arr2[$int_key]} ]]; then
+        for int_key in $( eval 'echo "${!'$1'[@]}"' ); do
+            if [[ $( eval 'echo "${'$1'[$int_key]}"' ) != $( eval 'echo "${'$2'[$int_key]}"' ) ]]; then
                 return 1
             fi
         done
@@ -43,7 +41,7 @@
         IsArray $1 || return $?
         eval 'declare -a arr=( ${'${1}'[@]} )' || return 1
 
-        for var_element in ${arr[@]}; do
+        for var_element in $( eval 'echo "${'$1'[@]}"' ); do
             if [[ $var_element == $2 ]]; then
                 return 0
             fi
@@ -174,34 +172,20 @@
     # <returns> the exit code </returns>
     function ReplaceLineInArray
     {
-        function Main
-        {
-            IsString $3 || return $?
-            declare -an arr_replace_line_in_array_reference=$1
-            IsArray "arr_replace_line_in_array_reference" || IsVarWritable "arr_replace_line_in_array_reference" || return $?
-            declare -a arr_replace_line_in_array_new="${arr_replace_line_in_array_reference[*]}"
-            FindLineInArray "arr_replace_line_in_array_new" $2 || return $?
+        IsString $3 || return $?
+        IsArray $1 || IsVarWritable $1 || return $?
+        FindLineInArray $1 $2 || return $?
 
-            for int_key in ${!arr_replace_line_in_array_new[@]}; do
-                local var_element="${arr_replace_line_in_array_new[$int_key]}"
+        for int_key in $( eval 'echo "${!'$1'[@]}"' ); do
+            case $( eval 'echo "${'$1'[$int_key]}"' ) in
+                $2* )
+                    eval $1'[$int_key]=$3'
+                    ;;
+            esac
+        done
 
-                case "${var_element}" in
-                    $2* )
-                        arr_replace_line_in_array_new[$int_key]=$3
-                        ;;
-                esac
-            done
-
-            IsArray "arr_replace_line_in_array_new" || return $?
-            arr_replace_line_in_array_reference="${arr_replace_line_in_array_new[*]}" || return 1
-            return 0
-        }
-
-        IFS=$'\n'
-        Main $@
-        SaveExitCode
-        unset IFS
-        return $int_exit_code
+        IsArray $1 || return $?
+        return 0
     }
 
     # <summary> Sort an array. </summary>
@@ -210,30 +194,16 @@
     # <returns> the exit code </returns>
     function SortArray
     {
-        function Main
-        {
-            declare -an arr_sort_array_reference=$1
-            IsArray "arr_sort_array_reference" || IsVarWritable "arr_sort_array_reference" || return $?
-            declare -a arr_sort_array_new=( )
-            local bool_is_reverse_sort=false
-            IsBool $2 &> /dev/null && bool_is_reverse_sort=$2
+        IsArray $1 || IsVarWritable $1 || return $?
 
-            if $bool_is_reverse_sort; then
-                arr_sort_array_new=$( sort -r <<< "${arr_sort_array_reference[*]}" ) || return $?
-            else
-                arr_sort_array_new=$( sort <<< "${arr_sort_array_reference[*]}" ) || return $?
-            fi
+        if IsBool $2 &> /dev/null && $2; then
+            IFS=$'\n'; eval "$1"'=( $( sort -r <<< "${'$1'[*]}" ) )' || return $?
+        else
+            IFS=$'\n'; eval "$1"'=( $( sort <<< "${'$1'[*]}" ) )' || return $?
+        fi
 
-            IsArray "arr_sort_array_new" || return $?
-            arr_sort_array_reference="${arr_sort_array_new[*]}" || return 1
-            return 0
-        }
-
-        IFS=$'\n'
-        Main $@
-        SaveExitCode
-        unset IFS
-        return $int_exit_code
+        IsArray $1 || return $?
+        return 0
     }
 
     # <summary> Clear empty elements from array. </summary>
@@ -241,31 +211,28 @@
     # <returns> the exit code </returns>
     function TrimArray
     {
-        function Main
-        {
-            declare -an arr_trim_array_reference=$1
-            IsArray "arr_trim_array_reference" || IsVarWritable "arr_trim_array_reference" || return $?
-            declare -a arr_trim_array_new="${arr_trim_array_reference[*]}"
-            IsArray "arr_trim_array_new" || return $?
-
-            for int_key in ${!arr_trim_array_new[@]}; do
-                local var_element="${arr_trim_array_new[$int_key]}"
-
-                if IsString "${var_element}" &> /dev/null; then
-                    arr_trim_array_new[$int_key]=( "${var_element}" ) || return 1
-                fi
-            done
-
-            IsArray "arr_trim_array_new" || return $?
-            arr_trim_array_reference="${arr_trim_array_new[*]}" || return 1
-            return 0
-        }
-
+        IsArray $1 || IsVarWritable $1 || return $?
+        echo hello
+        declare -a arr=( )
         IFS=$'\n'
-        Main $@
-        SaveExitCode
+
+        for var_element in $( eval 'echo "${'$1'[@]}"' ); do
+            if IsString "$var_element" &> /dev/null; then
+                echo $var_element
+                arr+=( $var_element ) || return 1
+            fi
+        done
+
+        eval "declare -a $1"'=( )' || return $?
+
+        for var_element in ${arr[@]}; do
+            eval "$1"'=$var_element' || return $?
+        done
+
+        PrintArray $1
+        IsArray $1 || return $?
         unset IFS
-        return $int_exit_code
+        return 0
     }
 # </code>
 
