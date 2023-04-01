@@ -36,16 +36,18 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 
         Parse IOMMU groups and reference chosen database for the system's PCI devices.
         OPTIONS: *
-          -f, --file            Reference file database.
+          -f, --file [filename] Reference file database.
           -i, --internal        Reference local database.
           -o, --online          Reference online database.
 
         ARGUMENTS: *
+          [filename]            Reference specific file.
           all                   Select all IOMMU groups.
           no-vga                Select all IOMMU groups without VGA devices.
           [x-y,z]               Select specific IOMMU groups (comma separated, or ranges).
 
           Example:
+            -f somefile.txt     Reference file 'somefile.txt' and begin parse.
             no-vga 14           Select group 14 and all non-VGA groups.
             1,14-16             Select groups 1, 14, 15, and 16.
 
