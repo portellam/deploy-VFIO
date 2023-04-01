@@ -1,0 +1,536 @@
+#!/bin/bash sh
+
+#
+# Filename:         vfiolib-utils
+# Description:      Recommended pre-installation setup.
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <remarks> Using </remarks>
+# <code>
+    source bashlib-all
+    source vfiolib-iommu
+# </code>
+
+# <code>
+    # <summary>
+    # Add user to necessary user groups.
+    # </summary>
+    # <returns> the exit code </returns>
+    function AddUserToGroups
+    {
+        function AddUserToGroups_Main
+        {
+            adduser "${str_first_user}" "input" || return 1
+            adduser "${str_first_user}" "libvirt" || return 1
+            return 0
+        }
+
+        AddUserToGroups_Main &> /dev/null
+        PrintPassOrFail "Adding user to groups..."
+        return $int_exit_code
+    }
+
+    # <summary>
+    # isolcpus: Allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and guest performance.
+    # </summary
+    # <returns> the exit code </returns>
+    function Allocate_CPU
+    {
+        function Allocate_CPU_Main
+        {
+            # <params>
+            local var_get_all_cores='seq 0 $(( ${int_total_cores} - 1 ))'
+            local var_get_total_threads='cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+"'
+            local var_get_total_cores='cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+"'
+            declare -i int_total_cores=$( eval "${var_get_total_cores}" )
+            declare -i int_total_threads=$( eval "${var_get_total_threads}" )
+            # </params>
+
+            # <summary> Set maximum number of cores allocated to host. </summary>
+                # <params>
+                declare -a arr_all_cores=( $( eval "${var_get_all_cores}" ) )
+                declare -i int_host_cores=1
+                # </params>
+
+                # <remarks> quad-core or greater CPU </remarks>
+                if [[ "${int_total_cores}" -ge 4 ]]; then
+                    int_host_cores=2
+
+                # <remarks> double-core/triple-core CPU </remarks>
+                elif [[ "${int_total_cores}" -le 3 && "${int_total_cores}" -ge 2 ]]; then
+                    int_host_cores=1
+
+                # <remarks> If single-core CPU, fail. </remarks>
+                else
+                    return 1
+                fi
+
+            # <summary> Get thread sets, for host and guest(s). </summary>
+                # <params>
+                local var_get_host_cores='seq 0 $(( ${int_host_cores} - 1 ))'
+                local var_get_SMT_factors='seq 0 $(( ${int_SMT_factor} - 1 ))'
+                local var_get_thread='$(( int_core + ( int_SMT_factor * int_total_cores ) ))'
+                local var_get_virt_cores='seq ${int_host_cores} $(( ${int_total_cores} - 1 ))'
+
+                declare -a arr_host_cores=( $( eval "${var_get_host_cores}" ) )
+                declare -a arr_host_threads=( )
+                declare -a arr_virt_cores=( $( eval "${var_get_virt_cores}" ) )
+                declare -a arr_virt_threads=( )
+                declare -i int_SMT_factor=$(( "${int_total_threads}" / "${int_total_cores}" ))
+                declare -a arr_SMT_factors=( $( eval "${var_get_SMT_factors}" ) )
+
+                declare -g str_host_thread_sets
+                declare -g str_virt_thread_sets
+                # </params>
+
+                function GetThreadByCoreAnd_SMT
+                {
+                    int_thread=$(( int_core + ( int_SMT_factor * int_total_cores ) ))
+                }
+
+                for int_SMT_factor in ${arr_SMT_factors[@]}; do
+                    # <remarks> Reset params </remarks>
+                    declare -a arr_host_threads_sets=( )
+                    declare -a arr_virt_threads_sets=( )
+                    declare -i int_thread
+
+                    # <remarks> Find thread sets for host. </remarks>
+                    for int_core in ${arr_host_cores[@]}; do
+                        GetThreadByCoreAnd_SMT
+                        arr_host_threads+=( "${int_thread}" )
+                        arr_host_threads_sets+=( "${int_thread}" )
+                    done
+
+                    # <remarks> Find thread sets for guest(s). </remarks>
+                    for int_core in ${arr_virt_cores[@]}; do
+                        GetThreadByCoreAnd_SMT
+                        arr_virt_threads+=( "${int_thread}" )
+                        arr_virt_threads_sets+=( "${int_thread}" )
+                    done
+
+                    # <remarks> Save thread sets to delimited list. </remarks>
+                    declare -i int_set_first_thread="${arr_host_threads_sets[0]}"
+                    declare -i int_set_last_thread="${arr_host_threads_sets[-1]}"
+                    local str_thread_set="${int_set_first_thread}"
+
+                    if [[ "${int_set_first_thread}" -ne "${int_set_last_thread}" ]]; then
+                        local str_thread_set="${int_set_first_thread}-${int_set_last_thread}"
+                    fi
+
+                    str_host_thread_sets+="${str_thread_set},"
+
+                    declare -i int_set_first_thread="${arr_virt_threads_sets[0]}"
+                    declare -i int_set_last_thread="${arr_virt_threads_sets[-1]}"
+                    local str_thread_set="${int_set_first_thread}"
+
+                    if [[ "${int_set_first_thread}" -ne "${int_set_last_thread}" ]]; then
+                        local str_thread_set="${int_set_first_thread}-${int_set_last_thread}"
+                    fi
+
+                    str_virt_thread_sets+="${str_thread_set},"
+                done
+
+                # <remarks> Truncate last delimiter. </remarks>
+                if [[ ${str_host_thread_sets: -1} == "," ]]; then
+                    str_host_thread_sets=${str_host_thread_sets::-1}
+                fi
+
+                # <remarks> Ditto. </remarks>
+                if [[ ${str_virt_thread_sets: -1} == "," ]]; then
+                    str_virt_thread_sets=${str_virt_thread_sets::-1}
+                fi
+
+            # <summary> Find CPU mask. </summary>
+                # <remarks>
+                # save output to string for cpuset and cpumask
+                # example:
+                #   host 0-1,8-9
+                #   virt 2-7,10-15
+                #
+                # information
+                # cores     bit masks       mask
+                # 0-7       0b11111111      FF      # total cores
+                # 0,4       0b00010001      11      # host cores
+                #
+                # 0-11      0b111111111111  FFF     # total cores
+                # 0-1,6-7   0b000011000011  C3      # host cores
+                #
+                # </remarks>
+
+                # <params>
+                local var_get_hexadecimal_mask_from_decimal='echo "obase=16; ${int_thread_decimal}" | bc'
+                declare -i int_host_threads_hexadecimal_mask=0
+                declare -i int_total_threads_hexadecimal_mask=0
+                # </params>
+
+                # <remarks> Add each decimal mask to sum. </remarks>
+                for int_thread in ${arr_host_threads[@]}; do
+                    declare -i int_thread_decimal=$(( 2 ** ${int_thread} ))
+                    declare -i int_thread_hexadecimal_mask=$( eval "${var_get_hexadecimal_mask_from_decimal}" )
+                    int_host_threads_hexadecimal_mask+="${int_thread_hexadecimal_mask}"
+                done
+
+                for int_thread in ${arr_total[@]}; do
+                    declare -i int_thread_decimal=$(( 2 ** ${int_thread} ))
+                    declare -i int_thread_hexadecimal_mask=$( eval "${var_get_hexadecimal_mask_from_decimal}" )
+                    int_host_threads_hexadecimal_mask+="${int_thread_hexadecimal_mask}"
+                done
+
+                # <remarks> Save changes, convert hexadecimal mask into hexadecimal. </remarks>
+                declare -g str_host_threads_hexadecimal=$( printf '%x\n' $int_host_threads_hexadecimal_mask )
+                declare -i int_total_threads_hexadecimal_mask=$(( ( 2 ** ${int_total_threads} ) - 1 ))
+                declare -g str_total_threads_hexadecimal=$( printf '%x\n' $int_total_threads_hexadecimal_mask )
+
+            declare -a arr_output1=(
+                "Allocated to Host\t${str_host_thread_sets}"
+                "Allocated to guest:\t${str_virt_thread_sets}"
+            )
+
+            PrintArray "arr_output1"
+            echo
+
+            # <remarks> Save changes. </remarks>
+            declare -g str_output_allocate_cpu_GRUB="isolcpus=${str_virt_thread_sets} nohz_full=${str_virt_thread_sets} rcu_nocbs=${str_virt_thread_sets}"
+            return 0
+        }
+
+        local str_output="Allocating CPU threads..."
+        # PrintWait "${str_output}"
+        Allocate_CPU_Main $@ &> /dev/null
+        PrintPassOrFail "${str_output}"
+        return $int_exit_code
+    }
+
+    # <summary>
+    # Hugepages: Allocate host memory (RAM) to 'hugepages'.
+    # Eliminate the need to defragement memory, reduce host overhead, and improve both host and guest performance.
+    # </summary
+    # <returns> the exit code </returns>
+    function Allocate_RAM
+    {
+        function Allocate_RAM_Main
+        {
+            if ! IsNum "${int_max_mem}" &> /dev/null; then
+                echo -e "${var_prefix_error} Could not parse system memory."
+                return 1
+            fi
+
+            # <remarks> Ask user to proceed. </remarks>
+            if ! $bool_hugepage_set_size; then
+                # <params>
+                declare -g str_huge_page_byte_prefix=""
+                declare -a arr_choices=(
+                    "2M"
+                    "1G"
+                )
+                # </params>
+
+                echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\nguest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
+                ReadInput "Setup Hugepages?" || return "${int_code_skipped_operation}"
+                ReadMultipleChoiceIgnoreCase "Enter size of Hugepages (bytes):" "str_huge_page_byte_prefix" "${arr_choices[@]}" || return $?
+            fi
+
+            # <remarks> Validate hugepage size and byte-size. </remarks>
+            # <params>
+            local var_get_host_max_mem='cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1'
+            declare -gi int_huge_page_count=0
+            declare -gi int_huge_page_kbit_size=0
+            declare -gi int_huge_page_max_kbit_size=$( eval "${var_get_host_max_mem}" )
+            declare -gi int_huge_page_min=0
+            # </params>
+
+            case "${str_huge_page_byte_prefix}" in
+                "${arr_choices[0]}" )
+                    int_huge_page_kbit_size=2048
+                    int_huge_page_min=2
+                    ;;
+                "${arr_choices[1]}" )
+                    int_huge_page_kbit_size=1048576
+                    int_huge_page_min=1
+                    ;;
+                * )
+                    return 1
+                    ;;
+            esac
+
+            # <remarks> Get values. </remarks>
+            # <params>
+            declare -gi int_huge_page_min_kbit_size=4194304
+            declare -gi int_huge_page_max=0
+            int_huge_page_max=$(( $int_huge_page_max_kbit_size - $int_huge_page_min_kbit_size ))
+            int_huge_page_max=$(( $int_huge_page_max / $int_huge_page_kbit_size ))
+            # </params>
+
+            if ! $bool_hugepage_set_count; then
+                local str_output4="Enter number of Hugepages (num * ${str_huge_page_byte_prefix})"
+
+                # <remarks> Ask user for preferred amount. </remarks>
+                ReadInputFromRangeOfTwoNums "${str_output4}" "int_huge_page_count" "${int_huge_page_min}" "${int_huge_page_max}" || return $?
+            fi
+
+            # <params>
+            declare -gi int_alloc_mem_hugepages=0
+            declare -g str_output_hugepages_GRUB=""
+            # </params>
+
+            if $bool_hugepage_set_count && [[ $int_huge_page_count -lt $int_huge_page_min || $int_huge_page_count -gt $int_huge_page_max ]]; then
+                return 1
+            fi
+
+            # <remarks> Save changes. </remarks>
+            int_alloc_mem_hugepages=$(( $int_huge_page_count * $int_huge_page_kbit_size ))
+            str_output_hugepages_GRUB="default_hugepagesz=${str_huge_page_byte_prefix} hugepagesz=${str_huge_page_byte_prefix} hugepages=${int_huge_page_count}"
+            bool_is_setup_hugepages=true
+            return 0
+        }
+
+        echo
+        Allocate_RAM_Main
+        PrintPassOrFail "Allocating RAM to pages..."
+        return $int_exit_code
+    }
+
+    # <summary>
+    # libvirt-qemu: Append necessary changes to QEMU system file, including user groups, Evdev, Hugepages, and NVRAM (for UEFI guest(s)).
+    # </summary>
+    # <returns> the exit code </returns>
+    function Modify_QEMU
+    {
+        function Modify_QEMU_Main
+        {
+            # <params>
+            declare -a arr_file1_evdev_cgroups=( )
+            declare -a arr_file1_default_cgroups=(
+                "        \"/dev/null\", \"/dev/full\", \"/dev/zero\","
+                "        \"/dev/random\", \"/dev/urandom\","
+                "        \"/dev/ptmx\", \"/dev/KVM\","
+                "        \"/dev/rtc\", \"/dev/hpet\""
+            )
+
+            declare -a arr_file1_contents arr_file1_current arr_file2_contents arr_file2_current
+            local str_backup1="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"
+            # local str_backup2=""
+            local str_daemon1="libvirtd"
+            local str_daemon1_packages="qemu"
+            local str_file1="/etc/libvirt/qemu.conf"
+            local str_file2="/etc/apparmor.d/local/abstractions/libvirt-qemu"
+            # </params>
+
+            # <remarks> Check if Libvirt is installed. </remarks>
+            IsInstalledPackage "${str_daemon1_packages}" &> /dev/null || InstallPackage "${str_daemon1_packages}" || return $?
+
+            # <remarks> Save file before work. </remarks>
+            BackupFile "${str_file1}" || return $?
+            BackupFile "${str_file2}" || return $?
+
+             # <remarks> Grab original system files. </remarks>
+            if SetInternetStatus && $bool_is_connected_to_Internet; then
+                curl "${str_backup_file1}" -o "${str_orig_file1}"
+                # curl "${str_backup_file2}" -o "${str_orig_file2}"
+            fi
+
+            # <remarks> Check if system files are unmodified. </remarks>
+            local bool_is_file1_original=true
+            local bool_is_file2_original=true
+
+            # TODO: delete lines the exist within range of the disclaimer and and end cap.
+
+            for var_line in ${arr_file_disclaimer[@]}; do
+                FindLineInFile "${str_file1}" "${var_line}" || bool_is_file1_original=false
+            done
+
+            for var_line in ${arr_file_disclaimer[@]}; do
+                FindLineInFile "${str_file2}" "${var_line}" || bool_is_file2_original=false
+            done
+
+            # <remarks> Overwrite system file with a backup or original copy. </remarks>
+            if ! $bool_is_file1_original; then
+                if IsFile "${str_backup_file1}" &> /dev/null && ! AreEqualFiles "${str_backup_file1}" "${str_file2}"; then
+                    cp "${str_orig_file1}" "${str_file1}" || (
+                        RestoreFile "${str_file1}"
+                        return $?
+                    )
+                elif ! IsFile "${str_backup_file1}" &> /dev/null; then  # TODO: to be revised
+                    RestoreFile "${str_file1}" || return $?
+                else
+                    return 1
+                fi
+            fi
+
+            if ! $bool_is_file2_original; then
+                if IsFile "${str_backup_file2}" &> /dev/null && ! AreEqualFiles "${str_backup_file2}" "${str_file2}"; then
+                    cp "${str_orig_file2}" "${str_file2}" || (
+                        RestoreFile "${str_file2}"
+                        return $?
+                    )
+                elif ! IsFile "${str_backup_file2}" &> /dev/null; then  # TODO: to be revised
+                    RestoreFile "${str_file2}" || return $?
+                else
+                    return 1
+                fi
+            fi
+
+            # <remarks> Format input for Evdev. </remarks>
+            if $bool_is_setup_evdev; then
+                for var_device in ${arr_event_devices[@]}; do
+                    arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${var_device}\"," )
+                done
+
+                for var_device in ${arr_input_devices[@]}; do
+                    arr_file1_evdev_cgroups+=( "        \"/dev/input/by-id/${var_device}\"," )
+                done
+            fi
+
+            # <remarks> Preface file contents. </remarks>
+            arr_file1_contents=( "${arr_file_disclaimer[@]}" )
+            arr_file2_contents=( "${arr_file_disclaimer[@]}" )
+            arr_file1_contents+=(
+                ""
+                "### User permissions ###"
+            )
+
+            # <remarks> Add user and group for Evdev. </remarks>
+            if IsString "${str_first_user}" && ($bool_is_setup_evdev || $bool_is_setup_scream); then
+                arr_file1_contents+=(
+                    "user = \"${str_first_user}\""
+                    "group = \"user\""
+                )
+            else
+                arr_file1_contents+=(
+                    "#user = \"user\""
+                    "#group = \"user\""
+                )
+
+                ( return "${int_code_skipped_operation}" )
+            fi
+
+            # <remarks> Hugepages </remarks>
+            arr_file1_contents+=(
+                ""
+                "### Hugepages ###"
+            )
+
+            if $bool_is_setup_hugepages; then
+                arr_file1_contents+=(
+                    "hugetlbfs_mount = \"/dev/hugepages\""
+                )
+            else
+                arr_file1_contents+=(
+                    "#hugetlbfs_mount = \"/dev/hugepages\""
+                )
+
+                ( return "${int_code_skipped_operation}" )
+            fi
+
+            # <remarks> Add cgroups for Evdev. </remarks>
+            arr_file1_contents+=(
+                ""
+                "### Devices ###"
+                "cgroup_device_acl = ["
+            )
+
+            if $bool_is_setup_evdev; then
+                arr_file1_contents+=(
+                    "${arr_file1_evdev_cgroups[@]}"
+                    "${arr_file1_default_cgroups[@]}"
+                    "]"
+                )
+
+                arr_file2_contents+=(
+                    ""
+                    "# EVDEV"
+                    "/dev/input/* rw,"
+                    "/dev/input/by-id/* rw,"
+                )
+            else
+                arr_file1_contents+=(
+                    "${arr_file1_default_cgroups[@]}"
+                    "]"
+                )
+
+                ( return "${int_code_skipped_operation}" )
+            fi
+
+            # <remarks> Adds NVRAM for EFI kernels in UEFI guest(s). </remarks>
+            arr_file1_contents+=(
+                ""
+                "nvram = ["
+                "        \"/usr/share/OguestF/OguestF_CODE.fd:/usr/share/OguestF/OguestF_VARS.fd\","
+                "        \"/usr/share/OguestF/OguestF_CODE.secboot.fd:/usr/share/OguestF/OguestF_VARS.fd\","
+                "        \"/usr/share/AAguestF/AAguestF_CODE.fd:/usr/share/AAguestF/AAguestF_VARS.fd\","
+                "        \"/usr/share/AAguestF/AAguestF32_CODE.fd:/usr/share/AAguestF/AAguestF32_VARS.fd\""
+                "]"
+            )
+
+            # <remarks> Append changes to file(s). </remarks>
+            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file1_current" "${str_file1}" &> /dev/null && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
+                OverwriteFile "arr_file1_contents" "${str_file1}" || return $?
+            fi
+
+            if ! IsFile "${str_file2}" &> /dev/null || ( ReadFile "arr_file2_current" "${str_file1}" &> /dev/null && IsArray "arr_file2_current" && ! AreEqualArrays "arr_file2_current" "arr_file2_contents" ); then
+                OverwriteFile "arr_file2_contents" "${str_file2}" || return $?
+            fi
+
+            # <remarks> Libvirtd service </remarks>
+            IsActiveDaemon "${str_daemon1}" || (
+                systemctl enable "${str_daemon1}" || return 1
+            )
+            systemctl restart "${str_daemon1}"
+            return $?
+        }
+
+        local str_output="Appending libvirt-qemu..."
+        # PrintWait "${str_output}"
+        Modify_QEMU_Main &> /dev/null
+        PrintPassOrFail "${str_output}"
+        return $int_exit_code
+    }
+
+    # <summary>
+    # Evdev: Setup a virtual Keyboard-Video-Mouse switch (excluding the Video).
+    # Will allow a user to swap between active guest(s) and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL').
+    # </summary>
+    # <returns> the exit code </returns>
+    function Virtual_KVM
+    {
+        function Virtual_KVM_Main
+        {
+            # <params>
+            declare -ag arr_event_devices arr_input_devices
+            local var_get_event_devices='arr_event_devices=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )'
+            local var_get_input_devices='arr_input_devices=( $( ls /dev/input/by-id ) )'
+            # </params>
+
+            eval "${var_get_event_devices}" || return 1
+            eval "${var_get_input_devices}" || return 1
+
+            if ! IsArray "arr_event_devices" && ! IsArray "arr_input_devices"; then
+                echo -e "${var_prefix_error} Cannot parse input devices (by ID)."
+                return 1
+            fi
+
+            echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and guest(s).\n${var_yellow}HOW-TO:${var_reset_color} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
+            bool_is_setup_evdev=true
+            return 0
+        }
+
+        echo
+        local str_output="Executing Evdev setup..."
+        # PrintWait "${str_output}"
+        Virtual_KVM_Main &> /dev/null
+        PrintPassOrFail "${str_output}"
+        return $int_exit_code
+    }
+# </code>
+
+# <params>
+    # <remarks> Evaluations </remarks>
+    declare -g var_get_first_valid_user='getent passwd {1000..60000} | cut -d ":" -f 1' &> /dev/null
+    declare -g str_first_user=$( eval "${var_get_first_valid_user}" ) &> /dev/null
+
+    # <remarks> Flag progress of setups </remarks>
+    declare -g bool_is_setup_evdev=false
+    declare -g bool_is_setup_hugepages=false
+# </params>
