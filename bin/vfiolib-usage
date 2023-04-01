@@ -25,18 +25,18 @@
 
             # <remarks> Pre-setup: Parse IOMMU </remarks>
             "-f" | "--file" )
-                bool_parse_IOMMU_from_file=true
                 GetSelect_IOMMU_Args $2 || return $?
+                bool_parse_IOMMU_from_file=true
                 ;;
 
             "-i" | "--internal" )
-                bool_parse_IOMMU_from_local=true
                 GetSelect_IOMMU_Args $2 || return $?
+                bool_parse_IOMMU_from_local=true
                 ;;
 
             "-o" | "--online" )
-                bool_parse_IOMMU_from_internet=true
                 GetSelect_IOMMU_Args $2 || return $?
+                bool_parse_IOMMU_from_internet=true
                 ;;
 
             # <remarks> Pre-setup: Utilities </remarks>
@@ -49,19 +49,24 @@
                 ;;
 
             "-h" | "--hugepages" )
-                bool_hugepages=true
                 GetHugepageByteSize $2 || GetHugepageCount $2 || return $?
                 GetHugepageByteSize $3 || GetHugepageCount $3 || return $?
+                bool_hugepages=true
+                ;;
+
+            "--uninstall-utils" )
+                bool_uninstall_utils=true
                 ;;
 
             "--uninstall-pre-setup" )
-                return 1
+                bool_uninstall_utils=true
                 ;;
 
             # <remarks> Main setup </remarks>
             "-m" | "--multiboot" )
-                bool_multiboot_vfio=true
+                GetArgsForStatic_VFIO $1 || return $?
                 GetArgsForStatic_VFIO $2 || return $?
+                bool_multiboot_vfio=true
                 ;;
 
             "-s" | "--static" )
@@ -90,7 +95,13 @@
                 ;;
 
             "-z" | "--zram-swap" )
+                GetZramSwapSize $1 || return $?
+                GetZramSwapOverride $2
                 bool_zram_swap=true
+                ;;
+
+            "--uninstall-extras" )
+                bool_uninstall_extras=true
                 ;;
 
             # <remarks> Else </remarks>
@@ -127,7 +138,7 @@
         esac
 
         return 1
-}
+    }
 
     # <summary> Set option for given argument. </summary>
     # <param name="1"> string: the option </param>
@@ -167,6 +178,10 @@
             "all" )
                 bool_select_all_IOMMU=true
                 ;;
+
+            * )
+                return 1
+                ;;
         esac
 
         return 0
@@ -201,7 +216,7 @@
             "  -c, --cpu\t\t\tAllocate CPU."
             "  -e, --evdev\t\t\tSetup a virtual KVM switch."
             "  -h, --hugepages\t\tCreate static hugepages (pages greater than 4 KiB) to allocate RAM for guest(s)."
-            "  --uninstall-pre-setup\t\tUndo changes made by preliminary setup."
+            "  --uninstall-utils\t\tUndo changes made by preliminary setup."
 
             "\nHugepages ARGUMENTS: *"
             "  2M, 1G\t\t\tHugepage size (2 MiB or 1 GiB)."
@@ -242,6 +257,61 @@
         return 0
     }
 
+    # <summary> Set option for given argument. </summary>
+    # <param name="1"> string: the option </param>
+    # <returns> the exit code </returns>
+    function GetZramSwapOverride
+    {
+        case $1 in
+            "force" )
+                bool_zram_swap_override=true
+                ;;
+
+            * )
+                return 1
+                ;;
+        esac
+
+        return 0
+    }
+
+    # <summary> Set option for given argument. </summary>
+    # <param name="1"> string: the option </param>
+    # <returns> the exit code </returns>
+    function GetZramSwapSize
+    {
+        IsString $1 &> /dev/null || return 0
+
+        case $1 in
+            *"/"* )
+                ;;
+            * )
+                echo -e "${var_prefix_error} Not a fraction."
+                return 1
+                ;;
+        esac
+
+        local var_numerator=$( echo $1 | cut -d '/' -f1 )
+        local var_denominator=$( echo $1 | cut -d '/' -f2 )
+
+        if ! IsNum $var_numerator || ! IsNum $var_numerator; then
+            return $?
+        fi
+
+        if [[ $var_numerator -lt $var_denominator ]] || [[ $var_denominator -gt 1 ]]; then
+            bool_zram_swap_set_fraction=true
+            declare -g str_zram_swap_fraction=$1
+            return 0
+        elif [[ $var_denominator -eq 0 ]]; then
+            IsNum ""
+            return $?
+        else
+             echo -e "${var_prefix_error} Invalid fraction."
+        fi
+
+        return 1
+    }
+
     # <summary> Sets the options. Exit early (Pass) if input is null. Else, exit early (Fail) if input is invalid. </summary>
     # <param name="@"> array: the input parameters </param>
     # <returns> the exit code </returns>
@@ -280,6 +350,8 @@
     declare -g bool_scream=false
     declare -g bool_select_all_IOMMU=false
     declare -g bool_static_vfio=false
+    declare -g bool_uninstall_extras=false
+    declare -g bool_uninstall_utils=false
     declare -g bool_uninstall_vfio=false
     declare -g bool_zram_swap=false
 # </params>

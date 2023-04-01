@@ -56,7 +56,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
           -c, --cpu                     Allocate CPU.
           -e, --evdev                   Setup a virtual KVM switch.
           -h, --hugepages               Create static hugepages (pages greater than 4 KiB) to allocate RAM for guest(s).
-          --uninstall-pre-setup         Undo changes made by preliminary setup.
+          --uninstall-utils             Undo changes made by preliminary setup.
 
         Hugepages ARGUMENTS: *
           2M, 1G                        Hugepage size (2 MiB or 1 GiB).
@@ -88,11 +88,12 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
           --uninstall-extras    Undo changes made by post-setup. *
 
         zram-swap ARGUMENTS:
-          force                 Force changes, even if zram-swap is allocated and in use. *
           [fraction]            Set the fraction of total available memory.
+          force                 Force changes, even if zram-swap is allocated and in use. *
 
           Example (assume a host with 32 GiB of RAM):
-            force 1/4           Compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
+            1/4 force           Force changes and compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
+            1/8                 Compress 4 GiB of RAM, to create 8 GiB of swap, with 28 GiB free.
 
 #### * Options that skip *all* user prompts.
 
