@@ -124,7 +124,7 @@
                         var_parse_slot_ID+=" ${var_parse_args_file}"
                         var_parse_quotes+=" ${var_parse_args_file}"
                         # PrintWait "${str_output}"
-                        IsFile $str_file &> /dev/null
+                        IsFile $str_filename_parse_IOMMU &> /dev/null
                         return $?
                         ;;
 
@@ -166,12 +166,12 @@
 
                 # <remarks> Set commands </remarks>
                 local var_parse='lspci -k -mm'
-                local var_parse_args_file='-F "${str_file}"'
+                local var_parse_args_file='-F "${str_filename_parse_IOMMU}"'
                 local var_parse_args_online='-q'
                 local var_parse_args_nums='-n'
                 local var_parse_args_slot_ID='-s ${var_device}'
                 local var_parse_args_verbose='-v'
-                local var_parse_to_file='lspci -x >> "${str_file}"'
+                local var_parse_to_file='lspci -x >> "${str_filename_parse_IOMMU}"'
                 local var_parse_all_ID="${var_parse} ${var_parse_args_nums} ${var_parse_args_verbose} ${var_parse_args_slot_ID}"
                 local var_parse_HWID="${var_parse} ${var_parse_args_nums} ${var_parse_args_slot_ID}"
                 local var_parse_name_ID="${var_parse} ${var_parse_args_verbose} ${var_parse_args_slot_ID}"
@@ -190,7 +190,7 @@
 
             # <remarks> Save output to file. </remarks>
             if [[ $? -eq 0 && $var_opt != $str_opt_parse_file ]]; then
-                IsFile $str_file &> /dev/null && eval "${var_parse_to_file}"
+                IsFile $str_filename_parse_IOMMU &> /dev/null && eval "${var_parse_to_file}"
             fi
 
             return 0
@@ -206,21 +206,21 @@
 
             # <remarks> Save input params </remarks>
             local var_opt="${1}"
-            local str_file="${2}"
+            local str_filename_parse_IOMMU="${2}"
         # </params>
 
         # <remarks> If an operation fails, try another. </remarks>
         case $var_opt in
             $str_opt_parse_internet )
-                Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
+                Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_filename_parse_IOMMU}"
                 ;;
 
             $str_opt_parse_file )
-                Parse_IOMMU_Main "${str_opt_parse_file}" "${str_file}" || Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
+                Parse_IOMMU_Main "${str_opt_parse_file}" "${str_filename_parse_IOMMU}" || Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_filename_parse_IOMMU}"
                 ;;
 
             $str_opt_parse_local | * )
-                Parse_IOMMU_Main "${str_opt_parse_local}" "${str_file}" || Parse_IOMMU_Main "${str_opt_parse_file}" "${str_file}" || Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_file}"
+                Parse_IOMMU_Main "${str_opt_parse_local}" "${str_filename_parse_IOMMU}" || Parse_IOMMU_Main "${str_opt_parse_file}" "${str_filename_parse_IOMMU}" || Parse_IOMMU_Main "${str_opt_parse_internet}" "${str_filename_parse_IOMMU}"
                 ;;
         esac
 
