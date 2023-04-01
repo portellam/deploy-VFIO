@@ -31,17 +31,17 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 
           --help        print this help and exit
 
-#### *** Options that skip *all* user prompts.
+#### * Options that skip *all* user prompts.
 
 #### Parse IOMMU
 
         Parse IOMMU groups and reference chosen database for the system's PCI devices.
-        OPTIONS: ***
+        OPTIONS: *
           -f, --file            Reference file database.
           -i, --internal        Reference local database.
           -o, --online          Reference online database.
 
-        "ARGUMENTS: ***"
+        ARGUMENTS: *
           all                   Select all IOMMU groups.
           no-vga                Select all IOMMU groups without VGA devices.
           [x-y,z]               Select specific IOMMU groups (comma separated, or ranges).
@@ -53,13 +53,13 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 
 #### Pre-setup
 
-        Pre-setup OPTIONS: ***
+        Pre-setup OPTIONS: *
           -c, --cpu                     Allocate CPU.
           -e, --evdev                   Setup a virtual KVM switch.
           -h, --hugepages               Create static hugepages (pages greater than 4 KiB) to allocate RAM for guest(s).
           --uninstall-pre-setup         Undo changes made by preliminary setup.
 
-        Hugepages ARGUMENTS: ***
+        Hugepages ARGUMENTS: *
           2M, 1G                        Hugepage size (2 MiB or 1 GiB).
           [1-?]                         Amount of Hugepages (maximum amount is total memory subtracted by 4 GiB).
 
@@ -69,7 +69,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 
 #### Main-setup
 
-        Main setup OPTIONS: ***
+        Main setup OPTIONS: *
           -m, --multiboot               Create multiple GRUB entries for a Multi VGA VFIO setup.
           -s, --static                  Install a Single VGA VFIO setup.
           -u, --uninstall               Undo an existing VFIO setup.
@@ -83,19 +83,19 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
         Post-setup OPTIONS:
           -H, --hooks           Install recommended libvirt-hooks and services.
           -l, --looking-glass   Install LookingGlass.                   Stream video (and audio) from guest to host over PCI bus using shared-memory device.
-          -L, --audio-loopback  Install the audio loopback service.     Loopback audio from guest to host (over Line-out to Line-in). ***
+          -L, --audio-loopback  Install the audio loopback service.     Loopback audio from guest to host (over Line-out to Line-in). *
           -S, --scream          Install Scream.                         Stream audio from guest to host over virtual LAN.
           -z, --zram-swap       Create compressed (~ 2:1) RAM swap.     Reduce chances of memory exhaustion for host.
-          --uninstall-extras    Undo changes made by post-setup. ***
+          --uninstall-extras    Undo changes made by post-setup. *
 
         zram-swap ARGUMENTS:
-          force                 Force changes, even if zram-swap is allocated and in use. ***
+          force                 Force changes, even if zram-swap is allocated and in use. *
           [fraction]            Set the fraction of total available memory.
 
           Example (assume a host with 32 GiB of RAM):
             force 1/4           Compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
 
-#### *** Options that skip *all* user prompts.
+#### * Options that skip *all* user prompts.
 
 ## Features
 ### Pre-setup  (vfiolib-utils)
