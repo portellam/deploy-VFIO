@@ -84,6 +84,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
           -l, --looking-glass   Install LookingGlass.                   Stream video (and audio) from guest to host over PCI bus using shared-memory device.
           -L, --audio-loopback  Install the audio loopback service.     Loopback audio from guest to host (over Line-out to Line-in). *
           -S, --scream          Install Scream.                         Stream audio from guest to host over virtual LAN.
+          -x  --auto-xorg       Install auto-Xorg.                      System service to find and set a valid Host boot VGA device for Xorg.
           -z, --zram-swap       Create compressed (~ 2:1) RAM swap.     Reduce chances of memory exhaustion for host.
           --uninstall-extras    Undo changes made by post-setup. *
 

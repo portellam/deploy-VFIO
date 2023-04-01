@@ -15,6 +15,20 @@
 
 # <code>
     # <summary>
+    # auto-Xorg: System service to find and set a valid Host boot VGA device for Xorg.
+    # </summary>
+    # <remarks>
+    # References:
+    #   https://github.com/portellam/auto-Xorg
+    # </remarks>
+    # <returns> the exit code </returns>
+    function AutoXorg
+    {
+        # TODO
+        return 1
+    }
+
+    # <summary>
     # Install necessary depenencies to setup an audio capture from guest emulated audio device to host audio backend.
     # Installs PulseAudio or ALSA.
     # </summary>

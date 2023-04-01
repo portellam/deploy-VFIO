@@ -94,6 +94,10 @@
                 bool_scream=true
                 ;;
 
+            "-x" | "--auto-xorg" )
+                bool_auto_xorg=true
+                ;;
+
             "-z" | "--zram-swap" )
                 GetZramSwapSize $1 || return $?
                 GetZramSwapOverride $2
@@ -337,6 +341,7 @@
     # <remarks> Usage toggles </remarks
     declare -g bool_alloc_cpu=false
     declare -g bool_audio_loopback=false
+    declare -g bool_auto_xorg=false
     declare -g bool_evdev=false
     declare -g bool_hugepages=false
     declare -g bool_hugepage_set_count=false
@@ -354,4 +359,6 @@
     declare -g bool_uninstall_utils=false
     declare -g bool_uninstall_vfio=false
     declare -g bool_zram_swap=false
+    declare -g bool_zram_swap_override=false
+    declare -g bool_zram_swap_set_fraction=false
 # </params>
