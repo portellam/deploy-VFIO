@@ -23,62 +23,69 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 ## How-to
 #### To install, execute:
 
-        sudo bash deploy-vfio.bash [OPTION]...
-        sudo bash vfiolib-all [OPTION]...
+        sudo bash deploy-vfio.bash
 
 #### Usage (Options)
 
-        --help                      print this help and exit
-        --version                   output version information and exit
+        Usage:          bash deploy-vfio.bash [OPTION]... [ARGUMENTS]...
+        Deploy a VFIO setup to a Linux machine that supports Para-virtualization and PCI Passthrough.
 
-        Parse IOMMU groups and reference chosen database for the system's PCI devices.  ARGUMENTS:
-            -f, --file              Reference file database.
-            -i, --internal          Reference local database.
-            -o, --online            Reference online database.
+          --help        print this help and exit
+          --version     output version information and exit
 
-        Select (valid) IOMMU groups. Process will ignore groups with internal devices.    OPTIONS:
-            all                     Select all IOMMU groups (exclusive).
-            no-vga                  Select all IOMMU groups without VGA devices.
-            [x,y,z]                 Select specific IOMMU groups.
+        Parse IOMMU groups and reference chosen database for the system's PCI devices.
+        OPTIONS:
+          -f, --file            Reference file database.
+          -i, --internal        Reference local database.
+          -o, --online          Reference online database.
 
-        Example:
-            no-vga,14               Select group 14 and all non-VGA groups.
-            1,14-16                 Select groups 1, 14, 15, and 16.
+        Select (valid) IOMMU groups. Process will ignore groups with internal devices.
+        ARGUMENTS:
+          all                   Select all IOMMU groups (exclusive).
+          no-vga                Select all IOMMU groups without VGA devices.
+          [x-y,z]               Select specific IOMMU groups (comma separated, or ranges).
 
-        VFIO setup ARGUMENTS:
-            -m, --multiboot         Create multiple GRUB entries for a Multi VGA VFIO setup.
-            -s, --static            Install a Single VGA VFIO setup.
-            -u, --uninstall         Undo an existing VFIO setup.
+          Example:
+            no-vga,14           Select group 14 and all non-VGA groups.
+            1,14-16             Select groups 1, 14, 15, and 16.
 
-        Pre-setup ARGUMENTS:
-            -c, --cpu               Allocate CPU.
-            -e, --evdev             Setup a virtual KVM switch.
-            -h, --hugepages         Create static pages in RAM to allocate RAM for guests.
-            --uninstall-pre-setup   Undo changes made by preliminay setup.
+        VFIO setup OPTIONS:
+          -m, --multiboot               Create multiple GRUB entries for a Multi VGA VFIO setup.
+          -s, --static                  Install a Single VGA VFIO setup.
+          -u, --uninstall               Undo an existing VFIO setup.
 
-        Hugepages OPTIONS:
-            2M, 1G [Amount]         Hugepage *size* (2 MiB or 1 GiB).
-            [size] [1-?]            *Amount* of Hugepages (maximum amount is total memory subtracted by 4 GiB).
+          Example:
+            -l -m                       Parse PCI locally, then deploy a Multi VGA VFIO setup.
+            -s -i -p                    Parse PCI from Internet, to re-deploy a Static VFIO setup, with hugepages.
 
-        Example:
-            1G 16                   16 hugepages * 1 GiB    == 16 GiB
-            2M 8192                 8912 hugepages * 2 MiB  == 16 GiB
+        Pre-setup OPTIONS:
+          -c, --cpu                     Allocate CPU.
+          -e, --evdev                   Setup a virtual KVM switch.
+          -h, --hugepages               Create static memory (huge) pages (greater than 4 KiB) to allocate RAM for guest(s).
+          --uninstall-pre-setup         Undo changes made by preliminary setup.
 
-        Post-setup ARGUMENTS:
-            -H, --hooks             Install recommended libvirt-hooks and services.
-            -l, --looking-glass     Install LookingGlass; stream video (and audio) from guest to host over PCI bus using shared-memory device.
-            -L, --audio-loopback    Install the audio loopback service; loopback audio from guest to host (over Line-out to Line-in).
-            -S, --scream            Install Scream; stream audio from guest to host over virtual LAN.
-            --uninstall-extras      Undo changes made by post-setup.
-            -z, --zram-swap         Create compressed swap in RAM to reduce events of memory exhaustion on host.
+        Hugepages ARGUMENTS:
+          2M, 1G                        Hugepage *size* (2 MiB or 1 GiB).
+          [1-?]                         *Amount* of Hugepages (maximum amount is total memory subtracted by 4 GiB).
 
-        zram-swap OPTIONS:
-            force                  Force changes, even if zram-swap is allocated and in use.
-            [fraction]             Set the fraction of total available memory, to allocate (recommended to use even number fractions).
+          Example:
+            1G 16                       1 GiB hugepage * 16     == 16 GiB
+            2M 8192                     2 MiB hugepage * 8912   == 16 GiB
 
-        Example, assume a system with 4x8 (32) GiB of RAM, with 16 GiB allocated to Hugepages:
-            force 1/4              Reserve 8 GiB of RAM to zram, (2:1 compression) creating 16 GiB of swap for host, with 8 GiB free.
+        Post-setup OPTIONS:
+          -H, --hooks           Install recommended libvirt-hooks and services.
+          -l, --looking-glass   Install LookingGlass.               Stream video (and audio) from guest to host over PCI bus using shared-memory device.
+          -L, --audio-loopback  Install the audio loopback service. Loopback audio from guest to host (over Line-out to Line-in).
+          -S, --scream          Install Scream.                     Stream audio from guest to host over virtual LAN.
+          -z, --zram-swap       Create compressed (~ 2:1) RAM swap. Reduce chances of memory exhaustion for host.
+          --uninstall-extras    Undo changes made by post-setup.
 
+        zram-swap ARGUMENTS:
+          force                 Force changes, even if zram-swap is allocated and in use.
+          [fraction]            Set the fraction of total available memory.
+
+          Example (assume a system with 32 GiB of RAM):
+            force 1/4           Compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
 
 ## Features
 ### Main VFIO Setup (vfiolib-setup)
