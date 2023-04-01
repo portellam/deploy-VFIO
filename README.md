@@ -25,13 +25,12 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
         sudo bash deploy-vfio.bash
 
 ### Usage
+#### * Options that skip *all* user prompts.
 
         Usage:          bash deploy-vfio.bash [OPTION]... [ARGUMENTS]...
         Deploy a VFIO setup to a Linux machine that supports Para-virtualization and PCI Passthrough.
 
           --help        print this help and exit
-
-#### * Options that skip *all* user prompts.
 
 #### Parse IOMMU
 
