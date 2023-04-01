@@ -12,8 +12,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
     * **VGA devices:** NVIDIA 7000-series GTX (or before), or ATI (pre-AMD) (example: **Windows 98**).
     * **Audio devices:** Creative Soundblaster for that authentic, 1990s-2000s experience (example: **Windows 98**).
 * **If it's greater control of your privacy you want**
-    * Piss on Microsoft, go deploy a VFIO setup **NOW**. [9]
-    * Use **me_cleaner**. [10]
+    * Use **me_cleaner**. [9]
 
 ## What is VFIO?
 * about:            https://www.kernel.org/doc/html/latest/driver-api/vfio.html
@@ -25,79 +24,81 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 
         sudo bash deploy-vfio.bash
 
-#### Usage (Options)
+### Usage
 
         Usage:          bash deploy-vfio.bash [OPTION]... [ARGUMENTS]...
         Deploy a VFIO setup to a Linux machine that supports Para-virtualization and PCI Passthrough.
 
           --help        print this help and exit
-          --version     output version information and exit
+
+#### *** Options that skip *all* user prompts.
+
+#### Parse IOMMU
 
         Parse IOMMU groups and reference chosen database for the system's PCI devices.
-        OPTIONS:
+        OPTIONS: ***
           -f, --file            Reference file database.
           -i, --internal        Reference local database.
           -o, --online          Reference online database.
 
-        Select (valid) IOMMU groups. Process will ignore groups with internal devices.
-        ARGUMENTS:
-          all                   Select all IOMMU groups (exclusive).
+        "ARGUMENTS: ***"
+          all                   Select all IOMMU groups.
           no-vga                Select all IOMMU groups without VGA devices.
           [x-y,z]               Select specific IOMMU groups (comma separated, or ranges).
 
           Example:
-            no-vga,14           Select group 14 and all non-VGA groups.
+            no-vga 14           Select group 14 and all non-VGA groups.
             1,14-16             Select groups 1, 14, 15, and 16.
 
-        VFIO setup OPTIONS:
+
+#### Pre-setup
+
+        Pre-setup OPTIONS: ***
+          -c, --cpu                     Allocate CPU.
+          -e, --evdev                   Setup a virtual KVM switch.
+          -h, --hugepages               Create static hugepages (pages greater than 4 KiB) to allocate RAM for guest(s).
+          --uninstall-pre-setup         Undo changes made by preliminary setup.
+
+        Hugepages ARGUMENTS: ***
+          2M, 1G                        Hugepage size (2 MiB or 1 GiB).
+          [1-?]                         Amount of Hugepages (maximum amount is total memory subtracted by 4 GiB).
+
+          Example:
+            1G 16                       1 GiB hugepage * 16     == 16 GiB allocated to hugepages.
+            2M 8192                     2 MiB hugepage * 8912   == 16 GiB allocated to hugepages.
+
+#### Main-setup
+
+        Main setup OPTIONS: ***
           -m, --multiboot               Create multiple GRUB entries for a Multi VGA VFIO setup.
           -s, --static                  Install a Single VGA VFIO setup.
           -u, --uninstall               Undo an existing VFIO setup.
 
           Example:
-            -l -m                       Parse PCI locally, then deploy a Multi VGA VFIO setup.
-            -s -i -p                    Parse PCI from Internet, to re-deploy a Static VFIO setup, with hugepages.
+            -l -m                       Parse against local database, then deploy a Multi VGA VFIO setup.
+            -s -o -p                    Setup hugepages, parse against online database, then deploy a Static VFIO setup.
 
-        Pre-setup OPTIONS:
-          -c, --cpu                     Allocate CPU.
-          -e, --evdev                   Setup a virtual KVM switch.
-          -h, --hugepages               Create static memory (huge) pages (greater than 4 KiB) to allocate RAM for guest(s).
-          --uninstall-pre-setup         Undo changes made by preliminary setup.
-
-        Hugepages ARGUMENTS:
-          2M, 1G                        Hugepage *size* (2 MiB or 1 GiB).
-          [1-?]                         *Amount* of Hugepages (maximum amount is total memory subtracted by 4 GiB).
-
-          Example:
-            1G 16                       1 GiB hugepage * 16     == 16 GiB
-            2M 8192                     2 MiB hugepage * 8912   == 16 GiB
+#### Post-setup
 
         Post-setup OPTIONS:
           -H, --hooks           Install recommended libvirt-hooks and services.
-          -l, --looking-glass   Install LookingGlass.               Stream video (and audio) from guest to host over PCI bus using shared-memory device.
-          -L, --audio-loopback  Install the audio loopback service. Loopback audio from guest to host (over Line-out to Line-in).
-          -S, --scream          Install Scream.                     Stream audio from guest to host over virtual LAN.
-          -z, --zram-swap       Create compressed (~ 2:1) RAM swap. Reduce chances of memory exhaustion for host.
-          --uninstall-extras    Undo changes made by post-setup.
+          -l, --looking-glass   Install LookingGlass.                   Stream video (and audio) from guest to host over PCI bus using shared-memory device.
+          -L, --audio-loopback  Install the audio loopback service.     Loopback audio from guest to host (over Line-out to Line-in). ***
+          -S, --scream          Install Scream.                         Stream audio from guest to host over virtual LAN.
+          -z, --zram-swap       Create compressed (~ 2:1) RAM swap.     Reduce chances of memory exhaustion for host.
+          --uninstall-extras    Undo changes made by post-setup. ***
 
         zram-swap ARGUMENTS:
-          force                 Force changes, even if zram-swap is allocated and in use.
+          force                 Force changes, even if zram-swap is allocated and in use. ***
           [fraction]            Set the fraction of total available memory.
 
-          Example (assume a system with 32 GiB of RAM):
+          Example (assume a host with 32 GiB of RAM):
             force 1/4           Compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
 
-## Features
-### Main VFIO Setup (vfiolib-setup)
-* **Multi-boot VFIO Setup**
-    * Best for Multiple VGA PCI Passthrough (**one** VGA for Host, and **multiple** VGA for Guests).    **More flexibility.**
-    * Multiple GRUB menu entries for multiple VGA device systems. Choose a GRUB menu entry with a VGA device to boot from (exclude that VGA device's IOMMU Group from PCI Passthrough/VFIO).
-    * **Disclaimer:** For best results, use **Auto-Xorg**. [1]
-* **Static VFIO Setup**
-    * Best for Single VGA PCI Passthrough (**one** VGA for Host, and **one** VGA for Guests).           **Less flexibility.**
-    * Traditional PCI Passthrough/VFIO Setup.
+#### *** Options that skip *all* user prompts.
 
-### Pre-setup  (vfiolib-important)
+## Features
+### Pre-setup  (vfiolib-utils)
 * **Allocate CPU**
     * Reduce Host overhead, and improve both Host and Guest performance.
     * **Statically** allocate Host CPU cores (and/or threads). [2]
@@ -112,6 +113,15 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
     * Create a virtual Keyboard-Video-Mouse switch.
     * Implementation is known as **Evdev (Event Devices)**. [6]
     * **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
+
+### Main VFIO setup (vfiolib-main)
+* **Multi-boot VFIO setup**
+    * Best for Multiple VGA PCI Passthrough (**one** VGA for Host, and **multiple** VGA for Guests).    **More flexibility.**
+    * Multiple GRUB menu entries for multiple VGA device systems. Choose a GRUB menu entry with a VGA device to boot from (exclude that VGA device's IOMMU Group from PCI Passthrough/VFIO).
+    * **Disclaimer:** For best results, use **Auto-Xorg**. [1]
+* **Static VFIO setup**
+    * Best for Single VGA PCI Passthrough (**one** VGA for Host, and **one** VGA for Guests).           **Less flexibility.**
+    * Traditional PCI Passthrough/VFIO setup.
 
 ### Post-setup  (vfiolib-extras)
 * **Auto-Xorg** system service to find and set a valid Host boot VGA (GPU) device for Xorg. [1]
@@ -168,9 +178,6 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 * **LookingGlass:** https://looking-glass.io/docs/B5.0.1/
 
 ### [9]
-* **Ford attacks Chevy:**   https://www.youtube.com/watch?v=ShiKM3OibGQ&t=30s
-
-### [10]
 * **original:**     https://github.com/corna/me_cleaner
 * **updated fork:** https://github.com/dt-zero/me_cleaner
 
