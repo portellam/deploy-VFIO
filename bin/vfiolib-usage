@@ -199,7 +199,7 @@
 
         declare -a arr_output=(
             "Usage:\t\tbash deploy-vfio.bash [OPTION]... [ARGUMENTS]..."
-            "Deploy a VFIO setup to a Linux host that supports Para-virtualization and PCI Passthrough.\n"
+            "Deploy a VFIO setup to a Linux Host that supports Para-virtualization and PCI Passthrough.\n"
             "  --help\tprint this help and exit"
 
             "\nParse IOMMU groups and reference chosen database for the system's PCI devices.\nOPTIONS: *"
@@ -219,7 +219,7 @@
             "\nPre-setup OPTIONS: *"
             "  -c, --cpu\t\t\tAllocate CPU."
             "  -e, --evdev\t\t\tSetup a virtual KVM switch."
-            "  -h, --hugepages\t\tCreate static hugepages (pages greater than 4 KiB) to allocate RAM for guest(s)."
+            "  -h, --hugepages\t\tCreate static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s)."
             "  --uninstall-utils\t\tUndo changes made by preliminary setup."
 
             "\nHugepages ARGUMENTS: *"
@@ -241,17 +241,17 @@
 
             "\nPost-setup OPTIONS:"
             "  -H, --hooks\t\tInstall recommended libvirt-hooks and services."
-            "  -l, --looking-glass\tInstall LookingGlass.\t\t\tStream video (and audio) from guest to host over PCI bus using shared-memory device."
-            "  -L, --audio-loopback\tInstall the audio loopback service.\tLoopback audio from guest to host (over Line-out to Line-in). *"
-            "  -S, --scream\t\tInstall Scream.\t\t\t\tStream audio from guest to host over virtual LAN."
-            "  -z, --zram-swap\tCreate compressed (~ 2:1) RAM swap.\tReduce chances of memory exhaustion for host."
+            "  -l, --looking-glass\tInstall LookingGlass.\t\t\tStream video (and audio) from Guest to Host over PCI bus using shared-memory device."
+            "  -L, --audio-loopback\tInstall the audio loopback service.\tLoopback audio from Guest to Host (over Line-out to Line-in). *"
+            "  -S, --scream\t\tInstall Scream.\t\t\t\tStream audio from Guest to Host over virtual LAN."
+            "  -z, --zram-swap\tCreate compressed (~ 2:1) RAM swap.\tReduce chances of memory exhaustion for Host."
             "  --uninstall-extras\tUndo changes made by post-setup. *"
 
             "\nzram-swap ARGUMENTS:"
             "  force\t\t\tForce changes, even if zram-swap is allocated and in use. *"
             "  [fraction]\t\tSet the fraction of total available memory."
 
-            "\n  Example (assume a host with 32 GiB of RAM):"
+            "\n  Example (assume a Host with 32 GiB of RAM):"
             "    force 1/4\t\tCompress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free."
             "\n* Options that skip *all* user prompts."
         )
