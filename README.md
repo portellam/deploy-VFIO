@@ -12,7 +12,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
     * **VGA devices:** NVIDIA 7000-series GTX (or before), or ATI (pre-AMD) (example: **Windows 98**).
     * **Audio devices:** Creative Soundblaster for that authentic, 1990s-2000s experience (example: **Windows 98**).
 * **If it's greater control of your privacy you want**
-    * Use **me_cleaner**. [9]
+    * Use **me_cleaner**. #9
 
 ## What is VFIO?
 * about:            https://www.kernel.org/doc/html/latest/driver-api/vfio.html
