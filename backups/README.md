@@ -1,5 +1,5 @@
 ## Description
-Backup files go here.
+Backup files go here. Files will be referenced, copied, and overwritten during setup.
 
 ## System files
 * GRUB
@@ -16,9 +16,8 @@ Backup files go here.
 - */etc/modprobe.d/pci-blacklists.conf*
 - */etc/modprobe.d/vfio.conf*
 
-## Backup sources
+## Notes
 #### [1]
-* n/a
-
+* source file N/A
 #### [2]
-* ***[source file (GitHub)](https://github.com/virtualopensystems/libvirt/blob/master/src/qemu/qemu.conf)**
+* **[source file (GitHub)](https://github.com/virtualopensystems/libvirt/blob/master/src/qemu/qemu.conf)**
