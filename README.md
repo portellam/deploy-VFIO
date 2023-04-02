@@ -151,8 +151,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
     * **Disclaimer:** Only supported for Windows 7/8/10/11 Guests.
 
 ## References
-<sub>[1]</sub>
-
+[1]
 * <sub>**[source (original)](https://github.com/corna/me_cleaner)**</sub>
 * <sub>**[source (updated)](https://github.com/dt-zero/me_cleaner)**</sub>
 
