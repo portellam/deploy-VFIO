@@ -77,7 +77,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 
           Example:
             -l -m                       Parse against local database, then deploy a Multi VGA VFIO setup.
-            -s -o -p                    Setup hugepages, parse against online database, then deploy a Static VFIO setup.
+            -s -o                       Parse against online database, then deploy a Static VFIO setup.
 
 #### Post-setup
 

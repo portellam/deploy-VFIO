@@ -241,7 +241,7 @@
 
             "\n  Example:"
             "    -l -m\t\t\tParse against local database, then deploy a Multi VGA VFIO setup."
-            "    -s -o -p\t\t\tSetup hugepages, parse against online database, then deploy a Static VFIO setup."
+            "    -s -o\t\t\tParse against online database, then deploy a Static VFIO setup."
 
             "\nPost-setup OPTIONS:"
             "  -H, --hooks\t\tInstall recommended libvirt-hooks and services."
