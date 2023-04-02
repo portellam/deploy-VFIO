@@ -188,6 +188,3 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA (GP
 ## Disclaimer
 Use at your own risk.
 Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
-
-## Contribution
-Should you find this script useful, please reach out via the **Issues** tab on GitHub. Thank you.
