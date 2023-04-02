@@ -68,7 +68,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
             1G 16                       1 GiB hugepage * 16     == 16 GiB allocated to hugepages.
             2M 8192                     2 MiB hugepage * 8912   == 16 GiB allocated to hugepages.
 
-#### Main-setup
+#### Main setup
 
         Main setup OPTIONS: *
           -m, --multiboot               Create multiple GRUB entries for a Multi VGA VFIO setup.
@@ -117,7 +117,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
     - Implementation is known as **Evdev (Event Devices)**.<sup>[4](#4)</sup>
     - **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 
-### Main VFIO setup <sub>(vfiolib-main)</sub>
+### Main setup <sub>(vfiolib-main)</sub>
 * **Multi-boot VFIO setup**
     - Best for Multiple VGA PCI Passthrough (**one** VGA for Host, and **multiple** VGA for Guests).    **More flexibility.**
     - Multiple GRUB menu entries for multiple VGA device systems. Choose a GRUB menu entry with a VGA device to boot from (exclude that VGA device's IOMMU Group from PCI Passthrough/VFIO).
