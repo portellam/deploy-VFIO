@@ -28,7 +28,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 #### * Options that skip *all* user prompts.
 
         Usage:          bash deploy-vfio.bash [OPTION]... [ARGUMENTS]...
-        Deploy a VFIO setup to a Linux machine that supports Para-virtualization or PCI Passthrough.
+        Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization (PCI Passthrough).
 
           --help        print this help and exit
 
@@ -184,7 +184,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 #### [9]
 - <sub>**[LookingGlass (website)](https://looking-glass.io/docs/B5.0.1/)**</sub>
 
-## Disclaimers
+## Disclaimer
 Use at your own risk.
 Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
 

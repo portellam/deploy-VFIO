@@ -201,7 +201,7 @@
 
         declare -a arr_output=(
             "Usage:\t\tbash deploy-vfio.bash [OPTION]... [ARGUMENTS]..."
-            "Deploy a VFIO setup to a Linux Host that supports Para-virtualization and PCI Passthrough.\n"
+            "Deploy a VFIO setup to a Linux Host that supports Para-virtualization or PCI Passthrough.\n"
             "  --help\tprint this help and exit"
 
             "\nParse IOMMU groups and reference chosen database for the system's PCI devices.\nOPTIONS: *"
