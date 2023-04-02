@@ -176,7 +176,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 - <sub>**[lz4 (GitHub)](https://github.com/lz4/lz4)**</sub>
 - <sub>**[zram package (Debian)](https://wiki.debian.org/ZRam)**</sub>
 - <sub>**[zram package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub>
-- <sub>**[zram benchmarks](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
+- <sub>**[zram benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
 
 #### [8]
 - <sub>**[Scream (GitHub)](https://github.com/duncanthrax/scream)**</sub>
