@@ -152,7 +152,9 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 
 ## References
 <sub>[1]</sub>
+
 <sub>* **[source (original)](https://github.com/corna/me_cleaner)**</sub>
+
 <sub>* **[source (updated)](https://github.com/dt-zero/me_cleaner)**</sub>
 
 #### [2]
