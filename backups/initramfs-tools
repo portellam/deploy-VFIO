@@ -1,0 +1,29 @@
+# List of modules that you want to include in your initramfs.
+# They will be loaded at boot time in the order below.
+#
+# Syntax: module_name [args ...]
+#
+# Examples:
+#
+# raid1
+# sd_mod
+#
+
+vfio
+vfio_iommu_type1
+vfio_virqfd
+
+# List of module dependencies:
+#
+# Examples:
+#
+# softdep module_name pre: vfio-pci
+#
+
+
+# List of hardware IDs:
+options vfio_pci ids=""
+vfio_pci ids=""
+
+# Last module to execute:
+vfio
