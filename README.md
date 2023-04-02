@@ -152,8 +152,8 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 
 ## References
 <sub>[1]</sub>
-* **[source (original)](https://github.com/corna/me_cleaner)**
-* **[source (updated)](https://github.com/dt-zero/me_cleaner)**
+<sub>* **[source (original)](https://github.com/corna/me_cleaner)**</sub>
+<sub>* **[source (updated)](https://github.com/dt-zero/me_cleaner)**</sub>
 
 #### [2]
 * **[isolcpu (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**
