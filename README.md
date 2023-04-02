@@ -152,8 +152,8 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 
 ## References
 #### [1]
-- <sub>**[source (original)](https://github.com/corna/me_cleaner)**</sub>
-- <sub>**[source (updated)](https://github.com/dt-zero/me_cleaner)**</sub>
+- <sub>**[me_cleaner, original (GitHub)](https://github.com/corna/me_cleaner)**</sub>
+- <sub>**[me_cleaner, updated (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
 
 #### [2]
 - <sub>**[isolcpu (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub>
@@ -165,24 +165,24 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 - <sub>**[Evdev (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
 
 #### [5]
-- <sub>**[auto-Xorg](https://github.com/portellam/Auto-Xorg)**</sub>
+- <sub>**[auto-Xorg (GitHub)](https://github.com/portellam/Auto-Xorg)**</sub>
 
 #### [6]
-- <sub>**[VFIO-Tools](https://github.com/PassthroughPOST/VFIO-Tools)**</sub>
-- <sub>**[libvirt-nosleep](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub>
+- <sub>**[VFIO-Tools (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)**</sub>
+- <sub>**[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub>
 
 #### [7]
-- <sub>**[zram-swap](https://github.com/foundObjects/zram-swap)**</sub>
-- <sub>**[Debian package](https://wiki.debian.org/ZRam)**</sub>
-- <sub>**[Arch package](https://aur.archlinux.org/packages/zramswap)**</sub>
-- <sub>**[lz4](https://github.com/lz4/lz4)**</sub>
-- <sub>**[benchmarks](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
+- <sub>**[zram-swap (GitHub)](https://github.com/foundObjects/zram-swap)**</sub>
+- <sub>**[lz4 (GitHub)](https://github.com/lz4/lz4)**</sub>
+- <sub>**[zram package (Debian)](https://wiki.debian.org/ZRam)**</sub>
+- <sub>**[zram package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub>
+- <sub>**[zram benchmarks](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
 
 #### [8]
-- <sub>**[Scream](https://github.com/duncanthrax/scream)**</sub>
+- <sub>**[Scream (GitHub)](https://github.com/duncanthrax/scream)**</sub>
 
 #### [9]
-- <sub>**[LookingGlass](https://looking-glass.io/docs/B5.0.1/)**</sub>
+- <sub>**[LookingGlass (website)](https://looking-glass.io/docs/B5.0.1/)**</sub>
 
 ## Disclaimers
 Use at your own risk.
