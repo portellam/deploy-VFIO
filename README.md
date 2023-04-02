@@ -120,7 +120,8 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 ### Main setup <sub>(vfiolib-main)</sub>
 * **Multi-boot VFIO setup**
     - Best for Multiple VGA PCI Passthrough.  **More flexibility.**
-    - Multiple GRUB menu entries for multiple VGA device systems. Choose a GRUB menu entry with a VGA device to boot from (exclude that VGA device's IOMMU Group from PCI Passthrough/VFIO).
+    - Multiple GRUB menu entries for multiple VGA device systems.
+    - Choose a GRUB menu entry with a VGA device to boot from (excludes that VGA device's IOMMU group from VFIO).
     - **Disclaimer:** For best results, use **auto-Xorg**.<sup>[5](#5)</sup>
 * **Static VFIO setup**
     - Best for Single VGA PCI Passthrough.    **Less flexibility.**
