@@ -18,7 +18,7 @@ Backup files go here.
 
 ## Backup sources
 #### [1]
--n/a
+* n/a
 
 #### [2]
--**[source file (GitHub)](https://github.com/virtualopensystems/libvirt/blob/master/src/qemu/qemu.conf)**
+* ***[source file (GitHub)](https://github.com/virtualopensystems/libvirt/blob/master/src/qemu/qemu.conf)**
