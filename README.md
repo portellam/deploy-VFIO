@@ -2,7 +2,7 @@
 work-in-progress
 
 ## Description
-Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA device for Host at GRUB boot menu. VFIO: Run any Guest OS with PCI hardware as a Virtual machine (VM), with your desktop OS untouched.
+Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA (GPU) device for Host at GRUB boot menu. VFIO: Run any Guest OS with PCI hardware as a Virtual machine (VM), with your desktop OS untouched.
 
 ## Why?
 * **Separation-of-Concerns**
@@ -128,7 +128,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
     - Traditional PCI Passthrough/VFIO setup.
 
 ### Post-setup  <sub>(vfiolib-extras)</sub>
-* **auto-Xorg** system service to find and set a valid Host boot VGA (GPU) device for Xorg. [4]
+* **auto-Xorg** system service to find and set a valid Host boot VGA device for Xorg.<sup>[5](#5)</sup>
 * **Guest Audio Capture**
     - Useful for systems with multiple Audio devices.
     - Create an **Audio loopback** to output on the **Host's** Audio device **Line-Out**.
