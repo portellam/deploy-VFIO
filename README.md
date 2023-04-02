@@ -151,7 +151,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
     * **Disclaimer:** Only supported for Windows 7/8/10/11 Guests.
 
 ## References
-### [1]
+<sub>### [1]
 * **original:**     https://github.com/corna/me_cleaner
 * **updated fork:** https://github.com/dt-zero/me_cleaner
 
@@ -182,7 +182,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 * **Scream:**   https://github.com/duncanthrax/scream
 
 ### [9]
-* **LookingGlass:** https://looking-glass.io/docs/B5.0.1/
+* **LookingGlass:** https://looking-glass.io/docs/B5.0.1/</sub>
 
 ## Disclaimers
 Use at your own risk.
