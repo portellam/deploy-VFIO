@@ -151,7 +151,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
     * **Disclaimer:** Only supported for Windows 7/8/10/11 Guests.
 
 ## References
-#### [1]
+<sub>[1]</sub>
 * **[source (original)](https://github.com/corna/me_cleaner)**
 * **[source (updated)](https://github.com/dt-zero/me_cleaner)**
 
@@ -168,7 +168,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 * **[auto-Xorg](https://github.com/portellam/Auto-Xorg)**
 
 #### [6]
-* **[VFIO-Tools]https://github.com/PassthroughPOST/VFIO-Tools)**
+* **[VFIO-Tools](https://github.com/PassthroughPOST/VFIO-Tools)**
 * **[libvirt-nosleep](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**
 
 #### [7]
