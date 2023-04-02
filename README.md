@@ -119,15 +119,15 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 
 ### Main setup <sub>(vfiolib-main)</sub>
 * **Multi-boot VFIO setup**
-    - Best for Multiple VGA PCI Passthrough (**one** VGA for Host, and **multiple** VGA for Guests).    **More flexibility.**
+    - Best for Multiple VGA PCI Passthrough.  **More flexibility.**
     - Multiple GRUB menu entries for multiple VGA device systems. Choose a GRUB menu entry with a VGA device to boot from (exclude that VGA device's IOMMU Group from PCI Passthrough/VFIO).
-    - **Disclaimer:** For best results, use **Auto-Xorg**.<sup>[5](#5)</sup>
+    - **Disclaimer:** For best results, use **auto-Xorg**.<sup>[5](#5)</sup>
 * **Static VFIO setup**
-    - Best for Single VGA PCI Passthrough (**one** VGA for Host, and **one** VGA for Guests).           **Less flexibility.**
+    - Best for Single VGA PCI Passthrough.    **Less flexibility.**
     - Traditional PCI Passthrough/VFIO setup.
 
 ### Post-setup  <sub>(vfiolib-extras)</sub>
-* **Auto-Xorg** system service to find and set a valid Host boot VGA (GPU) device for Xorg. [4]
+* **auto-Xorg** system service to find and set a valid Host boot VGA (GPU) device for Xorg. [4]
 * **Guest Audio Capture**
     - Useful for systems with multiple Audio devices.
     - Create an **Audio loopback** to output on the **Host's** Audio device **Line-Out**.
@@ -165,7 +165,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
 - <sub>**[Evdev (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
 
 #### [5]
-- <sub>**[auto-Xorg (GitHub)](https://github.com/portellam/Auto-Xorg)**</sub>
+- <sub>**[auto-Xorg (GitHub)](https://github.com/portellam/auto-Xorg)**</sub>
 
 #### [6]
 - <sub>**[VFIO-Tools (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)**</sub>
