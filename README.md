@@ -151,11 +151,9 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
     * **Disclaimer:** Only supported for Windows 7/8/10/11 Guests.
 
 ## References
-<sub>[1]</sub>
+<sub>[1] **[source (original)](https://github.com/corna/me_cleaner)**</sub>
 
-<sub>* **[source (original)](https://github.com/corna/me_cleaner)**</sub>
-
-<sub>* **[source (updated)](https://github.com/dt-zero/me_cleaner)**</sub>
+<sub>[1] **[source (updated)](https://github.com/dt-zero/me_cleaner)**</sub>
 
 #### [2]
 * **[isolcpu (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**
