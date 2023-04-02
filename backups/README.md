@@ -3,12 +3,12 @@ Backup files go here.
 
 ## System files
 * GRUB
-- */etc/default/grub*<sup>#1</sup>
+- */etc/default/grub*<sup>[1](#1)</sup>
 - */etc/grub.d/proxifiedScripts/custom*
 
 * QEMU
-- */etc/apparmor.d/local/abstractions/libvirt-qemu*<sup>#2</sup>
-- */etc/libvirt/qemu.conf*<sup>#3</sup>
+- */etc/apparmor.d/local/abstractions/libvirt-qemu*<sup>[2](#2)</sup>
+- */etc/libvirt/qemu.conf*<sup>[3](#3)</sup>
 
 * Modules
 - */etc/initramfs-tools/modules*
