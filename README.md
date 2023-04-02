@@ -151,38 +151,38 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA dev
     * **Disclaimer:** Only supported for Windows 7/8/10/11 Guests.
 
 ## References
-<sub>### [1]
-* **original:**     https://github.com/corna/me_cleaner
-* **updated fork:** https://github.com/dt-zero/me_cleaner
+#### [1]
+* **[source (original)]**(https://github.com/corna/me_cleaner)
+* **[updated fork](https://github.com/dt-zero/me_cleaner)**
 
-### [2]
+#### [2]
 * **isolcpu:**  https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning
 
-### [3]
+#### [3]
 * **Hugepages:**    https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages
 
-### [4]
+#### [4]
 * **Evdev:**    https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev
 
-### [5]
+#### [5]
 * **Auto-Xorg:**    https://github.com/portellam/Auto-Xorg
 
-### [6]
+#### [6]
 * https://github.com/PassthroughPOST/VFIO-Tools
 * **libvirt-nosleep:**    https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep
 
-### [7]
+#### [7]
 * **zram-swap:**    https://github.com/foundObjects/zram-swap
 * **Debian:**       https://wiki.debian.org/ZRam
 * **Arch:**         https://aur.archlinux.org/packages/zramswap
 * **about lz4:**    https://github.com/lz4/lz4
 * **benchmarks:**   https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/
 
-### [8]
+#### [8]
 * **Scream:**   https://github.com/duncanthrax/scream
 
-### [9]
-* **LookingGlass:** https://looking-glass.io/docs/B5.0.1/</sub>
+#### [9]
+* **LookingGlass:** https://looking-glass.io/docs/B5.0.1/
 
 ## Disclaimers
 Use at your own risk.
