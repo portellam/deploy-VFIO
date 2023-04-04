@@ -18,8 +18,9 @@ vfio_virqfd
 # Examples:
 #
 # softdep module_name pre: vfio-pci
+# module_name
 #
-
+## REPLACE_THIS_LINE
 
 # List of hardware IDs:
 options vfio_pci ids=""
