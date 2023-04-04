@@ -17,25 +17,20 @@
     # <summary>
     # Add user to necessary user groups.
     # </summary>
-    # <returns> the exit code </returns>
     function AddUserToGroups
     {
-        function AddUserToGroups_Main
-        {
-            adduser "${str_first_user}" "input" || return 1
-            adduser "${str_first_user}" "libvirt" || return 1
-            return 0
-        }
+        if ! [ adduser "$str_first_user" "input" &> /dev/null ] \
+            || ! [ adduser "$str_first_user" "libvirt" &> /dev/null ]; then
+            echo -e "An error occurred: Failed to add user '$str_first_user' to groups."
+            return 1
+        fi
 
-        AddUserToGroups_Main &> /dev/null
-        PrintPassOrFail "Adding user to groups..."
-        return $int_exit_code
+        return 0
     }
 
     # <summary>
     # isolcpus: Allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and guest performance.
     # </summary
-    # <returns> the exit code </returns>
     function Allocate_CPU
     {
         function Allocate_CPU_Main
@@ -207,7 +202,6 @@
     # Hugepages: Allocate host memory (RAM) to 'hugepages'.
     # Eliminate the need to defragement memory, reduce host overhead, and improve both host and guest performance.
     # </summary
-    # <returns> the exit code </returns>
     function Allocate_RAM
     {
         function Allocate_RAM_Main
@@ -295,7 +289,6 @@
     # <summary>
     # libvirt-qemu: Append necessary changes to QEMU system file, including user groups, Evdev, Hugepages, and NVRAM (for UEFI guest(s)).
     # </summary>
-    # <returns> the exit code </returns>
     function Modify_QEMU
     {
         function Modify_QEMU_Main
@@ -492,7 +485,6 @@
     # Evdev: Setup a virtual Keyboard-Video-Mouse switch (excluding the Video).
     # Will allow a user to swap between active guest(s) and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL').
     # </summary>
-    # <returns> the exit code </returns>
     function Virtual_KVM
     {
         function Virtual_KVM_Main

@@ -15,7 +15,6 @@
 # <code>
     # <summary> Set arguments and options. </summary>
     # <param name="@"> array: the input parameters </param>
-    # <returns> the exit code </returns>
     function GetOption
     {
         while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
@@ -68,15 +67,15 @@
             "-m" | "--multiboot" )
                 GetArgsForStatic_VFIO $1 || return $?
                 GetArgsForStatic_VFIO $2 || return $?
-                bool_multiboot_vfio=true
+                _EXECUTE_MULTIBOOT_SETUP=true
                 ;;
 
             "-s" | "--static" )
-                bool_static_vfio=true
+                _EXECUTE_STATIC_SETUP=true
                 ;;
 
             "-u" | "--uninstall" )
-                bool_uninstall_vfio=true
+                _EXECUTE_UNINSTALL_SETUP=true
                 ;;
 
             # <remarks> Post-setup: Extras </remarks>
@@ -126,19 +125,18 @@
 
     # <summary> Set option for given argument. </summary>
     # <param name="1"> string: the option </param>
-    # <returns> the exit code </returns>
     function GetArgsForStatic_VFIO
     {
         IsString $1 &> /dev/null || return 0
 
         case $1 in
             "grub" )
-                bool_static_vfio_grub=true
+                _EXECUTE_STATIC_SETUP_grub=true
                 return 0
                 ;;
 
             "file" )
-                bool_static_vfio_file=true
+                _EXECUTE_STATIC_SETUP_file=true
                 return 0
                 ;;
         esac
@@ -148,7 +146,6 @@
 
     # <summary> Set option for given argument. </summary>
     # <param name="1"> string: the option </param>
-    # <returns> the exit code </returns>
     function GetHugepageByteSize
     {
         IsString $1 &> /dev/null || return 0
@@ -164,7 +161,6 @@
 
     # <summary> Set option for given argument. </summary>
     # <param name="1"> int: the option </param>
-    # <returns> the exit code </returns>
     function GetHugepageCount
     {
         if IsNum $1 &> /dev/null && [[ $1 -gt 0 ]]; then
@@ -177,7 +173,6 @@
 
     # <summary> Set option for given argument. </summary>
     # <param name="1"> string: the option </param>
-    # <returns> the exit code </returns>
     function GetSelect_IOMMU_Args
     {
         case $1 in
@@ -194,7 +189,6 @@
     }
 
     # <summary> Prints the usage. </summary>
-    # <returns> the exit code </returns>
     function GetUsage
     {
         IFS=$'\n'
@@ -267,7 +261,6 @@
 
     # <summary> Set option for given argument. </summary>
     # <param name="1"> string: the option </param>
-    # <returns> the exit code </returns>
     function GetZramSwapOverride
     {
         case $1 in
@@ -285,7 +278,6 @@
 
     # <summary> Set option for given argument. </summary>
     # <param name="1"> string: the option </param>
-    # <returns> the exit code </returns>
     function GetZramSwapSize
     {
         IsString $1 &> /dev/null || return 0
@@ -322,7 +314,6 @@
 
     # <summary> Sets the options. Exit early (Pass) if input is null. Else, exit early (Fail) if input is invalid. </summary>
     # <param name="@"> array: the input parameters </param>
-    # <returns> the exit code </returns>
     function SetOptions
     {
         for var_option in $@; do
@@ -353,16 +344,16 @@
     declare -g bool_hugepage_set_size=false
     declare -g bool_libvirt_hooks=false
     declare -g bool_looking_glass=false
-    declare -g bool_multiboot_vfio=false
+    declare -g _EXECUTE_MULTIBOOT_SETUP=false
     declare -g bool_parse_IOMMU_from_file=false
     declare -g bool_parse_IOMMU_from_local=false
     declare -g bool_parse_IOMMU_from_internet=false
     declare -g bool_scream=false
     declare -g bool_select_all_IOMMU=false
-    declare -g bool_static_vfio=false
+    declare -g _EXECUTE_STATIC_SETUP=false
     declare -g bool_uninstall_extras=false
     declare -g bool_uninstall_utils=false
-    declare -g bool_uninstall_vfio=false
+    declare -g _EXECUTE_UNINSTALL_SETUP=false
     declare -g bool_zram_swap=false
     declare -g bool_zram_swap_override=false
     declare -g bool_zram_swap_set_fraction=false

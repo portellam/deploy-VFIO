@@ -21,7 +21,6 @@
     # References:
     #   https://github.com/portellam/auto-Xorg
     # </remarks>
-    # <returns> the exit code </returns>
     function AutoXorg
     {
         # TODO
@@ -36,7 +35,6 @@
     # References:
     #   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_through_other_devices
     # </remarks>
-    # <returns> the exit code </returns>
     function GuestAudioCapture
     {
         function GuestAudioCapture_Main
@@ -106,7 +104,6 @@
     # Setup an audio loopback service from physical guest audio device (Line-Out) to physical host audio device (Line-In).
     # Requires physical connection between Line-Out and Line-In, and audio backend with JACK support (requires PulseAudio or ALSA).
     # </summary>
-    # <returns> the exit code </returns>
     function GuestAudioLoopback
     {
         function GuestAudioLoopback_Main
@@ -161,7 +158,6 @@
     # References:
     #   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_audio_from_virtual_machine_to_host_via_Scream
     # </remarks>
-    # <returns> the exit code </returns>
     function GuestAudioStream
     {
         function GuestAudioStream_Build
@@ -350,7 +346,6 @@
     # References:
     #   https://looking-glass.io/docs/B6/install/#client-install
     # </remarks>
-    # <returns> the exit code </returns>
     function GuestVideoCapture
     {
         function GuestVideoCapture_Get
@@ -416,7 +411,6 @@
     # <summary>
     # libvirt-hooks: Setup useful Quality-of-life improvements in the form of services and scripts (hooks) for QEMU guest(s).
     # </summary>
-    # <returns> the exit code </returns>
     function LibvirtHooks
     {
         function LibvirtHooks_Main
@@ -455,7 +449,6 @@
     # zramswap: Setup a swap partition in host memory.
     # Reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory.
     # </summary>
-    # <returns> the exit code </returns>
     function RAM_Swapfile
     {
         function RAM_Swapfile_Install
