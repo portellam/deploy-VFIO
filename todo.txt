@@ -26,3 +26,17 @@ TODO:
 
 * add new opts/args
     -specify user for libvirtd, otherwise check for first valid user
+
+23/04/03
+
+* Reduce dependency on bashlib functions
+    -may need to keep functions that check distro and package manager.
+
+* Rename variables
+    -Naming convention, start with underscore, then uppercase, separate words with delimiter (underscore).
+    -Do not use datatype prefixes anymore.
+    -Prefix with underscore, to avoid overwriting same name environment variables.
+
+* Save libraries and bash script to "/usr/local/bin".
+
+* Create a script that watches for kernel change, and recommends reinstall of vfio setup?
