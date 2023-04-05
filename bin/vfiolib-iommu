@@ -7,21 +7,14 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-# <remarks> Using </remarks>
-# <code>
-    source bashlib-all
-# </code>
-
 # <code>
     # <summary> Is Virtualization enabled on the current system. If true, pass. </summary>
     function IsEnabled_IOMMU
     {
         if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*"; then
-            false
+            echo -e "$_PREFIX_ERROR System does not support Virtualization."
+            return 1
         fi
-
-        PrintPassOrFail "Validating Virtualization..."
-        return $int_exit_code
     }
 
     # <summary>

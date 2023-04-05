@@ -9,7 +9,6 @@
 
 # <remarks> Using </remarks>
 # <code>
-    source bashlib-all
     source vfiolib-iommu
 # </code>
 
