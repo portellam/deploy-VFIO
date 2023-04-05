@@ -22,12 +22,12 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA (GP
 ## How-to
 #### To install, execute:
 
-        sudo bash deploy-vfio.bash
+        sudo bash installer.bash
 
 ### Usage
 #### * Options that skip *all* user prompts.
 
-        Usage:          bash deploy-vfio.bash [OPTION]... [ARGUMENTS]...
+        Usage:          bash deploy-vfio [OPTION]... [ARGUMENTS]...
         Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization (PCI Passthrough).
 
           --help        print this help and exit
