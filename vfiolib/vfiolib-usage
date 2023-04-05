@@ -7,10 +7,39 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-# <remarks> Using </remarks>
-# <code>
-    source bashlib-all
-# </code>
+# <params>
+    # <remarks> Get script directories </remarks
+    GetScriptDir
+    declare -g _FILES_PATH="$( find . -name files | uniq | head -n1 | cut -c2- )/"
+    declare -g _FILENAME_PARSE_IOMMU=""
+
+    # <remarks> Toggles </remarks
+    declare -g _IS_CONNECTED_TO_INTERNET=false
+
+    # <remarks> Usage toggles </remarks
+    declare -g _EXECUTE_ALLOCATE_CPU=false
+    declare -g _EXECUTE_AUDIO_LOOPBACK=false
+    declare -g _EXECUTE_AUTO_XORG=false
+    declare -g _EXECUTE_EVDEV=false
+    declare -g _EXECUTE_HUGEPAGES=false
+    declare -g _HUGEPAGES_SET_COUNT=false
+    declare -g _HUGEPAGES_SET_SIZE=false
+    declare -g _EXECUTE_LIBVIRT_HOOKS=false
+    declare -g _EXECUTE_LOOKING_GLASS=false
+    declare -g _EXECUTE_MULTIBOOT_SETUP=false
+    declare -g _PARSE_IOMMU_FROM_FILE=false
+    declare -g _PARSE_IOMMU_FROM_CACHE=false
+    declare -g _PARSE_IOMMU_FROM_INTERNET=false
+    declare -g _EXECUTE_SCREAM=false
+    declare -g _SELECT_ALL_IOMMU=false
+    declare -g _EXECUTE_STATIC_SETUP=false
+    declare -g _UNINSTALL_EXTRAS=false
+    declare -g _UNINSTALL_UTILS=false
+    declare -g _EXECUTE_UNINSTALL_SETUP=false
+    declare -g _EXECUTE_ZRAM_SWAP=false
+    declare -g _ZRAM_SWAP_OVERRIDE=false
+    declare -g _ZRAM_SWAP_SET_FRACTION=false
+# </params>
 
 # <code>
     # <summary> Set arguments and options. </summary>
@@ -26,7 +55,7 @@
             "-f" | "--file" )
                 GetSelect_IOMMU_Args $2 || return "$?"
                 IsFile $3 || return "$?"
-                str_filename_parse_IOMMU=$3
+                _FILENAME_PARSE_IOMMU=$3
                 _PARSE_IOMMU_FROM_FILE=true
                 ;;
 
@@ -42,25 +71,25 @@
 
             # <remarks> Pre-setup: Utilities </remarks>
             "-c" | "--cpu" )
-                bool_alloc_cpu=true
+                _EXECUTE_ALLOCATE_CPU=true
                 ;;
 
             "-e" | "--evdev" )
-                bool_evdev=true
+                _EXECUTE_EVDEV=true
                 ;;
 
             "-h" | "--hugepages" )
                 GetHugepageByteSize $2 || GetHugepageCount $2 || return "$?"
                 GetHugepageByteSize $3 || GetHugepageCount $3 || return "$?"
-                bool_hugepages=true
+                _EXECUTE_HUGEPAGES=true
                 ;;
 
             "--uninstall-utils" )
-                bool_uninstall_utils=true
+                _UNINSTALL_UTILS=true
                 ;;
 
             "--uninstall-pre-setup" )
-                bool_uninstall_utils=true
+                _UNINSTALL_UTILS=true
                 ;;
 
             # <remarks> Main setup </remarks>
@@ -80,33 +109,33 @@
 
             # <remarks> Post-setup: Extras </remarks>
             "-H" | "--hooks" )
-                bool_libvirt_hooks=true
+                _EXECUTE_LIBVIRT_HOOKS=true
                 ;;
 
             "-l" | "--looking-glass" )
-                bool_looking_glass=true
+                _EXECUTE_LOOKING_GLASS=true
                 ;;
 
             "-L" | "--audio-loopback" )
-                bool_audio_loopback=true
+                _EXECUTE_AUDIO_LOOPBACK=true
                 ;;
 
             "-S" | "--scream" )
-                bool_scream=true
+                _EXECUTE_SCREAM=true
                 ;;
 
             "-x" | "--auto-xorg" )
-                bool_auto_xorg=true
+                _EXECUTE_AUTO_XORG=true
                 ;;
 
             "-z" | "--zram-swap" )
                 GetZramSwapSize $1 || return "$?"
                 GetZramSwapOverride $2
-                bool_zram_swap=true
+                _EXECUTE_ZRAM_SWAP=true
                 ;;
 
             "--uninstall-extras" )
-                bool_uninstall_extras=true
+                _UNINSTALL_EXTRAS=true
                 ;;
 
             # <remarks> Else </remarks>
@@ -148,11 +177,11 @@
     # <param name="1"> string: the option </param>
     function GetHugepageByteSize
     {
-        IsString $1 &> /dev/null || return 0
+        [ "$1" == "" ] || return 0
 
-        if [[ $1 == "2M" ]] || [[ $1 == "1G" ]]; then
-            bool_hugepage_set_size=true
-            declare -g str_huge_page_byte_prefix=$1
+        if [[ "$1" == "2M" ]] || [[ "$1" == "1G" ]]; then
+            _HUGEPAGES_SET_SIZE=true
+            declare -g _HUGEPAGES_BYTE_SUFFIX="$1"
             return 0
         fi
 
@@ -163,9 +192,10 @@
     # <param name="1"> int: the option </param>
     function GetHugepageCount
     {
-        if IsNum $1 &> /dev/null && [[ $1 -gt 0 ]]; then
-            bool_hugepage_set_count=true
-            declare -g int_huge_page_count=$1
+        if ! [[ "$1" =~ '^[0-9]+$' ]] \
+            && [[ "$1" -gt 0 ]]; then
+            _HUGEPAGES_SET_COUNT=true
+            declare -g _HUGEPAGES_COUNT=$1
         fi
 
         return 1
@@ -175,9 +205,9 @@
     # <param name="1"> string: the option </param>
     function GetSelect_IOMMU_Args
     {
-        case $1 in
+        case "$1" in
             "all" )
-                bool_select_all_IOMMU=true
+                _SELECT_ALL_IOMMU=true
                 ;;
 
             * )
@@ -193,8 +223,8 @@
     {
         IFS=$'\n'
 
-        declare -a arr_output=(
-            "Usage:\t\tbash deploy-vfio.bash [OPTION]... [ARGUMENTS]..."
+        declare -a _OUTPUT=(
+            "Usage:\t\tbash deploy-vfio [OPTION]... [ARGUMENTS]..."
             "Deploy a VFIO setup to a Linux Host that supports Para-virtualization or PCI Passthrough.\n"
             "  --help\tprint this help and exit"
 
@@ -254,7 +284,7 @@
             "\n* Options that skip *all* user prompts."
         )
 
-        echo -e "${arr_output[*]}"
+        echo -e "${_OUTPUT[*]}"
         unset IFS
         return 0
     }
@@ -263,9 +293,9 @@
     # <param name="1"> string: the option </param>
     function GetZramSwapOverride
     {
-        case $1 in
+        case "$1" in
             "force" )
-                bool_zram_swap_override=true
+                _ZRAM_SWAP_OVERRIDE=true
                 ;;
 
             * )
@@ -280,9 +310,9 @@
     # <param name="1"> string: the option </param>
     function GetZramSwapSize
     {
-        IsString $1 &> /dev/null || return 0
+        [ "$1" == "" ] || return 0
 
-        case $1 in
+        case "$1" in
             *"/"* )
                 ;;
             * )
@@ -291,20 +321,23 @@
                 ;;
         esac
 
-        local var_numerator=$( echo $1 | cut -d '/' -f1 )
-        local var_denominator=$( echo $1 | cut -d '/' -f2 )
+        local -i _NUMERATOR=$( echo $1 | cut -d '/' -f1 )
+        local -i _DENOMINATOR=$( echo $1 | cut -d '/' -f2 )
 
-        if ! IsNum $var_numerator || ! IsNum $var_numerator; then
-            return "$?"
+        if ! [[ "$_NUMERATOR" =~ '^[0-9]+$' ]] \
+            || ! [ "$_DENOMINATOR" =~ '^[0-9]+$' ]; then
+            echo -e "$_PREFIX_FAIL Not a fraction."
+            return 1
         fi
 
-        if [[ $var_numerator -lt $var_denominator ]] || [[ $var_denominator -gt 1 ]]; then
-            bool_zram_swap_set_fraction=true
-            declare -g str_zram_swap_fraction=$1
+        if [[ $_NUMERATOR -lt $_DENOMINATOR ]] || [[ $_DENOMINATOR -gt 1 ]]; then
+            _ZRAM_SWAP_SET_FRACTION=true
+            declare -g _ZRAM_SWAP_FRACTION="$1"
             return 0
-        elif [[ $var_denominator -eq 0 ]]; then
-            IsNum ""
-            return "$?"
+
+        elif [[ $_DENOMINATOR -eq 0 ]]; then
+            return 1
+
         else
              echo -e "$_PREFIX_FAIL Invalid fraction."
         fi
@@ -316,45 +349,11 @@
     # <param name="@"> array: the input parameters </param>
     function SetOptions
     {
-        for var_option in $@; do
-            IsString $var_option &> /dev/null || return 0
-            GetOption $var_option || return "$?"
+        for VAR_OPTION in "$@"; do
+            [ "$VAR_OPTION" == "" ] && return 0
+            GetOption "$VAR_OPTION" || return "$?"
         done
 
         return 0
     }
 # </code>
-
-# <params>
-    # <remarks> Get script directories </remarks
-    GetScriptDir
-    declare -g _FILES_PATH="$( find . -name files | uniq | head -n1 | cut -c2- )/"
-    declare -g str_filename_parse_IOMMU=""
-
-    # <remarks> Toggles </remarks
-    declare -g _IS_CONNECTED_TO_INTERNET=false
-
-    # <remarks> Usage toggles </remarks
-    declare -g bool_alloc_cpu=false
-    declare -g bool_audio_loopback=false
-    declare -g bool_auto_xorg=false
-    declare -g bool_evdev=false
-    declare -g bool_hugepages=false
-    declare -g bool_hugepage_set_count=false
-    declare -g bool_hugepage_set_size=false
-    declare -g bool_libvirt_hooks=false
-    declare -g bool_looking_glass=false
-    declare -g _EXECUTE_MULTIBOOT_SETUP=false
-    declare -g _PARSE_IOMMU_FROM_FILE=false
-    declare -g _PARSE_IOMMU_FROM_CACHE=false
-    declare -g _PARSE_IOMMU_FROM_INTERNET=false
-    declare -g bool_scream=false
-    declare -g bool_select_all_IOMMU=false
-    declare -g _EXECUTE_STATIC_SETUP=false
-    declare -g bool_uninstall_extras=false
-    declare -g bool_uninstall_utils=false
-    declare -g _EXECUTE_UNINSTALL_SETUP=false
-    declare -g bool_zram_swap=false
-    declare -g bool_zram_swap_override=false
-    declare -g bool_zram_swap_set_fraction=false
-# </params>

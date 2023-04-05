@@ -178,7 +178,6 @@
     }
 
     # <summary> Check if current kernel and distro are supported, and if the expected Package Manager is installed. </summary>
-    # <param name="_OPERATING_SYSTEM"> string: the operating system </param>
     function GetLinuxDistro
     {
         # <summary> Check if current Operating System matches Package Manager, and Check if PM is installed. </summary>
@@ -239,10 +238,9 @@
         return 0
     }
 
-    # <summary>Distro-agnostic, Install a software package. </summary>
+    # <summary> Distro-agnostic, Install a software package. </summary>
     # <param name="1"> string: the software package(s) </param>
     # <param name="2"> bool: true/false do/don't reinstall software package and configuration files (if possible) </param>
-    # <param name="_PACKAGE_MANAGER"> string: the package manager </param>
     function InstallPackage
     {
         if [[ "$_PACKAGE_MANAGER" == "" ]] \
@@ -349,7 +347,6 @@
 
     # <summary> Distro-agnostic, check if package is installed. </summary>
     # <param name="1"> string: the software package(s) </param>
-    # <param name="_PACKAGE_MANAGER"> string: the package manager </param>
     function IsInstalledPackage
     {
         if [[ "$_PACKAGE_MANAGER" == "" ]] \
@@ -396,7 +393,6 @@
 
     # <summary> Append Pass or Fail given exit code. </summary>
     # <param name="_LAST_EXIT_CODE"> the last exit code </param>
-    # <param name="1"> string: the output statement </param>
     function PrintPassOrFail
     {
         SaveExitCode
@@ -415,14 +411,12 @@
     }
 
     # <summary> Save last exit code. </summary>
-    # <param name="_LAST_EXIT_CODE"> int: the exit code </param>
     function SaveExitCode
     {
         _LAST_EXIT_CODE="$?"
     }
 
     # <summary> Update GetInternetStatus </summary>
-    # <param name="_IS_CONNECTED_TO_INTERNET"> bool: network status </param>
     function SetInternetStatus
     {
         GetInternetStatus true
@@ -438,7 +432,6 @@
 
     # <summary> Distro-agnostic, Uninstall a software package. </summary>
     # <param name="1"> string: the software package(s) </param>
-    # <param name="_PACKAGE_MANAGER"> string: the package manager </param>
     function UninstallPackage
     {
         if [[ "$_PACKAGE_MANAGER" == "" ]] \

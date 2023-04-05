@@ -9,7 +9,6 @@
 
 # <remarks> Using </remarks>
 # <code>
-    source bashlib-all
     source vfiolib-files
     source vfiolib-extras
     source vfiolib-iommu
@@ -19,7 +18,6 @@
     declare -gr _LINE_GRUB_CMDLINE="quiet iommu=1,pt amd_iommu=on intel_iommu=on video=efifb:off,vesafb:off acpi=force apm=power_off rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1"
 # </params>
 
-# <remarks> Logic </remarks>
 # <code>
     function ExcludeGivenVGAIOMMUGroup
     {

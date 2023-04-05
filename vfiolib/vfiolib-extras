@@ -453,7 +453,6 @@
         return "$_LAST_EXIT_CODE"
     }
 
-    # TODO: check for existing zram swap file, if occupied or exists, pause setup. ask user to continue or skip.
     # <summary>
     # zramswap: Setup a swap partition in host memory.
     # Reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory.

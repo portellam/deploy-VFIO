@@ -47,8 +47,35 @@
     declare -gr _QEMU_FILE_URL="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"
 # </params>
 
-# <remarks> Logic </remarks>
 # <code>
+    function CopyBackupsToPaths
+    {
+        GetBackups || return 1
+        SetBackups || return 1
+
+        if ! [ sudo cp -rv "$_APPARMOR_QEMU_BACKUP" "$_APPARMOR_QEMU_FILE_PATH" ] \
+            || [ ! sudo cp -rv "$_CUSTOM_GRUB_FILE_BACKUP" "$_CUSTOM_GRUB_FILE_PATH" ] \
+            || [ ! sudo cp -rv "$_INITRAMFS_MODULES_FILE_BACKUP" "$_INITRAMFS_MODULES_FILE_PATH" ] \
+            || [ ! sudo cp -rv "$_MODPROBE_BLACKLISTS_FILE_BACKUP" "$_MODPROBE_BLACKLISTS_FILE_PATH" ] \
+            || [ ! sudo cp -rv "$_MODPROBE_VFIO_FILE_BACKUP" "$_MODPROBE_VFIO_FILE_PATH" ] \
+            || [ ! sudo cp -rv "$_MODULES_FILE_BACKUP" "$_MODULES_FILE_PATH" ] \
+            || [ ! sudo cp -rv "$_QEMU_FILE_BACKUP" "$_QEMU_FILE_PATH" ]; then
+            echo -e "$_PREFIX_ERROR Could not copy files."
+            return 1
+        fi
+
+        if ! [ sudo chown root: root "$_APPARMOR_QEMU_FILE_PATH" ] \
+            || ! [ sudo chown root: root "$_CUSTOM_GRUB_FILE_PATH" ] \
+            || ! [ sudo chown root: root "$_INITRAMFS_MODULES_FILE_PATH" ] \
+            || ! [ sudo chown root: root "$_MODPROBE_BLACKLISTS_FILE_PATH" ] \
+            || ! [ sudo chown root: root "$_MODPROBE_VFIO_FILE_PATH" ] \
+            || ! [ sudo chown root: root "$_MODULES_FILE_PATH" ] \
+            || ! [ sudo chown root: root "$_QEMU_FILE_PATH" ]; then
+            echo -e "$_PREFIX_ERROR Could not set permissions for files."
+            return 1
+        fi
+    }
+
     function ExecuteBackups
     {
         SetWorkingDirToBackupsFolder || return 1
@@ -71,17 +98,17 @@
         fi
 
         if [ -z "$_GRUB_FILE_BACKUP_1" ]; then
-            GetBackupsForGRUB || return 1
+            GetBackupsFor_GRUB || return 1
         fi
 
         if [ -z "$_QEMU_FILE_BACKUP" ]; then
-            GetBackupsForQEMU || return 1
+            SetBackupsFor_QEMU || return 1
         fi
 
         return 0
     }
 
-    function GetBackupsForGRUB
+    function GetBackupsFor_GRUB
     {
         if [[ -e "$_GRUB_FILE_PATH_1" ]]; then
             return 0
@@ -102,7 +129,7 @@
         return 0
     }
 
-    function GetBackupsForQEMU
+    function SetBackupsFor_QEMU
     {
         if [[ -e "$_QEMU_FILE_PATH" ]]; then
             return 0
@@ -140,41 +167,13 @@
         return 0
     }
 
-    function CopyBackupsToPaths
-    {
-        GetBackups || return 1
-        SetBackups || return 1
-
-        if ! [ sudo cp -rv "$_APPARMOR_QEMU_BACKUP" "$_APPARMOR_QEMU_FILE_PATH" ] \
-            || [ ! sudo cp -rv "$_CUSTOM_GRUB_FILE_BACKUP" "$_CUSTOM_GRUB_FILE_PATH" ] \
-            || [ ! sudo cp -rv "$_INITRAMFS_MODULES_FILE_BACKUP" "$_INITRAMFS_MODULES_FILE_PATH" ] \
-            || [ ! sudo cp -rv "$_MODPROBE_BLACKLISTS_FILE_BACKUP" "$_MODPROBE_BLACKLISTS_FILE_PATH" ] \
-            || [ ! sudo cp -rv "$_MODPROBE_VFIO_FILE_BACKUP" "$_MODPROBE_VFIO_FILE_PATH" ] \
-            || [ ! sudo cp -rv "$_MODULES_FILE_BACKUP" "$_MODULES_FILE_PATH" ] \
-            || [ ! sudo cp -rv "$_QEMU_FILE_BACKUP" "$_QEMU_FILE_PATH" ]; then
-            echo -e "$_PREFIX_ERROR Could not copy files."
-            return 1
-        fi
-
-        if ! [ sudo chown root: root "$_APPARMOR_QEMU_FILE_PATH" ] \
-            || ! [ sudo chown root: root "$_CUSTOM_GRUB_FILE_PATH" ] \
-            || ! [ sudo chown root: root "$_INITRAMFS_MODULES_FILE_PATH" ] \
-            || ! [ sudo chown root: root "$_MODPROBE_BLACKLISTS_FILE_PATH" ] \
-            || ! [ sudo chown root: root "$_MODPROBE_VFIO_FILE_PATH" ] \
-            || ! [ sudo chown root: root "$_MODULES_FILE_PATH" ] \
-            || ! [ sudo chown root: root "$_QEMU_FILE_PATH" ]; then
-            echo -e "$_PREFIX_ERROR Could not set permissions for files."
-            return 1
-        fi
-    }
-
     function SetBackups
     {
-        SetBackupsForGRUB || return 1
+        SetBackupsFor_GRUB || return 1
         return 0
     }
 
-    function SetBackupsForGRUB
+    function SetBackupsFor_GRUB
     {
         if ! sudo cp "$_GRUB_FILE_BACKUP_1" "$_GRUB_FILE_BACKUP_2" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Could not copy GRUB backup file."

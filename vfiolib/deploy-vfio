@@ -27,7 +27,7 @@ function Main
 
     # <remarks> Exit early. </remarks>
     if "$_EXECUTE_UNINSTALL_SETUP"; then
-        Setup_VFIO
+        SelectSetup
         return "$?"
     fi
 
@@ -59,7 +59,7 @@ function Main
     esac
 
     Select_IOMMU "$@" || return "$?"
-    Setup_VFIO
+    SelectSetup
     return "$?"
 }
 # </code>

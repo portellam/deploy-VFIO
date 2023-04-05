@@ -248,7 +248,7 @@
                 local str_regex='[a-fA-F1-9]'
 
                 # <remarks> Output statement </remarks>
-                declare -a arr_output1=(
+                declare -a _OUTPUT1=(
                     "Slot ID:\t'${str_slot_ID}'"
                     "Vendor name:\t'${str_vendor_name}'"
                     "Device name:\t'${str_device_name}'"
@@ -267,7 +267,7 @@
                 fi
 
                 local str_class=$( echo "${arr_class[$int_key]}" | tr '[:upper:]' '[:lower:]' )
-                PrintArray "arr_output1"
+                PrintArray "_OUTPUT1"
 
                 # <remarks> Match Class </remarks>
                 case $str_class in
@@ -317,12 +317,12 @@
         function Select_IOMMU_Prompt
         {
             # <remarks> Append to list a valid array or empty value. </remarks>
-            if $bool_IOMMU_has_external_domain && $bool_select_all_IOMMU; then
+            if $bool_IOMMU_has_external_domain && $_SELECT_ALL_IOMMU; then
                 Select_IOMMU_Group
                 return 0
             fi
 
-            if $bool_IOMMU_has_external_domain && ! $bool_select_all_IOMMU && ReadInput "Select IOMMU group '${var_IOMMU}'?"; then
+            if $bool_IOMMU_has_external_domain && ! $_SELECT_ALL_IOMMU && ReadInput "Select IOMMU group '${var_IOMMU}'?"; then
                 Select_IOMMU_Group
             fi
 
