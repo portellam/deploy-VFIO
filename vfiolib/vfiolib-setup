@@ -15,6 +15,10 @@
     source vfiolib-iommu
 # </code>
 
+# <params>
+    declare -gr _LINE_GRUB_CMDLINE="quiet iommu=1,pt amd_iommu=on intel_iommu=on video=efifb:off,vesafb:off acpi=force apm=power_off rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1"
+# </params>
+
 # <remarks> Logic </remarks>
 # <code>
     function ExcludeGivenVGAIOMMUGroup
@@ -68,12 +72,12 @@
 
     function ExecuteMultibootSetup
     {
-        if ! BackupsMain \
+        if ! ExecuteBackups \
             || ! GetParamsForSetup \
             || ! SetParamsForMultibootSetup \
             || ! WriteFilesForMultibootSetup \
             || ! ExecuteUpdateAfterSetup; then
-            echo -e "An error occurred: Multiboot setup has failed."
+            echo -e "$_PREFIX_FAIL Multiboot setup has failed."
             return 1
         fi
 
@@ -85,7 +89,7 @@
         local -r _PRINT_FAIL="An error occurred: Static setup has failed."
 
         if $_EXECUTE_GRUB_STATIC_SETUP \
-            && ( ! BackupsMain \
+            && ( ! ExecuteBackups \
             || ! GetParamsForSetup \
             || ! SetParamsForGRUBStaticSetup \
             || ! WriteFilesForGRUBStaticSetup \
@@ -95,7 +99,7 @@
         fi
 
         if ! $_EXECUTE_GRUB_STATIC_SETUP \
-            && ( ! BackupsMain \
+            && ( ! ExecuteBackups \
             || ! GetParamsForSetup \
             || ! SetParamsForNoGRUBStaticSetup \
             || ! WriteFilesForNoGRUBStaticSetup \
@@ -109,8 +113,8 @@
 
     function ExecuteUninstallSetup
     {
-        if ! BackupsMain || ! ExecuteUpdateAfterSetup; then
-            echo -e "An error occurred: Uninstall has failed."
+        if ! ExecuteBackups || ! ExecuteUpdateAfterSetup; then
+            echo -e "$_PREFIX_FAIL Uninstall has failed."
         fi
 
         return 0
@@ -120,7 +124,7 @@
     {
         if ! [ sudo update-grub ] \
             || ! [ sudo update-initramfs -u -k all ]; then
-            echo -e "An error occurred: Failed to update system configuration."
+            echo -e "$_PREFIX_FAIL Failed to update system configuration."
             return 1
         fi
 
@@ -134,7 +138,7 @@
                 && [[ "${_PCISTUB_HWID_LIST[@]}" -eq 0 ]] \
                 && [[ "${_VGA_VFIOPCI_DRIVER_LIST[@]}" -eq 0 ]] \
                 && [[ "${_VGA_VFIOPCI_HWID_LIST[@]}" -eq 0 ]] ); then
-            echo -e "An error occurred: Required parsed IOMMU group lists are empty."
+            echo -e "$_PREFIX_FAIL Required parsed IOMMU group lists are empty."
             return 1
         fi
 
@@ -173,11 +177,11 @@
 
         case true in
             $_EXECUTE_MULTIBOOT_SETUP )
-                ExecuteMultibootSetup || return $?
+                ExecuteMultibootSetup || return "$?"
                 ;;
 
             $_EXECUTE_STATIC_SETUP )
-                ExecuteStaticSetup || return $?
+                ExecuteStaticSetup || return "$?"
                 ;;
 
             $_EXECUTE_UNINSTALL_SETUP )
@@ -289,7 +293,7 @@
         GetParamsForVFIOSetup || return 1
 
         # <remarks> System configuration </remarks>
-        declare -ir _MAX_NUM_PARSE_KERNELS=3
+        local -ir _MAX_NUM_PARSE_KERNELS=3
         declare -ar _KERNELS_LIST=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | sort -r | head -n $_MAX_NUM_PARSE_KERNELS ) )
         local _SYSTEM_DISK=$( df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1 )
         local _SYSTEM_DISTRO=$( lsb_release -i -s )
@@ -319,8 +323,8 @@
         _NO_VGA_HWID_DELIM="${_NO_VGA_HWID_DELIM::-1}"
         local _LINE_GRUB_CMDLINE_PREFIX=""
         _LINE_GRUB_CMDLINE_PREFIX+="$_LINE_GRUB_CMDLINE "
-        _LINE_GRUB_CMDLINE_PREFIX+="$str_output_allocate_cpu_GRUB "
-        _LINE_GRUB_CMDLINE_PREFIX+="$str_output_hugepages_GRUB "
+        _LINE_GRUB_CMDLINE_PREFIX+="$_OUTPUT_allocate_cpu_GRUB "
+        _LINE_GRUB_CMDLINE_PREFIX+="$_OUTPUT_hugepages_GRUB "
 
         # <remarks> Parse VGA VFIO IOMMU Groups. </remarks>
         for _IOMMU in ${_VGA_VFIOPCI_IOMMU_LIST[@]}; do
@@ -353,7 +357,7 @@
         done
 
         if ! [[ "${#_FILE_CONTENTS_LIST[@]}" -eq 0 ]]; then
-            echo -e "An error occurred: Multiboot setup output is empty."
+            echo -e "$_PREFIX_FAIL Multiboot setup output is empty."
             return 1
         fi
 
@@ -365,8 +369,8 @@
         IFS=$'\n'
         local _LINE_GRUB_CMDLINE_TEMP=""
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE "
-        _LINE_GRUB_CMDLINE_TEMP+="$str_output_allocate_cpu_GRUB "
-        _LINE_GRUB_CMDLINE_TEMP+="$str_output_hugepages_GRUB "
+        _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_allocate_cpu_GRUB "
+        _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_hugepages_GRUB "
         _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=\"$_DRIVER_DELIM\" "
         _LINE_GRUB_CMDLINE_TEMP+="pci-stub.ids=\"$_STATIC_PCISTUB_HWID_DELIM\" "
         _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=\"$_HWID_DELIM\" "
@@ -381,7 +385,7 @@
             || ! [ sed -i 's/## REPLACE_THIS_LINE*/'"${_MODULES_LIST[*]}" "$_MODPROBE_VFIO_FILE_PATH" ] \
             || ! [ sed -i 's/options vfio_pci ids=*/vfio_pci_ids="'"$_HWID_DELIM\"" "$_MODPROBE_VFIO_FILE_PATH" ] \
             || ! [ sed -i 's/vfio_pci ids=*/vfio_pci_ids="'"$_HWID_DELIM\"" "$_MODULES_FILE_PATH" ]; then
-            echo -e "An error occurred: Failed to overwrite target lines of files."
+            echo -e "$_PREFIX_FAIL Failed to overwrite target lines of files."
             return 1
         fi
 
@@ -390,17 +394,17 @@
 
     function WriteFilesForNoGRUBStaticSetup
     {
-        BackupsMain || return 1
+        ExecuteBackups || return 1
         IFS=$'\n'
         local _LINE_GRUB_CMDLINE_TEMP=""
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE "
-        _LINE_GRUB_CMDLINE_TEMP+="$str_output_allocate_cpu_GRUB "
-        _LINE_GRUB_CMDLINE_TEMP+="$str_output_hugepages_GRUB "
+        _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_allocate_cpu_GRUB "
+        _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_hugepages_GRUB "
         _LINE_GRUB_CMDLINE_TEMP="${_LINE_GRUB_CMDLINE_TEMP::-1}"
         local -r _LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"$_LINE_GRUB_CMDLINE_TEMP\""
 
         if ! [ sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=*/'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_FILE_PATH" ]; then
-            echo -e "An error occurred: Failed to overwrite target lines of files."
+            echo -e "$_PREFIX_FAIL Failed to overwrite target lines of files."
             return 1
         fi
 
@@ -409,18 +413,14 @@
 
     function WriteFilesForMultibootSetup
     {
-        BackupsMain || return 1
+        ExecuteBackups || return 1
         IFS=$'\n'
 
         if ! [ echo -e "${_FILE_CONTENTS_LIST[*]}" "$_CUSTOM_GRUB_FILE_PATH" ]; then
-            echo -e "An error occurred: Failed to overwrite target lines of files."
+            echo -e "$_PREFIX_FAIL Failed to overwrite target lines of files."
             return 1
         fi
 
         return 0
     }
 # </code>
-
-# <params>
-    declare -gr _LINE_GRUB_CMDLINE="quiet iommu=1,pt amd_iommu=on intel_iommu=on video=efifb:off,vesafb:off acpi=force apm=power_off rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1"
-# </params>

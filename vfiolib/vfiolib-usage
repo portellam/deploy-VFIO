@@ -24,19 +24,19 @@
 
             # <remarks> Pre-setup: Parse IOMMU </remarks>
             "-f" | "--file" )
-                GetSelect_IOMMU_Args $2 || return $?
-                IsFile $3 || return $?
+                GetSelect_IOMMU_Args $2 || return "$?"
+                IsFile $3 || return "$?"
                 str_filename_parse_IOMMU=$3
                 bool_parse_IOMMU_from_file=true
                 ;;
 
             "-i" | "--internal" )
-                GetSelect_IOMMU_Args $2 || return $?
+                GetSelect_IOMMU_Args $2 || return "$?"
                 bool_parse_IOMMU_from_local=true
                 ;;
 
             "-o" | "--online" )
-                GetSelect_IOMMU_Args $2 || return $?
+                GetSelect_IOMMU_Args $2 || return "$?"
                 bool_parse_IOMMU_from_internet=true
                 ;;
 
@@ -50,8 +50,8 @@
                 ;;
 
             "-h" | "--hugepages" )
-                GetHugepageByteSize $2 || GetHugepageCount $2 || return $?
-                GetHugepageByteSize $3 || GetHugepageCount $3 || return $?
+                GetHugepageByteSize $2 || GetHugepageCount $2 || return "$?"
+                GetHugepageByteSize $3 || GetHugepageCount $3 || return "$?"
                 bool_hugepages=true
                 ;;
 
@@ -65,8 +65,8 @@
 
             # <remarks> Main setup </remarks>
             "-m" | "--multiboot" )
-                GetArgsForStatic_VFIO $1 || return $?
-                GetArgsForStatic_VFIO $2 || return $?
+                GetArgsForStatic_VFIO $1 || return "$?"
+                GetArgsForStatic_VFIO $2 || return "$?"
                 _EXECUTE_MULTIBOOT_SETUP=true
                 ;;
 
@@ -100,7 +100,7 @@
                 ;;
 
             "-z" | "--zram-swap" )
-                GetZramSwapSize $1 || return $?
+                GetZramSwapSize $1 || return "$?"
                 GetZramSwapOverride $2
                 bool_zram_swap=true
                 ;;
@@ -114,7 +114,7 @@
                 ;;
 
             * )
-                echo -e "${var_prefix_warn} Invalid input."
+                echo -e "${$_PREFIX_FAIL} Invalid input."
                 return 1
                 ;;
         esac; shift; done
@@ -286,7 +286,7 @@
             *"/"* )
                 ;;
             * )
-                echo -e "${var_prefix_error} Not a fraction."
+                echo -e "$_PREFIX_FAIL Not a fraction."
                 return 1
                 ;;
         esac
@@ -295,7 +295,7 @@
         local var_denominator=$( echo $1 | cut -d '/' -f2 )
 
         if ! IsNum $var_numerator || ! IsNum $var_numerator; then
-            return $?
+            return "$?"
         fi
 
         if [[ $var_numerator -lt $var_denominator ]] || [[ $var_denominator -gt 1 ]]; then
@@ -304,9 +304,9 @@
             return 0
         elif [[ $var_denominator -eq 0 ]]; then
             IsNum ""
-            return $?
+            return "$?"
         else
-             echo -e "${var_prefix_error} Invalid fraction."
+             echo -e "$_PREFIX_FAIL Invalid fraction."
         fi
 
         return 1
@@ -318,7 +318,7 @@
     {
         for var_option in $@; do
             IsString $var_option &> /dev/null || return 0
-            GetOption $var_option || return $?
+            GetOption $var_option || return "$?"
         done
 
         return 0
@@ -328,11 +328,11 @@
 # <params>
     # <remarks> Get script directories </remarks
     GetScriptDir
-    declare -g str_files_dir="$( find . -name files | uniq | head -n1 | cut -c2- )/"
+    declare -g _FILES_PATH="$( find . -name files | uniq | head -n1 | cut -c2- )/"
     declare -g str_filename_parse_IOMMU=""
 
     # <remarks> Toggles </remarks
-    declare -g bool_is_connected_to_Internet=false
+    declare -g _IS_CONNECTED_TO_INTERNET=false
 
     # <remarks> Usage toggles </remarks
     declare -g bool_alloc_cpu=false

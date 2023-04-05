@@ -1,0 +1,68 @@
+#!/bin/bash sh
+
+#
+# Filename:         deploy-vfio.bash
+# Description:      Effortlessly deploy a VFIO setup (PCI passthrough).
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <remarks> Using </remarks>
+# <code>
+    source vfiolib-all
+# </code>
+
+# <code>
+function Main
+{
+    # <remarks> Gather arguments. </remarks>
+    SetScriptDir || return "$?"
+
+    if [[ $( whoami ) != "root" ]]; then
+        echo -e "$_PREFIX_FAIL User is not sudo/root."
+        return 1
+    fi
+
+    if ! SetOptions $@; then GetUsage; return "$?"; fi
+
+    # <remarks> Exit early. </remarks>
+    if "$_EXECUTE_UNINSTALL_SETUP"; then
+        Setup_VFIO
+        return "$?"
+    fi
+
+    # <remarks> Extras </remarks>
+    AddUserToGroups
+    Allocate_CPU
+    Allocate_RAM
+    Virtual_KVM
+    RAM_Swapfile
+    LibvirtHooks
+    # GuestVideoCapture     # currently failing.
+    GuestAudioLoopback
+    # GuestAudioStream      # currently failing.
+    Modify_QEMU
+
+    # <remarks> Main setup </remarks>
+    case true in
+        $bool_parse_IOMMU_from_file )
+            Parse_IOMMU "FILE" || return "$?"
+            ;;
+
+        $bool_parse_IOMMU_from_internet )
+            Parse_IOMMU "DNS" || return "$?"
+            ;;
+
+        $bool_parse_IOMMU_from_local | * )
+            Parse_IOMMU "LOCAL" || return "$?"
+            ;;
+    esac
+
+    Select_IOMMU $@ || return "$?"
+    Setup_VFIO
+    return "$?"
+}
+# </code>
+
+Main $@
+exit "$?"
