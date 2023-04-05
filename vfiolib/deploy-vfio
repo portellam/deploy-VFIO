@@ -1,7 +1,7 @@
 #!/bin/bash sh
 
 #
-# Filename:         deploy-vfio.bash
+# Filename:         deploy-vfio
 # Description:      Effortlessly deploy a VFIO setup (PCI passthrough).
 # Author(s):        Alex Portell <github.com/portellam>
 # Maintainer(s):    Alex Portell <github.com/portellam>
@@ -45,24 +45,24 @@ function Main
 
     # <remarks> Main setup </remarks>
     case true in
-        $bool_parse_IOMMU_from_file )
+        $_PARSE_IOMMU_FROM_FILE )
             Parse_IOMMU "FILE" || return "$?"
             ;;
 
-        $bool_parse_IOMMU_from_internet )
+        $_PARSE_IOMMU_FROM_INTERNET )
             Parse_IOMMU "DNS" || return "$?"
             ;;
 
-        $bool_parse_IOMMU_from_local | * )
+        $_PARSE_IOMMU_FROM_CACHE | * )
             Parse_IOMMU "LOCAL" || return "$?"
             ;;
     esac
 
-    Select_IOMMU $@ || return "$?"
+    Select_IOMMU "$@" || return "$?"
     Setup_VFIO
     return "$?"
 }
 # </code>
 
-Main $@
+Main "$@"
 exit "$?"

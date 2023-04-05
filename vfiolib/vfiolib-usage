@@ -27,17 +27,17 @@
                 GetSelect_IOMMU_Args $2 || return "$?"
                 IsFile $3 || return "$?"
                 str_filename_parse_IOMMU=$3
-                bool_parse_IOMMU_from_file=true
+                _PARSE_IOMMU_FROM_FILE=true
                 ;;
 
             "-i" | "--internal" )
                 GetSelect_IOMMU_Args $2 || return "$?"
-                bool_parse_IOMMU_from_local=true
+                _PARSE_IOMMU_FROM_CACHE=true
                 ;;
 
             "-o" | "--online" )
                 GetSelect_IOMMU_Args $2 || return "$?"
-                bool_parse_IOMMU_from_internet=true
+                _PARSE_IOMMU_FROM_INTERNET=true
                 ;;
 
             # <remarks> Pre-setup: Utilities </remarks>
@@ -345,9 +345,9 @@
     declare -g bool_libvirt_hooks=false
     declare -g bool_looking_glass=false
     declare -g _EXECUTE_MULTIBOOT_SETUP=false
-    declare -g bool_parse_IOMMU_from_file=false
-    declare -g bool_parse_IOMMU_from_local=false
-    declare -g bool_parse_IOMMU_from_internet=false
+    declare -g _PARSE_IOMMU_FROM_FILE=false
+    declare -g _PARSE_IOMMU_FROM_CACHE=false
+    declare -g _PARSE_IOMMU_FROM_INTERNET=false
     declare -g bool_scream=false
     declare -g bool_select_all_IOMMU=false
     declare -g _EXECUTE_STATIC_SETUP=false
