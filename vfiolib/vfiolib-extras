@@ -184,9 +184,9 @@
         function GuestAudioStream_Get
         {
             # <params>
-            local str_user_name1="duncanthrax"
-            local str_repo_name1="scream"
-            local str_full_repo1="${str_user_name1}/${str_repo_name1}"
+            local _USER_NAME="duncanthrax"
+            local _REPO_NAME="scream"
+            local _FULL_REPO="${_USER_NAME}/${_REPO_NAME}"
             local str_dependencies=""
             # </params>
 
@@ -247,9 +247,9 @@
 
             GetScriptDir
             echo
-            UpdateOrCloneGitRepo "${_GIT_PATH}" "${str_full_repo1}" "${str_user_name1}" || return "$?"
+            UpdateOrCloneGitRepo "${_GIT_PATH}" "${_FULL_REPO}" "${_USER_NAME}" || return "$?"
             GetScriptDir
-            cd "${_GIT_PATH}${str_full_repo1}" || return "$?"
+            cd "${_GIT_PATH}${_FULL_REPO}" || return "$?"
             return 0
         }
 
@@ -360,9 +360,9 @@
         function GuestVideoCapture_Get
         {
             # <params>
-            local str_user_name1="gnif"
-            local str_repo_name1="LookingGlass"
-            local str_full_repo1="${str_user_name1}/${str_repo_name1}"
+            local _USER_NAME="gnif"
+            local _REPO_NAME="LookingGlass"
+            local _FULL_REPO="${_USER_NAME}/${_REPO_NAME}"
             local str_dependencies=""
             # </params>
 
@@ -384,9 +384,9 @@
 
             GetScriptDir
             echo
-            UpdateOrCloneGitRepo "${_GIT_PATH}" "${str_full_repo1}" "${str_user_name1}" || return "$?"
+            UpdateOrCloneGitRepo "${_GIT_PATH}" "${_FULL_REPO}" "${_USER_NAME}" || return "$?"
             GetScriptDir
-            cd "${_GIT_PATH}${str_full_repo1}" || return "$?"
+            cd "${_GIT_PATH}${_FULL_REPO}" || return "$?"
             return 0
         }
 
@@ -459,26 +459,26 @@
     # </summary>
     function RAM_Swapfile
     {
-        function RAM_Swapfile_Install
+        function Install
         {
             # <params>
-            local str_user_name1="foundObjects"
-            local str_repo_name1="zram-swap"
-            local str_full_repo1="${str_user_name1}/${str_repo_name1}"
-            local str_script_name1="install.sh"
+            local _USER_NAME="foundObjects"
+            local _REPO_NAME="zram-swap"
+            local _FULL_REPO="$_USER_NAME/$_REPO_NAME"
+            local _SCRIPT_NAME="install.sh"
             # </params>
 
             GetScriptDir || return "$?"
             echo
-            UpdateOrCloneGitRepo "${_GIT_PATH}" "${str_full_repo1}" "${str_user_name1}" || return "$?"
-            cd "${_GIT_PATH}${str_full_repo1}" || return "$?"
-            IsFile "${str_script_name1}" || return "$?"
-            bash "${str_script_name1}" || return 1
+            UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" || return "$?"
+            cd "$_GIT_PATH$_FULL_REPO" || return "$?"
+            [ -e "$_SCRIPT_NAME" ] || return "$?"
+            sudo bash "$_SCRIPT_NAME" || return 1
             GetScriptDir || return "$?"
             return 0
         }
 
-        function RAM_Swapfile_Modify
+        function Modify
         {
             # <params>
             local str_file1="/etc/default/zram-swap"
@@ -537,8 +537,8 @@
             return 0
         }
 
-        RAM_Swapfile_Install
-        RAM_Swapfile_Modify &> /dev/null
+        Install
+        Modify &> /dev/null
         PrintPassOrFail "Allocating RAM to swap..."
         return "$_LAST_EXIT_CODE"
     }
