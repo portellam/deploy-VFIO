@@ -7,6 +7,12 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
+# TODO:
+# * fix 'sed' calls
+#
+#
+#
+
 # <remarks> Using </remarks>
 # <code>
     source vfiolib-files
@@ -75,7 +81,7 @@
             || ! SetParamsForMultibootSetup \
             || ! WriteFilesForMultibootSetup \
             || ! ExecuteUpdateAfterSetup; then
-            echo -e "$_PREFIX_FAIL Multiboot setup has failed."
+            echo -e "$_PREFIX_ERROR Multiboot setup has failed."
             return 1
         fi
 
@@ -112,7 +118,7 @@
     function ExecuteUninstallSetup
     {
         if ! ExecuteBackups || ! ExecuteUpdateAfterSetup; then
-            echo -e "$_PREFIX_FAIL Uninstall has failed."
+            echo -e "$_PREFIX_ERROR Uninstall has failed."
         fi
 
         return 0
@@ -122,7 +128,7 @@
     {
         if ! [ sudo update-grub ] \
             || ! [ sudo update-initramfs -u -k all ]; then
-            echo -e "$_PREFIX_FAIL Failed to update system configuration."
+            echo -e "$_PREFIX_ERROR Failed to update system configuration."
             return 1
         fi
 
@@ -136,7 +142,7 @@
                 && [[ "${_PCISTUB_HWID_LIST[@]}" -eq 0 ]] \
                 && [[ "${_VGA_VFIOPCI_DRIVER_LIST[@]}" -eq 0 ]] \
                 && [[ "${_VGA_VFIOPCI_HWID_LIST[@]}" -eq 0 ]] ); then
-            echo -e "$_PREFIX_FAIL Required parsed IOMMU group lists are empty."
+            echo -e "$_PREFIX_ERROR Required parsed IOMMU group lists are empty."
             return 1
         fi
 
@@ -355,7 +361,7 @@
         done
 
         if ! [[ "${#_FILE_CONTENTS_LIST[@]}" -eq 0 ]]; then
-            echo -e "$_PREFIX_FAIL Multiboot setup output is empty."
+            echo -e "$_PREFIX_ERROR Multiboot setup output is empty."
             return 1
         fi
 
@@ -383,7 +389,7 @@
             || ! [ sed -i 's/## REPLACE_THIS_LINE*/'"${_MODULES_LIST[*]}" "$_MODPROBE_VFIO_FILE_PATH" ] \
             || ! [ sed -i 's/options vfio_pci ids=*/vfio_pci_ids="'"$_HWID_DELIM\"" "$_MODPROBE_VFIO_FILE_PATH" ] \
             || ! [ sed -i 's/vfio_pci ids=*/vfio_pci_ids="'"$_HWID_DELIM\"" "$_MODULES_FILE_PATH" ]; then
-            echo -e "$_PREFIX_FAIL Failed to overwrite target lines of files."
+            echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi
 
@@ -402,7 +408,7 @@
         local -r _LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"$_LINE_GRUB_CMDLINE_TEMP\""
 
         if ! [ sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=*/'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_FILE_PATH" ]; then
-            echo -e "$_PREFIX_FAIL Failed to overwrite target lines of files."
+            echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi
 
@@ -415,7 +421,7 @@
         IFS=$'\n'
 
         if ! [ echo -e "${_FILE_CONTENTS_LIST[*]}" "$_CUSTOM_GRUB_FILE_PATH" ]; then
-            echo -e "$_PREFIX_FAIL Failed to overwrite target lines of files."
+            echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi
 

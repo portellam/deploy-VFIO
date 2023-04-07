@@ -7,6 +7,13 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
+# TODO:
+# * refactor Modify_QEMU
+# * rename vars to new standard
+#
+#
+#
+
 # <remarks> Using </remarks>
 # <code>
     source vfiolib-calc
@@ -45,7 +52,7 @@
     {
         if ! [ adduser "$SUDO_USER" "input" &> /dev/null ] \
             || ! [ adduser "$SUDO_USER" "libvirt" &> /dev/null ]; then
-            echo -e "$_PREFIX_FAIL Failed to add user '$SUDO_USER' to groups."
+            echo -e "$_PREFIX_ERROR Failed to add user '$SUDO_USER' to groups."
             return 1
         fi
 
@@ -282,7 +289,7 @@
             _IS_HUGEPAGES_SETUP=false
 
             if ! [[ "$_INT_MAX_MEMORY" =~ '^[0-9]+$' ]]; then
-                echo -e "$_PREFIX_FAIL Could not parse system memory."
+                echo -e "$_PREFIX_ERROR Could not parse system memory."
                 return 1
             fi
 
@@ -340,7 +347,6 @@
     {
         function Main
         {
-            # <params>
             declare -a arr_file1_evdev_cgroups=( )
             declare -a arr_file1_default_cgroups=(
                 "        \"/dev/null\", \"/dev/full\", \"/dev/zero\","
@@ -356,7 +362,6 @@
             local str_daemon1_packages="qemu"
             local str_file1="/etc/libvirt/qemu.conf"
             local str_file2="/etc/apparmor.d/local/abstractions/libvirt-qemu"
-            # </params>
 
             # <remarks> Check if Libvirt is installed. </remarks>
             IsInstalledPackage "${str_daemon1_packages}" &> /dev/null || InstallPackage "${str_daemon1_packages}" || return "$?"
@@ -562,7 +567,7 @@
             if [[ "${#_EVENT_DEVICES_LIST[@]}" -eq 0 ]] \
                 ||[[ "${#_INPUT_DEVICES_LIST[@]}" -eq 0 ]]; then
                 _IS_EVDEV_SETUP=false
-                echo -e "$_PREFIX_FAIL Cannot parse input devices (by ID)."
+                echo -e "$_PREFIX_ERROR Cannot parse input devices (by ID)."
                 return 1
             fi
 

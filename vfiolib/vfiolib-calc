@@ -76,4 +76,37 @@
         _HUGEPAGES_MAX_SIZE=$(( "$_HUGEPAGES_MAX_SIZE" / "$_HUGEPAGES_SIZE_IN_KBIT" ))
         return 0
     }
+
+    function GetZramSwapSize
+    {
+        case "$1" in
+            *"/"* )
+                local -i _NUMERATOR=$( echo $1 | cut -d '/' -f1 )
+                local -i _DENOMINATOR=$( echo $1 | cut -d '/' -f2 ) ;;
+
+            * )
+                echo -e "$_PREFIX_ERROR Not a fraction."
+                return 1 ;;
+        esac
+
+        if ! [[ "$_NUMERATOR" =~ '^[0-9]+$' ]] \
+            || ! [ "$_DENOMINATOR" =~ '^[0-9]+$' ]; then
+            echo -e "$_PREFIX_ERROR Values are not numbers."
+            return 1
+        fi
+
+        if [[ "$_NUMERATOR" -lt "$_DENOMINATOR" ]] || [[ "$_DENOMINATOR" -gt 1 ]]; then
+            _ZRAM_SWAP_SET_FRACTION=true
+            declare -g _ZRAM_SWAP_FRACTION="$1"
+            return 0
+
+        elif [[ "$_DENOMINATOR" -eq 0 ]]; then
+            return 1
+
+        else
+             echo -e "$_PREFIX_ERROR Invalid fraction."
+        fi
+
+        return 1
+    }
 # </code>

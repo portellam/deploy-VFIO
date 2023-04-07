@@ -9,6 +9,7 @@
 
 # <remarks> Using </remarks>
 # <code>
+    source vfiolib-calcs
     source vfiolib-iommu
 # </code>
 
@@ -498,7 +499,7 @@
             done
 
             if ! IsNum "${_INT_MAX_MEMORY}"; then
-                local _OUTPUT_could_not_parse_memory="$_PREFIX_FAIL Could not parse system memory."
+                local _OUTPUT_could_not_parse_memory="$_PREFIX_ERROR Could not parse system memory."
                 echo -e "${_OUTPUT_could_not_parse_memory}"
                 return 1
             fi

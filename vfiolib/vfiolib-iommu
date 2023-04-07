@@ -22,7 +22,7 @@
     function IsEnabled_IOMMU
     {
         if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*"; then
-            echo -e "$_PREFIX_FAIL System does not support Virtualization."
+            echo -e "$_PREFIX_ERROR System does not support Virtualization."
             return 1
         fi
     }
@@ -155,12 +155,12 @@
                 var_opt=$1
 
                 # <remarks> Output statements </remarks>
-                local _OUTPUT_lists_inequal="$_PREFIX_FAIL System PCI lists' sizes are inequal."
-                local _OUTPUT_list_empty="$_PREFIX_FAIL One or more system PCI lists are empty."
+                local _OUTPUT_lists_inequal="$_PREFIX_ERROR System PCI lists' sizes are inequal."
+                local _OUTPUT_list_empty="$_PREFIX_ERROR One or more system PCI lists are empty."
                 local _OUTPUT_parse_file="Parsing PCI from file..."
                 local _OUTPUT_parse_internet="Parsing PCI from Internet..."
                 local _OUTPUT_parse_local="Parsing PCI from system..."
-                local _OUTPUT_is_setup_VFIO="$_PREFIX_FAIL Found existing VFIO setup."
+                local _OUTPUT_is_setup_VFIO="$_PREFIX_ERROR Found existing VFIO setup."
 
                 # <remarks> Declare lists </remarks>
                 declare -ag arr_class arr_device_ID arr_device_name _DRIVER_LIST _HWID_LIST _IOMMU_LIST arr_slot_ID arr_vendor_ID arr_vendor_name
@@ -443,8 +443,6 @@
         declare -a arr_this_IOMMU=( $( eval "${var_get_IOMMU}" ) )
         # </params>
 
-        # PrintWait "${_OUTPUT}"
-
         for var_IOMMU in ${arr_this_IOMMU[@]}; do
             local bool_IOMMU_has_external_domain=false
             local bool_IOMMU_PCISTUB=false
@@ -462,7 +460,7 @@
 
         # <remarks> Check if list is empty </remarks>
         IsArray "_VFIOPCI_IOMMU_LIST" &> /dev/null && bool_VFIO_has_IOMMU=true && Get_IOMMU_Lists && Set_IOMMU_Lists
-        PrintPassOrFail "${_OUTPUT}"
+        PrintPassOrFail "Reviewing IOMMU groups..."
         return "$_LAST_EXIT_CODE"
     }
 # </code>

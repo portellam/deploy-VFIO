@@ -60,7 +60,7 @@
             || [ ! sudo cp -rv "$_MODPROBE_VFIO_FILE_BACKUP" "$_MODPROBE_VFIO_FILE_PATH" ] \
             || [ ! sudo cp -rv "$_MODULES_FILE_BACKUP" "$_MODULES_FILE_PATH" ] \
             || [ ! sudo cp -rv "$_QEMU_FILE_BACKUP" "$_QEMU_FILE_PATH" ]; then
-            echo -e "$_PREFIX_ERROR Could not copy files."
+            echo -e "$_PREFIX_ERROR Failed to copy files."
             return 1
         fi
 
@@ -71,7 +71,7 @@
             || ! [ sudo chown root: root "$_MODPROBE_VFIO_FILE_PATH" ] \
             || ! [ sudo chown root: root "$_MODULES_FILE_PATH" ] \
             || ! [ sudo chown root: root "$_QEMU_FILE_PATH" ]; then
-            echo -e "$_PREFIX_ERROR Could not set permissions for files."
+            echo -e "$_PREFIX_ERROR Failed to set permissions for files."
             return 1
         fi
     }
@@ -93,7 +93,7 @@
             || [ -z "$_MODPROBE_BLACKLISTS_FILE_BACKUP" ] \
             || [ -z "$_MODPROBE_VFIO_FILE_BACKUP" ] \
             || [ -z "$_MODULES_FILE_BACKUP" ]; then
-            echo -e "$_PREFIX_ERROR Could not find backup files."
+            echo -e "$_PREFIX_ERROR Failed to find backup files."
             return 1
         fi
 
@@ -136,7 +136,7 @@
         fi
 
         if [[ -z "$_QEMU_FILE_BACKUP" ]]; then
-            echo -e "$_PREFIX_ERROR Could not find QEMU source file. Attempting to download."
+            echo -e "$_PREFIX_ERROR Failed to find QEMU source file. Attempting to download."
 
             if ! [ command -v curl &> /dev/null ]; then
                 echo -e "$_PREFIX_ERROR Required command 'curl' is not installed."
@@ -144,13 +144,13 @@
             fi
 
             if ! [ curl -v "$_QEMU_FILE_URL" -o "$_QEMU_FILE_BACKUP" &> /dev/null ]; then
-                echo -e "$_PREFIX_ERROR Could not backup QEMU source file."
+                echo -e "$_PREFIX_ERROR Failed to find backup QEMU source file."
                 return 1
             fi
         fi
 
         if ! [ sudo cp $_QEMU_FILE_BACKUP $_QEMU_FILE_PATH &> /dev/null ]; then
-            echo -e "$_PREFIX_ERROR Could not restore QEMU backup file."
+            echo -e "$_PREFIX_ERROR Failed to restore QEMU backup file."
             return 1
         fi
 
@@ -160,7 +160,7 @@
     function SetWorkingDirToBackupsFolder
     {
         if ! [ cd "$_BACKUPS_PATH" &> /dev/null ]; then
-            echo -e "$_PREFIX_ERROR Could not set working directory."
+            echo -e "$_PREFIX_ERROR Failed to set working directory."
             return 1
         fi
 
@@ -176,7 +176,7 @@
     function SetBackupsFor_GRUB
     {
         if ! sudo cp "$_GRUB_FILE_BACKUP_1" "$_GRUB_FILE_BACKUP_2" &> /dev/null; then
-            echo -e "$_PREFIX_ERROR Could not copy GRUB backup file."
+            echo -e "$_PREFIX_ERROR Failed to copy GRUB backup file."
             return 1
         fi
 
@@ -188,20 +188,20 @@
         if ! [ sed -i 's/GRUB_DISTRIBUTOR=*/'"$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_FILE_BACKUP_2" ] \
             || ! [ sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=*/'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_FILE_BACKUP_2" ] \
             || ! [ sed -i 's/GRUB_CMDLINE_LINUX=*/'"$_LINE_GRUB_CMDLINE" "$_GRUB_FILE_BACKUP_2" ]; then
-            echo -e "$_PREFIX_ERROR Could not clear target lines of GRUB backup file."
+            echo -e "$_PREFIX_ERROR Failed to clear target lines of GRUB backup file."
             return 1
         fi
 
         if ! [ -z $( grep "$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_FILE_BACKUP_2" ) ] \
             || ! [ -z $( grep "$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_FILE_BACKUP_2" ) ] \
             || ! [ -z $( grep "$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_FILE_BACKUP_2" ) ]; then
-            echo -e "$_PREFIX_ERROR Could not overwrite target lines of GRUB backup file."
+            echo -e "$_PREFIX_ERROR Failed to overwrite target lines of GRUB backup file."
             return 1
         fi
 
         # <remarks> Note: this must be the second file (that is the overwritten copy) </remarks>
         if ! [ sudo cp "$_GRUB_FILE_BACKUP_2" "$_GRUB_FILE_PATH_1" &> /dev/null ]; then
-            echo -e "$_PREFIX_ERROR Could not restore GRUB backup file."
+            echo -e "$_PREFIX_ERROR Failed to restore GRUB backup file."
             return 1
         fi
 

@@ -31,6 +31,7 @@
     declare -g _EXECUTE_AUDIO_LOOPBACK_SETUP=false
     declare -g _EXECUTE_AUTO_XORG_SETUP=false
     declare -g _EXECUTE_EVDEV_SETUP=false
+    declare -g _EXECUTE_HUGEPAGES_SETUP=false
     declare -g _IS_HUGEPAGES_COUNT_SET=false
     declare -g _IS_HUGEPAGES_SIZE_SET=false
     declare -g _EXECUTE_LIBVIRT_HOOKS=false
@@ -51,8 +52,6 @@
 # </params>
 
 # <code>
-    # <summary> Set arguments and options. </summary>
-    # <param name="@"> array: the input parameters </param>
     function GetOption
     {
         while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
@@ -62,19 +61,33 @@
 
             # <remarks> Pre-setup: Parse IOMMU </remarks>
             "-f" | "--file" )
-                GetSelect_IOMMU_Args $2 || return "$?"
-                IsFile $3 || return "$?"
+                if [[ "$2" == "" ]] \
+                    || [[ -z "$2" ]]; then
+                    echo -e "$_OUTPUT_INVALID_OPTION"
+                    return "$?"
+                fi
+
+                if [[ "$3" != "" ]]; then
+                    GetArgsForSelect_IOMMU "$3" || return "$?"
+                fi
+
                 _FILENAME_PARSE_IOMMU=$3
                 _PARSE_IOMMU_FROM_FILE=true
                 ;;
 
             "-i" | "--internal" )
-                GetSelect_IOMMU_Args $2 || return "$?"
+                if [[ "$2" != "" ]]; then
+                    GetArgsForSelect_IOMMU "$2" || return "$?"
+                fi
+
                 _PARSE_IOMMU_FROM_CACHE=true
                 ;;
 
             "-o" | "--online" )
-                GetSelect_IOMMU_Args $2 || return "$?"
+                if [[ "$2" != "" ]]; then
+                    GetArgsForSelect_IOMMU "$2" || return "$?"
+                fi
+
                 _PARSE_IOMMU_FROM_INTERNET=true
                 ;;
 
@@ -99,6 +112,8 @@
                 if [[ "$3" != "" ]]; then
                     GetHugepageCount "$3" || return "$?"
                 fi
+
+                _EXECUTE_HUGEPAGES_SETUP=true
                 ;;
 
             "--uninstall-utils" )
@@ -107,12 +122,14 @@
 
             # <remarks> Main setup </remarks>
             "-m" | "--multiboot" )
-                GetArgsForStatic_VFIO $1 || return "$?"
-                GetArgsForStatic_VFIO $2 || return "$?"
                 _EXECUTE_MULTIBOOT_SETUP=true
                 ;;
 
             "-s" | "--static" )
+                if [[ "$2" != "" ]]; then
+                    GetArgsForStatic_VFIO "$2" || return "$?"
+                fi
+
                 _EXECUTE_STATIC_SETUP=true
                 ;;
 
@@ -148,8 +165,15 @@
 
             "-z" | "--zram-swap" )
                 _EXECUTE_ALL_EXTRAS_SETUPS=false
-                GetZramSwapSize $1 || return "$?"
-                GetZramSwapOverride $2
+
+                if [[ "$2" != "" ]]; then
+                    GetZramSwapSize "$2" || GetOverrideArgsForZramSwap "$2" || return "$?"
+                fi
+
+                if [[ "$3" != "" ]]; then
+                    GetZramSwapSize "$3" || GetOverrideArgsForZramSwap "$3" || return "$?"
+                fi
+
                 _EXECUTE_ZRAM_SWAP=true
                 ;;
 
@@ -162,7 +186,7 @@
                 ;;
 
             * )
-                echo -e "$_PREFIX_FAIL Invalid input."
+                echo -e "$_OUTPUT_INVALID_OPTION"
                 return 1
                 ;;
         esac; shift; done
@@ -174,13 +198,9 @@
         return 0
     }
 
-    # <summary> Set option for given argument. </summary>
-    # <param name="1"> string: the option </param>
     function GetArgsForStatic_VFIO
     {
-        IsString $1 &> /dev/null || return 0
-
-        case $1 in
+        case "$1" in
             "grub" )
                 _EXECUTE_STATIC_SETUP_grub=true
                 return 0
@@ -195,9 +215,7 @@
         return 1
     }
 
-    # <summary> Set option for given argument. </summary>
-    # <param name="1"> string: the option </param>
-    function GetSelect_IOMMU_Args
+    function GetArgsForSelect_IOMMU
     {
         case "$1" in
             "all" )
@@ -212,7 +230,21 @@
         return 0
     }
 
-    # <summary> Prints the usage. </summary>
+    function GetOverrideArgsForZramSwap
+    {
+        case "$1" in
+            "force" )
+                _ZRAM_SWAP_OVERRIDE=true
+                ;;
+
+            * )
+                return 1
+                ;;
+        esac
+
+        return 0
+    }
+
     function GetUsage
     {
         IFS=$'\n'
@@ -282,64 +314,6 @@
         return 0
     }
 
-    # <summary> Set option for given argument. </summary>
-    # <param name="1"> string: the option </param>
-    function GetZramSwapOverride
-    {
-        case "$1" in
-            "force" )
-                _ZRAM_SWAP_OVERRIDE=true
-                ;;
-
-            * )
-                return 1
-                ;;
-        esac
-
-        return 0
-    }
-
-    # <summary> Set option for given argument. </summary>
-    # <param name="1"> string: the option </param>
-    function GetZramSwapSize
-    {
-        [ "$1" == "" ] || return 0
-
-        case "$1" in
-            *"/"* )
-                ;;
-            * )
-                echo -e "$_PREFIX_FAIL Not a fraction."
-                return 1
-                ;;
-        esac
-
-        local -i _NUMERATOR=$( echo $1 | cut -d '/' -f1 )
-        local -i _DENOMINATOR=$( echo $1 | cut -d '/' -f2 )
-
-        if ! [[ "$_NUMERATOR" =~ '^[0-9]+$' ]] \
-            || ! [ "$_DENOMINATOR" =~ '^[0-9]+$' ]; then
-            echo -e "$_PREFIX_FAIL Not a fraction."
-            return 1
-        fi
-
-        if [[ $_NUMERATOR -lt $_DENOMINATOR ]] || [[ $_DENOMINATOR -gt 1 ]]; then
-            _ZRAM_SWAP_SET_FRACTION=true
-            declare -g _ZRAM_SWAP_FRACTION="$1"
-            return 0
-
-        elif [[ $_DENOMINATOR -eq 0 ]]; then
-            return 1
-
-        else
-             echo -e "$_PREFIX_FAIL Invalid fraction."
-        fi
-
-        return 1
-    }
-
-    # <summary> Sets the options. Exit early (Pass) if input is null. Else, exit early (Fail) if input is invalid. </summary>
-    # <param name="@"> array: the input parameters </param>
     function SetOptions
     {
         for VAR_OPTION in "$@"; do

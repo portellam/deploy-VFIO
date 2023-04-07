@@ -68,7 +68,7 @@
     {
         if [[ "$1" == "" ]] \
             || [[ "$_PACKAGE_MANAGER" == "" ]]; then
-            echo -e "$_PREFIX_FAIL Input values are empty."
+            echo -e "$_PREFIX_ERROR Input values are empty."
             return 1
         fi
 
@@ -112,11 +112,11 @@
         if [[ "$_LAST_EXIT_CODE" -ne 0 ]]; then
             case "$_PACKAGE_MANAGER" in
                 *" "* )
-                    echo -e "$_PREFIX_FAIL Packages '$_PACKAGE_MANAGER' were not found."
+                    echo -e "$_PREFIX_ERROR Packages '$_PACKAGE_MANAGER' were not found."
                     ;;
 
                 * )
-                    echo -e "$_PREFIX_FAIL Package '$_PACKAGE_MANAGER' was not found."
+                    echo -e "$_PREFIX_ERROR Package '$_PACKAGE_MANAGER' was not found."
                     ;;
             esac
 
@@ -221,17 +221,17 @@
         local _OS_WITH_ZYPPER="mandriva mageia"
 
         if [[ "$_KERNEL" == "" || "$_OPERATING_SYSTEM" == "" ]]; then
-            echo -e "$_PREFIX_FAIL Null values."
+            echo -e "$_PREFIX_ERROR Null values."
             return 1
         fi
 
         if [[ "$_KERNEL" != *"linux"* ]]; then
-            echo -e "$_PREFIX_FAIL Kernel '$( uname -o )' is not supported."
+            echo -e "$_PREFIX_ERROR Kernel '$( uname -o )' is not supported."
             return 1
         fi
 
         if ! GetPackageManagerByOS; then
-            echo -e "$_PREFIX_FAIL Distribution '$( lsb_release -is )' is not supported."
+            echo -e "$_PREFIX_ERROR Distribution '$( lsb_release -is )' is not supported."
             return 1
         fi
 
@@ -245,7 +245,7 @@
     {
         if [[ "$_PACKAGE_MANAGER" == "" ]] \
             || [[ "$1" == "" ]]; then
-            echo -e "$_PREFIX_FAIL Input values are empty."
+            echo -e "$_PREFIX_ERROR Input values are empty."
             return 1
         fi
 
@@ -308,7 +308,7 @@
     {
         if [[ "$2" == "" ]] \
             || [[ "$1" == "" ]]; then
-            echo -e "$_PREFIX_FAIL Input values are empty."
+            echo -e "$_PREFIX_ERROR Input values are empty."
             return 1
         fi
 
@@ -351,7 +351,7 @@
     {
         if [[ "$_PACKAGE_MANAGER" == "" ]] \
             || [[ "$1" == "" ]]; then
-            echo -e "$_PREFIX_FAIL Input values are empty."
+            echo -e "$_PREFIX_ERROR Input values are empty."
             return 1
         fi
 
@@ -384,7 +384,7 @@
     function IsSudoUser
     {
         if [[ $( whoami ) != "root" ]]; then
-            echo -e "$_PREFIX_FAIL User is not sudo/root."
+            echo -e "$_PREFIX_ERROR User is not sudo/root."
             return 1
         fi
 
@@ -436,7 +436,7 @@
     {
         if [[ "$_PACKAGE_MANAGER" == "" ]] \
             || [[ "$1" == "" ]]; then
-            echo -e "$_PREFIX_FAIL Input values are empty."
+            echo -e "$_PREFIX_ERROR Input values are empty."
             return 1
         fi
 
@@ -489,13 +489,13 @@
         if [[ "$3" == "" ]] \
             || [[ "$2" == "" ]] \
             || [[ "$1" == "" ]]; then
-            echo -e "$_PREFIX_FAIL Input values are empty."
+            echo -e "$_PREFIX_ERROR Input values are empty."
             return 1
         fi
 
         if [[ ! -d "$1$2" ]] \
             && sudo mkdir -p "$1$3"; then
-            echo -e "$_PREFIX_FAIL Failed to create directory '$1$3'."
+            echo -e "$_PREFIX_ERROR Failed to create directory '$1$3'."
             return 1
         fi
 
@@ -504,7 +504,7 @@
             cd "$1$2"
 
             if ! git pull &> /dev/null; then
-                echo -e "$_PREFIX_FAIL Failed to update repository."
+                echo -e "$_PREFIX_ERROR Failed to update repository."
                 return 1
             fi
 
@@ -520,7 +520,7 @@
                         cd "$1$3"
 
                         if ! git clone "https://github.com/$2" &> /dev/null; then
-                            echo -e "$_PREFIX_FAIL Failed to download repository."
+                            echo -e "$_PREFIX_ERROR Failed to download repository."
                             return 1
                         fi
 
