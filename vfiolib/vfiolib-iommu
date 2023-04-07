@@ -141,8 +141,7 @@
             Parse_IOMMU_Are_Inequal_Lists_Sizes || return "$?"
 
             # <remarks> Save output to file. </remarks>
-            if [[ $? -eq 0 ]] \
-                && [[ "$_OPTION" != "$_OPTION_PARSE_IOMMU_FILE" ]] \
+            if [[ "$_OPTION" != "$_OPTION_PARSE_IOMMU_FILE" ]] \
                 && [[ -z "$_PARSE_IOMMU_FILENAME" ]]; then
                 eval "$_PARSE_TO_FILE"
             fi
@@ -228,7 +227,7 @@
             local _HWID=$( lspci -n -s "$_DEVICE" | cut -d ' ' -f 3 )
 
             case "$_DRIVER" in
-                    # <remarks> Match invalid input, and save as known null value. </remarks>
+                # <remarks> Match invalid input, and save as known null value. </remarks>
                 "" )
                     _DRIVER="N/A"
                     ;;
@@ -308,39 +307,30 @@
         local _VENDOR_NAME="${_VENDOR_NAME_LIST[$_KEY]}"
         local _THIS_DOMAIN_ID=$( echo "$_SLOT_ID" | cut -d ':' -f 1 )
 
-        # <remarks> Regex: check if value is decimal or hexadecimal and greater than zero </remarks>
-        local str_regex='[a-fA-F1-9]'
-
-        # <remarks> Output statement </remarks>
-        declare -a _OUTPUT1=(
-            "Slot ID:\t'$_SLOT_ID'"
-            "Vendor name:\t'$_VENDOR_NAME'"
-            "Device name:\t'$_DEVICE_NAME'"
-            "Class/Type:\t'$_CLASS'"
-            "Hardware ID:\t'$_HWID'"
-            "Kernel driver:\t'$_DRIVER'"
-        )
-
         # <remarks> Match IOMMU group </remarks>
-        if [[ $_IOMMU -eq $_THIS_IOMMU ]]; then
+        if [[ "$_IOMMU" -eq "$_THIS_IOMMU" ]]; then
 
             # <remarks> External PCI devices have domain IDs of '01' or greater. </remarks>
-            if [[ $_THIS_DOMAIN_ID =~ ${str_regex} ]]; then
+            if [[ "$_THIS_DOMAIN_ID" =~ '[a-fA-F1-9]' ]]; then
                 _IOMMU_HAS_EXTERNAL_DOMAIN=true
             fi
 
-            local _CLASS=$( echo "${_CLASS_LIST[$_KEY]}" | tr '[:upper:]' '[:lower:]' )
-            PrintArray "_OUTPUT1"
+            local -l _CLASS="${_CLASS_LIST[$_KEY]}"
+            echo -e "Slot ID:\t'$_SLOT_ID'"
+            echo -e "Vendor name:\t'$_VENDOR_NAME'"
+            echo -e "Device name:\t'$_DEVICE_NAME'"
+            echo -e "Class/Type:\t'$_CLASS'"
+            echo -e "Hardware ID:\t'$_HWID'"
+            echo -e "Kernel driver:\t'$_DRIVER'"
 
             # <remarks> Match Class </remarks>
-            case $_CLASS in
+            case "$_CLASS" in
                 *"graphics"* | *"vga"* | *"video"* )
-                    bool_IOMMU_has_VGA=true
+                    _IOMMU_HAS_VGA=true
                     ;;
 
                 *"usb"* )
-                    bool_IOMMU_has_USB=true
-                    bool_IOMMU_PCISTUB=true
+                    _IOMMU_HAS_USB=true
                     ;;
             esac
         fi
@@ -350,17 +340,17 @@
 
     function Select_IOMMU_Group
     {
-        if $bool_IOMMU_has_USB; then
-            _PCISTUB_IOMMU_LIST+=( "${_THIS_IOMMU}" )
+        if "$_IOMMU_HAS_USB"; then
+            _PCISTUB_IOMMU_LIST+=( "$_THIS_IOMMU" )
         else
             _PCISTUB_IOMMU_LIST+=( "" )
         fi
 
-        if $bool_IOMMU_has_VGA; then
+        if "$_IOMMU_HAS_VGA"; then
             _VFIOPCI_IOMMU_LIST+=( "" )
-            _VGA_VFIOPCI_IOMMU_LIST+=( "${_THIS_IOMMU}" )
+            _VGA_VFIOPCI_IOMMU_LIST+=( "$_THIS_IOMMU" )
         else
-            _VFIOPCI_IOMMU_LIST+=( "${_THIS_IOMMU}" )
+            _VFIOPCI_IOMMU_LIST+=( "$_THIS_IOMMU" )
             _VGA_VFIOPCI_IOMMU_LIST+=( "" )
         fi
 
@@ -371,12 +361,15 @@
     function Select_IOMMU_Prompt
     {
         # <remarks> Append to list a valid array or empty value. </remarks>
-        if "$_IOMMU_HAS_EXTERNAL_DOMAIN" && "$_SELECT_ALL_IOMMU"; then
+        if "$_IOMMU_HAS_EXTERNAL_DOMAIN" \
+            && "$_SELECT_ALL_IOMMU"; then
             Select_IOMMU_Group
             return 0
         fi
 
-        if "$_IOMMU_HAS_EXTERNAL_DOMAIN" && ! "$_SELECT_ALL_IOMMU" && Select_IOMMU_YesOrNo; then
+        if "$_IOMMU_HAS_EXTERNAL_DOMAIN" \
+            && ! "$_SELECT_ALL_IOMMU" \
+            && Select_IOMMU_YesOrNo; then
             Select_IOMMU_Group
         fi
 
@@ -412,58 +405,44 @@
         return 1
     }
 
-    # TODO: need to update here.
     function Set_IOMMU_Lists
     {
         # <remarks> Remove duplicate entries. </remarks>
         for _KEY in ${!_DRIVER_LIST_VFIOPCI[@]}; do
-            local var_driver="${_DRIVER_LIST_VFIOPCI[$_KEY]}"
+            local _DRIVER="${_DRIVER_LIST_VFIOPCI[$_KEY]}"
 
-            if FindLineInArray "_DRIVER_LIST_VFIOPCI" "${var_driver}" &> /dev/null; then
+            if FindLineInArray "_DRIVER_LIST_VFIOPCI" "$_DRIVER" &> /dev/null; then
                 _DRIVER_LIST_VFIOPCI[_KEY]=""
             fi
         done
 
         # <remarks> Remove duplicate entries. </remarks>
         for _KEY in ${!_HWID_LIST_VFIOPCI[@]}; do
-            local var_HWID="${_HWID_LIST_VFIOPCI[$_KEY]}"
+            local _HWID="${_HWID_LIST_VFIOPCI[$_KEY]}"
 
-            if FindLineInArray "_HWID_LIST_PCISTUB" "${var_HWID}" &> /dev/null || FindLineInArray "_HWID_LIST_VFIOPCI_WITH_VGA" "${var_HWID}" &> /dev/null; then
+            if FindLineInArray "_HWID_LIST_PCISTUB" "$_HWID" &> /dev/null || FindLineInArray "_HWID_LIST_VFIOPCI_WITH_VGA" "$_HWID" &> /dev/null; then
                 _HWID_LIST_VFIOPCI[_KEY]=""
             fi
         done
 
         # <remarks> Remove duplicate entries. </remarks>
         for _KEY in ${!_HWID_LIST_PCISTUB[@]}; do
-            local var_HWID="${_HWID_LIST_VFIOPCI[$_KEY]}"
+            local _HWID="${_HWID_LIST_VFIOPCI[$_KEY]}"
 
-            if FindLineInArray "_HWID_LIST_VFIOPCI_WITH_VGA" "${var_HWID}" &> /dev/null; then
+            if FindLineInArray "_HWID_LIST_VFIOPCI_WITH_VGA" "$_HWID" &> /dev/null; then
                 _HWID_LIST_PCISTUB[_KEY]=""
             fi
         done
 
-        # TODO: need to update here.
-        # NOTE: possibly breaking here, because I just revised the array functions (undeclared vars, should declare.)
-
-        TrimArray "_DRIVER_LIST_VFIOPCI" || return "$?"
-        TrimArray "_DRIVER_LIST_VFIOPCI_WITH_VGA" || return "$?"
-        TrimArray "_HWID_LIST_PCISTUB" || return "$?"
-        TrimArray "_HWID_LIST_VFIOPCI" || return "$?"
-        TrimArray "_HWID_LIST_VFIOPCI_WITH_VGA" || return "$?"
-
-        SortArray "_DRIVER_LIST_VFIOPCI"
-        SortArray "_DRIVER_LIST_VFIOPCI_WITH_VGA"
-        SortArray "_HWID_LIST_PCISTUB"
-        SortArray "_HWID_LIST_VFIOPCI"
-        SortArray "_HWID_LIST_VFIOPCI_WITH_VGA"
-
-        PrintArray "_DRIVER_LIST_VFIOPCI"
-        PrintArray "_DRIVER_LIST_VFIOPCI_WITH_VGA"
-        PrintArray "_HWID_LIST_PCISTUB"
-        PrintArray "_HWID_LIST_VFIOPCI"
-        PrintArray "_HWID_LIST_VFIOPCI_WITH_VGA"
-
-        exit 0
+        # trim arrays here?
+        # <remarks> Sort lists by alphabetical order. </remarks>
+        IFS=$'\n'
+        _DRIVER_LIST_VFIOPCI=$( echo "${_DRIVER_LIST_VFIOPCI[*]}" | sort )
+        _DRIVER_LIST_VFIOPCI_WITH_VGA=$( echo "${_DRIVER_LIST_VFIOPCI_WITH_VGA[*]}" | sort )
+        _HWID_LIST_PCISTUB=$( echo "${_HWID_LIST_PCISTUB[*]}" | sort )
+        _HWID_LIST_VFIOPCI=$( echo "${_HWID_LIST_VFIOPCI[*]}" | sort )
+        _HWID_LIST_VFIOPCI_WITH_VGA=$( echo "${_HWID_LIST_VFIOPCI_WITH_VGA[*]}" | sort )
+        unset IFS
         return 0
     }
 
@@ -486,10 +465,9 @@
 
         for _THIS_IOMMU in ${_THIS_IOMMU_LIST[@]}; do
             local _IOMMU_HAS_EXTERNAL_DOMAIN=false
-            local bool_IOMMU_PCISTUB=false
             # local bool_IOMMU_VFIOPCI=false
-            local bool_IOMMU_has_USB=false
-            local bool_IOMMU_has_VGA=false
+            local _IOMMU_HAS_USB=false
+            local _IOMMU_HAS_VGA=false
 
             for _KEY in ${!_IOMMU_LIST[@]}; do
                 local -i _IOMMU="${_IOMMU_LIST[$_KEY]}"
