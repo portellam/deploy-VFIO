@@ -492,9 +492,9 @@
             # </params>
 
             # <remarks> Replace matching line with comment of line </remarks>
-            for int_key in ${!arr_file_contents[@]}; do
-                if [[ "${arr_file_contents[$int_key]}" == *"${str_match_line1}"* ]]; then
-                    arr_file_contents[$int_key]="#${arr_file_contents[$int_key]}"
+            for _KEY in ${!arr_file_contents[@]}; do
+                if [[ "${arr_file_contents[$_KEY]}" == *"${str_match_line1}"* ]]; then
+                    arr_file_contents[$_KEY]="#${arr_file_contents[$_KEY]}"
                 fi
             done
 
