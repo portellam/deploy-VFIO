@@ -87,7 +87,7 @@
 
         function GetThreadByCoreAnd_SMT
         {
-            _THREAD=$(( _CORE + ( _SMT_FACTOR * _SUM_CORES ) ))
+            _THREAD=$(( _CORE + ( _SMT_FACTOR * _SUM_CORES ) ))             # NOTE: VS Code reports a syntax error here. There is none.
         }
 
         function GetThreadSetsForHostAndGuest
