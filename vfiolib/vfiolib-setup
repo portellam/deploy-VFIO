@@ -167,22 +167,22 @@
                 esac
             done
 
-            if ! $_EXECUTE_MULTIBOOT_SETUP && ! $_EXECUTE_STATIC_SETUP && ! $_EXECUTE_UNINSTALL_SETUP; then
-                echo -e "Failed to select setup. Exiting."
+            if [[ "$_ANSWER" != [MmSsUu]* ]]; then
+                echo -e "$_PREFIX_ERROR Failed to answer."
                 return 1
             fi
         fi
 
         case true in
-            $_EXECUTE_MULTIBOOT_SETUP )
+            "$_EXECUTE_MULTIBOOT_SETUP" )
                 ExecuteMultibootSetup || return "$?"
                 ;;
 
-            $_EXECUTE_STATIC_SETUP )
+            "$_EXECUTE_STATIC_SETUP" )
                 ExecuteStaticSetup || return "$?"
                 ;;
 
-            $_EXECUTE_UNINSTALL_SETUP )
+            "$_EXECUTE_UNINSTALL_SETUP" )
                 ExecuteUninstallSetup || return 1
                 ;;
         esac
@@ -321,8 +321,8 @@
         _NO_VGA_HWID_DELIM="${_NO_VGA_HWID_DELIM::-1}"
         local _LINE_GRUB_CMDLINE_PREFIX=""
         _LINE_GRUB_CMDLINE_PREFIX+="$_LINE_GRUB_CMDLINE "
-        _LINE_GRUB_CMDLINE_PREFIX+="$_OUTPUT_allocate_cpu_GRUB "
-        _LINE_GRUB_CMDLINE_PREFIX+="$_OUTPUT_hugepages_GRUB "
+        _LINE_GRUB_CMDLINE_PREFIX+="$_LINE_GRUB_CMDLINE_ISOLCPU "
+        _LINE_GRUB_CMDLINE_PREFIX+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
 
         # <remarks> Parse VGA VFIO IOMMU Groups. </remarks>
         for _IOMMU in ${_VGA_VFIOPCI_IOMMU_LIST[@]}; do
@@ -367,8 +367,8 @@
         IFS=$'\n'
         local _LINE_GRUB_CMDLINE_TEMP=""
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE "
-        _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_allocate_cpu_GRUB "
-        _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_hugepages_GRUB "
+        _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE_ISOLCPU "
+        _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
         _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=\"$_DRIVER_DELIM\" "
         _LINE_GRUB_CMDLINE_TEMP+="pci-stub.ids=\"$_STATIC_PCISTUB_HWID_DELIM\" "
         _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=\"$_HWID_DELIM\" "
@@ -396,8 +396,8 @@
         IFS=$'\n'
         local _LINE_GRUB_CMDLINE_TEMP=""
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE "
-        _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_allocate_cpu_GRUB "
-        _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_hugepages_GRUB "
+        _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE_ISOLCPU "
+        _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
         _LINE_GRUB_CMDLINE_TEMP="${_LINE_GRUB_CMDLINE_TEMP::-1}"
         local -r _LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"$_LINE_GRUB_CMDLINE_TEMP\""
 

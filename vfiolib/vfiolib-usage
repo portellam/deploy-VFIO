@@ -7,7 +7,15 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
+# <remarks> Using </remarks>
+# <code>
+    source vfiolib-calc
+# </code>
+
 # <params>
+    declare -gr _OUTPUT_INVALID_ANSWER="$_PREFIX_ERROR Failed to answer."
+    declare -gr _OUTPUT_INVALID_OPTION="$_PREFIX_ERROR Invalid option."
+
     # <remarks> Get script directories </remarks
     GetScriptDir
     declare -g _FILES_PATH="$( find . -name files | uniq | head -n1 | cut -c2- )/"
@@ -17,13 +25,14 @@
     declare -g _IS_CONNECTED_TO_INTERNET=false
 
     # <remarks> Usage toggles </remarks
-    declare -g _EXECUTE_ALLOCATE_CPU=false
-    declare -g _EXECUTE_AUDIO_LOOPBACK=false
-    declare -g _EXECUTE_AUTO_XORG=false
-    declare -g _EXECUTE_EVDEV=false
-    declare -g _EXECUTE_HUGEPAGES=false
-    declare -g _HUGEPAGES_SET_COUNT=false
-    declare -g _HUGEPAGES_SET_SIZE=false
+    declare -g _EXECUTE_ALL_EXTRAS_SETUPS=true
+    declare -g _EXECUTE_ALL_UTILS_SETUPS=true
+    declare -g _EXECUTE_ISOLCPU_SETUP=false
+    declare -g _EXECUTE_AUDIO_LOOPBACK_SETUP=false
+    declare -g _EXECUTE_AUTO_XORG_SETUP=false
+    declare -g _EXECUTE_EVDEV_SETUP=false
+    declare -g _IS_HUGEPAGES_COUNT_SET=false
+    declare -g _IS_HUGEPAGES_SIZE_SET=false
     declare -g _EXECUTE_LIBVIRT_HOOKS=false
     declare -g _EXECUTE_LOOKING_GLASS=false
     declare -g _EXECUTE_MULTIBOOT_SETUP=false
@@ -71,24 +80,28 @@
 
             # <remarks> Pre-setup: Utilities </remarks>
             "-c" | "--cpu" )
-                _EXECUTE_ALLOCATE_CPU=true
+                _EXECUTE_ALL_UTILS_SETUPS=false
+                _EXECUTE_ISOLCPU_SETUP=true
                 ;;
 
             "-e" | "--evdev" )
-                _EXECUTE_EVDEV=true
+                _EXECUTE_ALL_UTILS_SETUPS=false
+                _EXECUTE_EVDEV_SETUP=true
                 ;;
 
             "-h" | "--hugepages" )
-                GetHugepageByteSize $2 || GetHugepageCount $2 || return "$?"
-                GetHugepageByteSize $3 || GetHugepageCount $3 || return "$?"
-                _EXECUTE_HUGEPAGES=true
+                _EXECUTE_ALL_UTILS_SETUPS=false
+
+                if [[ "$2" != "" ]]; then
+                    GetHugepageByteSize "$2" || return "$?"
+                fi
+
+                if [[ "$3" != "" ]]; then
+                    GetHugepageCount "$3" || return "$?"
+                fi
                 ;;
 
             "--uninstall-utils" )
-                _UNINSTALL_UTILS=true
-                ;;
-
-            "--uninstall-pre-setup" )
                 _UNINSTALL_UTILS=true
                 ;;
 
@@ -109,26 +122,32 @@
 
             # <remarks> Post-setup: Extras </remarks>
             "-H" | "--hooks" )
+                _EXECUTE_ALL_EXTRAS_SETUPS=false
                 _EXECUTE_LIBVIRT_HOOKS=true
                 ;;
 
             "-l" | "--looking-glass" )
+                _EXECUTE_ALL_EXTRAS_SETUPS=false
                 _EXECUTE_LOOKING_GLASS=true
                 ;;
 
             "-L" | "--audio-loopback" )
-                _EXECUTE_AUDIO_LOOPBACK=true
+                _EXECUTE_ALL_EXTRAS_SETUPS=false
+                _EXECUTE_AUDIO_LOOPBACK_SETUP=true
                 ;;
 
             "-S" | "--scream" )
+                _EXECUTE_ALL_EXTRAS_SETUPS=false
                 _EXECUTE_SCREAM=true
                 ;;
 
             "-x" | "--auto-xorg" )
-                _EXECUTE_AUTO_XORG=true
+                _EXECUTE_ALL_EXTRAS_SETUPS=false
+                _EXECUTE_AUTO_XORG_SETUP=true
                 ;;
 
             "-z" | "--zram-swap" )
+                _EXECUTE_ALL_EXTRAS_SETUPS=false
                 GetZramSwapSize $1 || return "$?"
                 GetZramSwapOverride $2
                 _EXECUTE_ZRAM_SWAP=true
@@ -143,12 +162,15 @@
                 ;;
 
             * )
-                echo -e "${$_PREFIX_FAIL} Invalid input."
+                echo -e "$_PREFIX_FAIL Invalid input."
                 return 1
                 ;;
         esac; shift; done
 
-        [ "$1" == '--' ] && shift
+        if [[ "$1" == '--' ]]; then
+            shift
+        fi
+
         return 0
     }
 
@@ -169,34 +191,6 @@
                 return 0
                 ;;
         esac
-
-        return 1
-    }
-
-    # <summary> Set option for given argument. </summary>
-    # <param name="1"> string: the option </param>
-    function GetHugepageByteSize
-    {
-        [ "$1" == "" ] || return 0
-
-        if [[ "$1" == "2M" ]] || [[ "$1" == "1G" ]]; then
-            _HUGEPAGES_SET_SIZE=true
-            declare -g _HUGEPAGES_BYTE_SUFFIX="$1"
-            return 0
-        fi
-
-        return 1
-    }
-
-    # <summary> Set option for given argument. </summary>
-    # <param name="1"> int: the option </param>
-    function GetHugepageCount
-    {
-        if ! [[ "$1" =~ '^[0-9]+$' ]] \
-            && [[ "$1" -gt 0 ]]; then
-            _HUGEPAGES_SET_COUNT=true
-            declare -g _HUGEPAGES_COUNT=$1
-        fi
 
         return 1
     }
@@ -266,7 +260,6 @@
             "\n  Example:"
             "    -l -m\t\t\tParse against local database, then deploy a Multi VGA VFIO setup."
             "    -s -o\t\t\tParse against online database, then deploy a Static VFIO setup."
-
             "\nPost-setup OPTIONS:"
             "  -H, --hooks\t\tInstall recommended libvirt-hooks and services."
             "  -l, --looking-glass\tInstall LookingGlass.\t\t\tStream video (and audio) from Guest to Host over PCI bus using shared-memory device."

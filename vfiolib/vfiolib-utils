@@ -9,6 +9,7 @@
 
 # <remarks> Using </remarks>
 # <code>
+    source vfiolib-calc
     source vfiolib-iommu
 # </code>
 
@@ -42,9 +43,9 @@
     # </summary>
     function AddUserToGroups
     {
-        if ! [ adduser "$_FIRST_USER" "input" &> /dev/null ] \
-            || ! [ adduser "$_FIRST_USER" "libvirt" &> /dev/null ]; then
-            echo -e "$_PREFIX_FAIL Failed to add user '$_FIRST_USER' to groups."
+        if ! [ adduser "$SUDO_USER" "input" &> /dev/null ] \
+            || ! [ adduser "$SUDO_USER" "libvirt" &> /dev/null ]; then
+            echo -e "$_PREFIX_FAIL Failed to add user '$SUDO_USER' to groups."
             return 1
         fi
 
@@ -56,168 +57,162 @@
     # </summary
     function Allocate_CPU
     {
-        function Allocate_CPU_Main
+        function AskToContinue
         {
-            # <params>
-            local var_get_all_cores='seq 0 $(( ${int_total_cores} - 1 ))'
-            local var_get_total_threads='cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+"'
-            local var_get_total_cores='cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+"'
-            local -i int_total_cores=$( eval "${var_get_total_cores}" )
-            local -i int_total_threads=$( eval "${var_get_total_threads}" )
-            # </params>
+            for _TRIES_COUNT in $( seq 0 2 ); do
+                read -r -p "Allocate CPU threads to Guest(s)? [Y/n]: " _ANSWER
 
-            # <summary> Set maximum number of cores allocated to host. </summary>
-                # <params>
-                declare -a arr_all_cores=( $( eval "${var_get_all_cores}" ) )
-                local -i int_host_cores=1
-                # </params>
+                case "$_ANSWER" in
+                    [Yy]* )
+                        return 0 ;;
 
-                # <remarks> quad-core or greater CPU </remarks>
-                if [[ "${int_total_cores}" -ge 4 ]]; then
-                    int_host_cores=2
+                    [Nn]* )
+                        return 1 ;;
 
-                # <remarks> double-core/triple-core CPU </remarks>
-                elif [[ "${int_total_cores}" -le 3 && "${int_total_cores}" -ge 2 ]]; then
-                    int_host_cores=1
+                    * )
+                        echo "Please answer \"Y\" or \"N\"." ;;
+                esac
+            done
 
-                # <remarks> If single-core CPU, fail. </remarks>
-                else
-                    return 1
-                fi
+            echo -e "$_PREFIX_ERROR Failed to answer."
+            return 1
+        }
 
-            # <summary> Get thread sets, for host and guest(s). </summary>
-                # <params>
-                local var_get_host_cores='seq 0 $(( ${int_host_cores} - 1 ))'
-                local var_get_SMT_factors='seq 0 $(( ${int_SMT_factor} - 1 ))'
-                local var_get_thread='$(( int_core + ( int_SMT_factor * int_total_cores ) ))'
-                local var_get_virt_cores='seq ${int_host_cores} $(( ${int_total_cores} - 1 ))'
+        function GetThreadByCoreAnd_SMT
+        {
+            _THREAD=$(( _CORE + ( _SMT_FACTOR * _SUM_CORES ) ))
+        }
 
-                declare -a arr_host_cores=( $( eval "${var_get_host_cores}" ) )
-                declare -a arr_host_threads=( )
-                declare -a arr_virt_cores=( $( eval "${var_get_virt_cores}" ) )
-                declare -a arr_virt_threads=( )
-                local -i int_SMT_factor=$(( "${int_total_threads}" / "${int_total_cores}" ))
-                declare -a arr_SMT_factors=( $( eval "${var_get_SMT_factors}" ) )
+        function GetThreadSetsForHostAndGuest
+        {
+            for _SMT_FACTOR in ${_SMT_FACTOR_LIST[@]}; do
+                declare -a _HOST_THREADS_DELIM_LIST=( )
+                declare -a _GUEST_THREADS_DELIM_LIST=( )
+                local -i _THREAD
 
-                declare -g str_host_thread_sets
-                declare -g str_virt_thread_sets
-                # </params>
-
-                function GetThreadByCoreAnd_SMT
-                {
-                    int_thread=$(( int_core + ( int_SMT_factor * int_total_cores ) ))
-                }
-
-                for int_SMT_factor in ${arr_SMT_factors[@]}; do
-                    # <remarks> Reset params </remarks>
-                    declare -a arr_host_threads_sets=( )
-                    declare -a arr_virt_threads_sets=( )
-                    local -i int_thread
-
-                    # <remarks> Find thread sets for host. </remarks>
-                    for int_core in ${arr_host_cores[@]}; do
-                        GetThreadByCoreAnd_SMT
-                        arr_host_threads+=( "${int_thread}" )
-                        arr_host_threads_sets+=( "${int_thread}" )
-                    done
-
-                    # <remarks> Find thread sets for guest(s). </remarks>
-                    for int_core in ${arr_virt_cores[@]}; do
-                        GetThreadByCoreAnd_SMT
-                        arr_virt_threads+=( "${int_thread}" )
-                        arr_virt_threads_sets+=( "${int_thread}" )
-                    done
-
-                    # <remarks> Save thread sets to delimited list. </remarks>
-                    local -i int_set_first_thread="${arr_host_threads_sets[0]}"
-                    local -i int_set_last_thread="${arr_host_threads_sets[-1]}"
-                    local str_thread_set="${int_set_first_thread}"
-
-                    if [[ "${int_set_first_thread}" -ne "${int_set_last_thread}" ]]; then
-                        local str_thread_set="${int_set_first_thread}-${int_set_last_thread}"
-                    fi
-
-                    str_host_thread_sets+="${str_thread_set},"
-
-                    local -i int_set_first_thread="${arr_virt_threads_sets[0]}"
-                    local -i int_set_last_thread="${arr_virt_threads_sets[-1]}"
-                    local str_thread_set="${int_set_first_thread}"
-
-                    if [[ "${int_set_first_thread}" -ne "${int_set_last_thread}" ]]; then
-                        local str_thread_set="${int_set_first_thread}-${int_set_last_thread}"
-                    fi
-
-                    str_virt_thread_sets+="${str_thread_set},"
+                # <remarks> Find thread sets for host. </remarks>
+                for _CORE in ${_HOST_CORES_LIST[@]}; do
+                    GetThreadByCoreAnd_SMT
+                    _HOST_THREADS_LIST+=( "$_THREAD" )
+                    _HOST_THREADS_DELIM_LIST+=( "$_THREAD" )
                 done
 
-                # <remarks> Truncate last delimiter. </remarks>
-                if [[ ${str_host_thread_sets: -1} == "," ]]; then
-                    str_host_thread_sets=${str_host_thread_sets::-1}
-                fi
-
-                # <remarks> Ditto. </remarks>
-                if [[ ${str_virt_thread_sets: -1} == "," ]]; then
-                    str_virt_thread_sets=${str_virt_thread_sets::-1}
-                fi
-
-            # <summary> Find CPU mask. </summary>
-                # <remarks>
-                # save output to string for cpuset and cpumask
-                # example:
-                #   host 0-1,8-9
-                #   virt 2-7,10-15
-                #
-                # information
-                # cores     bit masks       mask
-                # 0-7       0b11111111      FF      # total cores
-                # 0,4       0b00010001      11      # host cores
-                #
-                # 0-11      0b111111111111  FFF     # total cores
-                # 0-1,6-7   0b000011000011  C3      # host cores
-                #
-                # </remarks>
-
-                # <params>
-                local var_get_hexadecimal_mask_from_decimal='echo "obase=16; ${int_thread_decimal}" | bc'
-                local -i int_host_threads_hexadecimal_mask=0
-                local -i int_total_threads_hexadecimal_mask=0
-                # </params>
-
-                # <remarks> Add each decimal mask to sum. </remarks>
-                for int_thread in ${arr_host_threads[@]}; do
-                    local -i int_thread_decimal=$(( 2 ** ${int_thread} ))
-                    local -i int_thread_hexadecimal_mask=$( eval "${var_get_hexadecimal_mask_from_decimal}" )
-                    int_host_threads_hexadecimal_mask+="${int_thread_hexadecimal_mask}"
+                # <remarks> Find thread sets for guest(s). </remarks>
+                for _CORE in ${_GUEST_CORES_LIST[@]}; do
+                    GetThreadByCoreAnd_SMT
+                    _GUEST_THREADS_LIST+=( "$_THREAD" )
+                    _GUEST_THREADS_DELIM_LIST+=( "$_THREAD" )
                 done
 
-                for int_thread in ${arr_total[@]}; do
-                    local -i int_thread_decimal=$(( 2 ** ${int_thread} ))
-                    local -i int_thread_hexadecimal_mask=$( eval "${var_get_hexadecimal_mask_from_decimal}" )
-                    int_host_threads_hexadecimal_mask+="${int_thread_hexadecimal_mask}"
-                done
+                # <remarks> Save thread sets to delimited list. </remarks>
+                local -i _FIRST_THREAD_SET="${_HOST_THREADS_DELIM_LIST[0]}"
+                local -i _LAST_THREAD_SET="${_HOST_THREADS_DELIM_LIST[-1]}"
+                local _THREAD_SET="${_FIRST_THREAD_SET}"
 
-                # <remarks> Save changes, convert hexadecimal mask into hexadecimal. </remarks>
-                declare -g str_host_threads_hexadecimal=$( printf '%x\n' $int_host_threads_hexadecimal_mask )
-                local -i int_total_threads_hexadecimal_mask=$(( ( 2 ** ${int_total_threads} ) - 1 ))
-                declare -g str_total_threads_hexadecimal=$( printf '%x\n' $int_total_threads_hexadecimal_mask )
+                if [[ "$_FIRST_THREAD_SET" -ne "$_LAST_THREAD_SET" ]]; then
+                    local _THREAD_SET="$_FIRST_THREAD_SET-$_LAST_THREAD_SET"
+                fi
 
-            declare -a _OUTPUT1=(
-                "Allocated to Host\t${str_host_thread_sets}"
-                "Allocated to guest:\t${str_virt_thread_sets}"
-            )
+                _HOST_THREADS_DELIM+="$_THREAD_SET,"
 
-            PrintArray "_OUTPUT1"
-            echo
+                local -i _FIRST_THREAD_SET="${_GUEST_THREADS_DELIM_LIST[0]}"
+                local -i _LAST_THREAD_SET="${_GUEST_THREADS_DELIM_LIST[-1]}"
+                local _THREAD_SET="$_FIRST_THREAD_SET"
 
-            # <remarks> Save changes. </remarks>
-            declare -g _OUTPUT_allocate_cpu_GRUB="isolcpus=${str_virt_thread_sets} nohz_full=${str_virt_thread_sets} rcu_nocbs=${str_virt_thread_sets}"
+                if [[ "$_FIRST_THREAD_SET" -ne "$_LAST_THREAD_SET" ]]; then
+                    local _THREAD_SET="$_FIRST_THREAD_SET-$_LAST_THREAD_SET"
+                fi
+
+                _GUEST_THREADS_DELIM+="$_THREAD_SET,"
+            done
+
             return 0
         }
 
-        local _OUTPUT="Allocating CPU threads..."
-        # PrintWait "$_OUTPUT"
-        Allocate_CPU_Main $@
-        PrintPassOrFail "$_OUTPUT"
+        function Main
+        {
+            local -i _TOTAL_CORES_COUNT=$( cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+" )
+            local -i _TOTAL_THREADS_COUNT=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+" )
+            local -i _CORES_ALLOCATED_TO_HOST=1
+
+            # <remarks> Set maximum number of cores allocated to host. </remarks>
+            if [[ "$_SUM_CORES" -ge 4 ]]; then
+                _CORES_ALLOCATED_TO_HOST=2
+
+            elif [[ "$_SUM_CORES" -le 3 ]] \
+                && [[ "$_SUM_CORES" -ge 2 ]]; then
+                _CORES_ALLOCATED_TO_HOST=1
+
+            else
+                return 1
+            fi
+
+            # <remarks> Get thread sets, for host and guest(s). </remarks>
+            local -ar _HOST_CORES_LIST=( $( seq 0 $(( "$_CORES_ALLOCATED_TO_HOST" - 1 )) ) )
+            local -a _HOST_THREADS_LIST=( )
+            local -ar _GUEST_CORES_LIST=( $( seq "$_CORES_ALLOCATED_TO_HOST" $(( "$_SUM_CORES" - 1 )) ) )
+            local -ar _GUEST_THREADS_LIST=( )
+            local -i _SMT_FACTOR=$(( "$_TOTAL_THREADS_COUNT" / "$_SUM_CORES" ))
+            local -ar _SMT_FACTOR_LIST=( $( seq 0 $(( "$_SMT_FACTOR" - 1 )) ) )
+            local _HOST_THREADS_DELIM _GUEST_THREADS_DELIM
+            GetThreadSetsForHostAndGuest
+
+            # <remarks> Truncate last delimiter. </remarks>
+            if [[ ${_HOST_THREADS_DELIM: -1} == "," ]]; then
+                _HOST_THREADS_DELIM="${_HOST_THREADS_DELIM::-1}"
+            fi
+
+            if [[ ${_GUEST_THREADS_DELIM: -1} == "," ]]; then
+                _GUEST_THREADS_DELIM="${_GUEST_THREADS_DELIM::-1}"
+            fi
+
+            # <remarks>
+            # save output to string for cpuset and cpumask
+            # example:
+            #   host 0-1,8-9
+            #   virt 2-7,10-15
+            #
+            # information
+            # cores     bit masks       mask
+            # 0-7       0b11111111      FF      # total cores
+            # 0,4       0b00010001      11      # host cores
+            #
+            # 0-11      0b111111111111  FFF     # total cores
+            # 0-1,6-7   0b000011000011  C3      # host cores
+            #
+            # </remarks>
+
+            # <remarks> Find CPU mask. </remarks>
+            local _GET_HEX_MASK='echo "obase=16; $_THREAD_decimal" | bc'
+            local -i _HOST_THREADS_HEX_MASK=0
+            local -i _TOTAL_THREADS_HEX_MASK=0
+
+            # <remarks> Add each decimal mask to sum. </remarks>
+            for _THREAD in ${_HOST_THREADS_LIST[@]}; do
+                local -i _THREAD_decimal=$(( 2 ** $_THREAD ))
+                local -i _THREAD_HEX_MASK=$( eval "$_GET_HEX_MASK" )
+                _HOST_THREADS_HEX_MASK+="$_THREAD_HEX_MASK"
+            done
+
+            # <remarks> Convert hexadecimal mask into hexadecimal. </remarks>
+            declare -g _HOST_THREADS_HEX=$( printf '%x\n' "$_HOST_THREADS_HEX_MASK" )
+            local -i _TOTAL_THREADS_HEX_MASK=$(( ( 2 ** ${_TOTAL_THREADS_COUNT} ) - 1 ))
+            # declare -g _GUEST_THREADS_HEX=$( printf '%x\n' "$_TOTAL_THREADS_HEX_MASK" )
+
+            echo -e "Allocated to Host:\t$_HOST_THREADS_DELIM"
+            echo -e "Allocated to Guest:\t$_GUEST_THREADS_DELIM"
+
+            # <remarks> Save changes. </remarks>
+            declare -g _LINE_GRUB_CMDLINE_ISOLCPU="isolcpus=$_GUEST_THREADS_DELIM nohz_full=$_GUEST_THREADS_DELIM rcu_nocbs=$_GUEST_THREADS_DELIM"
+            return 0
+        }
+
+        if ! "$_EXECUTE_ISOLCPU_SETUP"; then
+            AskToContinue || return "$?"
+        fi
+
+        Main "$@"
+        PrintPassOrFail "Allocating CPU threads..."
         return "$_LAST_EXIT_CODE"
     }
 
@@ -227,86 +222,115 @@
     # </summary
     function Allocate_RAM
     {
-        function Allocate_RAM_Main
+        function AskForHugepageByteSize
         {
-            if ! [[ $_INT_MAX_MEMORY =~ '^[0-9]+$' ]]; then
+            if "$_IS_HUGEPAGES_SIZE_SET"; then
+                return 0
+            fi
+
+            declare -gu _HUGEPAGES_BYTE_SUFFIX=""
+
+            for _TRIES_COUNT in $( seq 0 2 ); do
+                read -r -p "Enter size of Hugepages [2M/1g]:" _HUGEPAGES_BYTE_SUFFIX
+                GetHugepageByteSize "$_HUGEPAGES_BYTE_SUFFIX" && return 0
+            done
+
+            echo -e "$_OUTPUT_INVALID_ANSWER"
+            return 1
+        }
+
+        function AskForHugepageCount
+        {
+            if "$_IS_HUGEPAGES_COUNT_SET"; then
+                return 0
+            fi
+
+            declare -gi _HUGEPAGES_COUNT=""
+
+            for _TRIES_COUNT in $( seq 0 2 ); do
+                read -r -p "Enter count of Hugepages [$_HUGEPAGES_MIN_SIZE-$_HUGEPAGES_MAX_SIZE]:" _HUGEPAGES_COUNT
+                GetHugepageCount "$_HUGEPAGES_COUNT" && return 0
+            done
+
+            echo -e "$_OUTPUT_INVALID_ANSWER"
+            return 1
+        }
+
+        function AskToContinue
+        {
+            for _TRIES_COUNT in $( seq 0 2 ); do
+                read -r -p "Setup Hugepages? [Y/n]: " _ANSWER
+
+                case "$_ANSWER" in
+                    [Yy]* )
+                        return 0 ;;
+
+                    [Nn]* )
+                        return 1 ;;
+
+                    * )
+                        echo "Please answer \"Y\" or \"N\"." ;;
+                esac
+            done
+
+            echo -e "$_PREFIX_ERROR Failed to answer."
+            return 1
+        }
+
+        function Main
+        {
+            _IS_HUGEPAGES_SETUP=false
+
+            if ! [[ "$_INT_MAX_MEMORY" =~ '^[0-9]+$' ]]; then
                 echo -e "$_PREFIX_FAIL Could not parse system memory."
                 return 1
             fi
 
-            # <remarks> Ask user to proceed. </remarks>
-            if ! $bool_hugepage_set_size; then
-                # <params>
-                declare -g _HUGEPAGES_BYTE_SUFFIX=""
-                declare -a arr_choices=(
-                    "2M"
-                    "1G"
-                )
-                # </params>
-
+            if ! "$_IS_HUGEPAGES_COUNT_SET" \
+                && ! "$_IS_HUGEPAGES_SIZE_SET" ; then
                 echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\nguest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
-                ReadInput "Setup Hugepages?" || return "${int_code_skipped_operation}"
-                ReadMultipleChoiceIgnoreCase "Enter size of Hugepages (bytes):" "_HUGEPAGES_BYTE_SUFFIX" "${arr_choices[@]}" || return "$?"
+                AskToContinue || return 1
             fi
 
-            # <remarks> Validate hugepage size and byte-size. </remarks>
-            # <params>
-            local var_get_host_max_mem='cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1'
-            declare -gi _HUGEPAGES_COUNT=0
-            declare -gi int_huge_page_kbit_size=0
-            declare -gi int_huge_page_max_kbit_size=$( eval "${var_get_host_max_mem}" )
-            declare -gi int_huge_page_min=0
-            # </params>
-
-            case "${_HUGEPAGES_BYTE_SUFFIX}" in
-                "${arr_choices[0]}" )
-                    int_huge_page_kbit_size=2048
-                    int_huge_page_min=2
-                    ;;
-                "${arr_choices[1]}" )
-                    int_huge_page_kbit_size=1048576
-                    int_huge_page_min=1
-                    ;;
-                * )
-                    return 1
-                    ;;
-            esac
-
-            # <remarks> Get values. </remarks>
-            # <params>
-            declare -gi int_huge_page_min_kbit_size=4194304
-            declare -gi int_huge_page_max=0
-            int_huge_page_max=$(( $int_huge_page_max_kbit_size - $int_huge_page_min_kbit_size ))
-            int_huge_page_max=$(( $int_huge_page_max / $int_huge_page_kbit_size ))
-            # </params>
-
-            if ! $bool_hugepage_set_count; then
-                local _OUTPUT4="Enter number of Hugepages (num * ${_HUGEPAGES_BYTE_SUFFIX})"
-
-                # <remarks> Ask user for preferred amount. </remarks>
-                ReadInputFromRangeOfTwoNums "${_OUTPUT4}" "_HUGEPAGES_COUNT" "${int_huge_page_min}" "${int_huge_page_max}" || return "$?"
-            fi
-
-            # <params>
-            declare -gi int_alloc_mem_hugepages=0
-            declare -g _OUTPUT_hugepages_GRUB=""
-            # </params>
-
-            if $bool_hugepage_set_count && [[ $_HUGEPAGES_COUNT -lt $int_huge_page_min || $_HUGEPAGES_COUNT -gt $int_huge_page_max ]]; then
-                return 1
-            fi
-
-            # <remarks> Save changes. </remarks>
-            int_alloc_mem_hugepages=$(( $_HUGEPAGES_COUNT * $int_huge_page_kbit_size ))
-            _OUTPUT_hugepages_GRUB="default_hugepagesz=${_HUGEPAGES_BYTE_SUFFIX} hugepagesz=${_HUGEPAGES_BYTE_SUFFIX} hugepages=${_HUGEPAGES_COUNT}"
+            AskForHugepageByteSize || return 1
+            AskForHugepageCount || return 1
+            declare -gir _HUGEPAGES_ALLOCATED_MEMORY=$(( $_HUGEPAGES_COUNT * $_HUGEPAGES_SIZE_IN_KBIT ))
+            declare -gr _OUTPUT_GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=$_HUGEPAGES_BYTE_SUFFIX hugepagesz=$_HUGEPAGES_BYTE_SUFFIX hugepages=$_HUGEPAGES_COUNT"
             _IS_HUGEPAGES_SETUP=true
             return 0
         }
 
         echo
-        Allocate_RAM_Main
+        Main
         PrintPassOrFail "Allocating RAM to pages..."
         return "$_LAST_EXIT_CODE"
+    }
+
+    function ExecuteUtilsSetups
+    {
+        AddUserToGroups || return "$?"
+
+        if "$_EXECUTE_ALL_UTILS_SETUPS"; then
+            Allocate_CPU || return "$?"
+            Allocate_RAM || return "$?"
+            Virtual_KVM || return "$?"
+            return 0
+        fi
+
+        if "$_EXECUTE_ISOLCPU_SETUP"; then
+            Allocate_CPU || return "$?"
+        fi
+
+        if "$_EXECUTE_HUGEPAGES_SETUP"; then
+            Allocate_RAM || return "$?"
+        fi
+
+        if "$_EXECUTE_EVDEV_SETUP"; then
+            Virtual_KVM || return "$?"
+        fi
+
+        Modify_QEMU || return "$?"
+        return 0
     }
 
     # <summary>
@@ -509,28 +533,50 @@
     # </summary>
     function Virtual_KVM
     {
+        function AskToContinue
+        {
+            for _TRIES_COUNT in $( seq 0 2 ); do
+                read -r -p "Setup Evdev? [Y/n]: " _ANSWER
+
+                case "$_ANSWER" in
+                    [Yy]* )
+                        return 0 ;;
+
+                    [Nn]* )
+                        return 1 ;;
+
+                    * )
+                        echo "Please answer \"Y\" or \"N\"." ;;
+                esac
+            done
+
+            echo -e "$_PREFIX_ERROR Failed to answer."
+            return 1
+        }
+
         function Main
         {
-            # <params>
-            declare -ag _EVENT_DEVICES_LIST _INPUT_DEVICES_LIST
-            local _GET_EVENT_DEVICES='_EVENT_DEVICES_LIST=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )'
-            local _GET_INPUT_DEVICES='_INPUT_DEVICES_LIST=( $( ls /dev/input/by-id ) )'
-            # </params>
+            declare -ag _EVENT_DEVICES_LIST=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )
+            declare -ag _INPUT_DEVICES_LIST=( $( ls /dev/input/by-id ) )
 
-            eval "$_GET_EVENT_DEVICES" || return 1
-            eval "$_GET_INPUT_DEVICES" || return 1
-
-            if ! IsArray "_EVENT_DEVICES_LIST" && ! IsArray "_INPUT_DEVICES_LIST"; then
+            if [[ "${#_EVENT_DEVICES_LIST[@]}" -eq 0 ]] \
+                ||[[ "${#_INPUT_DEVICES_LIST[@]}" -eq 0 ]]; then
+                _IS_EVDEV_SETUP=false
                 echo -e "$_PREFIX_FAIL Cannot parse input devices (by ID)."
                 return 1
             fi
 
-            echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and guest(s).\n${var_yellow}HOW-TO:${var_reset_color} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
             _IS_EVDEV_SETUP=true
             return 0
         }
 
         echo
+
+        if ! "$_EXECUTE_EVDEV_SETUP"; then
+            echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and guest(s).\n${var_yellow}HOW-TO:${var_reset_color} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
+            AskToContinue || return "$?"
+        fi
+
         Main
         PrintPassOrFail "Executing Evdev setup..."
         return "$_LAST_EXIT_CODE"
