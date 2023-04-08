@@ -130,7 +130,7 @@
     # <param name="1"> bool: True, enable verbosity. False, no change. </param>
     function GetInternetStatus
     {
-        function GetInternetStatus_PingServer
+        function PingServer
         {
             IsString $1 || return "$?"
             ping -q -c 1 $1 &>/dev/null
@@ -147,7 +147,7 @@
             echo -en "Testing Internet connection...\t"
         fi
 
-        if ! GetInternetStatus_PingServer "8.8.8.8" || ! GetInternetStatus_PingServer "1.1.1.1"; then
+        if ! PingServer "8.8.8.8" || ! PingServer "1.1.1.1"; then
             false
         fi
 
@@ -159,7 +159,7 @@
             echo -en "Testing connection to DNS...\t"
         fi
 
-        if ! GetInternetStatus_PingServer "www.google.com" || ! GetInternetStatus_PingServer "www.yandex.com"; then
+        if ! PingServer "www.google.com" || ! PingServer "www.yandex.com"; then
             false
         fi
 

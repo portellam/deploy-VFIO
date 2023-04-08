@@ -17,7 +17,7 @@
     declare -gr _OUTPUT_INVALID_OPTION="$_PREFIX_ERROR Invalid option."
 
     # <remarks> Get script directories </remarks
-    GetScriptDir
+    # GetScriptDir
     declare -g _FILES_PATH="$( find . -name files | uniq | head -n1 | cut -c2- )/"
     declare -g _FILENAME_PARSE_IOMMU=""
 
@@ -68,7 +68,7 @@
                 fi
 
                 if [[ "$3" != "" ]]; then
-                    GetArgsForSelect_IOMMU "$3" || return "$?"
+                    GetArgsForSelectIOMMU "$3" || return "$?"
                 fi
 
                 _FILENAME_PARSE_IOMMU=$3
@@ -77,7 +77,7 @@
 
             "-i" | "--internal" )
                 if [[ "$2" != "" ]]; then
-                    GetArgsForSelect_IOMMU "$2" || return "$?"
+                    GetArgsForSelectIOMMU "$2" || return "$?"
                 fi
 
                 _PARSE_IOMMU_FROM_CACHE=true
@@ -85,7 +85,7 @@
 
             "-o" | "--online" )
                 if [[ "$2" != "" ]]; then
-                    GetArgsForSelect_IOMMU "$2" || return "$?"
+                    GetArgsForSelectIOMMU "$2" || return "$?"
                 fi
 
                 _PARSE_IOMMU_FROM_INTERNET=true
@@ -127,7 +127,7 @@
 
             "-s" | "--static" )
                 if [[ "$2" != "" ]]; then
-                    GetArgsForStatic_VFIO "$2" || return "$?"
+                    GetArgsForStaticVFIO "$2" || return "$?"
                 fi
 
                 _EXECUTE_STATIC_SETUP=true
@@ -198,7 +198,7 @@
         return 0
     }
 
-    function GetArgsForStatic_VFIO
+    function GetArgsForStaticVFIO
     {
         case "$1" in
             "grub" )
@@ -215,7 +215,7 @@
         return 1
     }
 
-    function GetArgsForSelect_IOMMU
+    function GetArgsForSelectIOMMU
     {
         case "$1" in
             "all" )

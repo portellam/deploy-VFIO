@@ -19,7 +19,7 @@
 
 # <code>
     # <summary> Parse VFIO list for drivers and hardware IDs. </summary>
-    function Get_IOMMU_Lists
+    function GetIOMMULists
     {
         for _KEY in ${!_IOMMU_LIST[@]}; do
             local _ANY_LIST_HAS_IOMMU=false
@@ -87,8 +87,43 @@
         return 0
     }
 
+    function IOMMUListsAreNotEmpty
+    {
+        # <remarks> If any list is empty, fail. </remarks>
+        if [[ "${_CLASS_LIST[@]}" == "" ]] \
+            || [[ "${_DEVICE_ID_LIST[@]}" == "" ]] \
+            || [[ "${_DEVICE_NAME_LIST[@]}" == "" ]] \
+            || [[ "${_DRIVER_LIST[@]}" == "" ]] \
+            || [[ "${_HWID_LIST[@]}" == "" ]] \
+            || [[ "${_IOMMU_LIST[@]}" == "" ]] \
+            || [[ "${_VENDOR_ID_LIST[@]}" == "" ]] \
+            || [[ "${_VENDOR_NAME_LIST[@]}" == "" ]]; then
+            echo -e "$_PREFIX_ERROR One or more system PCI lists are empty."
+            return 1
+        fi
+
+        return 0
+    }
+
+    function IOMMUListsAreNotInequalSizes
+    {
+        # <remarks> If any list is inequal, fail. </remarks>
+        if [[ "${_IOMMU_LIST[@]}" -ne "${_CLASS_LIST[@]}" ]] \
+            || [[ "${_IOMMU_LIST[@]}" -ne "${_DEVICE_ID_LIST[@]}" ]] \
+            || [[ "${_IOMMU_LIST[@]}" -ne "${_DEVICE_NAME_LIST[@]}" ]] \
+            || [[ "${_IOMMU_LIST[@]}" -ne "${_DRIVER_LIST[@]}" ]] \
+            || [[ "${_IOMMU_LIST[@]}" -ne "${_HWID_LIST[@]}" ]] \
+            || [[ "${_IOMMU_LIST[@]}" -ne "${_VENDOR_ID_LIST[@]}" ]] \
+            || [[ "${_IOMMU_LIST[@]}" -ne "${_VENDOR_NAME_LIST[@]}" ]]; then
+            echo -e "$_PREFIX_ERROR System PCI lists' sizes are inequal."
+            return 1
+        fi
+
+        return 0
+    }
+
     # <summary> Is Virtualization enabled on the current system. If true, pass. </summary>
-    function IsEnabled_IOMMU
+    function IsEnabledIOMMU
     {
         if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*"; then
             echo -e "$_PREFIX_ERROR System does not support Virtualization."
@@ -96,11 +131,53 @@
         fi
     }
 
+    # <summary> Print all relevant information about the IOMMU group. </summary>
+    function MatchIOMMUAndClass
+    {
+        local _CLASS="${_CLASS_LIST[$_KEY]}"
+        local _DEVICE_NAME="${_DEVICE_NAME_LIST[$_KEY]}"
+        local _DRIVER="${_DRIVER_LIST[$_KEY]}"
+        local _HWID="${_HWID_LIST[$_KEY]}"
+        local _SLOT_ID="${_SLOT_ID_LIST[$_KEY]}"
+        local _VENDOR_NAME="${_VENDOR_NAME_LIST[$_KEY]}"
+        local _THIS_DOMAIN_ID=$( echo "$_SLOT_ID" | cut -d ':' -f 1 )
+
+        # <remarks> Match IOMMU group </remarks>
+        if [[ "$_IOMMU" -eq "$_THIS_IOMMU" ]]; then
+
+            # <remarks> External PCI devices have domain IDs of '01' or greater. </remarks>
+            if [[ "$_THIS_DOMAIN_ID" =~ '[a-fA-F1-9]' ]]; then
+                _IOMMU_HAS_EXTERNAL_DOMAIN=true
+            fi
+
+            local -l _CLASS="${_CLASS_LIST[$_KEY]}"
+            echo -e "Slot ID:\t'$_SLOT_ID'"
+            echo -e "Vendor name:\t'$_VENDOR_NAME'"
+            echo -e "Device name:\t'$_DEVICE_NAME'"
+            echo -e "Class/Type:\t'$_CLASS'"
+            echo -e "Hardware ID:\t'$_HWID'"
+            echo -e "Kernel driver:\t'$_DRIVER'"
+
+            # <remarks> Match Class </remarks>
+            case "$_CLASS" in
+                *"graphics"* | *"vga"* | *"video"* )
+                    _IOMMU_HAS_VGA=true
+                    ;;
+
+                *"usb"* )
+                    _IOMMU_HAS_USB=true
+                    ;;
+            esac
+        fi
+
+        return 0
+    }
+
     # <summary>
     # Parse IOMMU groups for all relevant information.
     # If a parse fails, attempt again another way. If all parses fail, fail.
     # </summary>
-    function Parse_IOMMU
+    function ParseIOMMU
     {
         function Main
         {
@@ -132,13 +209,13 @@
             local _PARSE_QUOTES="$_PARSE $_PARSE_ARGS_NUMS"
 
             # <remarks> Set commands for each parse type. </remarks>
-            Parse_IOMMU_Set_Operation || return "$?"
+            SetParseOperation || return "$?"
 
             # <remarks> Get all devices from system. </remarks>
             local -a _DEVICES_LIST=( $( eval "$_PARSE_SLOT_ID" | awk '{print $1}' ) )
-            Parse_IOMMU_Save_Lists || return "$?"
-            Parse_IOMMU_Are_Not_Empty_Lists || return "$?"
-            Parse_IOMMU_Are_Inequal_Lists_Sizes || return "$?"
+            SaveIOMMULists || return "$?"
+            IOMMUListsAreNotEmpty || return "$?"
+            IOMMUListsAreNotInequalSizes || return "$?"
 
             # <remarks> Save output to file. </remarks>
             if [[ "$_OPTION" != "$_OPTION_PARSE_IOMMU_FILE" ]] \
@@ -179,42 +256,7 @@
         return "$_LAST_EXIT_CODE"
     }
 
-    function Parse_IOMMU_Are_Inequal_Lists_Sizes
-    {
-        # <remarks> If any list is inequal, fail. </remarks>
-        if [[ "${_IOMMU_LIST[@]}" -ne "${_CLASS_LIST[@]}" ]] \
-            || [[ "${_IOMMU_LIST[@]}" -ne "${_DEVICE_ID_LIST[@]}" ]] \
-            || [[ "${_IOMMU_LIST[@]}" -ne "${_DEVICE_NAME_LIST[@]}" ]] \
-            || [[ "${_IOMMU_LIST[@]}" -ne "${_DRIVER_LIST[@]}" ]] \
-            || [[ "${_IOMMU_LIST[@]}" -ne "${_HWID_LIST[@]}" ]] \
-            || [[ "${_IOMMU_LIST[@]}" -ne "${_VENDOR_ID_LIST[@]}" ]] \
-            || [[ "${_IOMMU_LIST[@]}" -ne "${_VENDOR_NAME_LIST[@]}" ]]; then
-            echo -e "$_PREFIX_ERROR System PCI lists' sizes are inequal."
-            return 1
-        fi
-
-        return 0
-    }
-
-    function Parse_IOMMU_Are_Not_Empty_Lists
-    {
-        # <remarks> If any list is empty, fail. </remarks>
-        if [[ "${_CLASS_LIST[@]}" == "" ]] \
-            || [[ "${_DEVICE_ID_LIST[@]}" == "" ]] \
-            || [[ "${_DEVICE_NAME_LIST[@]}" == "" ]] \
-            || [[ "${_DRIVER_LIST[@]}" == "" ]] \
-            || [[ "${_HWID_LIST[@]}" == "" ]] \
-            || [[ "${_IOMMU_LIST[@]}" == "" ]] \
-            || [[ "${_VENDOR_ID_LIST[@]}" == "" ]] \
-            || [[ "${_VENDOR_NAME_LIST[@]}" == "" ]]; then
-            echo -e "$_PREFIX_ERROR One or more system PCI lists are empty."
-            return 1
-        fi
-
-        return 0
-    }
-
-    function Parse_IOMMU_Save_Lists
+    function SaveIOMMULists
     {
         # <remarks> Save to lists each device's information. Lists should be of the same-size. </remarks>
         for _DEVICE in ${_DEVICES_LIST[@]}; do
@@ -251,7 +293,115 @@
         return 0
     }
 
-    function Parse_IOMMU_Set_Operation
+    function SelectIOMMUGroup
+    {
+        if "$_IOMMU_HAS_USB"; then
+            _PCISTUB_IOMMU_LIST+=( "$_THIS_IOMMU" )
+        else
+            _PCISTUB_IOMMU_LIST+=( "" )
+        fi
+
+        if "$_IOMMU_HAS_VGA"; then
+            _VFIOPCI_IOMMU_LIST+=( "" )
+            _VGA_VFIOPCI_IOMMU_LIST+=( "$_THIS_IOMMU" )
+        else
+            _VFIOPCI_IOMMU_LIST+=( "$_THIS_IOMMU" )
+            _VGA_VFIOPCI_IOMMU_LIST+=( "" )
+        fi
+
+        return 0
+    }
+
+    # <summary> Ask user to Select/Skip IOMMU group. </summary>
+    function SelectIOMMUPrompt
+    {
+        # <remarks> Append to list a valid array or empty value. </remarks>
+        if "$_IOMMU_HAS_EXTERNAL_DOMAIN" \
+            && "$_SELECT_ALL_IOMMU"; then
+            SelectIOMMUGroup
+            return 0
+        fi
+
+        if "$_IOMMU_HAS_EXTERNAL_DOMAIN" \
+            && ! "$_SELECT_ALL_IOMMU" \
+            && SelectIOMMUYesOrNo; then
+            SelectIOMMUGroup
+        fi
+
+        if ! "$_IOMMU_HAS_EXTERNAL_DOMAIN"; then
+            SkipIOMMUGroup
+        fi
+
+        return 0
+    }
+
+    function SelectIOMMUYesOrNo
+    {
+        if [[ "$_THIS_IOMMU" == "" ]]; then
+            return 1
+        fi
+
+        for _TRIES_COUNT in $( seq 0 2 ); do
+            read -r -p "Select IOMMU group '$_THIS_IOMMU'? [Y/n]: " _ANSWER
+
+            case "$_ANSWER" in
+                [Yy]* )
+                    return 0 ;;
+
+                [Nn]* )
+                    return 1 ;;
+
+                * )
+                    echo "Please answer \"Y\" or \"N\"." ;;
+            esac
+        done
+
+        echo -e "$_PREFIX_ERROR Failed to answer."
+        return 1
+    }
+
+    function SetIOMMULists
+    {
+        # <remarks> Remove duplicate entries. </remarks>
+        for _KEY in ${!_DRIVER_LIST_VFIOPCI[@]}; do
+            local _DRIVER="${_DRIVER_LIST_VFIOPCI[$_KEY]}"
+
+            if FindLineInArray "_DRIVER_LIST_VFIOPCI" "$_DRIVER" &> /dev/null; then
+                _DRIVER_LIST_VFIOPCI[_KEY]=""
+            fi
+        done
+
+        # <remarks> Remove duplicate entries. </remarks>
+        for _KEY in ${!_HWID_LIST_VFIOPCI[@]}; do
+            local _HWID="${_HWID_LIST_VFIOPCI[$_KEY]}"
+
+            if FindLineInArray "_HWID_LIST_PCISTUB" "$_HWID" &> /dev/null || FindLineInArray "_HWID_LIST_VFIOPCI_WITH_VGA" "$_HWID" &> /dev/null; then
+                _HWID_LIST_VFIOPCI[_KEY]=""
+            fi
+        done
+
+        # <remarks> Remove duplicate entries. </remarks>
+        for _KEY in ${!_HWID_LIST_PCISTUB[@]}; do
+            local _HWID="${_HWID_LIST_VFIOPCI[$_KEY]}"
+
+            if FindLineInArray "_HWID_LIST_VFIOPCI_WITH_VGA" "$_HWID" &> /dev/null; then
+                _HWID_LIST_PCISTUB[_KEY]=""
+            fi
+        done
+
+        # trim arrays here?
+        # <remarks> Sort lists by alphabetical order. </remarks>
+        IFS=$'\n'
+        _DRIVER_LIST_VFIOPCI=$( echo "${_DRIVER_LIST_VFIOPCI[*]}" | sort )
+        _DRIVER_LIST_VFIOPCI_WITH_VGA=$( echo "${_DRIVER_LIST_VFIOPCI_WITH_VGA[*]}" | sort )
+        _HWID_LIST_PCISTUB=$( echo "${_HWID_LIST_PCISTUB[*]}" | sort )
+        _HWID_LIST_VFIOPCI=$( echo "${_HWID_LIST_VFIOPCI[*]}" | sort )
+        _HWID_LIST_VFIOPCI_WITH_VGA=$( echo "${_HWID_LIST_VFIOPCI_WITH_VGA[*]}" | sort )
+        unset IFS
+        return 0
+    }
+
+    function SetParseOperation
     {
         # <remarks> Set commands for each parse type. </remarks>
         case "$_OPTION" in
@@ -296,157 +446,7 @@
         return 0
     }
 
-    # <summary> Print all relevant information about the IOMMU group. </summary>
-    function Select_IOMMU_Match_IOMMU_AndClass
-    {
-        local _CLASS="${_CLASS_LIST[$_KEY]}"
-        local _DEVICE_NAME="${_DEVICE_NAME_LIST[$_KEY]}"
-        local _DRIVER="${_DRIVER_LIST[$_KEY]}"
-        local _HWID="${_HWID_LIST[$_KEY]}"
-        local _SLOT_ID="${_SLOT_ID_LIST[$_KEY]}"
-        local _VENDOR_NAME="${_VENDOR_NAME_LIST[$_KEY]}"
-        local _THIS_DOMAIN_ID=$( echo "$_SLOT_ID" | cut -d ':' -f 1 )
-
-        # <remarks> Match IOMMU group </remarks>
-        if [[ "$_IOMMU" -eq "$_THIS_IOMMU" ]]; then
-
-            # <remarks> External PCI devices have domain IDs of '01' or greater. </remarks>
-            if [[ "$_THIS_DOMAIN_ID" =~ '[a-fA-F1-9]' ]]; then
-                _IOMMU_HAS_EXTERNAL_DOMAIN=true
-            fi
-
-            local -l _CLASS="${_CLASS_LIST[$_KEY]}"
-            echo -e "Slot ID:\t'$_SLOT_ID'"
-            echo -e "Vendor name:\t'$_VENDOR_NAME'"
-            echo -e "Device name:\t'$_DEVICE_NAME'"
-            echo -e "Class/Type:\t'$_CLASS'"
-            echo -e "Hardware ID:\t'$_HWID'"
-            echo -e "Kernel driver:\t'$_DRIVER'"
-
-            # <remarks> Match Class </remarks>
-            case "$_CLASS" in
-                *"graphics"* | *"vga"* | *"video"* )
-                    _IOMMU_HAS_VGA=true
-                    ;;
-
-                *"usb"* )
-                    _IOMMU_HAS_USB=true
-                    ;;
-            esac
-        fi
-
-        return 0
-    }
-
-    function Select_IOMMU_Group
-    {
-        if "$_IOMMU_HAS_USB"; then
-            _PCISTUB_IOMMU_LIST+=( "$_THIS_IOMMU" )
-        else
-            _PCISTUB_IOMMU_LIST+=( "" )
-        fi
-
-        if "$_IOMMU_HAS_VGA"; then
-            _VFIOPCI_IOMMU_LIST+=( "" )
-            _VGA_VFIOPCI_IOMMU_LIST+=( "$_THIS_IOMMU" )
-        else
-            _VFIOPCI_IOMMU_LIST+=( "$_THIS_IOMMU" )
-            _VGA_VFIOPCI_IOMMU_LIST+=( "" )
-        fi
-
-        return 0
-    }
-
-    # <summary> Ask user to Select/Skip IOMMU group. </summary>
-    function Select_IOMMU_Prompt
-    {
-        # <remarks> Append to list a valid array or empty value. </remarks>
-        if "$_IOMMU_HAS_EXTERNAL_DOMAIN" \
-            && "$_SELECT_ALL_IOMMU"; then
-            Select_IOMMU_Group
-            return 0
-        fi
-
-        if "$_IOMMU_HAS_EXTERNAL_DOMAIN" \
-            && ! "$_SELECT_ALL_IOMMU" \
-            && Select_IOMMU_YesOrNo; then
-            Select_IOMMU_Group
-        fi
-
-        if ! "$_IOMMU_HAS_EXTERNAL_DOMAIN"; then
-            Skip_IOMMU_Group
-        fi
-
-        return 0
-    }
-
-    function Select_IOMMU_YesOrNo
-    {
-        if [[ "$_THIS_IOMMU" == "" ]]; then
-            return 1
-        fi
-
-        for _TRIES_COUNT in $( seq 0 2 ); do
-            read -r -p "Select IOMMU group '$_THIS_IOMMU'? [Y/n]: " _ANSWER
-
-            case "$_ANSWER" in
-                [Yy]* )
-                    return 0 ;;
-
-                [Nn]* )
-                    return 1 ;;
-
-                * )
-                    echo "Please answer \"Y\" or \"N\"." ;;
-            esac
-        done
-
-        echo -e "$_PREFIX_ERROR Failed to answer."
-        return 1
-    }
-
-    function Set_IOMMU_Lists
-    {
-        # <remarks> Remove duplicate entries. </remarks>
-        for _KEY in ${!_DRIVER_LIST_VFIOPCI[@]}; do
-            local _DRIVER="${_DRIVER_LIST_VFIOPCI[$_KEY]}"
-
-            if FindLineInArray "_DRIVER_LIST_VFIOPCI" "$_DRIVER" &> /dev/null; then
-                _DRIVER_LIST_VFIOPCI[_KEY]=""
-            fi
-        done
-
-        # <remarks> Remove duplicate entries. </remarks>
-        for _KEY in ${!_HWID_LIST_VFIOPCI[@]}; do
-            local _HWID="${_HWID_LIST_VFIOPCI[$_KEY]}"
-
-            if FindLineInArray "_HWID_LIST_PCISTUB" "$_HWID" &> /dev/null || FindLineInArray "_HWID_LIST_VFIOPCI_WITH_VGA" "$_HWID" &> /dev/null; then
-                _HWID_LIST_VFIOPCI[_KEY]=""
-            fi
-        done
-
-        # <remarks> Remove duplicate entries. </remarks>
-        for _KEY in ${!_HWID_LIST_PCISTUB[@]}; do
-            local _HWID="${_HWID_LIST_VFIOPCI[$_KEY]}"
-
-            if FindLineInArray "_HWID_LIST_VFIOPCI_WITH_VGA" "$_HWID" &> /dev/null; then
-                _HWID_LIST_PCISTUB[_KEY]=""
-            fi
-        done
-
-        # trim arrays here?
-        # <remarks> Sort lists by alphabetical order. </remarks>
-        IFS=$'\n'
-        _DRIVER_LIST_VFIOPCI=$( echo "${_DRIVER_LIST_VFIOPCI[*]}" | sort )
-        _DRIVER_LIST_VFIOPCI_WITH_VGA=$( echo "${_DRIVER_LIST_VFIOPCI_WITH_VGA[*]}" | sort )
-        _HWID_LIST_PCISTUB=$( echo "${_HWID_LIST_PCISTUB[*]}" | sort )
-        _HWID_LIST_VFIOPCI=$( echo "${_HWID_LIST_VFIOPCI[*]}" | sort )
-        _HWID_LIST_VFIOPCI_WITH_VGA=$( echo "${_HWID_LIST_VFIOPCI_WITH_VGA[*]}" | sort )
-        unset IFS
-        return 0
-    }
-
-    function Skip_IOMMU_Group
+    function SkipIOMMUGroup
     {
         _VFIOPCI_IOMMU_LIST+=( "" )
         _PCISTUB_IOMMU_LIST+=( "" )
@@ -456,7 +456,7 @@
     }
 
     # <summary> Select IOMMU groups for VFIO setup. </summary>
-    function Select_IOMMU
+    function SelectIOMMU
     {
         local _OUTPUT="Reviewing IOMMU groups..."
         local _LAST_IOMMU_VALUE=$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )
@@ -471,17 +471,17 @@
 
             for _KEY in ${!_IOMMU_LIST[@]}; do
                 local -i _IOMMU="${_IOMMU_LIST[$_KEY]}"
-                Select_IOMMU_Match_IOMMU_AndClass
+                MatchIOMMUAndClass
             done
 
-            Select_IOMMU_Prompt
+            SelectIOMMUPrompt
         done
 
         # <remarks> Check if list is empty </remarks>
         if [[ "${#_VFIOPCI_IOMMU_LIST[@]}" -eq 0 ]] \
             || ! "$bool_VFIO_has_IOMMU" \
-            || ! Get_IOMMU_Lists \
-            || ! Set_IOMMU_Lists; then
+            || ! GetIOMMULists \
+            || ! SetIOMMULists; then
             false
         fi
 

@@ -47,7 +47,7 @@
     # </remarks>
     function GuestAudioCapture
     {
-        function GuestAudioCapture_Main
+        function Main
         {
             # <params>
             local str_dependencies=""
@@ -105,7 +105,7 @@
 
         local _OUTPUT="Installing audio drivers..."
         # PrintWait "${_OUTPUT}"
-        GuestAudioCapture_Main &> /dev/null
+        Main &> /dev/null
         PrintPassOrFail "${_OUTPUT}" && _IS_AUDIO_CAPTURE_SETUP=true || _IS_AUDIO_CAPTURE_SETUP=false
         return "$_LAST_EXIT_CODE"
     }
@@ -116,7 +116,7 @@
     # </summary>
     function GuestAudioLoopback
     {
-        function GuestAudioLoopback_Main
+        function Main
         {
             # <remarks> Get audio backend. </remarks>
             if ! IsInstalledCommand "pulseaudio"; then
@@ -155,7 +155,7 @@
 
         local _OUTPUT="Creating audio loopback..."
         # PrintWait "${_OUTPUT}"
-        GuestAudioLoopback_Main &> /dev/null
+        Main &> /dev/null
         PrintPassOrFail "${_OUTPUT}"
         return "$_LAST_EXIT_CODE"
     }
@@ -170,7 +170,7 @@
     # </remarks>
     function GuestAudioStream
     {
-        function GuestAudioStream_Build
+        function Build
         {
             echo
 
@@ -182,7 +182,7 @@
             return 0
         }
 
-        function GuestAudioStream_Get
+        function Get
         {
             # <params>
             local _USER_NAME="duncanthrax"
@@ -254,7 +254,7 @@
             return 0
         }
 
-        function GuestAudioStream_Install
+        function Install
         {
             # <params>
             declare -a arr_file1_current arr_file1_contents arr_file2_contents
@@ -329,18 +329,18 @@
         else
             local _OUTPUT="Updating Scream..."
             # PrintWait "${_OUTPUT}"
-            GuestAudioStream_Get &> /dev/null
+            Get &> /dev/null
             PrintPassOrFail "${_OUTPUT}"
 
             local _OUTPUT="Building Scream..."
             # PrintWait "${_OUTPUT}"
 
-            if GuestAudioStream_Build; then
+            if Build; then
                 PrintPassOrFail "${_OUTPUT}"
 
                 local _OUTPUT="Installing Scream...\t"
                 # PrintWait "${_OUTPUT}"
-                GuestAudioStream_Install
+                Install
             fi
         fi
 
@@ -358,7 +358,7 @@
     # </remarks>
     function GuestVideoCapture
     {
-        function GuestVideoCapture_Get
+        function Get
         {
             # <params>
             local _USER_NAME="gnif"
@@ -391,7 +391,7 @@
             return 0
         }
 
-        function GuestVideoCapture_Install
+        function Install
         {
             echo
 
@@ -411,9 +411,9 @@
             return 0
         }
 
-        GuestVideoCapture_Get
+        Get
         PrintPassOrFail "Updating LookingGlass..."
-        GuestVideoCapture_Install
+        Install
         PrintPassOrFail "Installing LookingGlass..."
         return "$_LAST_EXIT_CODE"
     }
@@ -423,7 +423,7 @@
     # </summary>
     function LibvirtHooks
     {
-        function LibvirtHooks_Main
+        function Main
         {
             # <params>
             declare -a arr_file1_current arr_file1_contents=(
@@ -449,7 +449,7 @@
 
         local _OUTPUT="Installing libvirt-hooks..."
         # PrintWait "${_OUTPUT}"
-        LibvirtHooks_Main &> /dev/null
+        Main &> /dev/null
         PrintPassOrFail "${_OUTPUT}"
         return "$_LAST_EXIT_CODE"
     }
@@ -458,7 +458,7 @@
     # zramswap: Setup a swap partition in host memory.
     # Reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory.
     # </summary>
-    function RAM_Swapfile
+    function RAMSwapfile
     {
         function Install
         {
