@@ -38,13 +38,13 @@
 
         if [[ -z "${_PATH_2}deploy-vfio" ]] \
             || [[ -z "${_PATH_2}deploy-vfio" ]] \
-            || [[ -z "${_PATH_2}vfiolib-all" ]] \
+            || [[ -z "${_PATH_2}vfiolib-tools" ]] \
             || [[ -z "${_PATH_2}vfiolib-extras" ]] \
             || [[ -z "${_PATH_2}vfiolib-files" ]] \
             || [[ -z "${_PATH_2}vfiolib-iommu" ]] \
             || [[ -z "${_PATH_2}vfiolib-setup" ]] \
             || [[ -z "${_PATH_2}vfiolib-usage" ]] \
-            || [[ -z "${_PATH_2}vfiolib-utils" ]]; then
+            || [[ -z "${_PATH_2}vfiolib-essentials" ]]; then
             echo -e "$_PREFIX_ERROR Missing project binaries."
             return 1
         fi

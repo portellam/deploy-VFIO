@@ -1,11 +1,19 @@
 #!/bin/bash sh
 
 #
-# Filename:         vfiolib-all
-# Description:      Effortlessly deploy a VFIO setup (PCI passthrough).
+# Filename:         vfiolib-tools
+# Description:      
 # Author(s):        Alex Portell <github.com/portellam>
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
+
+# TODO:
+# * clean up
+#
+#
+#
+#
+
 
 # <remarks> Using </remarks>
 # <code>
@@ -13,7 +21,7 @@
     source vfiolib-iommu
     source vfiolib-setup
     source vfiolib-usage
-    source vfiolib-utils
+    source vfiolib-essentials
 # </code>
 
 # <params>

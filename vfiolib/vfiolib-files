@@ -9,12 +9,15 @@
 
 # <summary> Using </summary>
 # <code>
-    source vfiolib-all
+    source vfiolib-globals
 # </code>
 
 # <params>
+    # <remarks> Flags </remarks>
+    declare -g _HAS_EXECUTED_BACKUPS=false
+
     # <remarks> Files </remarks>
-    declare -gr _BACKUPS_PATH="files/"
+    declare -gr _BACKUPS_PATH="$( find . -name files | uniq | head -n1 | cut -c2- )/"
 
     declare -gr _APPARMOR_QEMU_BACKUP="libvirt-qemu"
     declare -gr _APPARMOR_QEMU_FILE_PATH="/etc/apparmor.d/local/abstractions/libvirt-qemu"
@@ -47,6 +50,7 @@
     declare -gr _QEMU_FILE_URL="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"
 # </params>
 
+# <summary> Functions </summary>
 # <code>
     function CopyBackupsToPaths
     {
@@ -207,4 +211,11 @@
 
         return 0
     }
+# </code>
+
+# <summary> Main </summary>
+# <code>
+    if ExecuteBackups; then
+        _HAS_EXECUTED_BACKUPS=true
+    fi
 # </code>

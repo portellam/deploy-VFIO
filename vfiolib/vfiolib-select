@@ -1,0 +1,286 @@
+#!/bin/bash sh
+
+#
+# Filename:         vfiolib-select
+# Description:      Select IOMMU groups.
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <remarks> Usage </remarks>
+# <code>
+    source vfiolib-parse
+# </code>
+
+# <params>
+    declare -ag _DRIVER_LIST_VFIOPCI _PCISTUB_IOMMU_LIST _VFIOPCI_IOMMU_LIST _VGA_VFIOPCI_IOMMU_LIST _HWID_LIST_PCISTUB _HWID_LIST_VFIOPCI _HWID_LIST_VFIOPCI_WITH_VGA
+    declare -g _VFIO_GROUP_HAS_IOMMU=false
+
+    # <remarks> Known kernel drivers to ignore; drivers that cause issues when binded to vfio-pci/pci-stub. </remarks>
+    declare -ag _DRIVER_LIST_TO_IGNORE=(
+        "snd_hda_intel"
+    )
+# </params>
+
+# <code>
+    function AddPromptOrSkipThisGroup
+    {
+        # <remarks> Append to list a valid array or empty value. </remarks>
+        if "$_IOMMU_HAS_EXTERNAL_DOMAIN" \
+            && "$_SELECT_ALL_IOMMU"; then
+            AddThisGroupToList
+            return 0
+        fi
+
+        if "$_IOMMU_HAS_EXTERNAL_DOMAIN" \
+            && ! "$_SELECT_ALL_IOMMU" \
+            && AskToSelectThisGroup; then
+            AddThisGroupToList
+        fi
+
+        if ! "$_IOMMU_HAS_EXTERNAL_DOMAIN"; then
+            SkipThisGroup
+        fi
+
+        return 0
+    }
+
+    function AddThisGroupToList
+    {
+        if "$_IOMMU_HAS_USB"; then
+            _PCISTUB_IOMMU_LIST+=( "$_THIS_IOMMU" )
+        else
+            _PCISTUB_IOMMU_LIST+=( "" )
+        fi
+
+        if "$_IOMMU_HAS_VGA"; then
+            _VFIOPCI_IOMMU_LIST+=( "" )
+            _VGA_VFIOPCI_IOMMU_LIST+=( "$_THIS_IOMMU" )
+        else
+            _VFIOPCI_IOMMU_LIST+=( "$_THIS_IOMMU" )
+            _VGA_VFIOPCI_IOMMU_LIST+=( "" )
+        fi
+
+        return 0
+    }
+
+    function AskToSelectThisGroup
+    {
+        if [[ "$_THIS_IOMMU" == "" ]]; then
+            return 1
+        fi
+
+        for _TRIES_COUNT in $( seq 0 2 ); do
+            read -r -p "Select IOMMU group '$_THIS_IOMMU'? [Y/n]: " _ANSWER
+
+            case "$_ANSWER" in
+                [Yy]* )
+                    return 0 ;;
+
+                [Nn]* )
+                    return 1 ;;
+
+                * )
+                    echo "Please answer \"Y\" or \"N\"." ;;
+            esac
+        done
+
+        echo -e "$_PREFIX_ERROR Failed to answer."
+        return 1
+    }
+
+    function GetDriverAndHWIDLists
+    {
+        for _KEY in ${!_IOMMU_LIST[@]}; do
+            local _ANY_LIST_HAS_IOMMU=false
+            local _SLOT_ID="${_SLOT_ID_LIST[$_KEY]}"
+            local _THIS_DOMAIN_ID=$( echo "$_SLOT_ID" | cut -d ':' -f 1 )
+            local -i _DOMAIN_ID=_DOMAIN_ID="${_THIS_DOMAIN_ID##*0}"
+            local _DRIVER=""
+            local _HWID=""
+            local _THIS_IOMMU=""
+
+            if [[ "$_DOMAIN_ID" -gt 0 ]]; then
+                _DRIVER="${_DRIVER_LIST[$_KEY]}"
+                _HWID="${_HWID_LIST[$_KEY]}"
+                _THIS_IOMMU="${_IOMMU_LIST[$_KEY]}"
+            fi
+
+            for _DRIVER_TO_IGNORE in ${_DRIVER_LIST_TO_IGNORE[@]}; do
+                if [[ "$_DRIVER_TO_IGNORE" == "$_DRIVER" ]]; then
+                    _DRIVER=""
+                    break
+                fi
+            done
+
+            # <remarks> Check if any IOMMU group exists in a given list. </remarks>
+            for _IOMMU in ${_PCISTUB_IOMMU_LIST[@]}; do
+                if [[ "$_IOMMU" -eq "$_THIS_IOMMU" ]]; then
+                    _HWID_LIST_PCISTUB+=( "$_HWID" )
+                    _ANY_LIST_HAS_IOMMU=true
+                    break
+                fi
+            done
+
+            for _IOMMU in ${_VFIOPCI_IOMMU_LIST[@]}; do
+                if [[ "$_IOMMU" -eq "$_THIS_IOMMU" ]]; then
+                    _HWID_LIST_VFIOPCI+=( "$_HWID" )
+                    _ANY_LIST_HAS_IOMMU=true
+                    break
+                fi
+            done
+
+            for _IOMMU in ${_VGA_VFIOPCI_IOMMU_LIST[@]}; do
+                if [[ "$_IOMMU" -eq "$_THIS_IOMMU" ]]; then
+                    _DRIVER_LIST_VFIOPCI_WITH_VGA+=( "$_DRIVER" )
+                    _HWID_LIST_VFIOPCI_WITH_VGA+=( "$_HWID" )
+                    _ANY_LIST_HAS_IOMMU=true
+                    break
+                fi
+            done
+
+            if "$_ANY_LIST_HAS_IOMMU"; then
+                _DRIVER_LIST_VFIOPCI+=( "$_DRIVER" )
+            fi
+        done
+
+        if [[ "${#_DRIVER_LIST_VFIOPCI[@]}" -eq 0 ]] \
+            || [[ "${#_DRIVER_LIST_VFIOPCI_WITH_VGA[@]}" -eq 0 ]] \
+            || [[ "${#_HWID_LIST_PCISTUB[@]}" -eq 0 ]] \
+            || [[ "${#_HWID_LIST_VFIOPCI[@]}" -eq 0 ]] \
+            || [[ "${#_HWID_LIST_VFIOPCI_WITH_VGA[@]}" -eq 0 ]]; then
+            echo -e "$_PREFIX_ERROR Some or all driver and/or HWID lists are empty."
+            return 1
+        fi
+
+        return 0
+    }
+
+    function MatchGroupAndClass
+    {
+        local _CLASS="${_CLASS_LIST[$_KEY]}"
+        local _DEVICE_NAME="${_DEVICE_NAME_LIST[$_KEY]}"
+        local _DRIVER="${_DRIVER_LIST[$_KEY]}"
+        local _HWID="${_HWID_LIST[$_KEY]}"
+        local _SLOT_ID="${_SLOT_ID_LIST[$_KEY]}"
+        local _VENDOR_NAME="${_VENDOR_NAME_LIST[$_KEY]}"
+        local _THIS_DOMAIN_ID=$( echo "$_SLOT_ID" | cut -d ':' -f 1 )
+
+        # <remarks> Match IOMMU group </remarks>
+        if [[ "$_IOMMU" -eq "$_THIS_IOMMU" ]]; then
+
+            # <remarks> External PCI devices have domain IDs of '01' or greater. </remarks>
+            if [[ "$_THIS_DOMAIN_ID" =~ '[a-fA-F1-9]' ]]; then
+                _IOMMU_HAS_EXTERNAL_DOMAIN=true
+            fi
+
+            local -l _CLASS="${_CLASS_LIST[$_KEY]}"
+            echo -e "Slot ID:\t'$_SLOT_ID'"
+            echo -e "Vendor name:\t'$_VENDOR_NAME'"
+            echo -e "Device name:\t'$_DEVICE_NAME'"
+            echo -e "Class/Type:\t'$_CLASS'"
+            echo -e "Hardware ID:\t'$_HWID'"
+            echo -e "Kernel driver:\t'$_DRIVER'"
+
+            # <remarks> Match Class </remarks>
+            case "$_CLASS" in
+                *"graphics"* | *"vga"* | *"video"* )
+                    _IOMMU_HAS_VGA=true
+                    ;;
+
+                *"usb"* )
+                    _IOMMU_HAS_USB=true
+                    ;;
+            esac
+        fi
+
+        return 0
+    }
+
+    function SelectIOMMU
+    {
+        local _OUTPUT="Reviewing IOMMU groups..."
+        local _LAST_IOMMU_VALUE=$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )
+        local _GET_IOMMU='seq 0 "$_LAST_IOMMU_VALUE"'
+        declare -a _THIS_IOMMU_LIST=( $( eval "$_GET_IOMMU" ) )
+
+        for _THIS_IOMMU in ${_THIS_IOMMU_LIST[@]}; do
+            local _IOMMU_HAS_EXTERNAL_DOMAIN=false
+            # local bool_IOMMU_VFIOPCI=false
+            local _IOMMU_HAS_USB=false
+            local _IOMMU_HAS_VGA=false
+
+            for _KEY in ${!_IOMMU_LIST[@]}; do
+                local -i _IOMMU="${_IOMMU_LIST[$_KEY]}"
+                MatchGroupAndClass
+            done
+
+            AddPromptOrSkipThisGroup
+        done
+
+        # <remarks> Check if list is empty </remarks>
+        if [[ "${#_VFIOPCI_IOMMU_LIST[@]}" -eq 0 ]] \
+            || ! "$_VFIO_GROUP_HAS_IOMMU" \
+            || ! GetDriverAndHWIDLists \
+            || ! SetIOMMULists; then
+            false
+        fi
+
+        PrintPassOrFail "Reviewing IOMMU groups..."
+        return "$_LAST_EXIT_CODE"
+    }
+
+    function SetParseOperation
+    {
+        # <remarks> Set commands for each parse type. </remarks>
+        case "$_OPTION" in
+
+            # <remarks> If parsing file and file does not exist, recursive call to parse internet. </remarks>
+            "$_OPTION_PARSE_IOMMU_FILE" )
+                _OUTPUT="$_OUTPUT_PARSE_FILE"
+                _PARSE_ALL_ID+=" $_PARSE_ARGS_FILE"
+                _PARSE_NAME_ID+=" $_PARSE_ARGS_FILE"
+                _PARSE_SLOT_ID+=" $_PARSE_ARGS_FILE"
+                _PARSE_QUOTES+=" $_PARSE_ARGS_FILE"
+
+                if [[ -z "$_PARSE_IOMMU_FILENAME" ]]; then
+                    echo -e "$_PREFIX_ERROR Failed to find file database to parse."
+                    return 1
+                fi
+
+                return 0
+                ;;
+
+            # <remarks> If internet is not available, exit. </remarks>
+            "$_OPTION_PARSE_IOMMU_ONLINE" )
+                _OUTPUT="$_OUTPUT_PARSE_ONLINE"
+                local _PARSE_ALL_ID+=" $_PARSE_ARGS_ONLINE"
+                local _PARSE_NAME_ID+=" $_PARSE_ARGS_ONLINE"
+                local _PARSE_SLOT_ID+=" $_PARSE_ARGS_ONLINE"
+                local _PARSE_QUOTES+=" $_PARSE_ARGS_ONLINE"
+
+                if ! GetInternetStatus &> /dev/null; then
+                    echo -e "$_PREFIX_ERROR Failed to find online database to parse."
+                    return 1
+                fi
+
+                return 0
+                ;;
+
+            "$_OUTPUT_PARSE_LOCAL" | * )
+                _OUTPUT="$_OUTPUT_PARSE_LOCAL"
+                ;;
+        esac
+
+        return 0
+    }
+
+    function SkipThisGroup
+    {
+        _VFIOPCI_IOMMU_LIST+=( "" )
+        _PCISTUB_IOMMU_LIST+=( "" )
+        _VGA_VFIOPCI_IOMMU_LIST+=( "" )
+        echo -e "Skipped IOMMU group '$_THIS_IOMMU'."
+        return 0
+    }
+# </code>

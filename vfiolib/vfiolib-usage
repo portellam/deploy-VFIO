@@ -9,16 +9,14 @@
 
 # <remarks> Using </remarks>
 # <code>
-    source vfiolib-calc
+    source vfiolib-calcs
+    source vfiolib-files
+    source vfiolib-globals
 # </code>
 
 # <params>
     declare -gr _OUTPUT_INVALID_ANSWER="$_PREFIX_ERROR Failed to answer."
     declare -gr _OUTPUT_INVALID_OPTION="$_PREFIX_ERROR Invalid option."
-
-    # <remarks> Get script directories </remarks
-    # GetScriptDir
-    declare -g _FILES_PATH="$( find . -name files | uniq | head -n1 | cut -c2- )/"
     declare -g _FILENAME_PARSE_IOMMU=""
 
     # <remarks> Toggles </remarks
@@ -27,13 +25,12 @@
     # <remarks> Usage toggles </remarks
     declare -g _EXECUTE_ALL_EXTRAS_SETUPS=true
     declare -g _EXECUTE_ALL_UTILS_SETUPS=true
+    declare -g _HAS_EXECUTED_BACKUPS=false
     declare -g _EXECUTE_ISOLCPU_SETUP=false
     declare -g _EXECUTE_AUDIO_LOOPBACK_SETUP=false
     declare -g _EXECUTE_AUTO_XORG_SETUP=false
     declare -g _EXECUTE_EVDEV_SETUP=false
     declare -g _EXECUTE_HUGEPAGES_SETUP=false
-    declare -g _IS_HUGEPAGES_COUNT_SET=false
-    declare -g _IS_HUGEPAGES_SIZE_SET=false
     declare -g _EXECUTE_LIBVIRT_HOOKS=false
     declare -g _EXECUTE_LOOKING_GLASS=false
     declare -g _EXECUTE_MULTIBOOT_SETUP=false
@@ -49,6 +46,7 @@
     declare -g _EXECUTE_ZRAM_SWAP=false
     declare -g _ZRAM_SWAP_OVERRIDE=false
     declare -g _ZRAM_SWAP_SET_FRACTION=false
+    ExecuteBackups && _HAS_EXECUTED_BACKUPS=true
 # </params>
 
 # <code>

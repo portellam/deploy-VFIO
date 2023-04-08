@@ -101,7 +101,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA (GP
 #### * Options that skip *all* user prompts.
 
 ## Features
-### Pre-setup  <sub>(vfiolib-utils)</sub>
+### Pre-setup  <sub>(vfiolib-essentials)</sub>
 * **Allocate CPU**
     - Reduce Host overhead, and improve both Host and Guest performance.
     - **Statically** allocate Host CPU cores (and/or threads).<sup>[2](#2)</sup>

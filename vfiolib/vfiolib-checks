@@ -1,0 +1,83 @@
+#!/bin/bash sh
+
+#
+# Filename:         vfiolib-checks
+# Description:
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <summary> Using </summary>
+# <code>
+    source vfiolib-globals
+# </code>
+
+# <params>
+    # <remarks> Flags </remarks>
+    declare -g _IS_SYSTEM_SUPPORTED=false
+# </params>
+
+# <summary> Functions </summary>
+# <code>
+    function IsIOMMUEnabled
+    {
+        if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*" &> /dev/null; then
+            echo -e "$_PREFIX_ERROR System does not support IOMMU groups."
+            return 1
+        fi
+    }
+
+    function IsKVMInstalled
+    {
+        if ! command -v "kvm" &> /dev/null; then
+            echo -e "$_PREFIX_ERROR Library 'KVM' is not installed."
+            return 1
+        fi
+    }
+
+    function IsLibvirtInstalled
+    {
+        if ! [[ $( systemctl list-unit-files "libvirtd" | wc -l ) -gt 3 ]]; then
+            echo -e "$_PREFIX_ERROR Daemon/service 'libvirtd' is not installed."
+            return 1
+        fi
+    }
+
+    function IsQEMUInstalled
+    {
+        if ! apt list "qemu" --installed; then
+            echo -e "$_PREFIX_ERROR Library 'QEMU' is not installed."
+            return 1
+        fi
+    }
+
+    function IsSystemdInstalled
+    {
+        if ! command -v systemd; then
+            echo -e "$_PREFIX_ERROR 'systemd' is not installed."
+            return 1
+        fi
+    }
+
+    function IsVirtualizationEnabled
+    {
+        if ! LC_ALL=C lscpu | grep Virtualization &> /dev/null \
+            && ! grep -E --color=auto 'vmx|svm|0xc0f' /proc/cpuinfo &> /dev/null; then
+            echo -e "$_PREFIX_ERROR System does not support hardware virtualization."
+            return 1
+        fi
+    }
+# </code>
+
+# <summary> Main </summary>
+# <code>
+    if IsSystemdInstalled \
+        && IsVirtualizationEnabled \
+        && IsIOMMUEnabled \
+        && IsSystemdInstalled \
+        && IsKVMInstalled \
+        && IsQEMUInstalled \
+        && IsLibvirtInstalled; then
+        _IS_SYSTEM_SUPPORTED=true
+    fi
+# </code>

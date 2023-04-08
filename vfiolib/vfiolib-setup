@@ -76,7 +76,7 @@
 
     function ExecuteMultibootSetup
     {
-        if ! ExecuteBackups \
+        if ! "$_HAS_EXECUTED_BACKUPS" \
             || ! GetParamsForSetup \
             || ! SetParamsForMultibootSetup \
             || ! WriteFilesForMultibootSetup \
@@ -92,8 +92,8 @@
     {
         local -r _PRINT_FAIL="An error occurred: Static setup has failed."
 
-        if $_EXECUTE_GRUB_STATIC_SETUP \
-            && ( ! ExecuteBackups \
+        if "$_EXECUTE_GRUB_STATIC_SETUP" \
+            && ( ! "$_HAS_EXECUTED_BACKUPS" \
             || ! GetParamsForSetup \
             || ! SetParamsForGRUBStaticSetup \
             || ! WriteFilesForGRUBStaticSetup \
@@ -102,8 +102,8 @@
             return 1
         fi
 
-        if ! $_EXECUTE_GRUB_STATIC_SETUP \
-            && ( ! ExecuteBackups \
+        if ! "$_EXECUTE_GRUB_STATIC_SETUP" \
+            && ( ! "$_HAS_EXECUTED_BACKUPS" \
             || ! GetParamsForSetup \
             || ! SetParamsForNoGRUBStaticSetup \
             || ! WriteFilesForNoGRUBStaticSetup \
@@ -117,7 +117,8 @@
 
     function ExecuteUninstallSetup
     {
-        if ! ExecuteBackups || ! ExecuteUpdateAfterSetup; then
+        if ! "$_HAS_EXECUTED_BACKUPS" \
+            || ! ExecuteUpdateAfterSetup; then
             echo -e "$_PREFIX_ERROR Uninstall has failed."
         fi
 
@@ -126,8 +127,8 @@
 
     function ExecuteUpdateAfterSetup
     {
-        if ! [ sudo update-grub ] \
-            || ! [ sudo update-initramfs -u -k all ]; then
+        if ! sudo update-grub \
+            || ! sudo update-initramfs -u -k all; then
             echo -e "$_PREFIX_ERROR Failed to update system configuration."
             return 1
         fi
@@ -151,7 +152,9 @@
 
     function SelectSetup
     {
-        if ! $_EXECUTE_MULTIBOOT_SETUP && ! $_EXECUTE_STATIC_SETUP && ! $_EXECUTE_UNINSTALL_SETUP; then
+        if ! "$_EXECUTE_MULTIBOOT_SETUP" \
+            && ! "$_EXECUTE_STATIC_SETUP" \
+            && ! "$_EXECUTE_UNINSTALL_SETUP"; then
             for _TRIES_COUNT in $( seq 0 2 ); do
                 read -r -p "Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall]: " _ANSWER
 
@@ -398,7 +401,7 @@
 
     function WriteFilesForNoGRUBStaticSetup
     {
-        ExecuteBackups || return 1
+        "$_HAS_EXECUTED_BACKUPS" || return 1
         IFS=$'\n'
         local _LINE_GRUB_CMDLINE_TEMP=""
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE "
@@ -417,7 +420,7 @@
 
     function WriteFilesForMultibootSetup
     {
-        ExecuteBackups || return 1
+        "$_HAS_EXECUTED_BACKUPS" || return 1
         IFS=$'\n'
 
         if ! [ echo -e "${_FILE_CONTENTS_LIST[*]}" "$_CUSTOM_GRUB_FILE_PATH" ]; then
