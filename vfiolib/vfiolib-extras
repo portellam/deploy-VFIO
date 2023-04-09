@@ -52,13 +52,13 @@
         function Modify
         {
             # <params>
-            local str_file1="/etc/default/zram-swap"
+            local _FILE_1="/etc/default/zram-swap"
             local str_match_line1="_zram_fraction="
             local var_find_zram_swap='swapon -v | grep zram'
             local var_disable_zram_swap='swapoff /dev/zram*'
             local var_enable_all_swap='swapon -a'
             local var_restart_daemon='systemctl restart zram-swap'
-            declare -a arr_file_contents=( $( cat "${str_file1}" ) )
+            declare -a arr_file_contents=( $( cat "${_FILE_1}" ) )
             # </params>
 
             # <remarks> Replace matching line with comment of line </remarks>
@@ -101,7 +101,7 @@
                 )
             fi
 
-            OverwriteFile "arr_file_contents" "${str_file1}" || return 1
+            OverwriteFile "arr_file_contents" "${_FILE_1}" || return 1
             eval "${var_find_zram_swap}" &> /dev/null && eval "${var_disable_zram_swap}" &> /dev/null
             eval "${var_restart_daemon}" || return 1
             eval "${var_enable_all_swap}" || return 1
@@ -228,7 +228,6 @@
         }
 
         local _OUTPUT="Installing audio drivers..."
-        # PrintWait "${_OUTPUT}"
         Main &> /dev/null
         PrintPassOrFail "${_OUTPUT}" && _IS_AUDIO_CAPTURE_SETUP=true || _IS_AUDIO_CAPTURE_SETUP=false
         return "$_LAST_EXIT_CODE"
@@ -248,7 +247,7 @@
             fi
 
             # <params>
-            declare -a arr_file1_current arr_file1_contents=(
+            declare -a arr_file1_current _FILE_1_CONTENTS=(
                 "[Unit]"
                 "Description=Load audio loopback module"
                 "After=pulseaudio.service"
@@ -263,22 +262,21 @@
                 "WantedBy=default.target"
             )
 
-            local str_dir1="/etc/systemd/system/"
-            local str_file1="audio-loopback-user.service"
+            local _PATH_1="/etc/systemd/system/"
+            local _FILE_1="audio-loopback-user.service"
             # </params>
 
-            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file1_current" "${str_file1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
-                OverwriteFile "arr_file1_contents" "${str_dir1}${str_file1}" || return 1
+            if ! IsFile "${_FILE_1}" &> /dev/null || ( ReadFile "arr_file1_current" "${_FILE_1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "_FILE_1_CONTENTS" ); then
+                OverwriteFile "_FILE_1_CONTENTS" "${_PATH_1}${_FILE_1}" || return 1
             fi
 
             systemctl daemon-reload || return 1
-            systemctl enable "${str_file1}" || return 1
-            systemctl restart "${str_file1}" || return 1
+            systemctl enable "${_FILE_1}" || return 1
+            systemctl restart "${_FILE_1}" || return 1
             return 0
         }
 
         local _OUTPUT="Creating audio loopback..."
-        # PrintWait "${_OUTPUT}"
         Main &> /dev/null
         PrintPassOrFail "${_OUTPUT}"
         return "$_LAST_EXIT_CODE"
@@ -381,10 +379,10 @@
         function Install
         {
             # <params>
-            declare -a arr_file1_current arr_file1_contents arr_file2_contents
+            declare -a arr_file1_current _FILE_1_CONTENTS arr_file2_contents
             local str_audio_backend_command str_audio_backend_name
-            local str_dir1="/etc/systemd/system/"
-            local str_file1="audio-loopback-user.service"
+            local _PATH_1="/etc/systemd/system/"
+            local _FILE_1="audio-loopback-user.service"
             local str_dir2="${str_user_home_dir}/config/systemd/user/"
             local str_file2="scream-ivshmem-pulse.service"
             # </params>
@@ -433,8 +431,8 @@
                 "WantedBy=default.target"
             )
 
-            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file1_current" "${str_file1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
-                OverwriteFile "arr_file1_contents" "${str_dir1}${str_file1}" || return 1
+            if ! IsFile "${_FILE_1}" &> /dev/null || ( ReadFile "arr_file1_current" "${_FILE_1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "_FILE_1_CONTENTS" ); then
+                OverwriteFile "_FILE_1_CONTENTS" "${_PATH_1}${_FILE_1}" || return 1
             fi
 
             if ! IsFile "${str_file2}" &> /dev/null || ( ReadFile "arr_file2_current" "${str_file2}" && IsArray "arr_file2_current" && ! AreEqualArrays "arr_file2_current" "arr_file2_contents" ); then
@@ -442,8 +440,8 @@
             fi
 
             systemctl daemon-reload || return 1
-            systemctl enable "${str_file1}" || return 1
-            systemctl restart "${str_file1}" || return 1
+            systemctl enable "${_FILE_1}" || return 1
+            systemctl restart "${_FILE_1}" || return 1
             return 0
         }
 
@@ -520,13 +518,16 @@
             echo
 
             # <remarks> Build client </remarks>
-            IsFile "client/build" || ( mkdir client/build || return 1 )
+            if [[ -z "client/build" ]]; then
+                mkdir client/build || return 1
+            fi
+
             cd client/build || return 1
             cmake ../ || ( git submodule update --init --recursive && cmake ../ ) || return 1
             make || return 1                                                            # TODO: fix here!
 
             # <remarks> Conclude build as root or user. </remarks>
-            if $bool_is_user_root; then
+            if [[ $( whoami ) != "root" ]]; then
                 make install || return 1
             else
                 cmake -DCMAKE_INSTALL_PREFIX=~/.local .. && make install
@@ -549,32 +550,21 @@
     {
         function Main
         {
-            # <params>
-            declare -a arr_file1_current arr_file1_contents=(
-                "[Unit]"
-                "Description=Preventing sleep while libvirt domain "%i" is running"
-                ""
-                "[Service]"
-                "Type=simple"
-                "ExecStart=/usr/bin/systemd-inhibit --what=sleep --why="Libvirt domain \"%i\" is running" --who=%U --mode=block sleep infinity"
-            )
-
-            local str_dir1="/etc/systemd/system/"
-            local str_file1="libvirt-nosleep@.service"
-            # </params>
-
-            if ! IsFile "${str_file1}" &> /dev/null || ( ReadFile "arr_file1_current" "${str_file1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "arr_file1_contents" ); then
-                OverwriteFile "arr_file1_contents" "${str_dir1}${str_file1}" || return 1
+            if ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_FILE_BACKUP" "$_LIBVIRT_HOOK_NOSLEEP_FILE_PATH"; then
+                echo -e "$_PREFIX_ERROR Failed to copy file."
+                return 1
             fi
 
-            systemctl daemon-reload || return 1
+            if ! sudo systemctl daemon-reload &> /dev/null then
+                echo -e "$_PREFIX_ERROR Failed to update systemd with new daemon/service."
+                return 1
+            fi
+
             return 0
         }
 
-        local _OUTPUT="Installing libvirt-hooks..."
-        # PrintWait "${_OUTPUT}"
-        Main &> /dev/null
-        PrintPassOrFail "${_OUTPUT}"
+        Main
+        PrintPassOrFail "Installing libvirt-hooks..."
         return "$_LAST_EXIT_CODE"
     }
 
