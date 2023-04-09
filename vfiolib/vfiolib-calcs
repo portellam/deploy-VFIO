@@ -16,9 +16,23 @@
 # <params>
     declare -g _IS_HUGEPAGES_COUNT_SET=false
     declare -g _IS_HUGEPAGES_SIZE_SET=false
+    declare -gi _AVAILABLE_MEMORY=0
+    declare -gir _MIN_MEMORY=8
 # </params>
 
 # <code>
+    function GetFreeMemory
+    {
+        _AVAILABLE_MEMORY=$(( _INT_MAX_MEMORY - _MIN_MEMORY ))
+        return 0
+    }
+
+    function GetMemoryAllocatedToHugepages
+    {
+        _HUGEPAGES_ALLOCATED_MEMORY=$(( $_HUGEPAGES_COUNT * $_HUGEPAGES_SIZE_IN_KBIT ))
+        return 0
+    }
+
     function GetHugepageByteSize
     {
         local -u _ANSWER="$1"
@@ -85,6 +99,8 @@
 
     function GetZramSwapSize
     {
+        IsHostMemorySufficientForZramSwap || return 1
+
         case "$1" in
             *"/"* )
                 local -i _NUMERATOR=$( echo $1 | cut -d '/' -f1 )
@@ -114,5 +130,35 @@
         fi
 
         return 1
+    }
+
+    function IsHostMemorySufficientForHugepages
+    {
+        GetFreeMemory
+
+        if [[ "$_AVAILABLE_MEMORY" -le 0 ]]; then
+            echo -e "$_PREFIX_ERROR Insufficient Host memory for Hugepages."
+            return 1
+        fi
+
+        return 0
+    }
+
+    function IsHostMemorySufficientForZramSwap
+    {
+        GetFreeMemory
+
+        if "$_IS_HUGEPAGES_SETUP"; then
+            GetMemoryAllocatedToHugepages || return 1
+            _AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY - _HUGEPAGES_ALLOCATED_MEMORY ))
+        fi
+
+        if [[ "$_AVAILABLE_MEMORY" -le 0 ]]; then
+            echo -e "$_PREFIX_ERROR Insufficient Host memory for zram-swap."
+            return 1
+        fi
+
+        return 0
+
     }
 # </code>

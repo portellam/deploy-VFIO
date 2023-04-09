@@ -140,7 +140,7 @@
     {
         function PingServer
         {
-            IsString $1 || return "$?"
+            IsString $1 || return 1
             ping -q -c 1 $1 &>/dev/null
             return "$?"
         }

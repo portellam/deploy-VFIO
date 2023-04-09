@@ -21,6 +21,8 @@
 # </code>
 
 # <params>
+    declare -gir _HUGEPAGES_ALLOCATED_MEMORY=0
+
     # <remarks> Flag progress of setups </remarks>
     declare -g _IS_EVDEV_SETUP=false
     declare -g _IS_HUGEPAGES_SETUP=false
@@ -44,7 +46,7 @@
     # <summary>
     # isolcpus: Allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and guest performance.
     # </summary
-    function AllocateCPU
+    function AllocateCPUToGuest
     {
         function AskToContinue
         {
@@ -96,7 +98,7 @@
                 # <remarks> Save thread sets to delimited list. </remarks>
                 local -i _FIRST_THREAD_SET="${_HOST_THREADS_DELIM_LIST[0]}"
                 local -i _LAST_THREAD_SET="${_HOST_THREADS_DELIM_LIST[-1]}"
-                local _THREAD_SET="${_FIRST_THREAD_SET}"
+                local _THREAD_SET="$_FIRST_THREAD_SET"
 
                 if [[ "$_FIRST_THREAD_SET" -ne "$_LAST_THREAD_SET" ]]; then
                     local _THREAD_SET="$_FIRST_THREAD_SET-$_LAST_THREAD_SET"
@@ -120,9 +122,9 @@
 
         function Main
         {
+            local -i _CORES_ALLOCATED_TO_HOST=1
             local -i _TOTAL_CORES_COUNT=$( cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+" )
             local -i _TOTAL_THREADS_COUNT=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+" )
-            local -i _CORES_ALLOCATED_TO_HOST=1
 
             # <remarks> Set maximum number of cores allocated to host. </remarks>
             if [[ "$_SUM_CORES" -ge 4 ]]; then
@@ -133,6 +135,7 @@
                 _CORES_ALLOCATED_TO_HOST=1
 
             else
+                echo -e "$PREFIX_ERROR Insuc"
                 return 1
             fi
 
@@ -172,7 +175,7 @@
             # </remarks>
 
             # <remarks> Find CPU mask. </remarks>
-            local _GET_HEX_MASK='echo "obase=16; $_THREAD_decimal" | bc'
+            local -r _GET_HEX_MASK='echo "obase=16; $_THREAD_decimal" | bc'
             local -i _HOST_THREADS_HEX_MASK=0
             local -i _TOTAL_THREADS_HEX_MASK=0
 
@@ -197,7 +200,7 @@
         }
 
         if ! "$_EXECUTE_ISOLCPU_SETUP"; then
-            AskToContinue || return "$?"
+            AskToContinue || return 1
         fi
 
         Main "$@"
@@ -209,7 +212,7 @@
     # Hugepages: Allocate host memory (RAM) to 'hugepages'.
     # Eliminate the need to defragement memory, reduce host overhead, and improve both host and guest performance.
     # </summary
-    function AllocateRAM
+    function AllocateRAMToGuest
     {
         function AskForHugepageByteSize
         {
@@ -283,7 +286,8 @@
 
             AskForHugepageByteSize || return 1
             AskForHugepageCount || return 1
-            declare -gir _HUGEPAGES_ALLOCATED_MEMORY=$(( $_HUGEPAGES_COUNT * $_HUGEPAGES_SIZE_IN_KBIT ))
+            GetMemoryAllocatedToHugepages || return 1
+            IsHostMemorySufficientForHugepages || return 1
             declare -gr _OUTPUT_GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=$_HUGEPAGES_BYTE_SUFFIX hugepagesz=$_HUGEPAGES_BYTE_SUFFIX hugepages=$_HUGEPAGES_COUNT"
             _IS_HUGEPAGES_SETUP=true
             return 0
@@ -295,30 +299,30 @@
         return "$_LAST_EXIT_CODE"
     }
 
-    function ExecuteUtilsSetups
+    function ExecuteEssentials
     {
-        AddUserToGroups || return "$?"
+        AddUserToGroups || return 1
 
         if "$_EXECUTE_ALL_UTILS_SETUPS"; then
-            AllocateCPU || return "$?"
-            AllocateRAM || return "$?"
-            VirtualKVM || return "$?"
+            AllocateCPUToGuest || return 1
+            AllocateRAMToGuest || return 1
+            VirtualKVM || return 1
             return 0
         fi
 
         if "$_EXECUTE_ISOLCPU_SETUP"; then
-            AllocateCPU || return "$?"
+            AllocateCPUToGuest || return 1
         fi
 
         if "$_EXECUTE_HUGEPAGES_SETUP"; then
-            AllocateRAM || return "$?"
+            AllocateRAMToGuest || return 1
         fi
 
         if "$_EXECUTE_EVDEV_SETUP"; then
-            VirtualKVM || return "$?"
+            VirtualKVM || return 1
         fi
 
-        ModifyQEMU || return "$?"
+        ModifyQEMU || return 1
         return 0
     }
 
@@ -495,8 +499,8 @@
         echo
 
         if ! "$_EXECUTE_EVDEV_SETUP"; then
-            echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and guest(s).\n${var_yellow}HOW-TO:${var_reset_color} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
-            AskToContinue || return "$?"
+            echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between host and guest(s).\n${_SET_COLOR_YELLOW}HOW-TO:${_RESET_COLOR} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
+            AskToContinue || return 1
         fi
 
         Main

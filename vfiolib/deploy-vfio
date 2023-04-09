@@ -16,7 +16,7 @@
 function Main
 {
     # <remarks> Gather arguments. </remarks>
-    SetScriptDir || return "$?"
+    SetScriptDir || return 1
 
     if [[ $( whoami ) != "root" ]]; then
         echo -e "$_PREFIX_FAIL User is not sudo/root."
@@ -46,19 +46,19 @@ function Main
     # <remarks> Main setup </remarks>
     case true in
         $_PARSE_IOMMU_FROM_FILE )
-            Parse_IOMMU "FILE" || return "$?"
+            Parse_IOMMU "FILE" || return 1
             ;;
 
         $_PARSE_IOMMU_FROM_INTERNET )
-            Parse_IOMMU "DNS" || return "$?"
+            Parse_IOMMU "DNS" || return 1
             ;;
 
         $_PARSE_IOMMU_FROM_CACHE | * )
-            Parse_IOMMU "LOCAL" || return "$?"
+            Parse_IOMMU "LOCAL" || return 1
             ;;
     esac
 
-    Select_IOMMU "$@" || return "$?"
+    Select_IOMMU "$@" || return 1
     SelectSetup
     return "$?"
 }

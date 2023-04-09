@@ -184,11 +184,11 @@
 
         case true in
             "$_EXECUTE_MULTIBOOT_SETUP" )
-                ExecuteMultibootSetup || return "$?"
+                ExecuteMultibootSetup || return 1
                 ;;
 
             "$_EXECUTE_STATIC_SETUP" )
-                ExecuteStaticSetup || return "$?"
+                ExecuteStaticSetup || return 1
                 ;;
 
             "$_EXECUTE_UNINSTALL_SETUP" )

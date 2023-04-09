@@ -92,13 +92,13 @@
             local _PARSE_QUOTES="$_PARSE $_PARSE_ARGS_NUMS"
 
             # <remarks> Set commands for each parse type. </remarks>
-            SetParseOperation || return "$?"
+            SetParseOperation || return 1
 
             # <remarks> Get all devices from system. </remarks>
             local -a _DEVICES_LIST=( $( eval "$_PARSE_SLOT_ID" | awk '{print $1}' ) )
-            SetParseLists || return "$?"
-            AreParseListsNotEmpty || return "$?"
-            AreParseListsNotInequalSizes || return "$?"
+            SetParseLists || return 1
+            AreParseListsNotEmpty || return 1
+            AreParseListsNotInequalSizes || return 1
 
             # <remarks> Save output to file. </remarks>
             if [[ "$_OPTION" != "$_OPTION_PARSE_IOMMU_FILE" ]] \

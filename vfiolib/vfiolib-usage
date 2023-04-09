@@ -41,7 +41,7 @@
     declare -g _SELECT_ALL_IOMMU=false
     declare -g _EXECUTE_STATIC_SETUP=false
     declare -g _UNINSTALL_EXTRAS=false
-    declare -g _UNINSTALL_UTILS=false
+    declare -g _UNINSTALL_ESSENTIALS=false
     declare -g _EXECUTE_UNINSTALL_SETUP=false
     declare -g _EXECUTE_ZRAM_SWAP=false
     declare -g _ZRAM_SWAP_OVERRIDE=false
@@ -62,11 +62,11 @@
                 if [[ "$2" == "" ]] \
                     || [[ -z "$2" ]]; then
                     echo -e "$_OUTPUT_INVALID_OPTION"
-                    return "$?"
+                    return 1
                 fi
 
                 if [[ "$3" != "" ]]; then
-                    GetArgsForSelectIOMMU "$3" || return "$?"
+                    GetArgsForSelectIOMMU "$3" || return 1
                 fi
 
                 _FILENAME_PARSE_IOMMU=$3
@@ -75,7 +75,7 @@
 
             "-i" | "--internal" )
                 if [[ "$2" != "" ]]; then
-                    GetArgsForSelectIOMMU "$2" || return "$?"
+                    GetArgsForSelectIOMMU "$2" || return 1
                 fi
 
                 _PARSE_IOMMU_FROM_CACHE=true
@@ -83,13 +83,13 @@
 
             "-o" | "--online" )
                 if [[ "$2" != "" ]]; then
-                    GetArgsForSelectIOMMU "$2" || return "$?"
+                    GetArgsForSelectIOMMU "$2" || return 1
                 fi
 
                 _PARSE_IOMMU_FROM_INTERNET=true
                 ;;
 
-            # <remarks> Pre-setup: Utilities </remarks>
+            # <remarks> Pre-setup: Essentials </remarks>
             "-c" | "--cpu" )
                 _EXECUTE_ALL_UTILS_SETUPS=false
                 _EXECUTE_ISOLCPU_SETUP=true
@@ -104,18 +104,19 @@
                 _EXECUTE_ALL_UTILS_SETUPS=false
 
                 if [[ "$2" != "" ]]; then
-                    GetHugepageByteSize "$2" || return "$?"
+                    GetHugepageByteSize "$2" || return 1
                 fi
 
                 if [[ "$3" != "" ]]; then
-                    GetHugepageCount "$3" || return "$?"
+                    GetHugepageCount "$3" || return 1
                 fi
 
+                IsHostMemorySufficientForHugepages || return 1
                 _EXECUTE_HUGEPAGES_SETUP=true
                 ;;
 
-            "--uninstall-utils" )
-                _UNINSTALL_UTILS=true
+            "--uninstall-essentials" )
+                _UNINSTALL_ESSENTIALS=true
                 ;;
 
             # <remarks> Main setup </remarks>
@@ -125,7 +126,7 @@
 
             "-s" | "--static" )
                 if [[ "$2" != "" ]]; then
-                    GetArgsForStaticVFIO "$2" || return "$?"
+                    GetArgsForStaticVFIO "$2" || return 1
                 fi
 
                 _EXECUTE_STATIC_SETUP=true
@@ -165,13 +166,14 @@
                 _EXECUTE_ALL_EXTRAS_SETUPS=false
 
                 if [[ "$2" != "" ]]; then
-                    GetZramSwapSize "$2" || GetOverrideArgsForZramSwap "$2" || return "$?"
+                    GetZramSwapSize "$2" || GetOverrideArgsForZramSwap "$2" || return 1
                 fi
 
                 if [[ "$3" != "" ]]; then
-                    GetZramSwapSize "$3" || GetOverrideArgsForZramSwap "$3" || return "$?"
+                    GetZramSwapSize "$3" || GetOverrideArgsForZramSwap "$3" || return 1
                 fi
 
+                IsHostMemorySufficientForZramSwap || return 1
                 _EXECUTE_ZRAM_SWAP=true
                 ;;
 
@@ -272,7 +274,7 @@
             "  -c, --cpu\t\t\tAllocate CPU."
             "  -e, --evdev\t\t\tSetup a virtual KVM switch."
             "  -h, --hugepages\t\tCreate static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s)."
-            "  --uninstall-utils\t\tUndo changes made by preliminary setup."
+            "  --uninstall-essentials\t\tUndo changes made by preliminary setup."
 
             "\nHugepages ARGUMENTS: *"
             "  2M, 1G\t\t\tHugepage size (2 MiB or 1 GiB)."
@@ -316,7 +318,7 @@
     {
         for VAR_OPTION in "$@"; do
             [ "$VAR_OPTION" == "" ] && return 0
-            GetOption "$VAR_OPTION" || return "$?"
+            GetOption "$VAR_OPTION" || return 1
         done
 
         return 0

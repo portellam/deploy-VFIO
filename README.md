@@ -58,7 +58,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA (GP
           -c, --cpu                     Allocate CPU.
           -e, --evdev                   Setup a virtual KVM switch.
           -h, --hugepages               Create static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s).
-          --uninstall-utils             Undo changes made by preliminary setup.
+          --uninstall-essentials             Undo changes made by preliminary setup.
 
         Hugepages ARGUMENTS: *
           2M, 1G                        Hugepage size (2 MiB or 1 GiB).
