@@ -373,7 +373,9 @@
 
     function WriteFilesForGRUBStaticSetup
     {
+        "$_HAS_EXECUTED_BACKUPS" || return 1
         IFS=$'\n'
+        local -r _LINE_TO_MATCH="GRUB_CMDLINE_LINUX_DEFAULT="
         local _LINE_GRUB_CMDLINE_TEMP=""
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE "
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE_ISOLCPU "
@@ -384,14 +386,14 @@
         _LINE_GRUB_CMDLINE_TEMP="${_LINE_GRUB_CMDLINE_TEMP::-1}"
         local -r _LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"$_LINE_GRUB_CMDLINE_TEMP\""
 
-        if ! [ sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=*/'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_FILE_PATH" ] \
-            || ! [ sed -i 's/## REPLACE_THIS_LINE*/'"${_INITRAMFS_LIST[*]}" "$_INITRAMFS_MODULES_FILE_PATH" ] \
-            || ! [ sed -i 's/options vfio_pci ids=*/options vfio_pci_ids="'"$_HWID_DELIM\"" "$_INITRAMFS_MODULES_FILE_PATH" ] \
-            || ! [ sed -i 's/vfio_pci ids=*/vfio_pci_ids="'"$_HWID_DELIM\"" "$_INITRAMFS_MODULES_FILE_PATH" ] \
-            || ! [ echo "${_BLACKLISTS_LIST[*]}" >> "$_MODPROBE_BLACKLISTS_FILE_PATH" ] \
-            || ! [ sed -i 's/## REPLACE_THIS_LINE*/'"${_MODULES_LIST[*]}" "$_MODPROBE_VFIO_FILE_PATH" ] \
-            || ! [ sed -i 's/options vfio_pci ids=*/vfio_pci_ids="'"$_HWID_DELIM\"" "$_MODPROBE_VFIO_FILE_PATH" ] \
-            || ! [ sed -i 's/vfio_pci ids=*/vfio_pci_ids="'"$_HWID_DELIM\"" "$_MODULES_FILE_PATH" ]; then
+        if ! sed -i "/$_LINE_TO_MATCH\"*\"/c\$_LINE_GRUB_CMDLINE_DEFAULT\"" "$_GRUB_FILE_PATH" \
+            || ! sed -i "/## REPLACE_THIS_LINE*/c\${_INITRAMFS_LIST[*]}" "$_INITRAMFS_MODULES_FILE_PATH" \
+            || ! sed -i "/options vfio_pci ids=*/c\options vfio_pci_ids=\"$_HWID_DELIM\"" "$_INITRAMFS_MODULES_FILE_PATH" \
+            || ! sed -i "/vfio_pci ids=*/c\vfio_pci_ids=\"$_HWID_DELIM\"" "$_INITRAMFS_MODULES_FILE_PATH" \
+            || ! echo "${_BLACKLISTS_LIST[*]}" >> "$_MODPROBE_BLACKLISTS_FILE_PATH" \
+            || ! sed -i "/## REPLACE_THIS_LINE*/c\${_MODULES_LIST[*]}" "$_MODPROBE_VFIO_FILE_PATH" \
+            || ! sed -i "/options vfio_pci ids=*/c\vfio_pci_ids=$_HWID_DELIM" "$_MODPROBE_VFIO_FILE_PATH" \
+            || ! sed -i "/vfio_pci ids=*/c\vfio_pci_ids=$_HWID_DELIM" "$_MODULES_FILE_PATH"; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi
@@ -403,14 +405,15 @@
     {
         "$_HAS_EXECUTED_BACKUPS" || return 1
         IFS=$'\n'
+        local -r _LINE_TO_MATCH="GRUB_CMDLINE_LINUX_DEFAULT="
         local _LINE_GRUB_CMDLINE_TEMP=""
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE "
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE_ISOLCPU "
         _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
         _LINE_GRUB_CMDLINE_TEMP="${_LINE_GRUB_CMDLINE_TEMP::-1}"
-        local -r _LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"$_LINE_GRUB_CMDLINE_TEMP\""
+        local -r _LINE_GRUB_CMDLINE_DEFAULT="$_LINE_TO_MATCH\"$_LINE_GRUB_CMDLINE_TEMP\""
 
-        if ! [ sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=*/'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_FILE_PATH" ]; then
+        if ! sed -i "/$_LINE_TO_MATCH\"*\"/c\$_LINE_GRUB_CMDLINE_DEFAULT\"" "$_GRUB_FILE_PATH"; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi

@@ -225,9 +225,8 @@
             return "$?"
         }
 
-        local _OUTPUT="Installing audio drivers..."
         Main
-        PrintPassOrFail "Installing audio drivers..." && _IS_AUDIO_CAPTURE_SETUP=true || _IS_AUDIO_CAPTURE_SETUP=false
+        PrintPassOrFail "Installing audio drivers..." && _IS_AUDIO_CAPTURE_SETUP=true
         return "$_LAST_EXIT_CODE"
     }
 

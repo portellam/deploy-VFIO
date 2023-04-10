@@ -204,9 +204,9 @@
         local -r _LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"quiet\""
         local -r _LINE_GRUB_CMDLINE="GRUB_CMDLINE_LINUX=\"\""
 
-        if ! sed -i 's/GRUB_DISTRIBUTOR=*/'"$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_FILE_BACKUP_2" \
-            || ! sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=*/'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_FILE_BACKUP_2" \
-            || ! sed -i 's/GRUB_CMDLINE_LINUX=*/'"$_LINE_GRUB_CMDLINE" "$_GRUB_FILE_BACKUP_2" ; then
+        if ! sed -i "s/GRUB_DISTRIBUTOR=*/c\$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_FILE_BACKUP_2" \
+            || ! sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=*/c\"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_FILE_BACKUP_2" \
+            || ! sed -i "s/GRUB_CMDLINE_LINUX=*/c\"$_LINE_GRUB_CMDLINE" "$_GRUB_FILE_BACKUP_2" ; then
             echo -e "$_PREFIX_ERROR Failed to clear target lines of GRUB backup file."
             return 1
         fi
