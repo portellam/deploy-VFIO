@@ -197,7 +197,7 @@
         return 0
     }
 
-    function SelectIOMMU
+    function ExecuteSelection
     {
         local _OUTPUT="Reviewing IOMMU groups..."
         local _LAST_IOMMU_VALUE=$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )
@@ -228,51 +228,6 @@
 
         PrintPassOrFail "Reviewing IOMMU groups..."
         return "$_LAST_EXIT_CODE"
-    }
-
-    function SetParseOperation
-    {
-        # <remarks> Set commands for each parse type. </remarks>
-        case "$_OPTION" in
-
-            # <remarks> If parsing file and file does not exist, recursive call to parse internet. </remarks>
-            "$_OPTION_PARSE_IOMMU_FILE" )
-                _OUTPUT="$_OUTPUT_PARSE_FILE"
-                _PARSE_ALL_ID+=" $_PARSE_ARGS_FILE"
-                _PARSE_NAME_ID+=" $_PARSE_ARGS_FILE"
-                _PARSE_SLOT_ID+=" $_PARSE_ARGS_FILE"
-                _PARSE_QUOTES+=" $_PARSE_ARGS_FILE"
-
-                if [[ -z "$_PARSE_IOMMU_FILENAME" ]]; then
-                    echo -e "$_PREFIX_ERROR Failed to find file database to parse."
-                    return 1
-                fi
-
-                return 0
-                ;;
-
-            # <remarks> If internet is not available, exit. </remarks>
-            "$_OPTION_PARSE_IOMMU_ONLINE" )
-                _OUTPUT="$_OUTPUT_PARSE_ONLINE"
-                local _PARSE_ALL_ID+=" $_PARSE_ARGS_ONLINE"
-                local _PARSE_NAME_ID+=" $_PARSE_ARGS_ONLINE"
-                local _PARSE_SLOT_ID+=" $_PARSE_ARGS_ONLINE"
-                local _PARSE_QUOTES+=" $_PARSE_ARGS_ONLINE"
-
-                if ! GetInternetStatus &> /dev/null; then
-                    echo -e "$_PREFIX_ERROR Failed to find online database to parse."
-                    return 1
-                fi
-
-                return 0
-                ;;
-
-            "$_OUTPUT_PARSE_LOCAL" | * )
-                _OUTPUT="$_OUTPUT_PARSE_LOCAL"
-                ;;
-        esac
-
-        return 0
     }
 
     function SkipThisGroup

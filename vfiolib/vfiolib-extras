@@ -177,19 +177,15 @@
     {
         function Main
         {
-            # <params>
             local _DEPENDENCIES=""
-            # </params>
 
             # <remarks> Install JACK and PipeWire. </remarks>
-            case "${_PACKAGE_MANAGER}" in
+            case "$_PACKAGE_MANAGER" in
                 "apt" )
-                    _DEPENDENCIES+="pipewire pipewire-jack "
-                    ;;
+                    _DEPENDENCIES+="pipewire pipewire-jack " ;;
 
                 "pacman" )
-                    _DEPENDENCIES+="pipewire pipewire-jack "
-                    ;;
+                    _DEPENDENCIES+="pipewire pipewire-jack " ;;
 
                 * )
                     echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
@@ -198,42 +194,39 @@
 
             # <remarks> Include PulseAudio (and QEMU driver if available). </remarks>
             if IsInstalledCommand "pulseaudio" &> /dev/null; then
-                case "${_PACKAGE_MANAGER}" in
+                case "$_PACKAGE_MANAGER" in
                     "apt" )
-                        _DEPENDENCIES+="pipewire-pulse "
-                        ;;
+                        _DEPENDENCIES+="pipewire-pulse " ;;
 
                     "pacman" )
-                        _DEPENDENCIES+="pipewire-pulse qemu-audio-pa "
-                        ;;
+                        _DEPENDENCIES+="pipewire-pulse qemu-audio-pa " ;;
 
                     * )
-                        return 1
+                        echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
+                        return 1 ;;
                 esac
 
             # <remarks> Fallback to factory driver. </remarks>
             else
-                case "${_PACKAGE_MANAGER}" in
+                case "$_PACKAGE_MANAGER" in
                     "apt" )
-                        _DEPENDENCIES+="pipewire-alsa "
-
-                        ;;
+                        _DEPENDENCIES+="pipewire-alsa " ;;
 
                     "pacman" )
-                        _DEPENDENCIES+="pipewire-alsa "
-                        ;;
+                        _DEPENDENCIES+="pipewire-alsa " ;;
 
                     * )
-                        return 1
+                        echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
+                        return 1 ;;
                 esac
             fi
 
-            IsInstalledPackage "${_DEPENDENCIES}" || InstallPackage "${_DEPENDENCIES}"
+            IsInstalledPackage "$_DEPENDENCIES" || InstallPackage "$_DEPENDENCIES"
             return "$?"
         }
 
         local _OUTPUT="Installing audio drivers..."
-        Main &> /dev/null
+        Main
         PrintPassOrFail "Installing audio drivers..." && _IS_AUDIO_CAPTURE_SETUP=true || _IS_AUDIO_CAPTURE_SETUP=false
         return "$_LAST_EXIT_CODE"
     }
@@ -261,12 +254,12 @@
                 return 1
             fi
 
-            if ! sudo systemctl start $_AUDIO_LOOPBACK_FILE_BACKUP; then
+            if ! sudo systemctl start "$_AUDIO_LOOPBACK_FILE_BACKUP"; then
                 echo -e "$_PREFIX_ERROR Failed to start audio loopback service."
                 return 1
             fi
 
-            if ! sudo systemctl enable $_AUDIO_LOOPBACK_FILE_BACKUP; then
+            if ! sudo systemctl enable "$_AUDIO_LOOPBACK_FILE_BACKUP"; then
                 echo -e "$_PREFIX_ERROR Failed to enable audio loopback service."
                 return 1
             fi
@@ -374,12 +367,6 @@
 
         function Install
         {
-            if ! command -v "pulseaudio" \
-                && ! command -v "pipewire"; then
-                echo -e "$_PREFIX_ERROR Missing required audio backends (Pipewire, PulseAudio)."
-                return 1
-            fi
-
             if command -v "pulseaudio"; then
                 if ! sudo cp "$_SCREAM_PULSEAUDIO_FILE_BACKUP" "$_SCREAM_PULSEAUDIO_FILE_PATH"; then
                     echo -e "$_PREFIX_ERROR Failed to copy file."
@@ -428,6 +415,7 @@
                 return 0
             fi
 
+            echo -e "$_PREFIX_ERROR Missing required audio backends (Pipewire, PulseAudio)."
             return 1
         }
 

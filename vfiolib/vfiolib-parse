@@ -61,7 +61,7 @@
         return 0
     }
 
-    function ParseIOMMU
+    function ExecuteParse
     {
         function Main
         {
@@ -71,7 +71,7 @@
             # <remarks> Output statements </remarks>
             local _OUTPUT_PARSE_FILE="Parsing PCI from file database..."
             local _OUTPUT_PARSE_ONLINE="Parsing PCI from online database..."
-            local _OUTPUT_PARSE_LOCAL="Parsing PCI from no database..."
+            local _OUTPUT_PARSE_SYSTEM="Parsing PCI from no database..."
 
             # <remarks> Declare lists </remarks>
             declare -ag _DRIVER_LIST _HWID_LIST _IOMMU_LIST
@@ -113,8 +113,8 @@
 
         # <remarks> Set parse options </remarks>
         local _OPTION_PARSE_IOMMU_FILE="FILE"
-        local _OPTION_PARSE_IOMMU_ONLINE="DNS"
-        local _OPTION_PARSE_IOMMU_LOCAL="LOCAL"
+        local _OPTION_PARSE_IOMMU_ONLINE="ONLINE"
+        local _OPTION_PARSE_IOMMU_SYSTEM="SYSTEM"
 
         # <remarks> Save input params </remarks>
         local _OPTION="$1"
@@ -130,8 +130,8 @@
                 Main "$_OPTION_PARSE_IOMMU_FILE" "$_PARSE_IOMMU_FILENAME" || Main "$_OPTION_PARSE_IOMMU_ONLINE" "$_PARSE_IOMMU_FILENAME"
                 ;;
 
-            "$_OPTION_PARSE_IOMMU_LOCAL" | * )
-                Main "$_OPTION_PARSE_IOMMU_LOCAL" "$_PARSE_IOMMU_FILENAME" || Main "$_OPTION_PARSE_IOMMU_FILE" "$_PARSE_IOMMU_FILENAME" || Main "$_OPTION_PARSE_IOMMU_ONLINE" "$_PARSE_IOMMU_FILENAME"
+            "$_OPTION_PARSE_IOMMU_SYSTEM" | * )
+                Main "$_OPTION_PARSE_IOMMU_SYSTEM" "$_PARSE_IOMMU_FILENAME" || Main "$_OPTION_PARSE_IOMMU_FILE" "$_PARSE_IOMMU_FILENAME" || Main "$_OPTION_PARSE_IOMMU_ONLINE" "$_PARSE_IOMMU_FILENAME"
                 ;;
         esac
 
@@ -201,8 +201,8 @@
                 return 0
                 ;;
 
-            "$_OUTPUT_PARSE_LOCAL" | * )
-                _OUTPUT="$_OUTPUT_PARSE_LOCAL"
+            "$_OUTPUT_PARSE_SYSTEM" | * )
+                _OUTPUT="$_OUTPUT_PARSE_SYSTEM"
                 ;;
         esac
 

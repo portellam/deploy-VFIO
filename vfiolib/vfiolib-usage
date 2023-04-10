@@ -66,7 +66,7 @@
                 fi
 
                 if [[ "$3" != "" ]]; then
-                    GetArgsForSelectIOMMU "$3" || return 1
+                    GetArgsForExecuteSelection "$3" || return 1
                 fi
 
                 _FILENAME_PARSE_IOMMU=$3
@@ -75,7 +75,7 @@
 
             "-i" | "--internal" )
                 if [[ "$2" != "" ]]; then
-                    GetArgsForSelectIOMMU "$2" || return 1
+                    GetArgsForExecuteSelection "$2" || return 1
                 fi
 
                 _PARSE_IOMMU_FROM_CACHE=true
@@ -83,7 +83,7 @@
 
             "-o" | "--online" )
                 if [[ "$2" != "" ]]; then
-                    GetArgsForSelectIOMMU "$2" || return 1
+                    GetArgsForExecuteSelection "$2" || return 1
                 fi
 
                 _PARSE_IOMMU_FROM_INTERNET=true
@@ -215,7 +215,7 @@
         return 1
     }
 
-    function GetArgsForSelectIOMMU
+    function GetArgsForExecuteSelection
     {
         case "$1" in
             "all" )

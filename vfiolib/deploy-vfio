@@ -23,43 +23,36 @@ function Main
         return 1
     fi
 
-    if ! SetOptions $@; then GetUsage; return "$?"; fi
+    if ! SetOptions $@; then
+        GetUsage; return "$?";
+    fi
 
     # <remarks> Exit early. </remarks>
     if "$_EXECUTE_UNINSTALL_SETUP"; then
-        SelectSetup
+        ExecuteSetup
         return "$?"
     fi
 
-    # <remarks> Extras </remarks>
-    AddUserToGroups
-    Allocate_CPU
-    Allocate_RAM
-    Virtual_KVM
-    RAM_Swapfile
-    LibvirtHooks
-    # GuestVideoCapture     # currently failing.
-    GuestAudioLoopback
-    # GuestAudioStream      # currently failing.
-    Modify_QEMU
+    ExecuteEssentials || return 1
+    ExecuteExtras || return 1
 
     # <remarks> Main setup </remarks>
     case true in
-        $_PARSE_IOMMU_FROM_FILE )
-            Parse_IOMMU "FILE" || return 1
+        "$_PARSE_IOMMU_FROM_FILE" )
+            ExecuteParse "FILE" || return 1
             ;;
 
-        $_PARSE_IOMMU_FROM_INTERNET )
-            Parse_IOMMU "DNS" || return 1
+        "$_PARSE_IOMMU_FROM_INTERNET" )
+            ExecuteParse "ONLINE" || return 1
             ;;
 
-        $_PARSE_IOMMU_FROM_CACHE | * )
-            Parse_IOMMU "LOCAL" || return 1
+        "$_PARSE_IOMMU_FROM_CACHE" | * )
+            ExecuteParse "SYSTEM" || return 1
             ;;
     esac
 
-    Select_IOMMU "$@" || return 1
-    SelectSetup
+    ExecuteSelection || return 1
+    ExecuteSetup
     return "$?"
 }
 # </code>

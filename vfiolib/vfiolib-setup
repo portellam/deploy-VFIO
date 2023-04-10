@@ -150,7 +150,7 @@
         return 0
     }
 
-    function SelectSetup
+    function ExecuteSetup
     {
         if ! "$_EXECUTE_MULTIBOOT_SETUP" \
             && ! "$_EXECUTE_STATIC_SETUP" \
@@ -158,7 +158,7 @@
             for _TRIES_COUNT in $( seq 0 2 ); do
                 read -r -p "Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall]: " _ANSWER
 
-                case $_ANSWER in
+                case "$_ANSWER" in
                     [Mm]* )
                         _EXECUTE_MULTIBOOT_SETUP=true
                         break;;
