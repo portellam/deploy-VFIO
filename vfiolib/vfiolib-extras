@@ -166,69 +166,69 @@
     # References:
     #   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_through_other_devices
     # </remarks>
-    function GuestAudioCapture
-    {
-        function Main
+        function GuestAudioCapture
         {
-            # <params>
-            local str_dependencies=""
-            # </params>
+            function Main
+            {
+                # <params>
+                local str_dependencies=""
+                # </params>
 
-            # <remarks> Install JACK and PipeWire. </remarks>
-            case "${_PACKAGE_MANAGER}" in
-                "apt" )
-                    str_dependencies+="pipewire pipewire-jack "
-                    ;;
-
-                "pacman" )
-                    str_dependencies+="pipewire pipewire-jack "
-                    ;;
-
-                * )
-                    return 1
-            esac
-
-            # <remarks> Include PulseAudio (and QEMU driver if available). </remarks>
-            if IsInstalledCommand "pulseaudio" &> /dev/null; then
+                # <remarks> Install JACK and PipeWire. </remarks>
                 case "${_PACKAGE_MANAGER}" in
                     "apt" )
-                        str_dependencies+="pipewire-pulse "
+                        str_dependencies+="pipewire pipewire-jack "
                         ;;
 
                     "pacman" )
-                        str_dependencies+="pipewire-pulse qemu-audio-pa "
+                        str_dependencies+="pipewire pipewire-jack "
                         ;;
 
                     * )
                         return 1
                 esac
 
-            # <remarks> Fallback to factory driver. </remarks>
-            else
-                case "${_PACKAGE_MANAGER}" in
-                    "apt" )
-                        str_dependencies+="pipewire-alsa "
+                # <remarks> Include PulseAudio (and QEMU driver if available). </remarks>
+                if IsInstalledCommand "pulseaudio" &> /dev/null; then
+                    case "${_PACKAGE_MANAGER}" in
+                        "apt" )
+                            str_dependencies+="pipewire-pulse "
+                            ;;
 
-                        ;;
+                        "pacman" )
+                            str_dependencies+="pipewire-pulse qemu-audio-pa "
+                            ;;
 
-                    "pacman" )
-                        str_dependencies+="pipewire-alsa "
-                        ;;
+                        * )
+                            return 1
+                    esac
 
-                    * )
-                        return 1
-                esac
-            fi
+                # <remarks> Fallback to factory driver. </remarks>
+                else
+                    case "${_PACKAGE_MANAGER}" in
+                        "apt" )
+                            str_dependencies+="pipewire-alsa "
 
-            IsInstalledPackage "${str_dependencies}" || InstallPackage "${str_dependencies}"
-            return "$?"
+                            ;;
+
+                        "pacman" )
+                            str_dependencies+="pipewire-alsa "
+                            ;;
+
+                        * )
+                            return 1
+                    esac
+                fi
+
+                IsInstalledPackage "${str_dependencies}" || InstallPackage "${str_dependencies}"
+                return "$?"
+            }
+
+            local _OUTPUT="Installing audio drivers..."
+            Main &> /dev/null
+            PrintPassOrFail "Installing audio drivers..." && _IS_AUDIO_CAPTURE_SETUP=true || _IS_AUDIO_CAPTURE_SETUP=false
+            return "$_LAST_EXIT_CODE"
         }
-
-        local _OUTPUT="Installing audio drivers..."
-        Main &> /dev/null
-        PrintPassOrFail "Installing audio drivers..." && _IS_AUDIO_CAPTURE_SETUP=true || _IS_AUDIO_CAPTURE_SETUP=false
-        return "$_LAST_EXIT_CODE"
-    }
 
     # <summary>
     # Setup an audio loopback service from physical guest audio device (Line-Out) to physical host audio device (Line-In).
@@ -238,44 +238,36 @@
     {
         function Main
         {
-            # <remarks> Get audio backend. </remarks>
-            if ! IsInstalledCommand "pulseaudio"; then
-                return "$?"
+            if ! command -v "pulseaudio"; then
+                echo -e "$_PREFIX_ERROR Required audio backend 'PulseAudio' is missing."
+                return 1
             fi
 
-            # <params>
-            declare -a arr_file1_current _FILE_1_CONTENTS=(
-                "[Unit]"
-                "Description=Load audio loopback module"
-                "After=pulseaudio.service"
-                ""
-                "[Service]"
-                "Type=simple"
-                "ExecStart=pactl load-module module-loopback"
-                "ExecStop=pactl unload-module module-loopback"
-                "RemainAfterExit=yes"
-                ""
-                "[Install]"
-                "WantedBy=default.target"
-            )
-
-            local _PATH_1="/etc/systemd/system/"
-            local _FILE_1="audio-loopback-user.service"
-            # </params>
-
-            if ! IsFile "${_FILE_1}" &> /dev/null || ( ReadFile "arr_file1_current" "${_FILE_1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "_FILE_1_CONTENTS" ); then
-                OverwriteFile "_FILE_1_CONTENTS" "${_PATH_1}${_FILE_1}" || return 1
+            if ! sudo cp "$_AUDIO_LOOPBACK_FILE_BACKUP" "$_AUDIO_LOOPBACK_FILE_PATH"; then
+                echo -e "$_PREFIX_ERROR Failed to copy file."
+                return 1
             fi
 
-            systemctl daemon-reload || return 1
-            systemctl enable "${_FILE_1}" || return 1
-            systemctl restart "${_FILE_1}" || return 1
+            if ! sudo systemctl daemon-reload &> /dev/null then
+                echo -e "$_PREFIX_ERROR Failed to update systemd with new daemon/service."
+                return 1
+            fi
+
+            if ! sudo systemctl start $_AUDIO_LOOPBACK_FILE_BACKUP; then
+                echo -e "$_PREFIX_ERROR Failed to start audio loopback service."
+                return 1
+            fi
+
+            if ! sudo systemctl enable $_AUDIO_LOOPBACK_FILE_BACKUP; then
+                echo -e "$_PREFIX_ERROR Failed to enable audio loopback service."
+                return 1
+            fi
+
             return 0
         }
 
-        local _OUTPUT="Creating audio loopback..."
-        Main &> /dev/null
-        PrintPassOrFail "${_OUTPUT}"
+        Main
+        PrintPassOrFail "Creating audio loopback..."
         return "$_LAST_EXIT_CODE"
     }
 

@@ -23,6 +23,9 @@
     declare -gr _APPARMOR_QEMU_FILE_PATH="/etc/apparmor.d/local/abstractions/libvirt-qemu"
     declare -gr _APPARMOR_QEMU_FILE_URL=""
 
+    declare -gr _AUDIO_LOOPBACK_FILE_BACKUP="audio-loopback-user.service"
+    declare -gr _AUDIO_LOOPBACK_FILE_PATH="/etc/systemd/system/$_AUDIO_LOOPBACK_FILE_BACKUP"
+
     declare -gr _CUSTOM_GRUB_FILE_BACKUP="custom"
     declare -gr _CUSTOM_GRUB_FILE_PATH="/etc/grub.d/proxifiedScripts/custom"
     # local CUSTOM_GRUB_FILE_URL=""
@@ -95,6 +98,7 @@
     function GetBackups
     {
         if [[ -z "$_APPARMOR_QEMU_BACKUP" ]] \
+            || [[ -z "$_AUDIO_LOOPBACK_FILE_BACKUP"]] \
             || [[ -z "$_CUSTOM_GRUB_FILE_BACKUP" ]] \
             || [[ -z "$_INITRAMFS_MODULES_FILE_BACKUP" ]] \
             || [[ -z "$_LIBVIRT_HOOK_NOSLEEP_FILE_BACKUP" ]] \
