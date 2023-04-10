@@ -51,6 +51,12 @@
     declare -gr _MODULES_FILE_BACKUP="modules"
     declare -gr _MODULES_FILE_PATH="/etc/modules"
 
+    declare -gr _SCREAM_PIPEWIRE_FILE_BACKUP="scream-ivshmem-pipewire.service"
+    declare -gr _SCREAM_PIPEWIRE_FILE_PATH="/etc/systemd/system/$_SCREAM_PIPEWIRE_FILE_BACKUP"
+
+    declare -gr _SCREAM_PULSEAUDIO_FILE_BACKUP="scream-ivshmem-pulseaudio.service"
+    declare -gr _SCREAM_PULSEAUDIO_FILE_PATH="/etc/systemd/system/$_SCREAM_PULSEAUDIO_FILE_BACKUP"
+
     declare -gr _QEMU_FILE_BACKUP="qemu.conf"
     declare -gr _QEMU_FILE_PATH="/etc/libvirt/qemu.conf"
     declare -gr _QEMU_FILE_URL="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"

@@ -9,11 +9,11 @@
 
 # <summary> Using </summary>
 # <code>
+    source vfiolib-common
     source vfiolib-globals
 # </code>
 
 # <params>
-    # <remarks> Flags </remarks>
     declare -g _IS_SYSTEM_SUPPORTED=false
 # </params>
 

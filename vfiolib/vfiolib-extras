@@ -10,6 +10,7 @@
 # <remarks> Using </remarks>
 # <code>
     source vfiolib-calcs
+    source vfiolib-common
     source vfiolib-iommu
 # </code>
 
@@ -28,16 +29,21 @@
     # </summary>
     function AllocateRAMToSwap
     {
-        function Install
+        function Get
         {
-            local -r _USER_NAME="foundObjects"
-            local -r _REPO_NAME="zram-swap"
-            local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
-            local -r _SCRIPT_NAME="install.sh"
-
             echo
             UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_ZRAM_SWAP" || return 1
-            cd "$_GIT_PATH$_FULL_REPO" || return 1
+            return 0
+        }
+
+        function Install
+        {
+            local -r _SCRIPT_NAME="install.sh"
+
+            if ! cd "$_GIT_PATH$_FULL_REPO"; then
+                echo -e "$_PREFIX_ERROR Failed to find build directory."
+                return 1
+            fi
 
             if [[ -z "$_SCRIPT_NAME" ]]; then
                 echo -e "$_PREFIX_ERROR Failed to find script '$_SCRIPT_NAME'."
@@ -112,14 +118,15 @@
             false
         fi
 
+        local -r _USER_NAME="foundObjects"
+        local -r _REPO_NAME="zram-swap"
+        local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
         PrintPassOrFail "Allocating RAM to swap..."
         return "$_LAST_EXIT_CODE"
     }
 
     function ExecuteExtras
     {
-        GuestAudioCapture
-
         if "$_EXECUTE_ALL_EXTRAS_SETUPS"; then
             AllocateRAMToSwap
             SetVideoOutput
@@ -166,69 +173,70 @@
     # References:
     #   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_through_other_devices
     # </remarks>
-        function GuestAudioCapture
+    function GuestAudioCapture
+    {
+        function Main
         {
-            function Main
-            {
-                # <params>
-                local str_dependencies=""
-                # </params>
+            # <params>
+            local _DEPENDENCIES=""
+            # </params>
 
-                # <remarks> Install JACK and PipeWire. </remarks>
+            # <remarks> Install JACK and PipeWire. </remarks>
+            case "${_PACKAGE_MANAGER}" in
+                "apt" )
+                    _DEPENDENCIES+="pipewire pipewire-jack "
+                    ;;
+
+                "pacman" )
+                    _DEPENDENCIES+="pipewire pipewire-jack "
+                    ;;
+
+                * )
+                    echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
+                    return 1 ;;
+            esac
+
+            # <remarks> Include PulseAudio (and QEMU driver if available). </remarks>
+            if IsInstalledCommand "pulseaudio" &> /dev/null; then
                 case "${_PACKAGE_MANAGER}" in
                     "apt" )
-                        str_dependencies+="pipewire pipewire-jack "
+                        _DEPENDENCIES+="pipewire-pulse "
                         ;;
 
                     "pacman" )
-                        str_dependencies+="pipewire pipewire-jack "
+                        _DEPENDENCIES+="pipewire-pulse qemu-audio-pa "
                         ;;
 
                     * )
                         return 1
                 esac
 
-                # <remarks> Include PulseAudio (and QEMU driver if available). </remarks>
-                if IsInstalledCommand "pulseaudio" &> /dev/null; then
-                    case "${_PACKAGE_MANAGER}" in
-                        "apt" )
-                            str_dependencies+="pipewire-pulse "
-                            ;;
+            # <remarks> Fallback to factory driver. </remarks>
+            else
+                case "${_PACKAGE_MANAGER}" in
+                    "apt" )
+                        _DEPENDENCIES+="pipewire-alsa "
 
-                        "pacman" )
-                            str_dependencies+="pipewire-pulse qemu-audio-pa "
-                            ;;
+                        ;;
 
-                        * )
-                            return 1
-                    esac
+                    "pacman" )
+                        _DEPENDENCIES+="pipewire-alsa "
+                        ;;
 
-                # <remarks> Fallback to factory driver. </remarks>
-                else
-                    case "${_PACKAGE_MANAGER}" in
-                        "apt" )
-                            str_dependencies+="pipewire-alsa "
+                    * )
+                        return 1
+                esac
+            fi
 
-                            ;;
-
-                        "pacman" )
-                            str_dependencies+="pipewire-alsa "
-                            ;;
-
-                        * )
-                            return 1
-                    esac
-                fi
-
-                IsInstalledPackage "${str_dependencies}" || InstallPackage "${str_dependencies}"
-                return "$?"
-            }
-
-            local _OUTPUT="Installing audio drivers..."
-            Main &> /dev/null
-            PrintPassOrFail "Installing audio drivers..." && _IS_AUDIO_CAPTURE_SETUP=true || _IS_AUDIO_CAPTURE_SETUP=false
-            return "$_LAST_EXIT_CODE"
+            IsInstalledPackage "${_DEPENDENCIES}" || InstallPackage "${_DEPENDENCIES}"
+            return "$?"
         }
+
+        local _OUTPUT="Installing audio drivers..."
+        Main &> /dev/null
+        PrintPassOrFail "Installing audio drivers..." && _IS_AUDIO_CAPTURE_SETUP=true || _IS_AUDIO_CAPTURE_SETUP=false
+        return "$_LAST_EXIT_CODE"
+    }
 
     # <summary>
     # Setup an audio loopback service from physical guest audio device (Line-Out) to physical host audio device (Line-In).
@@ -285,177 +293,162 @@
         {
             echo
 
-            # <remarks> Build client </remarks>
-            IsFile "build" || ( mkdir build || return 1 )
-            cd build || return 1
-            cmake .. || return 1
-            make || return 1
+            if [[ -z "build" ]] \
+                && ! mkdir build; then
+                echo -e "$_PREFIX_ERROR Failed to create build directory."
+                return 1
+            fi
+
+            if ! cd build; then
+                echo -e "$_PREFIX_ERROR Failed to find build directory."
+                return 1
+            fi
+
+            if ! cmake .. \
+                && ! make; then
+                echo -e "$_PREFIX_ERROR Failed to build client."
+                return 1
+            fi
+
             return 0
         }
 
         function Get
         {
-            # <params>
             local _USER_NAME="duncanthrax"
             local _REPO_NAME="scream"
-            local _FULL_REPO="${_USER_NAME}/${_REPO_NAME}"
-            local str_dependencies=""
-            # </params>
+            local _FULL_REPO="$_USER_NAME/$_REPO_NAME"
+            local _DEPENDENCIES=""
 
             # <remarks> Set dependencies for successful build. </remarks>
-            case "${_PACKAGE_MANAGER}" in
-                "apt" )
-                    str_dependencies="cmake "
-                    ;;
-
-                "yum" )
-                    str_dependencies="cmake "
-                    ;;
+            case "$_PACKAGE_MANAGER" in
+                "apt" | "yum" )
+                    _DEPENDENCIES="cmake " ;;
 
                 * )
-                    return "$?"
+                    return 1
                     ;;
             esac
 
             # <remarks> Set dependencies for available audio backend. </remarks>
-            if IsInstalledCommand "pulseaudio"; then
-                case "${_PACKAGE_MANAGER}" in
+            if command -v "pulseaudio"; then
+                case "$_PACKAGE_MANAGER" in
                     "apt" )
-                        str_dependencies+="libpulse-dev "
-                        ;;
+                        _DEPENDENCIES+="libpulse-dev " ;;
 
                     "yum" )
-                        str_dependencies+="pulseaudio-libs-devel "
-                        ;;
+                        _DEPENDENCIES+="pulseaudio-libs-devel " ;;
 
                    * )
-                        return "$?"
-                        ;;
+                        return 1 ;;
                 esac
-            elif IsInstalledCommand "pipewire-alsa"; then
-                case "${_PACKAGE_MANAGER}" in
+
+            elif command -v "pipewire-alsa"; then
+                case "$_PACKAGE_MANAGER" in
                     "apt" )
-                        str_dependencies+="ibasound2-dev "
-                        ;;
+                        _DEPENDENCIES+="ibasound2-dev " ;;
 
                     "yum" )
-                        str_dependencies+="alsa-lib-devel "
-                        ;;
+                        _DEPENDENCIES+="alsa-lib-devel " ;;
 
                     * )
-                        return "$?"
-                        ;;
+                        return 1 ;;
                 esac
+
             else
                 return 1
             fi
 
             # <remarks> Get dependencies. </remarks>
-            if ! IsInstalledPackage "${str_dependencies}" &> /dev/null; then
+            if ! IsInstalledPackage "$_DEPENDENCIES" &> /dev/null; then
                 echo
-                InstallPackage "${str_dependencies}" || return 1
+                InstallPackage "$_DEPENDENCIES" || return 1
                 echo
             fi
 
-            GetScriptDir
             echo
-            UpdateOrCloneGitRepo "${_GIT_PATH}" "${_FULL_REPO}" "${_USER_NAME}" || return 1
-            GetScriptDir
-            cd "${_GIT_PATH}${_FULL_REPO}" || return 1
+            UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_SCREAM" || return 1
+            cd "$_GIT_PATH$_FULL_REPO" || return 1
             return 0
         }
 
         function Install
         {
-            # <params>
-            declare -a arr_file1_current _FILE_1_CONTENTS arr_file2_contents
-            local str_audio_backend_command str_audio_backend_name
-            local _PATH_1="/etc/systemd/system/"
-            local _FILE_1="audio-loopback-user.service"
-            local str_dir2="${str_user_home_dir}/config/systemd/user/"
-            local str_file2="scream-ivshmem-pulse.service"
-            # </params>
-
-            # <remarks> Get audio backend. </remarks>
-            if ! IsInstalledCommand "pulseaudio" && ! IsInstalledCommand "pipewire"; then
-                return "$?"
-            elif IsInstalledCommand "pulseaudio" &> /dev/null; then
-                str_audio_backend_name="PulseAudio"
-            else
-                str_audio_backend_name="PipeWire"
+            if ! command -v "pulseaudio" \
+                && ! command -v "pipewire"; then
+                echo -e "$_PREFIX_ERROR Missing required audio backends (Pipewire, PulseAudio)."
+                return 1
             fi
 
-            str_audio_backend_command=$( echo $str_audio_backend_name | tr '[:upper:]' '[:lower:]' )
+            if command -v "pulseaudio"; then
+                if ! sudo cp "$_SCREAM_PULSEAUDIO_FILE_BACKUP" "$_SCREAM_PULSEAUDIO_FILE_PATH"; then
+                    echo -e "$_PREFIX_ERROR Failed to copy file."
+                    return 1
+                fi
 
-            arr_file_contents=(
-                "[Unit]"
-                "Description=${str_audio_backend_name} - QEMU"
-                "ConditionUser=!root"
-                ""
-                "[Socket]"
-                "Service=${str_audio_backend_command}-pulse.service"
-                "Priority=6"
-                "ListenStream=%T/${str_audio_backend_command}-qemu"
-                "SocketGroup=libvirt-qemu"
-                "SocketMode=0660"
-                ""
-                "[Install]"
-                "RequiredBy=${str_audio_backend_command}-pulse.service"
-                "WantedBy=sockets.target"
-            )
+                if ! sudo systemctl daemon-reload &> /dev/null then
+                    echo -e "$_PREFIX_ERROR Failed to update systemd with new daemon/service."
+                    return 1
+                fi
 
-            declare -a arr_file2_contents=(
-                "[Unit]"
-                "Description=Scream IVSHMEM pulse receiver"
-                "After=${str_audio_backend_command}.service"
-                "Wants=${str_audio_backend_command}.service"
-                ""
-                "[Service]"
-                "Type=simple"
-                "ExecStartPre=/usr/bin/truncate -s 0 /dev/shm/scream-ivshmem"
-                "ExecStartPre=/usr/bin/dd if=/dev/zero of=/dev/shm/scream-ivshmem bs=1M count=2"
-                "ExecStart=/usr/bin/scream -m /dev/shm/scream-ivshmem"
-                ""
-                "[Install]"
-                "WantedBy=default.target"
-            )
+                if ! sudo systemctl start $_SCREAM_PULSEAUDIO_FILE_BACKUP; then
+                    echo -e "$_PREFIX_ERROR Failed to start Scream shared memory service."
+                    return 1
+                fi
 
-            if ! IsFile "${_FILE_1}" &> /dev/null || ( ReadFile "arr_file1_current" "${_FILE_1}" && IsArray "arr_file1_current" && ! AreEqualArrays "arr_file1_current" "_FILE_1_CONTENTS" ); then
-                OverwriteFile "_FILE_1_CONTENTS" "${_PATH_1}${_FILE_1}" || return 1
+                if ! sudo systemctl enable $_SCREAM_PULSEAUDIO_FILE_BACKUP; then
+                    echo -e "$_PREFIX_ERROR Failed to enable Scream shared memory service."
+                    return 1
+                fi
+
+                return 0
             fi
 
-            if ! IsFile "${str_file2}" &> /dev/null || ( ReadFile "arr_file2_current" "${str_file2}" && IsArray "arr_file2_current" && ! AreEqualArrays "arr_file2_current" "arr_file2_contents" ); then
-                OverwriteFile "arr_file2_contents" "${str_dir2}${str_file2}" || return 1
+            if command -v "pipewire"; then
+                if ! sudo cp "$_SCREAM_PIPEWIRE_FILE_BACKUP" "$_SCREAM_PIPEWIRE_FILE_PATH"; then
+                    echo -e "$_PREFIX_ERROR Failed to copy file."
+                    return 1
+                fi
+
+                if ! sudo systemctl daemon-reload &> /dev/null then
+                    echo -e "$_PREFIX_ERROR Failed to update systemd with new daemon/service."
+                    return 1
+                fi
+
+                if ! sudo systemctl start $_SCREAM_PIPEWIRE_FILE_BACKUP; then
+                    echo -e "$_PREFIX_ERROR Failed to start Scream shared memory service."
+                    return 1
+                fi
+
+                if ! sudo systemctl enable $_SCREAM_PIPEWIRE_FILE_BACKUP; then
+                    echo -e "$_PREFIX_ERROR Failed to enable Scream shared memory service."
+                    return 1
+                fi
+
+                return 0
             fi
 
-            systemctl daemon-reload || return 1
-            systemctl enable "${_FILE_1}" || return 1
-            systemctl restart "${_FILE_1}" || return 1
-            return 0
+            return 1
         }
 
         if ! GuestAudioCapture; then
             local _OUTPUT="Installing Scream...\t"
-            (return "${int_code_skipped_operation}")
+            false
         else
             local _OUTPUT="Updating Scream..."
-            # PrintWait "${_OUTPUT}"
-            Get &> /dev/null
-            PrintPassOrFail "${_OUTPUT}"
+            Get
+            PrintPassOrFail "$_OUTPUT"
 
             local _OUTPUT="Building Scream..."
-            # PrintWait "${_OUTPUT}"
 
             if Build; then
-                PrintPassOrFail "${_OUTPUT}"
-
+                PrintPassOrFail "$_OUTPUT"
                 local _OUTPUT="Installing Scream...\t"
-                # PrintWait "${_OUTPUT}"
                 Install
             fi
         fi
 
-        PrintPassOrFail "${_OUTPUT}" && _IS_SCREAM_SETUP=true
+        PrintPassOrFail "$_OUTPUT" && _IS_SCREAM_SETUP=true
         return "$_LAST_EXIT_CODE"
     }
 
@@ -471,34 +464,30 @@
     {
         function Get
         {
-            # <params>
             local _USER_NAME="gnif"
             local _REPO_NAME="LookingGlass"
-            local _FULL_REPO="${_USER_NAME}/${_REPO_NAME}"
-            local str_dependencies=""
-            # </params>
+            local _FULL_REPO="$_USER_NAME/$_REPO_NAME"
+            local _DEPENDENCIES=""
 
-            case "${_PACKAGE_MANAGER}" in
+            case "$_PACKAGE_MANAGER" in
                 "apt" )
-                    str_dependencies="cmake gcc g++ clang libegl-dev libgl-dev libgles-dev libfontconfig-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config"
+                    _DEPENDENCIES="cmake gcc g++ clang libegl-dev libgl-dev libgles-dev libfontconfig-dev libgmp-dev libspice-protocol-dev make nettle-dev pkg-config"
                     ;;
 
-                # "yum" )
-                #     local str_package=""
-                #     ;;
+                * )
+                    echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
+                    return 1 ;;
             esac
 
-            if ! IsInstalledPackage "${str_dependencies}" &> /dev/null; then
+            if ! IsInstalledPackage "$_DEPENDENCIES" &> /dev/null; then
                 echo
-                InstallPackage "${str_dependencies}" || return 1
+                InstallPackage "$_DEPENDENCIES" || return 1
                 echo
             fi
 
-            GetScriptDir
             echo
-            UpdateOrCloneGitRepo "${_GIT_PATH}" "${_FULL_REPO}" "${_USER_NAME}" || return 1
-            GetScriptDir
-            cd "${_GIT_PATH}${_FULL_REPO}" || return 1
+            UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" || return 1
+            cd "$_GIT_PATH$_FULL_REPO" || return 1
             return 0
         }
 
@@ -507,19 +496,41 @@
             echo
 
             # <remarks> Build client </remarks>
-            if [[ -z "client/build" ]]; then
-                mkdir client/build || return 1
+            if [[ -z "client/build" ]] \
+                && ! mkdir client/build; then
+                echo -e "$_PREFIX_ERROR Failed to create build directory."
+                return 1
             fi
 
-            cd client/build || return 1
-            cmake ../ || ( git submodule update --init --recursive && cmake ../ ) || return 1
-            make || return 1                                                            # TODO: fix here!
+            if ! cd client/build; then
+                echo -e "$_PREFIX_ERROR Failed to find build directory."
+                return 1
+            fi
+
+            if ! cmake ../ \
+                && ! git submodule update --init --recursive \
+                && ! cmake ../; then
+                echo -e "$_PREFIX_ERROR Failed cmake"
+                return 1
+            fi
+
+            if ! make; then
+                echo -e "$_PREFIX_ERROR Failed make."
+                return 1
+            fi
 
             # <remarks> Conclude build as root or user. </remarks>
             if [[ $( whoami ) != "root" ]]; then
-                make install || return 1
+                if ! make install; then
+                    echo -e "$_PREFIX_ERROR Failed to build."
+                    return 1
+                fi
             else
-                cmake -DCMAKE_INSTALL_PREFIX=~/.local .. && make install
+                if ! cmake -DCMAKE_INSTALL_PREFIX=~/.local .. \
+                    && make install; then
+                    echo -e "$_PREFIX_ERROR Failed to build."
+                    return 1
+                fi
             fi
 
             return 0
@@ -566,74 +577,41 @@
     # </remarks>
     function SetVideoOutput
     {
-        # TODO
-        return 1
-    }
+        function Get
+        {
+            echo
+            UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_AUTO_XORG_SETUP" || return 1
+            return 0
+        }
 
-    function UpdateOrCloneGitRepo
-    {
-        local _AUTO_ANSWER_YES=false
+        function Install
+        {
+            local -r _SCRIPT_NAME="installer.bash"
 
-        if [[ "$4" == true ]]; then
-            _AUTO_ANSWER_YES=true
-        fi
+            if ! cd "$_GIT_PATH$_FULL_REPO"; then
+                echo -e "$_PREFIX_ERROR Failed to find build directory."
+                return 1
+            fi
 
-        if [[ "$3" == "" ]] \
-            || [[ "$2" == "" ]] \
-            || [[ "$1" == "" ]]; then
-            echo -e "$_PREFIX_ERROR Input values are empty."
-            return 1
-        fi
+            if [[ -z "$_SCRIPT_NAME" ]]; then
+                echo -e "$_PREFIX_ERROR Failed to find script '$_SCRIPT_NAME'."
+                return 1
+            fi
 
-        if [[ ! -d "$1$2" ]] \
-            && sudo mkdir -p "$1$3"; then
-            echo -e "$_PREFIX_ERROR Failed to create directory '$1$3'."
-            return 1
-        fi
-
-        # <remarks> Update existing GitHub repository. </remarks>
-        if [[ -d "$1$2" ]]; then
-            cd "$1$2"
-
-            if ! git pull &> /dev/null; then
-                echo -e "$_PREFIX_ERROR Failed to update repository."
+            if ! sudo bash "$_SCRIPT_NAME"; then                                    # TODO: add input vars here!
+                echo -e "$_PREFIX_ERROR Failed to execute script '$_SCRIPT_NAME'."
                 return 1
             fi
 
             return 0
+        }
 
-        # <remarks> Clone new GitHub repository. </remarks>
-        elif [[ -d "$1$3" ]]; then
-            for _TRIES_COUNT in $( seq 0 2 ); do
-                if ! "$_AUTO_ANSWER_YES"; then
-                    read -r -p "Clone repo '$2'? [Y/n]: " _ANSWER
-                else
-                    _ANSWER="Y"
-                fi
-
-                case "$_ANSWER" in
-                    [Yy]* )
-                        cd "$1$3"
-
-                        if ! git clone "https://github.com/$2" &> /dev/null; then
-                            echo -e "$_PREFIX_ERROR Failed to download repository."
-                            return 1
-                        fi
-
-                        return 0 ;;
-
-                    [Nn]* )
-                        break ;;
-
-                    * )
-                        echo "Please answer Y/n." ;;
-                esac
-            done
-
-            return 1
-
-        else
-            return 1
-        fi
+        local -r _USER_NAME="portellam"
+        local -r _REPO_NAME="auto-Xorg"
+        local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
+        Get
+        Install
+        PrintPassOrFail "Allocating RAM to swap..."
+        return "$_LAST_EXIT_CODE"
     }
 # </code>
