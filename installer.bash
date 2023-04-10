@@ -32,51 +32,58 @@
             return 1
         fi
 
-        declare -gr _PATH_1="/usr/local/bin/"
-        declare -gr _PATH_2="vfiolib/"
-        declare -gr _PATH_3="${_PATH_2}files/"
+        declare -gr _BIN_DEST_PATH="/usr/local/bin/"
+        declare -gr _BIN_SOURCE_PATH="bin/vfiolib/"
+        declare -gr _ETC_DEST_PATH="/usr/local/etc/"
+        declare -gr _ETC_SOURCE_PATH="etc/vfiolib/"
 
-        if [[ -z "${_PATH_2}deploy-vfio" ]] \
-            || [[ -z "${_PATH_2}deploy-vfio" ]] \
-            || [[ -z "${_PATH_2}vfiolib-tools" ]] \
-            || [[ -z "${_PATH_2}vfiolib-extras" ]] \
-            || [[ -z "${_PATH_2}vfiolib-files" ]] \
-            || [[ -z "${_PATH_2}vfiolib-iommu" ]] \
-            || [[ -z "${_PATH_2}vfiolib-setup" ]] \
-            || [[ -z "${_PATH_2}vfiolib-usage" ]] \
-            || [[ -z "${_PATH_2}vfiolib-essentials" ]]; then
+        if [[ -z "${_BIN_SOURCE_PATH}deploy-vfio" ]] \
+            || [[ -z "${_BIN_SOURCE_PATH}deploy-vfio" ]] \
+            || [[ -z "${_BIN_SOURCE_PATH}vfiolib-tools" ]] \
+            || [[ -z "${_BIN_SOURCE_PATH}vfiolib-extras" ]] \
+            || [[ -z "${_BIN_SOURCE_PATH}vfiolib-files" ]] \
+            || [[ -z "${_BIN_SOURCE_PATH}vfiolib-iommu" ]] \
+            || [[ -z "${_BIN_SOURCE_PATH}vfiolib-setup" ]] \
+            || [[ -z "${_BIN_SOURCE_PATH}vfiolib-usage" ]] \
+            || [[ -z "${_BIN_SOURCE_PATH}vfiolib-essentials" ]]; then
             echo -e "$_PREFIX_ERROR Missing project binaries."
             return 1
         fi
 
-        if [[ -z "${_PATH_3}custom" ]] \
-            || [[ -z "${_PATH_3}grub" ]] \
-            || [[ -z "${_PATH_3}initramfs-tools" ]] \
-            || [[ -z "${_PATH_3}modules" ]] \
-            || [[ -z "${_PATH_3}pci-blacklists.conf" ]] \
-            || [[ -z "${_PATH_3}qemu.conf" ]] \
-            || [[ -z "${_PATH_3}vfio.conf" ]]; then
+        if [[ -z "${_ETC_SOURCE_PATH}custom" ]] \
+            || [[ -z "${_ETC_SOURCE_PATH}grub" ]] \
+            || [[ -z "${_ETC_SOURCE_PATH}initramfs-tools" ]] \
+            || [[ -z "${_ETC_SOURCE_PATH}modules" ]] \
+            || [[ -z "${_ETC_SOURCE_PATH}pci-blacklists.conf" ]] \
+            || [[ -z "${_ETC_SOURCE_PATH}qemu.conf" ]] \
+            || [[ -z "${_ETC_SOURCE_PATH}vfio.conf" ]]; then
             echo -e "$_PREFIX_ERROR Missing project files."
             return 1
         fi
 
-        if [[ ! -d "$_PATH_1" ]]; then
-            echo -e "$_PREFIX_ERROR Could not find directory '$_PATH_1'."
+        if [[ ! -d "$_BIN_DEST_PATH" ]]; then
+            echo -e "$_PREFIX_ERROR Could not find directory '$_BIN_DEST_PATH'."
             return 1
         fi
 
-        if [[ ! -d "$_PATH_2" ]]; then
-            echo -e "$_PREFIX_ERROR Could not find directory '$_PATH_2'."
+        if [[ ! -d "$_ETC_DEST_PATH" ]]; then
+            echo -e "$_PREFIX_ERROR Could not find directory '$_ETC_DEST_PATH'."
             return 1
         fi
 
-        if ! sudo cp -rf "$_PATH_2" "_PATH_1" &> /dev/null; then
-            echo -e "$_PREFIX_ERROR Failed to copy file(s)."
+        if ! sudo cp -rf "$_BIN_SOURCE_PATH" "$_BIN_DEST_PATH" &> /dev/null; then
+            echo -e "$_PREFIX_ERROR Failed to copy project binaries."
             return 1
         fi
 
-        if ! chown -R root:root "$_PATH_2" &> /dev/null \
-            || ! chmod +x "$_PATH_2/*" &> /dev/null \; then
+        if ! sudo cp -rf "$_ETC_SOURCE_PATH" "$_ETC_DEST_PATH" &> /dev/null; then
+            echo -e "$_PREFIX_ERROR Failed to copy project file(s)."
+            return 1
+        fi
+
+        if ! sudo chown -R root:root "$_BIN_DEST_PATH" &> /dev/null \
+            || ! sudo chmod -R +x "${_BIN_DEST_PATH}vfiolib" &> /dev/null \
+            || ! sudo chown -R root:root "$_ETC_DEST_PATH" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to set file permissions."
             return 1
         fi

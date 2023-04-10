@@ -17,47 +17,47 @@
     declare -g _HAS_EXECUTED_BACKUPS=false
 
     # <remarks> Files </remarks>
-    declare -gr _BACKUPS_PATH="$( find . -name files | uniq | head -n1 | cut -c2- )/"
+    declare -gr _BACKUPS_PATH="/usr/local/etc/vfiolib"
 
-    declare -gr _APPARMOR_QEMU_BACKUP="libvirt-qemu"
+    declare -gr _APPARMOR_QEMU_FILENAME="$_BACKUPS_PATH/libvirt-qemu"
     declare -gr _APPARMOR_QEMU_FILE_PATH="/etc/apparmor.d/local/abstractions/libvirt-qemu"
-    declare -gr _APPARMOR_QEMU_FILE_URL=""
+    # declare -gr _APPARMOR_QEMU_FILE_URL=""
 
-    declare -gr _AUDIO_LOOPBACK_FILE_BACKUP="audio-loopback-user.service"
-    declare -gr _AUDIO_LOOPBACK_FILE_PATH="/etc/systemd/system/$_AUDIO_LOOPBACK_FILE_BACKUP"
+    declare -gr _AUDIO_LOOPBACK_FILENAME="$_BACKUPS_PATH/audio-loopback-user.service"
+    declare -gr _AUDIO_LOOPBACK_FILE_PATH="/etc/systemd/system/$_AUDIO_LOOPBACK_FILENAME"
 
-    declare -gr _CUSTOM_GRUB_FILE_BACKUP="custom"
+    declare -gr _CUSTOM_GRUB_FILENAME="$_BACKUPS_PATH/custom"
     declare -gr _CUSTOM_GRUB_FILE_PATH="/etc/grub.d/proxifiedScripts/custom"
     # local CUSTOM_GRUB_FILE_URL=""
 
-    declare -gr _GRUB_FILE_BACKUP_1="grub"
-    declare -gr _GRUB_FILE_BACKUP_2="grub.new"
+    declare -gr _GRUB_FILENAME="$_BACKUPS_PATH/grub"
+    declare -gr _GRUB_BACKUP_NAME="$_BACKUPS_PATH/grub.new"
     declare -gr _GRUB_FILE_PATH_1="/etc/default/grub"
     declare -gr _GRUB_FILE_PATH_2="/usr/share/grub/default/grub"
     # local GRUB_FILE_URL=""
 
-    declare -gr _INITRAMFS_MODULES_FILE_BACKUP="initramfs-tools"
+    declare -gr _INITRAMFS_MODULES_FILENAME="$_BACKUPS_PATH/initramfs-tools"
     declare -gr _INITRAMFS_MODULES_FILE_PATH="/etc/initramfs-tools/modules"
 
-    declare -gr _LIBVIRT_HOOK_NOSLEEP_FILE_BACKUP="libvirt-nosleep@.service"
-    declare -gr _LIBVIRT_HOOK_NOSLEEP_FILE_PATH="/etc/systemd/system/$_LIBVIRT_HOOK_NOSLEEP_FILE_BACKUP"
+    declare -gr _LIBVIRT_HOOK_NOSLEEP_FILENAME="$_BACKUPS_PATH/libvirt-nosleep@.service"
+    declare -gr _LIBVIRT_HOOK_NOSLEEP_FILE_PATH="/etc/systemd/system/$_LIBVIRT_HOOK_NOSLEEP_FILENAME"
 
-    declare -gr _MODPROBE_BLACKLISTS_FILE_BACKUP="pci-blacklists.conf"
+    declare -gr _MODPROBE_BLACKLISTS_FILENAME="$_BACKUPS_PATH/pci-blacklists.conf"
     declare -gr _MODPROBE_BLACKLISTS_FILE_PATH="/etc/modprobe.d/pci-blacklists.conf"
 
-    declare -gr _MODPROBE_VFIO_FILE_BACKUP="vfio.conf"
+    declare -gr _MODPROBE_VFIO_FILENAME="$_BACKUPS_PATH/vfio.conf"
     declare -gr _MODPROBE_VFIO_FILE_PATH="/etc/modprobe.d/vfio.conf"
 
-    declare -gr _MODULES_FILE_BACKUP="modules"
+    declare -gr _MODULES_FILENAME="$_BACKUPS_PATH/modules"
     declare -gr _MODULES_FILE_PATH="/etc/modules"
 
-    declare -gr _SCREAM_PIPEWIRE_FILE_BACKUP="scream-ivshmem-pipewire.service"
-    declare -gr _SCREAM_PIPEWIRE_FILE_PATH="/etc/systemd/system/$_SCREAM_PIPEWIRE_FILE_BACKUP"
+    declare -gr _SCREAM_PIPEWIRE_FILENAME="$_BACKUPS_PATH/scream-ivshmem-pipewire.service"
+    declare -gr _SCREAM_PIPEWIRE_FILE_PATH="/etc/systemd/system/$_SCREAM_PIPEWIRE_FILENAME"
 
-    declare -gr _SCREAM_PULSEAUDIO_FILE_BACKUP="scream-ivshmem-pulseaudio.service"
-    declare -gr _SCREAM_PULSEAUDIO_FILE_PATH="/etc/systemd/system/$_SCREAM_PULSEAUDIO_FILE_BACKUP"
+    declare -gr _SCREAM_PULSEAUDIO_FILENAME="$_BACKUPS_PATH/scream-ivshmem-pulseaudio.service"
+    declare -gr _SCREAM_PULSEAUDIO_FILE_PATH="/etc/systemd/system/$_SCREAM_PULSEAUDIO_FILENAME"
 
-    declare -gr _QEMU_FILE_BACKUP="qemu.conf"
+    declare -gr _QEMU_FILENAME="$_BACKUPS_PATH/qemu.conf"
     declare -gr _QEMU_FILE_PATH="/etc/libvirt/qemu.conf"
     declare -gr _QEMU_FILE_URL="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"
 # </params>
@@ -69,18 +69,18 @@
         GetBackups || return 1
         SetBackups || return 1
 
-        if ! sudo cp -rv "$_APPARMOR_QEMU_BACKUP" "$_APPARMOR_QEMU_FILE_PATH" \
-            || ! sudo cp -rv "$_CUSTOM_GRUB_FILE_BACKUP" "$_CUSTOM_GRUB_FILE_PATH" \
-            || ! sudo cp -rv "$_INITRAMFS_MODULES_FILE_BACKUP" "$_INITRAMFS_MODULES_FILE_PATH" \
-            || ! sudo cp -rv "$_MODPROBE_BLACKLISTS_FILE_BACKUP" "$_MODPROBE_BLACKLISTS_FILE_PATH" \
-            || ! sudo cp -rv "$_MODPROBE_VFIO_FILE_BACKUP" "$_MODPROBE_VFIO_FILE_PATH" \
-            || ! sudo cp -rv "$_MODULES_FILE_BACKUP" "$_MODULES_FILE_PATH" \
-            || ! sudo cp -rv "$_QEMU_FILE_BACKUP" "$_QEMU_FILE_PATH"; then
+        if ! sudo cp -rv "$_APPARMOR_QEMU_FILENAME" "$_APPARMOR_QEMU_FILE_PATH" \
+            || ! sudo cp -rv "$_CUSTOM_GRUB_FILENAME" "$_CUSTOM_GRUB_FILE_PATH" \
+            || ! sudo cp -rv "$_INITRAMFS_MODULES_FILENAME" "$_INITRAMFS_MODULES_FILE_PATH" \
+            || ! sudo cp -rv "$_MODPROBE_BLACKLISTS_FILENAME" "$_MODPROBE_BLACKLISTS_FILE_PATH" \
+            || ! sudo cp -rv "$_MODPROBE_VFIO_FILENAME" "$_MODPROBE_VFIO_FILE_PATH" \
+            || ! sudo cp -rv "$_MODULES_FILENAME" "$_MODULES_FILE_PATH" \
+            || ! sudo cp -rv "$_QEMU_FILENAME" "$_QEMU_FILE_PATH"; then
             echo -e "$_PREFIX_ERROR Failed to copy files."
             return 1
         fi
 
-        if ! sudo chown root: root "$_APPARMOR_QEMU_FILE_PATH" \
+        if ! sudo chown root:root "$_APPARMOR_QEMU_FILE_PATH" \
             || ! [ sudo chown root: root "$_CUSTOM_GRUB_FILE_PATH" ] \
             || ! [ sudo chown root: root "$_INITRAMFS_MODULES_FILE_PATH" ] \
             || ! [ sudo chown root: root "$_MODPROBE_BLACKLISTS_FILE_PATH" ] \
@@ -103,23 +103,23 @@
 
     function GetBackups
     {
-        if [[ -z "$_APPARMOR_QEMU_BACKUP" ]] \
-            || [[ -z "$_AUDIO_LOOPBACK_FILE_BACKUP"]] \
-            || [[ -z "$_CUSTOM_GRUB_FILE_BACKUP" ]] \
-            || [[ -z "$_INITRAMFS_MODULES_FILE_BACKUP" ]] \
-            || [[ -z "$_LIBVIRT_HOOK_NOSLEEP_FILE_BACKUP" ]] \
-            || [[ -z "$_MODPROBE_BLACKLISTS_FILE_BACKUP" ]] \
-            || [[ -z "$_MODPROBE_VFIO_FILE_BACKUP" ]] \
-            || [[ -z "$_MODULES_FILE_BACKUP" ]]; then
+        if [[ -z "$_APPARMOR_QEMU_FILENAME" ]] \
+            || [[ -z "$_AUDIO_LOOPBACK_FILENAME"]] \
+            || [[ -z "$_CUSTOM_GRUB_FILENAME" ]] \
+            || [[ -z "$_INITRAMFS_MODULES_FILENAME" ]] \
+            || [[ -z "$_LIBVIRT_HOOK_NOSLEEP_FILENAME" ]] \
+            || [[ -z "$_MODPROBE_BLACKLISTS_FILENAME" ]] \
+            || [[ -z "$_MODPROBE_VFIO_FILENAME" ]] \
+            || [[ -z "$_MODULES_FILENAME" ]]; then
             echo -e "$_PREFIX_ERROR Failed to find backup files."
             return 1
         fi
 
-        if [[ -z "$_GRUB_FILE_BACKUP_1" ]]; then
+        if [[ -z "$_GRUB_FILENAME" ]]; then
             GetBackupsForGRUB || return 1
         fi
 
-        if [[ -z "$_QEMU_FILE_BACKUP" ]]; then
+        if [[ -z "$_QEMU_FILENAME" ]]; then
             SetBackupsForQEMU || return 1
         fi
 
@@ -133,13 +133,13 @@
         fi
 
         if [[ -z "$_GRUB_FILE_PATH_2" ]] \
-            && [[ -z "$_GRUB_FILE_BACKUP_1" ]]; then
+            && [[ -z "$_GRUB_FILENAME" ]]; then
             echo -e "$_PREFIX_ERROR Failed to find GRUB source file."
             return 1
         fi
 
         if [[ -z "$_GRUB_FILE_PATH_BACKUP" ]]; then
-            if ! sudo cp "$_GRUB_FILE_PATH_2 $_GRUB_FILE_BACKUP_1"; then
+            if ! sudo cp "$_GRUB_FILE_PATH_2 $_GRUB_FILENAME"; then
                 echo -e "$_PREFIX_ERROR Failed to backup GRUB source file."
                 return 1
             fi
@@ -154,7 +154,7 @@
             return 0
         fi
 
-        if [[ -z "$_QEMU_FILE_BACKUP" ]]; then
+        if [[ -z "$_QEMU_FILENAME" ]]; then
             echo -e "$_PREFIX_ERROR Failed to find QEMU source file. Attempting to download."
 
             if ! [ command -v curl &> /dev/null ]; then
@@ -162,13 +162,13 @@
                 return 1
             fi
 
-            if ! [ curl -v "$_QEMU_FILE_URL" -o "$_QEMU_FILE_BACKUP" &> /dev/null ]; then
+            if ! [ curl -v "$_QEMU_FILE_URL" -o "$_QEMU_FILENAME" &> /dev/null ]; then
                 echo -e "$_PREFIX_ERROR Failed to find backup QEMU source file."
                 return 1
             fi
         fi
 
-        if ! sudo cp $_QEMU_FILE_BACKUP $_QEMU_FILE_PATH &> /dev/null; then
+        if ! sudo cp $_QEMU_FILENAME $_QEMU_FILE_PATH &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to restore QEMU backup file."
             return 1
         fi
@@ -194,7 +194,7 @@
 
     function SetBackupsForGRUB
     {
-        if ! sudo cp "$_GRUB_FILE_BACKUP_1" "$_GRUB_FILE_BACKUP_2" &> /dev/null; then
+        if ! sudo cp "$_GRUB_FILENAME" "$_GRUB_BACKUP_NAME" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to copy GRUB backup file."
             return 1
         fi
@@ -204,22 +204,22 @@
         local -r _LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"quiet\""
         local -r _LINE_GRUB_CMDLINE="GRUB_CMDLINE_LINUX=\"\""
 
-        if ! sed -i "s/GRUB_DISTRIBUTOR=*/c\$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_FILE_BACKUP_2" \
-            || ! sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=*/c\"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_FILE_BACKUP_2" \
-            || ! sed -i "s/GRUB_CMDLINE_LINUX=*/c\"$_LINE_GRUB_CMDLINE" "$_GRUB_FILE_BACKUP_2" ; then
+        if ! sed -i "s/GRUB_DISTRIBUTOR=*/c\$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_BACKUP_NAME" \
+            || ! sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=*/c\"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_BACKUP_NAME" \
+            || ! sed -i "s/GRUB_CMDLINE_LINUX=*/c\"$_LINE_GRUB_CMDLINE" "$_GRUB_BACKUP_NAME" ; then
             echo -e "$_PREFIX_ERROR Failed to clear target lines of GRUB backup file."
             return 1
         fi
 
-        if ! [[ -z $( grep "$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_FILE_BACKUP_2" ) ]] \
-            || ! [[ -z $( grep "$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_FILE_BACKUP_2" ) ]] \
-            || ! [[ -z $( grep "$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_FILE_BACKUP_2" ) ]]; then
+        if ! [[ -z $( grep "$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_BACKUP_NAME" ) ]] \
+            || ! [[ -z $( grep "$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_BACKUP_NAME" ) ]] \
+            || ! [[ -z $( grep "$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_BACKUP_NAME" ) ]]; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of GRUB backup file."
             return 1
         fi
 
         # <remarks> Note: this must be the second file (that is the overwritten copy) </remarks>
-        if ! sudo cp "$_GRUB_FILE_BACKUP_2" "$_GRUB_FILE_PATH_1" &> /dev/null; then
+        if ! sudo cp "$_GRUB_BACKUP_NAME" "$_GRUB_FILE_PATH_1" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to restore GRUB backup file."
             return 1
         fi

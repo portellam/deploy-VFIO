@@ -243,7 +243,7 @@
                 return 1
             fi
 
-            if ! sudo cp "$_AUDIO_LOOPBACK_FILE_BACKUP" "$_AUDIO_LOOPBACK_FILE_PATH"; then
+            if ! sudo cp "$_AUDIO_LOOPBACK_FILENAME" "$_AUDIO_LOOPBACK_FILE_PATH"; then
                 echo -e "$_PREFIX_ERROR Failed to copy file."
                 return 1
             fi
@@ -253,12 +253,12 @@
                 return 1
             fi
 
-            if ! sudo systemctl start "$_AUDIO_LOOPBACK_FILE_BACKUP"; then
+            if ! sudo systemctl start "$_AUDIO_LOOPBACK_FILENAME"; then
                 echo -e "$_PREFIX_ERROR Failed to start audio loopback service."
                 return 1
             fi
 
-            if ! sudo systemctl enable "$_AUDIO_LOOPBACK_FILE_BACKUP"; then
+            if ! sudo systemctl enable "$_AUDIO_LOOPBACK_FILENAME"; then
                 echo -e "$_PREFIX_ERROR Failed to enable audio loopback service."
                 return 1
             fi
@@ -367,7 +367,7 @@
         function Install
         {
             if command -v "pulseaudio"; then
-                if ! sudo cp "$_SCREAM_PULSEAUDIO_FILE_BACKUP" "$_SCREAM_PULSEAUDIO_FILE_PATH"; then
+                if ! sudo cp "$_SCREAM_PULSEAUDIO_FILENAME" "$_SCREAM_PULSEAUDIO_FILE_PATH"; then
                     echo -e "$_PREFIX_ERROR Failed to copy file."
                     return 1
                 fi
@@ -377,12 +377,12 @@
                     return 1
                 fi
 
-                if ! sudo systemctl start $_SCREAM_PULSEAUDIO_FILE_BACKUP; then
+                if ! sudo systemctl start $_SCREAM_PULSEAUDIO_FILENAME; then
                     echo -e "$_PREFIX_ERROR Failed to start Scream shared memory service."
                     return 1
                 fi
 
-                if ! sudo systemctl enable $_SCREAM_PULSEAUDIO_FILE_BACKUP; then
+                if ! sudo systemctl enable $_SCREAM_PULSEAUDIO_FILENAME; then
                     echo -e "$_PREFIX_ERROR Failed to enable Scream shared memory service."
                     return 1
                 fi
@@ -391,7 +391,7 @@
             fi
 
             if command -v "pipewire"; then
-                if ! sudo cp "$_SCREAM_PIPEWIRE_FILE_BACKUP" "$_SCREAM_PIPEWIRE_FILE_PATH"; then
+                if ! sudo cp "$_SCREAM_PIPEWIRE_FILENAME" "$_SCREAM_PIPEWIRE_FILE_PATH"; then
                     echo -e "$_PREFIX_ERROR Failed to copy file."
                     return 1
                 fi
@@ -401,12 +401,12 @@
                     return 1
                 fi
 
-                if ! sudo systemctl start $_SCREAM_PIPEWIRE_FILE_BACKUP; then
+                if ! sudo systemctl start $_SCREAM_PIPEWIRE_FILENAME; then
                     echo -e "$_PREFIX_ERROR Failed to start Scream shared memory service."
                     return 1
                 fi
 
-                if ! sudo systemctl enable $_SCREAM_PIPEWIRE_FILE_BACKUP; then
+                if ! sudo systemctl enable $_SCREAM_PIPEWIRE_FILENAME; then
                     echo -e "$_PREFIX_ERROR Failed to enable Scream shared memory service."
                     return 1
                 fi
@@ -537,7 +537,7 @@
     {
         function Main
         {
-            if ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_FILE_BACKUP" "$_LIBVIRT_HOOK_NOSLEEP_FILE_PATH"; then
+            if ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_FILENAME" "$_LIBVIRT_HOOK_NOSLEEP_FILE_PATH"; then
                 echo -e "$_PREFIX_ERROR Failed to copy file."
                 return 1
             fi
