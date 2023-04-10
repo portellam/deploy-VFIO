@@ -88,6 +88,11 @@
                 return 1
             fi
 
+            if ! sudo systemctl daemon-reload &> /dev/null then
+                echo -e "$_PREFIX_ERROR Failed to update systemd."
+                return 1
+            fi
+
             if ! sudo systemctl restart zram-swap; then
                 echo -e "$_PREFIX_ERROR Failed to restart zram-swap service."
                 return 1
