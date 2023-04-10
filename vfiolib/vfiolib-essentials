@@ -34,9 +34,9 @@
     # </summary>
     function AddUserToGroups
     {
-        if ! [ adduser "$SUDO_USER" "input" &> /dev/null ] \
-            || ! [ adduser "$SUDO_USER" "libvirt" &> /dev/null ]; then
-            echo -e "$_PREFIX_ERROR Failed to add user '$SUDO_USER' to groups."
+        if ! [ adduser "$USER" "input" &> /dev/null ] \
+            || ! [ adduser "$USER" "libvirt" &> /dev/null ]; then
+            echo -e "$_PREFIX_ERROR Failed to add user '$USER' to groups."
             return 1
         fi
 
@@ -303,7 +303,7 @@
     {
         AddUserToGroups || return 1
 
-        if "$_EXECUTE_ALL_UTILS_SETUPS"; then
+        if "$_EXECUTE_ALL_ESSENTIAL_SETUPS"; then
             AllocateCPUToGuest || return 1
             AllocateRAMToGuest || return 1
             VirtualKVM || return 1
@@ -363,7 +363,7 @@
             if "$_IS_EVDEV_SETUP" \
                 || "$_IS_SCREAM_SETUP"; then
                 _FILE_1_CONTENTS+=(
-                    "user = \"$SUDO_USER\""
+                    "user = \"$USER\""
                     "group = \"user\""
                 )
             else

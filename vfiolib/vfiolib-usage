@@ -23,8 +23,8 @@
     declare -g _IS_CONNECTED_TO_INTERNET=false
 
     # <remarks> Usage toggles </remarks
-    declare -g _EXECUTE_ALL_EXTRAS_SETUPS=true
-    declare -g _EXECUTE_ALL_UTILS_SETUPS=true
+    declare -g _EXECUTE_ALL_EXTRA_SETUPS=true
+    declare -g _EXECUTE_ALL_ESSENTIAL_SETUPS=true
     declare -g _HAS_EXECUTED_BACKUPS=false
     declare -g _EXECUTE_ISOLCPU_SETUP=false
     declare -g _EXECUTE_AUDIO_LOOPBACK_SETUP=false
@@ -91,17 +91,17 @@
 
             # <remarks> Pre-setup: Essentials </remarks>
             "-c" | "--cpu" )
-                _EXECUTE_ALL_UTILS_SETUPS=false
+                _EXECUTE_ALL_ESSENTIAL_SETUPS=false
                 _EXECUTE_ISOLCPU_SETUP=true
                 ;;
 
             "-e" | "--evdev" )
-                _EXECUTE_ALL_UTILS_SETUPS=false
+                _EXECUTE_ALL_ESSENTIAL_SETUPS=false
                 _EXECUTE_EVDEV_SETUP=true
                 ;;
 
             "-h" | "--hugepages" )
-                _EXECUTE_ALL_UTILS_SETUPS=false
+                _EXECUTE_ALL_ESSENTIAL_SETUPS=false
 
                 if [[ "$2" != "" ]]; then
                     GetHugepageByteSize "$2" || return 1
@@ -138,32 +138,32 @@
 
             # <remarks> Post-setup: Extras </remarks>
             "-H" | "--hooks" )
-                _EXECUTE_ALL_EXTRAS_SETUPS=false
+                _EXECUTE_ALL_EXTRA_SETUPS=false
                 _EXECUTE_LIBVIRT_HOOKS=true
                 ;;
 
             "-l" | "--looking-glass" )
-                _EXECUTE_ALL_EXTRAS_SETUPS=false
+                _EXECUTE_ALL_EXTRA_SETUPS=false
                 _EXECUTE_LOOKING_GLASS=true
                 ;;
 
             "-L" | "--audio-loopback" )
-                _EXECUTE_ALL_EXTRAS_SETUPS=false
+                _EXECUTE_ALL_EXTRA_SETUPS=false
                 _EXECUTE_AUDIO_LOOPBACK_SETUP=true
                 ;;
 
             "-S" | "--scream" )
-                _EXECUTE_ALL_EXTRAS_SETUPS=false
+                _EXECUTE_ALL_EXTRA_SETUPS=false
                 _EXECUTE_SCREAM=true
                 ;;
 
             "-x" | "--auto-xorg" )
-                _EXECUTE_ALL_EXTRAS_SETUPS=false
+                _EXECUTE_ALL_EXTRA_SETUPS=false
                 _EXECUTE_AUTO_XORG_SETUP=true
                 ;;
 
             "-z" | "--zram-swap" )
-                _EXECUTE_ALL_EXTRAS_SETUPS=false
+                _EXECUTE_ALL_EXTRA_SETUPS=false
 
                 if [[ "$2" != "" ]]; then
                     GetZramSwapSize "$2" || GetOverrideArgsForZramSwap "$2" || return 1
