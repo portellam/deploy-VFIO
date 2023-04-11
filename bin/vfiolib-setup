@@ -199,8 +199,8 @@
 
     function SetParamsForGRUBStaticSetup
     {
-        local -ar _STATIC_DRIVER_LIST=( "${_VFIOPCI_DRIVER_LIST[@]}" "${_VGA_VFIOPCI_DRIVER_LIST[@]}" )
-        local -ar _STATIC_HWID_LIST=( "${_VFIOPCI_HWID_LIST[@]}" "${_VGA_VFIOPCI_HWID_LIST[@]}" )
+        local -a _STATIC_DRIVER_LIST=( "${_VFIOPCI_DRIVER_LIST[@]}" "${_VGA_VFIOPCI_DRIVER_LIST[@]}" )
+        local -a _STATIC_HWID_LIST=( "${_VFIOPCI_HWID_LIST[@]}" "${_VGA_VFIOPCI_HWID_LIST[@]}" )
         local -a _BLACKLISTS_LIST=()
         local -a _INITRAMFS_LIST=()
         local -a _MODULES_LIST=()
@@ -255,8 +255,8 @@
     {
         GetParamsForVFIOSetup || return 1
         local -a _FILE_CONTENTS_LIST=()
-        local -ar _STATIC_DRIVER_LIST=( "${_VFIOPCI_DRIVER_LIST[@]}" "${_VGA_VFIOPCI_DRIVER_LIST[@]}" )
-        local -ar _STATIC_HWID_LIST=( "${_PCISTUB_HWID_LIST[@]}" "${_VFIOPCI_HWID_LIST[@]}" "${_VGA_VFIOPCI_HWID_LIST[@]}" )
+        local -a _STATIC_DRIVER_LIST=( "${_VFIOPCI_DRIVER_LIST[@]}" "${_VGA_VFIOPCI_DRIVER_LIST[@]}" )
+        local -a _STATIC_HWID_LIST=( "${_PCISTUB_HWID_LIST[@]}" "${_VFIOPCI_HWID_LIST[@]}" "${_VGA_VFIOPCI_HWID_LIST[@]}" )
         local -a _BLACKLISTS_LIST=()
         local -a _INITRAMFS_LIST=()
         local -a _MODULES_LIST=()
@@ -298,8 +298,8 @@
         GetParamsForVFIOSetup || return 1
 
         # <remarks> System configuration </remarks>
-        local -ir _MAX_NUM_PARSE_KERNELS=3
-        declare -ar _KERNELS_LIST=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | sort -r | head -n $_MAX_NUM_PARSE_KERNELS ) )
+        local -i _MAX_NUM_PARSE_KERNELS=3
+        declare -a _KERNELS_LIST=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | sort -r | head -n $_MAX_NUM_PARSE_KERNELS ) )
         local _SYSTEM_DISK=$( df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1 )
         local _SYSTEM_DISTRO=$( lsb_release -i -s )
         local _SYSTEM_FSTYPE=$( blkid -s TYPE | grep $_SYSTEM_DISK | cut -d '"' -f2 )
@@ -307,8 +307,8 @@
         local _SYSTEM_OS=$( uname )
         local _SYSTEM_UUID=$( blkid -s UUID | grep $_SYSTEM_DISK | cut -d '"' -f2 )
 
-        local -ar _MULTIBOOT_DRIVER_LIST=( "${_VFIOPCI_DRIVER_LIST[@]}" )
-        local -ar _MULTIBOOT_HWID_LIST=( "${_PCISTUB_HWID_LIST[@]}" "${_VFIOPCI_HWID_LIST[@]}" )
+        local -a _MULTIBOOT_DRIVER_LIST=( "${_VFIOPCI_DRIVER_LIST[@]}" )
+        local -a _MULTIBOOT_HWID_LIST=( "${_PCISTUB_HWID_LIST[@]}" "${_VFIOPCI_HWID_LIST[@]}" )
         local _NO_VGA_DRIVER_DELIM=""
         local _NO_VGA_HWID_DELIM=""
 

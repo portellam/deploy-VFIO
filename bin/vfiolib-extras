@@ -23,7 +23,6 @@
     {
         function Get
         {
-            echo
             UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_ZRAM_SWAP" || return 1
             return 0
         }
@@ -42,8 +41,6 @@
                 return 1
             fi
 
-            pwd
-
             if ! sudo bash "$_SCRIPT_NAME"; then
                 echo -e "$_PREFIX_ERROR Failed to execute script '$_SCRIPT_NAME'."
                 return 1
@@ -56,8 +53,8 @@
         {
             local -r _FILE="/etc/default/zram-swap"
             local -r _LINE_TO_MATCH="_zram_fraction="
-            local -ir _ZRAM_SWAP_AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY / 2 ))
-            local -ir _DENOMINATOR=$( printf "%.0f" $( echo "scale=2;$_INT_MAX_MEMORY/$_ZRAM_SWAP_AVAILABLE_MEMORY" | bc ) )
+            local -i _ZRAM_SWAP_AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY / 2 ))
+            local -i _DENOMINATOR=$( printf "%.0f" $( echo "scale=2;$_INT_MAX_MEMORY/$_ZRAM_SWAP_AVAILABLE_MEMORY" | bc ) )
 
             # <remarks> Round down to nearest even number. </remarks>
             if [[ $( expr $_DENOMINATOR % 2 ) -eq 1 ]]; then
@@ -69,9 +66,9 @@
                 echo -e "$_PREFIX_ERROR Denominator is negative or zero."
             fi
 
-            local -r _FRACTION="1/$_DENOMINATOR"
+            local _FRACTION="1/$_DENOMINATOR"
 
-            if ! sed -i "/$_LINE_TO_MATCH\"*\"/c\$_LINE_TO_MATCH\"$_FRACTION\"" "$_FILE"; then
+            if ! sed -i '/'$_LINE_TO_MATCH'"*"/c\'$_LINE_TO_MATCH'"'$_FRACTION'"' "$_FILE"; then
                 echo -e "$_PREFIX_ERROR Failed to write output to zram-swap file."
                 return 1
             fi
@@ -106,15 +103,16 @@
             return 0
         }
 
-        if ! IsHostMemorySufficientForZramSwap \
-            || ! Install \
-            || ! Modify &> /dev/null; then
-            false
-        fi
-
         local -r _USER_NAME="foundObjects"
         local -r _REPO_NAME="zram-swap"
         local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
+
+        if ! IsHostMemorySufficientForZramSwap \
+            || ! Install \
+            || ! Modify; then
+            false
+        fi
+
         PrintPassOrFail "Allocating RAM to swap..."
         return "$_LAST_EXIT_CODE"
     }
@@ -232,7 +230,7 @@
     {
         function Main
         {
-            if ! command -v "pulseaudio"; then
+            if ! command -v "pulseaudio" &> /dev/null; then
                 echo -e "$_PREFIX_ERROR Required audio backend 'PulseAudio' is missing."
                 return 1
             fi
@@ -277,8 +275,6 @@
     {
         function Build
         {
-            echo
-
             if [[ -z "build" ]] \
                 && ! mkdir build; then
                 echo -e "$_PREFIX_ERROR Failed to create build directory."
@@ -347,12 +343,9 @@
 
             # <remarks> Get dependencies. </remarks>
             if ! IsInstalledPackage "$_DEPENDENCIES" &> /dev/null; then
-                echo
                 InstallPackage "$_DEPENDENCIES" &> /dev/null || return 1
-                echo
             fi
 
-            echo
             UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_SCREAM" || return 1
             cd "$_GIT_PATH$_FULL_REPO" || return 1
             return 0
@@ -360,7 +353,7 @@
 
         function Install
         {
-            if command -v "pulseaudio"; then
+            if command -v "pulseaudio" &> /dev/null; then
                 if ! sudo cp "$_SCREAM_PULSEAUDIO_SRC_PATH" "$_SCREAM_PULSEAUDIO_DEST_PATH"; then
                     echo -e "$_PREFIX_ERROR Failed to copy file."
                     return 1
@@ -384,7 +377,7 @@
                 return 0
             fi
 
-            if command -v "pipewire"; then
+            if command -v "pipewire" &> /dev/null; then
                 if ! sudo cp "$_SCREAM_PIPEWIRE_SRC_PATH" "$_SCREAM_PIPEWIRE_DEST_PATH"; then
                     echo -e "$_PREFIX_ERROR Failed to copy file."
                     return 1
@@ -461,12 +454,9 @@
             esac
 
             if ! IsInstalledPackage "$_DEPENDENCIES" &> /dev/null; then
-                echo
                 InstallPackage "$_DEPENDENCIES" &> /dev/null || return 1
-                echo
             fi
 
-            echo
             UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" || return 1
             cd "$_GIT_PATH$_FULL_REPO" || return 1
             return 0
@@ -474,8 +464,6 @@
 
         function Install
         {
-            echo
-
             # <remarks> Build client </remarks>
             if [[ -z "client/build" ]] \
                 && ! mkdir client/build; then
@@ -560,7 +548,6 @@
     {
         function Get
         {
-            echo
             UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_AUTO_XORG_SETUP" || return 1
             return 0
         }
