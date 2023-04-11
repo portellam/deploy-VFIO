@@ -16,14 +16,12 @@
     function AreParseListsNotEmpty
     {
         # <remarks> If any list is empty, fail. </remarks>
-        if [[ "${_CLASS_LIST[@]}" == "" ]] \
-            || [[ "${_DEVICE_ID_LIST[@]}" == "" ]] \
-            || [[ "${_DEVICE_NAME_LIST[@]}" == "" ]] \
-            || [[ "${_DRIVER_LIST[@]}" == "" ]] \
-            || [[ "${_HWID_LIST[@]}" == "" ]] \
-            || [[ "${_IOMMU_LIST[@]}" == "" ]] \
-            || [[ "${_VENDOR_ID_LIST[@]}" == "" ]] \
-            || [[ "${_VENDOR_NAME_LIST[@]}" == "" ]]; then
+        if [[ "${#_CLASS_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_DEVICE_NAME_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_DRIVER_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_HWID_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_IOMMU_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_VENDOR_NAME_LIST[@]}" -eq 0 ]]; then
             echo -e "$_PREFIX_ERROR One or more lists are empty."
             return 1
         fi
@@ -34,13 +32,11 @@
     function AreParseListsNotInequalSizes
     {
         # <remarks> If any list is inequal, fail. </remarks>
-        if [[ "${_IOMMU_LIST[@]}" -ne "${_CLASS_LIST[@]}" ]] \
-            || [[ "${_IOMMU_LIST[@]}" -ne "${_DEVICE_ID_LIST[@]}" ]] \
-            || [[ "${_IOMMU_LIST[@]}" -ne "${_DEVICE_NAME_LIST[@]}" ]] \
-            || [[ "${_IOMMU_LIST[@]}" -ne "${_DRIVER_LIST[@]}" ]] \
-            || [[ "${_IOMMU_LIST[@]}" -ne "${_HWID_LIST[@]}" ]] \
-            || [[ "${_IOMMU_LIST[@]}" -ne "${_VENDOR_ID_LIST[@]}" ]] \
-            || [[ "${_IOMMU_LIST[@]}" -ne "${_VENDOR_NAME_LIST[@]}" ]]; then
+        if [[ "${#_IOMMU_LIST[@]}" -ne "${#_CLASS_LIST[@]}" ]] \
+            || [[ "${#_IOMMU_LIST[@]}" -ne "${#_DEVICE_NAME_LIST[@]}" ]] \
+            || [[ "${#_IOMMU_LIST[@]}" -ne "${#_DRIVER_LIST[@]}" ]] \
+            || [[ "${#_IOMMU_LIST[@]}" -ne "${#_HWID_LIST[@]}" ]] \
+            || [[ "${#_IOMMU_LIST[@]}" -ne "${#_VENDOR_NAME_LIST[@]}" ]]; then
             echo -e "$_PREFIX_ERROR One or more lists' sizes are inequal."
             return 1
         fi
@@ -53,14 +49,12 @@
         case "$_DRIVER" in
             # <remarks> Match invalid input, and save as known null value. </remarks>
             "" )
-                _DRIVER="N/A"
-                ;;
+                _DRIVER="N/A" ;;
 
             # <remarks> If system is setup for VFIO, exit. </remarks>
             "vfio-pci" )
                 echo -e "$_PREFIX_ERROR Found existing VFIO setup."
-                return 1
-                ;;
+                return 1 ;;
         esac
 
         return 0
@@ -80,7 +74,7 @@
 
             # <remarks> Declare lists </remarks>
             declare -ag _DRIVER_LIST _HWID_LIST _IOMMU_LIST
-            local -a _CLASS_LIST _DEVICE_ID_LIST _DEVICE_NAME_LIST _SLOT_ID_LIST _VENDOR_ID_LIST _VENDOR_NAME_LIST
+            local -a _CLASS_LIST _DEVICE_NAME_LIST _SLOT_ID_LIST _VENDOR_NAME_LIST
 
             # <remarks> Set commands </remarks>
             local _PARSE='lspci -k -mm'
@@ -106,9 +100,11 @@
             AreParseListsNotInequalSizes || return 1
 
             # <remarks> Save output to file. </remarks>
-            if [[ "$_OPTION" != "$_OPTION_PARSE_IOMMU_FILE" ]] \
-                && [[ -z "$_PARSE_IOMMU_FILENAME" ]]; then
-                eval "$_PARSE_TO_FILE"
+            if [[ "$_OPTION" == "$_OPTION_PARSE_IOMMU_FILE" ]] \
+                && ( [[ -z "$_PARSE_IOMMU_FILENAME" ]] \
+                || ! eval "$_PARSE_TO_FILE"); then
+                echo -e "$_PREFIX_ERROR Failed to save parse output to file."
+                return 1
             fi
 
             return 0
@@ -197,6 +193,7 @@
                 local _PARSE_NAME_ID+=" $_PARSE_ARGS_ONLINE"
                 local _PARSE_SLOT_ID+=" $_PARSE_ARGS_ONLINE"
                 local _PARSE_QUOTES+=" $_PARSE_ARGS_ONLINE"
+
                 return 0
                 ;;
 
