@@ -219,12 +219,12 @@
             "Deploy a VFIO setup to a Linux Host that supports Para-virtualization or PCI Passthrough.\n"
             "  --help\tprint this help and exit"
 
-            "\nParse IOMMU groups and reference chosen database for the system's PCI devices.\nOPTIONS: *"
+            "\nParse IOMMU groups and reference chosen database for the system's PCI devices.\nOPTIONS:"
             "  -f, --file [filename]\tReference file database."
             "  -i, --internal\tReference local database."
             "  -o, --online\t\tReference online database."
 
-            "\nARGUMENTS: *"
+            "\nARGUMENTS:"
             "  [filename]            Reference specific file."
             "  all\t\t\tSelect all IOMMU groups."
             "  no-vga\t\tSelect all IOMMU groups without VGA devices."
@@ -235,21 +235,21 @@
             "    no-vga 14\t\tSelect group 14 and all non-VGA groups."
             "    1,14-16\t\tSelect groups 1, 14, 15, and 16."
 
-            "\nPre-setup OPTIONS: *"
+            "\nPre-setup OPTIONS:"
             "  -c, --cpu\t\t\tAllocate CPU."
             "  -e, --evdev\t\t\tSetup a virtual KVM switch."
             "  -h, --hugepages\t\tCreate static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s)."
-            "  --uninstall-essentials\t\tUndo changes made by preliminary setup."
+            "  --uninstall-essentials\tUndo changes made by preliminary setup."
 
-            "\nHugepages ARGUMENTS: *"
+            "\nHugepages ARGUMENTS:"
             "  2M, 1G\t\t\tHugepage size (2 MiB or 1 GiB)."
             "  [1-?]\t\t\t\tAmount of Hugepages (maximum amount is total memory subtracted by 4 GiB)."
 
             "\n  Example:"
-            "    1G 16\t\t\t1 GiB hugepage * 16\t== 16 GiB allocated to hugepages."
-            "    2M 8192\t\t\t2 MiB hugepage * 8912\t== 16 GiB allocated to hugepages."
+            "    1G 16\t\t\t1 GiB hugepage 16\t== 16 GiB allocated to hugepages."
+            "    2M 8192\t\t\t2 MiB hugepage 8912\t== 16 GiB allocated to hugepages."
 
-            "\nMain setup OPTIONS: *"
+            "\nMain setup OPTIONS:"
             "  -m, --multiboot\t\tCreate multiple GRUB entries for a Multi VGA VFIO setup."
             "  -s, --static\t\t\tInstall a Single VGA VFIO setup."
             "  -u, --uninstall\t\tUndo an existing VFIO setup."
@@ -260,18 +260,17 @@
             "\nPost-setup OPTIONS:"
             "  -H, --hooks\t\tInstall recommended libvirt-hooks and services."
             "  -l, --looking-glass\tInstall LookingGlass.\t\t\tStream video (and audio) from Guest to Host over PCI bus using shared-memory device."
-            "  -L, --audio-loopback\tInstall the audio loopback service.\tLoopback audio from Guest to Host (over Line-out to Line-in). *"
+            "  -L, --audio-loopback\tInstall the audio loopback service.\tLoopback audio from Guest to Host (over Line-out to Line-in)."
             "  -S, --scream\t\tInstall Scream.\t\t\t\tStream audio from Guest to Host over virtual LAN."
             "  -z, --zram-swap\tCreate compressed (~ 2:1) RAM swap.\tReduce chances of memory exhaustion for Host."
-            "  --uninstall-extras\tUndo changes made by post-setup. *"
+            "  --uninstall-extras\tUndo changes made by post-setup."
 
             "\nzram-swap ARGUMENTS:"
-            "  force\t\t\tForce changes, even if zram-swap is allocated and in use. *"
+            "  force\t\t\tForce changes, even if zram-swap is allocated and in use."
             "  [fraction]\t\tSet the fraction of total available memory."
 
             "\n  Example (assume a Host with 32 GiB of RAM):"
             "    force 1/4\t\tCompress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free."
-            "\n* Options that skip *all* user prompts."
         )
 
         echo -e "${_OUTPUT[*]}"
