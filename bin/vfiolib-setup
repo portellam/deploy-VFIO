@@ -142,8 +142,6 @@
 
     function ExecuteSetup
     {
-        echo -e "HAYLLLOOO EETS MEE, ANNDDY DDICK!"
-
         if ! "$_EXECUTE_MULTIBOOT_SETUP" \
             && ! "$_EXECUTE_STATIC_SETUP" \
             && ! "$_EXECUTE_UNINSTALL_SETUP"; then
