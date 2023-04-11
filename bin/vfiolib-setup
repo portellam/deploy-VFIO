@@ -7,20 +7,12 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-# TODO:
-# * fix 'sed' calls
-#
-#
-#
-
 # <remarks> Using </remarks>
 # <code>
     source vfiolib-files
     source vfiolib-extras
     source vfiolib-parse
 # </code>
-
-
 
 # <code>
     function ExcludeGivenVGAIOMMUGroup

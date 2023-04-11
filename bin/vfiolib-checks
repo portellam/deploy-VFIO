@@ -12,7 +12,6 @@
     source vfiolib-globals
 # </code>
 
-# <summary> Functions </summary>
 # <code>
     function IsIOMMUEnabled
     {

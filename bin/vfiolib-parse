@@ -7,6 +7,11 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
+# <remarks> Using </remarks>
+# <code>
+    source vfiolib-common
+# </code>
+
 # <code>
     function AreParseListsNotEmpty
     {
@@ -192,12 +197,6 @@
                 local _PARSE_NAME_ID+=" $_PARSE_ARGS_ONLINE"
                 local _PARSE_SLOT_ID+=" $_PARSE_ARGS_ONLINE"
                 local _PARSE_QUOTES+=" $_PARSE_ARGS_ONLINE"
-
-                if ! GetInternetStatus &> /dev/null; then
-                    echo -e "$_PREFIX_ERROR Failed to find online database to parse."
-                    return 1
-                fi
-
                 return 0
                 ;;
 
