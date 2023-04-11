@@ -85,7 +85,7 @@
             local _ANY_LIST_HAS_IOMMU=false
             local _SLOT_ID="${_SLOT_ID_LIST[$_KEY]}"
             local _THIS_DOMAIN_ID=$( echo "$_SLOT_ID" | cut -d ':' -f 1 )
-            local -i _DOMAIN_ID=_DOMAIN_ID="${_THIS_DOMAIN_ID##*0}"
+            local -i _DOMAIN_ID="${_THIS_DOMAIN_ID##*0}"
             local _DRIVER=""
             local _HWID=""
             local _THIS_IOMMU=""
@@ -190,10 +190,8 @@
 
     function ExecuteSelection
     {
-        local _OUTPUT="Reviewing IOMMU groups..."
         local _LAST_IOMMU_VALUE=$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )
-        local _GET_IOMMU='seq 0 "$_LAST_IOMMU_VALUE"'
-        declare -a _THIS_IOMMU_LIST=( $( eval "$_GET_IOMMU" ) )
+        declare -a _THIS_IOMMU_LIST=( $( seq 0 "$_LAST_IOMMU_VALUE" ) )
 
         for _THIS_IOMMU in ${_THIS_IOMMU_LIST[@]}; do
             local _IOMMU_HAS_EXTERNAL_DOMAIN=false
@@ -211,9 +209,8 @@
 
         # <remarks> Check if list is empty </remarks>
         if [[ "${#_VFIOPCI_IOMMU_LIST[@]}" -eq 0 ]] \
-            || ! "$_VFIO_GROUP_HAS_IOMMU" \
-            || ! GetDriverAndHWIDLists \
-            || ! SetIOMMULists; then
+            || ! GetDriverAndHWIDLists; then
+            echo -e "$_PREFIX_ERROR Selection list is empty."
             false
         fi
 
@@ -233,7 +230,6 @@
 
 # <params>
     declare -ag _DRIVER_LIST_VFIOPCI _PCISTUB_IOMMU_LIST _VFIOPCI_IOMMU_LIST _VGA_VFIOPCI_IOMMU_LIST _HWID_LIST_PCISTUB _HWID_LIST_VFIOPCI _HWID_LIST_VFIOPCI_WITH_VGA
-    declare -g _VFIO_GROUP_HAS_IOMMU=false
 
     # <remarks> Known kernel drivers to ignore; drivers that cause issues when binded to vfio-pci/pci-stub. </remarks>
     declare -ag _DRIVER_LIST_TO_IGNORE=(
