@@ -8,7 +8,7 @@
 #
 
 # <code>
-function GetUser
+    function GetUser
     {
         if [[ "$SUDO_USER" != "" ]]; then
             _USER="$SUDO_USER"
@@ -25,7 +25,7 @@ function GetUser
 # </code>
 
 # <params>
-    declare -g _USER
+    declare -g _USER="$USER"
     GetUser &> /dev/null
 
     # <summary>
@@ -42,6 +42,11 @@ function GetUser
     declare -g _PREFIX_ERROR="${_SET_COLOR_YELLOW}An error occurred:$_RESET_COLOR"
     declare -g _PREFIX_FAIL="${_SET_COLOR_RED}Failure:$_RESET_COLOR"
     declare -g _PREFIX_PASS="${_SET_COLOR_GREEN}Success:$_RESET_COLOR"
+    declare -g _SUFFIX_FAIL="${_SET_COLOR_RED}[Failure]$_RESET_COLOR"
+    # declare -g _SUFFIX_MAYBE="${_SET_COLOR_YELLOW}[Incomplete]$_RESET_COLOR"
+    # declare -g _SUFFIX_WAIT="${_SET_COLOR_YELLOW}[Pending]$_RESET_COLOR"
+    declare -g _SUFFIX_PASS="${_SET_COLOR_GREEN}[Success]$_RESET_COLOR"
+    # declare -g _SUFFIX_SKIP="${_SET_COLOR_YELLOW}[Skipped]$_RESET_COLOR"
 
     # <remarks> File templates. </remarks>
     declare -g _DISCLAIMER_FILE_CONTENTS=(

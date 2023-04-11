@@ -9,6 +9,7 @@
 
 # <remarks> Usage </remarks>
 # <code>
+    source vfiolib-common
     source vfiolib-parse
 # </code>
 

@@ -10,15 +10,7 @@
 # <remarks> Using </remarks>
 # <code>
     source vfiolib-globals
-    # source vfiolib-usage
 # </code>
-
-# <params>
-    declare -g _IS_HUGEPAGES_COUNT_SET=false
-    declare -g _IS_HUGEPAGES_SIZE_SET=false
-    declare -gi _AVAILABLE_MEMORY=0
-    declare -gi _MIN_MEMORY=8
-# </params>
 
 # <code>
     function GetFreeMemory
@@ -59,8 +51,8 @@
         fi
 
         if ! [[ "$1" =~ ^[0-9]+$ ]] \
-            || ( [[ "$1" -lt "$_HUGEPAGES_MIN_SIZE" ]] \
-            && [[ "$1" -gt "$_HUGEPAGES_MAX_SIZE" ]] ); then
+            || [[ "$1" -lt "$_HUGEPAGES_MIN_SIZE" ]] \
+            || [[ "$1" -gt "$_HUGEPAGES_MAX_SIZE" ]]; then
             echo -e "Please answer between \"$_HUGEPAGES_MIN_SIZE\" or \"$_HUGEPAGES_MAX_SIZE\"."
             return 1
         fi
@@ -162,3 +154,10 @@
 
     }
 # </code>
+
+# <params>
+    declare -g _IS_HUGEPAGES_COUNT_SET=false
+    declare -g _IS_HUGEPAGES_SIZE_SET=false
+    declare -gi _AVAILABLE_MEMORY=0
+    declare -gi _MIN_MEMORY=8
+# </params>

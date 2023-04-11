@@ -68,9 +68,9 @@
             _OPTION="$1"
 
             # <remarks> Output statements </remarks>
-            local _OUTPUT_PARSE_FILE="Parsing PCI from file database..."
-            local _OUTPUT_PARSE_ONLINE="Parsing PCI from online database..."
-            local _OUTPUT_PARSE_SYSTEM="Parsing PCI from no database..."
+            local _OUTPUT_PARSE_FILE="Parsing from file database..."
+            local _OUTPUT_PARSE_ONLINE="Parsing from online database..."
+            local _OUTPUT_PARSE_SYSTEM="Parsing from cached database..."
 
             # <remarks> Declare lists </remarks>
             declare -ag _CLASS_LIST _DEVICE_NAME_LIST _DRIVER_LIST _HWID_LIST _IOMMU_LIST _SLOT_ID_LIST _VENDOR_NAME_LIST

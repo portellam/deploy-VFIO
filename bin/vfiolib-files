@@ -182,10 +182,6 @@
     # <remarks> Flags </remarks>
     declare -g _HAS_EXECUTED_BACKUPS=false
 
-    if ExecuteBackups &> /dev/null; then
-        _HAS_EXECUTED_BACKUPS=true
-    fi
-
     # <remarks> Files </remarks>
     declare -g _BACKUPS_PATH="/usr/local/etc/vfiolib.d"
 

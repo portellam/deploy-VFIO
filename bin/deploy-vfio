@@ -15,14 +15,16 @@
 # <code>
 function Main
 {
-    if [[ $( whoami ) != "root" ]]; then
-        echo -e "$_PREFIX_FAIL User is not sudo/root."
-        return 1
-    fi
+    IsSudoUser || return 1
 
     # <remarks> Gather arguments. </remarks>
     if ! SetOptions $@; then
-        GetUsage; return "$?";
+        GetUsage
+        return "$?"
+    fi
+
+    if ExecuteBackups; then
+        _HAS_EXECUTED_BACKUPS=true
     fi
 
     # <remarks> Exit early. </remarks>
@@ -50,6 +52,7 @@ function Main
     esac
 
     ExecuteSelection || return 1
+    echo
     ExecuteSetup
     return "$?"
 }

@@ -15,6 +15,29 @@
 # </code>
 
 # <code>
+    function AskToSpecifyStaticSetup
+    {
+        for _TRIES_COUNT in $( seq 0 2 ); do
+            read -r -p "Write output to system configuration files (and not GRUB)? [Y/n]: " _ANSWER
+
+            case "$_ANSWER" in
+                [Yy]* )
+                    _EXECUTE_GRUB_STATIC_SETUP=false
+                    return 0 ;;
+
+                [Nn]* )
+                    _EXECUTE_GRUB_STATIC_SETUP=true
+                    return 0 ;;
+
+                * )
+                    echo "Please answer \"Y\" or \"N\"." ;;
+            esac
+        done
+
+        echo -e "$_PREFIX_ERROR Failed to answer."
+        return 1
+    }
+
     function ExcludeGivenVGAIOMMUGroup
     {
         if ! [[ $1 =~ ^[0-9]+$ ]]; then
@@ -80,7 +103,11 @@
 
     function ExecuteStaticSetup
     {
-        local -r _PRINT_FAIL="An error occurred: Static setup has failed."
+        local -r _PRINT_FAIL="$_PREFIX_ERROR Static setup has failed."
+
+        if "$_ASK_TO_SELECT_TYPE_OF_STATIC_SETUP"; then
+            AskToSpecifyStaticSetup || return 1
+        fi
 
         if "$_EXECUTE_GRUB_STATIC_SETUP" \
             && ( ! "$_HAS_EXECUTED_BACKUPS" \
@@ -128,12 +155,14 @@
 
     function GetParamsForSetup
     {
-        if [[ "${_VFIOPCI_DRIVER_LIST[@]}" -eq 0 ]] \
-            || ( [[ "${_VFIOPCI_HWID_LIST[@]}" -eq 0 ]] \
-                && [[ "${_PCISTUB_HWID_LIST[@]}" -eq 0 ]] \
-                && [[ "${_VGA_VFIOPCI_DRIVER_LIST[@]}" -eq 0 ]] \
-                && [[ "${_VGA_VFIOPCI_HWID_LIST[@]}" -eq 0 ]] ); then
-            echo -e "$_PREFIX_ERROR Required parsed IOMMU group lists are empty."
+        # TODO: declare these lists, or find equivalents!
+
+        if [[ "${#_VFIOPCI_DRIVER_LIST[@]}" -eq 0 ]] \
+            || ( [[ "${#_VFIOPCI_HWID_LIST[@]}" -eq 0 ]] \
+                && [[ "${#_PCISTUB_HWID_LIST[@]}" -eq 0 ]] \
+                && [[ "${#_VGA_VFIOPCI_DRIVER_LIST[@]}" -eq 0 ]] \
+                && [[ "${#_VGA_VFIOPCI_HWID_LIST[@]}" -eq 0 ]] ); then
+            echo -e "$_PREFIX_ERROR Some or all parsed IOMMU group lists are empty."
             return 1
         fi
 

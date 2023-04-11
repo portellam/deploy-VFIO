@@ -7,6 +7,11 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
+# <remarks> Using </remarks>
+# <code>
+    source vfiolib-globals
+# </code>
+
 # <code>
     function FindPackage
     {
@@ -291,11 +296,11 @@
     {
         SaveExitCode
 
-        if [[ "$1" == "" ]]; then
+        if [[ "$1" != "" ]]; then
             echo -en "$1\t"
         fi
 
-        if [[ "$_LAST_EXIT_CODE" -ne 1 ]]; then
+        if [[ "$_LAST_EXIT_CODE" -ne 0 ]]; then
             echo -e "$_SUFFIX_FAIL"
         else
             echo -e "$_SUFFIX_PASS"

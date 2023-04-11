@@ -10,16 +10,9 @@
 # <remarks> Using </remarks>
 # <code>
     source vfiolib-calcs
+    source vfiolib-common
     source vfiolib-parse
 # </code>
-
-# <params>
-    declare -gi _HUGEPAGES_ALLOCATED_MEMORY=0
-
-    # <remarks> Flag progress of setups </remarks>
-    declare -g _IS_EVDEV_SETUP=false
-    declare -g _IS_HUGEPAGES_SETUP=false
-# </params>
 
 # <code>
     # <summary>
@@ -193,10 +186,10 @@
         }
 
         if ! "$_EXECUTE_ISOLCPU_SETUP"; then
-            AskToContinue || return 1
+            AskToContinue || return 0
         fi
 
-        Main "$@"
+        Main
         PrintPassOrFail "Allocating CPU threads..."
         return "$_LAST_EXIT_CODE"
     }
@@ -268,7 +261,6 @@
             _IS_HUGEPAGES_SETUP=false
 
             if ! [[ "$_INT_MAX_MEMORY" =~ ^[0-9]+$ ]]; then
-                echo $_INT_MAX_MEMORY
                 echo -e "$_PREFIX_ERROR Could not parse system memory."
                 return 1
             fi
@@ -276,7 +268,7 @@
             if ! "$_IS_HUGEPAGES_COUNT_SET" \
                 && ! "$_IS_HUGEPAGES_SIZE_SET" ; then
                 echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\nGuest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
-                AskToContinue || return 1
+                AskToContinue || return 0
             fi
 
             AskForHugepageByteSize || return 1
@@ -299,23 +291,27 @@
         AddUserToGroups || return 1
 
         if "$_EXECUTE_ALL_ESSENTIAL_SETUPS"; then
-            AllocateCPUToGuest
-            AllocateRAMToGuest
-            VirtualKVM
+            AllocateCPUToGuest || return 1
+            echo
+            AllocateRAMToGuest || return 1
+            echo
+            VirtualKVM || return 1
             ModifyQEMU || return 1
             return 0
         fi
 
         if "$_EXECUTE_ISOLCPU_SETUP"; then
-            AllocateCPUToGuest
+            AllocateCPUToGuest || return 1
         fi
 
         if "$_EXECUTE_HUGEPAGES_SETUP"; then
-            AllocateRAMToGuest
+            echo
+            AllocateRAMToGuest || return 1
         fi
 
         if "$_EXECUTE_EVDEV_SETUP"; then
-            VirtualKVM
+            echo
+            VirtualKVM || return 1
         fi
 
         ModifyQEMU || return 1
@@ -493,7 +489,7 @@
 
         if ! "$_EXECUTE_EVDEV_SETUP"; then
             echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between Host and Guest(s).\n${_SET_COLOR_YELLOW}HOW-TO:${_RESET_COLOR} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
-            AskToContinue || return 1
+            AskToContinue || return 0
         fi
 
         Main
@@ -501,3 +497,11 @@
         return "$_LAST_EXIT_CODE"
     }
 # </code>
+
+# <params>
+    declare -gi _HUGEPAGES_ALLOCATED_MEMORY=0
+
+    # <remarks> Flag progress of setups </remarks>
+    declare -g _IS_EVDEV_SETUP=false
+    declare -g _IS_HUGEPAGES_SETUP=false
+# </params>
