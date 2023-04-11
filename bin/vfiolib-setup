@@ -12,6 +12,7 @@
     source vfiolib-files
     source vfiolib-extras
     source vfiolib-parse
+    source vfiolib-select
 # </code>
 
 # <code>
@@ -60,12 +61,12 @@
 
             # <remarks> Add IOMMU group if it is not in the VGA list or if it does not match the given IOMMU group, and if it is not in the current VFIO list. </remarks>
             if ( ! $_VGA_VFIOPCI_HAS_IOMMU || [[ "$_IOMMU" != "$1" ]] ) && ! [[ "$_VGA_DRIVER_DELIM" =~ *"$_DRIVER"* ]]; then
-                _VGA_DRIVER_DELIM+="${_DRIVER}"
+                _VGA_DRIVER_DELIM+="$_DRIVER"
             fi
 
             # <remarks> Add IOMMU group if it is not in the VGA list or if it does not match the given IOMMU group, and if it is not in the current VFIO list. </remarks>
             if ( ! $_VGA_VFIOPCI_HAS_IOMMU || [[ "$_IOMMU" != "$1" ]] ) && ! [[ "$_VGA_HWID_DELIM" =~ *"$_HWID"* ]]; then
-                _VGA_HWID_DELIM+="${_HWID}"
+                _VGA_HWID_DELIM+="$_HWID"
             fi
 
             # <remarks> Append a delimiter, should the current element be not the last element. </remarks>
@@ -155,13 +156,11 @@
 
     function GetParamsForSetup
     {
-        # TODO: declare these lists, or find equivalents!
-
-        if [[ "${#_VFIOPCI_DRIVER_LIST[@]}" -eq 0 ]] \
-            || ( [[ "${#_VFIOPCI_HWID_LIST[@]}" -eq 0 ]] \
-                && [[ "${#_PCISTUB_HWID_LIST[@]}" -eq 0 ]] \
-                && [[ "${#_VGA_VFIOPCI_DRIVER_LIST[@]}" -eq 0 ]] \
-                && [[ "${#_VGA_VFIOPCI_HWID_LIST[@]}" -eq 0 ]] ); then
+        if [[ "${#_DRIVER_LIST_VFIOPCI[@]}" -eq 0 ]] \
+            || ( [[ "${#_HWID_LIST_VFIOPCI[@]}" -eq 0 ]] \
+                && [[ "${#_HWID_LIST_PCISTUB[@]}" -eq 0 ]] \
+                && [[ "${#_DRIVER_LIST_VFIOPCI_WITH_VGA[@]}" -eq 0 ]] \
+                && [[ "${#_HWID_LIST_VFIOPCI_WITH_VGA[@]}" -eq 0 ]] ); then
             echo -e "$_PREFIX_ERROR Some or all parsed IOMMU group lists are empty."
             return 1
         fi
@@ -220,31 +219,19 @@
 
     function SetParamsForGRUBStaticSetup
     {
-        local -a _STATIC_DRIVER_LIST=( "${_VFIOPCI_DRIVER_LIST[@]}" "${_VGA_VFIOPCI_DRIVER_LIST[@]}" )
-        local -a _STATIC_HWID_LIST=( "${_VFIOPCI_HWID_LIST[@]}" "${_VGA_VFIOPCI_HWID_LIST[@]}" )
-        local -a _BLACKLISTS_LIST=()
-        local -a _INITRAMFS_LIST=()
-        local -a _MODULES_LIST=()
-        local _DRIVER_DELIM=""
-        local _HWID_DELIM=""
-        local _STATIC_PCISTUB_HWID_DELIM=""
+        IFS=$'\n'
+        local -a _STATIC_DRIVER_LIST=( "${_DRIVER_LIST_VFIOPCI[@]}" "${_DRIVER_LIST_VFIOPCI_WITH_VGA[@]}" )
+        local -a _STATIC_HWID_LIST=( "${_HWID_LIST_VFIOPCI[@]}" "${_HWID_LIST_VFIOPCI_WITH_VGA[@]}" )
+        _STATIC_DRIVER_LIST=( $( sort --uniq <<<"${_STATIC_DRIVER_LIST[*]}" ) )
+        _STATIC_HWID_LIST=( $( sort --uniq <<<"${_STATIC_HWID_LIST[*]}" ) )
+        declare -g _DRIVER_DELIM=""
+        declare -g _HWID_DELIM=""
+        declare -g _STATIC_PCISTUB_HWID_DELIM=""
+        unset IFS
 
         for _DRIVER in ${_STATIC_DRIVER_LIST[@]}; do
             if [[ "$_DRIVER" != "" ]]; then
                 _DRIVER_DELIM+="$_DRIVER,"
-
-                _BLACKLISTS_LIST+=(
-                    "blacklist $_DRIVER"
-                )
-
-                _INITRAMFS_LIST+=(
-                    "softdep $_DRIVER pre: vfio-pci"
-                    "$_DRIVER"
-                )
-
-                _MODULES_LIST+=(
-                    "softdep $_DRIVER pre: vfio-pci"
-                )
             fi
         done
 
@@ -254,8 +241,8 @@
             fi
         done
 
-        if [[ "${#_PCISTUB_HWID_LIST[@]}" -gt 0 ]]; then
-            for _HWID in ${_PCISTUB_HWID_LIST[@]}; do
+        if [[ "${#_HWID_LIST_PCISTUB[@]}" -gt 0 ]]; then
+            for _HWID in ${_HWID_LIST_PCISTUB[@]}; do
                 if [[ "$_HWID" != "" ]]; then
                     _STATIC_PCISTUB_HWID_DELIM+="$_HWID,"
                 fi
@@ -269,20 +256,32 @@
             _STATIC_PCISTUB_HWID_DELIM="${_STATIC_PCISTUB_HWID_DELIM::-1}"
         fi
 
+        if ( [[ "${#_DRIVER_DELIM}" -eq 0 ]] \
+            && [[ "${#_HWID_DELIM}" -eq 0 ]] ) \
+            || ( [[ "${#_DRIVER_DELIM}" -eq 0 ]] \
+            && [[ "${#_STATIC_PCISTUB_HWID_DELIM}" -eq 0 ]] ); then
+            echo -e "$_PREFIX_ERROR Driver and HWID output is empty."
+            return 1
+        fi
+
         return 0
     }
 
     function SetParamsForNoGRUBStaticSetup
     {
         GetParamsForVFIOSetup || return 1
+        IFS=$'\n'
         local -a _FILE_CONTENTS_LIST=()
-        local -a _STATIC_DRIVER_LIST=( "${_VFIOPCI_DRIVER_LIST[@]}" "${_VGA_VFIOPCI_DRIVER_LIST[@]}" )
-        local -a _STATIC_HWID_LIST=( "${_PCISTUB_HWID_LIST[@]}" "${_VFIOPCI_HWID_LIST[@]}" "${_VGA_VFIOPCI_HWID_LIST[@]}" )
+        local -a _STATIC_DRIVER_LIST=( "${_DRIVER_LIST_VFIOPCI[@]}" "${_DRIVER_LIST_VFIOPCI_WITH_VGA[@]}" )
+        local -a _STATIC_HWID_LIST=( "${_HWID_LIST_PCISTUB[@]}" "${_HWID_LIST_VFIOPCI[@]}" "${_HWID_LIST_VFIOPCI_WITH_VGA[@]}" )
+        _STATIC_DRIVER_LIST=( $( sort --uniq <<<"${_STATIC_DRIVER_LIST[*]}" ) )
+        _STATIC_HWID_LIST=( $( sort --uniq <<<"${_STATIC_HWID_LIST[*]}" ) )
         local -a _BLACKLISTS_LIST=()
         local -a _INITRAMFS_LIST=()
         local -a _MODULES_LIST=()
-        local _DRIVER_DELIM=""
-        local _HWID_DELIM=""
+        declare -g _DRIVER_DELIM=""
+        declare -g _HWID_DELIM=""
+        unset IFS
 
         for _DRIVER in ${_STATIC_DRIVER_LIST[@]}; do
             if [[ "$_DRIVER" != "" ]]; then
@@ -311,6 +310,13 @@
 
         _DRIVER_DELIM="${_DRIVER_DELIM::-1}"
         _HWID_DELIM="${_HWID_DELIM::-1}"
+
+        if [[ "${#_DRIVER_DELIM}" -eq 0 ]] \
+            && [[ "${#_HWID_DELIM}" -eq 0 ]]; then
+            echo -e "$_PREFIX_ERROR Driver and HWID output is empty."
+            return 1
+        fi
+
         return 0
     }
 
@@ -328,8 +334,8 @@
         local _SYSTEM_OS=$( uname )
         local _SYSTEM_UUID=$( blkid -s UUID | grep $_SYSTEM_DISK | cut -d '"' -f2 )
 
-        local -a _MULTIBOOT_DRIVER_LIST=( "${_VFIOPCI_DRIVER_LIST[@]}" )
-        local -a _MULTIBOOT_HWID_LIST=( "${_PCISTUB_HWID_LIST[@]}" "${_VFIOPCI_HWID_LIST[@]}" )
+        local -a _MULTIBOOT_DRIVER_LIST=( "${_DRIVER_LIST_VFIOPCI[@]}" )
+        local -a _MULTIBOOT_HWID_LIST=( "${_HWID_LIST_PCISTUB[@]}" "${_HWID_LIST_VFIOPCI[@]}" )
         local _NO_VGA_DRIVER_DELIM=""
         local _NO_VGA_HWID_DELIM=""
 
@@ -390,7 +396,7 @@
         return 0
     }
 
-    function WriteFilesForGRUBStaticSetup
+    function WriteFilesForNoGRUBStaticSetup
     {
         "$_HAS_EXECUTED_BACKUPS" || return 1
         IFS=$'\n'
@@ -399,13 +405,23 @@
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE "
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE_ISOLCPU "
         _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
-        _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=\"$_DRIVER_DELIM\" "
-        _LINE_GRUB_CMDLINE_TEMP+="pci-stub.ids=\"$_STATIC_PCISTUB_HWID_DELIM\" "
-        _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=\"$_HWID_DELIM\" "
+
+        if [[ "$_DRIVER_DELIM" != "" ]]; then
+            _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=\"$_DRIVER_DELIM "
+        fi
+
+        if [[ "$_STATIC_PCISTUB_HWID_DELIM" != "" ]]; then
+            _LINE_GRUB_CMDLINE_TEMP+="pci-stub.ids=$_STATIC_PCISTUB_HWID_DELIM "
+        fi
+
+        if [[ "$_HWID_DELIM" != "" ]]; then
+            _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=$_HWID_DELIM "
+        fi
+
         _LINE_GRUB_CMDLINE_TEMP="${_LINE_GRUB_CMDLINE_TEMP::-1}"
         local -r _LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"$_LINE_GRUB_CMDLINE_TEMP\""
 
-        if ! sed -i "/$_LINE_TO_MATCH\"*\"/c\$_LINE_GRUB_CMDLINE_DEFAULT\"" "$_GRUB_DEST_PATH" \
+        if ! sed -i '/'$_LINE_TO_MATCH'/c\'$_LINE_GRUB_CMDLINE_DEFAULT "$_GRUB_DEST_PATH_1" \
             || ! sed -i "/## REPLACE_THIS_LINE*/c\${_INITRAMFS_LIST[*]}" "$_INITRAMFS_MODULES_DEST_PATH" \
             || ! sed -i "/options vfio_pci ids=*/c\options vfio_pci_ids=\"$_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" \
             || ! sed -i "/vfio_pci ids=*/c\vfio_pci_ids=\"$_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" \
@@ -420,7 +436,7 @@
         return 0
     }
 
-    function WriteFilesForNoGRUBStaticSetup
+    function WriteFilesForGRUBStaticSetup
     {
         "$_HAS_EXECUTED_BACKUPS" || return 1
         IFS=$'\n'
@@ -429,10 +445,13 @@
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE "
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE_ISOLCPU "
         _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
+        _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=$_DRIVER_DELIM "
+        _LINE_GRUB_CMDLINE_TEMP+="pci-stub.ids=$_STATIC_PCISTUB_HWID_DELIM "
+        _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=$_HWID_DELIM "
         _LINE_GRUB_CMDLINE_TEMP="${_LINE_GRUB_CMDLINE_TEMP::-1}"
         local -r _LINE_GRUB_CMDLINE_DEFAULT="$_LINE_TO_MATCH\"$_LINE_GRUB_CMDLINE_TEMP\""
 
-        if ! sed -i "/$_LINE_TO_MATCH\"*\"/c\$_LINE_GRUB_CMDLINE_DEFAULT\"" "$_GRUB_DEST_PATH"; then
+        if ! sed -i '/'"$_LINE_TO_MATCH"'/c\'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_DEST_PATH_1"; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi

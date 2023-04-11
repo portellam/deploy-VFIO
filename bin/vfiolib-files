@@ -142,19 +142,16 @@
 
         # <remarks> Overwrite target lines, lines that need to be set to defaults. </remarks>
         local -r _LINE_GRUB_DISTRIBUTOR="GRUB_DISTRIBUTOR=\`lsb_release -i -s 2> /dev/null || echo "$( lsb_release -i -s )"\`"
-        local -r _LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"quiet\""
-        local -r _LINE_GRUB_CMDLINE="GRUB_CMDLINE_LINUX=\"\""
+        local -r _LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\""
 
-        if ! sed -i "/GRUB_DISTRIBUTOR=*/c\$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_SRC_BACKUP_PATH" \
-            || ! sed -i "/GRUB_CMDLINE_LINUX_DEFAULT=*/c\"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_SRC_BACKUP_PATH" \
-            || ! sed -i "/GRUB_CMDLINE_LINUX=*/c\"$_LINE_GRUB_CMDLINE" "$_GRUB_SRC_BACKUP_PATH" ; then
+        if ! sed -i '/GRUB_DISTRIBUTOR=*/c\'"$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_SRC_BACKUP_PATH" \
+            || ! sed -i '/GRUB_CMDLINE_LINUX_DEFAULT=*/c\'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_SRC_BACKUP_PATH"; then
             echo -e "$_PREFIX_ERROR Failed to clear target lines of GRUB backup file."
             return 1
         fi
 
-        if ! [[ -z $( grep "$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_SRC_BACKUP_PATH" ) ]] \
-            || ! [[ -z $( grep "$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_SRC_BACKUP_PATH" ) ]] \
-            || ! [[ -z $( grep "$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_SRC_BACKUP_PATH" ) ]]; then
+        if [[ -z $( grep "$_LINE_GRUB_DISTRIBUTOR" "$_GRUB_SRC_BACKUP_PATH" ) ]] \
+            || [[ -z $( grep "$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_SRC_BACKUP_PATH" ) ]]; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of GRUB backup file."
             return 1
         fi
