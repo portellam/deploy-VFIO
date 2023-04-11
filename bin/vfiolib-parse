@@ -73,8 +73,7 @@
             local _OUTPUT_PARSE_SYSTEM="Parsing PCI from no database..."
 
             # <remarks> Declare lists </remarks>
-            declare -ag _DRIVER_LIST _HWID_LIST _IOMMU_LIST
-            local -a _CLASS_LIST _DEVICE_NAME_LIST _SLOT_ID_LIST _VENDOR_NAME_LIST
+            declare -ag _CLASS_LIST _DEVICE_NAME_LIST _DRIVER_LIST _HWID_LIST _IOMMU_LIST _SLOT_ID_LIST _VENDOR_NAME_LIST
 
             # <remarks> Set commands </remarks>
             local _PARSE='lspci -k -mm'
@@ -153,7 +152,6 @@
             local _HWID=$( lspci -n -s "$_DEVICE" | cut -d ' ' -f 3 )
 
             IsDriverValid || return 1
-
             _CLASS_LIST+=( "$_CLASS" )
             _DEVICE_NAME_LIST+=( "$_DEVICE_NAME" )
             _DRIVER_LIST+=( "$_DRIVER" )

@@ -160,11 +160,12 @@
         if [[ "$_IOMMU" -eq "$_THIS_IOMMU" ]]; then
 
             # <remarks> External PCI devices have domain IDs of '01' or greater. </remarks>
-            if [[ "$_THIS_DOMAIN_ID" =~ '[a-fA-F1-9]' ]]; then
+            if [[ "$_THIS_DOMAIN_ID" =~ [a-fA-F1-9] ]]; then
                 _IOMMU_HAS_EXTERNAL_DOMAIN=true
             fi
 
             local -l _CLASS="${_CLASS_LIST[$_KEY]}"
+            echo
             echo -e "Slot ID:\t'$_SLOT_ID'"
             echo -e "Vendor name:\t'$_VENDOR_NAME'"
             echo -e "Device name:\t'$_DEVICE_NAME'"
