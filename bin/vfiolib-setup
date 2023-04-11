@@ -269,7 +269,7 @@
 
     function SetParamsForNoGRUBStaticSetup
     {
-        GetParamsForVFIOSetup || return 1
+        GetParamsForSetup || return 1
         IFS=$'\n'
         local -a _FILE_CONTENTS_LIST=()
         local -a _STATIC_DRIVER_LIST=( "${_DRIVER_LIST_VFIOPCI[@]}" "${_DRIVER_LIST_VFIOPCI_WITH_VGA[@]}" )
@@ -322,7 +322,7 @@
 
     function SetParamsForMultibootSetup
     {
-        GetParamsForVFIOSetup || return 1
+        GetParamsForSetup || return 1
 
         # <remarks> System configuration </remarks>
         local -i _MAX_NUM_PARSE_KERNELS=3
@@ -368,15 +368,15 @@
                     local _LINE_GRUB_CMDLINE_TEMP=""
                     local _LINE_VFIOPCI_DRIVER="$_NO_VGA_DRIVER_DELIM"
                     _LINE_VFIOPCI_DRIVER=",$_VGA_DRIVER_DELIM"
-                    _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=\"$_LINE_VFIOPCI_DRIVER\" "
+                    _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=$_LINE_VFIOPCI_DRIVER "
                     local _LINE_VFIOPCI_HWID="$_NO_VGA_HWID_DELIM"
                     _LINE_VFIOPCI_HWID=",$_VGA_HWID_DELIM"
-                    _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=\"$_LINE_VFIOPCI_HWID\" "
+                    _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=$_LINE_VFIOPCI_HWID "
                     _LINE_GRUB_CMDLINE_TEMP="$_LINE_GRUB_CMDLINE_PREFIX${_LINE_GRUB_CMDLINE_TEMP::-1}"
 
                     # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
                     _FILE_CONTENTS_LIST+=(
-                        "menuentry $_SYSTEM_DISTRO, with $_SYSTEM_KERNEL $_KERNEL (VFIO, w/o IOMMU $_IOMMU, w/ boot VGA \"$str_device_name\") {"
+                        "menuentry $_SYSTEM_DISTRO, with $_SYSTEM_KERNEL $_KERNEL (VFIO, w/o IOMMU $_IOMMU, w/ boot VGA \"$_DEVICE_NAME\") {"       # TODO: add device name here!
                         "\tinsmod $_SYSTEM_FSTYPE"
                         "\tset root='/dev/disk/by-uuid/$_SYSTEM_UUID'"
                         "\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$_SYSTEM_UUID\n\t"'fi'
@@ -407,7 +407,7 @@
         _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
 
         if [[ "$_DRIVER_DELIM" != "" ]]; then
-            _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=\"$_DRIVER_DELIM "
+            _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=$_DRIVER_DELIM "
         fi
 
         if [[ "$_STATIC_PCISTUB_HWID_DELIM" != "" ]]; then
@@ -421,18 +421,21 @@
         _LINE_GRUB_CMDLINE_TEMP="${_LINE_GRUB_CMDLINE_TEMP::-1}"
         local -r _LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"$_LINE_GRUB_CMDLINE_TEMP\""
 
-        if ! sed -i '/'$_LINE_TO_MATCH'/c\'$_LINE_GRUB_CMDLINE_DEFAULT "$_GRUB_DEST_PATH_1" \
-            || ! sed -i "/## REPLACE_THIS_LINE*/c\${_INITRAMFS_LIST[*]}" "$_INITRAMFS_MODULES_DEST_PATH" \
+        # TODO: find line to start at, then output array at that line.
+
+        if ! sed -i '/'$_LINE_TO_MATCH'/c\'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_DEST_PATH_1" \
+            || ! sed -i '/## REPLACE_THIS_LINE*/c\'"${_INITRAMFS_LIST[*]}" "$_INITRAMFS_MODULES_DEST_PATH" \
             || ! sed -i "/options vfio_pci ids=*/c\options vfio_pci_ids=\"$_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" \
             || ! sed -i "/vfio_pci ids=*/c\vfio_pci_ids=\"$_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" \
             || ! echo "${_BLACKLISTS_LIST[*]}" >> "$_MODPROBE_BLACKLISTS_DEST_PATH" \
-            || ! sed -i "/## REPLACE_THIS_LINE*/c\${_MODULES_LIST[*]}" "$_MODPROBE_VFIO_DEST_PATH" \
-            || ! sed -i "/options vfio_pci ids=*/c\vfio_pci_ids=$_HWID_DELIM" "$_MODPROBE_VFIO_DEST_PATH" \
-            || ! sed -i "/vfio_pci ids=*/c\vfio_pci_ids=$_HWID_DELIM" "$_MODULES_DEST_PATH"; then
+            || ! sed -i '/## REPLACE_THIS_LINE*/c\'"${_MODULES_LIST[*]}" "$_MODPROBE_VFIO_DEST_PATH" \
+            || ! sed -i "/options vfio_pci ids=*/c\vfio_pci_ids=\"$_HWID_DELIM\"" "$_MODPROBE_VFIO_DEST_PATH" \
+            || ! sed -i "/vfio_pci ids=*/c\vfio_pci_ids=\"$_HWID_DELIM\"" "$_MODULES_DEST_PATH"; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi
 
+        unset IFS
         return 0
     }
 
@@ -456,6 +459,7 @@
             return 1
         fi
 
+        unset IFS
         return 0
     }
 
@@ -469,6 +473,7 @@
             return 1
         fi
 
+        unset IFS
         return 0
     }
 # </code>
