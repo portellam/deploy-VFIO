@@ -9,20 +9,18 @@
 
 # <remarks> Using </remarks>
 # <code>
-    source vfiolib-tools
+    source vfiolib-all
 # </code>
 
 # <code>
 function Main
 {
-    # <remarks> Gather arguments. </remarks>
-    SetScriptDir || return 1
-
     if [[ $( whoami ) != "root" ]]; then
         echo -e "$_PREFIX_FAIL User is not sudo/root."
         return 1
     fi
 
+    # <remarks> Gather arguments. </remarks>
     if ! SetOptions $@; then
         GetUsage; return "$?";
     fi

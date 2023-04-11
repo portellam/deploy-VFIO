@@ -12,16 +12,6 @@
     source vfiolib-parse
 # </code>
 
-# <params>
-    declare -ag _DRIVER_LIST_VFIOPCI _PCISTUB_IOMMU_LIST _VFIOPCI_IOMMU_LIST _VGA_VFIOPCI_IOMMU_LIST _HWID_LIST_PCISTUB _HWID_LIST_VFIOPCI _HWID_LIST_VFIOPCI_WITH_VGA
-    declare -g _VFIO_GROUP_HAS_IOMMU=false
-
-    # <remarks> Known kernel drivers to ignore; drivers that cause issues when binded to vfio-pci/pci-stub. </remarks>
-    declare -ag _DRIVER_LIST_TO_IGNORE=(
-        "snd_hda_intel"
-    )
-# </params>
-
 # <code>
     function AddPromptOrSkipThisGroup
     {
@@ -239,3 +229,13 @@
         return 0
     }
 # </code>
+
+# <params>
+    declare -ag _DRIVER_LIST_VFIOPCI _PCISTUB_IOMMU_LIST _VFIOPCI_IOMMU_LIST _VGA_VFIOPCI_IOMMU_LIST _HWID_LIST_PCISTUB _HWID_LIST_VFIOPCI _HWID_LIST_VFIOPCI_WITH_VGA
+    declare -g _VFIO_GROUP_HAS_IOMMU=false
+
+    # <remarks> Known kernel drivers to ignore; drivers that cause issues when binded to vfio-pci/pci-stub. </remarks>
+    declare -ag _DRIVER_LIST_TO_IGNORE=(
+        "snd_hda_intel"
+    )
+# </params>

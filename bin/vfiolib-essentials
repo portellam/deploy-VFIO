@@ -17,11 +17,11 @@
 # <remarks> Using </remarks>
 # <code>
     source vfiolib-calcs
-    source vfiolib-iommu
+    source vfiolib-parse
 # </code>
 
 # <params>
-    declare -gir _HUGEPAGES_ALLOCATED_MEMORY=0
+    declare -gi _HUGEPAGES_ALLOCATED_MEMORY=0
 
     # <remarks> Flag progress of setups </remarks>
     declare -g _IS_EVDEV_SETUP=false
@@ -34,9 +34,9 @@
     # </summary>
     function AddUserToGroups
     {
-        if ! [ adduser "$USER" "input" &> /dev/null ] \
-            || ! [ adduser "$USER" "libvirt" &> /dev/null ]; then
-            echo -e "$_PREFIX_ERROR Failed to add user '$USER' to groups."
+        if ! sudo adduser "$_USER" "input" &> /dev/null \
+            || ! sudo adduser "$_USER" "libvirt" &> /dev/null; then
+            echo -e "$_PREFIX_ERROR Failed to add user '$_USER' to groups."
             return 1
         fi
 
@@ -71,7 +71,7 @@
 
         function GetThreadByCoreAndSMT
         {
-            _THREAD=$(( _CORE + ( _SMT_FACTOR * _SUM_CORES ) ))             # NOTE: VS Code reports a syntax error here. There is none.
+            _THREAD=$(( _CORE + ( _SMT_FACTOR * _TOTAL_CORES_COUNT ) ))             # NOTE: VS Code reports a syntax error here. There is none.
         }
 
         function GetThreadSetsForHostAndGuest
@@ -127,24 +127,24 @@
             local -i _TOTAL_THREADS_COUNT=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+" )
 
             # <remarks> Set maximum number of cores allocated to host. </remarks>
-            if [[ "$_SUM_CORES" -ge 4 ]]; then
+            if [[ "$_TOTAL_CORES_COUNT" -ge 4 ]]; then
                 _CORES_ALLOCATED_TO_HOST=2
 
-            elif [[ "$_SUM_CORES" -le 3 ]] \
-                && [[ "$_SUM_CORES" -ge 2 ]]; then
+            elif [[ "$_TOTAL_CORES_COUNT" -le 3 ]] \
+                && [[ "$_TOTAL_CORES_COUNT" -ge 2 ]]; then
                 _CORES_ALLOCATED_TO_HOST=1
 
             else
-                echo -e "$PREFIX_ERROR Insuc"
+                echo -e "$PREFIX_ERROR Insufficient CPU cores."
                 return 1
             fi
 
             # <remarks> Get thread sets, for host and guest(s). </remarks>
             local -ar _HOST_CORES_LIST=( $( seq 0 $(( "$_CORES_ALLOCATED_TO_HOST" - 1 )) ) )
             local -a _HOST_THREADS_LIST=( )
-            local -ar _GUEST_CORES_LIST=( $( seq "$_CORES_ALLOCATED_TO_HOST" $(( "$_SUM_CORES" - 1 )) ) )
+            local -ar _GUEST_CORES_LIST=( $( seq "$_CORES_ALLOCATED_TO_HOST" $(( "$_TOTAL_CORES_COUNT" - 1 )) ) )
             local -ar _GUEST_THREADS_LIST=( )
-            local -i _SMT_FACTOR=$(( "$_TOTAL_THREADS_COUNT" / "$_SUM_CORES" ))
+            local -i _SMT_FACTOR=$(( "$_TOTAL_THREADS_COUNT" / "$_TOTAL_CORES_COUNT" ))
             local -ar _SMT_FACTOR_LIST=( $( seq 0 $(( "$_SMT_FACTOR" - 1 )) ) )
             local _HOST_THREADS_DELIM _GUEST_THREADS_DELIM
             GetThreadSetsForHostAndGuest
@@ -273,7 +273,8 @@
         {
             _IS_HUGEPAGES_SETUP=false
 
-            if ! [[ "$_INT_MAX_MEMORY" =~ '^[0-9]+$' ]]; then
+            if ! [[ "$_INT_MAX_MEMORY" =~ ^[0-9]+$ ]]; then
+                echo $_INT_MAX_MEMORY
                 echo -e "$_PREFIX_ERROR Could not parse system memory."
                 return 1
             fi
@@ -288,7 +289,7 @@
             AskForHugepageCount || return 1
             GetMemoryAllocatedToHugepages || return 1
             IsHostMemorySufficientForHugepages || return 1
-            declare -gr _OUTPUT_GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=$_HUGEPAGES_BYTE_SUFFIX hugepagesz=$_HUGEPAGES_BYTE_SUFFIX hugepages=$_HUGEPAGES_COUNT"
+            declare -g _OUTPUT_GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=$_HUGEPAGES_BYTE_SUFFIX hugepagesz=$_HUGEPAGES_BYTE_SUFFIX hugepages=$_HUGEPAGES_COUNT"
             _IS_HUGEPAGES_SETUP=true
             return 0
         }
@@ -304,22 +305,22 @@
         AddUserToGroups || return 1
 
         if "$_EXECUTE_ALL_ESSENTIAL_SETUPS"; then
-            AllocateCPUToGuest || return 1
-            AllocateRAMToGuest || return 1
-            VirtualKVM || return 1
+            AllocateCPUToGuest
+            AllocateRAMToGuest
+            VirtualKVM
             return 0
         fi
 
         if "$_EXECUTE_ISOLCPU_SETUP"; then
-            AllocateCPUToGuest || return 1
+            AllocateCPUToGuest
         fi
 
         if "$_EXECUTE_HUGEPAGES_SETUP"; then
-            AllocateRAMToGuest || return 1
+            AllocateRAMToGuest
         fi
 
         if "$_EXECUTE_EVDEV_SETUP"; then
-            VirtualKVM || return 1
+            VirtualKVM
         fi
 
         ModifyQEMU || return 1
@@ -363,7 +364,7 @@
             if "$_IS_EVDEV_SETUP" \
                 || "$_IS_SCREAM_SETUP"; then
                 _FILE_1_CONTENTS+=(
-                    "user = \"$USER\""
+                    "user = \"$_USER\""
                     "group = \"user\""
                 )
             else
@@ -434,12 +435,12 @@
             )
 
             # <remarks> Append changes to file(s). </remarks>
-            if ! echo -e "${_FILE_1_CONTENTS[@]}" >> "$_QEMU_FILE_PATH"; then
-                echo -e "$_PREFIX_ERROR Failed to write to file '$_QEMU_FILE_PATH'."
+            if ! echo -e "${_FILE_1_CONTENTS[@]}" >> "$_QEMU_DEST_PATH"; then
+                echo -e "$_PREFIX_ERROR Failed to write to file '$_QEMU_DEST_PATH'."
             fi
 
-            if ! echo -e "${_FILE_2_CONTENTS[@]}" >> "$_APPARMOR_QEMU_FILE_PATH"; then
-                echo -e "$_PREFIX_ERROR Failed to write to file '$_APPARMOR_QEMU_FILE_PATH'."
+            if ! echo -e "${_FILE_2_CONTENTS[@]}" >> "$_APPARMOR_QEMU_DEST_PATH"; then
+                echo -e "$_PREFIX_ERROR Failed to write to file '$_APPARMOR_QEMU_DEST_PATH'."
             fi
 
             return 0

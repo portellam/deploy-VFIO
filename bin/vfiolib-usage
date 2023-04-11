@@ -14,41 +14,6 @@
     source vfiolib-globals
 # </code>
 
-# <params>
-    declare -gr _OUTPUT_INVALID_ANSWER="$_PREFIX_ERROR Failed to answer."
-    declare -gr _OUTPUT_INVALID_OPTION="$_PREFIX_ERROR Invalid option."
-    declare -g _FILENAME_PARSE_IOMMU=""
-
-    # <remarks> Toggles </remarks
-    declare -g _IS_CONNECTED_TO_INTERNET=false
-
-    # <remarks> Usage toggles </remarks
-    declare -g _EXECUTE_ALL_EXTRA_SETUPS=true
-    declare -g _EXECUTE_ALL_ESSENTIAL_SETUPS=true
-    declare -g _HAS_EXECUTED_BACKUPS=false
-    declare -g _EXECUTE_ISOLCPU_SETUP=false
-    declare -g _EXECUTE_AUDIO_LOOPBACK_SETUP=false
-    declare -g _EXECUTE_AUTO_XORG_SETUP=false
-    declare -g _EXECUTE_EVDEV_SETUP=false
-    declare -g _EXECUTE_HUGEPAGES_SETUP=false
-    declare -g _EXECUTE_LIBVIRT_HOOKS=false
-    declare -g _EXECUTE_LOOKING_GLASS=false
-    declare -g _EXECUTE_MULTIBOOT_SETUP=false
-    declare -g _PARSE_IOMMU_FROM_FILE=false
-    declare -g _PARSE_IOMMU_FROM_CACHE=false
-    declare -g _PARSE_IOMMU_FROM_INTERNET=false
-    declare -g _EXECUTE_SCREAM=false
-    declare -g _SELECT_ALL_IOMMU=false
-    declare -g _EXECUTE_STATIC_SETUP=false
-    declare -g _UNINSTALL_EXTRAS=false
-    declare -g _UNINSTALL_ESSENTIALS=false
-    declare -g _EXECUTE_UNINSTALL_SETUP=false
-    declare -g _EXECUTE_ZRAM_SWAP=false
-    declare -g _ZRAM_SWAP_OVERRIDE=false
-    declare -g _ZRAM_SWAP_SET_FRACTION=false
-    ExecuteBackups && _HAS_EXECUTED_BACKUPS=true
-# </params>
-
 # <code>
     function GetOption
     {
@@ -324,3 +289,38 @@
         return 0
     }
 # </code>
+
+# <params>
+    declare -g _OUTPUT_INVALID_ANSWER="$_PREFIX_ERROR Failed to answer."
+    declare -g _OUTPUT_INVALID_OPTION="$_PREFIX_ERROR Invalid option."
+    declare -g _FILENAME_PARSE_IOMMU=""
+
+    # <remarks> Toggles </remarks
+    declare -g _IS_CONNECTED_TO_INTERNET=false
+
+    # <remarks> Usage toggles </remarks
+    declare -g _EXECUTE_ALL_EXTRA_SETUPS=true
+    declare -g _EXECUTE_ALL_ESSENTIAL_SETUPS=true
+    declare -g _HAS_EXECUTED_BACKUPS=false
+    declare -g _EXECUTE_ISOLCPU_SETUP=false
+    declare -g _EXECUTE_AUDIO_LOOPBACK_SETUP=false
+    declare -g _EXECUTE_AUTO_XORG_SETUP=false
+    declare -g _EXECUTE_EVDEV_SETUP=false
+    declare -g _EXECUTE_HUGEPAGES_SETUP=false
+    declare -g _EXECUTE_LIBVIRT_HOOKS=false
+    declare -g _EXECUTE_LOOKING_GLASS=false
+    declare -g _EXECUTE_MULTIBOOT_SETUP=false
+    declare -g _PARSE_IOMMU_FROM_FILE=false
+    declare -g _PARSE_IOMMU_FROM_CACHE=false
+    declare -g _PARSE_IOMMU_FROM_INTERNET=false
+    declare -g _EXECUTE_SCREAM=false
+    declare -g _SELECT_ALL_IOMMU=false
+    declare -g _EXECUTE_STATIC_SETUP=false
+    declare -g _UNINSTALL_EXTRAS=false
+    declare -g _UNINSTALL_ESSENTIALS=false
+    declare -g _EXECUTE_UNINSTALL_SETUP=false
+    declare -g _EXECUTE_ZRAM_SWAP=false
+    declare -g _ZRAM_SWAP_OVERRIDE=false
+    declare -g _ZRAM_SWAP_SET_FRACTION=false
+    ExecuteBackups && _HAS_EXECUTED_BACKUPS=true
+# </params>

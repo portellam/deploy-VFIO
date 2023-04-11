@@ -2,7 +2,6 @@
 
 #
 # Filename:         vfiolib-checks
-# Description:
 # Author(s):        Alex Portell <github.com/portellam>
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
@@ -12,10 +11,6 @@
     source vfiolib-common
     source vfiolib-globals
 # </code>
-
-# <params>
-    declare -g _IS_SYSTEM_SUPPORTED=false
-# </params>
 
 # <summary> Functions </summary>
 # <code>
@@ -37,7 +32,7 @@
 
     function IsLibvirtInstalled
     {
-        if ! [[ $( systemctl list-unit-files "libvirtd" | wc -l ) -gt 3 ]]; then
+        if [[ $( systemctl list-units --full -all | grep -Fq libvirtd.service ) ]]; then
             echo -e "$_PREFIX_ERROR Daemon/service 'libvirtd' is not installed."
             return 1
         fi
@@ -45,7 +40,7 @@
 
     function IsQEMUInstalled
     {
-        if ! apt list "qemu" --installed; then
+        if ! sudo apt list "qemu" --installed &> /dev/null; then
             echo -e "$_PREFIX_ERROR Library 'QEMU' is not installed."
             return 1
         fi
@@ -53,7 +48,7 @@
 
     function IsSystemdInstalled
     {
-        if ! command -v systemd; then
+        if ! command -v systemd &> /dev/null; then
             echo -e "$_PREFIX_ERROR 'systemd' is not installed."
             return 1
         fi
@@ -69,8 +64,9 @@
     }
 # </code>
 
-# <summary> Main </summary>
-# <code>
+# <params>
+    declare -g _IS_SYSTEM_SUPPORTED=false
+
     if IsSystemdInstalled \
         && IsVirtualizationEnabled \
         && IsIOMMUEnabled \
@@ -80,4 +76,4 @@
         && IsLibvirtInstalled; then
         _IS_SYSTEM_SUPPORTED=true
     fi
-# </code>
+# </params>

@@ -11,16 +11,8 @@
 # <code>
     source vfiolib-calcs
     source vfiolib-common
-    source vfiolib-iommu
+    source vfiolib-parse
 # </code>
-
-# <params>
-    declare -g _GIT_PATH="$USER/source/"
-
-    # <remarks> Flags </remarks>
-    declare -g _IS_AUDIO_CAPTURE_SETUP=false
-    declare -g _IS_SCREAM_SETUP=false
-# </params>
 
 # <code>
     # <summary>
@@ -49,6 +41,8 @@
                 echo -e "$_PREFIX_ERROR Failed to find script '$_SCRIPT_NAME'."
                 return 1
             fi
+
+            pwd
 
             if ! sudo bash "$_SCRIPT_NAME"; then
                 echo -e "$_PREFIX_ERROR Failed to execute script '$_SCRIPT_NAME'."
@@ -94,7 +88,7 @@
                 return 1
             fi
 
-            if ! sudo systemctl daemon-reload &> /dev/null then
+            if ! sudo systemctl daemon-reload &> /dev/null; then
                 echo -e "$_PREFIX_ERROR Failed to update systemd."
                 return 1
             fi
@@ -127,7 +121,7 @@
 
     function ExecuteExtras
     {
-        if "$_EXECUTE_ALL_EXTRAS_SETUPS"; then
+        if "$_EXECUTE_ALL_EXTRA_SETUPS"; then
             AllocateRAMToSwap
             SetVideoOutput
             LibvirtHooks
@@ -221,7 +215,7 @@
                 esac
             fi
 
-            IsInstalledPackage "$_DEPENDENCIES" || InstallPackage "$_DEPENDENCIES"
+            IsInstalledPackage "$_DEPENDENCIES" &> /dev/null || InstallPackage "$_DEPENDENCIES" &> /dev/null
             return "$?"
         }
 
@@ -243,12 +237,12 @@
                 return 1
             fi
 
-            if ! sudo cp "$_AUDIO_LOOPBACK_FILENAME" "$_AUDIO_LOOPBACK_FILE_PATH"; then
+            if ! sudo cp "$_AUDIO_LOOPBACK_SRC_PATH" "$_AUDIO_LOOPBACK_DEST_PATH"; then
                 echo -e "$_PREFIX_ERROR Failed to copy file."
                 return 1
             fi
 
-            if ! sudo systemctl daemon-reload &> /dev/null then
+            if ! sudo systemctl daemon-reload &> /dev/null; then
                 echo -e "$_PREFIX_ERROR Failed to update systemd with new daemon/service."
                 return 1
             fi
@@ -323,7 +317,7 @@
             esac
 
             # <remarks> Set dependencies for available audio backend. </remarks>
-            if command -v "pulseaudio"; then
+            if command -v "pulseaudio" &> /dev/null; then
                 case "$_PACKAGE_MANAGER" in
                     "apt" )
                         _DEPENDENCIES+="libpulse-dev " ;;
@@ -335,7 +329,7 @@
                         return 1 ;;
                 esac
 
-            elif command -v "pipewire-alsa"; then
+            elif command -v "pipewire-alsa" &> /dev/null; then
                 case "$_PACKAGE_MANAGER" in
                     "apt" )
                         _DEPENDENCIES+="ibasound2-dev " ;;
@@ -354,7 +348,7 @@
             # <remarks> Get dependencies. </remarks>
             if ! IsInstalledPackage "$_DEPENDENCIES" &> /dev/null; then
                 echo
-                InstallPackage "$_DEPENDENCIES" || return 1
+                InstallPackage "$_DEPENDENCIES" &> /dev/null || return 1
                 echo
             fi
 
@@ -367,12 +361,12 @@
         function Install
         {
             if command -v "pulseaudio"; then
-                if ! sudo cp "$_SCREAM_PULSEAUDIO_FILENAME" "$_SCREAM_PULSEAUDIO_FILE_PATH"; then
+                if ! sudo cp "$_SCREAM_PULSEAUDIO_SRC_PATH" "$_SCREAM_PULSEAUDIO_DEST_PATH"; then
                     echo -e "$_PREFIX_ERROR Failed to copy file."
                     return 1
                 fi
 
-                if ! sudo systemctl daemon-reload &> /dev/null then
+                if ! sudo systemctl daemon-reload &> /dev/null; then
                     echo -e "$_PREFIX_ERROR Failed to update systemd with new daemon/service."
                     return 1
                 fi
@@ -391,12 +385,12 @@
             fi
 
             if command -v "pipewire"; then
-                if ! sudo cp "$_SCREAM_PIPEWIRE_FILENAME" "$_SCREAM_PIPEWIRE_FILE_PATH"; then
+                if ! sudo cp "$_SCREAM_PIPEWIRE_SRC_PATH" "$_SCREAM_PIPEWIRE_DEST_PATH"; then
                     echo -e "$_PREFIX_ERROR Failed to copy file."
                     return 1
                 fi
 
-                if ! sudo systemctl daemon-reload &> /dev/null then
+                if ! sudo systemctl daemon-reload &> /dev/null; then
                     echo -e "$_PREFIX_ERROR Failed to update systemd with new daemon/service."
                     return 1
                 fi
@@ -468,7 +462,7 @@
 
             if ! IsInstalledPackage "$_DEPENDENCIES" &> /dev/null; then
                 echo
-                InstallPackage "$_DEPENDENCIES" || return 1
+                InstallPackage "$_DEPENDENCIES" &> /dev/null || return 1
                 echo
             fi
 
@@ -537,12 +531,12 @@
     {
         function Main
         {
-            if ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_FILENAME" "$_LIBVIRT_HOOK_NOSLEEP_FILE_PATH"; then
+            if ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_SRC_PATH" "$_LIBVIRT_HOOK_NOSLEEP_DEST_PATH"; then
                 echo -e "$_PREFIX_ERROR Failed to copy file."
                 return 1
             fi
 
-            if ! sudo systemctl daemon-reload &> /dev/null then
+            if ! sudo systemctl daemon-reload &> /dev/null; then
                 echo -e "$_PREFIX_ERROR Failed to update systemd with new daemon/service."
                 return 1
             fi
@@ -597,8 +591,17 @@
         local -r _REPO_NAME="auto-Xorg"
         local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
         Get
-        Install
+        Install &> /dev/null
         PrintPassOrFail "Allocating RAM to swap..."
         return "$_LAST_EXIT_CODE"
     }
 # </code>
+
+# <params>
+    declare -g _GIT_PATH="$HOME/source/"
+    sudo mkdir -p "$_GIT_PATH" &> /dev/null
+
+    # <remarks> Flags </remarks>
+    declare -g _IS_AUDIO_CAPTURE_SETUP=false
+    declare -g _IS_SCREAM_SETUP=false
+# </params>

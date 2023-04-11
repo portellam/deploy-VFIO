@@ -17,17 +17,15 @@
 # <code>
     source vfiolib-files
     source vfiolib-extras
-    source vfiolib-iommu
+    source vfiolib-parse
 # </code>
 
-# <params>
-    declare -gr _LINE_GRUB_CMDLINE="quiet iommu=1,pt amd_iommu=on intel_iommu=on video=efifb:off,vesafb:off acpi=force apm=power_off rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1"
-# </params>
+
 
 # <code>
     function ExcludeGivenVGAIOMMUGroup
     {
-        if ! [[ $1 =~ '^[0-9]+$' ]]; then
+        if ! [[ $1 =~ ^[0-9]+$ ]]; then
             return 1
         fi
 
@@ -386,14 +384,14 @@
         _LINE_GRUB_CMDLINE_TEMP="${_LINE_GRUB_CMDLINE_TEMP::-1}"
         local -r _LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"$_LINE_GRUB_CMDLINE_TEMP\""
 
-        if ! sed -i "/$_LINE_TO_MATCH\"*\"/c\$_LINE_GRUB_CMDLINE_DEFAULT\"" "$_GRUB_FILE_PATH" \
-            || ! sed -i "/## REPLACE_THIS_LINE*/c\${_INITRAMFS_LIST[*]}" "$_INITRAMFS_MODULES_FILE_PATH" \
-            || ! sed -i "/options vfio_pci ids=*/c\options vfio_pci_ids=\"$_HWID_DELIM\"" "$_INITRAMFS_MODULES_FILE_PATH" \
-            || ! sed -i "/vfio_pci ids=*/c\vfio_pci_ids=\"$_HWID_DELIM\"" "$_INITRAMFS_MODULES_FILE_PATH" \
-            || ! echo "${_BLACKLISTS_LIST[*]}" >> "$_MODPROBE_BLACKLISTS_FILE_PATH" \
-            || ! sed -i "/## REPLACE_THIS_LINE*/c\${_MODULES_LIST[*]}" "$_MODPROBE_VFIO_FILE_PATH" \
-            || ! sed -i "/options vfio_pci ids=*/c\vfio_pci_ids=$_HWID_DELIM" "$_MODPROBE_VFIO_FILE_PATH" \
-            || ! sed -i "/vfio_pci ids=*/c\vfio_pci_ids=$_HWID_DELIM" "$_MODULES_FILE_PATH"; then
+        if ! sed -i "/$_LINE_TO_MATCH\"*\"/c\$_LINE_GRUB_CMDLINE_DEFAULT\"" "$_GRUB_DEST_PATH" \
+            || ! sed -i "/## REPLACE_THIS_LINE*/c\${_INITRAMFS_LIST[*]}" "$_INITRAMFS_MODULES_DEST_PATH" \
+            || ! sed -i "/options vfio_pci ids=*/c\options vfio_pci_ids=\"$_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" \
+            || ! sed -i "/vfio_pci ids=*/c\vfio_pci_ids=\"$_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" \
+            || ! echo "${_BLACKLISTS_LIST[*]}" >> "$_MODPROBE_BLACKLISTS_DEST_PATH" \
+            || ! sed -i "/## REPLACE_THIS_LINE*/c\${_MODULES_LIST[*]}" "$_MODPROBE_VFIO_DEST_PATH" \
+            || ! sed -i "/options vfio_pci ids=*/c\vfio_pci_ids=$_HWID_DELIM" "$_MODPROBE_VFIO_DEST_PATH" \
+            || ! sed -i "/vfio_pci ids=*/c\vfio_pci_ids=$_HWID_DELIM" "$_MODULES_DEST_PATH"; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi
@@ -413,7 +411,7 @@
         _LINE_GRUB_CMDLINE_TEMP="${_LINE_GRUB_CMDLINE_TEMP::-1}"
         local -r _LINE_GRUB_CMDLINE_DEFAULT="$_LINE_TO_MATCH\"$_LINE_GRUB_CMDLINE_TEMP\""
 
-        if ! sed -i "/$_LINE_TO_MATCH\"*\"/c\$_LINE_GRUB_CMDLINE_DEFAULT\"" "$_GRUB_FILE_PATH"; then
+        if ! sed -i "/$_LINE_TO_MATCH\"*\"/c\$_LINE_GRUB_CMDLINE_DEFAULT\"" "$_GRUB_DEST_PATH"; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi
@@ -426,7 +424,7 @@
         "$_HAS_EXECUTED_BACKUPS" || return 1
         IFS=$'\n'
 
-        if ! [ echo -e "${_FILE_CONTENTS_LIST[*]}" "$_CUSTOM_GRUB_FILE_PATH" ]; then
+        if ! [ echo -e "${_FILE_CONTENTS_LIST[*]}" "$_CUSTOM_GRUB_DEST_PATH" ]; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi
@@ -434,3 +432,7 @@
         return 0
     }
 # </code>
+
+# <params>
+    declare -g _LINE_GRUB_CMDLINE="quiet iommu=1,pt amd_iommu=on intel_iommu=on video=efifb:off,vesafb:off acpi=force apm=power_off rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1"
+# </params>
