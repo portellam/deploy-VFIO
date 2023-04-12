@@ -249,6 +249,37 @@
         unset IFS
         return 1
     }
+
+    function DoesVGAListNotContainAllVGAGroups
+    {
+        local -a _MATCH_LIST=( )
+
+        for _KEY in ${!_VGA_VFIOPCI_IOMMU_LIST[@]}; do
+            _MATCH_LIST+=( false )
+        done
+
+        for _IOMMU in ${_IOMMU_LIST[@]}; do
+            for _KEY in ${!_VGA_VFIOPCI_IOMMU_LIST[@]}; do
+                local _VGA_IOMMU="${_VGA_VFIOPCI_IOMMU_LIST[$_KEY]}"
+
+                if [[ "$_VGA_IOMMU" == "$_IOMMU" ]] \
+                    || [[ "$_VGA_IOMMU" == "" ]]; then
+                    _MATCH_LIST[$_KEY]=true
+                fi
+            done
+        done
+
+        for _ELEMENT in ${_MATCH_LIST[@]}; do
+            if ! "$_ELEMENT"; then
+                return 0
+            fi
+        done
+
+        echo -e "$_PREFIX_ERROR No VGA devices left for host."
+        return 1
+    }
+
+
 # </code>
 
 # <params>

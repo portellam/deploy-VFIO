@@ -107,6 +107,11 @@
     {
         local -r _PRINT_FAIL="$_PREFIX_ERROR Static setup has failed."
 
+        if ! DoesVGAListNotContainAllVGAGroups; then
+            echo -e "$_PRINT_FAIL"
+            return 1
+        fi
+
         if "$_ASK_TO_SELECT_TYPE_OF_STATIC_SETUP"; then
             AskToSpecifyStaticSetup || return 1
         fi
@@ -171,51 +176,56 @@
 
     function ExecuteSetup
     {
-        if ! "$_EXECUTE_MULTIBOOT_SETUP" \
-            && ! "$_EXECUTE_STATIC_SETUP" \
-            && ! "$_EXECUTE_UNINSTALL_SETUP"; then
-            for _TRIES_COUNT in $( seq 0 2 ); do
-                read -r -p "Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall]: " _ANSWER
+        function Main
+        {
+            if ! "$_EXECUTE_MULTIBOOT_SETUP" \
+                && ! "$_EXECUTE_STATIC_SETUP" \
+                && ! "$_EXECUTE_UNINSTALL_SETUP"; then
+                for _TRIES_COUNT in $( seq 0 2 ); do
+                    read -r -p "Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall]: " _ANSWER
 
-                case "$_ANSWER" in
-                    [Mm]* )
-                        _EXECUTE_MULTIBOOT_SETUP=true
-                        break;;
+                    case "$_ANSWER" in
+                        [Mm]* )
+                            _EXECUTE_MULTIBOOT_SETUP=true
+                            break;;
 
-                    [Ss]* )
-                        _EXECUTE_STATIC_SETUP=true
-                        break;;
+                        [Ss]* )
+                            _EXECUTE_STATIC_SETUP=true
+                            break;;
 
-                    [Uu]* )
-                        _EXECUTE_UNINSTALL_SETUP=true
-                        break;;
+                        [Uu]* )
+                            _EXECUTE_UNINSTALL_SETUP=true
+                            break;;
 
-                    * )
-                        echo "Please answer M, S, or U.";;
-                esac
-            done
+                        * )
+                            echo "Please answer M, S, or U.";;
+                    esac
+                done
 
-            if ! [[ "$_ANSWER" =~ [MmSsUu] ]]; then
-                echo -e "$_PREFIX_ERROR Failed to answer."
-                return 1
+                if ! [[ "$_ANSWER" =~ [MmSsUu] ]]; then
+                    echo -e "$_PREFIX_ERROR Failed to answer."
+                    return 1
+                fi
             fi
-        fi
 
-        case true in
-            "$_EXECUTE_MULTIBOOT_SETUP" )
-                ExecuteMultibootSetup || return 1
-                ;;
+            case true in
+                "$_EXECUTE_MULTIBOOT_SETUP" )
+                    ExecuteMultibootSetup || return 1
+                    ;;
 
-            "$_EXECUTE_STATIC_SETUP" )
-                ExecuteStaticSetup || return 1
-                ;;
+                "$_EXECUTE_STATIC_SETUP" )
+                    ExecuteStaticSetup || return 1
+                    ;;
 
-            "$_EXECUTE_UNINSTALL_SETUP" )
-                ExecuteUninstallSetup || return 1
-                ;;
-        esac
+                "$_EXECUTE_UNINSTALL_SETUP" )
+                    ExecuteUninstallSetup || return 1
+                    ;;
+            esac
+        }
 
-        return 0
+        Main
+        PrintPassOrFail "Deploying VFIO setup...\t"
+        return "$_LAST_EXIT_CODE"
     }
 
     function SetParamsForGRUBStaticSetup
