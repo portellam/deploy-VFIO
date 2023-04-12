@@ -43,3 +43,29 @@ TODO:
 * Reduce dependency on bashlib functions
     -may need to keep functions that check distro and package manager.
     - Replace unused function calls with bash equivalents.
+
+
+23/04/12
+
+* ERROR
+    Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall]: s
+    Write output to system configuration files (and not GRUB)? [Y/n]: y
+    Generating grub configuration file ...
+    Found background image: /usr/share/images/desktop-base/desktop-grub.png
+    Found linux image: /boot/vmlinuz-5.10.0-21-amd64
+    Found initrd image: /boot/initrd.img-5.10.0-21-amd64
+    Found linux image: /boot/vmlinuz-5.10.0-16-amd64
+    Found initrd image: /boot/initrd.img-5.10.0-16-amd64
+    Found memtest86+ image: /boot/memtest86+.bin
+    Found memtest86+ multiboot image: /boot/memtest86+_multiboot.bin
+    Warning: os-prober will be executed to detect other bootable partitions.
+    Its output will be used to detect bootable binaries on them and create new boot entries.
+    rmdir: failed to remove '/var/lib/os-prober/mount': Device or resource busy
+    rmdir: failed to remove '/var/lib/os-prober/mount': Device or resource busy
+    rmdir: failed to remove '/var/lib/os-prober/mount': Device or resource busy
+    rmdir: failed to remove '/var/lib/os-prober/mount': Device or resource busy
+    rmdir: failed to remove '/var/lib/os-prober/mount': Device or resource busy
+    Adding boot menu entry for UEFI Firmware Settings ...
+    /etc/grub.d/LS_.custom.swp: 2: /etc/grub.d/proxifiedScripts/.custom.swp: not found
+    An error occurred: Failed to update system configuration.
+    An error occurred: Static setup has failed.
