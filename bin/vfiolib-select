@@ -101,8 +101,11 @@
         return 0
     }
 
+    # TODO: needs work.
     function DoesVGAListNotContainAllVGAGroups
     {
+        return 0
+
         local -a _MATCH_LIST=( )
 
         for _KEY in ${!_VGA_VFIOPCI_IOMMU_LIST[@]}; do
@@ -113,14 +116,14 @@
             for _KEY in ${!_VGA_VFIOPCI_IOMMU_LIST[@]}; do
                 local _VGA_IOMMU="${_VGA_VFIOPCI_IOMMU_LIST[$_KEY]}"
 
-                if [[ "$_VGA_IOMMU" == "$_IOMMU" ]] \
-                    || [[ "$_VGA_IOMMU" == "" ]]; then
+                if [[ "$_VGA_IOMMU" == "$_IOMMU" ]]; then
                     _MATCH_LIST[$_KEY]=true
                 fi
             done
         done
 
         for _ELEMENT in ${_MATCH_LIST[@]}; do
+            echo $_ELEMENT
             if ! "$_ELEMENT"; then
                 return 0
             fi
