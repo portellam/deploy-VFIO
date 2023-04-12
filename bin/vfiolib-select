@@ -216,6 +216,7 @@
         fi
 
         PrintPassOrFail "Reviewing IOMMU groups..."
+        DebugPrintLists
         return "$_LAST_EXIT_CODE"
     }
 
@@ -226,6 +227,27 @@
         _VGA_VFIOPCI_IOMMU_LIST+=( "" )
         echo -e "Skipped IOMMU group '$_THIS_IOMMU'."
         return 0
+    }
+
+    function DebugPrintLists
+    {
+        if [[ "${#_DRIVER_LIST_VFIOPCI[@]}" -eq 0 ]] \
+            || [[ "${#_DRIVER_LIST_VFIOPCI_WITH_VGA[@]}" -eq 0 ]] \
+            || [[ "${#_HWID_LIST_PCISTUB[@]}" -eq 0 ]] \
+            || [[ "${#_HWID_LIST_VFIOPCI[@]}" -eq 0 ]] \
+            || [[ "${#_HWID_LIST_VFIOPCI_WITH_VGA[@]}" -eq 0 ]]; then
+            echo -e "$_PREFIX_ERROR Some or all driver and/or HWID lists are empty."
+            return 1
+        fi
+
+        IFS=$'\n'
+        echo ${_DRIVER_LIST_VFIOPCI[*]}
+        echo ${_DRIVER_LIST_VFIOPCI_WITH_VGA[*]}
+        echo ${_HWID_LIST_PCISTUB[*]}
+        echo ${_HWID_LIST_VFIOPCI[*]}
+        echo ${_HWID_LIST_VFIOPCI_WITH_VGA[*]}
+        unset IFS
+        return 1
     }
 # </code>
 

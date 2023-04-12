@@ -17,10 +17,11 @@
 # <code>
     function GetOption
     {
-        while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
+        # NOTE: not all options are being hit.
+
+        while [[ "$1" =~ ^- && "$1" != "--" ]]; do case "$1" in
             "--help" )
-                return 1
-                ;;
+                return 1 ;;
 
             # <remarks> Pre-setup: Parse IOMMU </remarks>
             "-f" | "--file" )
@@ -35,35 +36,30 @@
                 fi
 
                 _FILENAME_PARSE_IOMMU=$3
-                _PARSE_IOMMU_FROM_FILE=true
-                ;;
+                _PARSE_IOMMU_FROM_FILE=true ;;
 
             "-i" | "--internal" )
                 if [[ "$2" != "" ]]; then
                     GetArgsForExecuteSelection "$2" || return 1
                 fi
 
-                _PARSE_IOMMU_FROM_CACHE=true
-                ;;
+                _PARSE_IOMMU_FROM_CACHE=true ;;
 
             "-o" | "--online" )
                 if [[ "$2" != "" ]]; then
                     GetArgsForExecuteSelection "$2" || return 1
                 fi
 
-                _PARSE_IOMMU_FROM_INTERNET=true
-                ;;
+                _PARSE_IOMMU_FROM_INTERNET=true ;;
 
             # <remarks> Pre-setup: Essentials </remarks>
             "-c" | "--cpu" )
                 _EXECUTE_ALL_ESSENTIAL_SETUPS=false
-                _EXECUTE_ISOLCPU_SETUP=true
-                ;;
+                _EXECUTE_ISOLCPU_SETUP=true ;;
 
             "-e" | "--evdev" )
                 _EXECUTE_ALL_ESSENTIAL_SETUPS=false
-                _EXECUTE_EVDEV_SETUP=true
-                ;;
+                _EXECUTE_EVDEV_SETUP=true ;;
 
             "-h" | "--hugepages" )
                 _EXECUTE_ALL_ESSENTIAL_SETUPS=false
@@ -77,17 +73,14 @@
                 fi
 
                 IsHostMemorySufficientForHugepages || return 1
-                _EXECUTE_HUGEPAGES_SETUP=true
-                ;;
+                _EXECUTE_HUGEPAGES_SETUP=true ;;
 
             "--uninstall-essentials" )
-                _UNINSTALL_ESSENTIALS=true
-                ;;
+                _UNINSTALL_ESSENTIALS=true ;;
 
             # <remarks> Main setup </remarks>
             "-m" | "--multiboot" )
-                _EXECUTE_MULTIBOOT_SETUP=true
-                ;;
+                _EXECUTE_MULTIBOOT_SETUP=true ;;
 
             "-s" | "--static" )
                 if [[ "$2" != "" ]]; then
@@ -95,38 +88,31 @@
                 fi
 
                 _EXECUTE_STATIC_SETUP=true
-                _ASK_TO_SELECT_TYPE_OF_STATIC_SETUP=false
-                ;;
+                _ASK_TO_SELECT_TYPE_OF_STATIC_SETUP=false ;;
 
             "-u" | "--uninstall" )
-                _EXECUTE_UNINSTALL_SETUP=true
-                ;;
+                _EXECUTE_UNINSTALL_SETUP=true ;;
 
             # <remarks> Post-setup: Extras </remarks>
             "-H" | "--hooks" )
                 _EXECUTE_ALL_EXTRA_SETUPS=false
-                _EXECUTE_LIBVIRT_HOOKS=true
-                ;;
+                _EXECUTE_LIBVIRT_HOOKS=true ;;
 
             "-l" | "--looking-glass" )
                 _EXECUTE_ALL_EXTRA_SETUPS=false
-                _EXECUTE_LOOKING_GLASS=true
-                ;;
+                _EXECUTE_LOOKING_GLASS=true ;;
 
             "-L" | "--audio-loopback" )
                 _EXECUTE_ALL_EXTRA_SETUPS=false
-                _EXECUTE_AUDIO_LOOPBACK_SETUP=true
-                ;;
+                _EXECUTE_AUDIO_LOOPBACK_SETUP=true ;;
 
             "-S" | "--scream" )
                 _EXECUTE_ALL_EXTRA_SETUPS=false
-                _EXECUTE_SCREAM=true
-                ;;
+                _EXECUTE_SCREAM=true ;;
 
             "-x" | "--auto-xorg" )
                 _EXECUTE_ALL_EXTRA_SETUPS=false
-                _EXECUTE_AUTO_XORG_SETUP=true
-                ;;
+                _EXECUTE_AUTO_XORG_SETUP=true ;;
 
             "-z" | "--zram-swap" )
                 _EXECUTE_ALL_EXTRA_SETUPS=false
@@ -140,12 +126,10 @@
                 fi
 
                 IsHostMemorySufficientForZramSwap || return 1
-                _EXECUTE_ZRAM_SWAP=true
-                ;;
+                _EXECUTE_ZRAM_SWAP=true ;;
 
             "--uninstall-extras" )
-                _UNINSTALL_EXTRAS=true
-                ;;
+                _UNINSTALL_EXTRAS=true ;;
 
             # <remarks> Else </remarks>
             "" )
@@ -153,8 +137,7 @@
 
             * )
                 echo -e "$_OUTPUT_INVALID_OPTION"
-                return 1
-                ;;
+                return 1 ;;
         esac; shift; done
 
         if [[ "$1" == '--' ]]; then
@@ -169,13 +152,11 @@
         case "$1" in
             "grub" )
                 _EXECUTE_STATIC_SETUP_grub=true
-                return 0
-                ;;
+                return 0 ;;
 
             "file" )
                 _EXECUTE_STATIC_SETUP_file=true
-                return 0
-                ;;
+                return 0 ;;
         esac
 
         return 1
@@ -185,12 +166,10 @@
     {
         case "$1" in
             "all" )
-                _SELECT_ALL_IOMMU=true
-                ;;
+                _SELECT_ALL_IOMMU=true ;;
 
             * )
-                return 1
-                ;;
+                return 1 ;;
         esac
 
         return 0
@@ -200,12 +179,10 @@
     {
         case "$1" in
             "force" )
-                _ZRAM_SWAP_OVERRIDE=true
-                ;;
+                _ZRAM_SWAP_OVERRIDE=true ;;
 
             * )
-                return 1
-                ;;
+                return 1 ;;
         esac
 
         return 0
@@ -281,11 +258,11 @@
 
     function SetOptions
     {
-        for VAR_OPTION in "$@"; do
-            [ "$VAR_OPTION" == "" ] && return 0
-            GetOption "$VAR_OPTION" || return 1
-        done
+        if [[ "$@" == "" ]]; then
+            return 0
+        fi
 
+        GetOption "$@" || return 1
         return 0
     }
 # </code>

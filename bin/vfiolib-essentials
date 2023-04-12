@@ -209,7 +209,7 @@
             declare -gu _HUGEPAGES_BYTE_SUFFIX=""
 
             for _TRIES_COUNT in $( seq 0 2 ); do
-                read -r -p "Enter size of Hugepages [2M/1g]: " _HUGEPAGES_BYTE_SUFFIX
+                read -r -p "Enter size of Hugepages [2M/1G]: " _HUGEPAGES_BYTE_SUFFIX
                 GetHugepageByteSize "$_HUGEPAGES_BYTE_SUFFIX" && return 0
             done
 
@@ -265,15 +265,21 @@
                 return 1
             fi
 
-            if ! "$_IS_HUGEPAGES_COUNT_SET" \
-                && ! "$_IS_HUGEPAGES_SIZE_SET" ; then
+            if ! "$_EXECUTE_HUGEPAGES_SETUP"; then
                 echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\nGuest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
                 AskToContinue || return 0
             fi
 
-            AskForHugepageByteSize || return 1
+            if ! "$_IS_HUGEPAGES_SIZE_SET"; then
+                AskForHugepageByteSize || return 1
+            fi
+
             GetHugepageMinAndMaxSizes || return 1
-            AskForHugepageCount || return 1
+
+            if ! "$_IS_HUGEPAGES_COUNT_SET"; then
+                AskForHugepageCount || return 1
+            fi
+
             GetMemoryAllocatedToHugepages || return 1
             IsHostMemorySufficientForHugepages || return 1
             declare -g _OUTPUT_GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=$_HUGEPAGES_BYTE_SUFFIX hugepagesz=$_HUGEPAGES_BYTE_SUFFIX hugepages=$_HUGEPAGES_COUNT"

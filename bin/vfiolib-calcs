@@ -31,6 +31,7 @@
 
         case "$_ANSWER" in
             "1G" | "2M" )
+                _HUGEPAGES_BYTE_SUFFIX="$_ANSWER"
                 _IS_HUGEPAGES_SIZE_SET=true
                 return 0 ;;
 

@@ -13,6 +13,7 @@
     source vfiolib-extras
     source vfiolib-parse
     source vfiolib-select
+    source vfiolib-usage
 # </code>
 
 # <code>
@@ -271,7 +272,7 @@
     {
         GetParamsForSetup || return 1
         IFS=$'\n'
-        local -a _FILE_CONTENTS_LIST=()
+        local -a _FILE_CONTENTS_LIST=( )
         local -a _STATIC_DRIVER_LIST=( "${_DRIVER_LIST_VFIOPCI[@]}" "${_DRIVER_LIST_VFIOPCI_WITH_VGA[@]}" )
         local -a _STATIC_HWID_LIST=( "${_HWID_LIST_PCISTUB[@]}" "${_HWID_LIST_VFIOPCI[@]}" "${_HWID_LIST_VFIOPCI_WITH_VGA[@]}" )
         _STATIC_DRIVER_LIST=( $( sort --uniq <<<"${_STATIC_DRIVER_LIST[*]}" ) )
@@ -326,33 +327,13 @@
 
         # <remarks> System configuration </remarks>
         local -i _MAX_NUM_PARSE_KERNELS=3
-        declare -a _KERNELS_LIST=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | sort -r | head -n $_MAX_NUM_PARSE_KERNELS ) )
+        declare -a _KERNELS_LIST=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | cut -c 2- | sort -r | head -n $_MAX_NUM_PARSE_KERNELS ) )
         local _SYSTEM_DISK=$( df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1 )
         local _SYSTEM_DISTRO=$( lsb_release -i -s )
         local _SYSTEM_FSTYPE=$( blkid -s TYPE | grep $_SYSTEM_DISK | cut -d '"' -f2 )
         local _SYSTEM_KERNEL=$( uname -o )
         local _SYSTEM_OS=$( uname )
         local _SYSTEM_UUID=$( blkid -s UUID | grep $_SYSTEM_DISK | cut -d '"' -f2 )
-
-        local -a _MULTIBOOT_DRIVER_LIST=( "${_DRIVER_LIST_VFIOPCI[@]}" )
-        local -a _MULTIBOOT_HWID_LIST=( "${_HWID_LIST_PCISTUB[@]}" "${_HWID_LIST_VFIOPCI[@]}" )
-        local _NO_VGA_DRIVER_DELIM=""
-        local _NO_VGA_HWID_DELIM=""
-
-        for _DRIVER in ${_MULTIBOOT_DRIVER_LIST[@]}; do
-            if [[ "$_DRIVER" != "" ]]; then
-                _NO_VGA_DRIVER_DELIM+="$_DRIVER,"
-            fi
-        done
-
-        for _HWID in ${_MULTIBOOT_HWID_LIST[@]}; do
-            if [[ "$_HWID" != "" ]]; then
-                _NO_VGA_HWID_DELIM+="$_HWID,"
-            fi
-        done
-
-        _NO_VGA_DRIVER_DELIM="${_NO_VGA_DRIVER_DELIM::-1}"
-        _NO_VGA_HWID_DELIM="${_NO_VGA_HWID_DELIM::-1}"
         local _LINE_GRUB_CMDLINE_PREFIX=""
         _LINE_GRUB_CMDLINE_PREFIX+="$_LINE_GRUB_CMDLINE "
         _LINE_GRUB_CMDLINE_PREFIX+="$_LINE_GRUB_CMDLINE_ISOLCPU "
@@ -360,35 +341,88 @@
 
         # <remarks> Parse VGA VFIO IOMMU Groups. </remarks>
         for _IOMMU in ${_VGA_VFIOPCI_IOMMU_LIST[@]}; do
-            local _VGA_DRIVER_DELIM=""
-            local _VGA_HWID_DELIM=""
+            local -a _NO_VGA_DRIVER_LIST=( )
+            local -a _NO_VGA_HWID_LIST=( )
+            local _NO_VGA_DRIVER_DELIM=""
+            local _NO_VGA_HWID_DELIM=""
+            local _DEVICE_NAME=""
+            local _MENU_ENTRY_TEMP=""
+
+            for _KEY in ${!_IOMMU_LIST[@]}; do
+                local _THIS_IOMMU="${_IOMMU_LIST[$_KEY]}"
+                local _DRIVER="${_DRIVER_LIST_VFIOPCI[$_KEY]}"
+                local _PCISTUB_HWID="${_HWID_LIST_PCISTUB[$_KEY]}"
+                local _VFIOPCI_HWID="${_HWID_LIST_VFIOPCI[$_KEY]}"
+                local _VFIOPCI_WITH_VGA_HWID="${_HWID_LIST_VFIOPCI_WITH_VGA[$_KEY]}"
+
+                if [[ "$_THIS_IOMMU" == "$_IOMMU" ]]; then
+                    local -l _CLASS="${_CLASS_LIST[$_KEY]}"
+
+                    case "$_CLASS" in
+                        *"vga"* | *"graphics"* )
+                            _DEVICE_NAME="${_DEVICE_NAME_LIST[$_KEY]}"
+                            _MENU_ENTRY_TEMP=", w/ boot VGA \"$_DEVICE_NAME\"" ;;
+                    esac
+                else
+                    if [[ "$_DRIVER" != "" ]] \
+                        && [[ "$_DRIVER" != "N/A" ]]; then
+                        _NO_VGA_DRIVER_LIST+=( "$_DRIVER" )
+                    fi
+
+                    if [[ "$_PCISTUB_HWID" != "" ]]; then
+                        _NO_VGA_HWID_LIST+=( "$_PCISTUB_HWID" )
+                    fi
+
+                    if [[ "$_VFIOPCI_HWID" != "" ]]; then
+                        _NO_VGA_HWID_LIST+=( "$_VFIOPCI_HWID" )
+                    fi
+
+                    if [[ "$_VFIOPCI_WITH_VGA_HWID" != "" ]]; then
+                        _NO_VGA_HWID_LIST+=( "$_VFIOPCI_WITH_VGA_HWID" )
+                    fi
+                fi
+            done
+
+            _NO_VGA_DRIVER_LIST=( $( sort --uniq <<<"${_NO_VGA_DRIVER_LIST[*]}" ) )
+            _NO_VGA_HWID_LIST=( $( sort --uniq <<<"${_NO_VGA_HWID_LIST[*]}" ) )
+
+            for _DRIVER in ${_NO_VGA_DRIVER_LIST[@]}; do
+                _NO_VGA_DRIVER_DELIM+="$_DRIVER,"
+            done
+
+            for _HWID in ${_NO_VGA_HWID_LIST[@]}; do
+                _NO_VGA_HWID_DELIM+="$_HWID,"
+            done
+
+            _NO_VGA_DRIVER_DELIM="${_NO_VGA_DRIVER_DELIM::-1}"
+            _NO_VGA_HWID_DELIM="${_NO_VGA_HWID_DELIM::-1}"
+            echo "_NO_VGA_DRIVER_DELIM == '$_NO_VGA_DRIVER_DELIM'"
+            echo "_NO_VGA_HWID_DELIM == '$_NO_VGA_HWID_DELIM'"
 
             if ExcludeGivenVGAIOMMUGroup "$_IOMMU"; then
                 for _KERNEL in ${_KERNELS_LIST[@]}; do
                     local _LINE_GRUB_CMDLINE_TEMP=""
-                    local _LINE_VFIOPCI_DRIVER="$_NO_VGA_DRIVER_DELIM"
-                    _LINE_VFIOPCI_DRIVER=",$_VGA_DRIVER_DELIM"
-                    _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=$_LINE_VFIOPCI_DRIVER "
-                    local _LINE_VFIOPCI_HWID="$_NO_VGA_HWID_DELIM"
-                    _LINE_VFIOPCI_HWID=",$_VGA_HWID_DELIM"
-                    _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=$_LINE_VFIOPCI_HWID "
+                    _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=$_NO_VGA_DRIVER_DELIM "
+                    _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=$_NO_VGA_HWID_DELIM "
                     _LINE_GRUB_CMDLINE_TEMP="$_LINE_GRUB_CMDLINE_PREFIX${_LINE_GRUB_CMDLINE_TEMP::-1}"
 
                     # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
                     _FILE_CONTENTS_LIST+=(
-                        "menuentry $_SYSTEM_DISTRO, with $_SYSTEM_KERNEL $_KERNEL (VFIO, w/o IOMMU $_IOMMU, w/ boot VGA \"$_DEVICE_NAME\") {"       # TODO: add device name here!
+                        "menuentry $_SYSTEM_DISTRO, with $_SYSTEM_OS $_KERNEL (VFIO, w/o IOMMU $_IOMMU$_MENU_ENTRY_TEMP) {"
                         "\tinsmod $_SYSTEM_FSTYPE"
                         "\tset root='/dev/disk/by-uuid/$_SYSTEM_UUID'"
                         "\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$_SYSTEM_UUID\n\t"'fi'
                         "\techo    'Loading $_SYSTEM_OS $_KERNEL ...'"
                         "\tlinux   /boot/vmlinuz-$_KERNEL root=UUID=$_SYSTEM_UUID $_LINE_GRUB_CMDLINE_TEMP"
                         "\tinitrd  /boot/initrd.img-$_KERNEL"
+                        "}"
+                        ""
                     )
                 done
             fi
         done
 
-        if ! [[ "${#_FILE_CONTENTS_LIST[@]}" -eq 0 ]]; then
+        if [[ "${#_FILE_CONTENTS_LIST[@]}" -eq 0 ]]; then
             echo -e "$_PREFIX_ERROR Multiboot setup output is empty."
             return 1
         fi
@@ -468,7 +502,7 @@
         "$_HAS_EXECUTED_BACKUPS" || return 1
         IFS=$'\n'
 
-        if ! [ echo -e "${_FILE_CONTENTS_LIST[*]}" "$_CUSTOM_GRUB_DEST_PATH" ]; then
+        if ! echo -e "\n${_FILE_CONTENTS_LIST[*]}" >> "$_CUSTOM_GRUB_DEST_PATH"; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi
