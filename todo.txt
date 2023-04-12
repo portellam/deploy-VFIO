@@ -24,3 +24,33 @@ TODO:
     /etc/grub.d/LS_.custom.swp: 2: /etc/grub.d/proxifiedScripts/.custom.swp: not found
     An error occurred: Failed to update system configuration.
     An error occurred: Static setup has failed.
+
+* ERROR
+    Reviewing IOMMU groups...       [Success]
+
+    nvidia xhci_hcd radeon xhci_hcd N/A N/A
+    nvidia xhci_hcd radeon
+    1912:0014
+    1912:0014 1102:000b 15b7:501a
+    10de:2484 10de:228b 1912:0015 1002:6719 1002:aa80
+
+    Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall]: m
+    _NO_VGA_DRIVER_DELIM == 'nvidia,radeon,xhci_hcd'
+    _NO_VGA_HWID_DELIM == '1912:0014,1912:0014,10de:2484,1002:6719,1002:aa80'
+    _NO_VGA_DRIVER_DELIM == 'nvidia,xhci_hcd,radeon,xhci_hcd'
+    _NO_VGA_HWID_DELIM == '1912:0014,1912:0014,10de:2484,1102:000b,10de:228b,15b7:501a,1912:0015,1002:6719,1002:aa80'
+
+
+Reviewing IOMMU groups...       [Success]
+
+nvidia xhci_hcd radeon xhci_hcd
+nvidia xhci_hcd radeon
+1912:0014
+1912:0014 1102:000b 15b7:501a
+10de:2484 10de:228b 1912:0015 1002:6719 1002:aa80
+
+Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall]: m
+_NO_VGA_DRIVER_DELIM == 'nvidia,nvidia,radeon,radeon,xhci_hcd'
+_NO_VGA_HWID_DELIM == '1912:0014,1912:0014,10de:2484,1002:6719,1002:aa80'
+_NO_VGA_DRIVER_DELIM == 'nvidia,nvidia,xhci_hcd,xhci_hcd,radeon,radeon,xhci_hcd'
+_NO_VGA_HWID_DELIM == '1912:0014,1912:0014,10de:2484,1102:000b,10de:228b,15b7:501a,1912:0015,1002:6719,1002:aa80'

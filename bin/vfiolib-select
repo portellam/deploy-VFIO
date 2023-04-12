@@ -80,6 +80,56 @@
         return 1
     }
 
+    function DeleteDuplicateEntriesFromLists
+    {
+        local -a _MATCH_LIST=( )
+
+        for _KEY in ${_IOMMU_LIST[@]}; do
+            local _PCISTUB_IOMMU="${_PCISTUB_IOMMU_LIST[$_KEY]}"
+            local _VFIOPCI_IOMMU="${_VFIOPCI_IOMMU_LIST[$_KEY]}"
+            local _VGA_VFIOPCI_IOMMU="${_VGA_VFIOPCI_IOMMU_LIST[$_KEY]}"
+
+            if [[ "$_PCISTUB_IOMMU" == "$_VGA_VFIOPCI_IOMMU" ]]; then
+                _PCISTUB_IOMMU_LIST[$_KEY]=""
+            fi
+
+            if [[ "$_VFIOPCI_IOMMU" == "$_VGA_VFIOPCI_IOMMU" ]]; then
+                _VFIOPCI_IOMMU_LIST[$_KEY]=""
+            fi
+        done
+
+        return 0
+    }
+
+    function DoesVGAListNotContainAllVGAGroups
+    {
+        local -a _MATCH_LIST=( )
+
+        for _KEY in ${!_VGA_VFIOPCI_IOMMU_LIST[@]}; do
+            _MATCH_LIST+=( false )
+        done
+
+        for _IOMMU in ${_IOMMU_LIST[@]}; do
+            for _KEY in ${!_VGA_VFIOPCI_IOMMU_LIST[@]}; do
+                local _VGA_IOMMU="${_VGA_VFIOPCI_IOMMU_LIST[$_KEY]}"
+
+                if [[ "$_VGA_IOMMU" == "$_IOMMU" ]] \
+                    || [[ "$_VGA_IOMMU" == "" ]]; then
+                    _MATCH_LIST[$_KEY]=true
+                fi
+            done
+        done
+
+        for _ELEMENT in ${_MATCH_LIST[@]}; do
+            if ! "$_ELEMENT"; then
+                return 0
+            fi
+        done
+
+        echo -e "$_PREFIX_ERROR No VGA devices left for host."
+        return 1
+    }
+
     function GetDriverAndHWIDLists
     {
         for _KEY in ${!_IOMMU_LIST[@]}; do
@@ -147,6 +197,39 @@
         return 0
     }
 
+    function ExecuteSelection
+    {
+        local _LAST_IOMMU_VALUE=$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )
+        declare -a _THIS_IOMMU_LIST=( $( seq 0 "$_LAST_IOMMU_VALUE" ) )
+
+        for _THIS_IOMMU in ${_THIS_IOMMU_LIST[@]}; do
+            local _IOMMU_HAS_EXTERNAL_DOMAIN=false
+            # local bool_IOMMU_VFIOPCI=false
+            local _IOMMU_HAS_USB=false
+            local _IOMMU_HAS_VGA=false
+
+            for _KEY in ${!_IOMMU_LIST[@]}; do
+                local -i _IOMMU="${_IOMMU_LIST[$_KEY]}"
+                MatchGroupAndClass
+            done
+
+            AddPromptOrSkipThisGroup
+        done
+
+        DeleteDuplicateEntriesFromLists
+
+        # <remarks> Check if list is empty </remarks>
+        if [[ "${#_VFIOPCI_IOMMU_LIST[@]}" -eq 0 ]] \
+            || ! GetDriverAndHWIDLists; then
+            echo -e "$_PREFIX_ERROR Selection list is empty."
+            false
+        fi
+
+        PrintPassOrFail "Reviewing IOMMU groups..."
+        DebugPrintLists
+        return "$_LAST_EXIT_CODE"
+    }
+
     function MatchGroupAndClass
     {
         local _CLASS="${_CLASS_LIST[$_KEY]}"
@@ -189,37 +272,6 @@
         return 0
     }
 
-    function ExecuteSelection
-    {
-        local _LAST_IOMMU_VALUE=$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )
-        declare -a _THIS_IOMMU_LIST=( $( seq 0 "$_LAST_IOMMU_VALUE" ) )
-
-        for _THIS_IOMMU in ${_THIS_IOMMU_LIST[@]}; do
-            local _IOMMU_HAS_EXTERNAL_DOMAIN=false
-            # local bool_IOMMU_VFIOPCI=false
-            local _IOMMU_HAS_USB=false
-            local _IOMMU_HAS_VGA=false
-
-            for _KEY in ${!_IOMMU_LIST[@]}; do
-                local -i _IOMMU="${_IOMMU_LIST[$_KEY]}"
-                MatchGroupAndClass
-            done
-
-            AddPromptOrSkipThisGroup
-        done
-
-        # <remarks> Check if list is empty </remarks>
-        if [[ "${#_VFIOPCI_IOMMU_LIST[@]}" -eq 0 ]] \
-            || ! GetDriverAndHWIDLists; then
-            echo -e "$_PREFIX_ERROR Selection list is empty."
-            false
-        fi
-
-        PrintPassOrFail "Reviewing IOMMU groups..."
-        DebugPrintLists
-        return "$_LAST_EXIT_CODE"
-    }
-
     function SkipThisGroup
     {
         _VFIOPCI_IOMMU_LIST+=( "" )
@@ -251,36 +303,6 @@
         return 1
     }
 
-    function DoesVGAListNotContainAllVGAGroups
-    {
-        local -a _MATCH_LIST=( )
-
-        for _KEY in ${!_VGA_VFIOPCI_IOMMU_LIST[@]}; do
-            _MATCH_LIST+=( false )
-        done
-
-        for _IOMMU in ${_IOMMU_LIST[@]}; do
-            for _KEY in ${!_VGA_VFIOPCI_IOMMU_LIST[@]}; do
-                local _VGA_IOMMU="${_VGA_VFIOPCI_IOMMU_LIST[$_KEY]}"
-
-                if [[ "$_VGA_IOMMU" == "$_IOMMU" ]] \
-                    || [[ "$_VGA_IOMMU" == "" ]]; then
-                    _MATCH_LIST[$_KEY]=true
-                fi
-            done
-        done
-
-        for _ELEMENT in ${_MATCH_LIST[@]}; do
-            if ! "$_ELEMENT"; then
-                return 0
-            fi
-        done
-
-        echo -e "$_PREFIX_ERROR No VGA devices left for host."
-        return 1
-    }
-
-
 # </code>
 
 # <params>
@@ -288,6 +310,7 @@
 
     # <remarks> Known kernel drivers to ignore; drivers that cause issues when binded to vfio-pci/pci-stub. </remarks>
     declare -ag _DRIVER_LIST_TO_IGNORE=(
+        "N/A"
         "snd_hda_intel"
     )
 # </params>

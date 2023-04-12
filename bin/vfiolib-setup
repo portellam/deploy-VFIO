@@ -361,6 +361,7 @@
                 local _DRIVER="${_DRIVER_LIST_VFIOPCI[$_KEY]}"
                 local _PCISTUB_HWID="${_HWID_LIST_PCISTUB[$_KEY]}"
                 local _VFIOPCI_HWID="${_HWID_LIST_VFIOPCI[$_KEY]}"
+                local _VGA_DRIVER="${_DRIVER_LIST_VFIOPCI_WITH_VGA[$_KEY]}"
                 local _VFIOPCI_WITH_VGA_HWID="${_HWID_LIST_VFIOPCI_WITH_VGA[$_KEY]}"
 
                 if [[ "$_THIS_IOMMU" == "$_IOMMU" ]]; then
@@ -372,8 +373,15 @@
                             _MENU_ENTRY_TEMP=", w/ boot VGA \"$_DEVICE_NAME\"" ;;
                     esac
                 else
+                    # NOTE: it doesn't look like we're doing wrong here, but I believe I need to re do this sort.
+
                     if [[ "$_DRIVER" != "" ]] \
                         && [[ "$_DRIVER" != "N/A" ]]; then
+                        _NO_VGA_DRIVER_LIST+=( "$_DRIVER" )
+                    fi
+
+                    if [[ "$_VGA_DRIVER" != "" ]] \
+                        && [[ "$_VGA_DRIVER" != "N/A" ]]; then
                         _NO_VGA_DRIVER_LIST+=( "$_DRIVER" )
                     fi
 
