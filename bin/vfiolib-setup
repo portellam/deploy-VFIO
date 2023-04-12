@@ -107,8 +107,6 @@
     {
         local -r _PRINT_FAIL="$_PREFIX_ERROR Static setup has failed."
 
-        # RemoveProblemFilesForStaticSetup || return 1
-
         if "$_ASK_TO_SELECT_TYPE_OF_STATIC_SETUP"; then
             AskToSpecifyStaticSetup || return 1
         fi
@@ -216,17 +214,6 @@
                 ExecuteUninstallSetup || return 1
                 ;;
         esac
-
-        return 0
-    }
-
-    function RemoveProblemFilesForStaticSetup
-    {
-        if [[ -d $( dirname "$_CUSTOM_GRUB_DEST_PATH" ) ]] \
-            && ! sudo rm -rf $( dirname "$_CUSTOM_GRUB_DEST_PATH" ); then
-            echo -e "$_PREFIX_ERROR Failed to delete directory '"$( dirname "$_CUSTOM_GRUB_DEST_PATH" )"'."
-            return 1
-        fi
 
         return 0
     }
@@ -454,19 +441,9 @@
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE "
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE_ISOLCPU "
         _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
-
-        if [[ "$_DRIVER_DELIM" != "" ]]; then
-            _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=$_DRIVER_DELIM "
-        fi
-
-        if [[ "$_STATIC_PCISTUB_HWID_DELIM" != "" ]]; then
-            _LINE_GRUB_CMDLINE_TEMP+="pci-stub.ids=$_STATIC_PCISTUB_HWID_DELIM "
-        fi
-
-        if [[ "$_HWID_DELIM" != "" ]]; then
-            _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=$_HWID_DELIM "
-        fi
-
+        _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist= "
+        _LINE_GRUB_CMDLINE_TEMP+="pci-stub.ids= "
+        _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids= "
         _LINE_GRUB_CMDLINE_TEMP="${_LINE_GRUB_CMDLINE_TEMP::-1}"
         local -r _LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"$_LINE_GRUB_CMDLINE_TEMP\""
 
@@ -514,8 +491,8 @@
         if ! sed -i '/'$_LINE_TO_MATCH'/c\'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_DEST_PATH_1" \
             || ! sed -i "/options vfio_pci ids=*/c\options vfio_pci_ids=\"$_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" \
             || ! sed -i "/vfio_pci ids=*/c\vfio_pci_ids=\"$_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" \
-            || ! echo "${_BLACKLISTS_LIST[*]}" >> "$_MODPROBE_BLACKLISTS_DEST_PATH" \
-            || ! sed -i "/options vfio_pci ids=*/c\vfio_pci_ids=\"$_HWID_DELIM\"" "$_MODPROBE_VFIO_DEST_PATH" \
+            || ! echo -e "\n${_BLACKLISTS_LIST[*]}" >> "$_MODPROBE_BLACKLISTS_DEST_PATH" \
+            || ! sed -i "/options vfio_pci ids=*/c\options vfio_pci ids=\"$_HWID_DELIM\"" "$_MODPROBE_VFIO_DEST_PATH" \
             || ! sed -i "/vfio_pci ids=*/c\vfio_pci_ids=\"$_HWID_DELIM\"" "$_MODULES_DEST_PATH"; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1

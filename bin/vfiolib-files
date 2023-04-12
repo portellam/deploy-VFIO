@@ -32,6 +32,7 @@
 
         if ! sudo chown root:root "$_APPARMOR_QEMU_DEST_PATH" &> /dev/null \
             || ! sudo chown root:root "$_CUSTOM_GRUB_DEST_PATH" &> /dev/null \
+            || ! sudo chmod +x "$_CUSTOM_GRUB_DEST_PATH" &> /dev/null \
             || ! sudo chown root:root "$_INITRAMFS_MODULES_DEST_PATH" &> /dev/null \
             || ! sudo chown root:root "$_MODPROBE_BLACKLISTS_DEST_PATH" &> /dev/null \
             || ! sudo chown root:root "$_MODPROBE_VFIO_DEST_PATH" &> /dev/null \
