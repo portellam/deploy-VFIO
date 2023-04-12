@@ -187,18 +187,18 @@
                     case "$_ANSWER" in
                         [Mm]* )
                             _EXECUTE_MULTIBOOT_SETUP=true
-                            break;;
+                            break ;;
 
                         [Ss]* )
                             _EXECUTE_STATIC_SETUP=true
-                            break;;
+                            break ;;
 
                         [Uu]* )
                             _EXECUTE_UNINSTALL_SETUP=true
-                            break;;
+                            break ;;
 
                         * )
-                            echo "Please answer M, S, or U.";;
+                            echo "Please answer M, S, or U." ;;
                     esac
                 done
 
@@ -210,16 +210,13 @@
 
             case true in
                 "$_EXECUTE_MULTIBOOT_SETUP" )
-                    ExecuteMultibootSetup || return 1
-                    ;;
+                    ExecuteMultibootSetup || return 1 ;;
 
                 "$_EXECUTE_STATIC_SETUP" )
-                    ExecuteStaticSetup || return 1
-                    ;;
+                    ExecuteStaticSetup || return 1 ;;
 
                 "$_EXECUTE_UNINSTALL_SETUP" )
-                    ExecuteUninstallSetup || return 1
-                    ;;
+                    ExecuteUninstallSetup || return 1 ;;
             esac
         }
 

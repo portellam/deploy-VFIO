@@ -184,8 +184,7 @@
                     return 1
                 fi
 
-                return 0
-                ;;
+                return 0 ;;
 
             # <remarks> If internet is not available, exit. </remarks>
             "$_OPTION_PARSE_IOMMU_ONLINE" )
@@ -195,12 +194,10 @@
                 local _PARSE_SLOT_ID+=" $_PARSE_ARGS_ONLINE"
                 local _PARSE_QUOTES+=" $_PARSE_ARGS_ONLINE"
 
-                return 0
-                ;;
+                return 0 ;;
 
             "$_OUTPUT_PARSE_SYSTEM" | * )
-                _OUTPUT="$_OUTPUT_PARSE_SYSTEM"
-                ;;
+                _OUTPUT="$_OUTPUT_PARSE_SYSTEM" ;;
         esac
 
         return 0

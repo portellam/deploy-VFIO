@@ -241,6 +241,7 @@
         fi
 
         IFS=$'\n'
+        echo
         echo ${_DRIVER_LIST_VFIOPCI[*]}
         echo ${_DRIVER_LIST_VFIOPCI_WITH_VGA[*]}
         echo ${_HWID_LIST_PCISTUB[*]}

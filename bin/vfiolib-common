@@ -23,37 +23,29 @@
 
         case "$_PACKAGE_MANAGER" in
             "apt" )
-                apt list "$1"
-                ;;
+                apt list "$1" ;;
 
             "dnf" )
-                dnf search "$1"
-                ;;
+                dnf search "$1" ;;
 
             "pacman" )
-                pacman -Ss "$1"
-                ;;
+                pacman -Ss "$1" ;;
 
             "gentoo" )
-                emerge --search "$1"
-                ;;
+                emerge --search "$1" ;;
 
             "urpmi" )
-                urpmq "$1"
-                ;;
+                urpmq "$1" ;;
 
             "yum" )
-                yum search "$1"
-                ;;
+                yum search "$1" ;;
 
             "zypper" )
-                zypper se "$1"
-                ;;
+                zypper se "$1" ;;
 
             * )
                 echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
-                return 1
-                ;;
+                return 1 ;;
         esac
 
         SaveExitCode
@@ -61,12 +53,10 @@
         if [[ "$_LAST_EXIT_CODE" -ne 0 ]]; then
             case "$_PACKAGE_MANAGER" in
                 *" "* )
-                    echo -e "$_PREFIX_ERROR Packages '$_PACKAGE_MANAGER' were not found."
-                    ;;
+                    echo -e "$_PREFIX_ERROR Packages '$_PACKAGE_MANAGER' were not found." ;;
 
                 * )
-                    echo -e "$_PREFIX_ERROR Package '$_PACKAGE_MANAGER' was not found."
-                    ;;
+                    echo -e "$_PREFIX_ERROR Package '$_PACKAGE_MANAGER' was not found." ;;
             esac
 
             return 1
@@ -212,37 +202,29 @@
                     _OPTION="--reinstall -o Dpkg::Options::=--force-confmiss"
                 fi
 
-                apt update && apt full-upgrade -y && apt install -y "$_OPTION" "$1" || return 1
-                ;;
+                apt update && apt full-upgrade -y && apt install -y "$_OPTION" "$1" || return 1 ;;
 
             "dnf" )
-                dnf upgrade && dnf install "$1"
-                ;;
+                dnf upgrade && dnf install "$1" ;;
 
             "pacman" )
-                pacman -Syu && pacman -S "$1"
-                ;;
+                pacman -Syu && pacman -S "$1" ;;
 
             "gentoo" )
-                emerge -u @world && emerge "$1"
-                ;;
+                emerge -u @world && emerge "$1" ;;
 
             "urpmi" )
-                urpmi --auto-update && urpmi "$1"
-                ;;
+                urpmi --auto-update && urpmi "$1" ;;
 
             "yum" )
-                yum update && yum install "$1"
-                ;;
+                yum update && yum install "$1" ;;
 
             "zypper" )
-                zypper refresh && zypper in "$1"
-                ;;
+                zypper refresh && zypper in "$1" ;;
 
             * )
                 echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
-                false
-                ;;
+                false ;;
         esac
 
         PrintPassOrFail "Installing software packages..."
@@ -262,13 +244,11 @@
         # <remarks> Check if package is not installed </remarks>
         case "$_PACKAGE_MANAGER" in
             "apt" )
-                _GET_COMMAND="sudo dpkg -s $1"
-                ;;
+                _GET_COMMAND="sudo dpkg -s $1" ;;
 
             * )
                 echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
-                return 1
-                ;;
+                return 1 ;;
         esac
 
         local -i _COUNT_DELIM=$( echo "$1" | wc -w )
@@ -325,37 +305,29 @@
         # <remarks> Uninstall selected packages </remarks>
         case "$_PACKAGE_MANAGER" in
             "apt" )
-                apt uninstall "$1"
-                ;;
+                apt uninstall "$1" ;;
 
             "dnf" )
-                dnf remove "$1"
-                ;;
+                dnf remove "$1" ;;
 
             "pacman" )
-                pacman -R "$1"
-                ;;
+                pacman -R "$1" ;;
 
             "gentoo" )
-                emerge -Cv "$1"
-                ;;
+                emerge -Cv "$1" ;;
 
             "urpmi" )
-                urpme "$1"
-                ;;
+                urpme "$1" ;;
 
             "yum" )
-                yum remove "$1"
-                ;;
+                yum remove "$1" ;;
 
             "zypper" )
-                zypper remove "$1"
-                ;;
+                zypper remove "$1" ;;
 
             * )
                 echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
-                false
-                ;;
+                false ;;
         esac
 
         PrintPassOrFail "Uninstalling software packages..."
