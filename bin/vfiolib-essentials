@@ -302,6 +302,7 @@
             AllocateRAMToGuest || return 1
             echo
             VirtualKVM || return 1
+            echo
             ModifyQEMU || return 1
             return 0
         fi
@@ -320,6 +321,7 @@
             VirtualKVM || return 1
         fi
 
+        echo
         ModifyQEMU || return 1
         return 0
     }
