@@ -17,7 +17,7 @@
     declare -g _DO_PARSE_ONLINE_DATABASE=false
     declare -g _DOMAIN_ID_REGEX='^[0-9A-F][1-9A-F]$'
     declare -g _GET_IOMMU_GROUP_DEVICES='ls /sys/kernel/iommu_groups/$_IOMMU_GROUP_ID/devices'
-    declare -gA _CLASS_BY_VALID_IOMMU_GROUP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_LIST _HWID_BY_VALID_IOMMU_GROUP_LIST _NAME_BY_VALID_IOMMU_GROUP_LIST 
+    declare -gA _PCI_ID_BY_VALID_IOMMU_GROUP_LIST _CLASS_BY_VALID_IOMMU_GROUP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_LIST _HWID_BY_VALID_IOMMU_GROUP_LIST _NAME_BY_VALID_IOMMU_GROUP_LIST
     declare -gA _IOMMU_GROUP_DEVICE_LIST
     declare -ga _IOMMU_GROUP_ID_LIST=$( ls -1v /sys/kernel/iommu_groups/ | sort -h )
     declare -ga _IOMMU_GROUP_ID_LIST_FOR_VFIO _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_HOST _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO
@@ -34,7 +34,8 @@
             return 1
         fi
 
-        if [[ "${#_CLASS_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
+        if [[ "${#_PCI_ID_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_CLASS_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
             || [[ "${#_DRIVER_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
             || [[ "${#_HWID_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
             || [[ "${#_NAME_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]]; then
@@ -256,7 +257,7 @@
             _DEVICE_HWID=""
             _DEVICE_NAME=""
             _DEVICE_VENDOR=""
-            
+
             if echo $_DEVICE_DOMAIN_ID | grep -E -q "$_DOMAIN_ID_REGEX"; then
                 _IOMMU_GROUP_IS_VALID=true
                 _DEVICE_CLASS="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 2 )"
@@ -299,19 +300,20 @@
             return 1
         fi
 
-        local -a _CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST _HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST _NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST
+        local -a _CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST _HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST _NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST _PCI_ID_BY_VALID_IOMMU_GROUP_TEMP_LIST
         local -i _IOMMU_GROUP_ID="$1"
         local _IOMMU_GROUP_IS_VALID=false
 
         for _DEVICE_FULL_ID in ${_IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]}; do
             local -u _DEVICE_DOMAIN_ID=${_DEVICE_FULL_ID:5:2}
             local -u _DEVICE_PCI_ID=${_DEVICE_FULL_ID:5}
+            _PCI_ID_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_PCI_ID" )
             _DEVICE_CLASS=""
             _DEVICE_DRIVER=""
             _DEVICE_HWID=""
             _DEVICE_NAME=""
             _DEVICE_VENDOR=""
-            
+
             if echo $_DEVICE_DOMAIN_ID | grep -E -q "$_DOMAIN_ID_REGEX"; then
                 _IOMMU_GROUP_IS_VALID=true
                 _DEVICE_CLASS="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 2 )"
@@ -325,7 +327,7 @@
                 echo -e "\tDevice name:\t'$_DEVICE_NAME'"
                 echo -e "\tClass/Type:\t'$_DEVICE_CLASS'"
                 echo -e "\tHardware ID:\t'$_DEVICE_HWID'"
-                
+
                 if [[ ! -z "$_DEVICE_DRIVER" ]]; then
                     echo -e "\tKernel driver:\t'$_DEVICE_DRIVER'"
                 else
@@ -360,6 +362,7 @@
             return 1
         fi
 
+        _PCI_ID_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_PCI_ID_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
         _CLASS_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
         _DRIVER_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
         _HWID_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
