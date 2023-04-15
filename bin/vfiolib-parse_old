@@ -1,0 +1,234 @@
+#!/bin/bash sh
+
+#
+# Filename:         vfiolib-parse
+# Description:      Reference a database and parse IOMMU groups.
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <remarks> Using </remarks>
+# <code>
+    source vfiolib-common
+# </code>
+
+# <code>
+    function AreParseListsNotEmpty
+    {
+        # <remarks> If any list is empty, fail. </remarks>
+        if [[ "${#_CLASS_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_DEVICE_NAME_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_DRIVER_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_HWID_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_IOMMU_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_VENDOR_NAME_LIST[@]}" -eq 0 ]]; then
+            echo -e "$_PREFIX_ERROR One or more lists are empty."
+            return 1
+        fi
+
+        return 0
+    }
+
+    function AreParseListsNotInequalSizes
+    {
+        # <remarks> If any list is inequal, fail. </remarks>
+        if [[ "${#_IOMMU_LIST[@]}" -ne "${#_CLASS_LIST[@]}" ]] \
+            || [[ "${#_IOMMU_LIST[@]}" -ne "${#_DEVICE_NAME_LIST[@]}" ]] \
+            || [[ "${#_IOMMU_LIST[@]}" -ne "${#_DRIVER_LIST[@]}" ]] \
+            || [[ "${#_IOMMU_LIST[@]}" -ne "${#_HWID_LIST[@]}" ]] \
+            || [[ "${#_IOMMU_LIST[@]}" -ne "${#_VENDOR_NAME_LIST[@]}" ]]; then
+            echo -e "$_PREFIX_ERROR One or more lists' sizes are inequal."
+            return 1
+        fi
+
+        return 0
+    }
+
+    function IsDriverValid
+    {
+        case "$_DRIVER" in
+            # <remarks> Match invalid input, and save as known null value. </remarks>
+            "" )
+                _DRIVER="N/A" ;;
+
+            # <remarks> If system is setup for VFIO, exit. </remarks>
+            "vfio-pci" )
+                echo -e "$_PREFIX_ERROR Found existing VFIO setup."
+                return 1 ;;
+        esac
+
+        return 0
+    }
+
+    function ExecuteParse
+    {
+        function Main
+        {
+            # <remarks> Save input params </remarks>
+            _OPTION="$1"
+
+            # <remarks> Output statements </remarks>
+            local _OUTPUT_PARSE_FILE="Parsing from file database..."
+            local _OUTPUT_PARSE_ONLINE="Parsing from online database..."
+            local _OUTPUT_PARSE_SYSTEM="Parsing from cached database..."
+
+            # <remarks> Declare lists </remarks>
+            declare -ag _CLASS_LIST _DEVICE_NAME_LIST _DRIVER_LIST _HWID_LIST _IOMMU_LIST _SLOT_ID_LIST _VENDOR_NAME_LIST
+
+            # <remarks> Set commands </remarks>
+            local _PARSE='lspci -k -mm'
+            local _PARSE_ARGS_FILE='-F "$_PARSE_IOMMU_DATABASE_FILENAME"'
+            local _PARSE_ARGS_ONLINE='-q'
+            local _PARSE_ARGS_NUMS='-n'
+            local _PARSE_ARGS_SLOT_ID='-s $_DEVICE'
+            local _PARSE_ARGS_VERBOSE='-v'
+            local _PARSE_TO_FILE='lspci -x >> "$_PARSE_IOMMU_DATABASE_FILENAME"'
+            local _PARSE_ALL_ID="$_PARSE $_PARSE_ARGS_NUMS $_PARSE_ARGS_VERBOSE $_PARSE_ARGS_SLOT_ID"
+            local _PARSE_HWID="$_PARSE $_PARSE_ARGS_NUMS $_PARSE_ARGS_SLOT_ID"
+            local _PARSE_NAME_ID="$_PARSE $_PARSE_ARGS_VERBOSE $_PARSE_ARGS_SLOT_ID"
+            local _PARSE_SLOT_ID="$_PARSE"
+            local _PARSE_QUOTES="$_PARSE $_PARSE_ARGS_NUMS"
+
+            # <remarks> Set commands for each parse type. </remarks>
+            SetParseOperation || return 1
+
+            # <remarks> Get all devices from system. </remarks>
+            local -a _DEVICES_LIST=( $( eval "$_PARSE_SLOT_ID" | awk '{print $1}' ) )
+            SetParseLists || return 1
+            AreParseListsNotEmpty || return 1
+            AreParseListsNotInequalSizes || return 1
+
+            # <remarks> Save output to file. </remarks>
+            if [[ "$_OPTION" == "$_OPTION_PARSE_IOMMU_FILE" ]] \
+                && ( [[ -z "$_PARSE_IOMMU_DATABASE_FILENAME" ]] \
+                || ! eval "$_PARSE_TO_FILE"); then
+                echo -e "$_PREFIX_ERROR Failed to save parse output to file."
+                return 1
+            fi
+
+            return 0
+        }
+
+        local _OUTPUT=""
+
+        # <remarks> Set parse options </remarks>
+        local _OPTION_PARSE_IOMMU_FILE="FILE"
+        local _OPTION_PARSE_IOMMU_ONLINE="ONLINE"
+        local _OPTION_PARSE_IOMMU_SYSTEM="SYSTEM"
+
+        # <remarks> Save input params </remarks>
+        local _OPTION="$1"
+        local _PARSE_IOMMU_DATABASE_FILENAME="$2"
+
+        # <remarks> If an operation fails, try another. </remarks>
+        case "$_OPTION" in
+            "$_OPTION_PARSE_IOMMU_ONLINE" )
+                Main "$_OPTION_PARSE_IOMMU_ONLINE" "$_PARSE_IOMMU_DATABASE_FILENAME"
+                # Main "$_OPTION_PARSE_IOMMU_ONLINE" "$_PARSE_IOMMU_DATABASE_FILENAME" || Main "$_OPTION_PARSE_IOMMU_FILE" "$_PARSE_IOMMU_DATABASE_FILENAME" || Main "$_OPTION_PARSE_IOMMU_SYSTEM" "$_PARSE_IOMMU_DATABASE_FILENAME"
+                ;;
+
+            "$_OPTION_PARSE_IOMMU_FILE" )
+                Main "$_OPTION_PARSE_IOMMU_FILE" "$_PARSE_IOMMU_DATABASE_FILENAME" || Main "$_OPTION_PARSE_IOMMU_ONLINE" "$_PARSE_IOMMU_DATABASE_FILENAME"
+                # Main "$_OPTION_PARSE_IOMMU_FILE" "$_PARSE_IOMMU_DATABASE_FILENAME" || Main "$_OPTION_PARSE_IOMMU_SYSTEM" "$_PARSE_IOMMU_DATABASE_FILENAME"
+                ;;
+
+            "$_OPTION_PARSE_IOMMU_SYSTEM" | * )
+                Main "$_OPTION_PARSE_IOMMU_SYSTEM" "$_PARSE_IOMMU_DATABASE_FILENAME" || Main "$_OPTION_PARSE_IOMMU_FILE" "$_PARSE_IOMMU_DATABASE_FILENAME" || Main "$_OPTION_PARSE_IOMMU_ONLINE" "$_PARSE_IOMMU_DATABASE_FILENAME"
+                # Main "$_OPTION_PARSE_IOMMU_SYSTEM" "$_PARSE_IOMMU_DATABASE_FILENAME"
+                ;;
+        esac
+
+        PrintPassOrFail "$_OUTPUT"
+        return "$_LAST_EXIT_CODE"
+    }
+
+    function SetParseLists
+    {
+        # <remarks> Save to lists each device's information. Lists should be of the same-size. </remarks>
+        for _DEVICE in ${_DEVICES_LIST[@]}; do
+            local _CLASS=$( eval "$_GET_CLASS" )
+            local _DEVICE_NAME=$( eval "$_PARSE_NAME_ID" | grep -i "Device:" | grep -Eiv "SDevice:|$_DEVICE" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
+            local _DRIVER=$( eval "$_PARSE_ALL_ID" | grep -i "Driver:" | awk '{print $2}' | uniq )
+            local _IOMMU=$( eval "$_PARSE_ALL_ID"| grep -i "IOMMUGroup:" | awk '{print $2}' | uniq )
+            local _VENDOR_NAME=$( eval "$_PARSE_NAME_ID" | grep -i "Vendor:" | grep -Eiv "SVendor:" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
+            local _HWID=$( lspci -n -s "$_DEVICE" | cut -d ' ' -f 3 )
+
+            IsDriverValid || return 1
+            _CLASS_LIST+=( $( eval "$_GET_CLASS" ) )
+            _DEVICE_NAME_LIST+=( $( eval "$_GET_DEVICE_NAME" ) )
+            _DRIVER_LIST+=( $( eval "$_GET_DRIVER" ) )
+            _HWID_LIST+=( $( eval "$_GET_HWID" ) )
+            _IOMMU_LIST+=( $( eval "$_GET_IOMMU" ) )
+            _SLOT_ID_LIST+=( "$_DEVICE" )
+            _VENDOR_NAME_LIST+=( $( eval "$_GET_VENDOR_NAME" ) )
+        done
+
+        return 0
+    }
+
+    function SetParseOperation
+    {
+        # <remarks> Set commands for each parse type. </remarks>
+        case "$_OPTION" in
+            # <remarks> If parsing file and file does not exist, recursive call to parse internet. </remarks>
+            "$_OPTION_PARSE_IOMMU_FILE" )
+                _OUTPUT="$_OUTPUT_PARSE_FILE"
+                _PARSE_ALL_ID+=" $_PARSE_ARGS_FILE"
+                _PARSE_NAME_ID+=" $_PARSE_ARGS_FILE"
+                _PARSE_SLOT_ID+=" $_PARSE_ARGS_FILE"
+                _PARSE_QUOTES+=" $_PARSE_ARGS_FILE"
+
+                if [[ -z "$_PARSE_IOMMU_DATABASE_FILENAME" ]]; then
+                    echo -e "$_PREFIX_ERROR Failed to find file database to parse."
+                    return 1
+                fi
+
+                return 0 ;;
+
+            # <remarks> If internet is not available, exit. </remarks>
+            "$_OPTION_PARSE_IOMMU_ONLINE" )
+                _OUTPUT="$_OUTPUT_PARSE_ONLINE"
+                local _PARSE_ALL_ID+=" $_PARSE_ARGS_ONLINE"
+                local _PARSE_NAME_ID+=" $_PARSE_ARGS_ONLINE"
+                local _PARSE_SLOT_ID+=" $_PARSE_ARGS_ONLINE"
+                local _PARSE_QUOTES+=" $_PARSE_ARGS_ONLINE"
+
+                return 0 ;;
+
+            "$_OUTPUT_PARSE_SYSTEM" | * )
+                _OUTPUT="$_OUTPUT_PARSE_SYSTEM" ;;
+        esac
+
+        return 0
+    }
+# </code>
+
+# <params>
+    declare -g _PARSE='lspci -k -mm'
+    declare -g _PARSE_ARGS_FILE='-F "$_PARSE_IOMMU_DATABASE_FILENAME"'
+    declare -g _PARSE_ARGS_ONLINE='-q'
+    declare -g _PARSE_ARGS_NUMS='-n'
+    declare -g _PARSE_ARGS_SLOT_ID='-s $_DEVICE'
+    declare -g _PARSE_ARGS_VERBOSE='-v'
+    declare -g _PARSE_TO_FILE='lspci -x >> "$_PARSE_IOMMU_DATABASE_FILENAME"'
+    declare -g _PARSE_ALL_ID="$_PARSE $_PARSE_ARGS_NUMS $_PARSE_ARGS_VERBOSE $_PARSE_ARGS_SLOT_ID"
+    declare -g _PARSE_HWID="$_PARSE $_PARSE_ARGS_NUMS $_PARSE_ARGS_SLOT_ID"
+    declare -g _PARSE_NAME_ID="$_PARSE $_PARSE_ARGS_VERBOSE $_PARSE_ARGS_SLOT_ID"
+    declare -g _PARSE_SLOT_ID="$_PARSE"
+    declare -g _PARSE_QUOTES="$_PARSE $_PARSE_ARGS_NUMS"
+    declare -g _GET_CLASS=$( eval "$_PARSE_NAME_ID" )
+    _GET_CLASS=$( echo -e "$_CLASS" | grep -i "Class:" | cut -d ':' -f 2 | grep -oP "^\t\K.*" )
+    declare -g _GET_DEVICE_NAME=$( eval "$_PARSE_NAME_ID" | grep -i "Device:" | grep -Eiv "SDevice:|$_DEVICE" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
+    declare -g _GET_DRIVER=$( eval "$_PARSE_ALL_ID" | grep -i "Driver:" | awk '{print $2}' | uniq )
+    declare -g _GET_HWID=$( lspci -n -s "$_DEVICE" | cut -d ' ' -f 3 )
+    declare -g _GET_IOMMU=$( eval "$_PARSE_ALL_ID"| grep -i "IOMMUGroup:" | awk '{print $2}' | uniq )
+    declare -g _GET_VENDOR_NAME=$( eval "$_PARSE_NAME_ID" | grep -i "Vendor:" | grep -Eiv "SVendor:" | cut -d ':' -f 2 | uniq | grep -oP "^\t\K.*" )
+
+
+    # declare -g _GET_CLASS='lspci -ms $_SLOT_ID | cut -d '"'\"'"' -f 2'
+    # declare -g _GET_DRIVER='lspci -ks $_SLOT_ID | grep -i "driver" | cut -d " " -f 5'
+    # declare -g _GET_HWID='lspci -ns $_SLOT_ID | cut -d " " -f 3'
+    # declare -g _GET_NAME='lspci -ms $_SLOT_ID | cut -d '"'\"'"' -f 4'
+
+
+# </params>

@@ -1,0 +1,63 @@
+#!/bin/bash sh
+
+declare -ag _SAVED_IOMMU _SAVED_HWID _SAVED_DRIVER
+declare -g _GET_DEVICES_FROM_IOMMU='find /sys/kernel/iommu_groups/* -maxdepth 0 -type d | sort -V'
+declare -g _GET_CLASS='lspci -ms $_SLOT_ID | cut -d '"'\"'"' -f 2'
+declare -g _GET_DRIVER='lspci -ks $_SLOT_ID | grep -i "driver" | cut -d " " -f 5'
+declare -g _GET_HWID='lspci -ns $_SLOT_ID | cut -d " " -f 3'
+declare -g _GET_NAME='lspci -ms $_SLOT_ID | cut -d '"'\"'"' -f 4'
+
+declare -gA IOMMU_GROUP_DICT
+shopt -s nullglob
+
+for _IOMMU_ID in $( ls -1v /sys/kernel/iommu_groups/ | sort -h ); do
+    IOMMU_GROUP_DICT[$_IOMMU_ID]=$( ls /sys/kernel/iommu_groups/$_IOMMU_ID/devices )
+done
+
+for _KEY in ${!IOMMU_GROUP_DICT[@]}; do
+    for _FULL_ID in ${IOMMU_GROUP_DICT[$_KEY]}; do
+        declare -u _DOMAIN_ID=$( echo "$_FULL_ID" | cut -d ':' -f 2 )
+        _REGEX='^[0-9A-F][1-9A-F]$'
+        _DRIVER=""
+        _HWID=""
+        
+        if echo $_DOMAIN_ID | grep -E -q "$_REGEX"; then
+            _DRIVER=$( lspci -ks $_FULL_ID | grep -i "driver" | cut -d " " -f 5 )
+            _HWID=$( lspci -ns $_FULL_ID | cut -d " " -f 3 )
+        fi
+
+        echo $_DRIVER $_HWID
+    done
+done
+
+
+
+function GetInfoFromIOMMU
+{
+    IFS=$'\n'
+    for _IOMMU_GROUP in ${_SAVED_IOMMU[@]}; do
+        ls /sys/kernel/iommu_groups/$_IOMMU_GROUP/devices/
+    done
+    unset IFS
+}
+
+
+function PrintThisIOMMUGroup
+{
+    if [[ -z "$1" ]] \
+        || ! [[ "$1" =~ ^[0-9]+$ ]]; then
+        echo -e "$_PREFIX_ERROR IOMMU group ID is not valid."
+        return 1
+    fi
+
+    for _IOMMU_INFO in $( eval "$_GET_DEVICES_FROM_IOMMU" ); do
+        local _IOMMU_ID="${_IOMMU_INFO##*/}"
+        local _SLOT_ID="${_IOMMU_INFO##*/}"
+        echo $_IOMMU_ID
+    done
+}
+
+# GetInfoFromIOMMU
+# PrintThisIOMMUGroup 1
+
+exit

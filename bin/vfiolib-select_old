@@ -45,11 +45,11 @@
         fi
 
         if "$_IOMMU_HAS_VGA"; then
-            _VFIOPCI_IOMMU_LIST+=( "" )
-            _VGA_VFIOPCI_IOMMU_LIST+=( "$_THIS_IOMMU" )
+            _GUEST_IOMMU_LIST+=( "" )
+            _VGA_GUEST_IOMMU_LIST+=( "$_THIS_IOMMU" )
         else
-            _VFIOPCI_IOMMU_LIST+=( "$_THIS_IOMMU" )
-            _VGA_VFIOPCI_IOMMU_LIST+=( "" )
+            _GUEST_IOMMU_LIST+=( "$_THIS_IOMMU" )
+            _VGA_GUEST_IOMMU_LIST+=( "" )
         fi
 
         return 0
@@ -57,12 +57,14 @@
 
     function AskToSelectThisGroup
     {
-        if [[ "$_THIS_IOMMU" == "" ]]; then
+        if [[ -z "$1" ]] \
+            || ! [[ "$1" =~ ^[0-9]+$ ]]; then
+            echo -e "$_PREFIX_ERROR IOMMU group ID is not valid."
             return 1
         fi
 
         for _TRIES_COUNT in $( seq 0 2 ); do
-            read -r -p "Select IOMMU group '$_THIS_IOMMU'? [Y/n]: " _ANSWER
+            read -r -p "Select IOMMU group '$1'? [Y/n]: " _ANSWER
 
             case "$_ANSWER" in
                 [Yy]* )
@@ -86,15 +88,15 @@
 
         for _KEY in ${_IOMMU_LIST[@]}; do
             local _PCISTUB_IOMMU="${_PCISTUB_IOMMU_LIST[$_KEY]}"
-            local _VFIOPCI_IOMMU="${_VFIOPCI_IOMMU_LIST[$_KEY]}"
-            local _VGA_VFIOPCI_IOMMU="${_VGA_VFIOPCI_IOMMU_LIST[$_KEY]}"
+            local _VFIOPCI_IOMMU="${_GUEST_IOMMU_LIST[$_KEY]}"
+            local _VGA_VFIOPCI_IOMMU="${_VGA_GUEST_IOMMU_LIST[$_KEY]}"
 
             if [[ "$_PCISTUB_IOMMU" == "$_VGA_VFIOPCI_IOMMU" ]]; then
                 _PCISTUB_IOMMU_LIST[$_KEY]=""
             fi
 
             if [[ "$_VFIOPCI_IOMMU" == "$_VGA_VFIOPCI_IOMMU" ]]; then
-                _VFIOPCI_IOMMU_LIST[$_KEY]=""
+                _GUEST_IOMMU_LIST[$_KEY]=""
             fi
         done
 
@@ -108,13 +110,13 @@
 
         local -a _MATCH_LIST=( )
 
-        for _KEY in ${!_VGA_VFIOPCI_IOMMU_LIST[@]}; do
+        for _KEY in ${!_VGA_GUEST_IOMMU_LIST[@]}; do
             _MATCH_LIST+=( false )
         done
 
         for _IOMMU in ${_IOMMU_LIST[@]}; do
-            for _KEY in ${!_VGA_VFIOPCI_IOMMU_LIST[@]}; do
-                local _VGA_IOMMU="${_VGA_VFIOPCI_IOMMU_LIST[$_KEY]}"
+            for _KEY in ${!_VGA_GUEST_IOMMU_LIST[@]}; do
+                local _VGA_IOMMU="${_VGA_GUEST_IOMMU_LIST[$_KEY]}"
 
                 if [[ "$_VGA_IOMMU" == "$_IOMMU" ]]; then
                     _MATCH_LIST[$_KEY]=true
@@ -166,7 +168,7 @@
                 fi
             done
 
-            for _IOMMU in ${_VFIOPCI_IOMMU_LIST[@]}; do
+            for _IOMMU in ${_GUEST_IOMMU_LIST[@]}; do
                 if [[ "$_IOMMU" -eq "$_THIS_IOMMU" ]]; then
                     _HWID_LIST_VFIOPCI+=( "$_HWID" )
                     _ANY_LIST_HAS_IOMMU=true
@@ -174,7 +176,7 @@
                 fi
             done
 
-            for _IOMMU in ${_VGA_VFIOPCI_IOMMU_LIST[@]}; do
+            for _IOMMU in ${_VGA_GUEST_IOMMU_LIST[@]}; do
                 if [[ "$_IOMMU" -eq "$_THIS_IOMMU" ]]; then
                     _DRIVER_LIST_VFIOPCI_WITH_VGA+=( "$_DRIVER" )
                     _HWID_LIST_VFIOPCI_WITH_VGA+=( "$_HWID" )
@@ -202,14 +204,14 @@
 
     function ExecuteSelection
     {
-        local _LAST_IOMMU_VALUE=$( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr | head -n1 ) )
-        declare -a _THIS_IOMMU_LIST=( $( seq 0 "$_LAST_IOMMU_VALUE" ) )
-
-        for _THIS_IOMMU in ${_THIS_IOMMU_LIST[@]}; do
+        for _IOMMU in $( basename $( ls -1v /sys/kernel/iommu_groups/ | sort -hr ) ); do
             local _IOMMU_HAS_EXTERNAL_DOMAIN=false
             # local bool_IOMMU_VFIOPCI=false
             local _IOMMU_HAS_USB=false
             local _IOMMU_HAS_VGA=false
+
+            for _DEVICE in $_IOMMU_GROUP/devices/*; do
+                _SLOT_ID="${_DEVICE##*/}"
 
             for _KEY in ${!_IOMMU_LIST[@]}; do
                 local -i _IOMMU="${_IOMMU_LIST[$_KEY]}"
@@ -222,7 +224,7 @@
         DeleteDuplicateEntriesFromLists
 
         # <remarks> Check if list is empty </remarks>
-        if [[ "${#_VFIOPCI_IOMMU_LIST[@]}" -eq 0 ]] \
+        if [[ "${#_GUEST_IOMMU_LIST[@]}" -eq 0 ]] \
             || ! GetDriverAndHWIDLists; then
             echo -e "$_PREFIX_ERROR Selection list is empty."
             false
@@ -277,9 +279,9 @@
 
     function SkipThisGroup
     {
-        _VFIOPCI_IOMMU_LIST+=( "" )
-        _PCISTUB_IOMMU_LIST+=( "" )
-        _VGA_VFIOPCI_IOMMU_LIST+=( "" )
+        _GUEST_IOMMU_LIST+=( "" )
+        # _PCISTUB_IOMMU_LIST+=( "" )
+        # _VGA_GUEST_IOMMU_LIST+=( "" )
         echo -e "Skipped IOMMU group '$_THIS_IOMMU'."
         return 0
     }
@@ -309,7 +311,13 @@
 # </code>
 
 # <params>
-    declare -ag _DRIVER_LIST_VFIOPCI _PCISTUB_IOMMU_LIST _VFIOPCI_IOMMU_LIST _VGA_VFIOPCI_IOMMU_LIST _HWID_LIST_PCISTUB _HWID_LIST_VFIOPCI _HWID_LIST_VFIOPCI_WITH_VGA
+    declare -g _GET_CLASS='lspci -ms $_SLOT_ID | cut -d '"'\"'"' -f 2'
+    declare -g _GET_DRIVER='lspci -ks $_SLOT_ID | grep -i "driver" | cut -d " " -f 5'
+    declare -g _GET_HWID='lspci -ns $_SLOT_ID | cut -d " " -f 3'
+    declare -g _GET_NAME='lspci -ms $_SLOT_ID | cut -d '"'\"'"' -f 6'
+    declare -g _GET_VENDOR='lspci -ms $_SLOT_ID | cut -d '"'\"'"' -f 4'
+
+    declare -ag _DRIVER_LIST_VFIOPCI _PCISTUB_IOMMU_LIST _GUEST_IOMMU_LIST _VGA_GUEST_IOMMU_LIST _HWID_LIST_PCISTUB _HWID_LIST_VFIOPCI _HWID_LIST_VFIOPCI_WITH_VGA
 
     # <remarks> Known kernel drivers to ignore; drivers that cause issues when binded to vfio-pci/pci-stub. </remarks>
     declare -ag _DRIVER_LIST_TO_IGNORE=(
