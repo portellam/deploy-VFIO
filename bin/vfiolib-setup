@@ -207,6 +207,43 @@
         return 0
     }
 
+    # function GetListsForNonVGAIOMMUGroup
+    # {
+    #     local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+
+    #     for _KEY in ${!_PCI_ID_LIST[@]}; do
+    #         local _PCI_ID_DELIM=${_PCI_ID_LIST[$_KEY]}
+    #         local -i _DELIM_COUNT=1
+    #         local _PCI_ID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_PCI_ID_DELIM" )
+
+    #         while [[ ! -z "$_PCI_ID" ]]; do
+    #             local _PCI_ID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_PCI_ID_DELIM" )
+    #             local _CLASS="$( lspci -ms $_PCI_ID | cut -d '"' -f 2 )"
+    #             local _DRIVER=$( lspci -ks $_PCI_ID | grep -i "driver" | cut -d " " -f 5 )
+    #             local _HWID=$( lspci -ns $_PCI_ID | cut -d " " -f 3 )
+
+    #             if [[ ! -z "$_HWID" ]] \
+    #                 && IsDeviceForPCISTUB "$_CLASS"; then
+    #                 _PCISTUB_HWID_DELIM+="$_HWID,"
+    #             fi
+
+    #             if [[ ! -z "$_HWID" ]] \
+    #                 && ! IsDeviceForPCISTUB "$_CLASS"; then
+    #                 _VFIOPCI_HWID_DELIM+="$_HWID,"
+    #             fi
+
+    #             if IsDriverNotOnIgnoreList "$_DRIVER"; then
+    #                 _VFIOPCI_DRIVER_DELIM+="$_DRIVER,"
+    #                 _VFIOPCI_DRIVER_LIST+=( "$_DRIVER" )
+    #             fi
+
+    #             (( _DELIM_COUNT++ ))
+    #         done
+    #     done
+
+    #     return 0
+    # }
+
     function GetListsForVGAIOMMUGroup
     {
         local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_LIST[$1]}"
@@ -226,7 +263,7 @@
                 local _DRIVER=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_DRIVER_DELIM" )
                 _HWID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_HWID_DELIM" )
                 local _NAME=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_NAME_DELIM" )
-    
+
                 if [[ ! -z "$_HWID" ]] \
                     && IsDeviceForPCISTUB "$_CLASS"; then
                     _VGA_PCISTUB_HWID_DELIM+="$_HWID,"
@@ -249,24 +286,59 @@
         return 0
     }
 
+    # function GetListsForVGAIOMMUGroup
+    # {
+    #     local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
 
-    # TODO: for here, use a list of PCI IDS, and scan the local database for the name of the device and it's class. Easy pzy.
+    #     for _KEY in ${!_PCI_ID_LIST[@]}; do
+    #         local _PCI_ID_DELIM=${_PCI_ID_LIST[$_KEY]}
+    #         local -i _DELIM_COUNT=1
+    #         local _PCI_ID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_PCI_ID_DELIM" )
+
+    #         while [[ ! -z "$_PCI_ID" ]]; do
+    #             local _PCI_ID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_PCI_ID_DELIM" )
+    #             local _CLASS="$( lspci -ms $_PCI_ID | cut -d '"' -f 2 )"
+    #             local _DRIVER=$( lspci -ks $_PCI_ID | grep -i "driver" | cut -d " " -f 5 )
+    #             local _HWID=$( lspci -ns $_PCI_ID | cut -d " " -f 3 )
+    #             local _NAME="$( lspci -ms $_PCI_ID | cut -d '"' -f 6 )"
+
+    #             if [[ ! -z "$_HWID" ]] \
+    #                 && IsDeviceForPCISTUB "$_CLASS"; then
+    #                 _VGA_PCISTUB_HWID_DELIM+="$_HWID,"
+    #             fi
+
+    #             if [[ ! -z "$_HWID" ]] \
+    #                 && ! IsDeviceForPCISTUB "$_CLASS"; then
+    #                 _VGA_VFIOPCI_HWID_DELIM+="$_HWID,"
+    #             fi
+
+    #             if [[ ! -z "$_DRIVER" ]] \
+    #                 && IsDriverNotOnIgnoreList "$_DRIVER"; then
+    #                 _VGA_VFIOPCI_DRIVER_DELIM+="$_DRIVER,"
+    #             fi
+
+    #             (( _DELIM_COUNT++ ))
+    #         done
+    #     done
+
+    #     return 0
+    # }
+
     function GetNameForVGAIOMMUGroup
     {
-        local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_LIST[$1]}"
-        local -a _NAME_LIST="${_NAME_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
 
-        for _KEY in ${!_NAME_LIST[@]}; do
-            local _CLASS_DELIM=${_CLASS_LIST[$_KEY]}
-            local _NAME_DELIM=${_NAME_LIST[$_KEY]}
+        for _KEY in ${!_PCI_ID_LIST[@]}; do
+            local _PCI_ID_DELIM=${_PCI_ID_LIST[$_KEY]}
             local -i _DELIM_COUNT=1
-            local _NAME=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_NAME_DELIM" )
-            echo "_NAME == $_NAME"
+            local _PCI_ID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_PCI_ID_DELIM" )
+            echo "_PCI_ID == $_PCI_ID"
 
-            while [[ ! -z "$_NAME" ]]; do
-                local _CLASS=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_CLASS" )
-                local _NAME=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_NAME_DELIM" )
-    
+            while [[ ! -z "$_PCI_ID" ]]; do
+                local _PCI_ID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_PCI_ID_DELIM" )
+                local _CLASS="$( lspci -ms $_PCI_ID | cut -d '"' -f 2 )"
+                local _NAME="$( lspci -ms $_PCI_ID | cut -d '"' -f 6 )"
+
                 if IsDeviceVGA "$_CLASS"; then
                     _THIS_IOMMU_GROUP_VGA_NAME="$_NAME"
                     return 0
