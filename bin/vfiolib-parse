@@ -400,4 +400,8 @@ echo
 for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
     PrintInfoForIOMMUGroupOnly "$_IOMMU_GROUP_ID"
 done
+<<<<<<< HEAD
 # </code>
+=======
+# </code>
+>>>>>>> develop-2

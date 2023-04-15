@@ -18,6 +18,13 @@
     {
         GetBackups || return 1
         SetBackups || return 1
+        
+        if ! sudo mkdir -p $( dirname "$_APPARMOR_QEMU_DEST_PATH" ) \
+            || ! sudo mkdir -p $( dirname "$_CUSTOM_GRUB_DEST_PATH" ) \
+            || ! sudo mkdir -p $( dirname "$_QEMU_DEST_PATH" ); then
+            echo -e "$_PREFIX_ERROR Failed to create directories."
+            return 1
+        fi
 
         if #! sudo cp -rv "$_APPARMOR_QEMU_SRC_PATH" "$_APPARMOR_QEMU_DEST_PATH" &> /dev/null \
             ! sudo cp -rv "$_CUSTOM_GRUB_SRC_PATH" "$_CUSTOM_GRUB_DEST_PATH" &> /dev/null \
