@@ -40,15 +40,21 @@
     function AskToSelectAllGroups
     {
         for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST[@]}; do
+            local _DO_PRINT=false
             declare -g _IOMMU_GROUP_HAS_VGA=false
-            
-            if PrintInfoForIOMMUGroupAndSaveInfoToLists "$_IOMMU_GROUP_ID" \
+            PrintInfoForIOMMUGroupAndSaveInfoToLists "$_IOMMU_GROUP_ID" && _DO_PRINT=true
+
+            if "$_DO_PRINT" \
                 && AskToSelectThisIOMMUGroup "$_IOMMU_GROUP_ID"; then
                 if "$_IOMMU_GROUP_HAS_VGA"; then
                     _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO+=( "$_IOMMU_GROUP_ID" )
                 else
                     _IOMMU_GROUP_ID_LIST_FOR_VFIO+=( "$_IOMMU_GROUP_ID" )
                 fi
+            fi
+
+            if "$_DO_PRINT"; then
+                echo
             fi
         done
 
@@ -135,6 +141,30 @@
         return 0
     }
 
+    function IsDeviceForPCISTUB
+    {
+        local -l _CLASS="$1"
+
+        case "$_CLASS" in
+            *"usb"* )
+                return 0 ;;
+        esac
+
+        return 1
+    }
+
+    function IsDriverOnIgnoreList
+    {
+        local -l _DRIVER="$1"
+
+        case "$_DRIVER" in
+            "snd_hda_intel" )
+                return 0 ;;
+        esac
+
+        return 1
+    }
+
     function ParseDatabaseFirstTimeAndSaveToFile
     {
         local _FILE="$_PARSE_IOMMU_DATABASE_FILENAME"
@@ -188,7 +218,8 @@
         _IOMMU_GROUP_HAS_VGA=false
 
         for _DEVICE_FULL_ID in ${_IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]}; do
-            local -u _DEVICE_DOMAIN_ID=$( echo "$_DEVICE_FULL_ID" | cut -d ':' -f 2 )
+            local -u _DEVICE_DOMAIN_ID=${_DEVICE_FULL_ID:5:2}
+            local -u _DEVICE_PCI_ID=${_DEVICE_FULL_ID:5}
             _DEVICE_CLASS=""
             _DEVICE_DRIVER=""
             _DEVICE_HWID=""
@@ -203,7 +234,20 @@
                 _DEVICE_NAME="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 6 )"
                 _DEVICE_VENDOR="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 4 )"
 
-                echo $_DEVICE_VENDOR $_DEVICE_NAME $_DEVICE_CLASS $_DEVICE_HWID $_DEVICE_DRIVER
+                echo -e "\tSlot ID:\t'$_DEVICE_PCI_ID'"
+                echo -e "\tVendor name:\t'$_DEVICE_VENDOR'"
+                echo -e "\tDevice name:\t'$_DEVICE_NAME'"
+                echo -e "\tClass/Type:\t'$_DEVICE_CLASS'"
+                echo -e "\tHardware ID:\t'$_DEVICE_HWID'"
+
+                if [[ ! -z "$_DEVICE_DRIVER" ]] \
+                    && ! IsDriverOnIgnoreList "$_DEVICE_DRIVER"; then
+                    echo -e "\tKernel driver:\t'$_DEVICE_DRIVER'"
+                else
+                    echo -e "\tKernel driver:\t'N/A'"
+                fi
+
+                echo
             fi
         done
 
@@ -228,7 +272,8 @@
         _IOMMU_GROUP_HAS_VGA=false
 
         for _DEVICE_FULL_ID in ${_IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]}; do
-            local -u _DEVICE_DOMAIN_ID=$( echo "$_DEVICE_FULL_ID" | cut -d ':' -f 2 )
+            local -u _DEVICE_DOMAIN_ID=${_DEVICE_FULL_ID:5:2}
+            local -u _DEVICE_PCI_ID=${_DEVICE_FULL_ID:5}
             _DEVICE_CLASS=""
             _DEVICE_DRIVER=""
             _DEVICE_HWID=""
@@ -243,10 +288,23 @@
                 _DEVICE_NAME="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 6 )"
                 _DEVICE_VENDOR="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 4 )"
 
-                echo $_DEVICE_VENDOR $_DEVICE_NAME $_DEVICE_CLASS $_DEVICE_HWID $_DEVICE_DRIVER
+                echo -e "\tSlot ID:\t'$_DEVICE_PCI_ID'"
+                echo -e "\tVendor name:\t'$_DEVICE_VENDOR'"
+                echo -e "\tDevice name:\t'$_DEVICE_NAME'"
+                echo -e "\tClass/Type:\t'$_DEVICE_CLASS'"
+                echo -e "\tHardware ID:\t'$_DEVICE_HWID'"
+                
+                if [[ ! -z "$_DEVICE_DRIVER" ]]; then
+                    echo -e "\tKernel driver:\t'$_DEVICE_DRIVER'"
+                else
+                    echo -e "\tKernel driver:\t'N/A'"
+                fi
+
+                echo
             fi
 
-            if [[ -z "$_DEVICE_DRIVER" ]]; then
+            if [[ -z "$_DEVICE_DRIVER" ]] \
+                && ! IsDriverOnIgnoreList "$_DEVICE_DRIVER"; then
                 _DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_DRIVER" )
             fi
 
@@ -271,18 +329,6 @@
         _HWID_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
         _NAME_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
         return 0
-    }
-
-    function IsDeviceForPCISTUB
-    {
-        local -l _CLASS="$1"
-
-        case "$_CLASS" in
-            *"usb"* )
-                return 0 ;;
-        esac
-
-        return 1
     }
 
     function SetOptionsForParsingDatabase
@@ -313,13 +359,15 @@
         return 0
     }
 
-# ExecuteParse
+ExecuteParse
 
-# for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_FOR_VFIO[@]}; do
-#     PrintInfoForIOMMUGroupOnly "$_IOMMU_GROUP_ID"
-# done
+for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_FOR_VFIO[@]}; do
+    PrintInfoForIOMMUGroupOnly "$_IOMMU_GROUP_ID"
+done
 
-# for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
-#     PrintInfoForIOMMUGroupOnly "$_IOMMU_GROUP_ID"
-# done
+echo
+
+for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
+    PrintInfoForIOMMUGroupOnly "$_IOMMU_GROUP_ID"
+done
 # </code>
