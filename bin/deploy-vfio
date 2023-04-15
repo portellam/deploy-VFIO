@@ -37,17 +37,18 @@ function Main
     # ExecuteExtras || return 1
 
     # <remarks> Main setup </remarks>
-    case true in
-        "$_PARSE_IOMMU_FROM_CACHE" | * )
-            ExecuteParse "SYSTEM" || return 1 ;;
+    # case true in
+    #     "$_PARSE_IOMMU_FROM_CACHE" | * )
+    #         ExecuteParse "SYSTEM" || return 1 ;;
 
-        "$_PARSE_IOMMU_FROM_FILE" )
-            ExecuteParse "FILE" || return 1 ;;
+    #     "$_PARSE_IOMMU_FROM_FILE" )
+    #         ExecuteParse "FILE" || return 1 ;;
 
-        "$_PARSE_IOMMU_FROM_INTERNET" )
-            ExecuteParse "ONLINE" || return 1 ;;
-    esac
+    #     "$_PARSE_IOMMU_FROM_INTERNET" )
+    #         ExecuteParse "ONLINE" || return 1 ;;
+    # esac
 
+    ExecuteParse || return 1
     ExecuteSelection || return 1
     echo
     ExecuteSetup

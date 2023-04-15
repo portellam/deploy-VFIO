@@ -227,7 +227,7 @@
 
             if ! "$_EXECUTE_MULTIBOOT_SETUP" \
                 && [[ ! -z "$_DRIVER" ]] \
-                && ! IsDriverOnIgnoreList "$_DRIVER" then
+                && ! IsDriverOnIgnoreList "$_DRIVER"; then
                 _VFIOPCI_DRIVER_DELIM+="$_DRIVER,"
                 _VFIOPCI_DRIVER_LIST+=( "$_DRIVER" )
             fi
@@ -246,7 +246,7 @@
 
             if "$_EXECUTE_MULTIBOOT_SETUP" \
                 && [[ ! -z "$_DRIVER" ]] \
-                && ! IsDriverOnIgnoreList "$_DRIVER" then
+                && ! IsDriverOnIgnoreList "$_DRIVER"; then
                 _VGA_VFIOPCI_DRIVER_DELIM+="$_DRIVER,"
             fi
         done

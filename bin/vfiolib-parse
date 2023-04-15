@@ -50,7 +50,11 @@
             local _HAS_ASKED=false
             declare -g _IOMMU_GROUP_HAS_VGA=false
             PrintInfoForIOMMUGroupAndSaveInfoToLists "$_IOMMU_GROUP_ID" && _DO_PRINT=true
-            AskToSelectThisIOMMUGroup "$_IOMMU_GROUP_ID" && _HAS_ASKED=true
+
+            if "$_DO_PRINT" \
+                && AskToSelectThisIOMMUGroup "$_IOMMU_GROUP_ID"; then
+                _HAS_ASKED=true
+            fi
 
             if "$_DO_PRINT" \
                 && "$_HAS_ASKED" \
@@ -389,19 +393,15 @@
         return 0
     }
 
-ExecuteParse
+# ExecuteParse
 
-for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_FOR_VFIO[@]}; do
-    PrintInfoForIOMMUGroupOnly "$_IOMMU_GROUP_ID"
-done
+# for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_FOR_VFIO[@]}; do
+#     PrintInfoForIOMMUGroupOnly "$_IOMMU_GROUP_ID"
+# done
 
-echo
+# echo
 
-for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
-    PrintInfoForIOMMUGroupOnly "$_IOMMU_GROUP_ID"
-done
-<<<<<<< HEAD
+# for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
+#     PrintInfoForIOMMUGroupOnly "$_IOMMU_GROUP_ID"
+# done
 # </code>
-=======
-# </code>
->>>>>>> develop-2
