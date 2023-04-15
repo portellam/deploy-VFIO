@@ -332,7 +332,6 @@
             local _PCI_ID_DELIM=${_PCI_ID_LIST[$_KEY]}
             local -i _DELIM_COUNT=1
             local _PCI_ID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_PCI_ID_DELIM" )
-            echo "_PCI_ID == $_PCI_ID"
 
             while [[ ! -z "$_PCI_ID" ]]; do
                 local _PCI_ID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_PCI_ID_DELIM" )
