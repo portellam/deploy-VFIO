@@ -25,8 +25,8 @@
 
             # <remarks> Pre-setup: Parse IOMMU </remarks>
             "-f" | "--file" )
-                if [[ "$2" == "" ]] \
-                    || [[ -z "$2" ]]; then
+                if [[ ! -e "$2" ]] \
+                    || [[ ! -s "$2" ]]; then
                     echo -e "$_OUTPUT_INVALID_OPTION"
                     return 1
                 fi
@@ -36,21 +36,24 @@
                 fi
 
                 _FILE_DATABASE=$3
-                _DO_PARSE_DATABASE_FROM_FILE=true ;;
+                _DO_PARSE_DATABASE_FROM_FILE=true
+                _ASK_TO_SELECT_METHOD_OF_PARSE=false ;;
 
             "-i" | "--internal" )
                 if [[ "$2" != "" ]]; then
                     GetArgsForExecuteSelection "$2" || return 1
                 fi
 
-                _DO_PARSE_DATABASE_FROM_CACHE=true ;;
+                _DO_PARSE_DATABASE_FROM_CACHE=true
+                _ASK_TO_SELECT_METHOD_OF_PARSE=false ;;
 
             "-o" | "--online" )
                 if [[ "$2" != "" ]]; then
                     GetArgsForExecuteSelection "$2" || return 1
                 fi
 
-                _DO_PARSE_DATABASE_FROM_INTERNET=true ;;
+                _DO_PARSE_DATABASE_FROM_INTERNET=true
+                _ASK_TO_SELECT_METHOD_OF_PARSE=false ;;
 
             # <remarks> Pre-setup: Essentials </remarks>
             "-c" | "--cpu" )
@@ -291,6 +294,7 @@
     declare -g _EXECUTE_STATIC_SETUP=false
     declare -g _EXECUTE_UNINSTALL_SETUP=false
     declare -g _EXECUTE_ZRAM_SWAP=false
+    declare -g _ASK_TO_SELECT_METHOD_OF_PARSE=true
     declare -g _ASK_TO_SELECT_TYPE_OF_STATIC_SETUP=true
     declare -g _DO_PARSE_DATABASE_FROM_FILE=false
     declare -g _DO_PARSE_DATABASE_FROM_CACHE=false

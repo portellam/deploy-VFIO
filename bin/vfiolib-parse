@@ -10,11 +10,10 @@
 # <remarks> Using </remarks>
 # <code>
     source vfiolib-common
+    source vfiolib-usage
 # </code>
 
 # <params>
-    declare -g _DO_PARSE_FILE_DATABASE=false
-    declare -g _DO_PARSE_ONLINE_DATABASE=false
     declare -g _DOMAIN_ID_REGEX='^[0-9A-F][1-9A-F]$'
     declare -g _GET_IOMMU_GROUP_DEVICES='ls /sys/kernel/iommu_groups/$_IOMMU_GROUP_ID/devices'
     declare -gA _CLASS_BY_VALID_IOMMU_GROUP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_LIST _HWID_BY_VALID_IOMMU_GROUP_LIST _NAME_BY_VALID_IOMMU_GROUP_LIST _PCI_ID_BY_VALID_IOMMU_GROUP_LIST
@@ -126,8 +125,14 @@
 
     function ExecuteParse
     {
+        echo
         SelectMethodToParseDatabase || return 1
         ParseDatabaseFirstTimeAndSaveToFile || return 1
+
+        if "$_ASK_TO_SELECT_METHOD_OF_PARSE"; then
+            SelectFileToParseDatabase || return 1
+        fi
+
         SetOptionsForParsingDatabase || return 1
         GetDevicesForEachIOMMUGroup || return 1
         AskToSelectAllGroups || return 1
@@ -201,35 +206,37 @@
 
     function ParseDatabaseFirstTimeAndSaveToFile
     {
-        if "$_DO_PARSE_DATABASE_FROM_FILE"; then
-            return 0
-        fi
-
-        local _FILE="$_DEFAULT_FILE_DATABASE"
-
-        if [[ ! -z "$_FILE" ]] \
-            && [[ ! -e "$_FILE" ]] \
-            && ! sudo mkdir -p $( dirname "$_FILE" ) &> /dev/null; then
+        if [[ ! -z "$_DEFAULT_FILE_DATABASE" ]] \
+            && [[ ! -e "$_DEFAULT_FILE_DATABASE" ]] \
+            && ! sudo mkdir -p $( dirname "$_DEFAULT_FILE_DATABASE" ) &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to create directory for database file."
             return 1
         fi
 
-        if [[ ! -z "$_FILE" ]] \
-            && [[ ! -e "$_FILE" ]] \
-            && ! sudo touch "$_FILE" &> /dev/null; then
+        if [[ ! -z "$_DEFAULT_FILE_DATABASE" ]] \
+            && [[ ! -e "$_DEFAULT_FILE_DATABASE" ]] \
+            && ! sudo touch "$_DEFAULT_FILE_DATABASE" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to create database file."
             return 1
         fi
 
-        if "$_DO_PARSE_ONLINE_DATABASE" \
-            && ! lspci -q -x >> "$_FILE" &> /dev/null; then
+        if "$_DO_PARSE_DATABASE_FROM_CACHE" \
+            && [[ ! -s "$_DEFAULT_FILE_DATABASE" ]] \
+            && ! lspci -x >> "$_DEFAULT_FILE_DATABASE" &> /dev/null; then
+            echo -e "$_PREFIX_ERROR Failed to reference local database and save to file."
+            return 1
+        fi
+
+        if "$_DO_PARSE_DATABASE_FROM_INTERNET" \
+            && [[ ! -s "$_DEFAULT_FILE_DATABASE" ]] \
+            && ! lspci -q -x >> "$_DEFAULT_FILE_DATABASE" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to reference online database and/or save to file."
             return 1
         fi
 
-        if ! "$_DO_PARSE_ONLINE_DATABASE" \
-            && ! lspci -x >> "$_FILE" &> /dev/null; then
-            echo -e "$_PREFIX_ERROR Failed to reference local database and save to file."
+        if [[ -s "$_DEFAULT_FILE_DATABASE" ]] \
+            && ! lspci -F "$_DEFAULT_FILE_DATABASE" &> /dev/null; then
+            echo -e "$_PREFIX_ERROR File is corrupt."
             return 1
         fi
 
@@ -381,7 +388,6 @@
             case "$_ANSWER" in
                 [Ff]* )
                     _DO_PARSE_DATABASE_FROM_FILE=true
-                    SelectFileToParseDatabase || return 1
                     return 0 ;;
 
                 [Ii]* )
@@ -403,26 +409,38 @@
 
     function SelectFileToParseDatabase
     {
-        for _TRIES_COUNT in $( seq 0 2 ); do
-            read -r -p "Enter filename (leave blank for default): " _ANSWER
+        read -r -p "Enter filename (leave blank for default): " _ANSWER
 
-            if [[ ! -e "$_ANSWER" ]]; then
-                echo -e "File does not exist."
-            fi
+        if [[ ! -z "$_ANSWER" ]] \
+            && [[ ! -e "$_ANSWER" ]]; then
+            echo -e "$_PREFIX_ERROR File does not exist."
+        fi
 
-            if [[ ! -s "$_ANSWER" ]]; then
-                echo -e "File is empty."
-            fi
+        if [[ ! -z "$_ANSWER" ]] \
+            && [[ ! -s "$_ANSWER" ]]; then
+            echo -e "$_PREFIX_ERROR File is empty."
+        fi
 
-            if [[ -e "$_ANSWER" ]] \
-                && [[ -s "$_ANSWER" ]]; then
-                _FILE_DATABASE="$_ANSWER"
-                return 0
-            fi
-        done
+        if [[ ! -z "$_ANSWER" ]] \
+            && [[ -e "$_ANSWER" ]] \
+            && [[ -s "$_ANSWER" ]]; then
+            _FILE_DATABASE="$_ANSWER"
+            return 0
+        fi
 
-        echo -e "$_PREFIX_ERROR Failed to answer."
-        return 1
+        _FILE_DATABASE="$_DEFAULT_FILE_DATABASE"
+
+        if [[ ! -e "$_FILE_DATABASE" ]]; then
+            echo -e "$_PREFIX_ERROR File does not exist."
+            return 1
+        fi
+
+        if [[ ! -s "$_FILE_DATABASE" ]]; then
+            echo -e "$_PREFIX_ERROR File is empty."
+            return 1
+        fi
+
+        return 0
     }
 
     function SetOptionsForParsingDatabase
@@ -436,17 +454,7 @@
             _FILE="$_DEFAULT_FILE_DATABASE"
         fi
 
-        if [[ ! -s "$_FILE" ]]; then
-            echo -e "$_PREFIX_ERROR Database file is empty."
-            return 1
-        fi
-
-        if ( "$_DO_PARSE_ONLINE_DATABASE" \
-            || "$_DO_PARSE_FILE_DATABASE" ) \
-            && [[ -s "$_FILE" ]]; then
-            _PARSE_OPTIONS="-F $_FILE"
-        fi
-
+        _PARSE_OPTIONS="-F $_FILE"
         return 0
     }
 # </code>
