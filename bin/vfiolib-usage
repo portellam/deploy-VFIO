@@ -35,22 +35,22 @@
                     GetArgsForExecuteSelection "$3" || return 1
                 fi
 
-                _FILENAME_PARSE_IOMMU=$3
-                _PARSE_IOMMU_FROM_FILE=true ;;
+                _FILE_DATABASE=$3
+                _DO_PARSE_DATABASE_FROM_FILE=true ;;
 
             "-i" | "--internal" )
                 if [[ "$2" != "" ]]; then
                     GetArgsForExecuteSelection "$2" || return 1
                 fi
 
-                _PARSE_IOMMU_FROM_CACHE=true ;;
+                _DO_PARSE_DATABASE_FROM_CACHE=true ;;
 
             "-o" | "--online" )
                 if [[ "$2" != "" ]]; then
                     GetArgsForExecuteSelection "$2" || return 1
                 fi
 
-                _PARSE_IOMMU_FROM_INTERNET=true ;;
+                _DO_PARSE_DATABASE_FROM_INTERNET=true ;;
 
             # <remarks> Pre-setup: Essentials </remarks>
             "-c" | "--cpu" )
@@ -270,7 +270,7 @@
 # <params>
     declare -g _OUTPUT_INVALID_ANSWER="$_PREFIX_ERROR Failed to answer."
     declare -g _OUTPUT_INVALID_OPTION="$_PREFIX_ERROR Invalid option."
-    declare -g _FILENAME_PARSE_IOMMU=""
+    declare -g _FILE_DATABASE=""
 
     # <remarks> Toggles </remarks
     declare -g _IS_CONNECTED_TO_INTERNET=false
@@ -292,9 +292,9 @@
     declare -g _EXECUTE_UNINSTALL_SETUP=false
     declare -g _EXECUTE_ZRAM_SWAP=false
     declare -g _ASK_TO_SELECT_TYPE_OF_STATIC_SETUP=true
-    declare -g _PARSE_IOMMU_FROM_FILE=false
-    declare -g _PARSE_IOMMU_FROM_CACHE=false
-    declare -g _PARSE_IOMMU_FROM_INTERNET=false
+    declare -g _DO_PARSE_DATABASE_FROM_FILE=false
+    declare -g _DO_PARSE_DATABASE_FROM_CACHE=false
+    declare -g _DO_PARSE_DATABASE_FROM_INTERNET=false
     declare -g _SELECT_ALL_IOMMU=false
     declare -g _UNINSTALL_EXTRAS=false
     declare -g _UNINSTALL_ESSENTIALS=false
