@@ -408,21 +408,13 @@
 
         function Modify
         {
-            local _APPARMOR_QEMU_FILE_ERROR="$_PREFIX_ERROR Failed to write to file '$_APPARMOR_QEMU_DEST_PATH'."
+            local _LINE="/dev/shm/scream-ivshmem rw,"
 
-            if grep -E -q "/dev/shm/scream-ivshmem" "$_APPARMOR_QEMU_DEST_PATH" \
-                && ! grep -E -q "/dev/shm/scream-ivshmem" "$_APPARMOR_QEMU_DEST_PATH" \
-                && ! sed -i ':/dev/shm/scream-ivshmem:c\/dev/shm/scream-ivshmem rw,' "$_APPARMOR_QEMU_DEST_PATH"; then
-                echo -e "$_APPARMOR_QEMU_FILE_ERROR"
-                return 1
-            fi
-
-            if ! grep -E -q "/dev/shm/scream-ivshmem" "$_APPARMOR_QEMU_DEST_PATH" \
-                && ! grep -E -q "/dev/shm/scream-ivshmem" "$_APPARMOR_QEMU_DEST_PATH" \
-                && ! echo "  /dev/shm/scream-ivshmem rw," >> "$_APPARMOR_QEMU_DEST_PATH"; then
-                echo -e "$_APPARMOR_QEMU_FILE_ERROR"
-                return 1
-            fi
+            local -a _FILE_CONTENTS+=(
+                ""
+                "# Scream"
+                "$_LINE"
+            )
 
             if ! sudo touch /dev/shm/scream-ivshmem &> /dev/null; then
                 echo -e "$_PREFIX_ERROR Failed create shared memory file."
@@ -432,6 +424,11 @@
             if ! sudo chmod 666 /dev/shm/scream-ivshmem &> /dev/null; then
                 echo -e "$_PREFIX_ERROR Failed to set file permissions."
                 return 1
+            fi
+
+            if ! grep -E -q "$_LINE" "$_APPARMOR_QEMU_DEST_PATH" \
+                && ! sudo echo -e "${_FILE_CONTENTS[*]}" >> "$_APPARMOR_QEMU_DEST_PATH"; then
+                echo -e "$_PREFIX_ERROR Failed to write to file '$_APPARMOR_QEMU_DEST_PATH'."
             fi
 
             return 0
@@ -539,21 +536,13 @@
 
         function Modify
         {
-            local _APPARMOR_QEMU_FILE_ERROR="$_PREFIX_ERROR Failed to write to file '$_APPARMOR_QEMU_DEST_PATH'."
+            local _LINE="/{dev,run}/shm/lookingglass rw,"
 
-            if grep -E -q "/{dev,run}/shm/lookingglass" "$_APPARMOR_QEMU_DEST_PATH" \
-                && ! grep -E -q "/{dev,run}/shm/lookingglass" "$_APPARMOR_QEMU_DEST_PATH" \
-                && ! sed -i ':/{dev,run}/shm/lookingglass:c\/{dev,run}/shm/lookingglass rw,' "$_APPARMOR_QEMU_DEST_PATH"; then
-                echo -e "$_APPARMOR_QEMU_FILE_ERROR"
-                return 1
-            fi
-
-            if ! grep -E -q "/{dev,run}/shm/lookingglass" "$_APPARMOR_QEMU_DEST_PATH" \
-                && ! grep -E -q "/{dev,run}/shm/lookingglass" "$_APPARMOR_QEMU_DEST_PATH" \
-                && ! echo "  /{dev,run}/shm/lookingglass rw," >> "$_APPARMOR_QEMU_DEST_PATH"; then
-                echo -e "$_APPARMOR_QEMU_FILE_ERROR"
-                return 1
-            fi
+            local -a _FILE_CONTENTS+=(
+                ""
+                "# Looking Glass"
+                "$_LINE"
+            )
 
             if ! sudo touch /dev/shm/lookingglass &> /dev/null; then
                 echo -e "$_PREFIX_ERROR Failed create shared memory file."
@@ -563,6 +552,11 @@
             if ! sudo chmod 666 /dev/shm/lookingglass &> /dev/null; then
                 echo -e "$_PREFIX_ERROR Failed to set file permissions."
                 return 1
+            fi
+
+            if ! grep -E -q "$_LINE" "$_APPARMOR_QEMU_DEST_PATH" \
+                && ! sudo echo -e "${_FILE_CONTENTS[*]}" >> "$_APPARMOR_QEMU_DEST_PATH"; then
+                echo -e "$_PREFIX_ERROR Failed to write to file '$_APPARMOR_QEMU_DEST_PATH'."
             fi
 
             return 0

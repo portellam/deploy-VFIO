@@ -11,6 +11,7 @@
 # <code>
     source vfiolib-calcs
     source vfiolib-common
+    source vfiolib-files
     source vfiolib-parse
 # </code>
 
@@ -385,6 +386,12 @@
                 _FILE_1_CONTENTS+=(
                     "hugetlbfs_mount = \"/dev/hugepages\""
                 )
+
+                _FILE_2_CONTENTS+=(
+                    ""
+                    "# Hugepages"
+                    "/dev/hugepages rw,"
+                )
             else
                 _FILE_1_CONTENTS+=(
                     "#hugetlbfs_mount = \"/dev/hugepages\""
@@ -409,7 +416,7 @@
 
                 _FILE_2_CONTENTS+=(
                     ""
-                    "# EVDEV"
+                    "# Evdev"
                     "/dev/input/* rw,"
                     "/dev/input/by-id/* rw,"
                 )

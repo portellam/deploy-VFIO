@@ -50,8 +50,18 @@
             return 1
         fi
 
-        if #! sudo cp -rv "$_APPARMOR_QEMU_SRC_PATH" "$_APPARMOR_QEMU_DEST_PATH" &> /dev/null \
-            ! sudo cp -rv "$_CUSTOM_GRUB_SRC_PATH" "$_CUSTOM_GRUB_DEST_PATH" &> /dev/null \
+        if [[ -e "$_APPARMOR_QEMU_DEST_PATH" ]] \
+            && ! sudo rm "$_APPARMOR_QEMU_DEST_PATH" &> /dev/null; then
+            echo -e "$_PREFIX_ERROR Failed to delete file '$_APPARMOR_QEMU_DEST_PATH'."
+            return 1
+        fi
+
+        if ! sudo touch "$_APPARMOR_QEMU_DEST_PATH" &> /dev/null; then
+            echo -e "$_PREFIX_ERROR Failed to create file '$_APPARMOR_QEMU_DEST_PATH'."
+            return 1
+        fi
+
+        if ! sudo cp -rv "$_CUSTOM_GRUB_SRC_PATH" "$_CUSTOM_GRUB_DEST_PATH" &> /dev/null \
             || ! sudo cp -rv "$_INITRAMFS_MODULES_SRC_PATH" "$_INITRAMFS_MODULES_DEST_PATH" &> /dev/null \
             || ! sudo cp -rv "$_MODPROBE_BLACKLISTS_SRC_PATH" "$_MODPROBE_BLACKLISTS_DEST_PATH" &> /dev/null \
             || ! sudo cp -rv "$_MODPROBE_VFIO_SRC_PATH" "$_MODPROBE_VFIO_DEST_PATH" &> /dev/null \
@@ -70,6 +80,11 @@
             || ! sudo chown root:root "$_MODULES_DEST_PATH" &> /dev/null \
             || ! sudo chown root:root "$_QEMU_DEST_PATH" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to set permissions for files."
+            return 1
+        fi
+
+        if ! sudo chmod 644 "$_APPARMOR_QEMU_DEST_PATH" &> /dev/null; then
+            echo -e "$_PREFIX_ERROR Failed to set permissions for file '$_APPARMOR_QEMU_DEST_PATH'."
             return 1
         fi
     }

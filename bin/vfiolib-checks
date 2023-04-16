@@ -56,7 +56,7 @@
     function IsVirtualizationEnabled
     {
         if ! LC_ALL=C lscpu | grep Virtualization &> /dev/null \
-            && ! grep -E --color=auto 'vmx|svm|0xc0f' /proc/cpuinfo &> /dev/null; then
+            && ! grep -E -q --color=auto 'vmx|svm|0xc0f' /proc/cpuinfo &> /dev/null; then
             echo -e "$_PREFIX_ERROR System does not support hardware virtualization."
             return 1
         fi
