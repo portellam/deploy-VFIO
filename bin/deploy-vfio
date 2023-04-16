@@ -49,10 +49,8 @@ function Main
     # esac
 
     ExecuteParse || return 1
-    ExecuteSelection || return 1
-    echo
-    ExecuteSetup
-    return "$?"
+    ExecuteSetup || return 1
+    return 0
 }
 # </code>
 

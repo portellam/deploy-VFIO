@@ -12,11 +12,34 @@
     source vfiolib-files
     source vfiolib-extras
     source vfiolib-parse
-    source vfiolib-select
     source vfiolib-usage
 # </code>
 
 # <code>
+    function AreParamsNotEmptyForMultibootSetup
+    {
+        if ( [[ -z "$_VGA_VFIOPCI_DRIVER_DELIM"  ]] \
+            || ( [[ -z "$_VGA_PCISTUB_HWID_DELIM" ]] \
+            && [[ -z "$_VGA_VFIOPCI_HWID_DELIM" ]] )); then
+            echo -e "$_PREFIX_ERROR Output is empty."
+            return 1
+        fi
+
+        return 0
+    }
+
+    function AreParamsNotEmptyForStaticSetup
+    {
+        if ( [[ -z "$_VFIOPCI_DRIVER_DELIM"  ]] \
+            || ( [[ -z "$_PCISTUB_HWID_DELIM" ]] \
+            && [[ -z "$_VFIOPCI_HWID_DELIM" ]] )); then
+            echo -e "$_PREFIX_ERROR Output is empty."
+            return 1
+        fi
+
+        return 0
+    }
+
     function AskToSpecifyStaticSetup
     {
         for _TRIES_COUNT in $( seq 0 2 ); do
@@ -43,11 +66,9 @@
     function ExecuteMultibootSetup
     {
         if ! "$_HAS_EXECUTED_BACKUPS" \
-            || ! GetParamsForAnySetup \
-            || ! GetParamsForMultibootSetup \
+            || ! GetAllParamsForMultibootSetup \
             || ! WriteFilesForMultibootSetup \
             || ! ExecuteUpdateAfterSetup; then
-            echo -e "$_PREFIX_ERROR Multiboot setup has failed."
             return 1
         fi
 
@@ -56,31 +77,28 @@
 
     function ExecuteStaticSetup
     {
-        local -r _PRINT_FAIL="$_PREFIX_ERROR Static setup has failed."
-
         if ! DoesHostHaveVGA \
             || ( "$_ASK_TO_SELECT_TYPE_OF_STATIC_SETUP" \
             && ! AskToSpecifyStaticSetup ); then
-            echo -e "$_PRINT_FAIL"
             return 1
         fi
 
         if "$_EXECUTE_GRUB_STATIC_SETUP" \
             && ( ! "$_HAS_EXECUTED_BACKUPS" \
             || ! GetParamsForAnySetup \
+            || ! AreParamsNotEmptyForStaticSetup \
             || ! WriteFilesForGRUBStaticSetup \
             || ! ExecuteUpdateAfterSetup ); then
-            echo -e "$_PRINT_FAIL"
             return 1
         fi
 
         if ! "$_EXECUTE_GRUB_STATIC_SETUP" \
             && ( ! "$_HAS_EXECUTED_BACKUPS" \
             || ! GetParamsForAnySetup \
+            || ! AreParamsNotEmptyForStaticSetup \
             || ! GetListsForNoGRUBStaticSetup \
             || ! WriteFilesForNoGRUBStaticSetup \
             || ! ExecuteUpdateAfterSetup ); then
-            echo -e "$_PRINT_FAIL"
             return 1
         fi
 
@@ -159,96 +177,110 @@
         return "$_LAST_EXIT_CODE"
     }
 
-    function GetParamsForAnySetup
+    function GetListsForNonVGAIOMMUGroup
     {
-        declare -g _PCISTUB_HWID_DELIM=""
-        declare -g _VFIOPCI_DRIVER_DELIM=""
-        declare -g _VFIOPCI_HWID_DELIM=""
-
-        if ! "$_EXECUTE_MULTIBOOT_SETUP"; then
-            declare -ga _VFIOPCI_DRIVER_LIST=( )
-        fi
-
-        for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_FOR_VFIO[@]}; do
-            GetListsForIOMMUGroup || return 1
-        done
-
-        if ! "$_EXECUTE_MULTIBOOT_SETUP"; then
-            for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
-                GetListsForIOMMUGroup || return 1
-            done
-        fi
-
-        if [[ -z "$_VFIOPCI_DRIVER_DELIM"  ]] \
-            && ( ! "$_EXECUTE_MULTIBOOT_SETUP" \
-            && [[ "${#_VFIOPCI_DRIVER_LIST[@]}" -eq 0 ]] ) \
-            && [[ -z "$_PCISTUB_HWID_DELIM" ]] \
-            && [[ -z "$_VFIOPCI_HWID_DELIM" ]]; then
-            echo -e "$_PREFIX_ERROR Output is empty."
-            return 1
-        fi
-
-        _VFIOPCI_DRIVER_DELIM="${_VFIOPCI_DRIVER_DELIM::-1}"
-        _PCISTUB_HWID_DELIM="${_PCISTUB_HWID_DELIM::-1}"
-        _VFIOPCI_HWID_DELIM="${_VFIOPCI_HWID_DELIM::-1}"
-        IFS=$'\n'
-        _VFIOPCI_DRIVER_LIST=( $( sort --uniq <<<"${_VFIOPCI_DRIVER_LIST[*]}" ) )
-
-        if ! "$_EXECUTE_MULTIBOOT_SETUP"; then
-            declare -ga _VFIOPCI_DRIVER_LIST=( )
-        fi
-
-        unset IFS
-        return 0
-    }
-
-    function GetListsForIOMMUGroup
-    {
-        local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]}"
-        local -a _DRIVER_LIST="${_DRIVER_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]}"
-        local -a _HWID_LIST="${_HWID_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]}"
+        local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _DRIVER_LIST="${_DRIVER_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _HWID_LIST="${_HWID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
 
         for _KEY in ${!_HWID_LIST[@]}; do
             local _CLASS=${_CLASS_LIST[$_KEY]}
             local _DRIVER=${_DRIVER_LIST[$_KEY]}
             local _HWID=${_HWID_LIST[$_KEY]}
 
-            if ! "$_EXECUTE_MULTIBOOT_SETUP" \
-                && [[ ! -z "$_HWID" ]] \
+            if [[ ! -z "$_HWID" ]] \
                 && IsDeviceForPCISTUB "$_CLASS"; then
                 _PCISTUB_HWID_DELIM+="$_HWID,"
             fi
 
-            if ! "$_EXECUTE_MULTIBOOT_SETUP" \
-                && [[ ! -z "$_HWID" ]] \
+            if [[ ! -z "$_HWID" ]] \
                 && ! IsDeviceForPCISTUB "$_CLASS"; then
                 _VFIOPCI_HWID_DELIM+="$_HWID,"
             fi
 
-            if ! "$_EXECUTE_MULTIBOOT_SETUP" \
-                && [[ ! -z "$_DRIVER" ]] \
-                && ! IsDriverOnIgnoreList "$_DRIVER"; then
+            if IsDriverNotOnIgnoreList "$_DRIVER"; then
                 _VFIOPCI_DRIVER_DELIM+="$_DRIVER,"
                 _VFIOPCI_DRIVER_LIST+=( "$_DRIVER" )
             fi
+        done
 
-            if "$_EXECUTE_MULTIBOOT_SETUP" \
-                && [[ ! -z "$_HWID" ]] \
-                && IsDeviceForPCISTUB "$_CLASS"; then
-                _VGA_PCISTUB_HWID_DELIM+="$_HWID,"
-            fi
+        return 0
+    }
 
-            if "$_EXECUTE_MULTIBOOT_SETUP" \
-                && [[ ! -z "$_HWID" ]] \
-                && ! IsDeviceForPCISTUB "$_CLASS"; then
-                _VGA_VFIOPCI_HWID_DELIM+="$_HWID,"
-            fi
+    function GetListsForVGAIOMMUGroup
+    {
+        local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _DRIVER_LIST="${_DRIVER_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _HWID_LIST="${_HWID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
 
-            if "$_EXECUTE_MULTIBOOT_SETUP" \
-                && [[ ! -z "$_DRIVER" ]] \
-                && ! IsDriverOnIgnoreList "$_DRIVER"; then
-                _VGA_VFIOPCI_DRIVER_DELIM+="$_DRIVER,"
+        for _KEY in ${!_HWID_LIST[@]}; do
+            local _CLASS_DELIM=${_CLASS_LIST[$_KEY]}
+            local _DRIVER_DELIM=${_DRIVER_LIST[$_KEY]}
+            local _HWID_DELIM=${_HWID_LIST[$_KEY]}
+            local _NAME_DELIM=${_NAME_LIST[$_KEY]}
+            local -i _DELIM_COUNT=1
+            local _HWID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_HWID_DELIM" )
+
+            while [[ ! -z "$_HWID" ]]; do
+                local _CLASS=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_CLASS_DELIM" )
+                local _DRIVER=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_DRIVER_DELIM" )
+                _HWID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_HWID_DELIM" )
+                local _NAME=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_NAME_DELIM" )
+    
+                if [[ ! -z "$_HWID" ]] \
+                    && IsDeviceForPCISTUB "$_CLASS"; then
+                    _VGA_PCISTUB_HWID_DELIM+="$_HWID,"
+                fi
+
+                if [[ ! -z "$_HWID" ]] \
+                    && ! IsDeviceForPCISTUB "$_CLASS"; then
+                    _VGA_VFIOPCI_HWID_DELIM+="$_HWID,"
+                fi
+
+                if [[ ! -z "$_DRIVER" ]] \
+                    && IsDriverNotOnIgnoreList "$_DRIVER"; then
+                    _VGA_VFIOPCI_DRIVER_DELIM+="$_DRIVER,"
+                fi
+
+                (( _DELIM_COUNT++ ))
+            done
+        done
+
+        return 0
+    }
+
+    function GetNameForVGAIOMMUGroup
+    {
+        local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _NAME_LIST="${_NAME_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+
+        for _KEY in ${!_CLASS_LIST[@]}; do
+            local _CLASS=${_CLASS_LIST[$_KEY]}
+            local _NAME=${_NAME_LIST[$_KEY]}
+
+            if IsDeviceVGA "$_CLASS"; then
+                _THIS_IOMMU_GROUP_VGA_NAME="$_NAME"
             fi
+        done
+
+        return 0
+    }
+
+    function GetListsForMultibootSetup
+    {
+        for _KERNEL in ${_KERNELS_LIST[@]}; do
+            # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
+            _FILE_CONTENTS_LIST+=(
+                "menuentry $_SYSTEM_DISTRO, with $_SYSTEM_OS $_KERNEL (VFIO, w/o IOMMU $_IOMMU_GROUP_ID $_THIS_IOMMU_GROUP_VGA_NAME ) {"
+                "\tinsmod $_SYSTEM_FSTYPE"
+                "\tset root='/dev/disk/by-uuid/$_SYSTEM_UUID'"
+                "\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$_SYSTEM_UUID\n\t"'fi'
+                "\techo    'Loading $_SYSTEM_OS $_KERNEL ...'"
+                "\tlinux   /boot/vmlinuz-$_KERNEL root=UUID=$_SYSTEM_UUID $_LINE_GRUB_CMDLINE_TEMP"
+                "\tinitrd  /boot/initrd.img-$_KERNEL"
+                "}"
+                ""
+            )
         done
 
         return 0
@@ -281,32 +313,49 @@
         fi
 
         if [[ ! -z "$_VFIOPCI_HWID_DELIM" ]]; then
-            _HWID_DELIM+="$_VFIOPCI_HWID_DELIM"
+            _HWID_DELIM+="$_VFIOPCI_HWID_DELIM,"
         fi
 
         _HWID_DELIM="${_HWID_DELIM::-1}"
         return 0
     }
 
-    function GetListsForMultibootSetup
+    function GetParamsForAnySetup
     {
-        for _KERNEL in ${_KERNELS_LIST[@]}; do
-            # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
-            _FILE_CONTENTS_LIST+=(
-                "menuentry $_SYSTEM_DISTRO, with $_SYSTEM_OS $_KERNEL (VFIO, w/o IOMMU $_IOMMU$_MENU_ENTRY_TEMP) {"
-                "\tinsmod $_SYSTEM_FSTYPE"
-                "\tset root='/dev/disk/by-uuid/$_SYSTEM_UUID'"
-                "\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$_SYSTEM_UUID\n\t"'fi'
-                "\techo    'Loading $_SYSTEM_OS $_KERNEL ...'"
-                "\tlinux   /boot/vmlinuz-$_KERNEL root=UUID=$_SYSTEM_UUID $_LINE_GRUB_CMDLINE_TEMP"
-                "\tinitrd  /boot/initrd.img-$_KERNEL"
-                "}"
-                ""
-            )
+        declare -g _PCISTUB_HWID_DELIM=""
+        declare -g _VFIOPCI_DRIVER_DELIM=""
+        declare -g _VFIOPCI_HWID_DELIM=""
+
+        if ! "$_EXECUTE_MULTIBOOT_SETUP"; then
+            declare -ga _VFIOPCI_DRIVER_LIST=( )
+        fi
+
+        for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_FOR_VFIO[@]}; do
+            GetListsForNonVGAIOMMUGroup "$_IOMMU_GROUP_ID" || return 1
         done
+
+        if [[ ! -z "$_VFIOPCI_DRIVER_DELIM" ]]; then
+            _VFIOPCI_DRIVER_DELIM="${_VFIOPCI_DRIVER_DELIM::-1}"
+        fi
+
+        if [[ ! -z "$_PCISTUB_HWID_DELIM" ]]; then
+            _PCISTUB_HWID_DELIM="${_PCISTUB_HWID_DELIM::-1}"
+        fi
+
+        if [[ ! -z "$_VFIOPCI_HWID_DELIM" ]]; then
+            _VFIOPCI_HWID_DELIM="${_VFIOPCI_HWID_DELIM::-1}"
+        fi
+
+        if ! "$_EXECUTE_MULTIBOOT_SETUP"; then
+            IFS=$'\n'
+            _VFIOPCI_DRIVER_LIST=( $( sort --uniq <<<"${_VFIOPCI_DRIVER_LIST[*]}" ) )
+            unset IFS
+        fi
+
+        return 0
     }
 
-    function GetParamsForMultibootSetup
+    function GetAllParamsForMultibootSetup
     {
         # <remarks> System configuration </remarks>
         local -i _MAX_NUM_PARSE_KERNELS=3
@@ -321,50 +370,18 @@
         _LINE_GRUB_CMDLINE_PREFIX+="$_LINE_GRUB_CMDLINE "
         _LINE_GRUB_CMDLINE_PREFIX+="$_LINE_GRUB_CMDLINE_ISOLCPU "
         _LINE_GRUB_CMDLINE_PREFIX+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
+        GetParamsForAnySetup || return 1
 
-        for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
-            local _VGA_VFIOPCI_DRIVER_DELIM=""
-            local _VGA_PCISTUB_HWID_DELIM=""
-            local _VGA_VFIOPCI_HWID_DELIM=""
-            GetListsForIOMMUGroup || return 1
+        for _THIS_IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
+            declare -g _THIS_IOMMU_GROUP_VGA_NAME=""
+            GetNameForVGAIOMMUGroup "$_THIS_IOMMU_GROUP_ID"
 
-            local _THIS_DRIVER_DELIM=""
-            local _THIS_PCISTUB_HWID_DELIM=""
-            local _THIS_VFIOPCI_HWID_DELIM=""
-
-            if [[ ! -z "$_VFIOPCI_DRIVER_DELIM" ]]; then
-                _THIS_DRIVER_DELIM+="$_VFIOPCI_DRIVER_DELIM,"
-            fi
-
-            if [[ ! -z "$_VGA_VFIOPCI_DRIVER_DELIM" ]]; then
-                _THIS_DRIVER_DELIM+="$_VGA_VFIOPCI_DRIVER_DELIM"
-            fi
-
-            if [[ ! -z "$_PCISTUB_HWID_DELIM" ]]; then
-                _THIS_PCISTUB_HWID_DELIM+="$_PCISTUB_HWID_DELIM,"
-            fi
-
-            if [[ ! -z "$_VGA_PCISTUB_HWID_DELIM" ]]; then
-                _THIS_PCISTUB_HWID_DELIM+="$_VGA_PCISTUB_HWID_DELIM"
-            fi
-
-            if [[ ! -z "$_VFIOPCI_HWID_DELIM" ]]; then
-                _THIS_VFIOPCI_HWID_DELIM+="$_VFIOPCI_HWID_DELIM"
-            fi
-
-            if [[ ! -z "$_VGA_VFIOPCI_HWID_DELIM" ]]; then
-                _THIS_VFIOPCI_HWID_DELIM+="$_VGA_VFIOPCI_HWID_DELIM"
-            fi
-
-            _THIS_DRIVER_DELIM="${_THIS_DRIVER_DELIM::-1}"
-            _THIS_PCISTUB_HWID_DELIM="${_THIS_PCISTUB_HWID_DELIM::-1}"
-            _THIS_VFIOPCI_HWID_DELIM="${_THIS_VFIOPCI_HWID_DELIM::-1}"
-            local _LINE_GRUB_CMDLINE_TEMP=""
-            _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=$_THIS_DRIVER_DELIM "
-            _LINE_GRUB_CMDLINE_TEMP+="pci-stub.ids=$_THIS_PCISTUB_HWID_DELIM "
-            _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=$_THIS_VFIOPCI_HWID_DELIM "
-            _LINE_GRUB_CMDLINE_TEMP="$_LINE_GRUB_CMDLINE_PREFIX${_LINE_GRUB_CMDLINE_TEMP::-1}"
-            GetListsForMultibootSetup
+            for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
+                if [[ "$_IOMMU_GROUP_ID" != "$_THIS_IOMMU_GROUP_ID" ]]; then
+                    GetParamsForMultibootSetup "$_IOMMU_GROUP_ID" || return 1
+                    GetListsForMultibootSetup
+                fi
+            done
         done
 
         if [[ "${#_FILE_CONTENTS_LIST[@]}" -eq 0 ]]; then
@@ -372,6 +389,92 @@
             return 1
         fi
 
+        return 0
+    }
+
+    function GetParamsForMultibootSetup
+    {
+        local _THIS_DRIVER_DELIM=""
+        local _THIS_PCISTUB_HWID_DELIM=""
+        local _THIS_VFIOPCI_HWID_DELIM=""
+        declare -g _VGA_VFIOPCI_DRIVER_DELIM=""
+        declare -g _VGA_PCISTUB_HWID_DELIM=""
+        declare -g _VGA_VFIOPCI_HWID_DELIM=""
+        GetListsForVGAIOMMUGroup "$1" || return 1
+
+        if [[ ! -z "$_VFIOPCI_DRIVER_DELIM" ]]; then
+            _THIS_DRIVER_DELIM+="$_VFIOPCI_DRIVER_DELIM,"
+        fi
+
+        if [[ ! -z "$_VGA_VFIOPCI_DRIVER_DELIM" ]]; then
+            _VGA_VFIOPCI_DRIVER_DELIM="${_VGA_VFIOPCI_DRIVER_DELIM::-1}"
+            _THIS_DRIVER_DELIM+="$_VGA_VFIOPCI_DRIVER_DELIM,"
+        fi
+
+        if [[ ! -z "$_PCISTUB_HWID_DELIM" ]]; then
+            _THIS_PCISTUB_HWID_DELIM+="$_PCISTUB_HWID_DELIM,"
+        fi
+
+        if [[ ! -z "$_VGA_PCISTUB_HWID_DELIM" ]]; then
+            _VGA_PCISTUB_HWID_DELIM="${_VGA_PCISTUB_HWID_DELIM::-1}"
+            _THIS_PCISTUB_HWID_DELIM+="$_VGA_PCISTUB_HWID_DELIM,"
+        fi
+
+        if [[ ! -z "$_VFIOPCI_HWID_DELIM" ]]; then
+            _THIS_VFIOPCI_HWID_DELIM+="$_VFIOPCI_HWID_DELIM,"
+        fi
+
+        if [[ ! -z "$_VGA_VFIOPCI_HWID_DELIM" ]]; then
+            _VGA_VFIOPCI_HWID_DELIM="${_VGA_VFIOPCI_HWID_DELIM::-1}"
+            _THIS_VFIOPCI_HWID_DELIM+="$_VGA_VFIOPCI_HWID_DELIM,"
+        fi
+
+        if [[ ! -z "$_THIS_DRIVER_DELIM" ]]; then
+            _THIS_DRIVER_DELIM="${_THIS_DRIVER_DELIM::-1}"
+        fi
+
+        if [[ ! -z "$_THIS_PCISTUB_HWID_DELIM" ]]; then
+            _THIS_PCISTUB_HWID_DELIM="${_THIS_PCISTUB_HWID_DELIM::-1}"
+        fi
+
+        if [[ ! -z "$_THIS_VFIOPCI_HWID_DELIM" ]]; then
+            _THIS_VFIOPCI_HWID_DELIM="${_THIS_VFIOPCI_HWID_DELIM::-1}"
+        fi
+
+        echo "_THIS_DRIVER_DELIM == $_THIS_DRIVER_DELIM"
+        echo "_THIS_PCISTUB_HWID_DELIM == $_THIS_PCISTUB_HWID_DELIM"
+        echo "_THIS_VFIOPCI_HWID_DELIM == $_THIS_VFIOPCI_HWID_DELIM"
+
+        local _LINE_GRUB_CMDLINE_TEMP=""
+        _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=$_THIS_DRIVER_DELIM "
+        _LINE_GRUB_CMDLINE_TEMP+="pci-stub.ids=$_THIS_PCISTUB_HWID_DELIM "
+        _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=$_THIS_VFIOPCI_HWID_DELIM "
+        _LINE_GRUB_CMDLINE_TEMP="$_LINE_GRUB_CMDLINE_PREFIX${_LINE_GRUB_CMDLINE_TEMP::-1}"
+        
+        return 0
+    }
+
+    function WriteFilesForGRUBStaticSetup
+    {
+        "$_HAS_EXECUTED_BACKUPS" || return 1
+        IFS=$'\n'
+        local -r _LINE_TO_MATCH="GRUB_CMDLINE_LINUX_DEFAULT="
+        local _LINE_GRUB_CMDLINE_TEMP=""
+        _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE "
+        _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE_ISOLCPU "
+        _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
+        _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=$_VFIOPCI_DRIVER_DELIM "
+        _LINE_GRUB_CMDLINE_TEMP+="pci-stub.ids=$_PCISTUB_HWID_DELIM "
+        _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=$_VFIOPCI_HWID_DELIM "
+        _LINE_GRUB_CMDLINE_TEMP="${_LINE_GRUB_CMDLINE_TEMP::-1}"
+        local -r _LINE_GRUB_CMDLINE_DEFAULT="$_LINE_TO_MATCH\"$_LINE_GRUB_CMDLINE_TEMP\""
+
+        if ! sed -i '/'"$_LINE_TO_MATCH"'/c\'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_DEST_PATH_1"; then
+            echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
+            return 1
+        fi
+
+        unset IFS
         return 0
     }
 
@@ -437,30 +540,6 @@
             || ! echo -e "\n${_BLACKLISTS_LIST[*]}" >> "$_MODPROBE_BLACKLISTS_DEST_PATH" \
             || ! sed -i "/options vfio_pci ids=*/c\options vfio_pci ids=\"$_HWID_DELIM\"" "$_MODPROBE_VFIO_DEST_PATH" \
             || ! sed -i "/vfio_pci ids=*/c\vfio_pci_ids=\"$_HWID_DELIM\"" "$_MODULES_DEST_PATH"; then
-            echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
-            return 1
-        fi
-
-        unset IFS
-        return 0
-    }
-
-    function WriteFilesForGRUBStaticSetup
-    {
-        "$_HAS_EXECUTED_BACKUPS" || return 1
-        IFS=$'\n'
-        local -r _LINE_TO_MATCH="GRUB_CMDLINE_LINUX_DEFAULT="
-        local _LINE_GRUB_CMDLINE_TEMP=""
-        _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE "
-        _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE_ISOLCPU "
-        _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
-        _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=$_VFIOPCI_DRIVER_DELIM "
-        _LINE_GRUB_CMDLINE_TEMP+="pci-stub.ids=$_PCISTUB_HWID_DELIM "
-        _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=$_VFIOPCI_HWID_DELIM "
-        _LINE_GRUB_CMDLINE_TEMP="${_LINE_GRUB_CMDLINE_TEMP::-1}"
-        local -r _LINE_GRUB_CMDLINE_DEFAULT="$_LINE_TO_MATCH\"$_LINE_GRUB_CMDLINE_TEMP\""
-
-        if ! sed -i '/'"$_LINE_TO_MATCH"'/c\'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_DEST_PATH_1"; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi

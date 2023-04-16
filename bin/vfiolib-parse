@@ -28,15 +28,17 @@
 # <code>
     function AreParsedListsEmpty
     {
-        if ( [[ "${#_IOMMU_GROUP_ID_LIST_FOR_VFIO[@]}" -eq 0 ]] \
-            && [[ "${#_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}" -ne 0 ]] ) \
-            || ( [[ "${#_IOMMU_GROUP_ID_LIST_FOR_VFIO[@]}" -ne 0 ]] \
-            && [[ "${#_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}" -eq 0 ]] ) \
-            || [[ "${#_CLASS_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
+        if [[ "${#_IOMMU_GROUP_ID_LIST_FOR_VFIO[@]}" -eq 0 ]] \
+            && [[ "${#_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}" -eq 0 ]]; then
+            echo -e "$_PREFIX_ERROR VFIO IOMMU group lists are empty."
+            return 1
+        fi
+
+        if [[ "${#_CLASS_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
             || [[ "${#_DRIVER_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
             || [[ "${#_HWID_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
             || [[ "${#_NAME_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]]; then
-            echo -e "$_PREFIX_ERROR Some or all parsed IOMMU group lists are empty."
+            echo -e "$_PREFIX_ERROR Some or all VFIO device lists are empty."
             return 1
         fi
 
@@ -65,7 +67,7 @@
             if "$_DO_PRINT" \
                 && "$_HAS_ASKED" \
                 && "$_IOMMU_GROUP_HAS_VGA"; then
-                IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO+=( "$_IOMMU_GROUP_ID" )
+                _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO+=( "$_IOMMU_GROUP_ID" )
             fi
 
             if "$_DO_PRINT" \
@@ -131,18 +133,6 @@
         return 0
     }
 
-    function DoesIOMMUGroupContainVGA
-    {
-        local -l _CLASS="$1"
-
-        case "$_CLASS" in
-            *"vga"* | *"graphic"* )
-                return 0 ;;
-        esac
-
-        return 1
-    }
-
     function GetDevicesForEachIOMMUGroup
     {
         shopt -s nullglob
@@ -183,16 +173,28 @@
         return 1
     }
 
-    function IsDriverOnIgnoreList
+    function IsDeviceVGA
     {
-        local -l _DRIVER="$1"
+        local -l _CLASS="$1"
 
-        case "$_DRIVER" in
-            "snd_hda_intel" )
+        case "$_CLASS" in
+            *"vga"* | *"graphic"* )
                 return 0 ;;
         esac
 
         return 1
+    }
+
+    function IsDriverNotOnIgnoreList
+    {
+        local -l _DRIVER="$1"
+
+        case "$_DRIVER" in
+            *"snd_hda_intel"* )
+                return 1 ;;
+        esac
+
+        return 0
     }
 
     function ParseDatabaseFirstTimeAndSaveToFile
@@ -245,7 +247,6 @@
 
         local -i _IOMMU_GROUP_ID="$1"
         local _IOMMU_GROUP_IS_VALID=false
-        _IOMMU_GROUP_HAS_VGA=false
 
         for _DEVICE_FULL_ID in ${_IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]}; do
             local -u _DEVICE_DOMAIN_ID=${_DEVICE_FULL_ID:5:2}
@@ -271,13 +272,15 @@
                 echo -e "\tHardware ID:\t'$_DEVICE_HWID'"
 
                 if [[ ! -z "$_DEVICE_DRIVER" ]] \
-                    && ! IsDriverOnIgnoreList "$_DEVICE_DRIVER"; then
+                    && IsDriverNotOnIgnoreList "$_DEVICE_DRIVER"; then
                     echo -e "\tKernel driver:\t'$_DEVICE_DRIVER'"
                 else
                     echo -e "\tKernel driver:\t'N/A'"
                 fi
+            fi
 
-                echo
+            if IsDeviceVGA "$_DEVICE_CLASS"; then
+                _IOMMU_GROUP_HAS_VGA=true
             fi
         done
 
@@ -299,7 +302,6 @@
         local -a _CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST _HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST _NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST
         local -i _IOMMU_GROUP_ID="$1"
         local _IOMMU_GROUP_IS_VALID=false
-        _IOMMU_GROUP_HAS_VGA=false
 
         for _DEVICE_FULL_ID in ${_IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]}; do
             local -u _DEVICE_DOMAIN_ID=${_DEVICE_FULL_ID:5:2}
@@ -333,23 +335,23 @@
                 echo
             fi
 
-            if [[ -z "$_DEVICE_CLASS" ]]; then
+            if [[ ! -z "$_DEVICE_CLASS" ]]; then
                 _CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_CLASS" )
             fi
 
-            if [[ -z "$_DEVICE_DRIVER" ]]; then
+            if [[ ! -z "$_DEVICE_DRIVER" ]]; then
                 _DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_DRIVER" )
             fi
 
-            if [[ -z "$_DEVICE_NAME" ]]; then
-                _HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_NAME" )
+            if [[ ! -z "$_DEVICE_HWID" ]]; then
+                _HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_HWID" )
             fi
 
-            if [[ -z "$_DEVICE_HWID" ]]; then
-                _NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_HWID" )
+            if [[ ! -z "$_DEVICE_NAME" ]]; then
+                _NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_NAME" )
             fi
 
-            if DoesIOMMUGroupContainVGA "$_DEVICE_CLASS" ; then
+            if IsDeviceVGA "$_DEVICE_CLASS"; then
                 _IOMMU_GROUP_HAS_VGA=true
             fi
         done
@@ -392,16 +394,4 @@
 
         return 0
     }
-
-# ExecuteParse
-
-# for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_FOR_VFIO[@]}; do
-#     PrintInfoForIOMMUGroupOnly "$_IOMMU_GROUP_ID"
-# done
-
-# echo
-
-# for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
-#     PrintInfoForIOMMUGroupOnly "$_IOMMU_GROUP_ID"
-# done
 # </code>

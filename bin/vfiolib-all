@@ -16,7 +16,6 @@
     source vfiolib-files
     source vfiolib-globals
     source vfiolib-parse
-    source vfiolib-select
     source vfiolib-setup
     source vfiolib-usage
 # </code>
