@@ -249,18 +249,31 @@
         return 0
     }
 
+
+    # TODO: for here, use a list of PCI IDS, and scan the local database for the name of the device and it's class. Easy pzy.
     function GetNameForVGAIOMMUGroup
     {
         local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_LIST[$1]}"
         local -a _NAME_LIST="${_NAME_BY_VALID_IOMMU_GROUP_LIST[$1]}"
 
-        for _KEY in ${!_CLASS_LIST[@]}; do
-            local _CLASS=${_CLASS_LIST[$_KEY]}
-            local _NAME=${_NAME_LIST[$_KEY]}
+        for _KEY in ${!_NAME_LIST[@]}; do
+            local _CLASS_DELIM=${_CLASS_LIST[$_KEY]}
+            local _NAME_DELIM=${_NAME_LIST[$_KEY]}
+            local -i _DELIM_COUNT=1
+            local _NAME=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_NAME_DELIM" )
+            echo "_NAME == $_NAME"
 
-            if IsDeviceVGA "$_CLASS"; then
-                _THIS_IOMMU_GROUP_VGA_NAME="$_NAME"
-            fi
+            while [[ ! -z "$_NAME" ]]; do
+                local _CLASS=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_CLASS" )
+                local _NAME=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_NAME_DELIM" )
+    
+                if IsDeviceVGA "$_CLASS"; then
+                    _THIS_IOMMU_GROUP_VGA_NAME="$_NAME"
+                    return 0
+                fi
+
+                (( _DELIM_COUNT++ ))
+            done
         done
 
         return 0
@@ -271,13 +284,18 @@
         for _KERNEL in ${_KERNELS_LIST[@]}; do
             # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
             _FILE_CONTENTS_LIST+=(
-                "menuentry $_SYSTEM_DISTRO, with $_SYSTEM_OS $_KERNEL (VFIO, w/o IOMMU $_IOMMU_GROUP_ID $_THIS_IOMMU_GROUP_VGA_NAME ) {"
+                "menuentry \"$_SYSTEM_DISTRO, with $_SYSTEM_OS $_KERNEL (VFIO, w/o IOMMU '$1' w/ '$_THIS_IOMMU_GROUP_VGA_NAME')\"{"
+                # "\tload_video"
+                # "insmod gzio"
+                # "if [ x\$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi"
+                # "insmod part_gpt"
                 "\tinsmod $_SYSTEM_FSTYPE"
                 "\tset root='/dev/disk/by-uuid/$_SYSTEM_UUID'"
                 "\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"$_SYSTEM_UUID\n\t"'fi'
                 "\techo    'Loading $_SYSTEM_OS $_KERNEL ...'"
                 "\tlinux   /boot/vmlinuz-$_KERNEL root=UUID=$_SYSTEM_UUID $_LINE_GRUB_CMDLINE_TEMP"
                 "\tinitrd  /boot/initrd.img-$_KERNEL"
+                "\techo    \"VFIO, w/o IOMMU '$1' w/ '$_THIS_IOMMU_GROUP_VGA_NAME'\""
                 "}"
                 ""
             )
@@ -357,6 +375,10 @@
 
     function GetAllParamsForMultibootSetup
     {
+        IFS=$'\n'
+        _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO=( $( sort -r <<<"${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[*]}" ) )
+        unset IFS
+
         # <remarks> System configuration </remarks>
         local -i _MAX_NUM_PARSE_KERNELS=3
         declare -a _KERNELS_LIST=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | cut -c 2- | sort -r | head -n $_MAX_NUM_PARSE_KERNELS ) )
@@ -379,7 +401,7 @@
             for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
                 if [[ "$_IOMMU_GROUP_ID" != "$_THIS_IOMMU_GROUP_ID" ]]; then
                     GetParamsForMultibootSetup "$_IOMMU_GROUP_ID" || return 1
-                    GetListsForMultibootSetup
+                    GetListsForMultibootSetup "$_IOMMU_GROUP_ID"
                 fi
             done
         done
@@ -441,16 +463,11 @@
             _THIS_VFIOPCI_HWID_DELIM="${_THIS_VFIOPCI_HWID_DELIM::-1}"
         fi
 
-        echo "_THIS_DRIVER_DELIM == $_THIS_DRIVER_DELIM"
-        echo "_THIS_PCISTUB_HWID_DELIM == $_THIS_PCISTUB_HWID_DELIM"
-        echo "_THIS_VFIOPCI_HWID_DELIM == $_THIS_VFIOPCI_HWID_DELIM"
-
-        local _LINE_GRUB_CMDLINE_TEMP=""
+        declare -g _LINE_GRUB_CMDLINE_TEMP=""
         _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=$_THIS_DRIVER_DELIM "
         _LINE_GRUB_CMDLINE_TEMP+="pci-stub.ids=$_THIS_PCISTUB_HWID_DELIM "
         _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=$_THIS_VFIOPCI_HWID_DELIM "
         _LINE_GRUB_CMDLINE_TEMP="$_LINE_GRUB_CMDLINE_PREFIX${_LINE_GRUB_CMDLINE_TEMP::-1}"
-        
         return 0
     }
 
