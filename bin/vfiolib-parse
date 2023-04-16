@@ -129,11 +129,11 @@
         SelectMethodToParseDatabase || return 1
         ParseDatabaseFirstTimeAndSaveToFile || return 1
 
-        if "$_ASK_TO_SELECT_METHOD_OF_PARSE"; then
+        if "$_DO_PARSE_DATABASE_FROM_FILE"; then
             SelectFileToParseDatabase || return 1
+            SetOptionsForParsingDatabase || return 1
         fi
 
-        SetOptionsForParsingDatabase || return 1
         GetDevicesForEachIOMMUGroup || return 1
         AskToSelectAllGroups || return 1
         AreParsedListsEmpty || return 1
@@ -333,7 +333,8 @@
                 echo -e "\tClass/Type:\t'$_DEVICE_CLASS'"
                 echo -e "\tHardware ID:\t'$_DEVICE_HWID'"
 
-                if [[ ! -z "$_DEVICE_DRIVER" ]]; then
+                if [[ ! -z "$_DEVICE_DRIVER" ]] \
+                    && IsDriverNotOnIgnoreList "$_DEVICE_DRIVER"; then
                     echo -e "\tKernel driver:\t'$_DEVICE_DRIVER'"
                 else
                     echo -e "\tKernel driver:\t'N/A'"
@@ -448,10 +449,16 @@
         _PARSE_OPTIONS=""
         local _FILE=""
 
-        if "$_DO_PARSE_DATABASE_FROM_FILE"; then
+        if [[ ! -s "$_FILE_DATABASE" ]]; then
             _FILE="$_FILE_DATABASE"
-        else
+        elif [[ ! -s "$_DEFAULT_FILE_DATABASE" ]]; then
             _FILE="$_DEFAULT_FILE_DATABASE"
+        else
+            return 1
+        fi
+
+        if [[ ! -s "$_FILE" ]]; then
+            return 1
         fi
 
         _PARSE_OPTIONS="-F $_FILE"

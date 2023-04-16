@@ -74,14 +74,15 @@
                 return 1
             fi
 
-            if sudo swapon -v | grep zram \
-                && ! sudo swapon -v | grep zram | grep 0B; then
+            if sudo swapon -v | grep zram &> /dev/null\
+                && sudo swapon -v | grep zram &> /dev/null\
+                && ! sudo swapon -v | grep zram | grep 0B &> /dev/null; then
                 echo -e "$_PREFIX_NOTE zram-swap device(s) already in use. Restart system to save changes."
                 return 0
             fi
 
-            if sudo swapon -v | grep zram \
-                && ! sudo swapoff /dev/zram*; then
+            if sudo swapon -v | grep zram &> /dev/null \
+                && ! sudo swapoff /dev/zram* &> /dev/null; then
                 echo -e "$_PREFIX_ERROR Failed to disable zram-swap device(s)."
                 return 1
             fi
@@ -91,12 +92,12 @@
                 return 1
             fi
 
-            if ! sudo systemctl restart zram-swap; then
+            if ! sudo systemctl restart zram-swap &> /dev/null; then
                 echo -e "$_PREFIX_ERROR Failed to restart zram-swap service."
                 return 1
             fi
 
-            if ! sudo swapon -a; then
+            if ! sudo swapon -v | grep zram &> /dev/null; then
                 echo -e "$_PREFIX_ERROR Failed to enable zram-swap device."
                 return 1
             fi
@@ -125,8 +126,10 @@
             SetVideoOutput
             LibvirtHooks
             GuestAudioLoopback
-            GuestAudioStream
-            GuestVideoCapture
+            # NOTE: these functions always fail at build stage.
+            # TODO: fix!
+            # GuestAudioStream
+            # GuestVideoCapture
             return 0
         fi
 
@@ -146,15 +149,16 @@
             GuestAudioLoopback || return 1
         fi
 
-        if "$_EXECUTE_SCREAM"; then
-            GuestAudioStream || return 1
-        fi
+        # NOTE: these functions always fail at build stage.
+        # TODO: fix!
+        # if "$_EXECUTE_SCREAM"; then
+        #     GuestAudioStream || return 1
+        # fi
 
-        if "$_EXECUTE_LOOKING_GLASS"; then
-            GuestVideoCapture || return 1
-        fi
+        # if "$_EXECUTE_LOOKING_GLASS"; then
+        #     GuestVideoCapture || return 1
+        # fi
 
-        ModifyQEMU || return 1
         return 0
     }
 
@@ -623,7 +627,8 @@
                 return 1
             fi
 
-            if ! sudo bash "$_SCRIPT_NAME"; then                                    # TODO: add input vars here!
+            # TODO: add input vars here!
+            if ! sudo bash "$_SCRIPT_NAME"; then
                 echo -e "$_PREFIX_ERROR Failed to execute script '$_SCRIPT_NAME'."
                 return 1
             fi

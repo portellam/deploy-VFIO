@@ -34,20 +34,7 @@ function Main
     fi
 
     ExecuteEssentials || return 1
-    # ExecuteExtras || return 1
-
-    # <remarks> Main setup </remarks>
-    # case true in
-    #     "$_DO_PARSE_DATABASE_FROM_CACHE" | * )
-    #         ExecuteParse "SYSTEM" || return 1 ;;
-
-    #     "$_DO_PARSE_DATABASE_FROM_FILE" )
-    #         ExecuteParse "FILE" || return 1 ;;
-
-    #     "$_DO_PARSE_DATABASE_FROM_INTERNET" )
-    #         ExecuteParse "ONLINE" || return 1 ;;
-    # esac
-
+    ExecuteExtras || return 1
     ExecuteParse || return 1
     ExecuteSetup || return 1
     return 0
