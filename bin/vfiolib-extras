@@ -11,6 +11,7 @@
 # <code>
     source vfiolib-calcs
     source vfiolib-common
+    source vfiolib-files
     source vfiolib-parse
 # </code>
 
@@ -405,6 +406,37 @@
             return 1
         }
 
+        function Modify
+        {
+            local _APPARMOR_QEMU_FILE_ERROR="$_PREFIX_ERROR Failed to write to file '$_APPARMOR_QEMU_DEST_PATH'."
+
+            if grep -E -q "/dev/shm/scream-ivshmem" "$_APPARMOR_QEMU_DEST_PATH" \
+                && ! grep -E -q "/dev/shm/scream-ivshmem" "$_APPARMOR_QEMU_DEST_PATH" \
+                && ! sed -i ':/dev/shm/scream-ivshmem:c\/dev/shm/scream-ivshmem rw,' "$_APPARMOR_QEMU_DEST_PATH"; then
+                echo -e "$_APPARMOR_QEMU_FILE_ERROR"
+                return 1
+            fi
+
+            if ! grep -E -q "/dev/shm/scream-ivshmem" "$_APPARMOR_QEMU_DEST_PATH" \
+                && ! grep -E -q "/dev/shm/scream-ivshmem" "$_APPARMOR_QEMU_DEST_PATH" \
+                && ! echo "  /dev/shm/scream-ivshmem rw," >> "$_APPARMOR_QEMU_DEST_PATH"; then
+                echo -e "$_APPARMOR_QEMU_FILE_ERROR"
+                return 1
+            fi
+
+            if ! sudo touch /dev/shm/scream-ivshmem &> /dev/null; then
+                echo -e "$_PREFIX_ERROR Failed create shared memory file."
+                return 1
+            fi
+
+            if ! sudo chmod 666 /dev/shm/scream-ivshmem &> /dev/null; then
+                echo -e "$_PREFIX_ERROR Failed to set file permissions."
+                return 1
+            fi
+
+            return 0
+        }
+
         if ! GuestAudioCapture; then
             local _OUTPUT="Installing Scream...\t"
             false
@@ -418,7 +450,7 @@
             if Build; then
                 PrintPassOrFail "$_OUTPUT"
                 local _OUTPUT="Installing Scream...\t"
-                Install
+                Install && Modify
             fi
         fi
 
@@ -505,9 +537,40 @@
             return 0
         }
 
+        function Modify
+        {
+            local _APPARMOR_QEMU_FILE_ERROR="$_PREFIX_ERROR Failed to write to file '$_APPARMOR_QEMU_DEST_PATH'."
+
+            if grep -E -q "/{dev,run}/shm/lookingglass" "$_APPARMOR_QEMU_DEST_PATH" \
+                && ! grep -E -q "/{dev,run}/shm/lookingglass" "$_APPARMOR_QEMU_DEST_PATH" \
+                && ! sed -i ':/{dev,run}/shm/lookingglass:c\/{dev,run}/shm/lookingglass rw,' "$_APPARMOR_QEMU_DEST_PATH"; then
+                echo -e "$_APPARMOR_QEMU_FILE_ERROR"
+                return 1
+            fi
+
+            if ! grep -E -q "/{dev,run}/shm/lookingglass" "$_APPARMOR_QEMU_DEST_PATH" \
+                && ! grep -E -q "/{dev,run}/shm/lookingglass" "$_APPARMOR_QEMU_DEST_PATH" \
+                && ! echo "  /{dev,run}/shm/lookingglass rw," >> "$_APPARMOR_QEMU_DEST_PATH"; then
+                echo -e "$_APPARMOR_QEMU_FILE_ERROR"
+                return 1
+            fi
+
+            if ! sudo touch /dev/shm/lookingglass &> /dev/null; then
+                echo -e "$_PREFIX_ERROR Failed create shared memory file."
+                return 1
+            fi
+
+            if ! sudo chmod 666 /dev/shm/lookingglass &> /dev/null; then
+                echo -e "$_PREFIX_ERROR Failed to set file permissions."
+                return 1
+            fi
+
+            return 0
+        }
+
         Get
         PrintPassOrFail "Updating LookingGlass..."
-        Install
+        Install && Modify
         PrintPassOrFail "Installing LookingGlass..."
         return "$_LAST_EXIT_CODE"
     }
