@@ -14,11 +14,35 @@
 
 # <summary> Functions </summary>
 # <code>
-    function CopyBackupsToPaths
+    function BackupFile
     {
-        GetBackups || return 1
-        SetBackups || return 1
-        
+        if ( [[ -e "$1" ]] \
+            && ! sudo cp -rv "$1" "$1$_SUFFIX_BACKUP" ); then
+            echo -e "$_PREFIX_ERROR Failed to backup file '$1'."
+            return 1
+        fi
+
+        return 0
+    }
+
+    function BackupFiles
+    {
+        BackupFile "$_APPARMOR_QEMU_DEST_PATH" || return 1
+        BackupFile "$_CUSTOM_GRUB_DEST_PATH" || return 1
+        BackupFile "$_GRUB_DEST_PATH_1" || return 1
+        BackupFile "$_INITRAMFS_MODULES_DEST_PATH" || return 1
+        BackupFile "$_MODPROBE_BLACKLISTS_DEST_PATH" || return 1
+        BackupFile "$_MODPROBE_VFIO_DEST_PATH" || return 1
+        BackupFile "$_MODULES_DEST_PATH" || return 1
+        BackupFile "$_QEMU_DEST_PATH" || return 1
+        return 0
+    }
+
+    function CopyFilesToPaths
+    {
+        GetFiles || return 1
+        SetFiles || return 1
+
         if ! sudo mkdir -p $( dirname "$_APPARMOR_QEMU_DEST_PATH" ) \
             || ! sudo mkdir -p $( dirname "$_CUSTOM_GRUB_DEST_PATH" ) \
             || ! sudo mkdir -p $( dirname "$_QEMU_DEST_PATH" ); then
@@ -50,7 +74,7 @@
         fi
     }
 
-    function GetBackups
+    function GetFiles
     {
         if # [[ -z "$_APPARMOR_QEMU_SRC_PATH" ]] \
             [[ -z "$_AUDIO_LOOPBACK_SRC_PATH" ]] \
@@ -65,17 +89,17 @@
         fi
 
         if [[ -z "$_GRUB_SRC_PATH" ]]; then
-            GetBackupsForGRUB || return 1
+            GetFilesForGRUB || return 1
         fi
 
         if [[ -z "$_QEMU_SRC_PATH" ]]; then
-            SetBackupsForQEMU || return 1
+            SetFilesForQEMU || return 1
         fi
 
         return 0
     }
 
-    function GetBackupsForGRUB
+    function GetFilesForGRUB
     {
         if [[ -e "$_GRUB_DEST_PATH_1" ]]; then
             return 0
@@ -97,7 +121,31 @@
         return 0
     }
 
-    function SetBackupsForQEMU
+    function RestoreFile
+    {
+        if ( [[ -e "$1$_SUFFIX_BACKUP" ]] \
+            && ! sudo cp -rv "$1$_SUFFIX_BACKUP" "$1"  ); then
+            echo -e "$_PREFIX_ERROR Failed to restore file '$1'."
+            return 1
+        fi
+
+        return 0
+    }
+
+    function RestoreFiles
+    {
+        RestoreFile "$_APPARMOR_QEMU_DEST_PATH" || return 1
+        RestoreFile "$_CUSTOM_GRUB_DEST_PATH" || return 1
+        RestoreFile "$_GRUB_DEST_PATH_1" || return 1
+        RestoreFile "$_INITRAMFS_MODULES_DEST_PATH" || return 1
+        RestoreFile "$_MODPROBE_BLACKLISTS_DEST_PATH" || return 1
+        RestoreFile "$_MODPROBE_VFIO_DEST_PATH" || return 1
+        RestoreFile "$_MODULES_DEST_PATH" || return 1
+        RestoreFile "$_QEMU_DEST_PATH" || return 1
+        return 0
+    }
+
+    function SetFilesForQEMU
     {
         if [[ -e "$_QEMU_DEST_PATH" ]]; then
             return 0
@@ -135,13 +183,13 @@
         return 0
     }
 
-    function SetBackups
+    function SetFiles
     {
-        SetBackupsForGRUB || return 1
+        SetFilesForGRUB || return 1
         return 0
     }
 
-    function SetBackupsForGRUB
+    function SetFilesForGRUB
     {
         if ! sudo cp "$_GRUB_SRC_PATH" "$_GRUB_SRC_BACKUP_PATH" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to copy GRUB backup file."
@@ -176,9 +224,9 @@
     function ExecuteBackups
     {
         SetWorkingDirToBackupsFolder || return 1
-        GetBackups || return 1
-        SetBackups || return 1
-        CopyBackupsToPaths || return 1
+        GetFiles || return 1
+        SetFiles || return 1
+        CopyFilesToPaths || return 1
         return 0
     }
 # </code>
@@ -189,6 +237,7 @@
 
     # <remarks> Files </remarks>
     declare -g _BACKUPS_PATH="/usr/local/etc/vfiolib.d"
+    declare -g _SUFFIX_BACKUP=".old"
 
     declare -g _APPARMOR_QEMU_DEST_PATH="/etc/apparmor.d/local/abstractions/libvirt-qemu"
     # declare -g _APPARMOR_QEMU_FILE_URL=""
