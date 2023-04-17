@@ -110,6 +110,7 @@
         local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
 
         if ! IsHostMemorySufficientForZramSwap \
+            || ! Get \
             || ! Install \
             || ! Modify; then
             false
