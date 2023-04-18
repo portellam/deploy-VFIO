@@ -1,5 +1,5 @@
 ## Description
-Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA (GPU) device for Host at GRUB boot menu. VFIO: Run any Guest OS with PCI hardware as a Virtual machine (VM), with your desktop OS untouched.
+Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video card for Host at GRUB boot menu. VFIO: Run any Virtual machine with real hardware, separate from your desktop host machine.
 
 ## Status: partial completion
 #### What works
