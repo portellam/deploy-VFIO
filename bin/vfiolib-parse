@@ -51,6 +51,7 @@
             local _DO_PRINT=false
             local _HAS_ASKED=false
             declare -g _IOMMU_GROUP_HAS_VGA=false
+            declare -g _IOMMU_GROUP_IS_VALID=false
             PrintInfoForIOMMUGroupAndSaveInfoToLists "$_IOMMU_GROUP_ID" && _DO_PRINT=true
 
             if "$_DO_PRINT" \
@@ -70,8 +71,7 @@
                 _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO+=( "$_IOMMU_GROUP_ID" )
             fi
 
-            if "$_DO_PRINT" \
-                && ! "$_HAS_ASKED" \
+            if ! "$_IOMMU_GROUP_IS_VALID" \
                 && "$_IOMMU_GROUP_HAS_VGA"; then
                 _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_HOST+=( "$_IOMMU_GROUP_ID" )
             fi
@@ -236,25 +236,18 @@
         fi
 
         local -i _IOMMU_GROUP_ID="$1"
-        local _IOMMU_GROUP_IS_VALID=false
 
         for _DEVICE_FULL_ID in ${_IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]}; do
             local -u _DEVICE_DOMAIN_ID=${_DEVICE_FULL_ID:5:2}
             local -u _DEVICE_PCI_ID=${_DEVICE_FULL_ID:5}
-            _DEVICE_CLASS=""
-            _DEVICE_DRIVER=""
-            _DEVICE_HWID=""
-            _DEVICE_NAME=""
-            _DEVICE_VENDOR=""
+            _DEVICE_CLASS="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 2 )"
+            _DEVICE_DRIVER=$( lspci -ks $_DEVICE_FULL_ID $_PARSE_OPTIONS | grep -i "driver" | cut -d " " -f 5 )
+            _DEVICE_HWID=$( lspci -ns $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d " " -f 3 )
+            _DEVICE_NAME="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 6 )"
+            _DEVICE_VENDOR="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 4 )"
 
             if echo $_DEVICE_DOMAIN_ID | grep -E -q "$_DOMAIN_ID_REGEX"; then
                 _IOMMU_GROUP_IS_VALID=true
-                _DEVICE_CLASS="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 2 )"
-                _DEVICE_DRIVER=$( lspci -ks $_DEVICE_FULL_ID $_PARSE_OPTIONS | grep -i "driver" | cut -d " " -f 5 )
-                _DEVICE_HWID=$( lspci -ns $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d " " -f 3 )
-                _DEVICE_NAME="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 6 )"
-                _DEVICE_VENDOR="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 4 )"
-
                 echo -e "\tSlot ID:\t'$_DEVICE_PCI_ID'"
                 echo -e "\tVendor name:\t'$_DEVICE_VENDOR'"
                 echo -e "\tDevice name:\t'$_DEVICE_NAME'"
@@ -291,26 +284,19 @@
 
         local -a _CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST _HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST _NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST _PCI_ID_BY_VALID_IOMMU_GROUP_TEMP_LIST
         local -i _IOMMU_GROUP_ID="$1"
-        local _IOMMU_GROUP_IS_VALID=false
 
         for _DEVICE_FULL_ID in ${_IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]}; do
             local -u _DEVICE_DOMAIN_ID=${_DEVICE_FULL_ID:5:2}
             local -u _DEVICE_PCI_ID=${_DEVICE_FULL_ID:5}
             _PCI_ID_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_PCI_ID" )
-            _DEVICE_CLASS=""
-            _DEVICE_DRIVER=""
-            _DEVICE_HWID=""
-            _DEVICE_NAME=""
-            _DEVICE_VENDOR=""
+            _DEVICE_CLASS="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 2 )"
+            _DEVICE_DRIVER=$( lspci -ks $_DEVICE_FULL_ID $_PARSE_OPTIONS | grep -i "driver" | cut -d " " -f 5 )
+            _DEVICE_HWID=$( lspci -ns $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d " " -f 3 )
+            _DEVICE_NAME="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 6 )"
+            _DEVICE_VENDOR="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 4 )"
 
             if echo $_DEVICE_DOMAIN_ID | grep -E -q "$_DOMAIN_ID_REGEX"; then
                 _IOMMU_GROUP_IS_VALID=true
-                _DEVICE_CLASS="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 2 )"
-                _DEVICE_DRIVER=$( lspci -ks $_DEVICE_FULL_ID $_PARSE_OPTIONS | grep -i "driver" | cut -d " " -f 5 )
-                _DEVICE_HWID=$( lspci -ns $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d " " -f 3 )
-                _DEVICE_NAME="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 6 )"
-                _DEVICE_VENDOR="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 4 )"
-
                 echo -e "\tSlot ID:\t'$_DEVICE_PCI_ID'"
                 echo -e "\tVendor name:\t'$_DEVICE_VENDOR'"
                 echo -e "\tDevice name:\t'$_DEVICE_NAME'"
@@ -325,22 +311,22 @@
                 fi
 
                 echo
-            fi
 
-            if [[ ! -z "$_DEVICE_CLASS" ]]; then
-                _CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_CLASS" )
-            fi
+                if [[ ! -z "$_DEVICE_CLASS" ]]; then
+                    _CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_CLASS" )
+                fi
 
-            if [[ ! -z "$_DEVICE_DRIVER" ]]; then
-                _DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_DRIVER" )
-            fi
+                if [[ ! -z "$_DEVICE_DRIVER" ]]; then
+                    _DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_DRIVER" )
+                fi
 
-            if [[ ! -z "$_DEVICE_HWID" ]]; then
-                _HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_HWID" )
-            fi
+                if [[ ! -z "$_DEVICE_HWID" ]]; then
+                    _HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_HWID" )
+                fi
 
-            if [[ ! -z "$_DEVICE_NAME" ]]; then
-                _NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_NAME" )
+                if [[ ! -z "$_DEVICE_NAME" ]]; then
+                    _NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_NAME" )
+                fi
             fi
 
             if IsDeviceVGA "$_DEVICE_CLASS"; then
