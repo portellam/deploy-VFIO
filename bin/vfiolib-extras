@@ -108,12 +108,23 @@
         local -r _USER_NAME="foundObjects"
         local -r _REPO_NAME="zram-swap"
         local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
+        local _HAS_SKIPPED=false
 
-        if ! IsHostMemorySufficientForZramSwap \
+        if ! "$_EXECUTE_ZRAM_SWAP" \
+            && ! AskToExecuteOrSkip "Install zram-swap?"; then
+            _HAS_SKIPPED=true
+        fi
+
+        if ! "$_HAS_SKIPPED" \
+            && ( ! IsHostMemorySufficientForZramSwap \
             || ! Get \
             || ! Install \
-            || ! Modify; then
+            || ! Modify ); then
             false
+        fi
+
+        if "$_HAS_SKIPPED"; then
+            ( return 255 )
         fi
 
         PrintPassOrFail "Allocating RAM to swap..."
@@ -264,7 +275,22 @@
             return 0
         }
 
-        Main
+        local _HAS_SKIPPED=false
+
+        if ! "$_EXECUTE_AUDIO_LOOPBACK_SETUP" \
+            && ! AskToExecuteOrSkip "Install audio loopback service?"; then
+            _HAS_SKIPPED=true
+        fi
+
+        if ! "$_HAS_SKIPPED" \
+            && ! Main; then
+            false
+        fi
+
+        if "$_HAS_SKIPPED"; then
+            ( return 255 )
+        fi
+
         PrintPassOrFail "Creating audio loopback..."
         return "$_LAST_EXIT_CODE"
     }
@@ -439,24 +465,32 @@
             return 0
         }
 
-        if ! GuestAudioCapture; then
-            local _OUTPUT="Installing Scream...\t"
-            false
-        else
-            local _OUTPUT="Updating Scream..."
-            Get
-            PrintPassOrFail "$_OUTPUT"
+        local _HAS_SKIPPED=false
 
-            local _OUTPUT="Building Scream..."
+        if ! "$_EXECUTE_SCREAM" \
+            && ! AskToExecuteOrSkip "Install Scream?"; then
+            _HAS_SKIPPED=true
+        fi
 
-            if Build; then
-                PrintPassOrFail "$_OUTPUT"
-                local _OUTPUT="Installing Scream...\t"
-                Install && Modify
+        if ! "$_HAS_SKIPPED"; then
+            if ! GuestAudioCapture; then
+                false
+            else
+                Get
+                PrintPassOrFail "Updating Scream..."
+
+                if Build; then
+                    PrintPassOrFail "Building Scream..."
+                    Install && Modify
+                fi
             fi
         fi
 
-        PrintPassOrFail "$_OUTPUT" && _IS_SCREAM_SETUP=true
+        if "$_HAS_SKIPPED"; then
+            ( return 255 )
+        fi
+
+        PrintPassOrFail "Installing Scream...\t" && _IS_SCREAM_SETUP=true
         return "$_LAST_EXIT_CODE"
     }
 
@@ -567,10 +601,24 @@
             return 0
         }
 
-        Get
-        PrintPassOrFail "Updating LookingGlass..."
-        Install && Modify
-        PrintPassOrFail "Installing LookingGlass..."
+        local _HAS_SKIPPED=false
+
+        if ! "$_EXECUTE_LOOKING_GLASS" \
+            && ! AskToExecuteOrSkip "Install Looking Glass?"; then
+            _HAS_SKIPPED=true
+        fi
+
+        if ! "$_HAS_SKIPPED"; then
+            Get
+            PrintPassOrFail "Updating Looking Glass..."
+            Install && Modify
+        fi
+
+        if "$_HAS_SKIPPED"; then
+            ( return 255 )
+        fi
+
+        PrintPassOrFail "Installing Looking Glass..."
         return "$_LAST_EXIT_CODE"
     }
 
@@ -581,8 +629,14 @@
     {
         function Main
         {
-            if ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_SRC_PATH" "$_LIBVIRT_HOOK_NOSLEEP_DEST_PATH"; then
-                echo -e "$_PREFIX_ERROR Failed to copy file."
+            if ! sudo cp "$_LIBVIRT_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_DEST_PATH" &> /dev/null \
+                || ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH" "$_LIBVIRT_HOOK_NOSLEEP_SERVICE_DEST_PATH" &> /dev/null; then
+                echo -e "$_PREFIX_ERROR Failed to copy file(s)."
+                return 1
+            fi
+
+            if ! sudo chmod +x "$_LIBVIRT_HOOK_DEST_PATH" &> /dev/null; then
+                echo -e "$_PREFIX_ERROR Failed to set file permissions."
                 return 1
             fi
 
@@ -594,8 +648,22 @@
             return 0
         }
 
-        Main
-        PrintPassOrFail "Installing libvirt-hooks..."
+        local _HAS_SKIPPED=false
+
+        if ! "$_EXECUTE_LIBVIRT_HOOKS" \
+            && ! AskToExecuteOrSkip "Install Libvirt hooks?"; then
+            _HAS_SKIPPED=true
+        fi
+
+        if ! "$_HAS_SKIPPED"; then
+            Main
+        fi
+
+        if "$_HAS_SKIPPED"; then
+            ( return 255 )
+        fi
+
+        PrintPassOrFail "Installing Libvirt hooks..."
         return "$_LAST_EXIT_CODE"
     }
 
@@ -640,9 +708,23 @@
         local -r _USER_NAME="portellam"
         local -r _REPO_NAME="auto-Xorg"
         local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
-        Get
-        Install &> /dev/null
-        PrintPassOrFail "Allocating RAM to swap..."
+        local _HAS_SKIPPED=false
+
+        if ! "$_EXECUTE_AUTO_XORG_SETUP" \
+            && ! AskToExecuteOrSkip "Install auto-Xorg?"; then
+            _HAS_SKIPPED=true
+        fi
+
+        if ! "$_HAS_SKIPPED"; then
+            Get
+            Install &> /dev/null
+        fi
+
+        if "$_HAS_SKIPPED"; then
+            ( return 255 )
+        fi
+
+        PrintPassOrFail "Installing auto-Xorg...\t"
         return "$_LAST_EXIT_CODE"
     }
 # </code>

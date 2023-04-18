@@ -13,6 +13,32 @@
 # </code>
 
 # <code>
+    function AskToExecuteOrSkip
+    {
+        local _OUTPUT=""
+
+        if [[ ! -z "$1" ]]; then
+            _OUTPUT="$1 "
+        fi
+
+        for _TRIES_COUNT in $( seq 0 2 ); do
+            read -r -p "$_OUTPUT[Y/n]: " _ANSWER
+
+            case "$_ANSWER" in
+                [Yy]* )
+                    return 0 ;;
+
+                [Nn]* )
+                    return 255 ;;
+
+                * )
+                    echo "Please answer Y/n." ;;
+            esac
+        done
+
+        return 1
+    }
+
     function FindPackage
     {
         if [[ "$1" == "" ]] \
@@ -280,11 +306,16 @@
             echo -en "$1\t"
         fi
 
-        if [[ "$_LAST_EXIT_CODE" -ne 0 ]]; then
-            echo -e "$_SUFFIX_FAIL"
-        else
-            echo -e "$_SUFFIX_PASS"
-        fi
+        case "$_LAST_EXIT_CODE" in
+            0 )
+                echo -e "$_SUFFIX_PASS" ;;
+
+            255 )
+                echo -e "$_SUFFIX_SKIP" ;;
+
+            * )
+                echo -e "$_SUFFIX_FAIL" ;;
+        esac
 
         return "$_LAST_EXIT_CODE"
     }
@@ -387,7 +418,7 @@
                         return 0 ;;
 
                     [Nn]* )
-                        break ;;
+                        return 255 ;;
 
                     * )
                         echo "Please answer Y/n." ;;
