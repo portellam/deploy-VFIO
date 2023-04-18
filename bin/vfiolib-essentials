@@ -35,27 +35,6 @@
     # </summary
     function AllocateCPUToGuest
     {
-        function AskToContinue
-        {
-            for _TRIES_COUNT in $( seq 0 2 ); do
-                read -r -p "Allocate CPU threads to Guest(s)? [Y/n]: " _ANSWER
-
-                case "$_ANSWER" in
-                    [Yy]* )
-                        return 0 ;;
-
-                    [Nn]* )
-                        return 1 ;;
-
-                    * )
-                        echo "Please answer \"Y\" or \"N\"." ;;
-                esac
-            done
-
-            echo -e "$_PREFIX_ERROR Failed to answer."
-            return 1
-        }
-
         function GetThreadByCoreAndSMT
         {
             _THREAD=$(( _CORE + ( _SMT_FACTOR * _TOTAL_CORES_COUNT ) ))             # NOTE: VS Code reports a syntax error here. There is none.
@@ -187,7 +166,7 @@
         }
 
         if ! "$_EXECUTE_ISOLCPU_SETUP"; then
-            AskToContinue || return 0
+            AskToExecuteOrSkip "Allocate CPU threads to Guest(s)?" || return 0
         fi
 
         Main
@@ -236,27 +215,6 @@
             return 1
         }
 
-        function AskToContinue
-        {
-            for _TRIES_COUNT in $( seq 0 2 ); do
-                read -r -p "Setup Hugepages? [Y/n]: " _ANSWER
-
-                case "$_ANSWER" in
-                    [Yy]* )
-                        return 0 ;;
-
-                    [Nn]* )
-                        return 1 ;;
-
-                    * )
-                        echo "Please answer \"Y\" or \"N\"." ;;
-                esac
-            done
-
-            echo -e "$_PREFIX_ERROR Failed to answer."
-            return 1
-        }
-
         function Main
         {
             _IS_HUGEPAGES_SETUP=false
@@ -268,7 +226,7 @@
 
             if ! "$_EXECUTE_HUGEPAGES_SETUP"; then
                 echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\nGuest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
-                AskToContinue || return 0
+                AskToExecuteOrSkip "Setup Hugepages?" || return 0
             fi
 
             if ! "$_IS_HUGEPAGES_SIZE_SET"; then
@@ -465,27 +423,6 @@
     # </summary>
     function VirtualKVM
     {
-        function AskToContinue
-        {
-            for _TRIES_COUNT in $( seq 0 2 ); do
-                read -r -p "Setup Evdev? [Y/n]: " _ANSWER
-
-                case "$_ANSWER" in
-                    [Yy]* )
-                        return 0 ;;
-
-                    [Nn]* )
-                        return 1 ;;
-
-                    * )
-                        echo "Please answer \"Y\" or \"N\"." ;;
-                esac
-            done
-
-            echo -e "$_PREFIX_ERROR Failed to answer."
-            return 1
-        }
-
         function Main
         {
             declare -ag _EVENT_DEVICES_LIST=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )
@@ -504,7 +441,7 @@
 
         if ! "$_EXECUTE_EVDEV_SETUP"; then
             echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between Host and Guest(s).\n${_SET_COLOR_YELLOW}HOW-TO:${_RESET_COLOR} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
-            AskToContinue || return 0
+            AskToExecuteOrSkip "Setup Evdev?" || return 0
         fi
 
         Main

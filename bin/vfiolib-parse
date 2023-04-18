@@ -93,24 +93,8 @@
         fi
 
         local -i _IOMMU_GROUP_ID="$1"
-
-        for _TRIES_COUNT in $( seq 0 2 ); do
-            read -r -p "Select IOMMU group '$_IOMMU_GROUP_ID'? [Y/n]: " _ANSWER
-
-            case "$_ANSWER" in
-                [Yy]* )
-                    return 0 ;;
-
-                [Nn]* )
-                    return 1 ;;
-
-                * )
-                    echo "Please answer \"Y\" or \"N\"." ;;
-            esac
-        done
-
-        echo -e "$_PREFIX_ERROR Failed to answer."
-        return 1
+        AskToExecuteOrSkip "Select IOMMU group '$_IOMMU_GROUP_ID'?"
+        return "$?"
     }
 
     function DoesHostHaveVGA

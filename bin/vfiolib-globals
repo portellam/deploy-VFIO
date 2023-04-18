@@ -43,10 +43,8 @@
     declare -g _PREFIX_FAIL="${_SET_COLOR_RED}Failure:$_RESET_COLOR"
     declare -g _PREFIX_PASS="${_SET_COLOR_GREEN}Success:$_RESET_COLOR"
     declare -g _SUFFIX_FAIL="${_SET_COLOR_RED}[Failure]$_RESET_COLOR"
-    # declare -g _SUFFIX_MAYBE="${_SET_COLOR_YELLOW}[Incomplete]$_RESET_COLOR"
-    # declare -g _SUFFIX_WAIT="${_SET_COLOR_YELLOW}[Pending]$_RESET_COLOR"
     declare -g _SUFFIX_PASS="${_SET_COLOR_GREEN}[Success]$_RESET_COLOR"
-    # declare -g _SUFFIX_SKIP="${_SET_COLOR_YELLOW}[Skipped]$_RESET_COLOR"
+    declare -g _SUFFIX_SKIP="${_SET_COLOR_YELLOW}[Skipped]$_RESET_COLOR"
 
     # <remarks> File templates. </remarks>
     declare -ga _DISCLAIMER_FILE_CONTENTS=(

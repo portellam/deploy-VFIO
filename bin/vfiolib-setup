@@ -9,8 +9,9 @@
 
 # <remarks> Using </remarks>
 # <code>
-    source vfiolib-files
+    source vfiolib-common
     source vfiolib-extras
+    source vfiolib-files
     source vfiolib-parse
     source vfiolib-usage
 # </code>
