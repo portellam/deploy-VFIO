@@ -1,24 +1,21 @@
 ## Description
 Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA (GPU) device for Host at GRUB boot menu. VFIO: Run any Guest OS with PCI hardware as a Virtual machine (VM), with your desktop OS untouched.
 
-## Status
-work-in-progress
-
-### What works
-* VFIO setups:      Static no-GRUB setup works. Devices will bind to vfio-pci.
+## Status: partial completion
+#### What works
+* VFIO setups:      No-GRUB Static setup works.
 * Essential setups: all work.
 * Extras setups:    all work minus exceptions listed below. Auto-Xorg needs to parse arguments (as it does in its installer).
-
-### What is currently not working
-* VFIO setups:    Multiboot and Static GRUB install but do not work. Devices fail to bind to vfio-pci? (possible misused kernel commandline)
+#### What is currently not working
+* VFIO setups:    Multiboot and GRUB Static setups install, but do not work. Devices fail to bind to vfio-pci? (possible misused kernel commandline)
 * Extras setups:  Looking Glass and Scream fail to build automatically.
 * Usage is partially working. Not all possible combinations of arguments currently work together.
-
-### To-do
-* fix malfunctioning installs.
-* add quality-of-life; include Yes/no prompts, include automation, fix usage.
-* include example XML files for virtual machines.
-* include visual guides?
+#### To-do
+* Fix remaining business functions (VFIO setups).
+* Fix usage.
+* Fix nice-to-have functions (extras) or omit for this release.
+* Include example XML files for virtual machines?
+* Include visual guides?
 
 ## Why?
 * **Separation-of-Concerns**
