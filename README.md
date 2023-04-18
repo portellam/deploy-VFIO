@@ -1,8 +1,21 @@
-## Status
-work-in-progress
-
 ## Description
-Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA (GPU) device for Host at GRUB boot menu. VFIO: Run any Guest OS with PCI hardware as a Virtual machine (VM), with your desktop OS untouched.
+Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video card for Host at GRUB boot menu. VFIO: Run any Virtual machine with real hardware, separate from your desktop host machine.
+
+## Status: partial completion (see [develop branch](https://github.com/portellam/deploy-VFIO/tree/develop))
+#### What works
+* VFIO setups:      No-GRUB Static setup works.
+* Essential setups: all work.
+* Extras setups:    all work minus exceptions listed below. Auto-Xorg needs to parse arguments (as it does in its installer).
+#### What is currently not working
+* VFIO setups:    Multiboot and GRUB Static setups install, but do not work. Devices fail to bind to vfio-pci? (possible misused kernel commandline)
+* Extras setups:  Looking Glass and Scream fail to build automatically.
+* Usage is partially working. Not all possible combinations of arguments currently work together.
+#### To-do
+* Fix remaining business functions (VFIO setups).
+* Fix usage.
+* Fix nice-to-have functions (extras) or omit for this release.
+* Include example XML files for virtual machines?
+* Include visual guides?
 
 ## Why?
 * **Separation-of-Concerns**
@@ -22,15 +35,15 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA (GP
 ## How-to
 #### To install, execute:
 
-        sudo bash deploy-vfio.bash
+        sudo bash installer.bash
 
 ### Usage
 #### * Options that skip *all* user prompts.
 
-        Usage:          bash deploy-vfio.bash [OPTION]... [ARGUMENTS]...
+        Usage:          sudo bash deploy-vfio [OPTION]... [ARGUMENTS]...
         Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization (PCI Passthrough).
 
-          --help        print this help and exit
+          --help        Print this help and exit.
 
 #### Parse IOMMU
 
@@ -58,7 +71,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA (GP
           -c, --cpu                     Allocate CPU.
           -e, --evdev                   Setup a virtual KVM switch.
           -h, --hugepages               Create static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s).
-          --uninstall-utils             Undo changes made by preliminary setup.
+          --uninstall-essentials             Undo changes made by preliminary setup.
 
         Hugepages ARGUMENTS: *
           2M, 1G                        Hugepage size (2 MiB or 1 GiB).
@@ -101,7 +114,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a VGA (GP
 #### * Options that skip *all* user prompts.
 
 ## Features
-### Pre-setup  <sub>(vfiolib-utils)</sub>
+### Pre-setup  <sub>(vfiolib-essentials)</sub>
 * **Allocate CPU**
     - Reduce Host overhead, and improve both Host and Guest performance.
     - **Statically** allocate Host CPU cores (and/or threads).<sup>[2](#2)</sup>
