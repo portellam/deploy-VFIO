@@ -16,6 +16,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
 * Fix nice-to-have functions (extras) or omit for this release.
 * Include example XML files for virtual machines?
 * Include visual guides?
+* Create script or program to resume VM(s) from sleep?
 
 ## Why?
 * **Separation-of-Concerns**
