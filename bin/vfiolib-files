@@ -16,8 +16,12 @@
 # <code>
     function BackupFile
     {
+        if [[ -e "$1$_SUFFIX_BACKUP" ]]; then
+            return 0
+        fi
+
         if ( [[ -e "$1" ]] \
-            && ! sudo cp -rv "$1" "$1$_SUFFIX_BACKUP" ); then
+            && ! sudo cp -rv "$1" "$1$_SUFFIX_BACKUP" &> /dev/null ); then
             echo -e "$_PREFIX_ERROR Failed to backup file '$1'."
             return 1
         fi
@@ -40,9 +44,6 @@
 
     function CopyFilesToPaths
     {
-        GetFiles || return 1
-        SetFiles || return 1
-
         if ! sudo mkdir -p $( dirname "$_APPARMOR_QEMU_DEST_PATH" ) \
             || ! sudo mkdir -p $( dirname "$_CUSTOM_GRUB_DEST_PATH" ) \
             || ! sudo mkdir -p $( dirname "$_QEMU_DEST_PATH" ); then
@@ -91,24 +92,20 @@
 
     function GetFiles
     {
-        if # [[ -z "$_APPARMOR_QEMU_SRC_PATH" ]] \
-            [[ -z "$_AUDIO_LOOPBACK_SRC_PATH" ]] \
-            || [[ -z "$_CUSTOM_GRUB_SRC_PATH" ]] \
-            || [[ -z "$_INITRAMFS_MODULES_SRC_PATH" ]] \
-            || [[ -z "$_LIBVIRT_HOOK_NOSLEEP_SRC_PATH" ]] \
-            || [[ -z "$_MODPROBE_BLACKLISTS_SRC_PATH" ]] \
-            || [[ -z "$_MODPROBE_VFIO_SRC_PATH" ]] \
-            || [[ -z "$_MODULES_SRC_PATH" ]]; then
+        if [[ ! -e "$_AUDIO_LOOPBACK_SRC_PATH" ]] \
+            || [[ ! -e "$_CUSTOM_GRUB_SRC_PATH" ]] \
+            || [[ ! -e "$_INITRAMFS_MODULES_SRC_PATH" ]] \
+            || [[ ! -e "$_LIBVIRT_HOOK_SRC_PATH" ]] \
+            || [[ ! -e "$_LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH" ]] \
+            || [[ ! -e "$_MODPROBE_BLACKLISTS_SRC_PATH" ]] \
+            || [[ ! -e "$_MODPROBE_VFIO_SRC_PATH" ]] \
+            || [[ ! -e "$_MODULES_SRC_PATH" ]]; then
             echo -e "$_PREFIX_ERROR Failed to find backup files."
             return 1
         fi
 
-        if [[ -z "$_GRUB_SRC_PATH" ]]; then
+        if [[ ! -e "$_GRUB_SRC_PATH" ]]; then
             GetFilesForGRUB || return 1
-        fi
-
-        if [[ -z "$_QEMU_SRC_PATH" ]]; then
-            SetFilesForQEMU || return 1
         fi
 
         return 0
@@ -120,14 +117,14 @@
             return 0
         fi
 
-        if [[ -z "$_GRUB_DEST_PATH_2" ]] \
-            && [[ -z "$_GRUB_SRC_PATH" ]]; then
+        if [[ ! -e "$_GRUB_DEST_PATH_2" ]] \
+            && [[ ! -e "$_GRUB_SRC_PATH" ]]; then
             echo -e "$_PREFIX_ERROR Failed to find GRUB source file."
             return 1
         fi
 
-        if [[ -z "$_GRUB_DEST_PATH_BACKUP" ]]; then
-            if ! sudo cp "$_GRUB_DEST_PATH_2 $_GRUB_SRC_PATH"; then
+        if [[ ! -e "$_GRUB_DEST_PATH_BACKUP" ]]; then
+            if ! sudo cp "$_GRUB_DEST_PATH_2" "$_GRUB_SRC_PATH"; then
                 echo -e "$_PREFIX_ERROR Failed to backup GRUB source file."
                 return 1
             fi
@@ -139,8 +136,13 @@
     function RestoreFile
     {
         if ( [[ -e "$1$_SUFFIX_BACKUP" ]] \
-            && ! sudo cp -rv "$1$_SUFFIX_BACKUP" "$1"  ); then
+            && ! sudo cp -rv "$1$_SUFFIX_BACKUP" "$1" &> /dev/null ); then
             echo -e "$_PREFIX_ERROR Failed to restore file '$1'."
+            return 1
+        fi
+
+        if ! sudo rm -f "$1$_SUFFIX_BACKUP" &> /dev/null; then
+            echo -e "$_PREFIX_ERROR Failed to delete file '$1'."
             return 1
         fi
 
@@ -166,7 +168,7 @@
             return 0
         fi
 
-        if [[ -z "$_QEMU_SRC_PATH" ]]; then
+        if [[ ! -e "$_QEMU_SRC_PATH" ]]; then
             echo -e "$_PREFIX_ERROR Failed to find QEMU source file. Attempting to download."
 
             if ! command -v curl &> /dev/null; then
@@ -201,6 +203,7 @@
     function SetFiles
     {
         SetFilesForGRUB || return 1
+        SetFilesForQEMU || return 1
         return 0
     }
 
@@ -275,9 +278,12 @@
     declare -g _INITRAMFS_MODULES_DEST_PATH="/etc/initramfs-tools/modules"
     declare -g _INITRAMFS_MODULES_SRC_PATH="$_BACKUPS_PATH/initramfs-tools"
 
-    declare -g _LIBVIRT_HOOK_NOSLEEP_DEST_PATH="/etc/systemd/system/$_LIBVIRT_HOOK_NOSLEEP_FILENAME"
-    declare -g _LIBVIRT_HOOK_NOSLEEP_FILENAME="libvirt-nosleep@.service"
-    declare -g _LIBVIRT_HOOK_NOSLEEP_SRC_PATH="$_BACKUPS_PATH/$_LIBVIRT_HOOK_NOSLEEP_FILENAME"
+    declare -g _LIBVIRT_HOOK_DEST_PATH="/etc/libvirt/hooks/qemu"
+    declare -g _LIBVIRT_HOOK_SRC_PATH="$_BACKUPS_PATH/hooks"
+
+    declare -g _LIBVIRT_HOOK_NOSLEEP_SERVICE_DEST_PATH="/etc/systemd/system/$_LIBVIRT_HOOK_NOSLEEP_SERVICE_FILENAME"
+    declare -g _LIBVIRT_HOOK_NOSLEEP_SERVICE_FILENAME="libvirt-nosleep@.service"
+    declare -g _LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH="$_BACKUPS_PATH/$_LIBVIRT_HOOK_NOSLEEP_SERVICE_FILENAME"
 
     declare -g _MODPROBE_BLACKLISTS_DEST_PATH="/etc/modprobe.d/pci-blacklists.conf"
     declare -g _MODPROBE_BLACKLISTS_SRC_PATH="$_BACKUPS_PATH/pci-blacklists.conf"
