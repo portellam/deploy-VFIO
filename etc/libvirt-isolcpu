@@ -1,0 +1,29 @@
+#!/bin/bash
+
+#
+# Filename:         /usr/local/bin/libvirt-isolcpu
+# Description:      Reserve/release CPU threads at start of Libvirt domain(s).
+# URL(s):           https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#IO\_threads
+# Author(s):        Unknown author
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+_COMMAND=$2
+_LAST_THREAD_ID=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+" )
+(( _LAST_THREAD_ID-- ))
+_RESERVED_CPU_SET="0,1,6,7"
+_RELEASED_CPU_SET="0-$_LAST_THREAD_ID"
+
+case "$_COMMAND" in
+        "started" )
+        systemctl set-property --runtime -- system.slice AllowedCPUs=$_RESERVED_CPU_SET
+        systemctl set-property --runtime -- user.slice AllowedCPUs=$_RESERVED_CPU_SET
+        systemctl set-property --runtime -- init.scope AllowedCPUs=$_RESERVED_CPU_SET
+        ;;
+
+        "release" )
+        systemctl set-property --runtime -- system.slice AllowedCPUs=$_RELEASED_CPU_SET
+        systemctl set-property --runtime -- user.slice AllowedCPUs=$_RELEASED_CPU_SET
+        systemctl set-property --runtime -- init.scope AllowedCPUs=$_RELEASED_CPU_SET
+        ;;
+esac
