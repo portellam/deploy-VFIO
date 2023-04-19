@@ -71,7 +71,9 @@
                 _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO+=( "$_IOMMU_GROUP_ID" )
             fi
 
-            if ! "$_IOMMU_GROUP_IS_VALID" \
+            if (( "$_DO_PRINT" \
+                && "$_HAS_ASKED" ) \
+                || ! "$_IOMMU_GROUP_IS_VALID" ) \
                 && "$_IOMMU_GROUP_HAS_VGA"; then
                 _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_HOST+=( "$_IOMMU_GROUP_ID" )
             fi
@@ -86,12 +88,7 @@
 
     function AskToSelectThisIOMMUGroup
     {
-        if [[ -z "$1" ]] \
-            || ! [[ "$1" =~ ^[0-9]+$ ]]; then
-            echo -e "$_PREFIX_ERROR IOMMU group ID is not valid."
-            return 1
-        fi
-
+        IsIOMMUGroupIDValid "$1" || return 1
         local -i _IOMMU_GROUP_ID="$1"
         AskToExecuteOrSkip "Select IOMMU group '$_IOMMU_GROUP_ID'?"
         return "$?"
@@ -101,7 +98,7 @@
     {
         if [[ "${#_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_HOST[@]}" -eq 0 ]]; then
             echo -e "$_PREFIX_ERROR No VGA devices left for host."
-        return 1
+            return 1
         fi
 
         return 0
@@ -137,7 +134,7 @@
                 local -u _DEVICE_DOMAIN_ID=$( echo "$_DEVICE_FULL_ID" | cut -d ':' -f 2 )
 
                 # <remarks> Save IOMMU group if it does contain devices with domains greater than 0 (non-motherboard devices). </remarks>
-                if echo $_DEVICE_DOMAIN_ID | grep -E -q "$_DOMAIN_ID_REGEX"; then
+                if echo "$_DEVICE_DOMAIN_ID" | grep -E -q "$_DOMAIN_ID_REGEX"; then
                     _IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]="$_DEVICES"
                     break
                 fi
@@ -188,6 +185,17 @@
         return 0
     }
 
+    function IsIOMMUGroupIDValid
+    {
+        if [[ -z "$1" ]] \
+            || ! [[ "$1" =~ ^[0-9]+$ ]]; then
+            echo -e "$_PREFIX_ERROR IOMMU group ID is not valid."
+            return 1
+        fi
+
+        return 0
+    }
+
     function ParseDatabaseFirstTimeAndSaveToFile
     {
         if [[ ! -z "$_DEFAULT_FILE_DATABASE" ]] \
@@ -229,12 +237,7 @@
 
     function PrintInfoForIOMMUGroupOnly
     {
-        if [[ -z "$1" ]] \
-            || ! [[ "$1" =~ ^[0-9]+$ ]]; then
-            echo -e "$_PREFIX_ERROR IOMMU group ID is not valid."
-            return 1
-        fi
-
+        IsIOMMUGroupIDValid "$1" || return 1
         local -i _IOMMU_GROUP_ID="$1"
 
         for _DEVICE_FULL_ID in ${_IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]}; do
@@ -246,7 +249,7 @@
             _DEVICE_NAME="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 6 )"
             _DEVICE_VENDOR="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 4 )"
 
-            if echo $_DEVICE_DOMAIN_ID | grep -E -q "$_DOMAIN_ID_REGEX"; then
+            if echo "$_DEVICE_DOMAIN_ID" | grep -E -q "$_DOMAIN_ID_REGEX"; then
                 _IOMMU_GROUP_IS_VALID=true
                 echo -e "\tSlot ID:\t'$_DEVICE_PCI_ID'"
                 echo -e "\tVendor name:\t'$_DEVICE_VENDOR'"
@@ -276,12 +279,7 @@
 
     function PrintInfoForIOMMUGroupAndSaveInfoToLists
     {
-        if [[ -z "$1" ]] \
-            || ! [[ "$1" =~ ^[0-9]+$ ]]; then
-            echo -e "$_PREFIX_ERROR IOMMU group ID is not valid."
-            return 1
-        fi
-
+        IsIOMMUGroupIDValid "$1" || return 1
         local -a _CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST _HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST _NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST _PCI_ID_BY_VALID_IOMMU_GROUP_TEMP_LIST
         local -i _IOMMU_GROUP_ID="$1"
 
@@ -295,7 +293,7 @@
             _DEVICE_NAME="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 6 )"
             _DEVICE_VENDOR="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 4 )"
 
-            if echo $_DEVICE_DOMAIN_ID | grep -E -q "$_DOMAIN_ID_REGEX"; then
+            if echo "$_DEVICE_DOMAIN_ID" | grep -E -q "$_DOMAIN_ID_REGEX"; then
                 _IOMMU_GROUP_IS_VALID=true
                 echo -e "\tSlot ID:\t'$_DEVICE_PCI_ID'"
                 echo -e "\tVendor name:\t'$_DEVICE_VENDOR'"
