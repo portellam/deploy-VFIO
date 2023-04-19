@@ -684,5 +684,5 @@
 # </code>
 
 # <params>
-    declare -g _LINE_GRUB_CMDLINE="quiet iommu=1,pt amd_iommu=on intel_iommu=on video=efifb:off,vesafb:off acpi=force apm=power_off rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1"
+    declare -g _LINE_GRUB_CMDLINE="quiet splash iommu=1,pt amd_iommu=on intel_iommu=on video=efifb:off,vesafb:off acpi=force apm=power_off rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1"
 # </params>
