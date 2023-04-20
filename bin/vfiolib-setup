@@ -132,7 +132,7 @@
                 && ! "$_EXECUTE_STATIC_SETUP" \
                 && ! "$_EXECUTE_UNINSTALL_SETUP"; then
                 for _TRIES_COUNT in $( seq 0 2 ); do
-                    read -r -p "Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall]: " _ANSWER
+                    read -r -p "Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall/(N)o]: " _ANSWER
 
                     case "$_ANSWER" in
                         [Mm]* )
@@ -147,12 +147,15 @@
                             _EXECUTE_UNINSTALL_SETUP=true
                             break ;;
 
+                        [Nn]* )
+                            return 255 ;;
+
                         * )
-                            echo "Please answer M, S, or U." ;;
+                            echo "Please answer M, S, U, or N." ;;
                     esac
                 done
 
-                if ! [[ "$_ANSWER" =~ [MmSsUu] ]]; then
+                if ! [[ "$_ANSWER" =~ [MmSsUuNn] ]]; then
                     echo -e "$_PREFIX_ERROR Failed to answer."
                     return 1
                 fi
