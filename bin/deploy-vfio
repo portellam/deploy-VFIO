@@ -18,7 +18,7 @@ function Main
     IsSudoUser || return 1
 
     # <remarks> Gather arguments. </remarks>
-    if ! SetOptions $@; then
+    if ! SetOptions "$@"; then
         GetUsage
         return "$?"
     fi
