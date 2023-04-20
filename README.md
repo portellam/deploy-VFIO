@@ -131,7 +131,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
     - Implementation is known as **Evdev (Event Devices)**.<sup>[4](#4)</sup>
     - **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 
-### Main setup <sub>(vfiolib-main)</sub>
+### Main setup <sub>(vfiolib-setup)</sub>
 * **Multi-boot VFIO setup**
     - Best for Multiple VGA PCI Passthrough.  **More flexibility.**
     - Multiple GRUB menu entries for multiple VGA device systems.
