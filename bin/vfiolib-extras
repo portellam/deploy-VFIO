@@ -370,7 +370,7 @@
                 esac
 
             else
-                return 1
+                return 1Rneamed fi
             fi
 
             # <remarks> Get dependencies. </remarks>
@@ -652,6 +652,13 @@
                     echo -e "$_PREFIX_ERROR Failed to set file permissions."
                     return 1
                 fi
+            fi
+
+            if ! sudo echo -e "source $_LIBVIRT_HOOK_NOSLEEP_HOOK_FILENAME" >> "$_LIBVIRT_HOOK_DEST_PATH" \
+                || ( ! "$_HAS_SETUP_STATIC_ISOLCPU" \
+                && sudo echo -e "source $_LIBVIRT_HOOK_ISOLCPU_HOOK_FILENAME" >> "$_LIBVIRT_HOOK_DEST_PATH" ); then
+                echo -e "$_PREFIX_ERROR Failed to append filenames as sources to Libvirt hooks file."
+                return 1
             fi
 
             if ! sudo systemctl daemon-reload &> /dev/null; then
