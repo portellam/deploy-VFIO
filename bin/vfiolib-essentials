@@ -167,12 +167,13 @@
         }
 
         if ! "$_EXECUTE_ISOLCPU_SETUP" \
-            && AskToExecuteOrSkip "Statically allocate CPU threads to Guest(s)?"; then
+            && ! AskToExecuteOrSkip "Statically allocate CPU threads to Guest(s)?"; then
             _HAS_SETUP_STATIC_ISOLCPU=false
             return 0
+        else
+            Main
         fi
 
-        Main
         PrintPassOrFail "Allocating CPU threads..." && _HAS_SETUP_STATIC_ISOLCPU=true
         return "$_LAST_EXIT_CODE"
     }

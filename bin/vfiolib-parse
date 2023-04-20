@@ -352,7 +352,7 @@
         esac
 
         for _TRIES_COUNT in $( seq 0 2 ); do
-            read -r -p "Select method of parsing IOMMU groups? [(F)ile/(I)nternal/(O)nline]: " _ANSWER
+            read -r -p "Select method of parsing IOMMU groups? [(F)ile/(I)nternal/(O)nline/(N)o]: " _ANSWER
 
             case "$_ANSWER" in
                 [Ff]* )
@@ -367,8 +367,11 @@
                     _DO_PARSE_DATABASE_FROM_INTERNET=true
                     return 0 ;;
 
+                [Nn]* )
+                    return 255 ;;
+
                 * )
-                    echo "Please answer \"F\", \"I\", or \"O\"." ;;
+                    echo "Please answer \"F\", \"I\", \"O\", or \"N\"." ;;
             esac
         done
 

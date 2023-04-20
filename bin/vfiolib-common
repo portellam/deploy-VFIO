@@ -32,7 +32,7 @@
                     return 255 ;;
 
                 * )
-                    echo "Please answer Y/n." ;;
+                    echo "Please answer \"Y\" or \"N\"." ;;
             esac
         done
 
@@ -421,7 +421,7 @@
                         return 255 ;;
 
                     * )
-                        echo "Please answer Y/n." ;;
+                        echo "Please answer \"Y\" or \"N\"." ;;
                 esac
             done
 

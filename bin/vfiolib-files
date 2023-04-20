@@ -16,7 +16,8 @@
 # <code>
     function BackupFile
     {
-        if [[ -e "$1$_SUFFIX_BACKUP" ]]; then
+        if [[ -e "$1$_SUFFIX_BACKUP" ]] \
+            || [[ cmp -s "$1" "$1$_SUFFIX_BACKUP" ]]; then
             return 0
         fi
 
@@ -135,6 +136,10 @@
 
     function RestoreFile
     {
+        if [[ cmp -s "$1" "$1$_SUFFIX_BACKUP" ]]; then
+            return 0
+        fi
+
         if ( [[ -e "$1$_SUFFIX_BACKUP" ]] \
             && ! sudo cp -rv "$1$_SUFFIX_BACKUP" "$1" &> /dev/null ); then
             echo -e "$_PREFIX_ERROR Failed to restore file '$1'."
