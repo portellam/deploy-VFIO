@@ -278,12 +278,12 @@
     # <remarks> Usage toggles </remarks
     declare -g _EXECUTE_ALL_EXTRA_SETUPS=true
     declare -g _EXECUTE_ALL_ESSENTIAL_SETUPS=true
-    declare -g _EXECUTE_ISOLCPU_SETUP=false
     declare -g _EXECUTE_AUDIO_LOOPBACK_SETUP=false
     declare -g _EXECUTE_AUTO_XORG_SETUP=false
     declare -g _EXECUTE_EVDEV_SETUP=false
     declare -g _EXECUTE_GRUB_STATIC_SETUP=true
     declare -g _EXECUTE_HUGEPAGES_SETUP=false
+    declare -g _EXECUTE_ISOLCPU_SETUP=false
     declare -g _EXECUTE_LIBVIRT_HOOKS=false
     declare -g _EXECUTE_LOOKING_GLASS=false
     declare -g _EXECUTE_MULTIBOOT_SETUP=false
@@ -295,6 +295,7 @@
     declare -g _DO_PARSE_DATABASE_FROM_FILE=false
     declare -g _DO_PARSE_DATABASE_FROM_CACHE=false
     declare -g _DO_PARSE_DATABASE_FROM_INTERNET=false
+    declare -g _HAS_SETUP_STATIC_ISOLCPU=false
     declare -g _SELECT_ALL_IOMMU=false
     declare -g _UNINSTALL_EXTRAS=false
     declare -g _UNINSTALL_ESSENTIALS=false

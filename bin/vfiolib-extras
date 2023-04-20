@@ -12,7 +12,7 @@
     source vfiolib-calcs
     source vfiolib-common
     source vfiolib-files
-    source vfiolib-parse
+    source vfiolib-usage
 # </code>
 
 # <code>
@@ -630,14 +630,28 @@
         function Main
         {
             if ! sudo cp "$_LIBVIRT_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_DEST_PATH" &> /dev/null \
+                || ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH" &> /dev/null \
                 || ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH" "$_LIBVIRT_HOOK_NOSLEEP_SERVICE_DEST_PATH" &> /dev/null; then
                 echo -e "$_PREFIX_ERROR Failed to copy file(s)."
                 return 1
             fi
 
-            if ! sudo chmod +x "$_LIBVIRT_HOOK_DEST_PATH" &> /dev/null; then
+            if ! sudo chmod +x "$_LIBVIRT_HOOK_DEST_PATH" &> /dev/null \
+                || ! sudo chmod +x "$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH" &> /dev/null; then
                 echo -e "$_PREFIX_ERROR Failed to set file permissions."
                 return 1
+            fi
+
+            if ! "$_HAS_SETUP_STATIC_ISOLCPU"; then
+                if ! sudo cp "$_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null; then
+                    echo -e "$_PREFIX_ERROR Failed to copy file(s)."
+                    return 1
+                fi
+
+                if ! sudo chmod +x "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null; then
+                    echo -e "$_PREFIX_ERROR Failed to set file permissions."
+                    return 1
+                fi
             fi
 
             if ! sudo systemctl daemon-reload &> /dev/null; then
