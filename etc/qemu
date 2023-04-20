@@ -6,5 +6,4 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-source libvirt-nosleep
-source libvirt-isolcpu
+# <remarks> Usage </remarks>
