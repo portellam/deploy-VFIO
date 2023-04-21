@@ -128,6 +128,9 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
     - Single VGA PCI Passthrough.
     - Best for systems with integrated VGA device and one PCI VGA device.     **Less flexibility.**
     - Traditional PCI Passthrough/VFIO setup.
+    - Choose method of setup:
+        - GRUB
+        - system configuration files
 
 ### Post-setup  <sub>(vfiolib-extras)</sub>
 * **auto-Xorg** system service to find and set a valid Host boot VGA device for Xorg.<sup>[5](#5)</sup>
