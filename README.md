@@ -104,7 +104,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
 * **Allocate CPU**
     - Reduce Host overhead, and improve both Host and Guest performance.
     - **Static** allocation of Host CPU cores (and/or threads).<sup>[2](#2)</sup>
-    - **Dynamic** allocation as a <sup>[Libvirt hook](#Libvirt Hooks)</sup>.
+    - **Dynamic** allocation as a [Libvirt hook](#* **Libvirt Hooks**).
 * **Allocate RAM**
     - Eliminate the need to defragment Host memory (RAM) before allocating Guest memory.
     - Reduce Host overhead, and improve both Host and Guest performance.
