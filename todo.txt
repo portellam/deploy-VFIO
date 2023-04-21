@@ -1,7 +1,0 @@
-TODO:
-
-23/04/16
--fix usage
--fix extras
-
--do logging?

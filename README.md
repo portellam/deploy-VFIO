@@ -1,22 +1,7 @@
 ## Description
 Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video card for Host at GRUB boot menu. VFIO: Run any Virtual machine with real hardware, separate from your desktop host machine.
 
-## Status: partial completion
-#### What works
-* VFIO setups:      No-GRUB Static setup works.
-* Essential setups: all work.
-* Extras setups:    all work minus exceptions listed below. Auto-Xorg needs to parse arguments (as it does in its installer).
-#### What is currently not working
-* VFIO setups:    Multiboot and GRUB Static setups install, but do not work. Devices fail to bind to vfio-pci? (possible misused kernel commandline)
-* Extras setups:  Looking Glass and Scream fail to build automatically.
-* Usage is partially working. Not all possible combinations of arguments currently work together.
-#### To-do
-* Fix remaining business functions (VFIO setups).
-* Fix usage.
-* Fix nice-to-have functions (extras) or omit for this release.
-* Include example XML files for virtual machines?
-* Include visual guides?
-* Create script or program to resume VM(s) from sleep?
+## Status: partial completion (see TODO.md)
 
 ## Why?
 * **Separation-of-Concerns**
@@ -118,7 +103,8 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
 ### Pre-setup  <sub>(vfiolib-essentials)</sub>
 * **Allocate CPU**
     - Reduce Host overhead, and improve both Host and Guest performance.
-    - **Statically** allocate Host CPU cores (and/or threads).<sup>[2](#2)</sup>
+    - **Static** allocation of Host CPU cores (and/or threads).<sup>[2](#2)</sup>
+    - **Dynamic** allocation as a <sup>[Libvirt hook](#Libvirt Hooks)</sup>.
 * **Allocate RAM**
     - Eliminate the need to defragment Host memory (RAM) before allocating Guest memory.
     - Reduce Host overhead, and improve both Host and Guest performance.
@@ -133,12 +119,14 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
 
 ### Main setup <sub>(vfiolib-setup)</sub>
 * **Multi-boot VFIO setup**
-    - Best for Multiple VGA PCI Passthrough.  **More flexibility.**
-    - Multiple GRUB menu entries for multiple VGA device systems.
+    - Multiple VGA PCI Passthrough.
+    - Multiple GRUB menu entries.
+    - Best for systems with two or more PCI VGA devices.                      **More flexibility.**
     - Choose a GRUB menu entry with a VGA device to boot from (excludes that VGA device's IOMMU group from VFIO).
     - **Disclaimer:** For best results, use **auto-Xorg**.<sup>[5](#5)</sup>
 * **Static VFIO setup**
-    - Best for Single VGA PCI Passthrough.    **Less flexibility.**
+    - Single VGA PCI Passthrough.
+    - Best for systems with integrated VGA device and one PCI VGA device.     **Less flexibility.**
     - Traditional PCI Passthrough/VFIO setup.
 
 ### Post-setup  <sub>(vfiolib-extras)</sub>
