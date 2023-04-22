@@ -24,16 +24,16 @@
 #
 # </remarks>
 
-function AreHexMasksNotEmpty
-{
-        if [[ -z "$_GUEST_THREADS_HEX" ]] \
-                || [[ -z "$_HOST_THREADS_HEX" ]]; then
-                echo -e "An error occured: Failed to get CPU hex masks."
-                return 1
-        fi
+# function AreHexMasksNotEmpty
+# {
+#         if [[ -z "$_GUEST_THREADS_HEX" ]] \
+#                 || [[ -z "$_HOST_THREADS_HEX" ]]; then
+#                 echo -e "An error occured: Failed to get CPU hex masks."
+#                 return 1
+#         fi
 
-        return 0
-}
+#         return 0
+# }
 
 function AreThreadSetsNotEmpty
 {
@@ -78,8 +78,12 @@ function GetThreads
         local -i _SMT_FACTOR=$(( "$_TOTAL_THREADS_COUNT" / "$_TOTAL_CORES_COUNT" ))
         local -a _SMT_FACTOR_LIST=( $( seq 0 $(( "$_SMT_FACTOR" - 1 )) ) )
 
-        if ! GetThreadSetsForHostAndLibvirt \
-                || ! GetHexMasksForHostAndLibvirt; then
+        # if ! GetThreadSetsForHostAndLibvirt \
+        #         || ! GetHexMasksForHostAndLibvirt; then
+        #         return 1
+        # fi
+
+        if ! GetThreadSetsForHostAndLibvirt; then
                 return 1
         fi
 
@@ -143,27 +147,28 @@ function GetThreadSetsForHostAndLibvirt
         return 0
 }
 
-function GetHexMasksForHostAndLibvirt
-{
-        declare -g _GUEST_THREADS_HEX _HOST_THREADS_HEX
-        local -i _HOST_THREADS_HEX_MASK=0
-        local -i _TOTAL_THREADS_HEX_MASK=0
+# NOTE: needs work, and not currently used.
+# function GetHexMasksForHostAndLibvirt
+# {
+#         declare -g _GUEST_THREADS_HEX _HOST_THREADS_HEX
+#         local -i _HOST_THREADS_HEX_MASK=0
+#         local -i _TOTAL_THREADS_HEX_MASK=0
 
-        # <remarks> Add each decimal mask to sum. </remarks>
-        for _THREAD in ${_HOST_THREADS_LIST[@]}; do
-                local -i _THREAD_DECIMAL=$(( 2 ** $_THREAD ))
-                local -i _THREAD_HEX_MASK=$( echo "obase=16; $_THREAD_DECIMAL" | bc )
-                _HOST_THREADS_HEX_MASK+="$_THREAD_HEX_MASK"
-        done
+#         # <remarks> Add each decimal mask to sum. </remarks>
+#         for _THREAD in ${_HOST_THREADS_LIST[@]}; do
+#                 local -i _THREAD_DECIMAL=$(( 2 ** $_THREAD ))
+#                 local -i _THREAD_HEX_MASK=$( echo "obase=16; $_THREAD_DECIMAL" | bc )
+#                 _HOST_THREADS_HEX_MASK+="$_THREAD_HEX_MASK"
+#         done
 
-        # <remarks> Convert hexadecimal mask into hexadecimal. </remarks>
-        _HOST_THREADS_HEX=$( printf '%x\n' "$_HOST_THREADS_HEX_MASK" )
-        local -i _TOTAL_THREADS_HEX_MASK=$(( ( 2 ** ${_TOTAL_THREADS_COUNT} ) - 1 ))
-        _GUEST_THREADS_HEX=$( printf '%x\n' "$_TOTAL_THREADS_HEX_MASK" )
+#         # <remarks> Convert hexadecimal mask into hexadecimal. </remarks>
+#         _HOST_THREADS_HEX=$( printf '%x\n' "$_HOST_THREADS_HEX_MASK" )
+#         local -i _TOTAL_THREADS_HEX_MASK=$(( ( 2 ** ${_TOTAL_THREADS_COUNT} ) - 1 ))
+#         _GUEST_THREADS_HEX=$( printf '%x\n' "$_TOTAL_THREADS_HEX_MASK" )
 
-        AreHexMasksNotEmpty
-        return "$?"
-}
+#         AreHexMasksNotEmpty
+#         return "$?"
+# }
 
 function ReleaseThreadSets
 {
@@ -209,8 +214,12 @@ function SetThreadSetsForLibvirtOrHost
         return 0
 }
 
-if ( AreThreadSetsNotEmpty \
-        && AreHexMasksNotEmpty ) \
-        || GetThreadSetsAndHexMasks; then
+# if ( AreThreadSetsNotEmpty && AreHexMasksNotEmpty ) \
+#         || ( GetHexMasksForHostAndLibvirt && GetThreadSetsForHostAndLibvirt ); then
+#         SetThreadSetsForLibvirtOrHost "$@"
+# fi
+
+if AreThreadSetsNotEmpty \
+        || GetThreadSetsForHostAndLibvirt; then
         SetThreadSetsForLibvirtOrHost "$@"
 fi

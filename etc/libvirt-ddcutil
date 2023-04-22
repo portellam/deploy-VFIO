@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+#
+# Filename:         /etc/libvirt/hooks/libvirt-nosleep
+# Description:      Automatically switch monitor inputs when starting/stopping a libvirt domain.
+# URL(s):           https://github.com/PassthroughPOST/VFIO-Tools
+# Author(s):        Sebastiaan <github.com/SharkWipf>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+_DOMAIN="$1"
+_OPERATION="$2"
+_SUBOPERATION="$3"
+_EXTRA_ARG="$4"
+_VM_DISPLAY="0"    # The display shown in `ddcutil detect`
+_VM_INPUT="12"     # The input the domain is connected to (without 0x, but with leading zeroes, if any. See `ddcutil capabilities`)
+_HOST_INPUT="0f"   # The input the host is connected to (without 0x, but with leading zeroes, if any. See `ddcutil capabilities`)
+
+case "$_OPERATION/$_SUBOPERATION" in
+        "started/begin" )
+                _INPUT="$_VM_INPUT" ;;
+
+        "stopped/end" )
+                _INPUT="$_HOST_INPUT" ;;
+esac
+
+if [[ "$( ddcutil -d "$_VM_DISPLAY" getvcp 60 --terse | awk '{print $4}' )" != "x$_INPUT" ]]; then
+    ddcutil -d "$_VM_DISPLAY" setvcp 60 "0x$_INPUT"
+fi

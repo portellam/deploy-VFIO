@@ -8,16 +8,16 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-_OBJECT="$1"
+_DOMAIN="$1"
 _OPERATION="$2"
 _SUBOPERATION="$3"
 _EXTRA_ARG="$4"
 
 case "$_OPERATION" in
         "prepare")
-                systemctl start libvirt-nosleep@"$_OBJECT"
+                systemctl start libvirt-nosleep@"$_DOMAIN"
                 ;;
         "release")
-                systemctl stop libvirt-nosleep@"$_OBJECT"
+                systemctl stop libvirt-nosleep@"$_DOMAIN"
                 ;;
 esac
