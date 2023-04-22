@@ -8,22 +8,42 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-_DOMAIN="$1"
 _OPERATION="$2"
 _SUBOPERATION="$3"
-_EXTRA_ARG="$4"
-_VM_DISPLAY="0"    # The display shown in `ddcutil detect`
-_VM_INPUT="12"     # The input the domain is connected to (without 0x, but with leading zeroes, if any. See `ddcutil capabilities`)
-_HOST_INPUT="0f"   # The input the host is connected to (without 0x, but with leading zeroes, if any. See `ddcutil capabilities`)
 
-case "$_OPERATION/$_SUBOPERATION" in
-        "started/begin" )
-                _INPUT="$_VM_INPUT" ;;
+# <remarks> The display shown in `ddcutil detect` </remarks>
+_DOMAIN_DISPLAY="0"
 
-        "stopped/end" )
-                _INPUT="$_HOST_INPUT" ;;
-esac
+# <remarks> Video input values (without 0x, but with leading zeroes, if any. See `ddcutil capabilities`) </remarks>
+_DOMAIN_VIDEO_INPUT="12"
+_HOST_VIDEO_INPUT="0f"
+_VIDEO_INPUT=""
 
-if [[ "$( ddcutil -d "$_VM_DISPLAY" getvcp 60 --terse | awk '{print $4}' )" != "x$_INPUT" ]]; then
-    ddcutil -d "$_VM_DISPLAY" setvcp 60 "0x$_INPUT"
+function GetVideoInput
+{
+	case "$_OPERATION/$_SUBOPERATION" in
+		"started/begin" )
+			_VIDEO_INPUT="$_DOMAIN_VIDEO_INPUT"
+			return 0 ;;
+
+		"stopped/end" )
+			_VIDEO_INPUT="$_HOST_VIDEO_INPUT"
+			return 0 ;;
+	esac
+
+	return 1
+}
+
+function SetVideoOutput
+{
+	if [[ "$( ddcutil -d "$_DOMAIN_DISPLAY" getvcp 60 --terse | awk '{print $4}' )" != "x$_VIDEO_INPUT" ]] \
+		&& ddcutil -d "$_DOMAIN_DISPLAY" setvcp 60 "0x$_VIDEO_INPUT"; then
+		return 0
+	fi
+
+	return 1
+}
+
+if GetVideoInput; then
+    SetVideoOutput
 fi

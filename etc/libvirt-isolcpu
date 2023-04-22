@@ -24,202 +24,233 @@
 #
 # </remarks>
 
-# function AreHexMasksNotEmpty
-# {
-#         if [[ -z "$_GUEST_THREADS_HEX" ]] \
-#                 || [[ -z "$_HOST_THREADS_HEX" ]]; then
-#                 echo -e "An error occured: Failed to get CPU hex masks."
-#                 return 1
-#         fi
+_FLAG_USE_HEX_MASKS=true
+_OPERATION="$2"
+_GUEST_THREADS_DELIM=""
+_GUEST_THREADS_HEX=""
+_HOST_THREADS_DELIM=""
+_HOST_THREADS_HEX=""
 
-#         return 0
-# }
+function AreValuesNotEmpty
+{
+    if ( "$_FLAG_USE_HEX_MASKS" \
+        && AreHexMasksNotEmpty  \
+        && AreThreadSetsNotEmpty ) \
+        || ( ! "$_FLAG_USE_HEX_MASKS"
+            && AreThreadSetsNotEmpty ); then
+        return 0
+    fi
+
+    return 1
+}
+
+function AreHexMasksNotEmpty
+{
+    if [[ -z "$_GUEST_THREADS_HEX" ]] \
+        || [[ -z "$_HOST_THREADS_HEX" ]]; then
+        echo -e "An error occured: Failed to get CPU hexadecimal masks."
+        return 1
+    fi
+
+    return 0
+}
 
 function AreThreadSetsNotEmpty
 {
-        if [[ -z "$_GUEST_THREADS_DELIM" ]] \
-                || [[ -z "$_HOST_THREADS_DELIM" ]]; then
-                echo -e "An error occured: Failed to get CPU thread sets."
-                return 1
-        fi
+    if [[ -z "$_GUEST_THREADS_DELIM" ]] \
+        || [[ -z "$_HOST_THREADS_DELIM" ]]; then
+        echo -e "An error occured: Failed to get CPU thread sets."
+        return 1
+    fi
 
-        return 0
+    return 0
 }
 
 function GetThreadByCoreAndSMT
 {
-        _THREAD=$(( _CORE + ( _SMT_FACTOR * _TOTAL_CORES_COUNT )))
-        return 0
+    _THREAD=$(( _CORE + ( _SMT_FACTOR * _TOTAL_CORES_COUNT )))
+    return 0
 }
 
-function GetThreads
+function GetCPU
 {
-        local -i _CORES_ALLOCATED_TO_HOST=0
-        local -i _TOTAL_CORES_COUNT=$( cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+" )
-        local -i _TOTAL_THREADS_COUNT=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+" )
+    AreValuesNotEmpty && return 0
+    local -i _CORES_ALLOCATED_TO_HOST=0
+    local -i _TOTAL_CORES_COUNT=$( cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+" )
+    local -i _TOTAL_THREADS_COUNT=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+" )
 
-        # <remarks> Set maximum number of cores allocated to host. </remarks>
-        if [[ "$_TOTAL_CORES_COUNT" -ge 4 ]]; then
-                _CORES_ALLOCATED_TO_HOST=2
+    # <remarks> Set maximum number of cores allocated to host. </remarks>
+    if [[ "$_TOTAL_CORES_COUNT" -ge 4 ]]; then
+        _CORES_ALLOCATED_TO_HOST=2
 
-        elif [[ "$_TOTAL_CORES_COUNT" -le 3 ]] \
-                && [[ "$_TOTAL_CORES_COUNT" -ge 2 ]]; then
-                _CORES_ALLOCATED_TO_HOST=1
+    elif [[ "$_TOTAL_CORES_COUNT" -le 3 ]] \
+        && [[ "$_TOTAL_CORES_COUNT" -ge 2 ]]; then
+        _CORES_ALLOCATED_TO_HOST=1
 
-        else
-                echo -e "An error occured: Insufficient CPU cores. Minimum is two (2) cores."
-                return 1
-        fi
+    else
+        echo -e "An error occured: Insufficient CPU cores. Minimum is two (2) cores."
+        return 1
+    fi
 
-        local -a _HOST_CORES_LIST=( $( seq 0 $(( "$_CORES_ALLOCATED_TO_HOST" - 1 )) ) )
-        local -a _HOST_THREADS_LIST=( )
-        local -a _GUEST_CORES_LIST=( $( seq "$_CORES_ALLOCATED_TO_HOST" $(( "$_TOTAL_CORES_COUNT" - 1 )) ) )
-        local -a _GUEST_THREADS_LIST=( )
-        local -i _SMT_FACTOR=$(( "$_TOTAL_THREADS_COUNT" / "$_TOTAL_CORES_COUNT" ))
-        local -a _SMT_FACTOR_LIST=( $( seq 0 $(( "$_SMT_FACTOR" - 1 )) ) )
+    local -a _HOST_CORES_LIST=( $( seq 0 $(( "$_CORES_ALLOCATED_TO_HOST" - 1 )) ) )
+    local -a _HOST_THREADS_LIST=( )
+    local -a _GUEST_CORES_LIST=( $( seq "$_CORES_ALLOCATED_TO_HOST" $(( "$_TOTAL_CORES_COUNT" - 1 )) ) )
+    local -a _GUEST_THREADS_LIST=( )
+    local -i _SMT_FACTOR=$(( "$_TOTAL_THREADS_COUNT" / "$_TOTAL_CORES_COUNT" ))
+    local -a _SMT_FACTOR_LIST=( $( seq 0 $(( "$_SMT_FACTOR" - 1 )) ) )
 
-        # if ! GetThreadSetsForHostAndLibvirt \
-        #         || ! GetHexMasksForHostAndLibvirt; then
-        #         return 1
-        # fi
-
-        if ! GetThreadSetsForHostAndLibvirt; then
-                return 1
-        fi
-
-        return 0
+    AreValuesNotEmpty
+    return "$?"
 }
 
 function GetThreadSetsForHostAndLibvirt
 {
-        declare -g _GUEST_THREADS_DELIM _HOST_THREADS_DELIM
+    for _SMT_FACTOR in ${_SMT_FACTOR_LIST[@]}; do
+        local -a _GUEST_THREADS_DELIM_LIST=( )
+        local -a _HOST_THREADS_DELIM_LIST=( )
+        local -i _THREAD
 
-        for _SMT_FACTOR in ${_SMT_FACTOR_LIST[@]}; do
-                local -a _GUEST_THREADS_DELIM_LIST=( )
-                local -a _HOST_THREADS_DELIM_LIST=( )
-                local -i _THREAD
-
-                for _CORE in ${_HOST_CORES_LIST[@]}; do
-                        GetThreadByCoreAndSMT
-                        _HOST_THREADS_LIST+=( "$_THREAD" )
-                        _HOST_THREADS_DELIM_LIST+=( "$_THREAD" )
-                done
-
-                for _CORE in ${_GUEST_CORES_LIST[@]}; do
-                        GetThreadByCoreAndSMT
-                        _GUEST_THREADS_LIST+=( "$_THREAD" )
-                        _GUEST_THREADS_DELIM_LIST+=( "$_THREAD" )
-                done
-
-                local -i _FIRST_THREAD_SET="${_HOST_THREADS_DELIM_LIST[0]}"
-                local -i _LAST_THREAD_SET="${_HOST_THREADS_DELIM_LIST[-1]}"
-
-                local _THREAD_SET="$_FIRST_THREAD_SET"
-
-                if [[ "$_FIRST_THREAD_SET" -ne "$_LAST_THREAD_SET" ]]; then
-                        local _THREAD_SET="$_FIRST_THREAD_SET-$_LAST_THREAD_SET"
-                fi
-
-                _HOST_THREADS_DELIM+="$_THREAD_SET,"
-
-                local -i _FIRST_THREAD_SET="${_GUEST_THREADS_DELIM_LIST[0]}"
-                local -i _LAST_THREAD_SET="${_GUEST_THREADS_DELIM_LIST[-1]}"
-                local _THREAD_SET="$_FIRST_THREAD_SET"
-
-                if [[ "$_FIRST_THREAD_SET" -ne "$_LAST_THREAD_SET" ]]; then
-                        local _THREAD_SET="$_FIRST_THREAD_SET-$_LAST_THREAD_SET"
-                fi
-
-                _GUEST_THREADS_DELIM+="$_THREAD_SET,"
+        for _CORE in ${_HOST_CORES_LIST[@]}; do
+            GetThreadByCoreAndSMT
+            _HOST_THREADS_LIST+=( "$_THREAD" )
+            _HOST_THREADS_DELIM_LIST+=( "$_THREAD" )
         done
 
-        AreThreadSetsNotEmpty || return 1
+        for _CORE in ${_GUEST_CORES_LIST[@]}; do
+            GetThreadByCoreAndSMT
+            _GUEST_THREADS_LIST+=( "$_THREAD" )
+            _GUEST_THREADS_DELIM_LIST+=( "$_THREAD" )
+        done
 
-        # <remarks> Truncate last delimiter. </remarks>
-        if [[ ${_HOST_THREADS_DELIM: -1} == "," ]]; then
-                _HOST_THREADS_DELIM="${_HOST_THREADS_DELIM::-1}"
+        local -i _FIRST_THREAD_SET="${_HOST_THREADS_DELIM_LIST[0]}"
+        local -i _LAST_THREAD_SET="${_HOST_THREADS_DELIM_LIST[-1]}"
+
+        local _THREAD_SET="$_FIRST_THREAD_SET"
+
+        if [[ "$_FIRST_THREAD_SET" -ne "$_LAST_THREAD_SET" ]]; then
+            local _THREAD_SET="$_FIRST_THREAD_SET-$_LAST_THREAD_SET"
         fi
 
-        if [[ ${_GUEST_THREADS_DELIM: -1} == "," ]]; then
-                _GUEST_THREADS_DELIM="${_GUEST_THREADS_DELIM::-1}"
+        _HOST_THREADS_DELIM+="$_THREAD_SET,"
+
+        local -i _FIRST_THREAD_SET="${_GUEST_THREADS_DELIM_LIST[0]}"
+        local -i _LAST_THREAD_SET="${_GUEST_THREADS_DELIM_LIST[-1]}"
+        local _THREAD_SET="$_FIRST_THREAD_SET"
+
+        if [[ "$_FIRST_THREAD_SET" -ne "$_LAST_THREAD_SET" ]]; then
+            local _THREAD_SET="$_FIRST_THREAD_SET-$_LAST_THREAD_SET"
         fi
 
-        return 0
+        _GUEST_THREADS_DELIM+="$_THREAD_SET,"
+    done
+
+    AreThreadSetsNotEmpty || return 1
+
+    # <remarks> Truncate last delimiter. </remarks>
+    if [[ ${_HOST_THREADS_DELIM: -1} == "," ]]; then
+        _HOST_THREADS_DELIM="${_HOST_THREADS_DELIM::-1}"
+    fi
+
+    if [[ ${_GUEST_THREADS_DELIM: -1} == "," ]]; then
+        _GUEST_THREADS_DELIM="${_GUEST_THREADS_DELIM::-1}"
+    fi
+
+    return 0
 }
 
-# NOTE: needs work, and not currently used.
-# function GetHexMasksForHostAndLibvirt
-# {
-#         declare -g _GUEST_THREADS_HEX _HOST_THREADS_HEX
-#         local -i _HOST_THREADS_HEX_MASK=0
-#         local -i _TOTAL_THREADS_HEX_MASK=0
+function GetHexMasksForHostAndLibvirt
+{
+    local -i _HOST_THREADS_HEX_MASK=0
+    local -i _TOTAL_THREADS_HEX_MASK=0
 
-#         # <remarks> Add each decimal mask to sum. </remarks>
-#         for _THREAD in ${_HOST_THREADS_LIST[@]}; do
-#                 local -i _THREAD_DECIMAL=$(( 2 ** $_THREAD ))
-#                 local -i _THREAD_HEX_MASK=$( echo "obase=16; $_THREAD_DECIMAL" | bc )
-#                 _HOST_THREADS_HEX_MASK+="$_THREAD_HEX_MASK"
-#         done
+    # <remarks> Add each decimal mask to sum. </remarks>
+    for _THREAD in ${_HOST_THREADS_LIST[@]}; do
+        local -i _THREAD_DECIMAL=$(( 2 ** $_THREAD ))
+        local -i _THREAD_HEX_MASK=$( echo "obase=16; $_THREAD_DECIMAL" | bc )
+        _HOST_THREADS_HEX_MASK+="$_THREAD_HEX_MASK"
+    done
 
-#         # <remarks> Convert hexadecimal mask into hexadecimal. </remarks>
-#         _HOST_THREADS_HEX=$( printf '%x\n' "$_HOST_THREADS_HEX_MASK" )
-#         local -i _TOTAL_THREADS_HEX_MASK=$(( ( 2 ** ${_TOTAL_THREADS_COUNT} ) - 1 ))
-#         _GUEST_THREADS_HEX=$( printf '%x\n' "$_TOTAL_THREADS_HEX_MASK" )
+    # <remarks> Convert hexadecimal mask into hexadecimal. </remarks>
+    _HOST_THREADS_HEX=$( printf '%x\n' "$_HOST_THREADS_HEX_MASK" )
+    local -i _TOTAL_THREADS_HEX_MASK=$(( ( 2 ** ${_TOTAL_THREADS_COUNT} ) - 1 ))
+    _GUEST_THREADS_HEX=$( printf '%x\n' "$_TOTAL_THREADS_HEX_MASK" )
+    AreHexMasksNotEmpty
+    return "$?"
+}
 
-#         AreHexMasksNotEmpty
-#         return "$?"
-# }
+function ReleaseHexMask
+{
+    if ! echo "$_HOST_THREADS_HEX" > /sys/bus/workqueue/devices/writeback/cpumask \
+        || ! echo 0 > /sys/bus/workqueue/devices/writeback/numa; then
+        echo -e "An error occured: Failed to release CPU mask to Host."
+        return 1
+    fi
+
+    echo -e "Releasing CPU mask to Host."
+}
 
 function ReleaseThreadSets
 {
-        if [[ -z "$1" ]] \
-                || ! systemctl set-property --runtime -- system.slice AllowedCPUs=$1 \
-                || ! systemctl set-property --runtime -- user.slice AllowedCPUs=$1 \
-                || ! systemctl set-property --runtime -- init.scope AllowedCPUs=$1; then
-                echo -e "An error occured: Failed to release CPU threads to Host."
-                return 1
-        fi
+    if ! systemctl set-property --runtime -- system.slice AllowedCPUs=$1 \
+        || ! systemctl set-property --runtime -- user.slice AllowedCPUs=$1 \
+        || ! systemctl set-property --runtime -- init.scope AllowedCPUs=$1; then
+        echo -e "An error occured: Failed to release CPU threads to Host."
+        return 1
+    fi
 
-        return 0
+    echo -e "Releasing CPU threads to Host."
+    return 0
+}
+
+function ReserveHexMask
+{
+    if ! echo "$_GUEST_THREADS_HEX" > /sys/bus/workqueue/devices/writeback/cpumask \
+        || ! echo 1 > /sys/bus/workqueue/devices/writeback/numa; then
+        echo -e "An error occured: Failed to reserve CPU mask to Libvirt domain(s)."
+        return 1
+    fi
+
+    echo -e "Reserving CPU mask to Libvirt domain(s)."
+    return 0
 }
 
 function ReserveThreadSets
 {
-        if [[ -z "$1" ]] \
-                || ! systemctl set-property --runtime -- system.slice AllowedCPUs=$1 \
-                || ! systemctl set-property --runtime -- user.slice AllowedCPUs=$1 \
-                || ! systemctl set-property --runtime -- init.scope AllowedCPUs=$1; then
-                echo -e "An error occured: Failed to reserve CPU threads to Libvirt."
-                return 1
-        fi
+    if ! systemctl set-property --runtime -- system.slice AllowedCPUs="$_GUEST_THREADS_DELIM" \
+        || ! systemctl set-property --runtime -- user.slice AllowedCPUs="$_GUEST_THREADS_DELIM" \
+        || ! systemctl set-property --runtime -- init.scope AllowedCPUs="$_GUEST_THREADS_DELIM"; then
+        echo -e "An error occured: Failed to reserve CPU threads to Libvirt domain(s)."
+        return 1
+    fi
 
-        return 0
+    echo -e "Reserving CPU threads to Libvirt domain(s)."
+    return 0
 }
 
-function SetThreadSetsForLibvirtOrHost
+function ReleaseOrReserveCPU
 {
-        local _COMMAND=$2
+    case "$_OPERATION" in
+        "started" )
+            if "$_FLAG_USE_HEX_MASKS"; then
+                ReserveHexMask || return 1 ;;
+            fi
 
-        case "$_COMMAND" in
-                "started" )
-                        ReserveThreadSets "$_GUEST_THREADS_DELIM" || return 1 ;;
+            ReserveThreadSets || return 1 ;;
 
-                "release" )
-                        local -i _LAST_THREAD_ID=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+" )
-                        (( _LAST_THREAD_ID-- ))
-                        local _RELEASED_CPU_SET="0-$_LAST_THREAD_ID"
-                        ReleaseThreadSets "$_RELEASED_CPU_SET" || return 1 ;;
-        esac
+        "release" )
+            if "$_FLAG_USE_HEX_MASKS"; then
+                ReleaseHexMask || return 1 ;;
+            fi
 
-        return 0
+            local -i _LAST_THREAD_ID=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+" )
+            (( _LAST_THREAD_ID-- ))
+            local _RELEASED_CPU_SET="0-$_LAST_THREAD_ID"
+            ReleaseThreadSets "$_RELEASED_CPU_SET" || return 1 ;;
+    esac
+
+    return 0
 }
 
-# if ( AreThreadSetsNotEmpty && AreHexMasksNotEmpty ) \
-#         || ( GetHexMasksForHostAndLibvirt && GetThreadSetsForHostAndLibvirt ); then
-#         SetThreadSetsForLibvirtOrHost "$@"
-# fi
-
-if AreThreadSetsNotEmpty \
-        || GetThreadSetsForHostAndLibvirt; then
-        SetThreadSetsForLibvirtOrHost "$@"
+if GetCPU; then
+    ReleaseOrReserveCPU
 fi
