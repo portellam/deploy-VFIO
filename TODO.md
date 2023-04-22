@@ -16,6 +16,7 @@
 
 ### To do:
 #### High priority
+* Maintain integrity; give credit appropriately and openly.
 * VFIO setups
     - Fix bugs.
 * Backups:
@@ -27,8 +28,10 @@
     - Update for every relevant question.
 
 #### Medium priority
-* CPU isolation, ask user to setup Static (append to GRUB) or Dynamic (Libvirt hooks).
 * Trim fat, remove unnecessary repetitions and code.
+* Essentials:
+    - CPU isolation, ask user to setup Static (append to GRUB) or Dynamic (Libvirt hooks), save output to logfile.
+    - Evdev, save output to logfile.
 * Extras:
     - Libvirt hooks, add more.
 * VFIO setup:
