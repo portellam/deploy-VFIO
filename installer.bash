@@ -38,19 +38,18 @@
         declare -g _ETC_SOURCE_PATH="etc"
         cd "$_BIN_SOURCE_PATH" || return 1
 
-        if [[ -z "deploy-vfio" ]] \
-            || [[ -z "deploy-vfio" ]] \
-            || [[ -z "vfiolib-all" ]] \
-            || [[ -z "vfiolib-calcs" ]] \
-            || [[ -z "vfiolib-checks" ]] \
-            || [[ -z "vfiolib-common" ]] \
-            || [[ -z "vfiolib-essentials" ]] \
-            || [[ -z "vfiolib-files" ]] \
-            || [[ -z "vfiolib-globals" ]] \
-            || [[ -z "vfiolib-parse" ]] \
-            || [[ -z "vfiolib-select" ]] \
-            || [[ -z "vfiolib-setup" ]] \
-            || [[ -z "vfiolib-usage" ]]; then
+        if  [[ ! -e "deploy-vfio" ]] \
+            || [[ ! -e "vfiolib-all" ]] \
+            || [[ ! -e "vfiolib-calcs" ]] \
+            || [[ ! -e "vfiolib-checks" ]] \
+            || [[ ! -e "vfiolib-common" ]] \
+            || [[ ! -e "vfiolib-essentials" ]] \
+            || [[ ! -e "vfiolib-files" ]] \
+            || [[ ! -e "vfiolib-globals" ]] \
+            || [[ ! -e "vfiolib-parse" ]] \
+            || [[ ! -e "vfiolib-select" ]] \
+            || [[ ! -e "vfiolib-setup" ]] \
+            || [[ ! -e "vfiolib-usage" ]]; then
             echo -e "$_PREFIX_ERROR Missing project binaries."
             return 1
         fi
@@ -58,17 +57,17 @@
         cd .. || return 1
         cd "$_ETC_SOURCE_PATH" || return 1
 
-        if [[ -z "audio-loopback-user.service" ]] \
-            || [[ -z "custom" ]] \
-            || [[ -z "grub" ]] \
-            || [[ -z "initramfs-tools" ]] \
-            || [[ -z "libvirt-nosleep@.service" ]] \
-            || [[ -z "modules" ]] \
-            || [[ -z "pci-blacklists.conf" ]] \
-            || [[ -z "qemu.conf" ]] \
-            || [[ -z "scream-ivshmem-pipewire.service" ]] \
-            || [[ -z "scream-ivshmem-pulseaudio.service" ]] \
-            || [[ -z "vfio.conf" ]]; then
+        if [[ ! -e "audio-loopback-user.service" ]] \
+            || [[ ! -e "custom" ]] \
+            || [[ ! -e "grub" ]] \
+            || [[ ! -e "initramfs-tools" ]] \
+            || [[ ! -e "libvirt-nosleep@.service" ]] \
+            || [[ ! -e "modules" ]] \
+            || [[ ! -e "pci-blacklists.conf" ]] \
+            || [[ ! -e "qemu.conf" ]] \
+            || [[ ! -e "scream-ivshmem-pipewire.service" ]] \
+            || [[ ! -e "scream-ivshmem-pulseaudio.service" ]] \
+            || [[ ! -e "vfio.conf" ]]; then
             echo -e "$_PREFIX_ERROR Missing project files."
             return 1
         fi

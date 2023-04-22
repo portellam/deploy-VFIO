@@ -37,7 +37,7 @@
                 return 1
             fi
 
-            if [[ -z "$_SCRIPT_NAME" ]]; then
+            if [[ ! -e "$_SCRIPT_NAME" ]]; then
                 echo -e "$_PREFIX_ERROR Failed to find script '$_SCRIPT_NAME'."
                 return 1
             fi
@@ -307,7 +307,7 @@
     {
         function Build
         {
-            if [[ -z "build" ]] \
+            if [[ ! -e "build" ]] \
                 && ! mkdir build; then
                 echo -e "$_PREFIX_ERROR Failed to create build directory."
                 return 1
@@ -533,7 +533,7 @@
         function Install
         {
             # <remarks> Build client </remarks>
-            if [[ -z "client/build" ]] \
+            if [[ ! -e "client/build" ]] \
                 && ! mkdir client/build; then
                 echo -e "$_PREFIX_ERROR Failed to create build directory."
                 return 1
@@ -714,7 +714,7 @@
                 return 1
             fi
 
-            if [[ -z "$_SCRIPT_NAME" ]]; then
+            if [[ ! -e "$_SCRIPT_NAME" ]]; then
                 echo -e "$_PREFIX_ERROR Failed to find script '$_SCRIPT_NAME'."
                 return 1
             fi
