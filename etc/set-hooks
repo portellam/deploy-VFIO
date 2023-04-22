@@ -1,20 +1,21 @@
 #!/bin/bash
 
 #
-# Filename:         /etc/libvirt/hooks/libvirt-update
+# Filename:         /etc/libvirt/hooks/set-hooks
 # Description:      Create symlinks of hooks for valid Libvirt domains.
 # Author(s):        Alex Portell <github.com/portellam>
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-_DOMAIN="$1"
+_DOMAIN_NAME="$1"
 _HOOKS_BASE_DIR="/etc/libvirt/hooks"
-_DOMAIN_BASE_DIR="$_HOOKS_BASE_DIR/qemu.d/$_DOMAIN"
-_BEGIN_DIR="$_DOMAIN_BASE_DIR/started/begin/"
-_END_DIR="$_DOMAIN_BASE_DIR/stopped/end/"
+_DOMAIN_NAME_BASE_DIR="$_HOOKS_BASE_DIR/qemu.d/$_DOMAIN_NAME"
+_BEGIN_DIR="$_DOMAIN_NAME_BASE_DIR/started/begin/"
+_END_DIR="$_DOMAIN_NAME_BASE_DIR/stopped/end/"
 
 # <remarks> Add domain-specific hooks here. </remarks>
-_HOOK_1="libvirt-ddcutil"
+_HOOK_NAME_1="ddcutil"
+_HOOK_NAME_2="cfscpu"
 
 function GetPathsForDomain
 {
@@ -30,7 +31,7 @@ function GetPathsForDomain
 
 function GetHooks
 {
-    if [[ ! -e "$_HOOKS_BASE_DIR/$_HOOK_1" ]]; then
+    if [[ ! -e "$_HOOKS_BASE_DIR/$_HOOK_NAME_1" ]]; then
         echo -e "An error occured: Failed to find domain hook(s)."
         return 1
     fi
@@ -59,10 +60,11 @@ function SetHooksForDomain
     return 0
 }
 
-if [[ -z "$_DOMAIN" ]] \
-    && GetPathsForDomain "$_DOMAIN" \
+if [[ ! -z "$_DOMAIN_NAME" ]] \
+    && GetPathsForDomain "$_DOMAIN_NAME" \
     && GetHooks; then
 
     # <remarks> Call domain-specific hooks here. </remarks>
-    SetHooksForDomain "$_HOOK_1"
+    SetHooksForDomain "$_HOOK_NAME_1"
+    SetHooksForDomain "$_HOOK_NAME_2"
 fi

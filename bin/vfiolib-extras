@@ -623,13 +623,14 @@
 	}
 
 	# <summary>
-	# libvirt-hooks: Setup useful Quality-of-life improvements in the form of services and scripts (hooks) for QEMU guest(s).
+	# Libvirt hooks: Setup useful Quality-of-life improvements in the form of services and scripts (hooks) for QEMU guest(s).
 	# </summary>
 	function LibvirtHooks
 	{
 		function Main
 		{
 			if ! sudo cp "$_LIBVIRT_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_DEST_PATH" &> /dev/null \
+                || ! sudo cp "$_LIBVIRT_HOOK_CFSCPU_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH" &> /dev/null \
 				|| ! sudo cp "$_LIBVIRT_HOOK_DDCUTIL_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH" &> /dev/null \
 				|| ! sudo cp "$_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null \
 				|| ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH" &> /dev/null \
@@ -640,6 +641,7 @@
 			fi
 
 			if ! sudo chmod +x "$_LIBVIRT_HOOK_DEST_PATH" &> /dev/null \
+                || ! sudo chmod +x "$_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH" &> /dev/null \
 				|| ! sudo chmod +x "$_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH" &> /dev/null \
 				|| ! sudo chmod +x "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null \
 				|| ! sudo chmod +x "$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH" &> /dev/null \

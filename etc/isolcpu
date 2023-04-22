@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Filename:         /etc/libvirt/hooks/libvirt-isolcpu
+# Filename:         /etc/libvirt/hooks/isolcpu
 # Description:      Reserve/release CPU threads at start of Libvirt domain(s).
 # URL(s):           https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#IO\_threads
 # Author(s):        Alex Portell <github.com/portellam>
@@ -9,12 +9,12 @@
 #
 
 # <remarks>
-# save output to string for cpuset and cpumask
-# example:
-#   host 0-1,8-9
-#   virt 2-7,10-15
+# Save output to string for cpuset and cpumask
+# Example:
+#   Host:   0-1,8-9
+#   Domain: 2-7,10-15
 #
-# information
+# Information
 # cores     bit masks       mask
 # 0-7       0b11111111      FF      # total cores
 # 0,4       0b00010001      11      # host cores
@@ -24,7 +24,10 @@
 #
 # </remarks>
 
+
 _FLAG_USE_HEX_MASKS=true
+_HOOK_NAME="isolcpu"
+_PREFIX_PROMPT="libvirt-qemu $_HOOK_NAME:"
 _OPERATION="$2"
 _GUEST_THREADS_DELIM=""
 _GUEST_THREADS_HEX=""
@@ -48,7 +51,7 @@ function AreHexMasksNotEmpty
 {
     if [[ -z "$_GUEST_THREADS_HEX" ]] \
         || [[ -z "$_HOST_THREADS_HEX" ]]; then
-        echo -e "An error occured: Failed to get CPU hexadecimal masks."
+        echo "$_PREFIX_PROMPT An error occured: Failed to get CPU hexadecimal masks."
         return 1
     fi
 
@@ -59,7 +62,7 @@ function AreThreadSetsNotEmpty
 {
     if [[ -z "$_GUEST_THREADS_DELIM" ]] \
         || [[ -z "$_HOST_THREADS_DELIM" ]]; then
-        echo -e "An error occured: Failed to get CPU thread sets."
+        echo "$_PREFIX_PROMPT An error occured: Failed to get CPU thread sets."
         return 1
     fi
 
@@ -88,7 +91,7 @@ function GetCPU
         _CORES_ALLOCATED_TO_HOST=1
 
     else
-        echo -e "An error occured: Insufficient CPU cores. Minimum is two (2) cores."
+        echo "$_PREFIX_PROMPT An error occured: Insufficient CPU cores. Minimum is two (2) cores."
         return 1
     fi
 
@@ -182,11 +185,11 @@ function ReleaseHexMask
 {
     if ! echo "$_HOST_THREADS_HEX" > /sys/bus/workqueue/devices/writeback/cpumask \
         || ! echo 0 > /sys/bus/workqueue/devices/writeback/numa; then
-        echo -e "An error occured: Failed to release CPU mask to Host."
+        echo "$_PREFIX_PROMPT An error occured: Failed to release CPU mask to Host."
         return 1
     fi
 
-    echo -e "Releasing CPU mask to Host."
+    echo "$_PREFIX_PROMPT Releasing CPU mask to Host."
 }
 
 function ReleaseThreadSets
@@ -194,11 +197,11 @@ function ReleaseThreadSets
     if ! systemctl set-property --runtime -- system.slice AllowedCPUs=$1 \
         || ! systemctl set-property --runtime -- user.slice AllowedCPUs=$1 \
         || ! systemctl set-property --runtime -- init.scope AllowedCPUs=$1; then
-        echo -e "An error occured: Failed to release CPU threads to Host."
+        echo "An error occured: Failed to release CPU threads to Host."
         return 1
     fi
 
-    echo -e "Releasing CPU threads to Host."
+    echo "Releasing CPU threads to Host."
     return 0
 }
 
@@ -206,11 +209,11 @@ function ReserveHexMask
 {
     if ! echo "$_GUEST_THREADS_HEX" > /sys/bus/workqueue/devices/writeback/cpumask \
         || ! echo 1 > /sys/bus/workqueue/devices/writeback/numa; then
-        echo -e "An error occured: Failed to reserve CPU mask to Libvirt domain(s)."
+        echo "An error occured: Failed to reserve CPU mask to Libvirt domain(s)."
         return 1
     fi
 
-    echo -e "Reserving CPU mask to Libvirt domain(s)."
+    echo "Reserving CPU mask to Libvirt domain(s)."
     return 0
 }
 
@@ -219,11 +222,11 @@ function ReserveThreadSets
     if ! systemctl set-property --runtime -- system.slice AllowedCPUs="$_GUEST_THREADS_DELIM" \
         || ! systemctl set-property --runtime -- user.slice AllowedCPUs="$_GUEST_THREADS_DELIM" \
         || ! systemctl set-property --runtime -- init.scope AllowedCPUs="$_GUEST_THREADS_DELIM"; then
-        echo -e "An error occured: Failed to reserve CPU threads to Libvirt domain(s)."
+        echo "$_PREFIX_PROMPT An error occured: Failed to reserve CPU threads to Libvirt domain(s)."
         return 1
     fi
 
-    echo -e "Reserving CPU threads to Libvirt domain(s)."
+    echo "$_PREFIX_PROMPT Reserving CPU threads to Libvirt domain(s)."
     return 0
 }
 

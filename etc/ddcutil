@@ -1,12 +1,23 @@
 #!/usr/bin/env bash
 
 #
-# Filename:         /etc/libvirt/hooks/libvirt-nosleep
+# Filename:         /etc/libvirt/hooks/ddcutil
 # Description:      Automatically switch monitor inputs when starting/stopping a libvirt domain.
 # URL(s):           https://github.com/PassthroughPOST/VFIO-Tools
 # Author(s):        Sebastiaan <github.com/SharkWipf>
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
+
+# <remarks>
+# This hook allows automatically switch monitor inputs when starting/stopping a VM.
+# This file depends on the Passthrough POST hook helper script found in this repo.
+# Place this script in BOTH these directories (or symlink it):
+#
+# Set the files as executable through `chmod +x` and configure your inputs.
+# You also need `ddcutil` and a ddcutil-compatible monitor.
+#
+# Make sure you specify the right settings for your setup below or it won't work.
+# </remarks>
 
 _OPERATION="$2"
 _SUBOPERATION="$3"

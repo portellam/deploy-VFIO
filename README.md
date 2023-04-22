@@ -81,7 +81,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
 #### Post-setup
 
         Post-setup OPTIONS:
-          -H, --hooks           Install recommended libvirt-hooks and services.
+          -H, --hooks           Install recommended Libvirt hooks and services.
           -l, --looking-glass   Install LookingGlass.                   Stream video (and audio) from Guest to Host over PCI bus using shared-memory device.
           -L, --audio-loopback  Install the audio loopback service.     Loopback audio from Guest to Host (over Line-out to Line-in). *
           -S, --scream          Install Scream.                         Stream audio from Guest to Host over virtual LAN.
