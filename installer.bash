@@ -47,7 +47,6 @@
             || [[ ! -e "vfiolib-files" ]] \
             || [[ ! -e "vfiolib-globals" ]] \
             || [[ ! -e "vfiolib-parse" ]] \
-            || [[ ! -e "vfiolib-select" ]] \
             || [[ ! -e "vfiolib-setup" ]] \
             || [[ ! -e "vfiolib-usage" ]]; then
             echo -e "$_PREFIX_ERROR Missing project binaries."
