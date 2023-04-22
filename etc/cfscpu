@@ -29,7 +29,7 @@ _DOMAIN_NAME="$1"
 _HOOK_NAME="cfscpu"
 _PREFIX_PROMPT="libvirt-qemu $_HOOK_NAME:"
 
-function GetVCPU_Path
+function Get_vCPU_Path
 {
     if ls /sys/fs/cgroup/cpu/machine.slice/machine-qemu*$_DOMAIN_NAME.scope/libvirt/vcpu* 1> /dev/null 2>&1; then
         echo "$_PREFIX_PROMPT Found vCPU paths in Libvirt subdirectory." > /dev/kmsg
@@ -70,6 +70,6 @@ function SetNiceLevelForDomain
 }
 
 if [[ ! -z "$_DOMAIN" ]]; then
-    GetVCPU_Path
+    Get_vCPU_Path
     Prioritize_vCPU_ForDomain
 fi

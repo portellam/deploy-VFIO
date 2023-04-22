@@ -19,6 +19,8 @@
 # Make sure you specify the right settings for your setup below or it won't work.
 # </remarks>
 
+_HOOK_NAME="ddcutil"
+_PREFIX_PROMPT="libvirt-qemu $_HOOK_NAME:"
 _OPERATION="$2"
 _SUBOPERATION="$3"
 
@@ -47,12 +49,16 @@ function GetVideoInput
 
 function SetVideoOutput
 {
-	if [[ "$( ddcutil -d "$_DOMAIN_DISPLAY" getvcp 60 --terse | awk '{print $4}' )" != "x$_VIDEO_INPUT" ]] \
-		&& ddcutil -d "$_DOMAIN_DISPLAY" setvcp 60 "0x$_VIDEO_INPUT"; then
-		return 0
+    if [[ "$( ddcutil -d "$_DOMAIN_DISPLAY" getvcp 60 --terse | awk '{print $4}' )" == "x$_VIDEO_INPUT" ]]; then
+        return 0
+    fi
+
+	if ! ddcutil -d "$_DOMAIN_DISPLAY" setvcp 60 "0x$_VIDEO_INPUT"; then
+        echo "$_PREFIX_PROMPT An error occured: Failed to switch video input."
+		return 1
 	fi
 
-	return 1
+	return 0
 }
 
 if GetVideoInput; then

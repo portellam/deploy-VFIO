@@ -39,7 +39,7 @@ function AreValuesNotEmpty
     if ( "$_FLAG_USE_HEX_MASKS" \
         && AreHexMasksNotEmpty  \
         && AreThreadSetsNotEmpty ) \
-        || ( ! "$_FLAG_USE_HEX_MASKS"
+        || ( ! "$_FLAG_USE_HEX_MASKS" \
             && AreThreadSetsNotEmpty ); then
         return 0
     fi
@@ -69,13 +69,13 @@ function AreThreadSetsNotEmpty
     return 0
 }
 
-function GetThreadByCoreAndSMT
+function GetThreadByCoreAnd_SMT
 {
     _THREAD=$(( _CORE + ( _SMT_FACTOR * _TOTAL_CORES_COUNT )))
     return 0
 }
 
-function GetCPU
+function Get_CPU
 {
     AreValuesNotEmpty && return 0
     local -i _CORES_ALLOCATED_TO_HOST=0
@@ -114,13 +114,13 @@ function GetThreadSetsForHostAndLibvirt
         local -i _THREAD
 
         for _CORE in ${_HOST_CORES_LIST[@]}; do
-            GetThreadByCoreAndSMT
+            GetThreadByCoreAnd_SMT
             _HOST_THREADS_LIST+=( "$_THREAD" )
             _HOST_THREADS_DELIM_LIST+=( "$_THREAD" )
         done
 
         for _CORE in ${_GUEST_CORES_LIST[@]}; do
-            GetThreadByCoreAndSMT
+            GetThreadByCoreAnd_SMT
             _GUEST_THREADS_LIST+=( "$_THREAD" )
             _GUEST_THREADS_DELIM_LIST+=( "$_THREAD" )
         done
@@ -230,19 +230,19 @@ function ReserveThreadSets
     return 0
 }
 
-function ReleaseOrReserveCPU
+function ReleaseOrReserve_CPU
 {
     case "$_OPERATION" in
         "started" )
             if "$_FLAG_USE_HEX_MASKS"; then
-                ReserveHexMask || return 1 ;;
+                ReserveHexMask || return 1
             fi
 
             ReserveThreadSets || return 1 ;;
 
         "release" )
             if "$_FLAG_USE_HEX_MASKS"; then
-                ReleaseHexMask || return 1 ;;
+                ReleaseHexMask || return 1
             fi
 
             local -i _LAST_THREAD_ID=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+" )
@@ -254,6 +254,6 @@ function ReleaseOrReserveCPU
     return 0
 }
 
-if GetCPU; then
-    ReleaseOrReserveCPU
+if Get_CPU; then
+    ReleaseOrReserve_CPU
 fi

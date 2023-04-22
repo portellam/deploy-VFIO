@@ -17,26 +17,26 @@ function Main
 {
     IsSudoUser || return 1
 
-    # # <remarks> Gather arguments. </remarks>
-    # if ! SetOptions "$@"; then
-    #     GetUsage
-    #     return "$?"
-    # fi
+    # <remarks> Gather arguments. </remarks>
+    if ! SetOptions "$@"; then
+        GetUsage
+        return "$?"
+    fi
 
-    # if ExecuteBackups; then
-    #     _HAS_EXECUTED_BACKUPS=true
-    # fi
+    if ExecuteBackups; then
+        _HAS_EXECUTED_BACKUPS=true
+    fi
 
-    # # <remarks> Exit early. </remarks>
-    # if "$_EXECUTE_UNINSTALL_SETUP"; then
-    #     ExecuteSetup
-    #     return "$?"
-    # fi
+    # <remarks> Exit early. </remarks>
+    if "$_EXECUTE_UNINSTALL_SETUP"; then
+        ExecuteSetup
+        return "$?"
+    fi
 
-    # ExecuteEssentials || return 1
+    ExecuteEssentials || return 1
     ExecuteExtras || return 1
-    # ExecuteParse || return 1
-    # ExecuteSetup || return 1
+    ExecuteParse || return 1
+    ExecuteSetup || return 1
     return 0
 }
 # </code>
