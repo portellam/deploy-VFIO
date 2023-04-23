@@ -34,9 +34,9 @@
     # <summary>
     # isolcpus: Allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and guest performance.
     # </summary
-    function AllocateCPUToGuest
+    function Allocate_CPU_ToGuest
     {
-        function GetThreadByCoreAndSMT
+        function GetThreadByCoreAnd_SMT
         {
             _THREAD=$(( _CORE + ( _SMT_FACTOR * _TOTAL_CORES_COUNT ) ))             # NOTE: VS Code reports a syntax error here. There is none.
         }
@@ -50,14 +50,14 @@
 
                 # <remarks> Find thread sets for host. </remarks>
                 for _CORE in ${_HOST_CORES_LIST[@]}; do
-                    GetThreadByCoreAndSMT
+                    GetThreadByCoreAnd_SMT
                     _HOST_THREADS_LIST+=( "$_THREAD" )
                     _HOST_THREADS_DELIM_LIST+=( "$_THREAD" )
                 done
 
                 # <remarks> Find thread sets for guest(s). </remarks>
                 for _CORE in ${_GUEST_CORES_LIST[@]}; do
-                    GetThreadByCoreAndSMT
+                    GetThreadByCoreAnd_SMT
                     _GUEST_THREADS_LIST+=( "$_THREAD" )
                     _GUEST_THREADS_DELIM_LIST+=( "$_THREAD" )
                 done
@@ -182,7 +182,7 @@
     # Hugepages: Allocate host memory (RAM) to 'hugepages'.
     # Eliminate the need to defragement memory, reduce host overhead, and improve both host and guest performance.
     # </summary
-    function AllocateRAMToGuest
+    function Allocate_RAM_ToGuest
     {
         function AskForHugepageByteSize
         {
@@ -260,39 +260,39 @@
         AddUserToGroups || return 1
 
         if "$_EXECUTE_ALL_ESSENTIAL_SETUPS"; then
-            AllocateCPUToGuest || return 1
+            Allocate_CPU_ToGuest || return 1
             echo
-            AllocateRAMToGuest || return 1
+            Allocate_RAM_ToGuest || return 1
             echo
-            VirtualKVM || return 1
+            Virtual_KVM || return 1
             echo
-            ModifyQEMU || return 1
+            Modify_QEMU || return 1
             return 0
         fi
 
         if "$_EXECUTE_ISOLCPU_SETUP"; then
-            AllocateCPUToGuest || return 1
+            Allocate_CPU_ToGuest || return 1
         fi
 
         if "$_EXECUTE_HUGEPAGES_SETUP"; then
             echo
-            AllocateRAMToGuest || return 1
+            Allocate_RAM_ToGuest || return 1
         fi
 
         if "$_EXECUTE_EVDEV_SETUP"; then
             echo
-            VirtualKVM || return 1
+            Virtual_KVM || return 1
         fi
 
         echo
-        ModifyQEMU || return 1
+        Modify_QEMU || return 1
         return 0
     }
 
     # <summary>
     # libvirt-qemu: Append necessary changes to QEMU system file, including user groups, Evdev, Hugepages, and NVRAM (for UEFI guest(s)).
     # </summary>
-    function ModifyQEMU
+    function Modify_QEMU
     {
         function Main
         {
@@ -425,7 +425,7 @@
     # Evdev: Setup a virtual Keyboard-Video-Mouse switch (excluding the Video).
     # Will allow a user to swap between active guest(s) and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL').
     # </summary>
-    function VirtualKVM
+    function Virtual_KVM
     {
         function Main
         {

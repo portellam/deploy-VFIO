@@ -106,13 +106,13 @@
         fi
 
         if [[ ! -e "$_GRUB_SRC_PATH" ]]; then
-            GetFilesForGRUB || return 1
+            GetFilesFor_GRUB || return 1
         fi
 
         return 0
     }
 
-    function GetFilesForGRUB
+    function GetFilesFor_GRUB
     {
         if [[ -e "$_GRUB_DEST_PATH_1" ]]; then
             return 0
@@ -167,7 +167,7 @@
         return 0
     }
 
-    function SetFilesForQEMU
+    function SetFilesFor_QEMU
     {
         if [[ -e "$_QEMU_DEST_PATH" ]]; then
             return 0
@@ -207,12 +207,12 @@
 
     function SetFiles
     {
-        SetFilesForGRUB || return 1
-        SetFilesForQEMU || return 1
+        SetFilesFor_GRUB || return 1
+        SetFilesFor_QEMU || return 1
         return 0
     }
 
-    function SetFilesForGRUB
+    function SetFilesFor_GRUB
     {
         if ! sudo cp "$_GRUB_SRC_PATH" "$_GRUB_SRC_BACKUP_PATH" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to copy GRUB backup file."

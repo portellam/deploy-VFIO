@@ -13,7 +13,7 @@
 # </code>
 
 # <code>
-    function IsIOMMUEnabled
+    function Is_IOMMU_Enabled
     {
         if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*" &> /dev/null; then
             echo -e "$_PREFIX_ERROR System does not support IOMMU groups."
@@ -21,7 +21,7 @@
         fi
     }
 
-    function IsKVMInstalled
+    function Is_KVM_Enabled
     {
         if ! command -v "kvm" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Library 'KVM' is not installed."
@@ -37,7 +37,7 @@
         fi
     }
 
-    function IsQEMUInstalled
+    function Is_QEMU_Installed
     {
         if ! sudo apt list "qemu" --installed &> /dev/null; then
             echo -e "$_PREFIX_ERROR Library 'QEMU' is not installed."
@@ -68,10 +68,10 @@
 
     if IsSystemdInstalled \
         && IsVirtualizationEnabled \
-        && IsIOMMUEnabled \
+        && Is_IOMMU_Enabled \
         && IsSystemdInstalled \
-        && IsKVMInstalled \
-        && IsQEMUInstalled \
+        && Is_KVM_Enabled \
+        && Is_QEMU_Installed \
         && IsLibvirtInstalled; then
         _IS_SYSTEM_SUPPORTED=true
     fi

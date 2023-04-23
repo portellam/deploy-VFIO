@@ -143,7 +143,7 @@
     function GetLinuxDistro
     {
         # <summary> Check if current Operating System matches Package Manager, and Check if PM is installed. </summary>
-        function GetPackageManagerByOS
+        function GetPackageManagerBy_OS
         {
             if [[ "$_OS_WITH_APT" =~ .*${_OPERATING_SYSTEM}.* ]]; then
                 _PACKAGE_MANAGER="apt"
@@ -198,7 +198,7 @@
             return 1
         fi
 
-        if ! GetPackageManagerByOS; then
+        if ! GetPackageManagerBy_OS; then
             echo -e "$_PREFIX_ERROR Distribution '$( lsb_release -is )' is not supported."
             return 1
         fi

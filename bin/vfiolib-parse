@@ -52,10 +52,10 @@
             local _HAS_ASKED=false
             declare -g _IOMMU_GROUP_HAS_VGA=false
             declare -g _IOMMU_GROUP_IS_VALID=false
-            PrintInfoForIOMMUGroupAndSaveInfoToLists "$_IOMMU_GROUP_ID" && _DO_PRINT=true
+            PrintInfoFor_IOMMU_GroupAndSaveInfoToLists "$_IOMMU_GROUP_ID" && _DO_PRINT=true
 
             if "$_DO_PRINT" \
-                && AskToSelectThisIOMMUGroup "$_IOMMU_GROUP_ID"; then
+                && AskToSelectThis_IOMMU_Group "$_IOMMU_GROUP_ID"; then
                 _HAS_ASKED=true
             fi
 
@@ -86,15 +86,15 @@
         return 0
     }
 
-    function AskToSelectThisIOMMUGroup
+    function AskToSelectThis_IOMMU_Group
     {
-        IsIOMMUGroupIDValid "$1" || return 1
+        Is_IOMMU_GroupIDValid "$1" || return 1
         local -i _IOMMU_GROUP_ID="$1"
         AskToExecuteOrSkip "Select IOMMU group '$_IOMMU_GROUP_ID'?"
         return "$?"
     }
 
-    function DoesHostHaveVGA
+    function DoesHostHave_VGA
     {
         if [[ "${#_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_HOST[@]}" -eq 0 ]]; then
             echo -e "$_PREFIX_ERROR No VGA devices left for host."
@@ -115,13 +115,13 @@
             SetOptionsForParsingDatabase || return 1
         fi
 
-        GetDevicesForEachIOMMUGroup || return 1
+        GetDevicesForEach_IOMMU_Group || return 1
         AskToSelectAllGroups || return 1
         AreParsedListsEmpty || return 1
         return 0
     }
 
-    function GetDevicesForEachIOMMUGroup
+    function GetDevicesForEach_IOMMU_Group
     {
         shopt -s nullglob
 
@@ -149,7 +149,7 @@
         return 0
     }
 
-    function IsDeviceForPCISTUB
+    function IsDeviceFor_PCISTUB
     {
         local -l _CLASS="$1"
 
@@ -161,7 +161,7 @@
         return 1
     }
 
-    function IsDeviceVGA
+    function IsDevice_VGA
     {
         local -l _CLASS="$1"
 
@@ -185,7 +185,7 @@
         return 0
     }
 
-    function IsIOMMUGroupIDValid
+    function Is_IOMMU_GroupIDValid
     {
         if [[ -z "$1" ]] \
             || ! [[ "$1" =~ ^[0-9]+$ ]]; then
@@ -235,9 +235,9 @@
         return 0
     }
 
-    function PrintInfoForIOMMUGroupOnly
+    function PrintInfoFor_IOMMU_GroupOnly
     {
-        IsIOMMUGroupIDValid "$1" || return 1
+        Is_IOMMU_GroupIDValid "$1" || return 1
         local -i _IOMMU_GROUP_ID="$1"
 
         for _DEVICE_FULL_ID in ${_IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]}; do
@@ -265,7 +265,7 @@
                 fi
             fi
 
-            if IsDeviceVGA "$_DEVICE_CLASS"; then
+            if IsDevice_VGA "$_DEVICE_CLASS"; then
                 _IOMMU_GROUP_HAS_VGA=true
             fi
         done
@@ -277,9 +277,9 @@
         return 0
     }
 
-    function PrintInfoForIOMMUGroupAndSaveInfoToLists
+    function PrintInfoFor_IOMMU_GroupAndSaveInfoToLists
     {
-        IsIOMMUGroupIDValid "$1" || return 1
+        Is_IOMMU_GroupIDValid "$1" || return 1
         local -a _CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST _HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST _NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST _PCI_ID_BY_VALID_IOMMU_GROUP_TEMP_LIST
         local -i _IOMMU_GROUP_ID="$1"
 
@@ -327,7 +327,7 @@
                 fi
             fi
 
-            if IsDeviceVGA "$_DEVICE_CLASS"; then
+            if IsDevice_VGA "$_DEVICE_CLASS"; then
                 _IOMMU_GROUP_HAS_VGA=true
             fi
         done

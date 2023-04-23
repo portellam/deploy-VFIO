@@ -84,7 +84,7 @@
 
             "-s" | "--static" )
                 if [[ "$2" != "" ]]; then
-                    GetArgsForStaticVFIO "$2" || return 1
+                    GetArgsForStatic_VFIO "$2" || return 1
                 fi
 
                 _EXECUTE_STATIC_SETUP=true
@@ -118,11 +118,11 @@
                 _EXECUTE_ALL_EXTRA_SETUPS=false
 
                 if [[ "$2" != "" ]]; then
-                    GetZramSwapSize "$2" || GetOverrideArgsForZramSwap "$2" || return 1
+                    Get_zRAM_SwapSize "$2" || GetOverrideArgsForZramSwap "$2" || return 1
                 fi
 
                 if [[ "$3" != "" ]]; then
-                    GetZramSwapSize "$3" || GetOverrideArgsForZramSwap "$3" || return 1
+                    Get_zRAM_SwapSize "$3" || GetOverrideArgsForZramSwap "$3" || return 1
                 fi
 
                 IsHostMemorySufficientForZramSwap || return 1
@@ -147,7 +147,7 @@
         return 0
     }
 
-    function GetArgsForStaticVFIO
+    function GetArgsForStatic_VFIO
     {
         case "$1" in
             "grub" )

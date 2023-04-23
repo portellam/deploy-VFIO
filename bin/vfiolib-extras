@@ -20,7 +20,7 @@
 	# zramswap: Setup a swap partition in host memory.
 	# Reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory.
 	# </summary>
-	function AllocateRAMToSwap
+	function Allocate_RAM_ToSwap
 	{
 		function Get
 		{
@@ -134,7 +134,7 @@
 	function ExecuteExtras
 	{
 		if "$_EXECUTE_ALL_EXTRA_SETUPS"; then
-			AllocateRAMToSwap
+			Allocate_RAM_ToSwap
 			SetVideoOutput
 			LibvirtHooks
 			GuestAudioLoopback
@@ -146,7 +146,7 @@
 		fi
 
 		if "$_EXECUTE_ZRAM_SWAP"; then
-			AllocateRAMToSwap || return 1
+			Allocate_RAM_ToSwap || return 1
 		fi
 
 		if "$_EXECUTE_AUTO_XORG_SETUP"; then

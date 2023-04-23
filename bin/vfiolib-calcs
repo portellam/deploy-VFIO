@@ -90,7 +90,7 @@
         return 0
     }
 
-    function GetZramSwapSize
+    function Get_zRAM_SwapSize
     {
         IsHostMemorySufficientForZramSwap || return 1
 
