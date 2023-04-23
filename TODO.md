@@ -19,8 +19,6 @@
 * Maintain integrity; give credit appropriately and openly.
 * VFIO setups
     - Fix bugs.
-* Backups:
-    - Restore files properly, on exit (failure).
 * Usage
     - Fix
     - Extend
@@ -30,14 +28,10 @@
 #### Medium priority
 * Trim fat, remove unnecessary repetitions and code.
 * Essentials:
-    - CPU isolation, ask user to setup Static (append to GRUB) or Dynamic (Libvirt hooks), save output to logfile.
     - Evdev, save output to logfile.
-* Extras:
-    - Libvirt hooks, add more.
 * VFIO setup:
     - Detect existing setup, and recommend update or uninstall to continue.
     - VFIO output, save to logfile (for easier updating).
-    - Save as XML?
 
 #### Low priority
 * Extras:
