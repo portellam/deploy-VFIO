@@ -258,7 +258,7 @@
 
     function SetOptions
     {
-        if [[ "$@" == "" ]]; then
+        if [[ -z "$@" ]]; then
             return 0
         fi
 

@@ -47,7 +47,7 @@
     function GetHugepageCount
     {
         if ! GetHugepageMinAndMaxSizes \
-            || [[ "$1" == "" ]]; then
+            || [[ -z "$1" ]]; then
             return 1
         fi
 

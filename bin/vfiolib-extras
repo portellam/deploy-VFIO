@@ -109,6 +109,7 @@
 		local -r _REPO_NAME="zram-swap"
 		local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
 		local _HAS_SKIPPED=false
+        echo
 
 		if ! "$_EXECUTE_ZRAM_SWAP" \
 			&& ! AskToExecuteOrSkip "Install zram-swap?"; then
@@ -127,51 +128,62 @@
 			( return 255 )
 		fi
 
-		PrintPassOrFail "Allocating RAM to swap..."
+		PrintSuffixPassOrFail "Allocating RAM to swap..."
 		return "$_LAST_EXIT_CODE"
 	}
 
 	function ExecuteExtras
 	{
-		if "$_EXECUTE_ALL_EXTRA_SETUPS"; then
-			Allocate_RAM_ToSwap
-			SetVideoOutput
-			LibvirtHooks
-			GuestAudioLoopback
-			# NOTE: these functions always fail at build stage.
-			# TODO: fix!
-			# GuestAudioStream
-			# GuestVideoCapture
-			return 0
-		fi
+        function Main
+        {
+            while [[ "$?" -ne 1 ]]; do
+                if "$_EXECUTE_ALL_EXTRA_SETUPS"; then
+                    Allocate_RAM_ToSwap
+                    SetVideoOutput
+                    LibvirtHooks
+                    GuestAudioLoopback
+                    # NOTE: these functions always fail at build stage.
+                    # TODO: fix!
+                    # GuestAudioStream
+                    # GuestVideoCapture
+                    break
+                fi
 
-		if "$_EXECUTE_ZRAM_SWAP"; then
-			Allocate_RAM_ToSwap || return 1
-		fi
+                if "$_EXECUTE_ZRAM_SWAP"; then
+                    Allocate_RAM_ToSwap
+                fi
 
-		if "$_EXECUTE_AUTO_XORG_SETUP"; then
-			SetVideoOutput || return 1
-		fi
+                if "$_EXECUTE_AUTO_XORG_SETUP"; then
+                    SetVideoOutput
+                fi
 
-		if "$_EXECUTE_LIBVIRT_HOOKS"; then
-			LibvirtHooks || return 1
-		fi
+                if "$_EXECUTE_LIBVIRT_HOOKS"; then
+                    LibvirtHooks
+                fi
 
-		if "$_EXECUTE_AUDIO_LOOPBACK_SETUP"; then
-			GuestAudioLoopback || return 1
-		fi
+                if "$_EXECUTE_AUDIO_LOOPBACK_SETUP"; then
+                    GuestAudioLoopback
+                fi
 
-		# NOTE: these functions always fail at build stage.
-		# TODO: fix!
-		# if "$_EXECUTE_SCREAM"; then
-		#     GuestAudioStream || return 1
-		# fi
+                # NOTE: these functions always fail at build stage.
+                # TODO: fix!
+                # if "$_EXECUTE_SCREAM"; then
+                #     GuestAudioStream
+                # fi
 
-		# if "$_EXECUTE_LOOKING_GLASS"; then
-		#     GuestVideoCapture || return 1
-		# fi
+                # if "$_EXECUTE_LOOKING_GLASS"; then
+                #     GuestVideoCapture
+                # fi
 
-		return 0
+                break
+            done
+
+            return "$?"
+        }
+
+        Main
+        PrintSuffixPassOrFail "Executing post-install..."
+		return "$?"
 	}
 
 	# <summary>
@@ -235,7 +247,7 @@
 		}
 
 		Main
-		PrintPassOrFail "Installing audio drivers..." && _IS_AUDIO_CAPTURE_SETUP=true
+		PrintSuffixPassOrFail "Installing audio drivers..." && _IS_AUDIO_CAPTURE_SETUP=true
 		return "$_LAST_EXIT_CODE"
 	}
 
@@ -276,6 +288,7 @@
 		}
 
 		local _HAS_SKIPPED=false
+        echo
 
 		if ! "$_EXECUTE_AUDIO_LOOPBACK_SETUP" \
 			&& ! AskToExecuteOrSkip "Install audio loopback service?"; then
@@ -291,7 +304,7 @@
 			( return 255 )
 		fi
 
-		PrintPassOrFail "Creating audio loopback..."
+		PrintSuffixPassOrFail "Creating audio loopback..."
 		return "$_LAST_EXIT_CODE"
 	}
 
@@ -370,7 +383,7 @@
 				esac
 
 			else
-				return 1Rneamed fi
+				return 1
 			fi
 
 			# <remarks> Get dependencies. </remarks>
@@ -466,6 +479,7 @@
 		}
 
 		local _HAS_SKIPPED=false
+        echo
 
 		if ! "$_EXECUTE_SCREAM" \
 			&& ! AskToExecuteOrSkip "Install Scream?"; then
@@ -477,10 +491,10 @@
 				false
 			else
 				Get
-				PrintPassOrFail "Updating Scream..."
+				PrintSuffixPassOrFail "Updating Scream..."
 
 				if Build; then
-					PrintPassOrFail "Building Scream..."
+					PrintSuffixPassOrFail "Building Scream..."
 					Install && Modify
 				fi
 			fi
@@ -490,7 +504,7 @@
 			( return 255 )
 		fi
 
-		PrintPassOrFail "Installing Scream...\t" && _IS_SCREAM_SETUP=true
+		PrintSuffixPassOrFail "Installing Scream...\t" && _IS_SCREAM_SETUP=true
 		return "$_LAST_EXIT_CODE"
 	}
 
@@ -602,6 +616,7 @@
 		}
 
 		local _HAS_SKIPPED=false
+        echo
 
 		if ! "$_EXECUTE_LOOKING_GLASS" \
 			&& ! AskToExecuteOrSkip "Install Looking Glass?"; then
@@ -610,7 +625,7 @@
 
 		if ! "$_HAS_SKIPPED"; then
 			Get
-			PrintPassOrFail "Updating Looking Glass..."
+			PrintSuffixPassOrFail "Updating Looking Glass..."
 			Install && Modify
 		fi
 
@@ -618,7 +633,7 @@
 			( return 255 )
 		fi
 
-		PrintPassOrFail "Installing Looking Glass..."
+		PrintSuffixPassOrFail "Installing Looking Glass..."
 		return "$_LAST_EXIT_CODE"
 	}
 
@@ -680,6 +695,7 @@
 		}
 
 		local _HAS_SKIPPED=false
+        echo
 
 		if ! "$_EXECUTE_LIBVIRT_HOOKS" \
 			&& ! AskToExecuteOrSkip "Install Libvirt hooks?"; then
@@ -694,7 +710,7 @@
 			( return 255 )
 		fi
 
-		PrintPassOrFail "Installing Libvirt hooks..."
+		PrintSuffixPassOrFail "Installing Libvirt hooks..."
 		return "$_LAST_EXIT_CODE"
 	}
 
@@ -740,6 +756,7 @@
 		local -r _REPO_NAME="auto-Xorg"
 		local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
 		local _HAS_SKIPPED=false
+        echo
 
 		if ! "$_EXECUTE_AUTO_XORG_SETUP" \
 			&& ! AskToExecuteOrSkip "Install auto-Xorg?"; then
@@ -755,7 +772,7 @@
 			( return 255 )
 		fi
 
-		PrintPassOrFail "Installing auto-Xorg...\t"
+		PrintSuffixPassOrFail "Installing auto-Xorg...\t"
 		return "$_LAST_EXIT_CODE"
 	}
 # </code>

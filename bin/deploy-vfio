@@ -30,7 +30,8 @@
             return "$?"
         fi
 
-        if "$_FLAG_DO_IGNORE_SYSTEM_CHECK" \
+        if "$_FLAG_DO_SYSTEM_CHECK" \
+            && ! GetLinuxDistro \
             && ! IsSystemSupported; then
             return 1
         fi
@@ -45,12 +46,11 @@
             return "$?"
         fi
 
-        ExecuteEssentials || return 1
-        ExecuteParse || return 1
-        ExecuteSetup || return 1
+        ExecuteEssentials
+        ExecuteSetup
 
         if "$_FLAG_DO_EXECUTE_EXTRAS"; then
-            ExecuteExtras || return 1
+            ExecuteExtras
         fi
 
         return 0
@@ -61,9 +61,14 @@ if "$_FLAG_DO_EXECUTE_BACKUPS"; then
     BackupFiles || exit 1
 fi
 
-if ! Main "$@" \
-    || "$_FLAG_DO_EXECUTE_BACKUPS"; then
-    RestoreFilesles || exit 1
+while [[ "$?" -ne 1 ]]; do
+    Main "$@"
+    break
+done
+
+if [[ "$?" -eq 1 ]] \
+    && "$_FLAG_DO_EXECUTE_BACKUPS"; then
+    RestoreFiles || exit 1
 fi
 
 exit "$?"

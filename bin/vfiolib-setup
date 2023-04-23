@@ -128,53 +128,62 @@
     {
         function Main
         {
-            if ! "$_EXECUTE_MULTIBOOT_SETUP" \
-                && ! "$_EXECUTE_STATIC_SETUP" \
-                && ! "$_EXECUTE_UNINSTALL_SETUP"; then
-                for _TRIES_COUNT in $( seq 0 2 ); do
-                    read -r -p "Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall/(N)o]: " _ANSWER
+            while [[ "$?" -ne 1 ]]; do
+                if ! "$_EXECUTE_MULTIBOOT_SETUP" \
+                    && ! "$_EXECUTE_STATIC_SETUP" \
+                    && ! "$_EXECUTE_UNINSTALL_SETUP"; then
+                    for _TRIES_COUNT in $( seq 0 2 ); do
+                        read -r -p "Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall/(N)o]: " _ANSWER
 
-                    case "$_ANSWER" in
-                        [Mm]* )
-                            _EXECUTE_MULTIBOOT_SETUP=true
-                            break ;;
+                        case "$_ANSWER" in
+                            [Mm]* )
+                                _EXECUTE_MULTIBOOT_SETUP=true
+                                break ;;
 
-                        [Ss]* )
-                            _EXECUTE_STATIC_SETUP=true
-                            break ;;
+                            [Ss]* )
+                                _EXECUTE_STATIC_SETUP=true
+                                break ;;
 
-                        [Uu]* )
-                            _EXECUTE_UNINSTALL_SETUP=true
-                            break ;;
+                            [Uu]* )
+                                _EXECUTE_UNINSTALL_SETUP=true
+                                break ;;
 
-                        [Nn]* )
-                            return 255 ;;
+                            [Nn]* )
+                                return 255 ;;
 
-                        * )
-                            echo "Please answer \"M\", \"S\", \"U\", or \"N\"." ;;
-                    esac
-                done
+                            * )
+                                echo "Please answer \"M\", \"S\", \"U\", or \"N\"." ;;
+                        esac
+                    done
 
-                if ! [[ "$_ANSWER" =~ [MmSsUuNn] ]]; then
-                    echo -e "$_PREFIX_ERROR Failed to answer."
-                    return 1
+                    if ! [[ "$_ANSWER" =~ [MmSsUuNn] ]]; then
+                        echo -e "$_PREFIX_ERROR Failed to answer."
+                        return 1
+                    fi
                 fi
-            fi
 
-            case true in
-                "$_EXECUTE_MULTIBOOT_SETUP" )
-                    ExecuteMultibootSetup || return 1 ;;
+                case true in
+                    "$_EXECUTE_MULTIBOOT_SETUP" )
+                        ExecuteParse || return 1
+                        ExecuteMultibootSetup || return 1 ;;
 
-                "$_EXECUTE_STATIC_SETUP" )
-                    ExecuteStaticSetup || return 1 ;;
+                    "$_EXECUTE_STATIC_SETUP" )
+                        ExecuteParse || return 1
+                        ExecuteStaticSetup || return 1 ;;
 
-                "$_EXECUTE_UNINSTALL_SETUP" )
-                    ExecuteUninstallSetup || return 1 ;;
-            esac
+                    "$_EXECUTE_UNINSTALL_SETUP" )
+                        ExecuteUninstallSetup || return 1 ;;
+                esac
+
+                break
+            done
+
+            return "$?"
         }
 
+        echo
         Main
-        PrintPassOrFail "Deploying VFIO setup...\t"
+        PrintSuffixPassOrFail "Executing VFIO setup...\t"
         return "$_LAST_EXIT_CODE"
     }
 
