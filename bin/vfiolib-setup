@@ -693,11 +693,17 @@
     _FLAG_ADD_SET_POWER_ARGS=true
     _FLAG_ADD_SET_VIDEO_ARGS=true
     _FLAG_ADD_WIN10_REQUIRED_ARGS=true
+    _FLAG_ADD_PRIVACY_ARGS=true
 
     declare -g _LINE_GRUB_CMDLINE="quiet splash amd_iommu=on intel_iommu=on iommu=1,pt"
 
     if "$_FLAG_ADD_LOG_LEVEL_ARGS"; then
         _LINE_GRUB_CMDLINE="loglevel=3 $_LINE_GRUB_CMDLINE"
+    fi
+
+    if "$_FLAG_ADD_PRIVACY_ARGS" \
+        && IsInstalled "rfkill" &> /dev/null; then
+        _LINE_GRUB_CMDLINE+=" rfkill.default_state=1 systemd.restore_state=0"
     fi
 
     if "$_FLAG_ADD_SET_POWER_ARGS"; then
