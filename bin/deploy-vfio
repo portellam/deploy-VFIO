@@ -41,7 +41,6 @@ function Main
 }
 # </code>
 
-# BackupFiles || exit 1
-# Main "$@" || RestoreFiles || exit 1
-Main "$@"
+BackupFiles || exit 1
+Main "$@" || RestoreFiles || exit 1
 exit "$?"
