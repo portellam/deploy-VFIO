@@ -16,8 +16,8 @@
 # <code>
     function BackupFile
     {
-        if [[ -e "$1$_SUFFIX_BACKUP" ]] \
-            || cmp -s "$1" "$1$_SUFFIX_BACKUP"; then
+        if [[ -e "$1" ]] \
+            && cmp -s "$1" "$1$_SUFFIX_BACKUP"; then
             return 0
         fi
 
@@ -136,7 +136,8 @@
 
     function RestoreFile
     {
-        if cmp -s "$1" "$1$_SUFFIX_BACKUP"; then
+        if [[ -e "$1$_SUFFIX_BACKUP" ]] \
+            && cmp -s "$1" "$1$_SUFFIX_BACKUP"; then
             return 0
         fi
 
@@ -146,7 +147,8 @@
             return 1
         fi
 
-        if ! sudo rm -f "$1$_SUFFIX_BACKUP" &> /dev/null; then
+        if [[ -e "$1$_SUFFIX_BACKUP" ]] \
+            && ! sudo rm -f "$1$_SUFFIX_BACKUP" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to delete file '$1'."
             return 1
         fi
