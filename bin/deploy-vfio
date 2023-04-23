@@ -12,35 +12,58 @@
     source vfiolib-all
 # </code>
 
+# <params>
+    # <remarks> Feature Flags </remarks>
+    declare -g _FLAG_DO_EXECUTE_BACKUPS=true
+    declare -g _FLAG_DO_EXECUTE_EXTRAS=true
+    declare -g _FLAG_DO_SYSTEM_CHECK=true
+# </params>
+
 # <code>
-function Main
-{
-    IsSudoUser || return 1
+    function Main
+    {
+        IsSudoUser || return 1
 
-    # <remarks> Gather arguments. </remarks>
-    if ! SetOptions "$@"; then
-        GetUsage
-        return "$?"
-    fi
+        # <remarks> Gather arguments. </remarks>
+        if ! SetOptions "$@"; then
+            GetUsage
+            return "$?"
+        fi
 
-    if ExecuteBackups; then
-        _HAS_EXECUTED_BACKUPS=true
-    fi
+        if "$_FLAG_DO_IGNORE_SYSTEM_CHECK" \
+            && ! IsSystemSupported; then
+            return 1
+        fi
 
-    # <remarks> Exit early. </remarks>
-    if "$_EXECUTE_UNINSTALL_SETUP"; then
-        ExecuteSetup
-        return "$?"
-    fi
+        if ExecuteBackups; then
+            _HAS_EXECUTED_BACKUPS=true
+        fi
 
-    ExecuteEssentials || return 1
-    ExecuteExtras || return 1
-    ExecuteParse || return 1
-    ExecuteSetup || return 1
-    return 0
-}
+        # <remarks> Exit early. </remarks>
+        if "$_EXECUTE_UNINSTALL_SETUP"; then
+            ExecuteSetup
+            return "$?"
+        fi
+
+        ExecuteEssentials || return 1
+        ExecuteParse || return 1
+        ExecuteSetup || return 1
+
+        if "$_FLAG_DO_EXECUTE_EXTRAS"; then
+            ExecuteExtras || return 1
+        fi
+
+        return 0
+    }
 # </code>
 
-BackupFiles || exit 1
-Main "$@" || RestoreFiles || exit 1
+if "$_FLAG_DO_EXECUTE_BACKUPS"; then
+    BackupFiles || exit 1
+fi
+
+if ! Main "$@" \
+    || "$_FLAG_DO_EXECUTE_BACKUPS"; then
+    RestoreFilesles || exit 1
+fi
+
 exit "$?"
