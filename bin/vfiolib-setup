@@ -78,14 +78,14 @@
 
     function ExecuteStaticSetup
     {
-        DoesHostHaveVGA || return 1
+        DoesHostHave_VGA || return 1
         AskToSpecifyStaticSetup || return 1
 
         if "$_EXECUTE_GRUB_STATIC_SETUP" \
             && ( ! "$_HAS_EXECUTED_BACKUPS" \
             || ! GetParamsForAnySetup \
             || ! AreParamsNotEmptyForStaticSetup \
-            || ! WriteFilesForGRUBStaticSetup \
+            || ! WriteFilesFor_GRUB_StaticSetup \
             || ! ExecuteUpdateAfterSetup ); then
             return 1
         fi
@@ -94,8 +94,8 @@
             && ( ! "$_HAS_EXECUTED_BACKUPS" \
             || ! GetParamsForAnySetup \
             || ! AreParamsNotEmptyForStaticSetup \
-            || ! GetListsForNoGRUBStaticSetup \
-            || ! WriteFilesForNoGRUBStaticSetup \
+            || ! GetListsForNo_GRUB_StaticSetup \
+            || ! WriteFilesForNo_GRUB_StaticSetup \
             || ! ExecuteUpdateAfterSetup ); then
             return 1
         fi
@@ -201,7 +201,7 @@
 
         for _THIS_IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
             declare -g _THIS_IOMMU_GROUP_VGA_NAME=""
-            GetNameForIOMMUGroupWithVGA "$_THIS_IOMMU_GROUP_ID"
+            GetNameFor_IOMMU_GroupWith_VGA "$_THIS_IOMMU_GROUP_ID"
 
             for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
                 if [[ "$_IOMMU_GROUP_ID" != "$_THIS_IOMMU_GROUP_ID" ]]; then
@@ -219,7 +219,7 @@
         return 0
     }
 
-    function GetListsForIOMMUGroup
+    function GetListsFor_IOMMU_Group
     {
         local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_LIST[$1]}"
         local -a _DRIVER_LIST="${_DRIVER_BY_VALID_IOMMU_GROUP_LIST[$1]}"
@@ -231,12 +231,12 @@
             local _HWID=${_HWID_LIST[$_KEY]}
 
             if [[ ! -z "$_HWID" ]] \
-                && IsDeviceForPCISTUB "$_CLASS"; then
+                && IsDeviceFor_PCISTUB "$_CLASS"; then
                 _PCISTUB_HWID_DELIM+="$_HWID,"
             fi
 
             if [[ ! -z "$_HWID" ]] \
-                && ! IsDeviceForPCISTUB "$_CLASS"; then
+                && ! IsDeviceFor_PCISTUB "$_CLASS"; then
                 _VFIOPCI_HWID_DELIM+="$_HWID,"
             fi
 
@@ -249,7 +249,7 @@
         return 0
     }
 
-    function GetListsForIOMMUGroupByPCI_ID
+    function GetListsFor_IOMMU_GroupWith_By_PCI_ID
     {
         local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
 
@@ -265,12 +265,12 @@
                 local _HWID=$( lspci -ns $_PCI_ID | cut -d " " -f 3 )
 
                 if [[ ! -z "$_HWID" ]] \
-                    && IsDeviceForPCISTUB "$_CLASS"; then
+                    && IsDeviceFor_PCISTUB "$_CLASS"; then
                     _PCISTUB_HWID_DELIM+="$_HWID,"
                 fi
 
                 if [[ ! -z "$_HWID" ]] \
-                    && ! IsDeviceForPCISTUB "$_CLASS"; then
+                    && ! IsDeviceFor_PCISTUB "$_CLASS"; then
                     _VFIOPCI_HWID_DELIM+="$_HWID,"
                 fi
 
@@ -286,7 +286,7 @@
         return 0
     }
 
-    function GetListsForIOMMUGroupWithVGA
+    function GetListsFor_IOMMU_GroupWith_VGA
     {
         local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_LIST[$1]}"
         local -a _DRIVER_LIST="${_DRIVER_BY_VALID_IOMMU_GROUP_LIST[$1]}"
@@ -307,12 +307,12 @@
                 local _NAME=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_NAME_DELIM" )
 
                 if [[ ! -z "$_HWID" ]] \
-                    && IsDeviceForPCISTUB "$_CLASS"; then
+                    && IsDeviceFor_PCISTUB "$_CLASS"; then
                     _VGA_PCISTUB_HWID_DELIM+="$_HWID,"
                 fi
 
                 if [[ ! -z "$_HWID" ]] \
-                    && ! IsDeviceForPCISTUB "$_CLASS"; then
+                    && ! IsDeviceFor_PCISTUB "$_CLASS"; then
                     _VGA_VFIOPCI_HWID_DELIM+="$_HWID,"
                 fi
 
@@ -334,7 +334,7 @@
         return 0
     }
 
-    function GetListsForIOMMUGroupWithVGAByPCI_ID
+    function GetListsFor_IOMMU_GroupWith_VGA_By_PCI_ID
     {
         local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
 
@@ -351,12 +351,12 @@
                 local _NAME="$( lspci -ms $_PCI_ID | cut -d '"' -f 6 )"
 
                 if [[ ! -z "$_HWID" ]] \
-                    && IsDeviceForPCISTUB "$_CLASS"; then
+                    && IsDeviceFor_PCISTUB "$_CLASS"; then
                     _VGA_PCISTUB_HWID_DELIM+="$_HWID,"
                 fi
 
                 if [[ ! -z "$_HWID" ]] \
-                    && ! IsDeviceForPCISTUB "$_CLASS"; then
+                    && ! IsDeviceFor_PCISTUB "$_CLASS"; then
                     _VGA_VFIOPCI_HWID_DELIM+="$_HWID,"
                 fi
 
@@ -378,7 +378,7 @@
         return 0
     }
 
-    function GetNameForIOMMUGroupWithVGA
+    function GetNameFor_IOMMU_GroupWith_VGA
     {
         local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
 
@@ -392,7 +392,7 @@
                 local _CLASS="$( lspci -ms $_PCI_ID | cut -d '"' -f 2 )"
                 local _NAME="$( lspci -ms $_PCI_ID | cut -d '"' -f 6 )"
 
-                if IsDeviceVGA "$_CLASS"; then
+                if IsDevice_VGA "$_CLASS"; then
                     _THIS_IOMMU_GROUP_VGA_NAME="$_NAME"
                     return 0
                 fi
@@ -429,7 +429,7 @@
         return 0
     }
 
-    function GetListsForNoGRUBStaticSetup
+    function GetListsForNo_GRUB_StaticSetup
     {
         declare -ag _BLACKLISTS_LIST=( )
         declare -ag _INITRAMFS_LIST=( )
@@ -482,12 +482,12 @@
         fi
 
         for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_FOR_VFIO[@]}; do
-            GetListsForIOMMUGroup "$_IOMMU_GROUP_ID" || return 1
+            GetListsFor_IOMMU_Group "$_IOMMU_GROUP_ID" || return 1
         done
 
         if ! "$_EXECUTE_MULTIBOOT_SETUP"; then
             for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
-                GetListsForIOMMUGroupWithVGA "$_IOMMU_GROUP_ID" || return 1
+                GetListsFor_IOMMU_GroupWith_VGA "$_IOMMU_GROUP_ID" || return 1
             done
         fi
 
@@ -516,7 +516,7 @@
 
     function GetParamsForMultibootSetup
     {
-        GetListsForIOMMUGroupWithVGA "$1" || return 1
+        GetListsFor_IOMMU_GroupWith_VGA "$1" || return 1
         GetTempListForAnySetup
 
         declare -g _LINE_GRUB_CMDLINE_TEMP=""
@@ -571,7 +571,7 @@
         return 0
     }
 
-    function WriteFilesForGRUBStaticSetup
+    function WriteFilesFor_GRUB_StaticSetup
     {
         "$_HAS_EXECUTED_BACKUPS" || return 1
         IFS=$'\n'
@@ -595,7 +595,7 @@
         return 0
     }
 
-    function WriteFilesForNoGRUBStaticSetup
+    function WriteFilesForNo_GRUB_StaticSetup
     {
         "$_HAS_EXECUTED_BACKUPS" || return 1
         IFS=$'\n'
@@ -687,5 +687,31 @@
 # </code>
 
 # <params>
-    declare -g _LINE_GRUB_CMDLINE="quiet splash iommu=1,pt amd_iommu=on intel_iommu=on video=efifb:off,vesafb:off acpi=force apm=power_off rd.driver.pre=vfio-pci pcie_aspm=off kvm.ignore_msrs=1"
+    _FLAG_ADD_EARLY_LOAD_MODULE_ARGS=true
+    _FLAG_ADD_LOG_LEVEL_ARGS=true
+    _FLAG_ADD_SET_POWER_ARGS=true
+    _FLAG_ADD_SET_VIDEO_ARGS=true
+    _FLAG_ADD_WIN10_REQUIRED_ARGS=true
+
+    declare -g _LINE_GRUB_CMDLINE="quiet splash amd_iommu=on intel_iommu=on iommu=1,pt"
+
+    if "$_FLAG_ADD_LOG_LEVEL_ARGS"; then
+        _LINE_GRUB_CMDLINE="loglevel=3 $_LINE_GRUB_CMDLINE"
+    fi
+
+    if "$_FLAG_ADD_SET_POWER_ARGS"; then
+        _LINE_GRUB_CMDLINE+=" acpi=force apm=power_off pcie_aspm=off"
+    fi
+
+    if "$_FLAG_ADD_EARLY_LOAD_MODULE_ARGS"; then
+        _LINE_GRUB_CMDLINE+=" rd.driver.pre=vfio-pci rd.modules-load=vfio-pci"
+    fi
+
+    if "$_FLAG_ADD_SET_VIDEO_ARGS"; then
+        _LINE_GRUB_CMDLINE+=" video=efifb:off,vesafb:off"
+    fi
+
+    if "$_FLAG_ADD_WIN10_REQUIRED_ARGS"; then
+        _LINE_GRUB_CMDLINE+=" kvm.ignore_msrs=1"
+    fi
 # </params>
