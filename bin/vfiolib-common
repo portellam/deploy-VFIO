@@ -181,8 +181,8 @@
         }
 
         local _KERNEL="$( uname -o | tr '[:upper:]' '[:lower:]' )"
-        local _OS_WITH_APT="debian bodhi deepin knoppix mint peppermint pop ubuntu kubuntu lubuntu xubuntu "
-        local _OS_WITH_DNF_OR_YUM="redhat berry centos cern clearos elastix fedora fermi frameos mageia opensuse oracle scientific suse"
+        local _OS_WITH_APT="debian bodhi deepin knoppix mint peppermint pop ubuntu kubuntu lubuntu xubuntu"
+        local _OS_WITH_DNF_OR_YUM="redhat alma berry centos cern clearos elastix fedora fermi frameos mageia opensuse oracle scientific suse"
         local _OS_WITH_PACMAN="arch manjaro"
         local _OS_WITH_PORTAGE="gentoo"
         local _OS_WITH_URPMI="opensuse"
@@ -439,5 +439,6 @@
     # <remarks> System validation </remarks>
     declare -gl _PACKAGE_MANAGER=""
     declare -gl _OPERATING_SYSTEM="$( lsb_release -is )"
-    GetLinuxDistro &> /dev/null
+    # declare -gl _LINUX_FAMILY=""
+    GetLinuxDistro
 # </params>
