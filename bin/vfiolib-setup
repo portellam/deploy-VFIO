@@ -661,11 +661,11 @@
 
         # <remarks> Write to new files. </remarks>
         if ! sed -i '/'$_LINE_TO_MATCH'/c\'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_DEST_PATH_1" \
-            || ! sed -i "/options vfio_pci ids=*/c\options vfio_pci_ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" \
-            || ! sed -i "/vfio_pci ids=*/c\vfio_pci_ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" \
+            || ! sed -i "/# options vfio_pci ids=*/c\options vfio_pci_ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" \
+            || ! sed -i "/# vfio_pci ids=*/c\vfio_pci_ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" \
             || ! echo -e "\n${_BLACKLISTS_LIST[*]}" >> "$_MODPROBE_BLACKLISTS_DEST_PATH" \
-            || ! sed -i "/options vfio_pci ids=*/c\options vfio_pci ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_MODPROBE_VFIO_DEST_PATH" \
-            || ! sed -i "/vfio_pci ids=*/c\vfio_pci_ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_MODULES_DEST_PATH"; then
+            || ! sed -i "/# options vfio_pci ids=*/c\options vfio_pci ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_MODPROBE_VFIO_DEST_PATH" \
+            || ! sed -i "/# vfio_pci ids=*/c\vfio_pci_ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_MODULES_DEST_PATH"; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi

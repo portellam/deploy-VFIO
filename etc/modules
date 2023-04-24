@@ -11,4 +11,4 @@ kvm_intel
 apm power_off=1
 
 # List of hardware IDs:
-vfio_pci ids=""
+# vfio_pci ids=""

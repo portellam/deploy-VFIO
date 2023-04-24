@@ -22,8 +22,8 @@ vfio_virqfd
 #
 
 # List of hardware IDs:
-options vfio_pci ids=""
-vfio_pci ids=""
+# options vfio_pci ids=""
+# vfio_pci ids=""
 
 # Last module to execute:
 vfio
