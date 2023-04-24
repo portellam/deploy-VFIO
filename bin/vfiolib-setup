@@ -204,8 +204,15 @@
         local _SYSTEM_UUID=$( blkid -s UUID | grep $_SYSTEM_DISK | cut -d '"' -f2 )
         local _LINE_GRUB_CMDLINE_PREFIX=""
         _LINE_GRUB_CMDLINE_PREFIX+="$_LINE_GRUB_CMDLINE "
-        _LINE_GRUB_CMDLINE_PREFIX+="$_LINE_GRUB_CMDLINE_ISOLCPU "
-        _LINE_GRUB_CMDLINE_PREFIX+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
+
+        if [[ ! -z "$_LINE_GRUB_CMDLINE_ISOLCPU" ]]; then
+            _LINE_GRUB_CMDLINE_PREFIX+="$_LINE_GRUB_CMDLINE_ISOLCPU "
+        fi
+
+        if [[ ! -z "$_OUTPUT_GRUB_CMDLINE_HUGEPAGES" ]]; then
+            _LINE_GRUB_CMDLINE_PREFIX+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
+        fi
+
         GetParamsForAnySetup || return 1
 
         for _THIS_IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
@@ -546,7 +553,6 @@
         fi
 
         if [[ ! -z "$_VGA_VFIOPCI_DRIVER_DELIM" ]]; then
-            _VGA_VFIOPCI_DRIVER_DELIM="${_VGA_VFIOPCI_DRIVER_DELIM::-1}"
             _THIS_DRIVER_DELIM+="$_VGA_VFIOPCI_DRIVER_DELIM,"
         fi
 
@@ -568,16 +574,28 @@
             _THIS_VFIOPCI_HWID_DELIM+="$_VGA_VFIOPCI_HWID_DELIM,"
         fi
 
-        if [[ ! -z "$_THIS_DRIVER_DELIM" ]]; then
-            _THIS_DRIVER_DELIM="${_THIS_DRIVER_DELIM::-1}"
-        fi
-
-        if [[ ! -z "$_THIS_PCISTUB_HWID_DELIM" ]]; then
+        if [[ "$_THIS_PCISTUB_HWID_DELIM" == *"," ]]; then
             _THIS_PCISTUB_HWID_DELIM="${_THIS_PCISTUB_HWID_DELIM::-1}"
         fi
 
-        if [[ ! -z "$_THIS_VFIOPCI_HWID_DELIM" ]]; then
+        if [[ "$_THIS_VFIOPCI_HWID_DELIM" == *"," ]]; then
             _THIS_VFIOPCI_HWID_DELIM="${_THIS_VFIOPCI_HWID_DELIM::-1}"
+        fi
+
+        if [[ "$_THIS_DRIVER_DELIM" == *"," ]]; then
+            _THIS_DRIVER_DELIM="${_THIS_DRIVER_DELIM::-1}"
+        fi
+
+        if [[ "$_THIS_PCISTUB_HWID_DELIM" == *"," ]]; then
+            _THIS_PCISTUB_HWID_DELIM="${_THIS_PCISTUB_HWID_DELIM::-1}"
+        fi
+
+        if [[ "$_THIS_VFIOPCI_HWID_DELIM" == *"," ]]; then
+            _THIS_VFIOPCI_HWID_DELIM="${_THIS_VFIOPCI_HWID_DELIM::-1}"
+        fi
+
+        if [[ "$_THIS_DRIVER_DELIM" == *"," ]]; then
+            _THIS_DRIVER_DELIM="${_THIS_DRIVER_DELIM::-1}"
         fi
 
         return 0
@@ -590,8 +608,15 @@
         local -r _LINE_TO_MATCH="GRUB_CMDLINE_LINUX_DEFAULT="
         local _LINE_GRUB_CMDLINE_TEMP=""
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE "
-        _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE_ISOLCPU "
-        _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
+
+        if [[ ! -z "$_LINE_GRUB_CMDLINE_ISOLCPU" ]]; then
+            _LINE_GRUB_CMDLINE_PREFIX+="$_LINE_GRUB_CMDLINE_ISOLCPU "
+        fi
+
+        if [[ ! -z "$_OUTPUT_GRUB_CMDLINE_HUGEPAGES" ]]; then
+            _LINE_GRUB_CMDLINE_PREFIX+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
+        fi
+
         _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=$_THIS_DRIVER_DELIM "
         _LINE_GRUB_CMDLINE_TEMP+="pci_stub.ids=$_THIS_PCISTUB_HWID_DELIM "
         _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=$_THIS_VFIOPCI_HWID_DELIM "
@@ -614,11 +639,15 @@
         local -r _LINE_TO_MATCH="GRUB_CMDLINE_LINUX_DEFAULT="
         local _LINE_GRUB_CMDLINE_TEMP=""
         _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE "
-        _LINE_GRUB_CMDLINE_TEMP+="$_LINE_GRUB_CMDLINE_ISOLCPU "
-        _LINE_GRUB_CMDLINE_TEMP+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
-        # _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist= "
-        # _LINE_GRUB_CMDLINE_TEMP+="pci_stub.ids= "
-        # _LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids= "
+
+        if [[ ! -z "$_LINE_GRUB_CMDLINE_ISOLCPU" ]]; then
+            _LINE_GRUB_CMDLINE_PREFIX+="$_LINE_GRUB_CMDLINE_ISOLCPU "
+        fi
+
+        if [[ ! -z "$_OUTPUT_GRUB_CMDLINE_HUGEPAGES" ]]; then
+            _LINE_GRUB_CMDLINE_PREFIX+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
+        fi
+
         _LINE_GRUB_CMDLINE_TEMP="${_LINE_GRUB_CMDLINE_TEMP::-1}"
         local -r _LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"$_LINE_GRUB_CMDLINE_TEMP\""
 
