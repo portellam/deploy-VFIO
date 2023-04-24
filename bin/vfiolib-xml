@@ -15,6 +15,7 @@
 # </code>
 
 # <params>
+    declare -g _XML_FILE="$_BACKUPS_PATH/deploy-vfio-test.xml"
 # </params>
 
 # <code>
@@ -80,10 +81,9 @@
             "</xml>"
         )
 
-        local -r _FILE="$_BACKUPS_PATH/deploy-vfio-test.xml"
         IFS=$'\n'
 
-        if ! sudo echo -e "${_OUTPUT[*]}" > "$_FILE"; then
+        if ! sudo echo -e "${_OUTPUT[*]}" > "$_XML_FILE"; then
             echo -e "$_PREFIX_ERROR Failed to write to file '$_FILE'."
         fi
 
@@ -91,9 +91,11 @@
         return 0
     }
 
-    # function ReadAndParseFrom_XML
-    # {
-    # }
+    function ReadAndParseFrom_XML
+    {
+        _XML_IOMMU_GROUP_ID_LIST="$( xmlstarlet select --template --value-of /xml/iommu/id -nl "$_XML_FILE" )"
+        # _XML_IOMMU_GROUP_ID_LIST="$( xmlstarlet select --template --value-of /xml/iommu/id -nl "$_XML_FILE" )"
+    }
 
     ParseAndPrintTo_XML
 # </code>
