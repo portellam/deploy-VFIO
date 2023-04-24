@@ -1,12 +1,12 @@
 #### What Works:
 * VFIO setup
-- Functional, each setup works as intended.
-- Will add ability to update system (parse XML document if VFIO is already setup).
+    - Functional, each setup works as intended.
+    - Will add ability to update system (parse XML document if VFIO is already setup).
 * Pre-setup
-- Functional.
-- Finished.
+    - Functional.
+    - Finished.
 * Post-setup
-- Mostly functional (see Known Bugs).
+    - Mostly functional (see Known Bugs).
 
 ### To Do:
 #### High priority

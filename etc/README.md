@@ -3,18 +3,18 @@ Reference and backup files. At start of setup, system files will backup (before 
 
 ## System files
 * GRUB
-- */etc/default/grub*
-- */etc/grub.d/proxifiedScripts/custom*
+    - */etc/default/grub*
+    - */etc/grub.d/proxifiedScripts/custom*
 
 * QEMU
-- */etc/apparmor.d/local/abstractions/libvirt-qemu*
-- */etc/libvirt/qemu.conf* <sup>[1](#1)</sup>
+    - */etc/apparmor.d/local/abstractions/libvirt-qemu*
+    - */etc/libvirt/qemu.conf* <sup>[1](#1)</sup>
 
 * Modules
-- */etc/initramfs-tools/modules*
-- */etc/modules*
-- */etc/modprobe.d/pci-blacklists.conf*
-- */etc/modprobe.d/vfio.conf*
+    - */etc/initramfs-tools/modules*
+    - */etc/modules*
+    - */etc/modprobe.d/pci-blacklists.conf*
+    - */etc/modprobe.d/vfio.conf*
 
 ## Notes
 #### [2]
