@@ -182,7 +182,7 @@
         }
 
         Main
-        PrintSuffixPassOrFail "Executing post-setup..."
+        PrintSuffixPassOrFail "Executing post-setup...\t"
 		return "$?"
 	}
 
