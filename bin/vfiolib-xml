@@ -1,0 +1,17 @@
+#!/bin/bash sh
+
+#
+# Filename:         vfiolib-xml
+# Description:      Read/write XML.
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <remarks> Using </remarks>
+# <code>
+    source vfiolib-parse
+# </code>
+
+# <code>
+    # is vfio not setup
+# </code>
