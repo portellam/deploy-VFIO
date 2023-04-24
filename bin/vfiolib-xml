@@ -9,9 +9,91 @@
 
 # <remarks> Using </remarks>
 # <code>
+    source vfiolib-common
+    source vfiolib-globals
     source vfiolib-parse
 # </code>
 
+# <params>
+# </params>
+
 # <code>
-    # is vfio not setup
+    function Are_XML_LibrariesInstalled
+    {
+        if ! command -v "xmllint" &> /dev/null \
+            || command -v "xmlstarlet" &> /dev/null; then
+            echo -e "$_PREFIX_ERROR Required libraries are not installed."
+            return 1
+        fi
+
+        return 0
+    }
+
+    function ParseAndPrintTo_XML
+    {
+        local -a _OUTPUT=( )
+        local -a _THIS_IOMMU_OUTPUT=( )
+
+        for _IOMMU_ID in $( ls -1v /sys/kernel/iommu_groups/ | sort -h ); do
+            local -a _THIS_DEVICE_OUTPUT=( )
+
+            for _DEVICE_ID in $( ls /sys/kernel/iommu_groups/$_IOMMU_ID/devices ); do
+                local -u _DEVICE_BUS_ID=${_DEVICE_ID:5}
+                local _DEVICE_CLASS="$( lspci -ms $_DEVICE_ID | cut -d \" -f 2 )"
+                local _DEVICE_DRIVER=$( lspci -ks $_DEVICE_ID | grep -i "driver" | cut -d " " -f 5 )
+                local _DEVICE_HWID=$( lspci -ns $_DEVICE_ID | cut -d " " -f 3 )
+                local _DEVICE_NAME="$( lspci -ms $_DEVICE_ID | cut -d \" -f 6 )"
+                local _DEVICE_VENDOR="$( lspci -ms $_DEVICE_ID | cut -d \" -f 4 )"
+
+                local _LINE_BUS_ID="<id>$_DEVICE_BUS_ID</id>"
+                local _LINE_CLASS="<class>$_DEVICE_CLASS</class>"
+                local _LINE_DRIVER="<driver>$_DEVICE_DRIVER</driver>"
+                local _LINE_HWID="<hw_id>$_DEVICE_HWID</hw_id>"
+                local _LINE_NAME="<name>$_DEVICE_NAME</name>"
+                local _LINE_VENDOR="<vendor>$_DEVICE_VENDOR</vendor>"
+
+                _THIS_DEVICE_OUTPUT+=(
+                    "\t\t<device>"
+                    "\t\t\t$_LINE_BUS_ID"
+                    "\t\t\t$_LINE_CLASS"
+                    "\t\t\t$_LINE_DRIVER"
+                    "\t\t\t$_LINE_HWID"
+                    "\t\t\t$_LINE_NAME"
+                    "\t\t\t$_LINE_VENDOR"
+                    "\t\t</device>"
+                )
+            done
+
+            local _LINE_IOMMU_ID="<id>$_IOMMU_ID</id>"
+
+            _THIS_IOMMU_OUTPUT+=(
+                "\t<iommu>"
+                "\t\t$_LINE_IOMMU_ID"
+                "${_THIS_DEVICE_OUTPUT[@]}"
+                "\t</iommu>"
+            )
+        done
+
+        _OUTPUT=(
+            "<xml>"
+            "${_THIS_IOMMU_OUTPUT[@]}"
+            "</xml>"
+        )
+
+        local -r _FILE="$_BACKUPS_PATH/deploy-vfio-test.xml"
+        IFS=$'\n'
+
+        if ! sudo echo -e "${_OUTPUT[*]}" > "$_FILE"; then
+            echo -e "$_PREFIX_ERROR Failed to write to file '$_FILE'."
+        fi
+
+        unset IFS
+        return 0
+    }
+
+    # function ReadAndParseFrom_XML
+    # {
+    # }
+
+    ParseAndPrintTo_XML
 # </code>
