@@ -702,7 +702,7 @@
     _FLAG_ADD_SET_POWER_ARGS=true
     _FLAG_ADD_SET_VIDEO_ARGS=true
     _FLAG_ADD_WIN10_REQUIRED_ARGS=true
-    _FLAG_ADD_PRIVACY_ARGS=true
+    _FLAG_ADD_PRIVACY_ARGS=false
 
     declare -g _LINE_GRUB_CMDLINE="quiet splash amd_iommu=on intel_iommu=on iommu=1,pt"
 
