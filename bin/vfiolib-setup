@@ -216,6 +216,9 @@
                 if [[ "$_IOMMU_GROUP_ID" != "$_THIS_IOMMU_GROUP_ID" ]]; then
                     GetParamsForMultibootSetup "$_IOMMU_GROUP_ID" || return 1
                     GetListsForMultibootSetup "$_IOMMU_GROUP_ID"
+                    _THIS_PCISTUB_HWID_DELIM=""
+                    _THIS_VFIOPCI_HWID_DELIM=""
+                    _VGA_VFIOPCI_HWID_DELIM=""
                 fi
             done
         done
