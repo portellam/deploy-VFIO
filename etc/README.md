@@ -1,5 +1,5 @@
 ## Description
-Backup files go here. Files will be referenced, copied, and overwritten during setup.
+Reference and backup files. At start of setup, system files will backup (before overwritten by reference files). On script failure, system files will be restored.
 
 ## System files
 * GRUB
@@ -7,8 +7,8 @@ Backup files go here. Files will be referenced, copied, and overwritten during s
 - */etc/grub.d/proxifiedScripts/custom*
 
 * QEMU
-- */etc/apparmor.d/local/abstractions/libvirt-qemu* <sup>[1](#1)</sup>
-- */etc/libvirt/qemu.conf* <sup>[2](#2)</sup>
+- */etc/apparmor.d/local/abstractions/libvirt-qemu*
+- */etc/libvirt/qemu.conf* <sup>[1](#1)</sup>
 
 * Modules
 - */etc/initramfs-tools/modules*
@@ -17,7 +17,5 @@ Backup files go here. Files will be referenced, copied, and overwritten during s
 - */etc/modprobe.d/vfio.conf*
 
 ## Notes
-#### [1]
-* source file N/A
 #### [2]
 * **[source file (GitHub)](https://github.com/virtualopensystems/libvirt/blob/master/src/qemu/qemu.conf)**
