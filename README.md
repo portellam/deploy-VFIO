@@ -140,9 +140,9 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
     - Listen on **Host** Audio device **Line-In** (from **Guest** PCI Audio device **Line-Out**).
     - For virtual implementation, see **Virtual Audio Capture**.
 * **Libvirt Hooks**
-    - Invoke **"hooks"** (scripts) for individual Guests.<sup>[6](#6)</sup>
+    - Invoke **"hooks"** (scripts) for all or individual Guests.<sup>[6](#6)</sup>
     - Switch display input (video output) at Guest start.
-    - **Dynamically** allocate system resources (CPU, RAM).
+    - **Dynamically** allocate CPU cores and CPU scheduler.
     - **Libvirt-nosleep** system service(s) per Guest to prevent Host sleep while Guest is active.
 * **RAM as Compressed Swapfile/partition**
     - Reduce swapiness to existing Host swap devices, and reduce chances of Host memory exhaustion (given an event of memory over-allocation).

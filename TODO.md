@@ -1,17 +1,15 @@
-#### What works
-* VFIO setup works (as of commit f9ca9d0).
-* Pre-setup (essentials), complete and functional.
-* Post-setup (extras), incomplete and mostly functional (see bugs).
+#### What Works:
+* VFIO setup
+- Functional, each setup works as intended.
+- Will add ability to update system (parse XML document if VFIO is already setup).
+* Pre-setup
+- Functional.
+- Finished.
+* Post-setup
+- Mostly functional (see Known Bugs).
 
-#### Known bugs:
-* Usage does not work with certain combinations of arguments.
-* Extras:
-    - Looking Glass fails to build.
-    - Scream fails to build.
-
-### To do:
+### To Do:
 #### High priority
-* Maintain integrity; give credit appropriately and openly.
 * Usage
     - Fix
     - Extend
@@ -21,10 +19,10 @@
 #### Medium priority
 * Trim fat, remove unnecessary repetitions and code.
 * Essentials:
-    - Evdev, save output to logfile.
+    - Evdev, save output to logfile, for use in VM XML.
 * VFIO setup:
     - Detect existing setup, and recommend update or uninstall to continue.
-    - VFIO output, save to logfile (for easier updating).
+    - VFIO output, read/write from/to XML file for easier updating.
 
 #### Low priority
 * Extras:
@@ -35,7 +33,12 @@
 * Include example XML files for virtual machines?
 * Include visual guides?
 * Make script distro-agnostic?
-* Skip pre-setup and post-setup installations if already done (from previous setup).
+
+#### Known Bugs:
+* Usage does not work with certain combinations of arguments.
+* Extras:
+    - Looking Glass fails to build.
+    - Scream fails to build.
 
 ## Disclaimer
 Use at your own risk.
