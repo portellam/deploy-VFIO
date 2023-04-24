@@ -1,5 +1,5 @@
 #### What works
-* No-GRUB Static setup works.
+* VFIO setup works (as of commit f9ca9d0).
 * Pre-setup (essentials), complete and functional.
 * Post-setup (extras), incomplete and mostly functional (see bugs).
 
@@ -8,17 +8,10 @@
 * Extras:
     - Looking Glass fails to build.
     - Scream fails to build.
-* VFIO setups:
-    - Static GRUB setup fails.
-    - Multiboot setup fails.
-    - Symptom is devices aren't binded to vfio-pci.
-    - Possible kernel commandline syntax error.
 
 ### To do:
 #### High priority
 * Maintain integrity; give credit appropriately and openly.
-* VFIO setups
-    - Fix bugs.
 * Usage
     - Fix
     - Extend
