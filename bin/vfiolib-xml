@@ -33,10 +33,11 @@
     function ParseAndPrintTo_XML
     {
         local -a _OUTPUT=( )
-        local -a _THIS_IOMMU_OUTPUT=( )
+        local -a _IOMMU_OUTPUT=( )
 
         for _IOMMU_ID in $( ls -1v /sys/kernel/iommu_groups/ | sort -h ); do
-            local -a _THIS_DEVICE_OUTPUT=( )
+            local -a _DEVICE_OUTPUT=( )
+            local _LINE_IOMMU_ID="id=\"$_IOMMU_ID\""
 
             for _DEVICE_ID in $( ls /sys/kernel/iommu_groups/$_IOMMU_ID/devices ); do
                 local -u _DEVICE_BUS_ID=${_DEVICE_ID:5}
@@ -45,33 +46,33 @@
                 local _DEVICE_HWID=$( lspci -ns $_DEVICE_ID | cut -d " " -f 3 )
                 local _DEVICE_NAME="$( lspci -ms $_DEVICE_ID | cut -d \" -f 6 )"
                 local _DEVICE_VENDOR="$( lspci -ms $_DEVICE_ID | cut -d \" -f 4 )"
-                local _LINE_CLASS="<class>$_DEVICE_CLASS</class>"
-                local _LINE_DRIVER="<driver>$_DEVICE_DRIVER</driver>"
-                local _LINE_HWID="<hw_id>$_DEVICE_HWID</hw_id>"
-                local _LINE_NAME="<name>$_DEVICE_NAME</name>"
-                local _LINE_VENDOR="<vendor>$_DEVICE_VENDOR</vendor>"
 
-                _THIS_DEVICE_OUTPUT+=(
-                    "\t\t<device id="$_DEVICE_BUS_ID">"
-                    "\t\t\t$_LINE_CLASS"
-                    "\t\t\t$_LINE_DRIVER"
-                    "\t\t\t$_LINE_HWID"
-                    "\t\t\t$_LINE_NAME"
-                    "\t\t\t$_LINE_VENDOR"
-                    "\t\t</device>"
+                if [[ -z "$_DEVICE_DRIVER" ]]; then
+                    _DEVICE_DRIVER="N/A"
+                fi
+
+                local _LINE_DEVICE_ID="dev_id=\"$_DEVICE_BUS_ID\""
+                local _LINE_DEVICE_CLASS="class=\"$_DEVICE_CLASS\""
+                local _LINE_DEVICE_DRIVER="driver=\"$_DEVICE_DRIVER\""
+                local _LINE_DEVICE_HWID="hw_id=\"$_DEVICE_HWID\""
+                local _LINE_DEVICE_NAME="name=\"$_DEVICE_NAME\""
+                local _LINE_DEVICE_VENDOR="vendor=\"$_DEVICE_VENDOR\""
+                local _LINE_DEVICE="$_LINE_DEVICE_ID $_LINE_DEVICE_HWID $_LINE_DEVICE_DRIVER $_LINE_DEVICE_CLASS $_LINE_DEVICE_VENDOR $_LINE_DEVICE_NAME"
+                local _LINE_IOMMU="<iommu $_LINE_IOMMU_ID $_LINE_DEVICE/>"
+
+                _DEVICE_OUTPUT+=(
+                    "\t$_LINE_IOMMU"
                 )
             done
 
-            _THIS_IOMMU_OUTPUT+=(
-                "\t<iommu id=\"$_IOMMU_ID\" >"
-                "${_THIS_DEVICE_OUTPUT[@]}"
-                "\t</iommu>"
+            _IOMMU_OUTPUT+=(
+                "${_DEVICE_OUTPUT[@]}"
             )
         done
 
         _OUTPUT=(
             "<xml>"
-            "${_THIS_IOMMU_OUTPUT[@]}"
+            "${_IOMMU_OUTPUT[@]}"
             "</xml>"
         )
 
