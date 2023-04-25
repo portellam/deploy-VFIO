@@ -221,14 +221,20 @@
 
             for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
                 if [[ "$_IOMMU_GROUP_ID" != "$_THIS_IOMMU_GROUP_ID" ]]; then
-                    GetParamsForMultibootSetup "$_IOMMU_GROUP_ID" || return 1
-                    GetListsForMultibootSetup "$_IOMMU_GROUP_ID"
+                    # <remarks> Clear values before this next pass. </remarks>
+		            _THIS_DRIVER_DELIM=""
                     _THIS_PCISTUB_HWID_DELIM=""
                     _THIS_VFIOPCI_HWID_DELIM=""
+		            _VGA_VFIOPCI_DRIVER_DELIM=""
                     _VGA_VFIOPCI_HWID_DELIM=""
+
+                    GetParamsForMultibootSetup "$_IOMMU_GROUP_ID" || return 1
+                    GetListsForMultibootSetup "$_IOMMU_GROUP_ID"
                 fi
             done
         done
+
+        exit 1
 
         if [[ "${#_FILE_CONTENTS_LIST[@]}" -eq 0 ]]; then
             echo -e "$_PREFIX_ERROR Multiboot setup output is empty."
