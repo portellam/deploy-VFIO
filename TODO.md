@@ -1,6 +1,6 @@
 #### What Works:
 * VFIO setup
-    - Mostly functional (see Known Bugs).
+    - Functional.
     - Will add ability to update system (parse XML document if VFIO is already setup).
 * Pre-setup
     - Functional.
@@ -15,8 +15,7 @@
     - Extend
     - Execute or skip setups?
     - Update for every relevant question.
-* VFIO setup
-    - Multiboot, issue where driver list is being carried over (from previous entry).
+
 #### Medium priority
 * Trim fat, remove unnecessary repetitions and code.
 * Essentials:
