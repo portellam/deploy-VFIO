@@ -45,8 +45,6 @@
                 local _DEVICE_HWID=$( lspci -ns $_DEVICE_ID | cut -d " " -f 3 )
                 local _DEVICE_NAME="$( lspci -ms $_DEVICE_ID | cut -d \" -f 6 )"
                 local _DEVICE_VENDOR="$( lspci -ms $_DEVICE_ID | cut -d \" -f 4 )"
-
-                local _LINE_BUS_ID="<id>$_DEVICE_BUS_ID</id>"
                 local _LINE_CLASS="<class>$_DEVICE_CLASS</class>"
                 local _LINE_DRIVER="<driver>$_DEVICE_DRIVER</driver>"
                 local _LINE_HWID="<hw_id>$_DEVICE_HWID</hw_id>"
@@ -54,8 +52,7 @@
                 local _LINE_VENDOR="<vendor>$_DEVICE_VENDOR</vendor>"
 
                 _THIS_DEVICE_OUTPUT+=(
-                    "\t\t<device>"
-                    "\t\t\t$_LINE_BUS_ID"
+                    "\t\t<device id="$_DEVICE_BUS_ID">"
                     "\t\t\t$_LINE_CLASS"
                     "\t\t\t$_LINE_DRIVER"
                     "\t\t\t$_LINE_HWID"
@@ -65,11 +62,8 @@
                 )
             done
 
-            local _LINE_IOMMU_ID="<id>$_IOMMU_ID</id>"
-
             _THIS_IOMMU_OUTPUT+=(
-                "\t<iommu>"
-                "\t\t$_LINE_IOMMU_ID"
+                "\t<iommu id=\"$_IOMMU_ID\" >"
                 "${_THIS_DEVICE_OUTPUT[@]}"
                 "\t</iommu>"
             )
