@@ -234,8 +234,6 @@
             done
         done
 
-        exit 1
-
         if [[ "${#_FILE_CONTENTS_LIST[@]}" -eq 0 ]]; then
             echo -e "$_PREFIX_ERROR Multiboot setup output is empty."
             return 1
