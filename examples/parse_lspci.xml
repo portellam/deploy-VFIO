@@ -1,225 +1,63 @@
 <xml>
 	<iommu id="0">
-		<device id="00:00.0">
-			<class>Host bridge</class>
-			<driver>skl_uncore</driver>
-			<hw_id>8086:3e30</hw_id>
-			<name>8th/9th Gen Core 8-core Desktop Processor Host Bridge/DRAM Registers [Coffee Lake S]</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
+		<device id="00:00.0" class="Host bridge" driver="skl_uncore" hardware_id="8086:3e30" name="8th/9th Gen Core 8-core Desktop Processor Host Bridge/DRAM Registers [Coffee Lake S]" vendor="Intel Corporation"/>
 	</iommu>
 	<iommu id="1">
-		<device id="00:01.0">
-			<class>PCI bridge</class>
-			<driver>pcieport</driver>
-			<hw_id>8086:1901</hw_id>
-			<name>6th-10th Gen Core Processor PCIe Controller (x16)</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
-		<device id="00:01.1">
-			<class>PCI bridge</class>
-			<driver>pcieport</driver>
-			<hw_id>8086:1905</hw_id>
-			<name>Xeon E3-1200 v5/E3-1500 v5/6th Gen Core Processor PCIe Controller (x8)</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
-		<device id="01:00.0">
-			<class>VGA compatible controller</class>
-			<driver>vfio-pci</driver>
-			<hw_id>10de:2484</hw_id>
-			<name>GA104 [GeForce RTX 3070]</name>
-			<vendor>NVIDIA Corporation</vendor>
-		</device>
-		<device id="01:00.1">
-			<class>Audio device</class>
-			<driver>vfio-pci</driver>
-			<hw_id>10de:228b</hw_id>
-			<name>GA104 High Definition Audio Controller</name>
-			<vendor>NVIDIA Corporation</vendor>
-		</device>
-		<device id="02:00.0">
-			<class>USB controller</class>
-			<driver>xhci_hcd</driver>
-			<hw_id>1912:0015</hw_id>
-			<name>uPD720202 USB 3.0 Host Controller</name>
-			<vendor>Renesas Technology Corp.</vendor>
-		</device>
+		<device id="00:01.0" class="PCI bridge" driver="pcieport" hardware_id="8086:1901" name="6th-10th Gen Core Processor PCIe Controller (x16)" vendor="Intel Corporation"/>
+		<device id="00:01.1" class="PCI bridge" driver="pcieport" hardware_id="8086:1905" name="Xeon E3-1200 v5/E3-1500 v5/6th Gen Core Processor PCIe Controller (x8)" vendor="Intel Corporation"/>
+		<device id="01:00.0" class="VGA compatible controller" driver="vfio-pci" hardware_id="10de:2484" name="GA104 [GeForce RTX 3070]" vendor="NVIDIA Corporation"/>
+		<device id="01:00.1" class="Audio device" driver="vfio-pci" hardware_id="10de:228b" name="GA104 High Definition Audio Controller" vendor="NVIDIA Corporation"/>
+		<device id="02:00.0" class="USB controller" driver="xhci_hcd" hardware_id="1912:0015" name="uPD720202 USB 3.0 Host Controller" vendor="Renesas Technology Corp."/>
 	</iommu>
 	<iommu id="2">
-		<device id="00:12.0">
-			<class>Signal processing controller</class>
-			<driver>intel_pch_thermal</driver>
-			<hw_id>8086:a379</hw_id>
-			<name>Cannon Lake PCH Thermal Controller</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
+		<device id="00:12.0" class="Signal processing controller" driver="intel_pch_thermal" hardware_id="8086:a379" name="Cannon Lake PCH Thermal Controller" vendor="Intel Corporation"/>
 	</iommu>
 	<iommu id="3">
-		<device id="00:14.0">
-			<class>USB controller</class>
-			<driver>xhci_hcd</driver>
-			<hw_id>8086:a36d</hw_id>
-			<name>Cannon Lake PCH USB 3.1 xHCI Host Controller</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
-		<device id="00:14.2">
-			<class>RAM memory</class>
-			<driver></driver>
-			<hw_id>8086:a36f</hw_id>
-			<name>Cannon Lake PCH Shared SRAM</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
+		<device id="00:14.0" class="USB controller" driver="xhci_hcd" hardware_id="8086:a36d" name="Cannon Lake PCH USB 3.1 xHCI Host Controller" vendor="Intel Corporation"/>
+		<device id="00:14.2" class="RAM memory" driver="" hardware_id="8086:a36f" name="Cannon Lake PCH Shared SRAM" vendor="Intel Corporation"/>
 	</iommu>
 	<iommu id="4">
-		<device id="00:14.3">
-			<class>Network controller</class>
-			<driver>iwlwifi</driver>
-			<hw_id>8086:a370</hw_id>
-			<name>Wireless-AC 9560 [Jefferson Peak]</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
+		<device id="00:14.3" class="Network controller" driver="iwlwifi" hardware_id="8086:a370" name="Wireless-AC 9560 [Jefferson Peak]" vendor="Intel Corporation"/>
 	</iommu>
 	<iommu id="5">
-		<device id="00:17.0">
-			<class>SATA controller</class>
-			<driver>ahci</driver>
-			<hw_id>8086:a352</hw_id>
-			<name>Cannon Lake PCH SATA AHCI Controller</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
+		<device id="00:17.0" class="SATA controller" driver="ahci" hardware_id="8086:a352" name="Cannon Lake PCH SATA AHCI Controller" vendor="Intel Corporation"/>
 	</iommu>
 	<iommu id="6">
-		<device id="00:1B.0">
-			<class>PCI bridge</class>
-			<driver>pcieport</driver>
-			<hw_id>8086:a340</hw_id>
-			<name>Cannon Lake PCH PCI Express Root Port #17</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
+		<device id="00:1B.0" class="PCI bridge" driver="pcieport" hardware_id="8086:a340" name="Cannon Lake PCH PCI Express Root Port #17" vendor="Intel Corporation"/>
 	</iommu>
 	<iommu id="7">
-		<device id="00:1B.4">
-			<class>PCI bridge</class>
-			<driver>pcieport</driver>
-			<hw_id>8086:a32c</hw_id>
-			<name>Cannon Lake PCH PCI Express Root Port #21</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
+		<device id="00:1B.4" class="PCI bridge" driver="pcieport" hardware_id="8086:a32c" name="Cannon Lake PCH PCI Express Root Port #21" vendor="Intel Corporation"/>
 	</iommu>
 	<iommu id="8">
-		<device id="00:1C.0">
-			<class>PCI bridge</class>
-			<driver>pcieport</driver>
-			<hw_id>8086:a338</hw_id>
-			<name>Cannon Lake PCH PCI Express Root Port #1</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
+		<device id="00:1C.0" class="PCI bridge" driver="pcieport" hardware_id="8086:a338" name="Cannon Lake PCH PCI Express Root Port #1" vendor="Intel Corporation"/>
 	</iommu>
 	<iommu id="9">
-		<device id="00:1C.5">
-			<class>PCI bridge</class>
-			<driver>pcieport</driver>
-			<hw_id>8086:a33d</hw_id>
-			<name>Cannon Lake PCH PCI Express Root Port #6</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
+		<device id="00:1C.5" class="PCI bridge" driver="pcieport" hardware_id="8086:a33d" name="Cannon Lake PCH PCI Express Root Port #6" vendor="Intel Corporation"/>
 	</iommu>
 	<iommu id="10">
-		<device id="00:1C.7">
-			<class>PCI bridge</class>
-			<driver>pcieport</driver>
-			<hw_id>8086:a33f</hw_id>
-			<name>Cannon Lake PCH PCI Express Root Port #8</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
+		<device id="00:1C.7" class="PCI bridge" driver="pcieport" hardware_id="8086:a33f" name="Cannon Lake PCH PCI Express Root Port #8" vendor="Intel Corporation"/>
 	</iommu>
 	<iommu id="11">
-		<device id="00:1D.0">
-			<class>PCI bridge</class>
-			<driver>pcieport</driver>
-			<hw_id>8086:a330</hw_id>
-			<name>Cannon Lake PCH PCI Express Root Port #9</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
+		<device id="00:1D.0" class="PCI bridge" driver="pcieport" hardware_id="8086:a330" name="Cannon Lake PCH PCI Express Root Port #9" vendor="Intel Corporation"/>
 	</iommu>
 	<iommu id="12">
-		<device id="00:1F.0">
-			<class>ISA bridge</class>
-			<driver></driver>
-			<hw_id>8086:a305</hw_id>
-			<name>Z390 Chipset LPC/eSPI Controller</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
-		<device id="00:1F.3">
-			<class>Audio device</class>
-			<driver>snd_hda_intel</driver>
-			<hw_id>8086:a348</hw_id>
-			<name>Cannon Lake PCH cAVS</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
-		<device id="00:1F.4">
-			<class>SMBus</class>
-			<driver>i801_smbus</driver>
-			<hw_id>8086:a323</hw_id>
-			<name>Cannon Lake PCH SMBus Controller</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
-		<device id="00:1F.5">
-			<class>Serial bus controller [0c80]</class>
-			<driver></driver>
-			<hw_id>8086:a324</hw_id>
-			<name>Cannon Lake PCH SPI Controller</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
-		<device id="00:1F.6">
-			<class>Ethernet controller</class>
-			<driver>e1000e</driver>
-			<hw_id>8086:15bc</hw_id>
-			<name>Ethernet Connection (7) I219-V</name>
-			<vendor>Intel Corporation</vendor>
-		</device>
+		<device id="00:1F.0" class="ISA bridge" driver="" hardware_id="8086:a305" name="Z390 Chipset LPC/eSPI Controller" vendor="Intel Corporation"/>
+		<device id="00:1F.3" class="Audio device" driver="snd_hda_intel" hardware_id="8086:a348" name="Cannon Lake PCH cAVS" vendor="Intel Corporation"/>
+		<device id="00:1F.4" class="SMBus" driver="i801_smbus" hardware_id="8086:a323" name="Cannon Lake PCH SMBus Controller" vendor="Intel Corporation"/>
+		<device id="00:1F.5" class="Serial bus controller [0c80]" driver="" hardware_id="8086:a324" name="Cannon Lake PCH SPI Controller" vendor="Intel Corporation"/>
+		<device id="00:1F.6" class="Ethernet controller" driver="e1000e" hardware_id="8086:15bc" name="Ethernet Connection (7) I219-V" vendor="Intel Corporation"/>
 	</iommu>
 	<iommu id="13">
-		<device id="04:00.0">
-			<class>VGA compatible controller</class>
-			<driver>radeon</driver>
-			<hw_id>1002:6719</hw_id>
-			<name>Cayman PRO [Radeon HD 6950]</name>
-			<vendor>Advanced Micro Devices, Inc. [AMD/ATI]</vendor>
-		</device>
-		<device id="04:00.1">
-			<class>Audio device</class>
-			<driver>snd_hda_intel</driver>
-			<hw_id>1002:aa80</hw_id>
-			<name>Cayman/Antilles HDMI Audio [Radeon HD 6930/6950/6970/6990]</name>
-			<vendor>Advanced Micro Devices, Inc. [AMD/ATI]</vendor>
-		</device>
+		<device id="04:00.0" class="VGA compatible controller" driver="radeon" hardware_id="1002:6719" name="Cayman PRO [Radeon HD 6950]" vendor="Advanced Micro Devices, Inc. [AMD/ATI]"/>
+		<device id="04:00.1" class="Audio device" driver="snd_hda_intel" hardware_id="1002:aa80" name="Cayman/Antilles HDMI Audio [Radeon HD 6930/6950/6970/6990]" vendor="Advanced Micro Devices, Inc. [AMD/ATI]"/>
 	</iommu>
 	<iommu id="14">
-		<device id="06:00.0">
-			<class>USB controller</class>
-			<driver>xhci_hcd</driver>
-			<hw_id>1912:0014</hw_id>
-			<name>uPD720201 USB 3.0 Host Controller</name>
-			<vendor>Renesas Technology Corp.</vendor>
-		</device>
+		<device id="06:00.0" class="USB controller" driver="xhci_hcd" hardware_id="1912:0014" name="uPD720201 USB 3.0 Host Controller" vendor="Renesas Technology Corp."/>
 	</iommu>
 	<iommu id="15">
-		<device id="07:00.0">
-			<class>Audio device</class>
-			<driver>vfio-pci</driver>
-			<hw_id>1102:000b</hw_id>
-			<name>EMU20k2 [Sound Blaster X-Fi Titanium Series]</name>
-			<vendor>Creative Labs</vendor>
-		</device>
+		<device id="07:00.0" class="Audio device" driver="vfio-pci" hardware_id="1102:000b" name="EMU20k2 [Sound Blaster X-Fi Titanium Series]" vendor="Creative Labs"/>
 	</iommu>
 	<iommu id="16">
-		<device id="08:00.0">
-			<class>Non-Volatile memory controller</class>
-			<driver>vfio-pci</driver>
-			<hw_id>15b7:501a</hw_id>
-			<name>Device 501a</name>
-			<vendor>Sandisk Corp</vendor>
-		</device>
+		<device id="08:00.0" class="Non-Volatile memory controller" driver="vfio-pci" hardware_id="15b7:501a" name="Device 501a" vendor="Sandisk Corp"/>
 	</iommu>
 </xml>
