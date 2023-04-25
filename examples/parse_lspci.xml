@@ -1,8 +1,6 @@
 <xml>
-	<iommu>
-		<id>0</id>
-		<device>
-			<id>00:00.0</id>
+	<iommu id="0">
+		<device id="00:00.0">
 			<class>Host bridge</class>
 			<driver>skl_uncore</driver>
 			<hw_id>8086:3e30</hw_id>
@@ -10,42 +8,36 @@
 			<vendor>Intel Corporation</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>1</id>
-		<device>
-			<id>00:01.0</id>
+	<iommu id="1">
+		<device id="00:01.0">
 			<class>PCI bridge</class>
 			<driver>pcieport</driver>
 			<hw_id>8086:1901</hw_id>
 			<name>6th-10th Gen Core Processor PCIe Controller (x16)</name>
 			<vendor>Intel Corporation</vendor>
 		</device>
-		<device>
-			<id>00:01.1</id>
+		<device id="00:01.1">
 			<class>PCI bridge</class>
 			<driver>pcieport</driver>
 			<hw_id>8086:1905</hw_id>
 			<name>Xeon E3-1200 v5/E3-1500 v5/6th Gen Core Processor PCIe Controller (x8)</name>
 			<vendor>Intel Corporation</vendor>
 		</device>
-		<device>
-			<id>01:00.0</id>
+		<device id="01:00.0">
 			<class>VGA compatible controller</class>
 			<driver>vfio-pci</driver>
 			<hw_id>10de:2484</hw_id>
 			<name>GA104 [GeForce RTX 3070]</name>
 			<vendor>NVIDIA Corporation</vendor>
 		</device>
-		<device>
-			<id>01:00.1</id>
+		<device id="01:00.1">
 			<class>Audio device</class>
 			<driver>vfio-pci</driver>
 			<hw_id>10de:228b</hw_id>
 			<name>GA104 High Definition Audio Controller</name>
 			<vendor>NVIDIA Corporation</vendor>
 		</device>
-		<device>
-			<id>02:00.0</id>
+		<device id="02:00.0">
 			<class>USB controller</class>
 			<driver>xhci_hcd</driver>
 			<hw_id>1912:0015</hw_id>
@@ -53,10 +45,8 @@
 			<vendor>Renesas Technology Corp.</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>2</id>
-		<device>
-			<id>00:12.0</id>
+	<iommu id="2">
+		<device id="00:12.0">
 			<class>Signal processing controller</class>
 			<driver>intel_pch_thermal</driver>
 			<hw_id>8086:a379</hw_id>
@@ -64,18 +54,15 @@
 			<vendor>Intel Corporation</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>3</id>
-		<device>
-			<id>00:14.0</id>
+	<iommu id="3">
+		<device id="00:14.0">
 			<class>USB controller</class>
 			<driver>xhci_hcd</driver>
 			<hw_id>8086:a36d</hw_id>
 			<name>Cannon Lake PCH USB 3.1 xHCI Host Controller</name>
 			<vendor>Intel Corporation</vendor>
 		</device>
-		<device>
-			<id>00:14.2</id>
+		<device id="00:14.2">
 			<class>RAM memory</class>
 			<driver></driver>
 			<hw_id>8086:a36f</hw_id>
@@ -83,10 +70,8 @@
 			<vendor>Intel Corporation</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>4</id>
-		<device>
-			<id>00:14.3</id>
+	<iommu id="4">
+		<device id="00:14.3">
 			<class>Network controller</class>
 			<driver>iwlwifi</driver>
 			<hw_id>8086:a370</hw_id>
@@ -94,10 +79,8 @@
 			<vendor>Intel Corporation</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>5</id>
-		<device>
-			<id>00:17.0</id>
+	<iommu id="5">
+		<device id="00:17.0">
 			<class>SATA controller</class>
 			<driver>ahci</driver>
 			<hw_id>8086:a352</hw_id>
@@ -105,10 +88,8 @@
 			<vendor>Intel Corporation</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>6</id>
-		<device>
-			<id>00:1B.0</id>
+	<iommu id="6">
+		<device id="00:1B.0">
 			<class>PCI bridge</class>
 			<driver>pcieport</driver>
 			<hw_id>8086:a340</hw_id>
@@ -116,10 +97,8 @@
 			<vendor>Intel Corporation</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>7</id>
-		<device>
-			<id>00:1B.4</id>
+	<iommu id="7">
+		<device id="00:1B.4">
 			<class>PCI bridge</class>
 			<driver>pcieport</driver>
 			<hw_id>8086:a32c</hw_id>
@@ -127,10 +106,8 @@
 			<vendor>Intel Corporation</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>8</id>
-		<device>
-			<id>00:1C.0</id>
+	<iommu id="8">
+		<device id="00:1C.0">
 			<class>PCI bridge</class>
 			<driver>pcieport</driver>
 			<hw_id>8086:a338</hw_id>
@@ -138,10 +115,8 @@
 			<vendor>Intel Corporation</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>9</id>
-		<device>
-			<id>00:1C.5</id>
+	<iommu id="9">
+		<device id="00:1C.5">
 			<class>PCI bridge</class>
 			<driver>pcieport</driver>
 			<hw_id>8086:a33d</hw_id>
@@ -149,10 +124,8 @@
 			<vendor>Intel Corporation</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>10</id>
-		<device>
-			<id>00:1C.7</id>
+	<iommu id="10">
+		<device id="00:1C.7">
 			<class>PCI bridge</class>
 			<driver>pcieport</driver>
 			<hw_id>8086:a33f</hw_id>
@@ -160,10 +133,8 @@
 			<vendor>Intel Corporation</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>11</id>
-		<device>
-			<id>00:1D.0</id>
+	<iommu id="11">
+		<device id="00:1D.0">
 			<class>PCI bridge</class>
 			<driver>pcieport</driver>
 			<hw_id>8086:a330</hw_id>
@@ -171,42 +142,36 @@
 			<vendor>Intel Corporation</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>12</id>
-		<device>
-			<id>00:1F.0</id>
+	<iommu id="12">
+		<device id="00:1F.0">
 			<class>ISA bridge</class>
 			<driver></driver>
 			<hw_id>8086:a305</hw_id>
 			<name>Z390 Chipset LPC/eSPI Controller</name>
 			<vendor>Intel Corporation</vendor>
 		</device>
-		<device>
-			<id>00:1F.3</id>
+		<device id="00:1F.3">
 			<class>Audio device</class>
 			<driver>snd_hda_intel</driver>
 			<hw_id>8086:a348</hw_id>
 			<name>Cannon Lake PCH cAVS</name>
 			<vendor>Intel Corporation</vendor>
 		</device>
-		<device>
-			<id>00:1F.4</id>
+		<device id="00:1F.4">
 			<class>SMBus</class>
 			<driver>i801_smbus</driver>
 			<hw_id>8086:a323</hw_id>
 			<name>Cannon Lake PCH SMBus Controller</name>
 			<vendor>Intel Corporation</vendor>
 		</device>
-		<device>
-			<id>00:1F.5</id>
+		<device id="00:1F.5">
 			<class>Serial bus controller [0c80]</class>
 			<driver></driver>
 			<hw_id>8086:a324</hw_id>
 			<name>Cannon Lake PCH SPI Controller</name>
 			<vendor>Intel Corporation</vendor>
 		</device>
-		<device>
-			<id>00:1F.6</id>
+		<device id="00:1F.6">
 			<class>Ethernet controller</class>
 			<driver>e1000e</driver>
 			<hw_id>8086:15bc</hw_id>
@@ -214,18 +179,15 @@
 			<vendor>Intel Corporation</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>13</id>
-		<device>
-			<id>04:00.0</id>
+	<iommu id="13">
+		<device id="04:00.0">
 			<class>VGA compatible controller</class>
 			<driver>radeon</driver>
 			<hw_id>1002:6719</hw_id>
 			<name>Cayman PRO [Radeon HD 6950]</name>
 			<vendor>Advanced Micro Devices, Inc. [AMD/ATI]</vendor>
 		</device>
-		<device>
-			<id>04:00.1</id>
+		<device id="04:00.1">
 			<class>Audio device</class>
 			<driver>snd_hda_intel</driver>
 			<hw_id>1002:aa80</hw_id>
@@ -233,10 +195,8 @@
 			<vendor>Advanced Micro Devices, Inc. [AMD/ATI]</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>14</id>
-		<device>
-			<id>06:00.0</id>
+	<iommu id="14">
+		<device id="06:00.0">
 			<class>USB controller</class>
 			<driver>xhci_hcd</driver>
 			<hw_id>1912:0014</hw_id>
@@ -244,10 +204,8 @@
 			<vendor>Renesas Technology Corp.</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>15</id>
-		<device>
-			<id>07:00.0</id>
+	<iommu id="15">
+		<device id="07:00.0">
 			<class>Audio device</class>
 			<driver>vfio-pci</driver>
 			<hw_id>1102:000b</hw_id>
@@ -255,10 +213,8 @@
 			<vendor>Creative Labs</vendor>
 		</device>
 	</iommu>
-	<iommu>
-		<id>16</id>
-		<device>
-			<id>08:00.0</id>
+	<iommu id="16">
+		<device id="08:00.0">
 			<class>Non-Volatile memory controller</class>
 			<driver>vfio-pci</driver>
 			<hw_id>15b7:501a</hw_id>
