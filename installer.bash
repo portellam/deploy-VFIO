@@ -64,8 +64,6 @@
             || [[ ! -e "modules" ]] \
             || [[ ! -e "pci-blacklists.conf" ]] \
             || [[ ! -e "qemu.conf" ]] \
-            || [[ ! -e "scream-ivshmem-pipewire.service" ]] \
-            || [[ ! -e "scream-ivshmem-pulseaudio.service" ]] \
             || [[ ! -e "vfio.conf" ]]; then
             echo -e "$_PREFIX_ERROR Missing project files."
             return 1
