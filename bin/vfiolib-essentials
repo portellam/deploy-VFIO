@@ -337,8 +337,7 @@
             )
 
             # <remarks> Add user and group for Evdev. </remarks>
-            if "$_IS_EVDEV_SETUP" \
-                || "$_IS_SCREAM_SETUP"; then
+            if "$_IS_EVDEV_SETUP"; then
                 _FILE_1_CONTENTS+=(
                     "user = \"$_USER\""
                     "group = \"user\""

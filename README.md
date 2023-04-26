@@ -82,10 +82,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
 
         Post-setup OPTIONS:
           -H, --hooks           Install recommended Libvirt hooks and services.
-          -l, --looking-glass   Install LookingGlass.                   Stream video (and audio) from Guest to Host over PCI bus using shared-memory device.
           -L, --audio-loopback  Install the audio loopback service.     Loopback audio from Guest to Host (over Line-out to Line-in). *
-          -S, --scream          Install Scream.                         Stream audio from Guest to Host over virtual LAN.
-          -x  --auto-xorg       Install auto-Xorg.                      System service to find and set a valid Host boot VGA device for Xorg.
           -z, --zram-swap       Create compressed (~ 2:1) RAM swap.     Reduce chances of memory exhaustion for Host.
           --uninstall-extras    Undo changes made by post-setup. *
 
@@ -133,7 +130,6 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
         - system configuration files
 
 ### Post-setup  <sub>(vfiolib-extras)</sub>
-* **auto-Xorg** system service to find and set a valid Host boot VGA device for Xorg.<sup>[5](#5)</sup>
 * **Guest Audio Capture**
     - Useful for systems with multiple Audio devices.
     - Create an **Audio loopback** to output on the **Host's** Audio device **Line-Out**.
@@ -148,13 +144,6 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
     - Reduce swapiness to existing Host swap devices, and reduce chances of Host memory exhaustion (given an event of memory over-allocation).
     - Create a compressed Swap device in Host memory, using the **lz4** algorithm **(compression ratio of about 2:1)**.
     - Implementation is known as **zram-swap**.<sup>[7](#7)</sup>
-* **Virtual Audio Capture**
-    - Setup a virtual Audio driver for Windows that provides a discrete Audio device.
-    - Implementation is known as **Scream**.<sup>[8](#8)</sup>
-* **Virtual Video Capture**
-    - Setup direct-memory-access (DMA) of a PCI VGA device output (Video and Audio) from a Guest to Host.
-    - Implementation is known as **LookingGlass**.<sup>[9](#9)</sup>
-    - **Disclaimer:** Only supported for Windows 7/8/10/11 Guests.
 
 ## References
 #### [1]

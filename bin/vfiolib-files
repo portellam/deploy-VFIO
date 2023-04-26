@@ -322,14 +322,6 @@
     declare -g _MODULES_DEST_PATH="/etc/modules"
     declare -g _MODULES_SRC_PATH="$_BACKUPS_PATH/modules"
 
-    declare -g _SCREAM_PIPEWIRE_DEST_PATH="/etc/systemd/system/$_SCREAM_PIPEWIRE_FILENAME"
-    declare -g _SCREAM_PIPEWIRE_FILENAME="scream-ivshmem-pipewire.service"
-    declare -g _SCREAM_PIPEWIRE_SRC_PATH="$_BACKUPS_PATH/$_SCREAM_PIPEWIRE_FILENAME"
-
-    declare -g _SCREAM_PULSEAUDIO_DEST_PATH="/etc/systemd/system/$_SCREAM_PULSEAUDIO_FILENAME"
-    declare -g _SCREAM_PULSEAUDIO_FILENAME="scream-ivshmem-pulseaudio.service"
-    declare -g _SCREAM_PULSEAUDIO_SRC_PATH="$_BACKUPS_PATH/$_SCREAM_PULSEAUDIO_FILENAME"
-
     declare -g _QEMU_DEST_PATH="/etc/libvirt/qemu.conf"
     declare -g _QEMU_FILE_URL="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"
     declare -g _QEMU_SRC_PATH="$_BACKUPS_PATH/qemu.conf"

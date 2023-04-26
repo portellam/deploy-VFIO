@@ -98,21 +98,9 @@
                 _EXECUTE_ALL_EXTRA_SETUPS=false
                 _EXECUTE_LIBVIRT_HOOKS=true ;;
 
-            "-l" | "--looking-glass" )
-                _EXECUTE_ALL_EXTRA_SETUPS=false
-                _EXECUTE_LOOKING_GLASS=true ;;
-
             "-L" | "--audio-loopback" )
                 _EXECUTE_ALL_EXTRA_SETUPS=false
                 _EXECUTE_AUDIO_LOOPBACK_SETUP=true ;;
-
-            "-S" | "--scream" )
-                _EXECUTE_ALL_EXTRA_SETUPS=false
-                _EXECUTE_SCREAM=true ;;
-
-            "-x" | "--auto-xorg" )
-                _EXECUTE_ALL_EXTRA_SETUPS=false
-                _EXECUTE_AUTO_XORG_SETUP=true ;;
 
             "-z" | "--zram-swap" )
                 _EXECUTE_ALL_EXTRA_SETUPS=false
@@ -237,11 +225,7 @@
             "    -s -o\t\t\tParse against online database, then deploy a Static VFIO setup."
             "\nPost-setup OPTIONS:"
             "  -H, --hooks\t\tInstall recommended Libvirt hooks and services."
-            "  -l, --looking-glass\tInstall LookingGlass.\t\t\tStream video (and audio) from Guest to Host over PCI bus using shared-memory device."
             "  -L, --audio-loopback\tInstall the audio loopback service.\tLoopback audio from Guest to Host (over Line-out to Line-in)."
-            "  -S, --scream\t\tInstall Scream.\t\t\t\tStream audio from Guest to Host over virtual LAN."
-            "  -z, --zram-swap\tCreate compressed (~ 2:1) RAM swap.\tReduce chances of memory exhaustion for Host."
-            "  --uninstall-extras\tUndo changes made by post-setup."
 
             "\nzram-swap ARGUMENTS:"
             "  force\t\t\tForce changes, even if zram-swap is allocated and in use."
@@ -279,15 +263,12 @@
     declare -g _EXECUTE_ALL_EXTRA_SETUPS=true
     declare -g _EXECUTE_ALL_ESSENTIAL_SETUPS=true
     declare -g _EXECUTE_AUDIO_LOOPBACK_SETUP=false
-    declare -g _EXECUTE_AUTO_XORG_SETUP=false
     declare -g _EXECUTE_EVDEV_SETUP=false
     declare -g _EXECUTE_GRUB_STATIC_SETUP=true
     declare -g _EXECUTE_HUGEPAGES_SETUP=false
     declare -g _EXECUTE_ISOLCPU_SETUP=false
     declare -g _EXECUTE_LIBVIRT_HOOKS=false
-    declare -g _EXECUTE_LOOKING_GLASS=false
     declare -g _EXECUTE_MULTIBOOT_SETUP=false
-    declare -g _EXECUTE_SCREAM=false
     declare -g _EXECUTE_STATIC_SETUP=false
     declare -g _EXECUTE_UNINSTALL_SETUP=false
     declare -g _EXECUTE_ZRAM_SWAP=false
