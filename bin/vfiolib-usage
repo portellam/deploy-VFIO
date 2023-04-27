@@ -130,8 +130,8 @@
         fi
 
         GetParseOrderForAutoXorg "$1" || GetVendorPreferenceForAutoXorg "$1" || return 1
-        GetVendorPreferenceForAutoXorg "$2" || GetVendorPreferenceForAutoXorg "$2" || return 1
-        return 1
+        GetParseOrderForAutoXorg "$2" || GetVendorPreferenceForAutoXorg "$2" || return 1
+        return 0
     }
 
     function GetVendorPreferenceForAutoXorg
@@ -147,9 +147,10 @@
 
             "" )
                 return 0 ;;
-        esac
 
-        return 1
+            * )
+                return 1 ;;
+        esac
     }
 
     function GetParseOrderForAutoXorg
@@ -160,14 +161,15 @@
 
         case "$1" in
             "first" | "last" )
-                _ARGS_FOR_AUTO_XORG+="--$1"
+                _ARGS_FOR_AUTO_XORG+=" --$1"
                 return 0 ;;
 
             "" )
                 return 0 ;;
-        esac
 
-        return 1
+            * )
+                return 1 ;;
+        esac
     }
 
     function GetArgsForStatic_VFIO

@@ -400,7 +400,7 @@
 				return 1
 			fi
 
-			if ! sudo bash "$_SCRIPT_NAME" "$_ARGS_FOR_AUTO_XORG"; then
+			if ! sudo bash $_SCRIPT_NAME $_ARGS_FOR_AUTO_XORG; then
 				echo -e "$_PREFIX_ERROR Failed to execute script '$_SCRIPT_NAME'."
 				return 1
 			fi
@@ -421,7 +421,7 @@
 
 		if ! "$_HAS_SKIPPED"; then
 			Get
-			Install &> /dev/null
+			Install
 		fi
 
 		if "$_HAS_SKIPPED"; then
