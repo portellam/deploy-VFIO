@@ -81,10 +81,19 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
 #### Post-setup
 
         Post-setup OPTIONS:
-          -H, --hooks           Install recommended Libvirt hooks and services.
-          -L, --audio-loopback  Install the audio loopback service.     Loopback audio from Guest to Host (over Line-out to Line-in). *
-          -z, --zram-swap       Create compressed (~ 2:1) RAM swap.     Reduce chances of memory exhaustion for Host.
+          --audio-loopback      Install the audio loopback service.     Loopback audio from Guest to Host (over Line-out to Line-in). *
+          --auto-xorg           Install auto-Xorg.                      System service to find and set a valid Host boot VGA device for Xorg.
+          --hooks               Install recommended Libvirt hooks.
+          --zram-swap           Create compressed (~ 2:1) RAM swap.     Reduce chances of memory exhaustion for Host.
           --uninstall-extras    Undo changes made by post-setup. *
+
+        auto-xorg ARGUMENTS:
+          --first               Find the first valid VGA device.
+          --last                Find the last valid VGA device.
+          --amd                 Prefer AMD or ATI.
+          --intel               Prefer Intel.
+          --nvidia              Prefer NVIDIA.
+          --other               Prefer any other brand.
 
         zram-swap ARGUMENTS:
           [fraction]            Set the fraction of total available memory.
@@ -130,6 +139,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
         - system configuration files
 
 ### Post-setup  <sub>(vfiolib-extras)</sub>
+* **auto-Xorg** system service to find and set a valid Host boot VGA device for Xorg.<sup>[5](#5)</sup>
 * **Guest Audio Capture**
     - Useful for systems with multiple Audio devices.
     - Create an **Audio loopback** to output on the **Host's** Audio device **Line-Out**.

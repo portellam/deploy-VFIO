@@ -141,6 +141,7 @@
                     LibvirtHooks
                     GuestAudioLoopback
                     Allocate_RAM_ToSwap
+                    SetVideoOutput
                     break
                 fi
 
@@ -155,6 +156,11 @@
                 if "$_EXECUTE_ZRAM_SWAP"; then
                     Allocate_RAM_ToSwap
                 fi
+
+                if "$_EXECUTE_AUTO_XORG_SETUP"; then
+                    SetVideoOutput
+                fi
+
                 break
             done
 
@@ -362,6 +368,67 @@
 		fi
 
 		PrintSuffixPassOrFail "Installing Libvirt hooks..."
+		return "$_LAST_EXIT_CODE"
+	}
+
+    # <summary>
+	# auto-Xorg: System service to find and set a valid Host boot VGA device for Xorg.
+	# </summary>
+	# <remarks>
+	# References:
+	#   https://github.com/portellam/auto-Xorg
+	# </remarks>
+	function SetVideoOutput
+	{
+		function Get
+		{
+			UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_AUTO_XORG_SETUP" || return 1
+			return 0
+		}
+
+		function Install
+		{
+			local -r _SCRIPT_NAME="installer.bash"
+
+			if ! cd "$_GIT_PATH$_FULL_REPO"; then
+				echo -e "$_PREFIX_ERROR Failed to find build directory."
+				return 1
+			fi
+
+			if [[ ! -e "$_SCRIPT_NAME" ]]; then
+				echo -e "$_PREFIX_ERROR Failed to find script '$_SCRIPT_NAME'."
+				return 1
+			fi
+
+			if ! sudo bash "$_SCRIPT_NAME" "$_ARGS_FOR_AUTO_XORG"; then
+				echo -e "$_PREFIX_ERROR Failed to execute script '$_SCRIPT_NAME'."
+				return 1
+			fi
+
+			return 0
+		}
+
+		local -r _USER_NAME="portellam"
+		local -r _REPO_NAME="auto-Xorg"
+		local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
+		local _HAS_SKIPPED=false
+        echo
+
+		if ! "$_EXECUTE_AUTO_XORG_SETUP" \
+			&& ! AskToExecuteOrSkip "Install auto-Xorg?"; then
+			_HAS_SKIPPED=true
+		fi
+
+		if ! "$_HAS_SKIPPED"; then
+			Get
+			Install &> /dev/null
+		fi
+
+		if "$_HAS_SKIPPED"; then
+			( return 255 )
+		fi
+
+		PrintSuffixPassOrFail "Installing auto-Xorg...\t"
 		return "$_LAST_EXIT_CODE"
 	}
 # </code>

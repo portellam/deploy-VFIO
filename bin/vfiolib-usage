@@ -25,32 +25,18 @@
 
             # <remarks> Pre-setup: Parse IOMMU </remarks>
             "-f" | "--file" )
-                if [[ ! -e "$2" ]] \
-                    || [[ ! -s "$2" ]]; then
-                    echo -e "$_OUTPUT_INVALID_OPTION"
-                    return 1
-                fi
-
-                if [[ "$3" != "" ]]; then
-                    GetArgsForExecuteSelection "$3" || return 1
-                fi
-
+                IsFileValid "$2" || return 1
+                GetArgsForExecuteSelection "$3" || return 1
                 _FILE_DATABASE=$3
                 _DO_PARSE_DATABASE_FROM_FILE=true ;;
 
             "-i" | "--internal" )
-                if [[ "$2" != "" ]]; then
-                    GetArgsForExecuteSelection "$2" || return 1
-                fi
-
+                GetArgsForExecuteSelection "$2" || return 1
                 _DO_PARSE_DATABASE_FROM_CACHE=true ;;
 
             "-o" | "--online" )
-                if [[ "$2" != "" ]]; then
-                    GetArgsForExecuteSelection "$2" || return 1
-                fi
-
-                _DO_PARSE_DATABASE_FROM_INTERNET=true;;
+                GetArgsForExecuteSelection "$2" || return 1
+                _DO_PARSE_DATABASE_FROM_INTERNET=true ;;
 
             # <remarks> Pre-setup: Essentials </remarks>
             "-c" | "--cpu" )
@@ -64,11 +50,11 @@
             "-h" | "--hugepages" )
                 _EXECUTE_ALL_ESSENTIAL_SETUPS=false
 
-                if [[ "$2" != "" ]]; then
+                if [[ ! -z "$2" ]]; then
                     GetHugepageByteSize "$2" || return 1
                 fi
 
-                if [[ "$3" != "" ]]; then
+                if [[ ! -z "$3" ]]; then
                     GetHugepageCount "$3" || return 1
                 fi
 
@@ -83,10 +69,7 @@
                 _EXECUTE_MULTIBOOT_SETUP=true ;;
 
             "-s" | "--static" )
-                if [[ "$2" != "" ]]; then
-                    GetArgsForStatic_VFIO "$2" || return 1
-                fi
-
+                GetArgsForStatic_VFIO "$2" || return 1
                 _EXECUTE_STATIC_SETUP=true
                 _ASK_TO_SELECT_TYPE_OF_STATIC_SETUP=false ;;
 
@@ -94,22 +77,27 @@
                 _EXECUTE_UNINSTALL_SETUP=true ;;
 
             # <remarks> Post-setup: Extras </remarks>
-            "-H" | "--hooks" )
+            "--hooks" )
                 _EXECUTE_ALL_EXTRA_SETUPS=false
                 _EXECUTE_LIBVIRT_HOOKS=true ;;
 
-            "-L" | "--audio-loopback" )
+            "--audio-loopback" )
                 _EXECUTE_ALL_EXTRA_SETUPS=false
                 _EXECUTE_AUDIO_LOOPBACK_SETUP=true ;;
 
-            "-z" | "--zram-swap" )
+            "--auto-xorg" )
+                _EXECUTE_ALL_EXTRA_SETUPS=false
+                _EXECUTE_AUTO_XORG_SETUP=true
+                GetArgsForAutoXorg "$2" "$3" || return 1 ;;
+
+            "--zram-swap" )
                 _EXECUTE_ALL_EXTRA_SETUPS=false
 
-                if [[ "$2" != "" ]]; then
+                if [[ ! -z "$2" ]]; then
                     Get_zRAM_SwapSize "$2" || GetOverrideArgsForZramSwap "$2" || return 1
                 fi
 
-                if [[ "$3" != "" ]]; then
+                if [[ ! -z "$3" ]]; then
                     Get_zRAM_SwapSize "$3" || GetOverrideArgsForZramSwap "$3" || return 1
                 fi
 
@@ -135,8 +123,59 @@
         return 0
     }
 
+    function GetArgsForAutoXorg
+    {
+        if [[ -z "$1" ]]; then
+            return 0
+        fi
+
+        GetParseOrderForAutoXorg "$1" || GetVendorPreferenceForAutoXorg "$1" || return 1
+        GetVendorPreferenceForAutoXorg "$2" || GetVendorPreferenceForAutoXorg "$2" || return 1
+        return 1
+    }
+
+    function GetVendorPreferenceForAutoXorg
+    {
+        if "$_HAS_ARGS_VENDOR_AUTO_XORG"; then
+            return 1
+        fi
+
+        case "$1" in
+            "amd" | "intel" | "nvidia" | "other" )
+                _ARGS_FOR_AUTO_XORG+="--$1"
+                return 0 ;;
+
+            "" )
+                return 0 ;;
+        esac
+
+        return 1
+    }
+
+    function GetParseOrderForAutoXorg
+    {
+        if "$_HAS_ARGS_SORT_AUTO_XORG"; then
+            return 1
+        fi
+
+        case "$1" in
+            "first" | "last" )
+                _ARGS_FOR_AUTO_XORG+="--$1"
+                return 0 ;;
+
+            "" )
+                return 0 ;;
+        esac
+
+        return 1
+    }
+
     function GetArgsForStatic_VFIO
     {
+        if [[ -z "$1" ]]; then
+            return 0
+        fi
+
         case "$1" in
             "grub" )
                 _EXECUTE_STATIC_SETUP_grub=true
@@ -154,13 +193,15 @@
     {
         case "$1" in
             "all" )
-                _SELECT_ALL_IOMMU=true ;;
+                _SELECT_ALL_IOMMU=true
+                return 0 ;;
+
+            "" )
+                return 0 ;;
 
             * )
                 return 1 ;;
         esac
-
-        return 0
     }
 
     function GetOverrideArgsForZramSwap
@@ -224,8 +265,17 @@
             "    -l -m\t\t\tParse against local database, then deploy a Multi VGA VFIO setup."
             "    -s -o\t\t\tParse against online database, then deploy a Static VFIO setup."
             "\nPost-setup OPTIONS:"
-            "  -H, --hooks\t\tInstall recommended Libvirt hooks and services."
-            "  -L, --audio-loopback\tInstall the audio loopback service.\tLoopback audio from Guest to Host (over Line-out to Line-in)."
+            "  --audio-loopback\tInstall the audio loopback service.\tLoopback audio from Guest to Host (over Line-out to Line-in)."
+            "  --auto-xorg\t\tInstall auto-Xorg.\t\t\tSystem service to find and set a valid Host boot VGA device for Xorg."
+            "  --hooks\t\tInstall recommended Libvirt hooks."
+
+            "\nauto-xorg ARGUMENTS:"
+            "  first  [vendor]\tFind the first valid VGA device."
+            "  last   [vendor]\tFind the last valid VGA device."
+            "  [sort] amd\t\tPrefer AMD or ATI."
+            "  [sort] intel\t\tPrefer Intel."
+            "  [sort] nvidia\t\tPrefer NVIDIA."
+            "  [sort] other\t\tPrefer any other brand."
 
             "\nzram-swap ARGUMENTS:"
             "  force\t\t\tForce changes, even if zram-swap is allocated and in use."
@@ -237,6 +287,17 @@
 
         echo -e "${_OUTPUT[*]}"
         unset IFS
+        return 0
+    }
+
+    function IsFileValid
+    {
+        if [[ ! -e "$1" ]] \
+            || [[ ! -s "$1" ]]; then
+            echo -e "$_OUTPUT_INVALID_OPTION"
+            return 1
+        fi
+
         return 0
     }
 
@@ -252,17 +313,25 @@
 # </code>
 
 # <params>
+    declare -g _ARGS_FOR_AUTO_XORG=""
+    declare -g _FILE_DATABASE=""
+
+    # <remarks> Statements </remarks
     declare -g _OUTPUT_INVALID_ANSWER="$_PREFIX_ERROR Failed to answer."
     declare -g _OUTPUT_INVALID_OPTION="$_PREFIX_ERROR Invalid option."
-    declare -g _FILE_DATABASE=""
 
     # <remarks> Toggles </remarks
     declare -g _IS_CONNECTED_TO_INTERNET=false
 
-    # <remarks> Usage toggles </remarks
+    # <remarks> Flags </remarks
+    declare -g _ASK_TO_SELECT_TYPE_OF_STATIC_SETUP=true
+    declare -g _DO_PARSE_DATABASE_FROM_CACHE=false
+    declare -g _DO_PARSE_DATABASE_FROM_FILE=false
+    declare -g _DO_PARSE_DATABASE_FROM_INTERNET=false
     declare -g _EXECUTE_ALL_EXTRA_SETUPS=true
     declare -g _EXECUTE_ALL_ESSENTIAL_SETUPS=true
     declare -g _EXECUTE_AUDIO_LOOPBACK_SETUP=false
+    declare -g _EXECUTE_AUTO_XORG_SETUP=false
     declare -g _EXECUTE_EVDEV_SETUP=false
     declare -g _EXECUTE_GRUB_STATIC_SETUP=true
     declare -g _EXECUTE_HUGEPAGES_SETUP=false
@@ -272,10 +341,8 @@
     declare -g _EXECUTE_STATIC_SETUP=false
     declare -g _EXECUTE_UNINSTALL_SETUP=false
     declare -g _EXECUTE_ZRAM_SWAP=false
-    declare -g _ASK_TO_SELECT_TYPE_OF_STATIC_SETUP=true
-    declare -g _DO_PARSE_DATABASE_FROM_FILE=false
-    declare -g _DO_PARSE_DATABASE_FROM_CACHE=false
-    declare -g _DO_PARSE_DATABASE_FROM_INTERNET=false
+    declare -g _HAS_ARGS_SORT_AUTO_XORG=false
+    declare -g _HAS_ARGS_VENDOR_AUTO_XORG=false
     declare -g _HAS_SETUP_STATIC_ISOLCPU=false
     declare -g _SELECT_ALL_IOMMU=false
     declare -g _UNINSTALL_EXTRAS=false
