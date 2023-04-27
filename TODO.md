@@ -1,13 +1,3 @@
-#### What Works:
-* VFIO setup
-    - Functional.
-    - Will add ability to update system (parse XML document if VFIO is already setup).
-* Pre-setup
-    - Functional.
-    - Finished.
-* Post-setup
-    - Mostly functional (see Known Bugs).
-
 ### To Do:
 #### High priority
 * Usage
@@ -26,8 +16,6 @@
 
 #### Low priority
 * Extras:
-    - Auto-Xorg, parse arguments from user input.
-* Extras:
     - Create script or program to resume VM(s) from sleep?
 * Errors/exceptions, handle and/or save to logfile (subjectively, important for user-operation, not development).
 * Include example XML files for virtual machines?
@@ -39,6 +27,3 @@
 * Extras:
     - Looking Glass fails to build.
     - Scream fails to build.
-
-## Disclaimer
-Use at your own risk.
