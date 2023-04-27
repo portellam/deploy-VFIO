@@ -13,7 +13,7 @@
 # </code>
 
 # <params>
-    # <remarks> Feature Flags </remarks>
+    # <remarks> Flags </remarks>
     declare -g _FLAG_DO_EXECUTE_BACKUPS=true
     declare -g _FLAG_DO_EXECUTE_EXTRAS=true
     declare -g _FLAG_DO_SYSTEM_CHECK=true

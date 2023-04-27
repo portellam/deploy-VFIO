@@ -732,7 +732,7 @@
 # </code>
 
 # <params>
-    # <remarks> Feature Flags </remarks>
+    # <remarks> Flags </remarks>
     _FLAG_ADD_EARLY_LOAD_MODULE_ARGS=true
     _FLAG_ADD_LOG_LEVEL_ARGS=true
     _FLAG_ADD_SET_POWER_ARGS=true

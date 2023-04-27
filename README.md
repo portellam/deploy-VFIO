@@ -1,7 +1,5 @@
 ## Description
-Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video card for Host at GRUB boot menu. VFIO: Run any Virtual machine with real hardware, separate from your desktop host machine.
-
-## Status: partial completion (see TODO.md)
+Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machine with real hardware, isolated from your desktop (Host) computer. Multi-boot: Select a video device for Host at boot.
 
 ## Why?
 * **Separation-of-Concerns**
@@ -57,7 +55,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
           -c, --cpu                     Allocate CPU.
           -e, --evdev                   Setup a virtual KVM switch.
           -h, --hugepages               Create static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s).
-          --uninstall-essentials             Undo changes made by preliminary setup.
+          --uninstall-essentials        Undo changes made by preliminary setup.
 
         Hugepages ARGUMENTS: *
           2M, 1G                        Hugepage size (2 MiB or 1 GiB).
@@ -81,10 +79,19 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
 #### Post-setup
 
         Post-setup OPTIONS:
-          -H, --hooks           Install recommended Libvirt hooks and services.
-          -L, --audio-loopback  Install the audio loopback service.     Loopback audio from Guest to Host (over Line-out to Line-in). *
-          -z, --zram-swap       Create compressed (~ 2:1) RAM swap.     Reduce chances of memory exhaustion for Host.
+          --audio-loopback      Install the audio loopback service.     Loopback audio from Guest to Host (over Line-out to Line-in). *
+          --auto-xorg           Install auto-Xorg.                      System service to find and set a valid Host boot VGA device for Xorg.
+          --hooks               Install recommended Libvirt hooks.
+          --zram-swap           Create compressed (~ 2:1) RAM swap.     Reduce chances of memory exhaustion for Host.
           --uninstall-extras    Undo changes made by post-setup. *
+
+        auto-xorg ARGUMENTS:
+          first  [vendor]       Find the first valid VGA device.
+          last   [vendor]       Find the last valid VGA device.
+          [sort] amd            Prefer AMD or ATI.
+          [sort] intel          Prefer Intel.
+          [sort] nvidia         Prefer NVIDIA.
+          [sort] other          Prefer any other brand.
 
         zram-swap ARGUMENTS:
           [fraction]            Set the fraction of total available memory.
@@ -130,6 +137,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
         - system configuration files
 
 ### Post-setup  <sub>(vfiolib-extras)</sub>
+* **auto-Xorg** system service to find and set a valid Host boot VGA device for Xorg.<sup>[5](#5)</sup>
 * **Guest Audio Capture**
     - Useful for systems with multiple Audio devices.
     - Create an **Audio loopback** to output on the **Host's** Audio device **Line-Out**.
@@ -172,12 +180,6 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
 - <sub>**[zram package (Debian)](https://wiki.debian.org/ZRam)**</sub>
 - <sub>**[zram package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub>
 - <sub>**[zram benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
-
-#### [8]
-- <sub>**[Scream (GitHub)](https://github.com/duncanthrax/scream)**</sub>
-
-#### [9]
-- <sub>**[LookingGlass (website)](https://looking-glass.io/docs/B5.0.1/)**</sub>
 
 ## Disclaimer
 Use at your own risk.
