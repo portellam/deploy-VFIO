@@ -57,7 +57,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
           -c, --cpu                     Allocate CPU.
           -e, --evdev                   Setup a virtual KVM switch.
           -h, --hugepages               Create static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s).
-          --uninstall-essentials             Undo changes made by preliminary setup.
+          --uninstall-essentials        Undo changes made by preliminary setup.
 
         Hugepages ARGUMENTS: *
           2M, 1G                        Hugepage size (2 MiB or 1 GiB).
@@ -182,12 +182,6 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
 - <sub>**[zram package (Debian)](https://wiki.debian.org/ZRam)**</sub>
 - <sub>**[zram package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub>
 - <sub>**[zram benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
-
-#### [8]
-- <sub>**[Scream (GitHub)](https://github.com/duncanthrax/scream)**</sub>
-
-#### [9]
-- <sub>**[LookingGlass (website)](https://looking-glass.io/docs/B5.0.1/)**</sub>
 
 ## Disclaimer
 Use at your own risk.
