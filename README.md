@@ -88,12 +88,12 @@ Effortlessly deploy a VFIO setup (PCI passthrough). Multi-boot: Select a video c
           --uninstall-extras    Undo changes made by post-setup. *
 
         auto-xorg ARGUMENTS:
-          --first               Find the first valid VGA device.
-          --last                Find the last valid VGA device.
-          --amd                 Prefer AMD or ATI.
-          --intel               Prefer Intel.
-          --nvidia              Prefer NVIDIA.
-          --other               Prefer any other brand.
+          first  [vendor]       Find the first valid VGA device.
+          last   [vendor]       Find the last valid VGA device.
+          [sort] amd            Prefer AMD or ATI.
+          [sort] intel          Prefer Intel.
+          [sort] nvidia         Prefer NVIDIA.
+          [sort] other          Prefer any other brand.
 
         zram-swap ARGUMENTS:
           [fraction]            Set the fraction of total available memory.
