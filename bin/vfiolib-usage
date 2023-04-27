@@ -1,0 +1,354 @@
+#!/bin/bash sh
+
+#
+# Filename:         vfiolib-usage
+# Description:      Usage
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <remarks> Using </remarks>
+# <code>
+    source vfiolib-calcs
+    source vfiolib-files
+    source vfiolib-globals
+# </code>
+
+# <code>
+    function GetOption
+    {
+        # NOTE: not all options are being hit.
+
+        while [[ "$1" =~ ^- && "$1" != "--" ]]; do case "$1" in
+            "--help" )
+                return 1 ;;
+
+            # <remarks> Pre-setup: Parse IOMMU </remarks>
+            "-f" | "--file" )
+                IsFileValid "$2" || return 1
+                GetArgsForExecuteSelection "$3" || return 1
+                _FILE_DATABASE=$3
+                _DO_PARSE_DATABASE_FROM_FILE=true ;;
+
+            "-i" | "--internal" )
+                GetArgsForExecuteSelection "$2" || return 1
+                _DO_PARSE_DATABASE_FROM_CACHE=true ;;
+
+            "-o" | "--online" )
+                GetArgsForExecuteSelection "$2" || return 1
+                _DO_PARSE_DATABASE_FROM_INTERNET=true ;;
+
+            # <remarks> Pre-setup: Essentials </remarks>
+            "-c" | "--cpu" )
+                _EXECUTE_ALL_ESSENTIAL_SETUPS=false
+                _EXECUTE_ISOLCPU_SETUP=true ;;
+
+            "-e" | "--evdev" )
+                _EXECUTE_ALL_ESSENTIAL_SETUPS=false
+                _EXECUTE_EVDEV_SETUP=true ;;
+
+            "-h" | "--hugepages" )
+                _EXECUTE_ALL_ESSENTIAL_SETUPS=false
+
+                if [[ ! -z "$2" ]]; then
+                    GetHugepageByteSize "$2" || return 1
+                fi
+
+                if [[ ! -z "$3" ]]; then
+                    GetHugepageCount "$3" || return 1
+                fi
+
+                IsHostMemorySufficientForHugepages || return 1
+                _EXECUTE_HUGEPAGES_SETUP=true ;;
+
+            "--uninstall-essentials" )
+                _UNINSTALL_ESSENTIALS=true ;;
+
+            # <remarks> Main setup </remarks>
+            "-m" | "--multiboot" )
+                _EXECUTE_MULTIBOOT_SETUP=true ;;
+
+            "-s" | "--static" )
+                GetArgsForStatic_VFIO "$2" || return 1
+                _EXECUTE_STATIC_SETUP=true
+                _ASK_TO_SELECT_TYPE_OF_STATIC_SETUP=false ;;
+
+            "-u" | "--uninstall" )
+                _EXECUTE_UNINSTALL_SETUP=true ;;
+
+            # <remarks> Post-setup: Extras </remarks>
+            "--hooks" )
+                _EXECUTE_ALL_EXTRA_SETUPS=false
+                _EXECUTE_LIBVIRT_HOOKS=true ;;
+
+            "--audio-loopback" )
+                _EXECUTE_ALL_EXTRA_SETUPS=false
+                _EXECUTE_AUDIO_LOOPBACK_SETUP=true ;;
+
+            "--auto-xorg" )
+                _EXECUTE_ALL_EXTRA_SETUPS=false
+                _EXECUTE_AUTO_XORG_SETUP=true
+                GetArgsForAutoXorg "$2" "$3" || return 1 ;;
+
+            "--zram-swap" )
+                _EXECUTE_ALL_EXTRA_SETUPS=false
+
+                if [[ ! -z "$2" ]]; then
+                    Get_zRAM_SwapSize "$2" || GetOverrideArgsForZramSwap "$2" || return 1
+                fi
+
+                if [[ ! -z "$3" ]]; then
+                    Get_zRAM_SwapSize "$3" || GetOverrideArgsForZramSwap "$3" || return 1
+                fi
+
+                IsHostMemorySufficientForZramSwap || return 1
+                _EXECUTE_ZRAM_SWAP=true ;;
+
+            "--uninstall-extras" )
+                _UNINSTALL_EXTRAS=true ;;
+
+            # <remarks> Else </remarks>
+            "" )
+                ;;
+
+            * )
+                echo -e "$_OUTPUT_INVALID_OPTION"
+                return 1 ;;
+        esac; shift; done
+
+        if [[ "$1" == '--' ]]; then
+            shift
+        fi
+
+        return 0
+    }
+
+    function GetArgsForAutoXorg
+    {
+        if [[ -z "$1" ]]; then
+            return 0
+        fi
+
+        GetParseOrderForAutoXorg "$1" || GetVendorPreferenceForAutoXorg "$1" || return 1
+        GetParseOrderForAutoXorg "$2" || GetVendorPreferenceForAutoXorg "$2" || return 1
+        return 0
+    }
+
+    function GetVendorPreferenceForAutoXorg
+    {
+        if "$_HAS_ARGS_VENDOR_AUTO_XORG"; then
+            return 1
+        fi
+
+        case "$1" in
+            "amd" | "intel" | "nvidia" | "other" )
+                _ARGS_FOR_AUTO_XORG+="--$1"
+                return 0 ;;
+
+            "" )
+                return 0 ;;
+
+            * )
+                return 1 ;;
+        esac
+    }
+
+    function GetParseOrderForAutoXorg
+    {
+        if "$_HAS_ARGS_SORT_AUTO_XORG"; then
+            return 1
+        fi
+
+        case "$1" in
+            "first" | "last" )
+                _ARGS_FOR_AUTO_XORG+=" --$1"
+                return 0 ;;
+
+            "" )
+                return 0 ;;
+
+            * )
+                return 1 ;;
+        esac
+    }
+
+    function GetArgsForStatic_VFIO
+    {
+        if [[ -z "$1" ]]; then
+            return 0
+        fi
+
+        case "$1" in
+            "grub" )
+                _EXECUTE_STATIC_SETUP_grub=true
+                return 0 ;;
+
+            "file" )
+                _EXECUTE_STATIC_SETUP_file=true
+                return 0 ;;
+        esac
+
+        return 1
+    }
+
+    function GetArgsForExecuteSelection
+    {
+        case "$1" in
+            "all" )
+                _SELECT_ALL_IOMMU=true
+                return 0 ;;
+
+            "" )
+                return 0 ;;
+
+            * )
+                return 1 ;;
+        esac
+    }
+
+    function GetOverrideArgsForZramSwap
+    {
+        case "$1" in
+            "force" )
+                _ZRAM_SWAP_OVERRIDE=true ;;
+
+            * )
+                return 1 ;;
+        esac
+
+        return 0
+    }
+
+    function GetUsage
+    {
+        IFS=$'\n'
+
+        declare -a _OUTPUT=(
+            "Usage:\t\tbash deploy-vfio [OPTION]... [ARGUMENTS]..."
+            "Deploy a VFIO setup to a Linux Host that supports Para-virtualization or PCI Passthrough.\n"
+            "  --help\tprint this help and exit"
+
+            "\nParse IOMMU groups and reference chosen database for the system's PCI devices.\nOPTIONS:"
+            "  -f, --file [filename]\tReference file database."
+            "  -i, --internal\tReference local database."
+            "  -o, --online\t\tReference online database."
+
+            "\nARGUMENTS:"
+            "  [filename]            Reference specific file."
+            "  all\t\t\tSelect all IOMMU groups."
+            "  no-vga\t\tSelect all IOMMU groups without VGA devices."
+            "  [x-y,z]\t\tSelect specific IOMMU groups (comma separated, or ranges)."
+
+            "\n  Example:"
+            "    -f somefile.txt     Reference file 'somefile.txt' and begin parse."
+            "    no-vga 14\t\tSelect group 14 and all non-VGA groups."
+            "    1,14-16\t\tSelect groups 1, 14, 15, and 16."
+
+            "\nPre-setup OPTIONS:"
+            "  -c, --cpu\t\t\tAllocate CPU."
+            "  -e, --evdev\t\t\tSetup a virtual KVM switch."
+            "  -h, --hugepages\t\tCreate static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s)."
+            "  --uninstall-essentials\tUndo changes made by preliminary setup."
+
+            "\nHugepages ARGUMENTS:"
+            "  2M, 1G\t\t\tHugepage size (2 MiB or 1 GiB)."
+            "  [1-?]\t\t\t\tAmount of Hugepages (maximum amount is total memory subtracted by 4 GiB)."
+
+            "\n  Example:"
+            "    1G 16\t\t\t1 GiB hugepage 16\t== 16 GiB allocated to hugepages."
+            "    2M 8192\t\t\t2 MiB hugepage 8912\t== 16 GiB allocated to hugepages."
+
+            "\nMain setup OPTIONS:"
+            "  -m, --multiboot\t\tCreate multiple GRUB entries for a Multi VGA VFIO setup."
+            "  -s, --static\t\t\tCreate a single GRUB entry/Install a Single VGA VFIO setup."
+            "  -u, --uninstall\t\tUndo an existing VFIO setup."
+
+            "\n  Example:"
+            "    -l -m\t\t\tParse against local database, then deploy a Multi VGA VFIO setup."
+            "    -s -o\t\t\tParse against online database, then deploy a Static VFIO setup."
+            "\nPost-setup OPTIONS:"
+            "  --audio-loopback\tInstall the audio loopback service.\tLoopback audio from Guest to Host (over Line-out to Line-in)."
+            "  --auto-xorg\t\tInstall auto-Xorg.\t\t\tSystem service to find and set a valid Host boot VGA device for Xorg."
+            "  --hooks\t\tInstall recommended Libvirt hooks."
+
+            "\nauto-xorg ARGUMENTS:"
+            "  first  [vendor]\tFind the first valid VGA device."
+            "  last   [vendor]\tFind the last valid VGA device."
+            "  [sort] amd\t\tPrefer AMD or ATI."
+            "  [sort] intel\t\tPrefer Intel."
+            "  [sort] nvidia\t\tPrefer NVIDIA."
+            "  [sort] other\t\tPrefer any other brand."
+
+            "\nzram-swap ARGUMENTS:"
+            "  force\t\t\tForce changes, even if zram-swap is allocated and in use."
+            "  [fraction]\t\tSet the fraction of total available memory."
+
+            "\n  Example (assume a Host with 32 GiB of RAM):"
+            "    force 1/4\t\tCompress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free."
+        )
+
+        echo -e "${_OUTPUT[*]}"
+        unset IFS
+        return 0
+    }
+
+    function IsFileValid
+    {
+        if [[ ! -e "$1" ]] \
+            || [[ ! -s "$1" ]]; then
+            echo -e "$_OUTPUT_INVALID_OPTION"
+            return 1
+        fi
+
+        return 0
+    }
+
+    function SetOptions
+    {
+        if [[ -z "$@" ]]; then
+            return 0
+        fi
+
+        GetOption "$@" || return 1
+        return 0
+    }
+# </code>
+
+# <params>
+    declare -g _ARGS_FOR_AUTO_XORG=""
+    declare -g _FILE_DATABASE=""
+
+    # <remarks> Statements </remarks
+    declare -g _OUTPUT_INVALID_ANSWER="$_PREFIX_ERROR Failed to answer."
+    declare -g _OUTPUT_INVALID_OPTION="$_PREFIX_ERROR Invalid option."
+
+    # <remarks> Toggles </remarks
+    declare -g _IS_CONNECTED_TO_INTERNET=false
+
+    # <remarks> Flags </remarks
+    declare -g _ASK_TO_SELECT_TYPE_OF_STATIC_SETUP=true
+    declare -g _DO_PARSE_DATABASE_FROM_CACHE=false
+    declare -g _DO_PARSE_DATABASE_FROM_FILE=false
+    declare -g _DO_PARSE_DATABASE_FROM_INTERNET=false
+    declare -g _EXECUTE_ALL_EXTRA_SETUPS=true
+    declare -g _EXECUTE_ALL_ESSENTIAL_SETUPS=true
+    declare -g _EXECUTE_AUDIO_LOOPBACK_SETUP=false
+    declare -g _EXECUTE_AUTO_XORG_SETUP=false
+    declare -g _EXECUTE_EVDEV_SETUP=false
+    declare -g _EXECUTE_GRUB_STATIC_SETUP=true
+    declare -g _EXECUTE_HUGEPAGES_SETUP=false
+    declare -g _EXECUTE_ISOLCPU_SETUP=false
+    declare -g _EXECUTE_LIBVIRT_HOOKS=false
+    declare -g _EXECUTE_MULTIBOOT_SETUP=false
+    declare -g _EXECUTE_STATIC_SETUP=false
+    declare -g _EXECUTE_UNINSTALL_SETUP=false
+    declare -g _EXECUTE_ZRAM_SWAP=false
+    declare -g _HAS_ARGS_SORT_AUTO_XORG=false
+    declare -g _HAS_ARGS_VENDOR_AUTO_XORG=false
+    declare -g _HAS_SETUP_STATIC_ISOLCPU=false
+    declare -g _SELECT_ALL_IOMMU=false
+    declare -g _UNINSTALL_EXTRAS=false
+    declare -g _UNINSTALL_ESSENTIALS=false
+    declare -g _ZRAM_SWAP_OVERRIDE=false
+    declare -g _ZRAM_SWAP_SET_FRACTION=false
+# </params>

@@ -1,0 +1,74 @@
+#!/bin/bash sh
+
+#
+# Filename:         deploy-vfio
+# Description:      Effortlessly deploy a VFIO setup (PCI passthrough).
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <remarks> Using </remarks>
+# <code>
+    source vfiolib-all
+# </code>
+
+# <params>
+    # <remarks> Flags </remarks>
+    declare -g _FLAG_DO_EXECUTE_BACKUPS=true
+    declare -g _FLAG_DO_EXECUTE_EXTRAS=true
+    declare -g _FLAG_DO_SYSTEM_CHECK=true
+# </params>
+
+# <code>
+    function Main
+    {
+        IsSudoUser || return 1
+
+        # <remarks> Gather arguments. </remarks>
+        if ! SetOptions "$@"; then
+            GetUsage
+            return "$?"
+        fi
+
+        if "$_FLAG_DO_SYSTEM_CHECK" \
+            && ! GetLinuxDistro \
+            && ! IsSystemSupported; then
+            return 1
+        fi
+
+        if ExecuteBackups; then
+            _HAS_EXECUTED_BACKUPS=true
+        fi
+
+        # <remarks> Exit early. </remarks>
+        if "$_EXECUTE_UNINSTALL_SETUP"; then
+            ExecuteSetup
+            return "$?"
+        fi
+
+        ExecuteEssentials
+        ExecuteSetup
+
+        if "$_FLAG_DO_EXECUTE_EXTRAS"; then
+            ExecuteExtras
+        fi
+
+        return 0
+    }
+# </code>
+
+if "$_FLAG_DO_EXECUTE_BACKUPS"; then
+    BackupFiles || exit 1
+fi
+
+while [[ "$?" -ne 1 ]]; do
+    Main "$@"
+    break
+done
+
+if [[ "$?" -eq 1 ]] \
+    && "$_FLAG_DO_EXECUTE_BACKUPS"; then
+    RestoreFiles || exit 1
+fi
+
+exit "$?"

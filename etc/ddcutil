@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+#
+# Filename:         /etc/libvirt/hooks/ddcutil
+# Description:      Automatically switch monitor inputs when starting/stopping a libvirt domain.
+# URL(s):           https://github.com/PassthroughPOST/VFIO-Tools
+# Author(s):        Sebastiaan <github.com/SharkWipf>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <remarks>
+# This hook allows automatically switch monitor inputs when starting/stopping a VM.
+# This file depends on the Passthrough POST hook helper script found in this repo.
+# Place this script in BOTH these directories (or symlink it):
+#
+# Set the files as executable through `chmod +x` and configure your inputs.
+# You also need `ddcutil` and a ddcutil-compatible monitor.
+#
+# Make sure you specify the right settings for your setup below or it won't work.
+# </remarks>
+
+_HOOK_NAME="ddcutil"
+_PREFIX_PROMPT="libvirt-qemu $_HOOK_NAME:"
+_OPERATION="$2"
+_SUBOPERATION="$3"
+
+# <remarks> The display shown in `ddcutil detect` </remarks>
+_DOMAIN_DISPLAY="0"
+
+# <remarks> Video input values (without 0x, but with leading zeroes, if any. See `ddcutil capabilities`) </remarks>
+_DOMAIN_VIDEO_INPUT="12"
+_HOST_VIDEO_INPUT="0f"
+_VIDEO_INPUT=""
+
+function GetVideoInput
+{
+	case "$_OPERATION/$_SUBOPERATION" in
+		"started/begin" )
+			_VIDEO_INPUT="$_DOMAIN_VIDEO_INPUT"
+			return 0 ;;
+
+		"stopped/end" )
+			_VIDEO_INPUT="$_HOST_VIDEO_INPUT"
+			return 0 ;;
+	esac
+
+	return 1
+}
+
+function SetVideoOutput
+{
+    if [[ "$( ddcutil -d "$_DOMAIN_DISPLAY" getvcp 60 --terse | awk '{print $4}' )" == "x$_VIDEO_INPUT" ]]; then
+        return 0
+    fi
+
+	if ! ddcutil -d "$_DOMAIN_DISPLAY" setvcp 60 "0x$_VIDEO_INPUT"; then
+        echo "$_PREFIX_PROMPT An error occured: Failed to switch video input."
+		return 1
+	fi
+
+	return 0
+}
+
+if GetVideoInput; then
+    SetVideoOutput
+fi
