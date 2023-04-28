@@ -86,7 +86,6 @@
 
     function AskToSelectThis_IOMMU_Group
     {
-        Is_IOMMU_GroupIDValid "$1" || return 1
         local -i _IOMMU_GROUP_ID="$1"
         AskToExecuteOrSkip "Select IOMMU group '$_IOMMU_GROUP_ID'?"
         return "$?"
@@ -132,7 +131,7 @@
                 local -u _DEVICE_DOMAIN_ID=$( echo "$_DEVICE_FULL_ID" | cut -d ':' -f 2 )
 
                 # <remarks> Save IOMMU group if it does contain devices with domains greater than 0 (non-motherboard devices). </remarks>
-                if echo "$_DEVICE_DOMAIN_ID" | grep -E -q "$_DOMAIN_ID_REGEX"; then
+                if echo "$_DEVICE_DOMAIN_ID" | grep -E -q "$_REGEX_DOMAIN_ID"; then
                     _IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]="$_DEVICES"
                     break
                 fi
@@ -167,17 +166,6 @@
             *"snd_hda_intel"* )
                 return 1 ;;
         esac
-
-        return 0
-    }
-
-    function Is_IOMMU_GroupIDValid
-    {
-        if [[ -z "$1" ]] \
-            || ! [[ "$1" =~ ^[0-9]+$ ]]; then
-            echo -e "$_PREFIX_ERROR IOMMU group ID is not valid."
-            return 1
-        fi
 
         return 0
     }
@@ -223,7 +211,6 @@
 
     function PrintInfoFor_IOMMU_GroupOnly
     {
-        Is_IOMMU_GroupIDValid "$1" || return 1
         local -i _IOMMU_GROUP_ID="$1"
 
         for _DEVICE_FULL_ID in ${_IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]}; do
@@ -235,7 +222,7 @@
             _DEVICE_NAME="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 6 )"
             _DEVICE_VENDOR="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 4 )"
 
-            if echo "$_DEVICE_DOMAIN_ID" | grep -E -q "$_DOMAIN_ID_REGEX"; then
+            if echo "$_DEVICE_DOMAIN_ID" | grep -E -q "$_REGEX_DOMAIN_ID"; then
                 _IOMMU_GROUP_IS_VALID=true
                 echo -e "\tSlot ID:\t'$_DEVICE_PCI_ID'"
                 echo -e "\tVendor name:\t'$_DEVICE_VENDOR'"
@@ -265,7 +252,6 @@
 
     function PrintInfoFor_IOMMU_GroupAndSaveInfoToLists
     {
-        Is_IOMMU_GroupIDValid "$1" || return 1
         local -a _CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST _HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST _NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST _PCI_ID_BY_VALID_IOMMU_GROUP_TEMP_LIST
         local -i _IOMMU_GROUP_ID="$1"
 
@@ -279,7 +265,7 @@
             _DEVICE_NAME="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 6 )"
             _DEVICE_VENDOR="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 4 )"
 
-            if echo "$_DEVICE_DOMAIN_ID" | grep -E -q "$_DOMAIN_ID_REGEX"; then
+            if echo "$_DEVICE_DOMAIN_ID" | grep -E -q "$_REGEX_DOMAIN_ID"; then
                 _IOMMU_GROUP_IS_VALID=true
                 echo -e "\tSlot ID:\t'$_DEVICE_PCI_ID'"
                 echo -e "\tVendor name:\t'$_DEVICE_VENDOR'"
