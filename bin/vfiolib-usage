@@ -32,15 +32,7 @@
 
             "-h" | "--hugepages" )
                 _ASK_TO_EXECUTE_PRE_SETUPS=false
-
-                if [[ ! -z "$2" ]]; then
-                    GetHugepageByteSize "$2" || return 1
-                fi
-
-                if [[ ! -z "$3" ]]; then
-                    GetHugepageCount "$3" || return 1
-                fi
-
+                GetArgsForHugepages "$2" "$3" || return 1
                 IsHostMemorySufficientForHugepages || return 1
                 _EXECUTE_PRE_SETUP_HUGEPAGES=true ;;
 
@@ -67,8 +59,8 @@
 
             "-s" | "--static" )
                 GetArgsForStatic_VFIO "$2" || return 1
-                _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB=true
-                _ASK_TO_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=false ;;
+                _ASK_TO_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=false
+                _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB=true ;;
 
             "-u" | "--uninstall" )
                 _EXECUTE_VFIO_SETUP_UNINSTALL=true ;;
@@ -89,15 +81,7 @@
 
             "--zram-swap" )
                 _ASK_TO_EXECUTE_POST_SETUPS=false
-
-                if [[ ! -z "$2" ]]; then
-                    Get_zRAM_SwapSize "$2" || GetOverrideArgsForZramSwap "$2" || return 1
-                fi
-
-                if [[ ! -z "$3" ]]; then
-                    Get_zRAM_SwapSize "$3" || GetOverrideArgsForZramSwap "$3" || return 1
-                fi
-
+                GetArgsFor_ZRAM_Swap "$2" "$3" || return 1
                 IsHostMemorySufficientForZramSwap || return 1
                 _EXECUTE_POST_SETUP_ZRAM_SWAP=true ;;
 
@@ -109,7 +93,7 @@
                 ;;
 
             * )
-                echo -e "$_OUTPUT_INVALID_OPTION"
+                PrintStatementInvalidOption "$1"
                 return 1 ;;
         esac; shift; done
 
@@ -131,42 +115,36 @@
         return 0
     }
 
-    function GetVendorPreferenceForAutoXorg
+    function GetArgsForParseSelection
     {
-        if "$_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR"; then
-            return 1
-        fi
+        for _ARG in "$@"; do
+            if "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL"; then
+                return 0
+            fi
 
-        case "$1" in
-            "amd" | "intel" | "nvidia" | "other" )
-                _ARGS_FOR_AUTO_XORG+="--$1"
-                return 0 ;;
+            if [[ ! -z "$_ARG" ]] \
+                && ( ! "$_DO_PARSE_DATABASE_FROM_FILE" \
+                    || ( "$_DO_PARSE_DATABASE_FROM_FILE" \
+                    && [[ "$_ARG" != "$_DATABASE_FILE" ]] )); then
+                case "$_ARG" in
+                    "all" )
+                        AddAll_IOMMU_GroupsParseList
+                        AddValid_IOMMU_GroupsParseList || return 1
+                        _HAS_ARG_PARSE_IOMMU_SELECT_ALL=true ;;
 
-            "" )
-                return 0 ;;
+                    "no-vga" )
+                        AddAll_IOMMU_GroupsParseList
+                        AddValid_IOMMU_GroupsParseList || return 1
+                        _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true ;;
 
-            * )
-                return 1 ;;
-        esac
-    }
+                    * )
+                        Add_IOMMU_GroupsParseList "$_ARG" || return 1
+                        AddValid_IOMMU_GroupsParseList || return 1 ;;
+                esac
+            fi
+        done
 
-    function GetParseOrderForAutoXorg
-    {
-        if "$_HAS_ARG_AUTO_XORG_SORT_ORDER"; then
-            return 1
-        fi
-
-        case "$1" in
-            "first" | "last" )
-                _ARGS_FOR_AUTO_XORG+=" --$1"
-                return 0 ;;
-
-            "" )
-                return 0 ;;
-
-            * )
-                return 1 ;;
-        esac
+        return 0
     }
 
     function GetArgsForStatic_VFIO
@@ -185,39 +163,8 @@
                 return 0 ;;
         esac
 
+        PrintStatementInvalidArgument "$1"
         return 1
-    }
-
-    function GetArgsForParseSelection
-    {
-        for _ARG in "$@"; do
-            if "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL"; then
-                return 0
-            fi
-
-            if [[ ! -z "$_ARG" ]] \
-                && ( ! "$_DO_PARSE_DATABASE_FROM_FILE" \
-                    || ( "$_DO_PARSE_DATABASE_FROM_FILE" \
-                    && [[ "$_ARG" != "$_DATABASE_FILE" ]] )); then
-                case "$_ARG" in
-                    "all" )
-                        AddAll_IOMMU_GroupsToList
-                        AddValid_IOMMU_GroupsToList || return 1
-                        _HAS_ARG_PARSE_IOMMU_SELECT_ALL=true ;;
-
-                    "no-vga" )
-                        AddAll_IOMMU_GroupsToList
-                        AddValid_IOMMU_GroupsToList || return 1
-                        _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true ;;
-
-                    * )
-                        Add_IOMMU_GroupsToList "$_ARG" || return 1
-                        AddValid_IOMMU_GroupsToList || return 1 ;;
-                esac
-            fi
-        done
-
-        return 0
     }
 
     function GetFileForParseSelection
@@ -229,6 +176,7 @@
         if "$_DO_PARSE_DATABASE_FROM_FILE" \
             && ( [[ ! -e "$1" ]] \
             || [[ ! -s "$1" ]] ); then
+            echo -e "$_PREFIX_ERROR File is not valid."
             return 1
         fi
 
@@ -236,17 +184,88 @@
         return 0
     }
 
-    function GetOverrideArgsForZramSwap
+    function GetArgsForHugepages
+    {
+        if [[ ! -z "$1" ]] \
+            && ! GetHugepageByteSize "$1"; then
+            PrintStatementInvalidArgument "$1"
+            return 1
+        fi
+
+        if [[ ! -z "$2" ]] \
+            && ! GetHugepageCount "$2"; then
+            PrintStatementInvalidArgument "$2"
+            return 1
+        fi
+
+        return 0
+    }
+
+    function GetArgsFor_ZRAM_Swap
+    {
+        if [[ ! -z "$1" ]]; then
+            Get_ZRAM_SwapSize "$1" || GetOverrideArgsFor_ZRAM_Swap "$1" || return 1
+        fi
+
+        if [[ ! -z "$2" ]]; then
+            Get_ZRAM_SwapSize "$2" || GetOverrideArgsFor_ZRAM_Swap "$2" || return 1
+        fi
+
+        return 0
+    }
+
+    function GetOverrideArgsFor_ZRAM_Swap
     {
         case "$1" in
             "force" )
                 _HAS_ARG_ZRAM_SWAP_OVERRIDE=true ;;
 
             * )
+                PrintStatementInvalidArgument "$1"
                 return 1 ;;
         esac
 
         return 0
+    }
+
+    function GetParseOrderForAutoXorg
+    {
+        if "$_HAS_ARG_AUTO_XORG_SORT_ORDER"; then
+            return 1
+        fi
+
+        if [[ -z "$1" ]]; then
+            return 0
+        fi
+
+        case "$1" in
+            "first" | "last" )
+                _ARGS_FOR_AUTO_XORG+=" --$1"
+                return 0 ;;
+        esac
+
+        PrintStatementInvalidArgument "$1"
+        return 1
+    }
+
+    function GetVendorPreferenceForAutoXorg
+    {
+        if "$_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR"; then
+            return 1
+        fi
+
+        if [[ -z "$1" ]]; then
+            return 0
+        fi
+
+        case "$1" in
+            "amd" | "intel" | "nvidia" | "other" )
+                _ARGS_FOR_AUTO_XORG+="--$1"
+                return 0 ;;
+        esac
+
+        PrintStatementInvalidArgument "$1"
+        return 1
     }
 
     function GetUsage
@@ -322,6 +341,22 @@
         return 0
     }
 
+    function PrintStatementInvalidArgument
+    {
+        echo -e "$_PREFIX_ERROR Invalid argument '$1'."
+        return 0
+    }
+
+    function PrintStatementInvalidOption
+    {
+        if [[ -z "$1" ]]; then
+            echo -e "$_OUTPUT_INVALID_OPTION"
+        fi
+
+        echo -e "$_PREFIX_ERROR Invalid option '$1'."
+        return 0
+    }
+
     function SetOptions
     {
         if [[ -z "$@" ]]; then
@@ -366,6 +401,7 @@
     declare -g _HAS_ARG_AUTO_XORG_SORT_ORDER=false
     declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
     declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=false
+    declare -g _HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
     declare -g _HAS_ARG_ZRAM_SWAP_OVERRIDE=false
     declare -g _HAS_ARG_ZRAM_SWAP_SET_FRACTION=false
     declare -g _HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU=false
