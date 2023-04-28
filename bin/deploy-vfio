@@ -30,6 +30,8 @@
             return "$?"
         fi
 
+        Debug
+
         if "$_FLAG_DO_SYSTEM_CHECK" \
             && ! GetLinuxDistro \
             && ! IsSystemSupported; then
@@ -41,7 +43,7 @@
         fi
 
         # <remarks> Exit early. </remarks>
-        if "$_EXECUTE_UNINSTALL_SETUP"; then
+        if "$_EXECUTE_VFIO_SETUP_UNINSTALL"; then
             ExecuteSetup
             return "$?"
         fi
@@ -54,6 +56,41 @@
         fi
 
         return 0
+    }
+
+    function Debug
+    {
+        echo "DEBUG"
+        echo
+        echo -e "_DO_PARSE_DATABASE_FROM_CACHE ==\t\t\t'$_DO_PARSE_DATABASE_FROM_CACHE'"
+        echo -e "_DO_PARSE_DATABASE_FROM_FILE ==\t\t\t\t'$_DO_PARSE_DATABASE_FROM_FILE'"
+        echo -e "_DATABASE_FILE ==\t\t\t\t\t'$_DATABASE_FILE'"
+        echo -e "_DO_PARSE_DATABASE_FROM_INTERNET ==\t\t\t'$_DO_PARSE_DATABASE_FROM_INTERNET'"
+        echo
+        echo -e "_ASK_TO_EXECUTE_PRE_SETUPS ==\t\t\t\t'$_ASK_TO_EXECUTE_PRE_SETUPS'"
+        echo -e "_EXECUTE_PRE_SETUP_EVDEV ==\t\t\t\t'$_EXECUTE_PRE_SETUP_EVDEV'"
+        echo -e "_EXECUTE_PRE_SETUP_HUGEPAGES ==\t\t\t\t'$_EXECUTE_PRE_SETUP_HUGEPAGES'"
+        echo -e "_IS_HUGEPAGES_COUNT_SET ==\t\t\t\t'$_IS_HUGEPAGES_COUNT_SET'"
+        echo -e "_IS_HUGEPAGES_SIZE_SET ==\t\t\t\t'$_IS_HUGEPAGES_SIZE_SET'"
+        echo -e "_HUGEPAGES_ALLOCATED_MEMORY ==\t\t\t\t'$_HUGEPAGES_ALLOCATED_MEMORY'"
+        echo -e "_HUGEPAGES_BYTE_SUFFIX ==\t\t\t\t'$_HUGEPAGES_BYTE_SUFFIX'"
+        echo -e "_EXECUTE_PRE_SETUP_STATIC_ISOLCPU ==\t\t\t'$_EXECUTE_PRE_SETUP_STATIC_ISOLCPU'"
+        echo -e "_EXECUTE_PRE_SETUP_UNINSTALL ==\t\t\t\t'$_EXECUTE_PRE_SETUP_UNINSTALL'"
+        echo
+        echo -e "_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB ==\t\t'$_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB'"
+        echo -e "_EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB ==\t\t'$_EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB'"
+        echo -e "_ASK_TO_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB ==\t\t'$_ASK_TO_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB'"
+        echo -e "_EXECUTE_VFIO_SETUP_UNINSTALL ==\t\t\t'$_EXECUTE_VFIO_SETUP_UNINSTALL'"
+        echo
+        echo -e "_ASK_TO_EXECUTE_POST_SETUPS ==\t\t\t\t'$_ASK_TO_EXECUTE_POST_SETUPS'"
+        echo -e "_EXECUTE_PRE_SETUP_AUDIO_LOOPBACK ==\t\t\t'$_EXECUTE_PRE_SETUP_AUDIO_LOOPBACK'"
+        echo -e "_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS ==\t\t'$_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS'"
+        echo -e "_EXECUTE_POST_SETUP_ZRAM_SWAP ==\t\t\t'$_EXECUTE_POST_SETUP_ZRAM_SWAP'"
+        echo -e "_ZRAM_SWAP_FRACTION ==\t\t\t\t\t'$_ZRAM_SWAP_FRACTION'"
+        echo -e "_HAS_ARG_ZRAM_SWAP_OVERRIDE ==\t\t\t\t'$_HAS_ARG_ZRAM_SWAP_OVERRIDE'"
+        echo -e "_EXECUTE_POST_SETUP_UNINSTALL ==\t\t\t'$_EXECUTE_POST_SETUP_UNINSTALL'"
+
+        exit 1
     }
 # </code>
 
