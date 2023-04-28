@@ -133,7 +133,7 @@
 
         GetHugepageMinAndMaxSizes || return 1
 
-        if ! echo "$1" | grep -E -q "$_REGEX_FOR_NUM"; then
+        if ! echo "$1" | grep -E -q "$_REGEX_FOR_NUM" \
             || [[ "$1" -lt "$_HUGEPAGES_MIN_SIZE" ]] \
             || [[ "$1" -gt "$_HUGEPAGES_MAX_SIZE" ]]; then
             echo -e "$_PREFIX_ERROR Please answer between \"$_HUGEPAGES_MIN_SIZE\" or \"$_HUGEPAGES_MAX_SIZE\"."
