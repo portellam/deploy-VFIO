@@ -24,7 +24,7 @@
 	{
 		function Get
 		{
-			UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_ZRAM_SWAP" || return 1
+			UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_POST_SETUP_ZRAM_SWAP" || return 1
 			return 0
 		}
 
@@ -111,7 +111,7 @@
 		local _HAS_SKIPPED=false
         echo
 
-		if ! "$_EXECUTE_ZRAM_SWAP" \
+		if ! "$_EXECUTE_POST_SETUP_ZRAM_SWAP" \
 			&& ! AskToExecuteOrSkip "Install zram-swap?"; then
 			_HAS_SKIPPED=true
 		fi
@@ -137,7 +137,7 @@
         function Main
         {
             while [[ "$?" -ne 1 ]]; do
-                if "$_EXECUTE_ALL_EXTRA_SETUPS"; then
+                if "$_ASK_TO_EXECUTE_POST_SETUPS"; then
                     LibvirtHooks
                     GuestAudioLoopback
                     Allocate_RAM_ToSwap
@@ -145,19 +145,19 @@
                     break
                 fi
 
-                if "$_EXECUTE_LIBVIRT_HOOKS"; then
+                if "$_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS"; then
                     LibvirtHooks
                 fi
 
-                if "$_EXECUTE_AUDIO_LOOPBACK_SETUP"; then
+                if "$_EXECUTE_PRE_SETUP_AUDIO_LOOPBACK"; then
                     GuestAudioLoopback
                 fi
 
-                if "$_EXECUTE_ZRAM_SWAP"; then
+                if "$_EXECUTE_POST_SETUP_ZRAM_SWAP"; then
                     Allocate_RAM_ToSwap
                 fi
 
-                if "$_EXECUTE_AUTO_XORG_SETUP"; then
+                if "$_EXECUTE_PRE_SETUP_AUTO_XORG"; then
                     SetVideoOutput
                 fi
 
@@ -276,7 +276,7 @@
 		local _HAS_SKIPPED=false
         echo
 
-		if ! "$_EXECUTE_AUDIO_LOOPBACK_SETUP" \
+		if ! "$_EXECUTE_PRE_SETUP_AUDIO_LOOPBACK" \
 			&& ! AskToExecuteOrSkip "Install audio loopback service?"; then
 			_HAS_SKIPPED=true
 		fi
@@ -322,7 +322,7 @@
 				return 1
 			fi
 
-			if ! "$_HAS_SETUP_STATIC_ISOLCPU"; then
+			if ! "$_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU"; then
 				if ! sudo cp "$_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null; then
 					echo -e "$_PREFIX_ERROR Failed to copy file(s)."
 					return 1
@@ -335,7 +335,7 @@
 			fi
 
 			if ! sudo echo -e "" >> "$_LIBVIRT_HOOK_DEST_PATH" \
-				|| ( ! "$_HAS_SETUP_STATIC_ISOLCPU" && ! sudo echo -e "source \"$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH" ) \
+				|| ( ! "$_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU" && ! sudo echo -e "source \"$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH" ) \
 				|| ! sudo echo -e "source \"$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH" \
 				|| ! sudo echo -e "source \"$_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH"; then
 				echo -e "$_PREFIX_ERROR Failed to append filenames as sources to Libvirt hooks file."
@@ -354,7 +354,7 @@
 		local _HAS_SKIPPED=false
         echo
 
-		if ! "$_EXECUTE_LIBVIRT_HOOKS" \
+		if ! "$_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS" \
 			&& ! AskToExecuteOrSkip "Install Libvirt hooks?"; then
 			_HAS_SKIPPED=true
 		fi
@@ -382,7 +382,7 @@
 	{
 		function Get
 		{
-			UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_AUTO_XORG_SETUP" || return 1
+			UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_PRE_SETUP_AUTO_XORG" || return 1
 			return 0
 		}
 
@@ -414,7 +414,7 @@
 		local _HAS_SKIPPED=false
         echo
 
-		if ! "$_EXECUTE_AUTO_XORG_SETUP" \
+		if ! "$_EXECUTE_PRE_SETUP_AUTO_XORG" \
 			&& ! AskToExecuteOrSkip "Install auto-Xorg?"; then
 			_HAS_SKIPPED=true
 		fi

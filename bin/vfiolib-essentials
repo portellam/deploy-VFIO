@@ -166,14 +166,14 @@
             return 0
         }
 
-        if ! "$_EXECUTE_ISOLCPU_SETUP" \
+        if ! "$_EXECUTE_PRE_SETUP_STATIC_ISOLCPU" \
             && ! AskToExecuteOrSkip "Statically allocate CPU threads to Guest(s)?"; then
             return "$?"
         else
             Main
         fi
 
-        PrintSuffixPassOrFail "Allocating CPU threads..." && _HAS_SETUP_STATIC_ISOLCPU=true
+        PrintSuffixPassOrFail "Allocating CPU threads..." && _HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU=true
         return "$_LAST_EXIT_CODE"
     }
 
@@ -227,7 +227,7 @@
                 return 1
             fi
 
-            if ! "$_EXECUTE_HUGEPAGES_SETUP"; then
+            if ! "$_EXECUTE_PRE_SETUP_HUGEPAGES"; then
                 echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\nGuest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
                 AskToExecuteOrSkip "Setup Hugepages?" || return "$?"
             fi
@@ -261,7 +261,7 @@
             while [[ "$?" -ne 1 ]]; do
                 AddUserToGroups
 
-                if "$_EXECUTE_ALL_ESSENTIAL_SETUPS"; then
+                if "$_ASK_TO_EXECUTE_PRE_SETUPS"; then
                     Allocate_RAM_ToGuest
                     echo
                     Allocate_CPU_ToGuest
@@ -272,20 +272,20 @@
                     break
                 fi
 
-                if "$_EXECUTE_HUGEPAGES_SETUP"; then
+                if "$_EXECUTE_PRE_SETUP_HUGEPAGES"; then
                     Allocate_RAM_ToGuest
                 fi
 
-                if "$_EXECUTE_ISOLCPU_SETUP"; then
+                if "$_EXECUTE_PRE_SETUP_STATIC_ISOLCPU"; then
                     echo
                     Allocate_CPU_ToGuest
                 fi
 
-                if "$_EXECUTE_ISOLCPU_SETUP"; then
+                if "$_EXECUTE_PRE_SETUP_STATIC_ISOLCPU"; then
                     Allocate_CPU_ToGuest
                 fi
 
-                if "$_EXECUTE_EVDEV_SETUP"; then
+                if "$_EXECUTE_PRE_SETUP_EVDEV"; then
                     echo
                     Virtual_KVM
                 fi
@@ -456,7 +456,7 @@
             return 0
         }
 
-        if ! "$_EXECUTE_EVDEV_SETUP"; then
+        if ! "$_EXECUTE_PRE_SETUP_EVDEV"; then
             echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between Host and Guest(s).\n${_SET_COLOR_YELLOW}HOW-TO:${_RESET_COLOR} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
             AskToExecuteOrSkip "Setup Evdev?" || return "$?"
         fi

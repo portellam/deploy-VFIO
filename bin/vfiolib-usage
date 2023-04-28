@@ -27,7 +27,7 @@
             "-f" | "--file" )
                 IsFileValid "$2" || return 1
                 GetArgsForExecuteSelection "$3" || return 1
-                _FILE_DATABASE=$3
+                _DATABASE_FILE=$3
                 _DO_PARSE_DATABASE_FROM_FILE=true ;;
 
             "-i" | "--internal" )
@@ -40,15 +40,15 @@
 
             # <remarks> Pre-setup: Essentials </remarks>
             "-c" | "--cpu" )
-                _EXECUTE_ALL_ESSENTIAL_SETUPS=false
-                _EXECUTE_ISOLCPU_SETUP=true ;;
+                _ASK_TO_EXECUTE_PRE_SETUPS=false
+                _EXECUTE_PRE_SETUP_STATIC_ISOLCPU=true ;;
 
             "-e" | "--evdev" )
-                _EXECUTE_ALL_ESSENTIAL_SETUPS=false
-                _EXECUTE_EVDEV_SETUP=true ;;
+                _ASK_TO_EXECUTE_PRE_SETUPS=false
+                _EXECUTE_PRE_SETUP_EVDEV=true ;;
 
             "-h" | "--hugepages" )
-                _EXECUTE_ALL_ESSENTIAL_SETUPS=false
+                _ASK_TO_EXECUTE_PRE_SETUPS=false
 
                 if [[ ! -z "$2" ]]; then
                     GetHugepageByteSize "$2" || return 1
@@ -59,39 +59,39 @@
                 fi
 
                 IsHostMemorySufficientForHugepages || return 1
-                _EXECUTE_HUGEPAGES_SETUP=true ;;
+                _EXECUTE_PRE_SETUP_HUGEPAGES=true ;;
 
             "--uninstall-essentials" )
-                _UNINSTALL_ESSENTIALS=true ;;
+                _EXECUTE_PRE_SETUP_UNINSTALL=true ;;
 
             # <remarks> Main setup </remarks>
             "-m" | "--multiboot" )
-                _EXECUTE_MULTIBOOT_SETUP=true ;;
+                _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=true ;;
 
             "-s" | "--static" )
                 GetArgsForStatic_VFIO "$2" || return 1
-                _EXECUTE_STATIC_SETUP=true
-                _ASK_TO_SELECT_TYPE_OF_STATIC_SETUP=false ;;
+                _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB=true
+                _ASK_TO_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=false ;;
 
             "-u" | "--uninstall" )
-                _EXECUTE_UNINSTALL_SETUP=true ;;
+                _EXECUTE_VFIO_SETUP_UNINSTALL=true ;;
 
             # <remarks> Post-setup: Extras </remarks>
             "--hooks" )
-                _EXECUTE_ALL_EXTRA_SETUPS=false
-                _EXECUTE_LIBVIRT_HOOKS=true ;;
+                _ASK_TO_EXECUTE_POST_SETUPS=false
+                _EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS=true ;;
 
             "--audio-loopback" )
-                _EXECUTE_ALL_EXTRA_SETUPS=false
-                _EXECUTE_AUDIO_LOOPBACK_SETUP=true ;;
+                _ASK_TO_EXECUTE_POST_SETUPS=false
+                _EXECUTE_PRE_SETUP_AUDIO_LOOPBACK=true ;;
 
             "--auto-xorg" )
-                _EXECUTE_ALL_EXTRA_SETUPS=false
-                _EXECUTE_AUTO_XORG_SETUP=true
+                _ASK_TO_EXECUTE_POST_SETUPS=false
+                _EXECUTE_PRE_SETUP_AUTO_XORG=true
                 GetArgsForAutoXorg "$2" "$3" || return 1 ;;
 
             "--zram-swap" )
-                _EXECUTE_ALL_EXTRA_SETUPS=false
+                _ASK_TO_EXECUTE_POST_SETUPS=false
 
                 if [[ ! -z "$2" ]]; then
                     Get_zRAM_SwapSize "$2" || GetOverrideArgsForZramSwap "$2" || return 1
@@ -102,10 +102,10 @@
                 fi
 
                 IsHostMemorySufficientForZramSwap || return 1
-                _EXECUTE_ZRAM_SWAP=true ;;
+                _EXECUTE_POST_SETUP_ZRAM_SWAP=true ;;
 
             "--uninstall-extras" )
-                _UNINSTALL_EXTRAS=true ;;
+                _EXECUTE_POST_SETUP_UNINSTALL=true ;;
 
             # <remarks> Else </remarks>
             "" )
@@ -136,7 +136,7 @@
 
     function GetVendorPreferenceForAutoXorg
     {
-        if "$_HAS_ARGS_VENDOR_AUTO_XORG"; then
+        if "$_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR"; then
             return 1
         fi
 
@@ -155,7 +155,7 @@
 
     function GetParseOrderForAutoXorg
     {
-        if "$_HAS_ARGS_SORT_AUTO_XORG"; then
+        if "$_HAS_ARG_AUTO_XORG_SORT_ORDER"; then
             return 1
         fi
 
@@ -180,11 +180,11 @@
 
         case "$1" in
             "grub" )
-                _EXECUTE_STATIC_SETUP_grub=true
+                _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB_grub=true
                 return 0 ;;
 
             "file" )
-                _EXECUTE_STATIC_SETUP_file=true
+                _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB_file=true
                 return 0 ;;
         esac
 
@@ -195,7 +195,7 @@
     {
         case "$1" in
             "all" )
-                _SELECT_ALL_IOMMU=true
+                _VFIO_SETUP_SELECT_ALL_IOMMU_GROUPS=true
                 return 0 ;;
 
             "" )
@@ -210,7 +210,7 @@
     {
         case "$1" in
             "force" )
-                _ZRAM_SWAP_OVERRIDE=true ;;
+                _HAS_ARG_ZRAM_SWAP_OVERRIDE=true ;;
 
             * )
                 return 1 ;;
@@ -316,39 +316,37 @@
 
 # <params>
     declare -g _ARGS_FOR_AUTO_XORG=""
-    declare -g _FILE_DATABASE=""
+    declare -g _DATABASE_FILE=""
 
     # <remarks> Statements </remarks
     declare -g _OUTPUT_INVALID_ANSWER="$_PREFIX_ERROR Failed to answer."
     declare -g _OUTPUT_INVALID_OPTION="$_PREFIX_ERROR Invalid option."
 
-    # <remarks> Toggles </remarks
-    declare -g _IS_CONNECTED_TO_INTERNET=false
-
     # <remarks> Flags </remarks
-    declare -g _ASK_TO_SELECT_TYPE_OF_STATIC_SETUP=true
+    declare -g _ASK_TO_EXECUTE_POST_SETUPS=true
+    declare -g _ASK_TO_EXECUTE_PRE_SETUPS=true
+    declare -g _ASK_TO_EXECUTE_VFIO_SETUP=true
+    declare -g _ASK_TO_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=true
     declare -g _DO_PARSE_DATABASE_FROM_CACHE=false
     declare -g _DO_PARSE_DATABASE_FROM_FILE=false
     declare -g _DO_PARSE_DATABASE_FROM_INTERNET=false
-    declare -g _EXECUTE_ALL_EXTRA_SETUPS=true
-    declare -g _EXECUTE_ALL_ESSENTIAL_SETUPS=true
-    declare -g _EXECUTE_AUDIO_LOOPBACK_SETUP=false
-    declare -g _EXECUTE_AUTO_XORG_SETUP=false
-    declare -g _EXECUTE_EVDEV_SETUP=false
-    declare -g _EXECUTE_GRUB_STATIC_SETUP=true
-    declare -g _EXECUTE_HUGEPAGES_SETUP=false
-    declare -g _EXECUTE_ISOLCPU_SETUP=false
-    declare -g _EXECUTE_LIBVIRT_HOOKS=false
-    declare -g _EXECUTE_MULTIBOOT_SETUP=false
-    declare -g _EXECUTE_STATIC_SETUP=false
-    declare -g _EXECUTE_UNINSTALL_SETUP=false
-    declare -g _EXECUTE_ZRAM_SWAP=false
-    declare -g _HAS_ARGS_SORT_AUTO_XORG=false
-    declare -g _HAS_ARGS_VENDOR_AUTO_XORG=false
-    declare -g _HAS_SETUP_STATIC_ISOLCPU=false
-    declare -g _SELECT_ALL_IOMMU=false
-    declare -g _UNINSTALL_EXTRAS=false
-    declare -g _UNINSTALL_ESSENTIALS=false
-    declare -g _ZRAM_SWAP_OVERRIDE=false
-    declare -g _ZRAM_SWAP_SET_FRACTION=false
+    declare -g _EXECUTE_PRE_SETUP_AUDIO_LOOPBACK=false
+    declare -g _EXECUTE_PRE_SETUP_AUTO_XORG=false
+    declare -g _EXECUTE_PRE_SETUP_EVDEV=false
+    declare -g _EXECUTE_PRE_SETUP_UNINSTALL=false
+    declare -g _EXECUTE_PRE_SETUP_HUGEPAGES=false
+    declare -g _EXECUTE_PRE_SETUP_STATIC_ISOLCPU=false
+    declare -g _EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS=false
+    declare -g _EXECUTE_POST_SETUP_ZRAM_SWAP=false
+    declare -g _EXECUTE_POST_SETUP_UNINSTALL=false
+    declare -g _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=false
+    declare -g _EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=true
+    declare -g _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB=false
+    declare -g _EXECUTE_VFIO_SETUP_UNINSTALL=false
+    declare -g _HAS_ARG_AUTO_XORG_SORT_ORDER=false
+    declare -g _HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=false
+    declare -g _HAS_ARG_ZRAM_SWAP_OVERRIDE=false
+    declare -g _HAS_ARG_ZRAM_SWAP_SET_FRACTION=false
+    declare -g _HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU=false
+    declare -g _VFIO_SETUP_SELECT_ALL_IOMMU_GROUPS=false
 # </params>
