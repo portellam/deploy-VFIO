@@ -17,28 +17,11 @@
 # <code>
     function GetOption
     {
-        # NOTE: not all options are being hit.
-
         while [[ "$1" =~ ^- && "$1" != "--" ]]; do case "$1" in
             "--help" )
                 return 1 ;;
 
-            # <remarks> Pre-setup: Parse IOMMU </remarks>
-            "-f" | "--file" )
-                IsFileValid "$2" || return 1
-                GetArgsForExecuteSelection "$3" || return 1
-                _DATABASE_FILE=$3
-                _DO_PARSE_DATABASE_FROM_FILE=true ;;
-
-            "-i" | "--internal" )
-                GetArgsForExecuteSelection "$2" || return 1
-                _DO_PARSE_DATABASE_FROM_CACHE=true ;;
-
-            "-o" | "--online" )
-                GetArgsForExecuteSelection "$2" || return 1
-                _DO_PARSE_DATABASE_FROM_INTERNET=true ;;
-
-            # <remarks> Pre-setup: Essentials </remarks>
+            # <remarks> Pre-setup </remarks>
             "-c" | "--cpu" )
                 _ASK_TO_EXECUTE_PRE_SETUPS=false
                 _EXECUTE_PRE_SETUP_STATIC_ISOLCPU=true ;;
@@ -64,7 +47,21 @@
             "--uninstall-essentials" )
                 _EXECUTE_PRE_SETUP_UNINSTALL=true ;;
 
-            # <remarks> Main setup </remarks>
+            # <remarks> Parse PCI for VFIO setup </remarks>
+            "-f" | "--file" )
+                _DO_PARSE_DATABASE_FROM_FILE=true
+                GetFileForParseSelection "$2" || return 1
+                GetArgsForParseSelection "$@" || return 1 ;;
+
+            "-i" | "--internal" )
+                _DO_PARSE_DATABASE_FROM_CACHE=true
+                GetArgsForParseSelection "$@" || return 1 ;;
+
+            "-o" | "--online" )
+                _DO_PARSE_DATABASE_FROM_INTERNET=true
+                GetArgsForParseSelection "$@" || return 1 ;;
+
+            # <remarks> VFIO setup </remarks>
             "-m" | "--multiboot" )
                 _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=true ;;
 
@@ -76,7 +73,7 @@
             "-u" | "--uninstall" )
                 _EXECUTE_VFIO_SETUP_UNINSTALL=true ;;
 
-            # <remarks> Post-setup: Extras </remarks>
+            # <remarks> Post-setup </remarks>
             "--hooks" )
                 _ASK_TO_EXECUTE_POST_SETUPS=false
                 _EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS=true ;;
@@ -191,19 +188,52 @@
         return 1
     }
 
-    function GetArgsForExecuteSelection
+    function GetArgsForParseSelection
     {
-        case "$1" in
-            "all" )
-                _VFIO_SETUP_SELECT_ALL_IOMMU_GROUPS=true
-                return 0 ;;
+        for _ARG in "$@"; do
+            if "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL"; then
+                return 0
+            fi
 
-            "" )
-                return 0 ;;
+            if [[ ! -z "$_ARG" ]] \
+                && ( ! "$_DO_PARSE_DATABASE_FROM_FILE" \
+                    || ( "$_DO_PARSE_DATABASE_FROM_FILE" \
+                    && [[ "$_ARG" != "$_DATABASE_FILE" ]] )); then
+                case "$_ARG" in
+                    "all" )
+                        AddAll_IOMMU_GroupsToList
+                        AddValid_IOMMU_GroupsToList || return 1
+                        _HAS_ARG_PARSE_IOMMU_SELECT_ALL=true ;;
 
-            * )
-                return 1 ;;
-        esac
+                    "no-vga" )
+                        AddAll_IOMMU_GroupsToList
+                        AddValid_IOMMU_GroupsToList || return 1
+                        _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true ;;
+
+                    * )
+                        Add_IOMMU_GroupsToList "$_ARG" || return 1
+                        AddValid_IOMMU_GroupsToList || return 1 ;;
+                esac
+            fi
+        done
+
+        return 0
+    }
+
+    function GetFileForParseSelection
+    {
+        if ! "$_DO_PARSE_DATABASE_FROM_FILE"; then
+            return 0
+        fi
+
+        if "$_DO_PARSE_DATABASE_FROM_FILE" \
+            && ( [[ ! -e "$1" ]] \
+            || [[ ! -s "$1" ]] ); then
+            return 1
+        fi
+
+        _DATABASE_FILE="$1"
+        return 0
     }
 
     function GetOverrideArgsForZramSwap
@@ -292,17 +322,6 @@
         return 0
     }
 
-    function IsFileValid
-    {
-        if [[ ! -e "$1" ]] \
-            || [[ ! -s "$1" ]]; then
-            echo -e "$_OUTPUT_INVALID_OPTION"
-            return 1
-        fi
-
-        return 0
-    }
-
     function SetOptions
     {
         if [[ -z "$@" ]]; then
@@ -343,10 +362,11 @@
     declare -g _EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=true
     declare -g _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB=false
     declare -g _EXECUTE_VFIO_SETUP_UNINSTALL=false
-    declare -g _HAS_ARG_AUTO_XORG_SORT_ORDER=false
     declare -g _HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=false
+    declare -g _HAS_ARG_AUTO_XORG_SORT_ORDER=false
+    declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
+    declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=false
     declare -g _HAS_ARG_ZRAM_SWAP_OVERRIDE=false
     declare -g _HAS_ARG_ZRAM_SWAP_SET_FRACTION=false
     declare -g _HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU=false
-    declare -g _VFIO_SETUP_SELECT_ALL_IOMMU_GROUPS=false
 # </params>
