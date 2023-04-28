@@ -67,6 +67,8 @@
         echo -e "_DATABASE_FILE ==\t\t\t\t\t'$_DATABASE_FILE'"
         echo -e "_DO_PARSE_DATABASE_FROM_INTERNET ==\t\t\t'$_DO_PARSE_DATABASE_FROM_INTERNET'"
         echo -e "_HAS_ARG_PARSE_IOMMU_SELECT_ALL ==\t\t\t'$_HAS_ARG_PARSE_IOMMU_SELECT_ALL'"
+        echo -e "_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA ==\t\t'$_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA'"
+        echo -e "_HAS_ARG_PARSE_IOMMU_SELECT_SOME ==\t\t\t'$_HAS_ARG_PARSE_IOMMU_SELECT_SOME'"
         echo
         echo
         echo -e "_ASK_TO_EXECUTE_PRE_SETUPS ==\t\t\t\t'$_ASK_TO_EXECUTE_PRE_SETUPS'"
@@ -74,8 +76,8 @@
         echo -e "_EXECUTE_PRE_SETUP_HUGEPAGES ==\t\t\t\t'$_EXECUTE_PRE_SETUP_HUGEPAGES'"
         echo -e "_IS_HUGEPAGES_COUNT_SET ==\t\t\t\t'$_IS_HUGEPAGES_COUNT_SET'"
         echo -e "_IS_HUGEPAGES_SIZE_SET ==\t\t\t\t'$_IS_HUGEPAGES_SIZE_SET'"
-        echo -e "_HUGEPAGES_ALLOCATED_MEMORY ==\t\t\t\t'$_HUGEPAGES_ALLOCATED_MEMORY'"
         echo -e "_HUGEPAGES_BYTE_SUFFIX ==\t\t\t\t'$_HUGEPAGES_BYTE_SUFFIX'"
+        echo -e "_HUGEPAGES_COUNT ==\t\t\t\t\t'$_HUGEPAGES_COUNT'"
         echo
         echo -e "_EXECUTE_PRE_SETUP_STATIC_ISOLCPU ==\t\t\t'$_EXECUTE_PRE_SETUP_STATIC_ISOLCPU'"
         echo -e "_EXECUTE_PRE_SETUP_UNINSTALL ==\t\t\t\t'$_EXECUTE_PRE_SETUP_UNINSTALL'"
