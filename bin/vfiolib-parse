@@ -9,16 +9,14 @@
 
 # <remarks> Using </remarks>
 # <code>
+    source vfiolib-calcs
     source vfiolib-common
     source vfiolib-usage
 # </code>
 
 # <params>
-    declare -g _DOMAIN_ID_REGEX='^[0-9A-F][1-9A-F]$'
-    declare -g _GET_IOMMU_GROUP_DEVICES='ls /sys/kernel/iommu_groups/$_IOMMU_GROUP_ID/devices'
     declare -gA _CLASS_BY_VALID_IOMMU_GROUP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_LIST _HWID_BY_VALID_IOMMU_GROUP_LIST _NAME_BY_VALID_IOMMU_GROUP_LIST _PCI_ID_BY_VALID_IOMMU_GROUP_LIST
     declare -gA _IOMMU_GROUP_DEVICE_LIST
-    declare -ga _IOMMU_GROUP_ID_LIST=$( ls -1v /sys/kernel/iommu_groups/ | sort -h )
     declare -ga _IOMMU_GROUP_ID_LIST_FOR_VFIO _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_HOST _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO
     declare -g _DEFAULT_DATABASE_FILE="/usr/local/etc/vfiolib_lspci_database"
     declare -g _PARSE_OPTIONS=""
@@ -127,7 +125,7 @@
 
         # <remarks> Iterate list of IOMMU IDs. </remarks>
         for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST[@]}; do
-            local _DEVICES=$( eval "$_GET_IOMMU_GROUP_DEVICES" )
+            local _DEVICES=$( eval "$_GET_IOMMU_GROUP_DEVICE_LIST" )
 
             # <remarks> Iterate list of devices' full PCI ID. </remarks>
             for _DEVICE_FULL_ID in ${_DEVICES[@]}; do
@@ -155,18 +153,6 @@
 
         case "$_CLASS" in
             *"usb"* )
-                return 0 ;;
-        esac
-
-        return 1
-    }
-
-    function IsDevice_VGA
-    {
-        local -l _CLASS="$1"
-
-        case "$_CLASS" in
-            *"vga"* | *"graphic"* )
                 return 0 ;;
         esac
 

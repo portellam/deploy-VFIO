@@ -13,6 +13,61 @@
 # </code>
 
 # <code>
+    function Add_IOMMU_GroupsToList
+    {
+        local -r _REGEX_FOR_RANGE_OF_NUMS='^[0-9]+[-][0-9]+$'
+
+        if [[ "$1" =~ "$_REGEX_FOR_RANGE_OF_NUMS" ]]; then
+            local _RANGE_START=$( echo "$1" | cut -d '-' -f 1 )
+            local _RANGE_STOP=$( echo "$1" | cut -d '-' -f 2 )
+            Is_IOMMU_Group_Not_Valid "$_RANGE_START" || return 1
+            Is_IOMMU_Group_Not_Valid "$_RANGE_STOP" || return 1
+            _IOMMU_GROUP_LIST_TO_PARSE+=( $( seq "$_RANGE_START" "$_RANGE_STOP" ) )
+
+        elif [[ "$1" =~ ^[0-9]$ ]]; then
+            _IOMMU_GROUP_LIST_TO_PARSE+=( "$1" )
+
+        else
+            return 1
+        fi
+
+        return 0
+    }
+
+    function AddAll_IOMMU_GroupsToList
+    {
+        _IOMMU_GROUP_LIST_TO_PARSE=( "${_IOMMU_GROUP_ID_LIST[@]}" )
+        return 0
+    }
+
+    function AddValid_IOMMU_GroupsToList
+    {
+        for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_LIST_TO_PARSE[@]}; do
+            local _DEVICE_LIST=$( eval "$_GET_IOMMU_GROUP_DEVICE_LIST" )
+            local _IOMMU_GROUP_HAS_EXTERNAL=false
+
+            for _DEVICE in ${_DEVICE_LIST[@]}; do
+                local -u _DEVICE_DOMAIN_ID=$( echo "$_DEVICE" | cut -d ':' -f 2 )
+                local -l _DEVICE_CLASS="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 2 )"
+
+                if IsDeviceExternal "$_DEVICE_DOMAIN_ID" \
+                    && ( ! "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA" \
+                        || ( "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA" \
+                            && IsDevice_VGA "$_DEVICE_CLASS" )); then
+                    _IOMMU_GROUP_LIST_TO_PARSE+=( "$_IOMMU_GROUP_ID" )
+                    break
+                fi
+            done
+        done
+
+        if [[ "${#_IOMMU_GROUP_LIST_TO_PARSE[@]}" -eq 0 ]]; then
+            return 1
+        fi
+
+        SortListOf_IOMMU_Groups
+        return 0
+    }
+
     function GetFreeMemory
     {
         _AVAILABLE_MEMORY=$(( _INT_MAX_MEMORY - _MIN_MEMORY ))
@@ -152,13 +207,57 @@
         fi
 
         return 0
+    }
 
+    function IsDeviceExternal
+    {
+        if ! echo "$1" | grep -E -q "$_DOMAIN_ID_REGEX"; then
+            return 1
+        fi
+
+        return 0
+    }
+
+    function IsDevice_VGA
+    {
+        case "$1" in
+            *"vga"* | *"graphic"* )
+                return 0 ;;
+        esac
+
+        return 1
+    }
+
+    function Is_IOMMU_Group_Valid
+    {
+        if [[ "$1" -lt 0 ]] \
+            || [[ "$1" -gt "${_IOMMU_GROUP_ID_LIST[-1]}" ]]; then
+            return 1
+        fi
+
+        return 0
+    }
+
+    function SortListOf_IOMMU_Groups
+    {
+        IFS=$'\n'
+        _IOMMU_GROUP_LIST_TO_PARSE=( $( uniq <<<"${_IOMMU_GROUP_LIST_TO_PARSE[*]}" ) )
+        _IOMMU_GROUP_LIST_TO_PARSE=( $( sort -h <<<"${_IOMMU_GROUP_LIST_TO_PARSE[*]}" ) )
+        unset IFS
+
+        return 0
     }
 # </code>
 
 # <params>
+    # <remarks> Pre-setup: Hugepages </remarks>
     declare -g _IS_HUGEPAGES_COUNT_SET=false
     declare -g _IS_HUGEPAGES_SIZE_SET=false
     declare -gi _AVAILABLE_MEMORY=0
     declare -gi _MIN_MEMORY=8
+
+    # <remarks> Parse PCI for VFIO setup </remarks>
+    declare -g _DOMAIN_ID_REGEX='^[0-9A-F][1-9A-F]$'
+    declare -g _GET_IOMMU_GROUP_DEVICE_LIST='ls /sys/kernel/iommu_groups/$_IOMMU_GROUP_ID/devices'
+    declare -ga _IOMMU_GROUP_ID_LIST=$( ls -1v /sys/kernel/iommu_groups/ | sort -h )
 # </params>
