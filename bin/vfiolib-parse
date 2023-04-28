@@ -343,7 +343,7 @@
                     return 255 ;;
 
                 * )
-                    echo "Please answer \"F\", \"I\", \"O\", or \"N\"." ;;
+                    echo "Please answer 'F', 'I', 'O', or 'N'." ;;
             esac
         done
 

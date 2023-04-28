@@ -49,7 +49,7 @@
         fi
 
         if "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA" \
-            && IsDevice_VGA "$2"; then
+            && ! IsDevice_VGA "$2"; then
             _IOMMU_GROUP_LIST_TO_PARSE+=( "$1" )
         fi
 
@@ -119,7 +119,7 @@
                 return 1 ;;
 
             * )
-                echo -e "Please answer \"2M\" or \"1G\"."
+                echo -e "Please answer '2M' or '1G'."
                 return 1 ;;
         esac
     }
@@ -136,7 +136,7 @@
         if ! echo "$1" | grep -E -q "$_REGEX_FOR_NUM" \
             || [[ "$1" -lt "$_HUGEPAGES_MIN_SIZE" ]] \
             || [[ "$1" -gt "$_HUGEPAGES_MAX_SIZE" ]]; then
-            echo -e "$_PREFIX_ERROR Please answer between \"$_HUGEPAGES_MIN_SIZE\" or \"$_HUGEPAGES_MAX_SIZE\"."
+            echo -e "$_PREFIX_ERROR Please answer between '$_HUGEPAGES_MIN_SIZE' or '$_HUGEPAGES_MAX_SIZE'."
             return 1
         fi
 
@@ -259,7 +259,7 @@
     {
         if [[ "$1" -lt 0 ]] \
             || [[ "$1" -gt "${_IOMMU_GROUP_ID_LIST[-1]}" ]]; then
-            echo -e "$_PREFIX_ERROR Please answer between \"0\" or \"${_IOMMU_GROUP_ID_LIST[-1]}\"."
+            echo -e "$_PREFIX_ERROR Please answer between '0' or '${_IOMMU_GROUP_ID_LIST[-1]}\"."
             return 1
         fi
 
