@@ -83,11 +83,11 @@
 
             "--audio-loopback" )
                 _ASK_TO_EXECUTE_POST_SETUPS=false
-                _EXECUTE_PRE_SETUP_AUDIO_LOOPBACK=true ;;
+                _EXECUTE_POST_SETUP_AUDIO_LOOPBACK=true ;;
 
             "--auto-xorg" )
                 _ASK_TO_EXECUTE_POST_SETUPS=false
-                _EXECUTE_PRE_SETUP_AUTO_XORG=true
+                _EXECUTE_POST_SETUP_AUTO_XORG=true
                 GetArgsForAutoXorg "$2" "$3" || return 1 ;;
 
             "--zram-swap" )
@@ -330,12 +330,12 @@
     declare -g _DO_PARSE_DATABASE_FROM_CACHE=false
     declare -g _DO_PARSE_DATABASE_FROM_FILE=false
     declare -g _DO_PARSE_DATABASE_FROM_INTERNET=false
-    declare -g _EXECUTE_PRE_SETUP_AUDIO_LOOPBACK=false
-    declare -g _EXECUTE_PRE_SETUP_AUTO_XORG=false
     declare -g _EXECUTE_PRE_SETUP_EVDEV=false
-    declare -g _EXECUTE_PRE_SETUP_UNINSTALL=false
     declare -g _EXECUTE_PRE_SETUP_HUGEPAGES=false
     declare -g _EXECUTE_PRE_SETUP_STATIC_ISOLCPU=false
+    declare -g _EXECUTE_PRE_SETUP_UNINSTALL=false
+    declare -g _EXECUTE_POST_SETUP_AUDIO_LOOPBACK=false
+    declare -g _EXECUTE_POST_SETUP_AUTO_XORG=false
     declare -g _EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS=false
     declare -g _EXECUTE_POST_SETUP_ZRAM_SWAP=false
     declare -g _EXECUTE_POST_SETUP_UNINSTALL=false

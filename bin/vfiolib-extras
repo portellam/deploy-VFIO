@@ -149,7 +149,7 @@
                     LibvirtHooks
                 fi
 
-                if "$_EXECUTE_PRE_SETUP_AUDIO_LOOPBACK"; then
+                if "$_EXECUTE_POST_SETUP_AUDIO_LOOPBACK"; then
                     GuestAudioLoopback
                 fi
 
@@ -157,7 +157,7 @@
                     Allocate_RAM_ToSwap
                 fi
 
-                if "$_EXECUTE_PRE_SETUP_AUTO_XORG"; then
+                if "$_EXECUTE_POST_SETUP_AUTO_XORG"; then
                     SetVideoOutput
                 fi
 
@@ -276,7 +276,7 @@
 		local _HAS_SKIPPED=false
         echo
 
-		if ! "$_EXECUTE_PRE_SETUP_AUDIO_LOOPBACK" \
+		if ! "$_EXECUTE_POST_SETUP_AUDIO_LOOPBACK" \
 			&& ! AskToExecuteOrSkip "Install audio loopback service?"; then
 			_HAS_SKIPPED=true
 		fi
@@ -382,7 +382,7 @@
 	{
 		function Get
 		{
-			UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_PRE_SETUP_AUTO_XORG" || return 1
+			UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_POST_SETUP_AUTO_XORG" || return 1
 			return 0
 		}
 
@@ -414,7 +414,7 @@
 		local _HAS_SKIPPED=false
         echo
 
-		if ! "$_EXECUTE_PRE_SETUP_AUTO_XORG" \
+		if ! "$_EXECUTE_POST_SETUP_AUTO_XORG" \
 			&& ! AskToExecuteOrSkip "Install auto-Xorg?"; then
 			_HAS_SKIPPED=true
 		fi
