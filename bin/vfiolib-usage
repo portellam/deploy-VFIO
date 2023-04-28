@@ -42,16 +42,16 @@
             # <remarks> Parse PCI for VFIO setup </remarks>
             "-f" | "--file" )
                 _DO_PARSE_DATABASE_FROM_FILE=true
-                GetFileForParseSelection "$2" || return 1
-                GetArgsForParseSelection "$@" || return 1 ;;
+                GetFileForParseSelection "$2" || return 1;;
 
             "-i" | "--internal" )
-                _DO_PARSE_DATABASE_FROM_CACHE=true
-                GetArgsForParseSelection "$@" || return 1 ;;
+                _DO_PARSE_DATABASE_FROM_CACHE=true ;;
 
             "-o" | "--online" )
-                _DO_PARSE_DATABASE_FROM_INTERNET=true
-                GetArgsForParseSelection "$@" || return 1 ;;
+                _DO_PARSE_DATABASE_FROM_INTERNET=true ;;
+
+            "-p" | "--parse" )
+                GetArgsForParseSelection "$2" || return 1 ;;
 
             # <remarks> VFIO setup </remarks>
             "-m" | "--multiboot" )
@@ -115,17 +115,24 @@
         return 0
     }
 
+    # TODO: continue work on here!
     function GetArgsForParseSelection
     {
-        for _ARG in "$@"; do
+        local -i _COUNT_DELIM=$( echo "$1" | wc -w )
+
+        while [[ "$_COUNT_DELIM" -gt 0 ]]; do
+            local _ARG=$( echo "$1" | cut -d ',' -f "$_COUNT_DELIM" )
+
             if "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL"; then
                 return 0
             fi
 
-            if [[ ! -z "$_ARG" ]] \
-                && ( ! "$_DO_PARSE_DATABASE_FROM_FILE" \
+            if ! "$_DO_PARSE_DATABASE_FROM_FILE" \
                     || ( "$_DO_PARSE_DATABASE_FROM_FILE" \
-                    && [[ "$_ARG" != "$_DATABASE_FILE" ]] )); then
+                    && [[ "$_ARG" != "$_DATABASE_FILE" ]] ); then
+                echo -e "_DO_PARSE_DATABASE_FROM_FILE ==\t\t\t\t'$_DO_PARSE_DATABASE_FROM_FILE'"
+                echo -e "_ARG ==\t\t\t\t\t'$_ARG'"
+
                 case "$_ARG" in
                     "all" )
                         AddAll_IOMMU_GroupsParseList
@@ -142,6 +149,8 @@
                         AddValid_IOMMU_GroupsParseList || return 1 ;;
                 esac
             fi
+
+            (( _COUNT_DELIM-- ))
         done
 
         return 0
@@ -275,23 +284,31 @@
         declare -a _OUTPUT=(
             "Usage:\t\tbash deploy-vfio [OPTION]... [ARGUMENTS]..."
             "Deploy a VFIO setup to a Linux Host that supports Para-virtualization or PCI Passthrough.\n"
-            "  --help\tprint this help and exit"
+            "  --help\t\t\tPrint this help and exit."
 
-            "\nParse IOMMU groups and reference chosen database for the system's PCI devices.\nOPTIONS:"
-            "  -f, --file [filename]\tReference file database."
-            "  -i, --internal\tReference local database."
-            "  -o, --online\t\tReference online database."
+            "\nSpecify the database to reference before parsing IOMMU groups.\nOPTIONS:"
+            "  -f, --file [filename]\t\tReference file database."
+            "  -i, --internal\t\tReference local database."
+            "  -o, --online\t\t\tReference online database."
 
             "\nARGUMENTS:"
-            "  [filename]            Reference specific file."
-            "  all\t\t\tSelect all IOMMU groups."
-            "  no-vga\t\tSelect all IOMMU groups without VGA devices."
-            "  [x-y,z]\t\tSelect specific IOMMU groups (comma separated, or ranges)."
+            "  [filename]\t\t\tReference specific file."
 
             "\n  Example:"
-            "    -f somefile.txt     Reference file 'somefile.txt' and begin parse."
-            "    no-vga 14\t\tSelect group 14 and all non-VGA groups."
-            "    1,14-16\t\tSelect groups 1, 14, 15, and 16."
+            "    -f somefile.txt\t\tReference file 'somefile.txt' and begin parse."
+
+            "\nSpecify the IOMMU groups to parse.\nOPTIONS:"
+            "  -p, --parse [groups]\t\tParse given IOMMU groups."
+
+            "\nARGUMENTS (delimited by comma):"
+            "  all\t\t\t\tSelect all IOMMU groups."
+            "  no-vga\t\t\tSelect all IOMMU groups without VGA devices."
+            "  [x]\t\t\t\tSelect IOMMU group."
+            "  [x-y]\t\t\t\tSelect IOMMU groups."
+
+            "\n  Example:"
+            "    no-vga,14\t\t\tSelect group 14 and all non-VGA groups."
+            "    1,14-16\t\t\tSelect groups 1, 14, 15, and 16."
 
             "\nPre-setup OPTIONS:"
             "  -c, --cpu\t\t\tAllocate CPU."
@@ -312,28 +329,25 @@
             "  -s, --static\t\t\tCreate a single GRUB entry/Install a Single VGA VFIO setup."
             "  -u, --uninstall\t\tUndo an existing VFIO setup."
 
-            "\n  Example:"
-            "    -l -m\t\t\tParse against local database, then deploy a Multi VGA VFIO setup."
-            "    -s -o\t\t\tParse against online database, then deploy a Static VFIO setup."
             "\nPost-setup OPTIONS:"
-            "  --audio-loopback\tInstall the audio loopback service.\tLoopback audio from Guest to Host (over Line-out to Line-in)."
-            "  --auto-xorg\t\tInstall auto-Xorg.\t\t\tSystem service to find and set a valid Host boot VGA device for Xorg."
-            "  --hooks\t\tInstall recommended Libvirt hooks."
+            "  --audio-loopback\t\tInstall the audio loopback service.\tLoopback audio from Guest to Host (over Line-out to Line-in)."
+            "  --auto-xorg\t\t\tInstall auto-Xorg.\t\t\tSystem service to find and set a valid boot VGA device for Xorg."
+            "  --hooks\t\t\tInstall recommended Libvirt hooks."
 
             "\nauto-xorg ARGUMENTS:"
-            "  first  [vendor]\tFind the first valid VGA device."
-            "  last   [vendor]\tFind the last valid VGA device."
-            "  [sort] amd\t\tPrefer AMD or ATI."
-            "  [sort] intel\t\tPrefer Intel."
-            "  [sort] nvidia\t\tPrefer NVIDIA."
-            "  [sort] other\t\tPrefer any other brand."
+            "  first  [vendor]\t\tFind the first valid VGA device."
+            "  last   [vendor]\t\tFind the last valid VGA device."
+            "  [sort] amd\t\t\tPrefer AMD or ATI."
+            "  [sort] intel\t\t\tPrefer Intel."
+            "  [sort] nvidia\t\t\tPrefer NVIDIA."
+            "  [sort] other\t\t\tPrefer any other brand."
 
             "\nzram-swap ARGUMENTS:"
-            "  force\t\t\tForce changes, even if zram-swap is allocated and in use."
-            "  [fraction]\t\tSet the fraction of total available memory."
+            "  force\t\t\t\tForce changes, even if zram-swap is allocated and in use."
+            "  [fraction]\t\t\tSet the fraction of total available memory."
 
             "\n  Example (assume a Host with 32 GiB of RAM):"
-            "    force 1/4\t\tCompress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free."
+            "    force 1/4\t\t\tCompress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free."
         )
 
         echo -e "${_OUTPUT[*]}"
