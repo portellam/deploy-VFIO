@@ -86,10 +86,10 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
 #### Post-setup
 
         Post-setup OPTIONS:
-          --audio-loopback              Install the audio loopback service.     Loopback audio from Guest to Host (over Line-out to Line-in). *
-          --auto-xorg                   Install auto-Xorg.                      System service to find and set a valid Host boot VGA device for Xorg.
+          --audio-loopback              Install the audio loopback service...           Loopback audio from Guest to Host (over Line-out to Line-in). *
+          --auto-xorg                   Install auto-Xorg...                            System service to find and set a valid Host boot VGA device for Xorg.
           --hooks                       Install recommended Libvirt hooks.
-          --zram-swap                   Create compressed (~ 2:1) RAM swap.     Reduce chances of memory exhaustion for Host.
+          --zram-swap                   Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
           --uninstall-post-setup        Undo all changes made by post-setup. *
 
         auto-xorg ARGUMENTS:
