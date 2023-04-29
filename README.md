@@ -74,7 +74,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
             1G 16                       1 GiB hugepage * 16     == 16 GiB allocated to hugepages.
             2M 8192                     2 MiB hugepage * 8912   == 16 GiB allocated to hugepages.
 
-#### Main setup
+#### VFIO setup
 
         VFIO setup OPTIONS: *
           -m, --multiboot               Create multiple VFIO setups with corresponding GRUB menu entries.
