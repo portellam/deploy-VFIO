@@ -20,7 +20,11 @@
         while [[ "$1" =~ ^- ]] \
             || [[ "$1" =~ ^-- ]]; do
             local -i _ARGS_COUNT=0
-            GetOptions "$@" || return 1
+
+            if ! GetOptions "$@"; then
+                echo
+                return 1
+            fi
 
             for _COUNT in $( seq 0 "$_ARGS_COUNT" ); do
                 shift
@@ -34,7 +38,8 @@
     {
         case "$1" in
             "--help" )
-                return 1 ;;
+                GetUsage
+                exit 1 ;;
 
             # <remarks> Parse PCI for VFIO setup </remarks>
             "-f" | "--file" )

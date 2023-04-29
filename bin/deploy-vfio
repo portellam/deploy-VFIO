@@ -26,7 +26,6 @@
 
         # <remarks> Gather arguments. </remarks>
         if ! SetOptions "$@"; then
-            echo
             GetUsage
             return "$?"
         fi
