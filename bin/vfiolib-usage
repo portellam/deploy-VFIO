@@ -301,7 +301,7 @@
             "  [filename]\t\t\tReference specific file."
 
             "\n  Example:"
-            "    -f somefile.txt\t\tReference file 'somefile.txt' and begin parse."
+            "    -f some_file.txt\t\tReference file 'some_file.txt'."
 
             "\nSpecify the IOMMU groups to parse.\nOPTIONS:"
             "  -p, --parse [groups]\t\tParse given IOMMU groups."
@@ -324,7 +324,7 @@
 
             "\nHugepages ARGUMENTS:"
             "  2M, 1G\t\t\tHugepage size (2 MiB or 1 GiB)."
-            "  [1-?]\t\t\t\tAmount of Hugepages (maximum amount is total memory subtracted by 4 GiB)."
+            "  [1-x]\t\t\t\tAmount of Hugepages (maximum amount is total memory subtracted by 4 GiB)."
 
             "\n  Example:"
             "    1G 16\t\t\t1 GiB hugepage 16\t== 16 GiB allocated to hugepages."
@@ -333,13 +333,13 @@
             "\nMain setup OPTIONS:"
             "  -m, --multiboot\t\tCreate multiple GRUB entries for a Multi VGA VFIO setup."
             "  -s, --static\t\t\tCreate a single GRUB entry/Install a Single VGA VFIO setup."
-            "  -u, --uninstall-vfio-setup\tUndo an existing VFIO setup."
+            "  --uninstall-vfio-setup\tUndo an existing VFIO setup."
 
             "\nPost-setup OPTIONS:"
-            "  --audio-loopback\t\tInstall the audio loopback service.\tLoopback audio from Guest to Host (over Line-out to Line-in)."
-            "  --auto-xorg\t\t\tInstall auto-Xorg.\t\t\tSystem service to find and set a valid boot VGA device for Xorg."
+            "  --audio-loopback\t\tInstall the audio loopback service...\tLoopback audio from Guest to Host (over Line-out to Line-in)."
+            "  --auto-xorg\t\t\tInstall auto-Xorg...\t\t\tSystem service to find and set a valid boot VGA device for Xorg."
             "  --hooks\t\t\tInstall recommended Libvirt hooks."
-            "  --uninstall-post-setup\t\tUndo all changes made by post-setup."
+            "  --uninstall-post-setup\tUndo all changes made by post-setup."
 
             "\nauto-xorg ARGUMENTS:"
             "  first  [vendor]\t\tFind the first valid VGA device."

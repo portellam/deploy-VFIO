@@ -41,7 +41,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
           [filename]                    Reference specific file.
 
           Example:"
-            -f somefile.txt             Reference file 'somefile.txt' and begin parse.
+            -f some_file.txt             Reference file 'some_file.txt'.
 
         Specify the IOMMU groups to parse.\nOPTIONS:
           -p, --parse [groups]          Parse given IOMMU groups.
@@ -66,7 +66,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
 
         Hugepages ARGUMENTS: *
           2M, 1G                        Hugepage size (2 MiB or 1 GiB).
-          [1-?]                         Amount of Hugepages (maximum amount is total memory subtracted by 4 GiB).
+          [1-x]                         Amount of Hugepages (maximum amount is total memory subtracted by 4 GiB).
 
           Example:
             1G 16                       1 GiB hugepage * 16     == 16 GiB allocated to hugepages.
