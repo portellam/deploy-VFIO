@@ -15,45 +15,23 @@
 # </code>
 
 # <code>
-    function ShiftIfOptionIsArgument
-    {
-        while [[ ! -z "$1" ]]; do
-            shift
-            (( _ARGS_COUNT++ ))
-        done
-
-        return 0
-    }
-
     function GetOption
     {
         while [[ "$1" =~ ^- ]] \
             || [[ "$1" =~ ^-- ]]; do
             local -i _ARGS_COUNT=0
-            echo "1 == $1"
-            echo "_ARGS_COUNT == $_ARGS_COUNT"
             GetOptions "$@" || return 1
-            echo "_ARGS_COUNT == $_ARGS_COUNT"
-            echo
 
             for _COUNT in $( seq 0 "$_ARGS_COUNT" ); do
-                echo SHIFTING
                 shift
             done
         done
-
-        # if [[ "$1" == '--' ]]; then
-        #     shift
-        # fi
 
         return 0
     }
 
     function GetOptions
     {
-        echo "@ == $@"
-        echo
-
         case "$1" in
             "--help" )
                 return 1 ;;
@@ -144,6 +122,16 @@
         return 0
     }
 
+    function ShiftIfOptionIsArgument
+    {
+        while [[ ! -z "$1" ]]; do
+            shift
+            (( _ARGS_COUNT++ ))
+        done
+
+        return 0
+    }
+
     function GetArgsForAutoXorg
     {
         if [[ -z "$1" ]]; then
@@ -157,6 +145,11 @@
 
     function GetArgsForParseSelection
     {
+        if [[ -z "$1" ]]; then
+            Is_IOMMU_Group_ID_Valid "$1"
+            return 1
+        fi
+
         local -i _COUNT_DELIM=$( echo "$1" | grep -o "," | wc -l )
         (( _COUNT_DELIM++ ))
 
