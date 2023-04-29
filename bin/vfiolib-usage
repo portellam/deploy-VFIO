@@ -289,7 +289,7 @@
 
         declare -a _OUTPUT=(
             "Usage:\t\tbash deploy-vfio [OPTION] [ARGUMENTS]"
-            "Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization (PCI Passthrough)\n"
+            "Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization (PCI Passthrough).\n"
             "  --help\t\t\tPrint this help and exit."
 
             "\nSpecify the database to reference before parsing IOMMU groups.\nOPTIONS:"
@@ -330,10 +330,14 @@
             "    1G 16\t\t\t1 GiB hugepage 16\t== 16 GiB allocated to hugepages."
             "    2M 8192\t\t\t2 MiB hugepage 8912\t== 16 GiB allocated to hugepages."
 
-            "\nMain setup OPTIONS:"
-            "  -m, --multiboot\t\tCreate multiple GRUB entries for a Multi VGA VFIO setup."
-            "  -s, --static\t\t\tCreate a single GRUB entry/Install a Single VGA VFIO setup."
+            "\nVFIO setup OPTIONS:"
+            "  -m, --multiboot\t\tCreate multiple VFIO setups with corresponding GRUB menu entries."
+            "  -s, --static\t\t\tSingle VFIO setup. Specify method of setup (see ARGUMENTS)."
             "  --uninstall-vfio-setup\tUndo an existing VFIO setup."
+
+            "\nStatic VFIO setup ARGUMENTS:"
+            "  file\t\t\tAppend output to system configuration files."
+            "  grub\t\t\tAppend output to GRUB; single GRUB menu entry."
 
             "\nPost-setup OPTIONS:"
             "  --audio-loopback\t\tInstall the audio loopback service...\t\tLoopback audio from Guest to Host (over Line-out to Line-in)."

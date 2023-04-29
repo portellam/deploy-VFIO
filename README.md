@@ -24,10 +24,10 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
 ### Usage
 #### * Options that skip *all* user prompts.
 
-        Usage:          sudo bash deploy-vfio [OPTION] [ARGUMENTS]
+        Usage:        bash deploy-vfio [OPTION] [ARGUMENTS]
         Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization (PCI Passthrough).
 
-          --help                        Print this help and exit.
+          --help        Print this help and exit.
 
 #### Parse IOMMU groups
 
@@ -35,16 +35,16 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
         OPTIONS:
           -f, --file [filename]         Reference file database.
           -i, --internal                Reference local database.
-          -o, --online                  eference online database.
+          -o, --online                  Reference online database.
 
         ARGUMENTS:"
-          [filename]                    Reference specific file.
+          [filename]                    Reference specific file."
 
           Example:"
-            -f some_file.txt             Reference file 'some_file.txt'.
+            -f some_file.txt            Reference file 'some_file.txt'.
 
-        Specify the IOMMU groups to parse.\nOPTIONS:
-          -p, --parse [groups]          Parse given IOMMU groups.
+        Specify the IOMMU groups to parse.\nOPTIONS:"
+          -p, --parse [groups]          Parse given IOMMU groups."
 
         ARGUMENTS (delimited by comma):
           all                           Select all IOMMU groups.
@@ -56,17 +56,18 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
             no-vga,14                   Select group 14 and all non-VGA groups.
             1,14-16                     Select groups 1, 14, 15, and 16.
 
+
 #### Pre-setup
 
         Pre-setup OPTIONS: *
           -c, --cpu                     Allocate CPU.
           -e, --evdev                   Setup a virtual KVM switch.
           -h, --hugepages               Create static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s).
-          --uninstall-pre-setup         Undo all changes made by preliminary setup.
+          --uninstall-pre-setup         Undo changes made by preliminary setup.
 
         Hugepages ARGUMENTS: *
           2M, 1G                        Hugepage size (2 MiB or 1 GiB).
-          [1-x]                         Amount of Hugepages (maximum amount is total memory subtracted by 4 GiB).
+          [1-?]                         Amount of Hugepages (maximum amount is total memory subtracted by 4 GiB).
 
           Example:
             1G 16                       1 GiB hugepage * 16     == 16 GiB allocated to hugepages.
@@ -74,20 +75,20 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
 
 #### Main setup
 
-        Main setup OPTIONS: *
-          -m, --multiboot               Create multiple GRUB entries for a Multi VGA VFIO setup.
-          -s, --static                  Install a Single VGA VFIO setup.
+        VFIO setup OPTIONS:
+          -m, --multiboot               Create multiple VFIO setups with corresponding GRUB menu entries.
+          -s, --static                  Single VFIO setup. Specify method of setup (see ARGUMENTS).
           --uninstall-vfio-setup        Undo an existing VFIO setup.
 
-          Example:
-            -l -m                       Parse against local database, then deploy a Multi VGA VFIO setup.
-            -s -o                       Parse against online database, then deploy a Static VFIO setup.
+        Static VFIO setup ARGUMENTS:
+          file                          Append output to system configuration files.
+          grub                          Append output to GRUB; single GRUB menu entry.
 
 #### Post-setup
 
         Post-setup OPTIONS:
           --audio-loopback              Install the audio loopback service...           Loopback audio from Guest to Host (over Line-out to Line-in). *
-          --auto-xorg                   Install auto-Xorg...                            System service to find and set a valid Host boot VGA device for Xorg.
+          --auto-xorg                   Install auto-Xorg...                            System service to find and set a valid boot VGA device for Xorg.
           --hooks                       Install recommended Libvirt hooks.
           --zram-swap                   Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
           --uninstall-post-setup        Undo all changes made by post-setup. *
@@ -128,20 +129,19 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
     - Implementation is known as **Evdev (Event Devices)**.<sup>[4](#4)</sup>
     - **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 
-### Main setup <sub>(vfiolib-setup)</sub>
+### VFIO setup <sub>(vfiolib-setup)</sub>
 * **Multi-boot VFIO setup**
-    - Multiple VGA PCI Passthrough.
-    - Multiple GRUB menu entries.
-    - Best for systems with two or more PCI VGA devices.                      **More flexibility.**
-    - Choose a GRUB menu entry with a VGA device to boot from (excludes that VGA device's IOMMU group from VFIO).
+    - Create multiple VFIO setups with corresponding GRUB menu entries.     **More flexibility.**
+    - Best for systems with two or more PCI VGA devices.
+    - Select a GRUB menu entry with a VGA device to boot from (excludes that VGA device's IOMMU group from VFIO).
     - **Disclaimer:** For best results, use **auto-Xorg**.<sup>[5](#5)</sup>
 * **Static VFIO setup**
-    - Single VGA PCI Passthrough.
-    - Best for systems with integrated VGA device and one PCI VGA device.     **Less flexibility.**
+    - Single VFIO setup.                                                    **Less flexibility.**
+    - Specify method of setup:
+        - Append output to GRUB; single GRUB menu entry.
+        - Append output to system configuration files.
+    - Best for systems with integrated VGA device and one PCI VGA device.
     - Traditional PCI Passthrough/VFIO setup.
-    - Choose method of setup:
-        - GRUB
-        - system configuration files
 
 ### Post-setup  <sub>(vfiolib-extras)</sub>
 * **auto-Xorg** system service to find and set a valid Host boot VGA device for Xorg.<sup>[5](#5)</sup>
