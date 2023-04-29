@@ -244,9 +244,9 @@
 
     function GetListsFor_IOMMU_Group
     {
-        local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_LIST[$1]}"
-        local -a _DRIVER_LIST="${_DRIVER_BY_VALID_IOMMU_GROUP_LIST[$1]}"
-        local -a _HWID_LIST="${_HWID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
+        local -a _DRIVER_LIST="${_DRIVER_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
+        local -a _HWID_LIST="${_HWID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
         for _KEY in ${!_HWID_LIST[@]}; do
             local _CLASS=${_CLASS_LIST[$_KEY]}
@@ -274,7 +274,7 @@
 
     function GetListsFor_IOMMU_GroupWith_By_PCI_ID
     {
-        local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
         for _KEY in ${!_PCI_ID_LIST[@]}; do
             local _PCI_ID_DELIM=${_PCI_ID_LIST[$_KEY]}
@@ -311,9 +311,9 @@
 
     function GetListsFor_IOMMU_GroupWith_VGA
     {
-        local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_LIST[$1]}"
-        local -a _DRIVER_LIST="${_DRIVER_BY_VALID_IOMMU_GROUP_LIST[$1]}"
-        local -a _HWID_LIST="${_HWID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
+        local -a _DRIVER_LIST="${_DRIVER_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
+        local -a _HWID_LIST="${_HWID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
         for _KEY in ${!_HWID_LIST[@]}; do
             local _CLASS_DELIM=${_CLASS_LIST[$_KEY]}
@@ -359,7 +359,7 @@
 
     function GetListsFor_IOMMU_GroupWith_VGA_By_PCI_ID
     {
-        local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
         for _KEY in ${!_PCI_ID_LIST[@]}; do
             local _PCI_ID_DELIM=${_PCI_ID_LIST[$_KEY]}
@@ -403,7 +403,7 @@
 
     function GetNameFor_IOMMU_GroupWith_VGA
     {
-        local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
         for _KEY in ${!_PCI_ID_LIST[@]}; do
             local _PCI_ID_DELIM=${_PCI_ID_LIST[$_KEY]}
@@ -529,8 +529,8 @@
         if ! "$_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB"; then
             GetTempListForAnySetup
             IFS=$'\n'
-            _VFIOPCI_DRIVER_LIST+=( $( sort --uniq <<<"${_VGA_VFIOPCI_DRIVER_LIST[*]}" ) )
-            _VFIOPCI_DRIVER_LIST=( $( sort --uniq <<<"${_VFIOPCI_DRIVER_LIST[*]}" ) )
+            _VFIOPCI_DRIVER_LIST+=( $( sort -u <<<"${_VGA_VFIOPCI_DRIVER_LIST[*]}" ) )
+            _VFIOPCI_DRIVER_LIST=( $( sort -u <<<"${_VFIOPCI_DRIVER_LIST[*]}" ) )
             unset IFS
         fi
 

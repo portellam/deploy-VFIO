@@ -41,8 +41,7 @@
 
             # <remarks> Parse PCI for VFIO setup </remarks>
             "-f" | "--file" )
-                _DO_PARSE_DATABASE_FROM_FILE=true
-                GetFileForParseSelection "$2" || return 1;;
+                _DO_PARSE_DATABASE_FROM_FILE=true ;;
 
             "-i" | "--internal" )
                 _DO_PARSE_DATABASE_FROM_CACHE=true ;;
@@ -51,6 +50,7 @@
                 _DO_PARSE_DATABASE_FROM_INTERNET=true ;;
 
             "-p" | "--parse" )
+                Get_IOMMU_GroupList
                 GetArgsForParseSelection "$2" || return 1 ;;
 
             # <remarks> VFIO setup </remarks>
@@ -115,38 +115,32 @@
         return 0
     }
 
-    # TODO: continue work on here!
     function GetArgsForParseSelection
     {
-        local -i _COUNT_DELIM=$( echo "$1" | wc -w )
+        local -i _COUNT_DELIM=$( echo "$1" | grep -o "," | wc -l )
+        (( _COUNT_DELIM++ ))
 
-        while [[ "$_COUNT_DELIM" -gt 0 ]]; do
+        while [[ "$_COUNT_DELIM" -gt 0 ]] \
+            && ! "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL"; do
             local _ARG=$( echo "$1" | cut -d ',' -f "$_COUNT_DELIM" )
 
-            if "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL"; then
-                return 0
-            fi
-
-            if ! "$_DO_PARSE_DATABASE_FROM_FILE" \
+            if [[ ! -z "$_ARG" ]] \
+                && ( ! "$_DO_PARSE_DATABASE_FROM_FILE" \
                     || ( "$_DO_PARSE_DATABASE_FROM_FILE" \
-                    && [[ "$_ARG" != "$_DATABASE_FILE" ]] ); then
-                echo -e "_DO_PARSE_DATABASE_FROM_FILE ==\t\t\t\t'$_DO_PARSE_DATABASE_FROM_FILE'"
-                echo -e "_ARG ==\t\t\t\t\t'$_ARG'"
-
+                    && [[ "$_ARG" != "$_DATABASE_FILE" ]] )); then
                 case "$_ARG" in
                     "all" )
-                        AddAll_IOMMU_GroupsParseList
-                        AddValid_IOMMU_GroupsParseList || return 1
-                        _HAS_ARG_PARSE_IOMMU_SELECT_ALL=true ;;
+                        _HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
+                        AddValid_IOMMU_GroupsParseList || return 1 ;;
 
                     "no-vga" )
-                        AddAll_IOMMU_GroupsParseList
+                        _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true
                         AddValid_IOMMU_GroupsParseList || return 1
-                        _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true ;;
+                        _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=false ;;
 
                     * )
-                        Add_IOMMU_GroupsParseList "$_ARG" || return 1
-                        AddValid_IOMMU_GroupsParseList || return 1 ;;
+                        _HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
+                        AddSome_IOMMU_GroupsParseList "$_ARG" || return 1 ;;
                 esac
             fi
 

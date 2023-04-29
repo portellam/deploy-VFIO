@@ -15,7 +15,7 @@
 # </code>
 
 # <params>
-    declare -gA _CLASS_BY_VALID_IOMMU_GROUP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_LIST _HWID_BY_VALID_IOMMU_GROUP_LIST _NAME_BY_VALID_IOMMU_GROUP_LIST _PCI_ID_BY_VALID_IOMMU_GROUP_LIST
+    declare -gA _CLASS_BY_VALID_IOMMU_GROUP_ID_LIST _DRIVER_BY_VALID_IOMMU_GROUP_ID_LIST _HWID_BY_VALID_IOMMU_GROUP_ID_LIST _NAME_BY_VALID_IOMMU_GROUP_ID_LIST _PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST
     declare -gA _IOMMU_GROUP_DEVICE_LIST
     declare -ga _IOMMU_GROUP_ID_LIST_FOR_VFIO _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_HOST _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO
     declare -g _DEFAULT_DATABASE_FILE="/usr/local/etc/vfiolib_lspci_database"
@@ -31,11 +31,11 @@
             return 1
         fi
 
-        if [[ "${#_PCI_ID_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
-            || [[ "${#_CLASS_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
-            || [[ "${#_DRIVER_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
-            || [[ "${#_HWID_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
-            || [[ "${#_NAME_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]]; then
+        if [[ "${#_PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_CLASS_BY_VALID_IOMMU_GROUP_ID_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_DRIVER_BY_VALID_IOMMU_GROUP_ID_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_HWID_BY_VALID_IOMMU_GROUP_ID_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_NAME_BY_VALID_IOMMU_GROUP_ID_LIST[@]}" -eq 0 ]]; then
             echo -e "$_PREFIX_ERROR Some or all VFIO device lists are empty."
             return 1
         fi
@@ -252,13 +252,13 @@
 
     function PrintInfoFor_IOMMU_GroupAndSaveInfoToLists
     {
-        local -a _CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST _HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST _NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST _PCI_ID_BY_VALID_IOMMU_GROUP_TEMP_LIST
+        local -a _CLASS_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST _HWID_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST _NAME_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST _PCI_ID_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST
         local -i _IOMMU_GROUP_ID="$1"
 
         for _DEVICE_FULL_ID in ${_IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]}; do
             local -u _DEVICE_DOMAIN_ID=${_DEVICE_FULL_ID:5:2}
             local -u _DEVICE_PCI_ID=${_DEVICE_FULL_ID:5}
-            _PCI_ID_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_PCI_ID" )
+            _PCI_ID_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST+=( "$_DEVICE_PCI_ID" )
             _DEVICE_CLASS="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 2 )"
             _DEVICE_DRIVER=$( lspci -ks $_DEVICE_FULL_ID $_PARSE_OPTIONS | grep -i "driver" | cut -d " " -f 5 )
             _DEVICE_HWID=$( lspci -ns $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d " " -f 3 )
@@ -283,19 +283,19 @@
                 echo
 
                 if [[ ! -z "$_DEVICE_CLASS" ]]; then
-                    _CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_CLASS" )
+                    _CLASS_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST+=( "$_DEVICE_CLASS" )
                 fi
 
                 if [[ ! -z "$_DEVICE_DRIVER" ]]; then
-                    _DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_DRIVER" )
+                    _DRIVER_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST+=( "$_DEVICE_DRIVER" )
                 fi
 
                 if [[ ! -z "$_DEVICE_HWID" ]]; then
-                    _HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_HWID" )
+                    _HWID_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST+=( "$_DEVICE_HWID" )
                 fi
 
                 if [[ ! -z "$_DEVICE_NAME" ]]; then
-                    _NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_NAME" )
+                    _NAME_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST+=( "$_DEVICE_NAME" )
                 fi
             fi
 
@@ -308,11 +308,11 @@
             return 1
         fi
 
-        _CLASS_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
-        _DRIVER_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
-        _HWID_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
-        _NAME_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
-        _PCI_ID_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_PCI_ID_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
+        _CLASS_BY_VALID_IOMMU_GROUP_ID_LIST[$_IOMMU_GROUP_ID]=${_CLASS_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST[@]}
+        _DRIVER_BY_VALID_IOMMU_GROUP_ID_LIST[$_IOMMU_GROUP_ID]=${_DRIVER_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST[@]}
+        _HWID_BY_VALID_IOMMU_GROUP_ID_LIST[$_IOMMU_GROUP_ID]=${_HWID_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST[@]}
+        _NAME_BY_VALID_IOMMU_GROUP_ID_LIST[$_IOMMU_GROUP_ID]=${_NAME_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST[@]}
+        _PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[$_IOMMU_GROUP_ID]=${_PCI_ID_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST[@]}
         return 0
     }
 

@@ -26,6 +26,7 @@
 
         # <remarks> Gather arguments. </remarks>
         if ! SetOptions "$@"; then
+            echo
             GetUsage
             return "$?"
         fi
@@ -66,9 +67,10 @@
         echo -e "_DO_PARSE_DATABASE_FROM_FILE ==\t\t\t\t'$_DO_PARSE_DATABASE_FROM_FILE'"
         echo -e "_DATABASE_FILE ==\t\t\t\t\t'$_DATABASE_FILE'"
         echo -e "_DO_PARSE_DATABASE_FROM_INTERNET ==\t\t\t'$_DO_PARSE_DATABASE_FROM_INTERNET'"
-        echo -e "_HAS_ARG_PARSE_IOMMU_SELECT_ALL ==\t\t\t'$_HAS_ARG_PARSE_IOMMU_SELECT_ALL'"
-        echo -e "_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA ==\t\t'$_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA'"
-        echo -e "_HAS_ARG_PARSE_IOMMU_SELECT_SOME ==\t\t\t'$_HAS_ARG_PARSE_IOMMU_SELECT_SOME'"
+        # echo -e "_HAS_ARG_PARSE_IOMMU_SELECT_ALL ==\t\t\t'$_HAS_ARG_PARSE_IOMMU_SELECT_ALL'"
+        # echo -e "_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA ==\t\t'$_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA'"
+        # echo -e "_HAS_ARG_PARSE_IOMMU_SELECT_SOME ==\t\t\t'$_HAS_ARG_PARSE_IOMMU_SELECT_SOME'"
+        echo -e "_IOMMU_GROUP_ID_LIST_TO_USE ==\t\t\t\t'${_IOMMU_GROUP_ID_LIST_TO_USE[@]}'"
         echo
         echo
         echo -e "_ASK_TO_EXECUTE_PRE_SETUPS ==\t\t\t\t'$_ASK_TO_EXECUTE_PRE_SETUPS'"

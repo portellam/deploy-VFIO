@@ -13,82 +13,89 @@
 # </code>
 
 # <code>
-    function Add_IOMMU_GroupsParseList
+    function AddSome_IOMMU_GroupsParseList
     {
-        local -r _REGEX_FOR_RANGE_OF_NUMS='[0-9]+[-][0-9]+$'
+        local -a _IOMMU_GROUP_ID_LIST_SOME=( )
+        local -r _REGEX_FOR_RANGE_OF_NUMS='^[0-9]+[-][0-9]+$'
 
-        if ! echo "$1" | grep -E -q "$_REGEX_FOR_RANGE_OF_NUMS"; then
-            local -r _RANGE_START=$( echo "$1" | cut -d '-' -f 1 )
-            local -r _RANGE_STOP=$( echo "$1" | cut -d '-' -f 2 )
-            Is_IOMMU_Group_Valid "$_RANGE_START" || return 1
-            Is_IOMMU_Group_Valid "$_RANGE_STOP" || return 1
-            _IOMMU_GROUP_LIST_TO_PARSE+=( $( seq "$_RANGE_START" "$_RANGE_STOP" ) )
+        if echo "$1" | grep -E -q "$_REGEX_FOR_RANGE_OF_NUMS"; then
+            local -ir _RANGE_START=$( echo "$1" | cut -d '-' -f 1 )
+            local -ir _RANGE_STOP=$( echo "$1" | cut -d '-' -f 2 )
+            Is_IOMMU_Group_ID_Valid "$_RANGE_START" || return 1
+            Is_IOMMU_Group_ID_Valid "$_RANGE_STOP" || return 1
+            _IOMMU_GROUP_ID_LIST_SOME+=( $( seq "$_RANGE_START" "$_RANGE_STOP" ) )
 
-        elif ! echo "$1" | grep -E -q "$_REGEX_FOR_NUM"; then
-            _IOMMU_GROUP_LIST_TO_PARSE+=( "$1" )
+        elif echo "$1" | grep -E -q "$_REGEX_FOR_NUM"; then
+            Is_IOMMU_Group_ID_Valid "$1" || return 1
+            _IOMMU_GROUP_ID_LIST_SOME+=( "$1" )
 
         else
-            echo -e "$_PREFIX_ERROR Invalid IOMMU group ID value(s)."
+            echo -e "$_PREFIX_ERROR Invalid IOMMU group ID(s)."
             return 1
         fi
 
-        _HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
-        return 0
-    }
+        for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_SOME[@]}; do
+            Is_IOMMU_Group_ID_Valid "$_IOMMU_GROUP_ID" || return 1
+            local -a _DEVICE_LIST=( $( eval "$_GET_IOMMU_GROUP_DEVICE_LIST" ) )
+            local _HAS_EXTERNAL_PCI=false
 
-    function AddAll_IOMMU_GroupsParseList
-    {
-        _IOMMU_GROUP_LIST_TO_PARSE=( "${_IOMMU_GROUP_ID_LIST[@]}" )
-        return 0
-    }
+            for _DEVICE in ${_DEVICE_LIST[@]}; do
+                local -u _DEVICE_DOMAIN_ID=$( echo "$_DEVICE" | cut -d ':' -f 2 )
+                local -l _DEVICE_CLASS="$( lspci -m -s $_DEVICE $_PARSE_OPTIONS | cut -d '"' -f 2 )"
 
-    function AddThis_IOMMU_GroupToParseList
-    {
-        if "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL"; then
-            _IOMMU_GROUP_LIST_TO_PARSE+=( "$1" )
-        fi
+                if IsDeviceExternal "$_DEVICE_DOMAIN_ID"; then
+                    _HAS_EXTERNAL_PCI=true
+                    break
+                fi
+            done
 
-        if "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA" \
-            && ! IsDevice_VGA "$2"; then
-            _IOMMU_GROUP_LIST_TO_PARSE+=( "$1" )
-        fi
+            if ! "$_HAS_EXTERNAL_PCI"; then
+                echo -e "$_PREFIX_ERROR IOMMU group(s) contains no external PCI devices."
+                return 1
+            fi
+        done
 
+        _IOMMU_GROUP_ID_LIST_TO_USE+=( "${_IOMMU_GROUP_ID_LIST_SOME[@]}" )
+        SortListOf_IOMMU_Groups
         return 0
     }
 
     function AddValid_IOMMU_GroupsParseList
     {
-        local _THIS_IOMMU_GROUP_HAS_EXTERNAL_PCI=false
+        local -a _IOMMU_GROUP_ID_LIST_TEMP=( )
 
-        for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_LIST_TO_PARSE[@]}; do
-            local _DEVICE_LIST=$( eval "$_GET_IOMMU_GROUP_DEVICE_LIST" )
-            local _IOMMU_GROUP_HAS_EXTERNAL=false
+        for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST[@]}; do
+            local -a _DEVICE_LIST=( $( eval "$_GET_IOMMU_GROUP_DEVICE_LIST" ) )
+            local _THIS_IOMMU_GROUP_HAS_EXTERNAL_PCI=false
+            local _THIS_IOMMU_GROUP_HAS_VGA=false
 
             for _DEVICE in ${_DEVICE_LIST[@]}; do
                 local -u _DEVICE_DOMAIN_ID=$( echo "$_DEVICE" | cut -d ':' -f 2 )
-                local -l _DEVICE_CLASS="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 2 )"
+                local -l _DEVICE_CLASS="$( lspci -m -s $_DEVICE $_PARSE_OPTIONS | cut -d '"' -f 2 )"
 
                 if IsDeviceExternal "$_DEVICE_DOMAIN_ID"; then
                     _THIS_IOMMU_GROUP_HAS_EXTERNAL_PCI=true
-                fi
 
-                if "$_THIS_IOMMU_GROUP_HAS_EXTERNAL_PCI" \
-                    && AddThis_IOMMU_GroupToParseList "$_IOMMU_GROUP_ID" "$_DEVICE_CLASS"; then
+                    if "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL"; then
+                        _IOMMU_GROUP_ID_LIST_TEMP+=( "$_IOMMU_GROUP_ID" )
+                    fi
+
+                    if "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA" \
+                        && IsDevice_VGA "$_DEVICE_CLASS"; then
+                        _IOMMU_GROUP_ID_LIST_TEMP+=( "$_IOMMU_GROUP_ID" )
+                    fi
+
                     break
                 fi
             done
-
-            if "$_HAS_ARG_PARSE_IOMMU_SELECT_SOME" \
-                && ! "$_THIS_IOMMU_GROUP_HAS_EXTERNAL_PCI"; then
-                echo -e "$_PREFIX_ERROR IOMMU group value(s) contains no external PCI devices."
-                return 1
-            fi
         done
 
-        if [[ "${#_IOMMU_GROUP_LIST_TO_PARSE[@]}" -eq 0 ]]; then
+        if [[ "${#_IOMMU_GROUP_ID_LIST_TEMP[@]}" -eq 0 ]]; then
+            echo -e "$_PREFIX_ERROR List is empty."
             return 1
         fi
 
+        _IOMMU_GROUP_ID_LIST_TO_USE+=( "${_IOMMU_GROUP_ID_LIST_TEMP[@]}" )
         SortListOf_IOMMU_Groups
         return 0
     }
@@ -119,7 +126,7 @@
                 return 1 ;;
 
             * )
-                echo -e "Please answer '2M' or '1G'."
+                echo -e "Please a enter valid Hugepages size, '2M' or '1G'."
                 return 1 ;;
         esac
     }
@@ -136,7 +143,7 @@
         if ! echo "$1" | grep -E -q "$_REGEX_FOR_NUM" \
             || [[ "$1" -lt "$_HUGEPAGES_MIN_SIZE" ]] \
             || [[ "$1" -gt "$_HUGEPAGES_MAX_SIZE" ]]; then
-            echo -e "$_PREFIX_ERROR Please answer between '$_HUGEPAGES_MIN_SIZE' or '$_HUGEPAGES_MAX_SIZE'."
+            echo -e "$_PREFIX_ERROR Please enter a valid Hugepages amount, between $_HUGEPAGES_MIN_SIZE or $_HUGEPAGES_MAX_SIZE."
             return 1
         fi
 
@@ -170,6 +177,11 @@
         _HUGEPAGES_MAX_SIZE=$(( "$_HUGEPAGES_MAX_SIZE_IN_KBIT" - "$_HUGEPAGES_MIN_SIZE_IN_KBIT" ))
         _HUGEPAGES_MAX_SIZE=$(( "$_HUGEPAGES_MAX_SIZE" / "$_HUGEPAGES_SIZE_IN_KBIT" ))
         return 0
+    }
+
+    function Get_IOMMU_GroupList
+    {
+        declare -ga _IOMMU_GROUP_ID_LIST_TO_USE=( )
     }
 
     function Get_ZRAM_SwapSize
@@ -255,11 +267,11 @@
         return 1
     }
 
-    function Is_IOMMU_Group_Valid
+    function Is_IOMMU_Group_ID_Valid
     {
         if [[ "$1" -lt 0 ]] \
             || [[ "$1" -gt "${_IOMMU_GROUP_ID_LIST[-1]}" ]]; then
-            echo -e "$_PREFIX_ERROR Please answer between '0' or '${_IOMMU_GROUP_ID_LIST[-1]}\"."
+            echo -e "$_PREFIX_ERROR Please enter valid IOMMU group ID(s), between 0 and ${_IOMMU_GROUP_ID_LIST[-1]}."
             return 1
         fi
 
@@ -269,14 +281,14 @@
     function SortListOf_IOMMU_Groups
     {
         IFS=$'\n'
-        _IOMMU_GROUP_LIST_TO_PARSE=( $( uniq <<<"${_IOMMU_GROUP_LIST_TO_PARSE[*]}" ) )
-        _IOMMU_GROUP_LIST_TO_PARSE=( $( sort -h <<<"${_IOMMU_GROUP_LIST_TO_PARSE[*]}" ) )
+        _IOMMU_GROUP_ID_LIST_TO_USE=( $( sort -hu <<<"${_IOMMU_GROUP_ID_LIST_TO_USE[*]}" ) )
         unset IFS
         return 0
     }
 # </code>
 
 # <params>
+    # IFS=$'\n'
     declare -g _REGEX_FOR_NUM='^[0-9]+$'
 
     # <remarks> Pre-setup: Hugepages </remarks>
@@ -288,5 +300,7 @@
     # <remarks> Parse PCI for VFIO setup </remarks>
     declare -g _GET_IOMMU_GROUP_DEVICE_LIST='ls /sys/kernel/iommu_groups/$_IOMMU_GROUP_ID/devices'
     declare -g _REGEX_DOMAIN_ID='^[0-9A-F][1-9A-F]$'
-    declare -ga _IOMMU_GROUP_ID_LIST=$( ls -1v /sys/kernel/iommu_groups/ | sort -h )
+    declare -ga _IOMMU_GROUP_ID_LIST=( $( ls -1v /sys/kernel/iommu_groups/ | sort -h ) )
+    declare -ga _IOMMU_GROUP_ID_LIST_SOME=( )
+    # unset IFS
 # </params>
