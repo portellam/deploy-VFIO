@@ -1,10 +1,10 @@
-#### What works:
+### What works:
 * Everything minus...
     - Referencing the input from usage for selecting IOMMU groups. (Input is good, just not used.)
     - Ditto with auto-Xorg (input is unused).
     - Anything mentioned in **To Do** is not enabled/available.
 
-#### To Do:
+### To Do:
 * Trim fat, remove unnecessary repetitions and code.
 * Ask question to do each function, then execute after asking all questions (pre and post-setup).
 * Usage
@@ -22,10 +22,10 @@
 * Include visual guides?
 * Make script distro-agnostic?
 
-#### Known Bugs:
+### Known Bugs:
 * Extras:
     - Looking Glass fails to build. *
     - Scream fails to build. *
 
-#### Key
-* Moved to feature branch == *
+### Key
+Moved to feature branch == *
