@@ -48,15 +48,15 @@
 
             case "$_ANSWER" in
                 [Yy]* )
-                    _EXECUTE_GRUB_STATIC_SETUP=true
+                    _EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=true
                     return 0 ;;
 
                 [Nn]* )
-                    _EXECUTE_GRUB_STATIC_SETUP=false
+                    _EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=false
                     return 0 ;;
 
                 * )
-                    echo "Please answer \"Y\" or \"N\"." ;;
+                    echo "Please answer 'Y' or 'N'." ;;
             esac
         done
 
@@ -81,7 +81,7 @@
         DoesHostHave_VGA || return 1
         AskToSpecifyStaticSetup || return 1
 
-        if "$_EXECUTE_GRUB_STATIC_SETUP" \
+        if "$_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB" \
             && ( ! "$_HAS_EXECUTED_BACKUPS" \
             || ! GetParamsForAnySetup \
             || ! AreParamsNotEmptyForStaticSetup \
@@ -90,7 +90,7 @@
             return 1
         fi
 
-        if ! "$_EXECUTE_GRUB_STATIC_SETUP" \
+        if ! "$_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB" \
             && ( ! "$_HAS_EXECUTED_BACKUPS" \
             || ! GetParamsForAnySetup \
             || ! AreParamsNotEmptyForStaticSetup \
@@ -129,30 +129,30 @@
         function Main
         {
             while [[ "$?" -ne 1 ]]; do
-                if ! "$_EXECUTE_MULTIBOOT_SETUP" \
-                    && ! "$_EXECUTE_STATIC_SETUP" \
-                    && ! "$_EXECUTE_UNINSTALL_SETUP"; then
+                if ! "$_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB" \
+                    && ! "$_EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB" \
+                    && ! "$_EXECUTE_VFIO_SETUP_UNINSTALL"; then
                     for _TRIES_COUNT in $( seq 0 2 ); do
                         read -r -p "Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall/(N)o]: " _ANSWER
 
                         case "$_ANSWER" in
                             [Mm]* )
-                                _EXECUTE_MULTIBOOT_SETUP=true
+                                _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=true
                                 break ;;
 
                             [Ss]* )
-                                _EXECUTE_STATIC_SETUP=true
+                                _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB=true
                                 break ;;
 
                             [Uu]* )
-                                _EXECUTE_UNINSTALL_SETUP=true
+                                _EXECUTE_VFIO_SETUP_UNINSTALL=true
                                 break ;;
 
                             [Nn]* )
                                 return 255 ;;
 
                             * )
-                                echo "Please answer \"M\", \"S\", \"U\", or \"N\"." ;;
+                                echo "Please answer 'M', 'S', 'U', or 'N'." ;;
                         esac
                     done
 
@@ -163,15 +163,15 @@
                 fi
 
                 case true in
-                    "$_EXECUTE_MULTIBOOT_SETUP" )
+                    "$_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB" )
                         ExecuteParse || return 1
                         ExecuteMultibootSetup || return 1 ;;
 
-                    "$_EXECUTE_STATIC_SETUP" )
+                    "$_EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB" )
                         ExecuteParse || return 1
                         ExecuteStaticSetup || return 1 ;;
 
-                    "$_EXECUTE_UNINSTALL_SETUP" )
+                    "$_EXECUTE_VFIO_SETUP_UNINSTALL" )
                         ExecuteUninstallSetup || return 1 ;;
                 esac
 
@@ -244,9 +244,9 @@
 
     function GetListsFor_IOMMU_Group
     {
-        local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_LIST[$1]}"
-        local -a _DRIVER_LIST="${_DRIVER_BY_VALID_IOMMU_GROUP_LIST[$1]}"
-        local -a _HWID_LIST="${_HWID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
+        local -a _DRIVER_LIST="${_DRIVER_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
+        local -a _HWID_LIST="${_HWID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
         for _KEY in ${!_HWID_LIST[@]}; do
             local _CLASS=${_CLASS_LIST[$_KEY]}
@@ -274,7 +274,7 @@
 
     function GetListsFor_IOMMU_GroupWith_By_PCI_ID
     {
-        local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
         for _KEY in ${!_PCI_ID_LIST[@]}; do
             local _PCI_ID_DELIM=${_PCI_ID_LIST[$_KEY]}
@@ -311,9 +311,9 @@
 
     function GetListsFor_IOMMU_GroupWith_VGA
     {
-        local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_LIST[$1]}"
-        local -a _DRIVER_LIST="${_DRIVER_BY_VALID_IOMMU_GROUP_LIST[$1]}"
-        local -a _HWID_LIST="${_HWID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _CLASS_LIST="${_CLASS_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
+        local -a _DRIVER_LIST="${_DRIVER_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
+        local -a _HWID_LIST="${_HWID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
         for _KEY in ${!_HWID_LIST[@]}; do
             local _CLASS_DELIM=${_CLASS_LIST[$_KEY]}
@@ -344,7 +344,7 @@
                     _VGA_VFIOPCI_DRIVER_DELIM+="$_DRIVER,"
                 fi
 
-                if ! "$_EXECUTE_MULTIBOOT_SETUP" \
+                if ! "$_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB" \
                     && [[ ! -z "$_DRIVER" ]] \
                     && IsDriverNotOnIgnoreList "$_DRIVER"; then
                     _VGA_VFIOPCI_DRIVER_LIST+=( "$_DRIVER" )
@@ -359,7 +359,7 @@
 
     function GetListsFor_IOMMU_GroupWith_VGA_By_PCI_ID
     {
-        local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
         for _KEY in ${!_PCI_ID_LIST[@]}; do
             local _PCI_ID_DELIM=${_PCI_ID_LIST[$_KEY]}
@@ -388,7 +388,7 @@
                     _VGA_VFIOPCI_DRIVER_DELIM+="$_DRIVER,"
                 fi
 
-                if ! "$_EXECUTE_MULTIBOOT_SETUP" \
+                if ! "$_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB" \
                     && [[ ! -z "$_DRIVER" ]] \
                     && IsDriverNotOnIgnoreList "$_DRIVER"; then
                     _VGA_VFIOPCI_DRIVER_LIST+=( "$_DRIVER" )
@@ -403,7 +403,7 @@
 
     function GetNameFor_IOMMU_GroupWith_VGA
     {
-        local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_LIST[$1]}"
+        local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
         for _KEY in ${!_PCI_ID_LIST[@]}; do
             local _PCI_ID_DELIM=${_PCI_ID_LIST[$_KEY]}
@@ -499,7 +499,7 @@
         declare -g _VGA_VFIOPCI_DRIVER_DELIM=""
         declare -g _VGA_VFIOPCI_HWID_DELIM=""
 
-        if ! "$_EXECUTE_MULTIBOOT_SETUP"; then
+        if ! "$_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB"; then
             declare -ga _VFIOPCI_DRIVER_LIST=( )
             declare -ga _VGA_VFIOPCI_DRIVER_LIST=( )
         fi
@@ -508,7 +508,7 @@
             GetListsFor_IOMMU_Group "$_IOMMU_GROUP_ID" || return 1
         done
 
-        if ! "$_EXECUTE_MULTIBOOT_SETUP"; then
+        if ! "$_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB"; then
             for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[@]}; do
                 GetListsFor_IOMMU_GroupWith_VGA "$_IOMMU_GROUP_ID" || return 1
             done
@@ -526,11 +526,11 @@
             _VFIOPCI_HWID_DELIM="${_VFIOPCI_HWID_DELIM::-1}"
         fi
 
-        if ! "$_EXECUTE_MULTIBOOT_SETUP"; then
+        if ! "$_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB"; then
             GetTempListForAnySetup
             IFS=$'\n'
-            _VFIOPCI_DRIVER_LIST+=( $( sort --uniq <<<"${_VGA_VFIOPCI_DRIVER_LIST[*]}" ) )
-            _VFIOPCI_DRIVER_LIST=( $( sort --uniq <<<"${_VFIOPCI_DRIVER_LIST[*]}" ) )
+            _VFIOPCI_DRIVER_LIST+=( $( sort -u <<<"${_VGA_VFIOPCI_DRIVER_LIST[*]}" ) )
+            _VFIOPCI_DRIVER_LIST=( $( sort -u <<<"${_VFIOPCI_DRIVER_LIST[*]}" ) )
             unset IFS
         fi
 

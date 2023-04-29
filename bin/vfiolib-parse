@@ -9,18 +9,16 @@
 
 # <remarks> Using </remarks>
 # <code>
+    source vfiolib-calcs
     source vfiolib-common
     source vfiolib-usage
 # </code>
 
 # <params>
-    declare -g _DOMAIN_ID_REGEX='^[0-9A-F][1-9A-F]$'
-    declare -g _GET_IOMMU_GROUP_DEVICES='ls /sys/kernel/iommu_groups/$_IOMMU_GROUP_ID/devices'
-    declare -gA _CLASS_BY_VALID_IOMMU_GROUP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_LIST _HWID_BY_VALID_IOMMU_GROUP_LIST _NAME_BY_VALID_IOMMU_GROUP_LIST _PCI_ID_BY_VALID_IOMMU_GROUP_LIST
+    declare -gA _CLASS_BY_VALID_IOMMU_GROUP_ID_LIST _DRIVER_BY_VALID_IOMMU_GROUP_ID_LIST _HWID_BY_VALID_IOMMU_GROUP_ID_LIST _NAME_BY_VALID_IOMMU_GROUP_ID_LIST _PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST
     declare -gA _IOMMU_GROUP_DEVICE_LIST
-    declare -ga _IOMMU_GROUP_ID_LIST=$( ls -1v /sys/kernel/iommu_groups/ | sort -h )
     declare -ga _IOMMU_GROUP_ID_LIST_FOR_VFIO _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_HOST _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO
-    declare -g _DEFAULT_FILE_DATABASE="/usr/local/etc/vfiolib_lspci_database"
+    declare -g _DEFAULT_DATABASE_FILE="/usr/local/etc/vfiolib_lspci_database"
     declare -g _PARSE_OPTIONS=""
 # </params>
 
@@ -33,11 +31,11 @@
             return 1
         fi
 
-        if [[ "${#_PCI_ID_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
-            || [[ "${#_CLASS_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
-            || [[ "${#_DRIVER_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
-            || [[ "${#_HWID_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]] \
-            || [[ "${#_NAME_BY_VALID_IOMMU_GROUP_LIST[@]}" -eq 0 ]]; then
+        if [[ "${#_PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_CLASS_BY_VALID_IOMMU_GROUP_ID_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_DRIVER_BY_VALID_IOMMU_GROUP_ID_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_HWID_BY_VALID_IOMMU_GROUP_ID_LIST[@]}" -eq 0 ]] \
+            || [[ "${#_NAME_BY_VALID_IOMMU_GROUP_ID_LIST[@]}" -eq 0 ]]; then
             echo -e "$_PREFIX_ERROR Some or all VFIO device lists are empty."
             return 1
         fi
@@ -88,7 +86,6 @@
 
     function AskToSelectThis_IOMMU_Group
     {
-        Is_IOMMU_GroupIDValid "$1" || return 1
         local -i _IOMMU_GROUP_ID="$1"
         AskToExecuteOrSkip "Select IOMMU group '$_IOMMU_GROUP_ID'?"
         return "$?"
@@ -127,14 +124,14 @@
 
         # <remarks> Iterate list of IOMMU IDs. </remarks>
         for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST[@]}; do
-            local _DEVICES=$( eval "$_GET_IOMMU_GROUP_DEVICES" )
+            local _DEVICES=$( eval "$_GET_IOMMU_GROUP_DEVICE_LIST" )
 
             # <remarks> Iterate list of devices' full PCI ID. </remarks>
             for _DEVICE_FULL_ID in ${_DEVICES[@]}; do
                 local -u _DEVICE_DOMAIN_ID=$( echo "$_DEVICE_FULL_ID" | cut -d ':' -f 2 )
 
                 # <remarks> Save IOMMU group if it does contain devices with domains greater than 0 (non-motherboard devices). </remarks>
-                if echo "$_DEVICE_DOMAIN_ID" | grep -E -q "$_DOMAIN_ID_REGEX"; then
+                if echo "$_DEVICE_DOMAIN_ID" | grep -E -q "$_REGEX_DOMAIN_ID"; then
                     _IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]="$_DEVICES"
                     break
                 fi
@@ -161,18 +158,6 @@
         return 1
     }
 
-    function IsDevice_VGA
-    {
-        local -l _CLASS="$1"
-
-        case "$_CLASS" in
-            *"vga"* | *"graphic"* )
-                return 0 ;;
-        esac
-
-        return 1
-    }
-
     function IsDriverNotOnIgnoreList
     {
         local -l _DRIVER="$1"
@@ -185,49 +170,38 @@
         return 0
     }
 
-    function Is_IOMMU_GroupIDValid
-    {
-        if [[ -z "$1" ]] \
-            || ! [[ "$1" =~ ^[0-9]+$ ]]; then
-            echo -e "$_PREFIX_ERROR IOMMU group ID is not valid."
-            return 1
-        fi
-
-        return 0
-    }
-
     function ParseDatabaseFirstTimeAndSaveToFile
     {
-        if [[ ! -z "$_DEFAULT_FILE_DATABASE" ]] \
-            && [[ ! -e "$_DEFAULT_FILE_DATABASE" ]] \
-            && ! sudo mkdir -p $( dirname "$_DEFAULT_FILE_DATABASE" ) &> /dev/null; then
+        if [[ ! -z "$_DEFAULT_DATABASE_FILE" ]] \
+            && [[ ! -e "$_DEFAULT_DATABASE_FILE" ]] \
+            && ! sudo mkdir -p $( dirname "$_DEFAULT_DATABASE_FILE" ) &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to create directory for database file."
             return 1
         fi
 
-        if [[ ! -z "$_DEFAULT_FILE_DATABASE" ]] \
-            && [[ ! -e "$_DEFAULT_FILE_DATABASE" ]] \
-            && ! sudo touch "$_DEFAULT_FILE_DATABASE" &> /dev/null; then
+        if [[ ! -z "$_DEFAULT_DATABASE_FILE" ]] \
+            && [[ ! -e "$_DEFAULT_DATABASE_FILE" ]] \
+            && ! sudo touch "$_DEFAULT_DATABASE_FILE" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to create database file."
             return 1
         fi
 
         if "$_DO_PARSE_DATABASE_FROM_CACHE" \
-            && [[ ! -s "$_DEFAULT_FILE_DATABASE" ]] \
-            && ! lspci -x >> "$_DEFAULT_FILE_DATABASE" &> /dev/null; then
+            && [[ ! -s "$_DEFAULT_DATABASE_FILE" ]] \
+            && ! lspci -x >> "$_DEFAULT_DATABASE_FILE" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to reference local database and save to file."
             return 1
         fi
 
         if "$_DO_PARSE_DATABASE_FROM_INTERNET" \
-            && [[ ! -s "$_DEFAULT_FILE_DATABASE" ]] \
-            && ! lspci -q -x >> "$_DEFAULT_FILE_DATABASE" &> /dev/null; then
+            && [[ ! -s "$_DEFAULT_DATABASE_FILE" ]] \
+            && ! lspci -q -x >> "$_DEFAULT_DATABASE_FILE" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to reference online database and/or save to file."
             return 1
         fi
 
-        if [[ -s "$_DEFAULT_FILE_DATABASE" ]] \
-            && ! lspci -F "$_DEFAULT_FILE_DATABASE" &> /dev/null; then
+        if [[ -s "$_DEFAULT_DATABASE_FILE" ]] \
+            && ! lspci -F "$_DEFAULT_DATABASE_FILE" &> /dev/null; then
             echo -e "$_PREFIX_ERROR File is corrupt."
             return 1
         fi
@@ -237,7 +211,6 @@
 
     function PrintInfoFor_IOMMU_GroupOnly
     {
-        Is_IOMMU_GroupIDValid "$1" || return 1
         local -i _IOMMU_GROUP_ID="$1"
 
         for _DEVICE_FULL_ID in ${_IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]}; do
@@ -249,7 +222,7 @@
             _DEVICE_NAME="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 6 )"
             _DEVICE_VENDOR="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 4 )"
 
-            if echo "$_DEVICE_DOMAIN_ID" | grep -E -q "$_DOMAIN_ID_REGEX"; then
+            if echo "$_DEVICE_DOMAIN_ID" | grep -E -q "$_REGEX_DOMAIN_ID"; then
                 _IOMMU_GROUP_IS_VALID=true
                 echo -e "\tSlot ID:\t'$_DEVICE_PCI_ID'"
                 echo -e "\tVendor name:\t'$_DEVICE_VENDOR'"
@@ -279,21 +252,20 @@
 
     function PrintInfoFor_IOMMU_GroupAndSaveInfoToLists
     {
-        Is_IOMMU_GroupIDValid "$1" || return 1
-        local -a _CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST _HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST _NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST _PCI_ID_BY_VALID_IOMMU_GROUP_TEMP_LIST
+        local -a _CLASS_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST _DRIVER_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST _HWID_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST _NAME_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST _PCI_ID_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST
         local -i _IOMMU_GROUP_ID="$1"
 
         for _DEVICE_FULL_ID in ${_IOMMU_GROUP_DEVICE_LIST[$_IOMMU_GROUP_ID]}; do
             local -u _DEVICE_DOMAIN_ID=${_DEVICE_FULL_ID:5:2}
             local -u _DEVICE_PCI_ID=${_DEVICE_FULL_ID:5}
-            _PCI_ID_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_PCI_ID" )
+            _PCI_ID_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST+=( "$_DEVICE_PCI_ID" )
             _DEVICE_CLASS="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 2 )"
             _DEVICE_DRIVER=$( lspci -ks $_DEVICE_FULL_ID $_PARSE_OPTIONS | grep -i "driver" | cut -d " " -f 5 )
             _DEVICE_HWID=$( lspci -ns $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d " " -f 3 )
             _DEVICE_NAME="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 6 )"
             _DEVICE_VENDOR="$( lspci -ms $_DEVICE_FULL_ID $_PARSE_OPTIONS | cut -d '"' -f 4 )"
 
-            if echo "$_DEVICE_DOMAIN_ID" | grep -E -q "$_DOMAIN_ID_REGEX"; then
+            if echo "$_DEVICE_DOMAIN_ID" | grep -E -q "$_REGEX_DOMAIN_ID"; then
                 _IOMMU_GROUP_IS_VALID=true
                 echo -e "\tSlot ID:\t'$_DEVICE_PCI_ID'"
                 echo -e "\tVendor name:\t'$_DEVICE_VENDOR'"
@@ -311,19 +283,19 @@
                 echo
 
                 if [[ ! -z "$_DEVICE_CLASS" ]]; then
-                    _CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_CLASS" )
+                    _CLASS_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST+=( "$_DEVICE_CLASS" )
                 fi
 
                 if [[ ! -z "$_DEVICE_DRIVER" ]]; then
-                    _DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_DRIVER" )
+                    _DRIVER_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST+=( "$_DEVICE_DRIVER" )
                 fi
 
                 if [[ ! -z "$_DEVICE_HWID" ]]; then
-                    _HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_HWID" )
+                    _HWID_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST+=( "$_DEVICE_HWID" )
                 fi
 
                 if [[ ! -z "$_DEVICE_NAME" ]]; then
-                    _NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST+=( "$_DEVICE_NAME" )
+                    _NAME_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST+=( "$_DEVICE_NAME" )
                 fi
             fi
 
@@ -336,11 +308,11 @@
             return 1
         fi
 
-        _CLASS_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_CLASS_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
-        _DRIVER_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_DRIVER_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
-        _HWID_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_HWID_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
-        _NAME_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_NAME_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
-        _PCI_ID_BY_VALID_IOMMU_GROUP_LIST[$_IOMMU_GROUP_ID]=${_PCI_ID_BY_VALID_IOMMU_GROUP_TEMP_LIST[@]}
+        _CLASS_BY_VALID_IOMMU_GROUP_ID_LIST[$_IOMMU_GROUP_ID]=${_CLASS_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST[@]}
+        _DRIVER_BY_VALID_IOMMU_GROUP_ID_LIST[$_IOMMU_GROUP_ID]=${_DRIVER_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST[@]}
+        _HWID_BY_VALID_IOMMU_GROUP_ID_LIST[$_IOMMU_GROUP_ID]=${_HWID_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST[@]}
+        _NAME_BY_VALID_IOMMU_GROUP_ID_LIST[$_IOMMU_GROUP_ID]=${_NAME_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST[@]}
+        _PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[$_IOMMU_GROUP_ID]=${_PCI_ID_BY_VALID_IOMMU_GROUP_ID_TEMP_LIST[@]}
         return 0
     }
 
@@ -371,7 +343,7 @@
                     return 255 ;;
 
                 * )
-                    echo "Please answer \"F\", \"I\", \"O\", or \"N\"." ;;
+                    echo "Please answer 'F', 'I', 'O', or 'N'." ;;
             esac
         done
 
@@ -396,18 +368,18 @@
         if [[ ! -z "$_ANSWER" ]] \
             && [[ -e "$_ANSWER" ]] \
             && [[ -s "$_ANSWER" ]]; then
-            _FILE_DATABASE="$_ANSWER"
+            _DATABASE_FILE="$_ANSWER"
             return 0
         fi
 
-        _FILE_DATABASE="$_DEFAULT_FILE_DATABASE"
+        _DATABASE_FILE="$_DEFAULT_DATABASE_FILE"
 
-        if [[ ! -e "$_FILE_DATABASE" ]]; then
+        if [[ ! -e "$_DATABASE_FILE" ]]; then
             echo -e "$_PREFIX_ERROR File does not exist."
             return 1
         fi
 
-        if [[ ! -s "$_FILE_DATABASE" ]]; then
+        if [[ ! -s "$_DATABASE_FILE" ]]; then
             echo -e "$_PREFIX_ERROR File is empty."
             return 1
         fi
@@ -420,10 +392,10 @@
         _PARSE_OPTIONS=""
         local _FILE=""
 
-        if [[ ! -s "$_FILE_DATABASE" ]]; then
-            _FILE="$_FILE_DATABASE"
-        elif [[ ! -s "$_DEFAULT_FILE_DATABASE" ]]; then
-            _FILE="$_DEFAULT_FILE_DATABASE"
+        if [[ ! -s "$_DATABASE_FILE" ]]; then
+            _FILE="$_DATABASE_FILE"
+        elif [[ ! -s "$_DEFAULT_DATABASE_FILE" ]]; then
+            _FILE="$_DEFAULT_DATABASE_FILE"
         else
             return 1
         fi
