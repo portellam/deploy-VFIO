@@ -1,7 +1,7 @@
 ## Description
 Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machine with real hardware, isolated from your desktop (Host) computer. Multi-boot: Select a video device for Host at boot.
 
-## Status: See [TODO.md](https://github.com/portellam/deploy-vfio/tree/develop/TODO.md).
+## Status: Functional and [Developing](https://github.com/portellam/deploy-vfio/tree/develop). See [TODO.md](https://github.com/portellam/deploy-vfio/tree/develop/TODO.md).
 
 ## Why?
 * **Separation-of-Concerns**
