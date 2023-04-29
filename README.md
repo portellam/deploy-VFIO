@@ -40,11 +40,12 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
         ARGUMENTS: *
           [filename]                    Reference specific file.
 
-          Example:"
+          Example:
             -f some_file.txt            Reference file 'some_file.txt'.
 
-        Specify the IOMMU groups to parse.\nOPTIONS:"
-          -p, --parse [groups]          Parse given IOMMU groups."
+        Specify the IOMMU groups to parse.
+        OPTIONS:
+          -p, --parse [groups]          Parse given IOMMU groups.
 
         ARGUMENTS (delimited by comma): *
           all                           Select all IOMMU groups.
