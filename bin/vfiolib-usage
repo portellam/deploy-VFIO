@@ -83,10 +83,6 @@
                 _EXECUTE_VFIO_SETUP_UNINSTALL=true ;;
 
             # <remarks> Post-setup </remarks>
-            "--hooks" )
-                _ASK_TO_EXECUTE_POST_SETUPS=false
-                _EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS=true ;;
-
             "--audio-loopback" )
                 _ASK_TO_EXECUTE_POST_SETUPS=false
                 _EXECUTE_POST_SETUP_AUDIO_LOOPBACK=true ;;
@@ -96,6 +92,10 @@
                 _ASK_TO_EXECUTE_POST_SETUPS=false
                 _EXECUTE_POST_SETUP_AUTO_XORG=true
                 GetArgsForAutoXorg "$1" "$2" || return 1 ;;
+
+            "--hooks" )
+                _ASK_TO_EXECUTE_POST_SETUPS=false
+                _EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS=true ;;
 
             "--zram-swap" )
                 shift
