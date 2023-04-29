@@ -17,14 +17,15 @@
 # <code>
     function GetOption
     {
-        while [[ "$1" =~ ^- && "$1" != "--" ]]; do
+        while [[ "$1" =~ ^- ]] \
+            || [[ "$1" =~ ^-- ]]; do
+            local -i _ARGS_COUNT=0
             GetOptions "$@" || return 1
-            shift
-        done
 
-        if [[ "$1" == '--' ]]; then
-            shift
-        fi
+            for _COUNT in $( seq 0 "$_ARGS_COUNT" ); do
+                shift
+            done
+        done
 
         return 0
     }
@@ -34,6 +35,22 @@
         case "$1" in
             "--help" )
                 return 1 ;;
+
+            # <remarks> Parse PCI for VFIO setup </remarks>
+            "-f" | "--file" )
+                _DO_PARSE_DATABASE_FROM_FILE=true ;;
+
+            "-i" | "--internal" )
+                _DO_PARSE_DATABASE_FROM_CACHE=true ;;
+
+            "-o" | "--online" )
+                _DO_PARSE_DATABASE_FROM_INTERNET=true ;;
+
+            "-p" | "--parse" )
+                shift
+                Get_IOMMU_GroupList
+                GetArgsForParseSelection "$1" || return 1
+                ShiftIfOptionIsArgument "$1" ;;
 
             # <remarks> Pre-setup </remarks>
             "-c" | "--cpu" )
@@ -49,25 +66,11 @@
                 _ASK_TO_EXECUTE_PRE_SETUPS=false
                 GetArgsForHugepages "$1" "$2" || return 1
                 IsHostMemorySufficientForHugepages || return 1
-                _EXECUTE_PRE_SETUP_HUGEPAGES=true ;;
+                _EXECUTE_PRE_SETUP_HUGEPAGES=true
+                ShiftIfOptionIsArgument "$1" "$2" ;;
 
             "--uninstall-pre-setup" )
                 _EXECUTE_PRE_SETUP_UNINSTALL=true ;;
-
-            # <remarks> Parse PCI for VFIO setup </remarks>
-            "-f" | "--file" )
-                _DO_PARSE_DATABASE_FROM_FILE=true ;;
-
-            "-i" | "--internal" )
-                _DO_PARSE_DATABASE_FROM_CACHE=true ;;
-
-            "-o" | "--online" )
-                _DO_PARSE_DATABASE_FROM_INTERNET=true ;;
-
-            "-p" | "--parse" )
-                shift
-                Get_IOMMU_GroupList
-                GetArgsForParseSelection "$1" || return 1 ;;
 
             # <remarks> VFIO setup </remarks>
             "-m" | "--multiboot" )
@@ -77,7 +80,8 @@
                 shift
                 GetArgsForStatic_VFIO "$1" || return 1
                 _ASK_TO_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=false
-                _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB=true ;;
+                _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB=true
+                ShiftIfOptionIsArgument "$1" ;;
 
             "--uninstall-vfio-setup" )
                 _EXECUTE_VFIO_SETUP_UNINSTALL=true ;;
@@ -95,14 +99,16 @@
                 shift
                 _ASK_TO_EXECUTE_POST_SETUPS=false
                 _EXECUTE_POST_SETUP_AUTO_XORG=true
-                GetArgsForAutoXorg "$1" "$2" || return 1 ;;
+                GetArgsForAutoXorg "$1" "$2" || return 1
+                ShiftIfOptionIsArgument "$1" "$2" ;;
 
             "--zram-swap" )
                 shift
                 _ASK_TO_EXECUTE_POST_SETUPS=false
                 GetArgsFor_ZRAM_Swap "$1" "$2" || return 1
                 IsHostMemorySufficientForZramSwap || return 1
-                _EXECUTE_POST_SETUP_ZRAM_SWAP=true ;;
+                _EXECUTE_POST_SETUP_ZRAM_SWAP=true
+                ShiftIfOptionIsArgument "$1" "$2" ;;
 
             "--uninstall-post-setup" )
                 _EXECUTE_POST_SETUP_UNINSTALL=true ;;
@@ -112,6 +118,16 @@
                 PrintStatementInvalidOption "$1"
                 return 1 ;;
         esac
+
+        return 0
+    }
+
+    function ShiftIfOptionIsArgument
+    {
+        while [[ ! -z "$1" ]]; do
+            shift
+            (( _ARGS_COUNT++ ))
+        done
 
         return 0
     }
@@ -129,6 +145,11 @@
 
     function GetArgsForParseSelection
     {
+        if [[ -z "$1" ]]; then
+            Is_IOMMU_Group_ID_Valid "$1"
+            return 1
+        fi
+
         local -i _COUNT_DELIM=$( echo "$1" | grep -o "," | wc -l )
         (( _COUNT_DELIM++ ))
 
