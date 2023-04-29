@@ -269,7 +269,8 @@
 
     function Is_IOMMU_Group_ID_Valid
     {
-        if [[ "$1" -lt 0 ]] \
+        if [[ -z "$1" ]] \
+            || [[ "$1" -lt 0 ]] \
             || [[ "$1" -gt "${_IOMMU_GROUP_ID_LIST[-1]}" ]]; then
             echo -e "$_PREFIX_ERROR Please enter valid IOMMU group ID(s), between 0 and ${_IOMMU_GROUP_ID_LIST[-1]}."
             return 1
