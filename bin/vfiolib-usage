@@ -17,7 +17,21 @@
 # <code>
     function GetOption
     {
-        while [[ "$1" =~ ^- && "$1" != "--" ]]; do case "$1" in
+        while [[ "$1" =~ ^- && "$1" != "--" ]]; do
+            GetOptions "$@" || return 1
+            shift
+        done
+
+        if [[ "$1" == '--' ]]; then
+            shift
+        fi
+
+        return 0
+    }
+
+    function GetOptions
+    {
+        case "$1" in
             "--help" )
                 return 1 ;;
 
@@ -31,12 +45,13 @@
                 _EXECUTE_PRE_SETUP_EVDEV=true ;;
 
             "-h" | "--hugepages" )
+                shift
                 _ASK_TO_EXECUTE_PRE_SETUPS=false
-                GetArgsForHugepages "$2" "$3" || return 1
+                GetArgsForHugepages "$1" "$2" || return 1
                 IsHostMemorySufficientForHugepages || return 1
                 _EXECUTE_PRE_SETUP_HUGEPAGES=true ;;
 
-            "--uninstall-essentials" )
+            "--uninstall-pre-setup" )
                 _EXECUTE_PRE_SETUP_UNINSTALL=true ;;
 
             # <remarks> Parse PCI for VFIO setup </remarks>
@@ -50,19 +65,21 @@
                 _DO_PARSE_DATABASE_FROM_INTERNET=true ;;
 
             "-p" | "--parse" )
+                shift
                 Get_IOMMU_GroupList
-                GetArgsForParseSelection "$2" || return 1 ;;
+                GetArgsForParseSelection "$1" || return 1 ;;
 
             # <remarks> VFIO setup </remarks>
             "-m" | "--multiboot" )
                 _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=true ;;
 
             "-s" | "--static" )
-                GetArgsForStatic_VFIO "$2" || return 1
+                shift
+                GetArgsForStatic_VFIO "$1" || return 1
                 _ASK_TO_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=false
                 _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB=true ;;
 
-            "-u" | "--uninstall" )
+            "--uninstall-vfio-setup" )
                 _EXECUTE_VFIO_SETUP_UNINSTALL=true ;;
 
             # <remarks> Post-setup </remarks>
@@ -75,31 +92,26 @@
                 _EXECUTE_POST_SETUP_AUDIO_LOOPBACK=true ;;
 
             "--auto-xorg" )
+                shift
                 _ASK_TO_EXECUTE_POST_SETUPS=false
                 _EXECUTE_POST_SETUP_AUTO_XORG=true
-                GetArgsForAutoXorg "$2" "$3" || return 1 ;;
+                GetArgsForAutoXorg "$1" "$2" || return 1 ;;
 
             "--zram-swap" )
+                shift
                 _ASK_TO_EXECUTE_POST_SETUPS=false
-                GetArgsFor_ZRAM_Swap "$2" "$3" || return 1
+                GetArgsFor_ZRAM_Swap "$1" "$2" || return 1
                 IsHostMemorySufficientForZramSwap || return 1
                 _EXECUTE_POST_SETUP_ZRAM_SWAP=true ;;
 
-            "--uninstall-extras" )
+            "--uninstall-post-setup" )
                 _EXECUTE_POST_SETUP_UNINSTALL=true ;;
 
             # <remarks> Else </remarks>
-            "" )
-                ;;
-
             * )
                 PrintStatementInvalidOption "$1"
                 return 1 ;;
-        esac; shift; done
-
-        if [[ "$1" == '--' ]]; then
-            shift
-        fi
+        esac
 
         return 0
     }
@@ -276,8 +288,8 @@
         IFS=$'\n'
 
         declare -a _OUTPUT=(
-            "Usage:\t\tbash deploy-vfio [OPTION]... [ARGUMENTS]..."
-            "Deploy a VFIO setup to a Linux Host that supports Para-virtualization or PCI Passthrough.\n"
+            "Usage:\t\tbash deploy-vfio [OPTION] [ARGUMENTS]"
+            "Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization (PCI Passthrough)\n"
             "  --help\t\t\tPrint this help and exit."
 
             "\nSpecify the database to reference before parsing IOMMU groups.\nOPTIONS:"
@@ -308,7 +320,7 @@
             "  -c, --cpu\t\t\tAllocate CPU."
             "  -e, --evdev\t\t\tSetup a virtual KVM switch."
             "  -h, --hugepages\t\tCreate static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s)."
-            "  --uninstall-essentials\tUndo changes made by preliminary setup."
+            "  --uninstall-pre-setup\t\tUndo all changes made by pre-setup."
 
             "\nHugepages ARGUMENTS:"
             "  2M, 1G\t\t\tHugepage size (2 MiB or 1 GiB)."
@@ -321,12 +333,13 @@
             "\nMain setup OPTIONS:"
             "  -m, --multiboot\t\tCreate multiple GRUB entries for a Multi VGA VFIO setup."
             "  -s, --static\t\t\tCreate a single GRUB entry/Install a Single VGA VFIO setup."
-            "  -u, --uninstall\t\tUndo an existing VFIO setup."
+            "  -u, --uninstall-vfio-setup\tUndo an existing VFIO setup."
 
             "\nPost-setup OPTIONS:"
             "  --audio-loopback\t\tInstall the audio loopback service.\tLoopback audio from Guest to Host (over Line-out to Line-in)."
             "  --auto-xorg\t\t\tInstall auto-Xorg.\t\t\tSystem service to find and set a valid boot VGA device for Xorg."
             "  --hooks\t\t\tInstall recommended Libvirt hooks."
+            "  --uninstall-post-setup\t\tUndo all changes made by post-setup."
 
             "\nauto-xorg ARGUMENTS:"
             "  first  [vendor]\t\tFind the first valid VGA device."

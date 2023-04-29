@@ -24,30 +24,37 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
 ### Usage
 #### * Options that skip *all* user prompts.
 
-        Usage:          sudo bash deploy-vfio [OPTION]... [ARGUMENTS]...
+        Usage:          sudo bash deploy-vfio [OPTION] [ARGUMENTS]
         Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization (PCI Passthrough).
 
-          --help        Print this help and exit.
+          --help                        Print this help and exit.
 
-#### Parse IOMMU
+#### Parse IOMMU groups
 
-        Parse IOMMU groups and reference chosen database for the system's PCI devices.
-        OPTIONS: *
-          -f, --file [filename] Reference file database.
-          -i, --internal        Reference local database.
-          -o, --online          Reference online database.
+        Specify the database to reference before parsing IOMMU groups.
+        OPTIONS:
+          -f, --file [filename]         Reference file database.
+          -i, --internal                Reference local database.
+          -o, --online                  eference online database.
 
-        ARGUMENTS: *
-          [filename]            Reference specific file.
-          all                   Select all IOMMU groups.
-          no-vga                Select all IOMMU groups without VGA devices.
-          [x-y,z]               Select specific IOMMU groups (comma separated, or ranges).
+        ARGUMENTS:"
+          [filename]                    Reference specific file.
+
+          Example:"
+            -f somefile.txt             Reference file 'somefile.txt' and begin parse.
+
+        Specify the IOMMU groups to parse.\nOPTIONS:
+          -p, --parse [groups]          Parse given IOMMU groups.
+
+        ARGUMENTS (delimited by comma):
+          all                           Select all IOMMU groups.
+          no-vga                        Select all IOMMU groups without VGA devices.
+          [x]                           Select IOMMU group.
+          [x-y]                         Select IOMMU groups.
 
           Example:
-            -f somefile.txt     Reference file 'somefile.txt' and begin parse.
-            no-vga 14           Select group 14 and all non-VGA groups.
-            1,14-16             Select groups 1, 14, 15, and 16.
-
+            no-vga,14                   Select group 14 and all non-VGA groups.
+            1,14-16                     Select groups 1, 14, 15, and 16.
 
 #### Pre-setup
 
@@ -55,7 +62,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
           -c, --cpu                     Allocate CPU.
           -e, --evdev                   Setup a virtual KVM switch.
           -h, --hugepages               Create static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s).
-          --uninstall-essentials        Undo changes made by preliminary setup.
+          --uninstall-pre-setup         Undo all changes made by preliminary setup.
 
         Hugepages ARGUMENTS: *
           2M, 1G                        Hugepage size (2 MiB or 1 GiB).
@@ -70,7 +77,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
         Main setup OPTIONS: *
           -m, --multiboot               Create multiple GRUB entries for a Multi VGA VFIO setup.
           -s, --static                  Install a Single VGA VFIO setup.
-          -u, --uninstall               Undo an existing VFIO setup.
+          --uninstall-vfio-setup        Undo an existing VFIO setup.
 
           Example:
             -l -m                       Parse against local database, then deploy a Multi VGA VFIO setup.
@@ -79,27 +86,27 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
 #### Post-setup
 
         Post-setup OPTIONS:
-          --audio-loopback      Install the audio loopback service.     Loopback audio from Guest to Host (over Line-out to Line-in). *
-          --auto-xorg           Install auto-Xorg.                      System service to find and set a valid Host boot VGA device for Xorg.
-          --hooks               Install recommended Libvirt hooks.
-          --zram-swap           Create compressed (~ 2:1) RAM swap.     Reduce chances of memory exhaustion for Host.
-          --uninstall-extras    Undo changes made by post-setup. *
+          --audio-loopback              Install the audio loopback service.     Loopback audio from Guest to Host (over Line-out to Line-in). *
+          --auto-xorg                   Install auto-Xorg.                      System service to find and set a valid Host boot VGA device for Xorg.
+          --hooks                       Install recommended Libvirt hooks.
+          --zram-swap                   Create compressed (~ 2:1) RAM swap.     Reduce chances of memory exhaustion for Host.
+          --uninstall-post-setup        Undo all changes made by post-setup. *
 
         auto-xorg ARGUMENTS:
-          first  [vendor]       Find the first valid VGA device.
-          last   [vendor]       Find the last valid VGA device.
-          [sort] amd            Prefer AMD or ATI.
-          [sort] intel          Prefer Intel.
-          [sort] nvidia         Prefer NVIDIA.
-          [sort] other          Prefer any other brand.
+          first  [vendor]               Find the first valid VGA device.
+          last   [vendor]               Find the last valid VGA device.
+          [sort] amd                    Prefer AMD or ATI.
+          [sort] intel                  Prefer Intel.
+          [sort] nvidia                 Prefer NVIDIA.
+          [sort] other                  Prefer any other brand.
 
         zram-swap ARGUMENTS:
-          [fraction]            Set the fraction of total available memory.
-          force                 Force changes, even if zram-swap is allocated and in use. *
+          [fraction]                    Set the fraction of total available memory.
+          force                         Force changes, even if zram-swap is allocated and in use. *
 
           Example (assume a Host with 32 GiB of RAM):
-            1/4 force           Force changes and compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
-            1/8                 Compress 4 GiB of RAM, to create 8 GiB of swap, with 28 GiB free.
+            1/4 force                   Force changes and compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
+            1/8                         Compress 4 GiB of RAM, to create 8 GiB of swap, with 28 GiB free.
 
 #### * Options that skip *all* user prompts.
 
