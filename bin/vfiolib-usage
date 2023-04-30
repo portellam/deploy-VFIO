@@ -290,7 +290,7 @@
     {
         case "$1" in
             "force" )
-                _ARGS_FOR_ZRAM_SWAP_FORCE=true ;;
+                _HAS_ARG_ZRAM_SWAP_FORCE=true ;;
 
             * )
                 PrintStatementInvalidArgument "$1"
@@ -373,6 +373,7 @@
             "  [sort] other\t\t\tPrefer any other brand."
 
             "\nzram-swap ARGUMENTS:"
+            "  default\t\t\t\tCalculate fraction automatically."
             "  force\t\t\t\tForce changes, even if zram-swap is allocated and in use."
             "  [fraction]\t\t\tSet the fraction of total available memory."
 
@@ -446,7 +447,8 @@
     declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
     declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=false
     declare -g _HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
-    declare -g _ARGS_FOR_ZRAM_SWAP_FORCE=false
+    declare -g _HAS_ARG_ZRAM_SWAP_FORCE=false
+    declare -g _HAS_ARG_ZRAM_SWAP_DEFAULTS=false
     declare -g _HAS_ARG_ZRAM_SWAP_SET_FRACTION=false
     declare -g _HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU=false
 # </params>

@@ -54,9 +54,29 @@
 		{
 			local -r _FILE="/etc/default/zram-swap"
 			local -r _LINE_TO_MATCH="_zram_fraction="
-            local _FRACTION=""
+            local _FRACTION="$_ARGS_FOR_ZRAM_SWAP_FRACTION"
 
-            if ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
+            if ! "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
+                && ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
+                local -ir _MAX_TRIES=2
+
+                for _TRIES_COUNT in $( seq 0 "$_MAX_TRIES" ); do
+                    read -r -p "Set fraction of total memory for zram-swap to use (to calculate default, enter 'default'): " _ANSWER
+
+                    if Get_ZRAM_SwapSize "$_ANSWER"; then
+                        _FRACTION="$_ANSWER"
+                        break
+                    fi
+
+                    if [[ "$?" -ne 0 ]] \
+                        && [[ $_TRIES_COUNT -eq "$_MAX_TRIES" ]]; then
+                        return 1
+                    fi
+                done
+            fi
+
+            if "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
+                && ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
                 local -i _ZRAM_SWAP_AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY / 2 ))
                 local -i _DENOMINATOR=$( printf "%.0f" $( echo "scale=2;$_INT_MAX_MEMORY/$_ZRAM_SWAP_AVAILABLE_MEMORY" | bc ) )
 
@@ -73,14 +93,12 @@
                 _FRACTION="1/$_DENOMINATOR"
             fi
 
-            _FRACTION="$_ARGS_FOR_ZRAM_SWAP_FRACTION"
-
 			if ! sed -i '/'$_LINE_TO_MATCH'"*"/c\'$_LINE_TO_MATCH'"'$_FRACTION'"' "$_FILE"; then
 				echo -e "$_PREFIX_ERROR Failed to write output to zram-swap file."
 				return 1
 			fi
 
-			if ! "$_ARGS_FOR_ZRAM_SWAP_FORCE" \
+			if ! "$_HAS_ARG_ZRAM_SWAP_FORCE" \
                 && sudo swapon -v | grep zram &> /dev/null \
 				&& sudo swapon -v | grep zram &> /dev/null \
 				&& ! sudo swapon -v | grep zram | grep 0B &> /dev/null; then

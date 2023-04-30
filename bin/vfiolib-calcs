@@ -193,6 +193,10 @@
                 local -i _NUMERATOR=$( echo $1 | cut -d '/' -f1 )
                 local -i _DENOMINATOR=$( echo $1 | cut -d '/' -f2 ) ;;
 
+            "default" )
+                _HAS_ARG_ZRAM_SWAP_DEFAULTS=true
+                return 0 ;;
+
             * )
                 echo -e "$_PREFIX_ERROR Not a fraction."
                 return 1 ;;
