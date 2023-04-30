@@ -84,8 +84,7 @@
             "-s" | "--static" )
                 shift
                 GetArgsForStatic_VFIO "$1" || return 1
-                _ASK_TO_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=false
-                _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB=true
+                _ASK_TO_EXECUTE_VFIO_SETUP_STATIC=false
                 ShiftIfOptionIsArgument "$1" ;;
 
             "--uninstall-vfio-setup" )
@@ -143,8 +142,31 @@
             return 0
         fi
 
-        GetParseOrderForAutoXorg "$1" || GetVendorPreferenceForAutoXorg "$1" || return 1
-        GetParseOrderForAutoXorg "$2" || GetVendorPreferenceForAutoXorg "$2" || return 1
+        while [[ ! -z "$1" ]]; do
+            case "$1" in
+                "first" | "last" )
+                    if "$_HAS_ARG_AUTO_XORG_SORT_ORDER"; then
+                        return 1
+                    fi
+
+                    _HAS_ARG_AUTO_XORG_SORT_ORDER=true ;;
+
+                "amd" | "intel" | "nvidia" | "other" )
+                    if "$_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR"; then
+                        return 1
+                    fi
+
+                    _HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=true ;;
+
+                * )
+                    PrintStatementInvalidArgument "$1"
+                    return 1 ;;
+            esac
+
+            _ARGS_FOR_AUTO_XORG+=" --$1"
+            shift
+        done
+
         return 0
     }
 
@@ -196,11 +218,11 @@
 
         case "$1" in
             "grub" )
-                _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB_grub=true
+                _EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=true
                 return 0 ;;
 
             "file" )
-                _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB_file=true
+                _EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=false
                 return 0 ;;
         esac
 
@@ -267,46 +289,6 @@
         esac
 
         return 0
-    }
-
-    function GetParseOrderForAutoXorg
-    {
-        if "$_HAS_ARG_AUTO_XORG_SORT_ORDER"; then
-            return 1
-        fi
-
-        if [[ -z "$1" ]]; then
-            return 0
-        fi
-
-        case "$1" in
-            "first" | "last" )
-                _ARGS_FOR_AUTO_XORG+=" --$1"
-                return 0 ;;
-        esac
-
-        PrintStatementInvalidArgument "$1"
-        return 1
-    }
-
-    function GetVendorPreferenceForAutoXorg
-    {
-        if "$_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR"; then
-            return 1
-        fi
-
-        if [[ -z "$1" ]]; then
-            return 0
-        fi
-
-        case "$1" in
-            "amd" | "intel" | "nvidia" | "other" )
-                _ARGS_FOR_AUTO_XORG+="--$1"
-                return 0 ;;
-        esac
-
-        PrintStatementInvalidArgument "$1"
-        return 1
     }
 
     function GetUsage
@@ -432,7 +414,7 @@
     declare -g _ASK_TO_EXECUTE_POST_SETUPS=true
     declare -g _ASK_TO_EXECUTE_PRE_SETUPS=true
     declare -g _ASK_TO_EXECUTE_VFIO_SETUP=true
-    declare -g _ASK_TO_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=true
+    declare -g _ASK_TO_EXECUTE_VFIO_SETUP_STATIC=true
     declare -g _DO_PARSE_DATABASE_FROM_CACHE=false
     declare -g _DO_PARSE_DATABASE_FROM_FILE=false
     declare -g _DO_PARSE_DATABASE_FROM_INTERNET=false
@@ -445,9 +427,9 @@
     declare -g _EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS=false
     declare -g _EXECUTE_POST_SETUP_ZRAM_SWAP=false
     declare -g _EXECUTE_POST_SETUP_UNINSTALL=false
+    # declare -g _EXECUTE_VFIO_SETUP_DYNAMIC_WTIH_HOOKS=false
     declare -g _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=false
     declare -g _EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=true
-    declare -g _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB=false
     declare -g _EXECUTE_VFIO_SETUP_UNINSTALL=false
     declare -g _HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=false
     declare -g _HAS_ARG_AUTO_XORG_SORT_ORDER=false
