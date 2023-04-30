@@ -26,7 +26,7 @@
 
         # <remarks> Gather arguments. </remarks>
         if ! SetOptions "$@"; then
-            GetUsage
+            GetHelp
             return "$?"
         fi
 

@@ -22,7 +22,6 @@
             local -i _ARGS_COUNT=0
 
             if ! GetOptions "$@"; then
-                echo
                 return 1
             fi
 
@@ -41,8 +40,14 @@
                 GetUsage
                 exit 1 ;;
 
+            "-q" | "--quiet" )
+                # TODO: show only Y/N or multiple choice questions and success or fail statements.
+                echo ;;
+
             # <remarks> Parse PCI for VFIO setup </remarks>
             "-f" | "--file" )
+                shift
+                GetFileForParseSelection "$1" || return 1
                 _DO_PARSE_DATABASE_FROM_FILE=true ;;
 
             "-i" | "--internal" )
@@ -232,13 +237,8 @@
 
     function GetFileForParseSelection
     {
-        if ! "$_DO_PARSE_DATABASE_FROM_FILE"; then
-            return 0
-        fi
-
-        if "$_DO_PARSE_DATABASE_FROM_FILE" \
-            && ( [[ ! -e "$1" ]] \
-            || [[ ! -s "$1" ]] ); then
+        if [[ ! -e "$1" ]] \
+            || [[ ! -s "$1" ]]; then
             echo -e "$_PREFIX_ERROR File is not valid."
             return 1
         fi
@@ -277,6 +277,12 @@
         return 0
     }
 
+    function GetHelp
+    {
+        echo -e "Try 'sudo bash deploy-vfio --help' for usage."
+        return 0
+    }
+
     function GetOverrideArgsFor_ZRAM_Swap
     {
         case "$1" in
@@ -296,9 +302,10 @@
         IFS=$'\n'
 
         declare -a _OUTPUT=(
-            "Usage:\t\tbash deploy-vfio [OPTION] [ARGUMENTS]"
+            "Usage:\tbash deploy-vfio [OPTION] [ARGUMENTS]"
             "Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization (PCI Passthrough).\n"
             "  --help\t\t\tPrint this help and exit."
+            "  --quiet\t\t\tPrint only relevant questions and pass/fail statements; reduce verbosity."
 
             "\nSpecify the database to reference before parsing IOMMU groups.\nOPTIONS:"
             "  -f, --file [filename]\t\tReference file database."
