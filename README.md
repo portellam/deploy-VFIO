@@ -2,8 +2,7 @@
 ### Description:
 Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines, on your Linux computer. Includes many common-sense quality-of-life enhancements.
 
-### Status:
-#### Functional and [Developing](https://github.com/portellam/deploy-vfio/tree/develop) (see [TODO.md](https://github.com/portellam/deploy-vfio/tree/develop/TODO.md)).
+### Status: Functional and [Developing](https://github.com/portellam/deploy-vfio/tree/develop) (see [TODO.md](https://github.com/portellam/deploy-vfio/tree/develop/TODO.md)).
 
 ### Why?
 * **Separation of Concerns**
@@ -27,6 +26,8 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
     - Use **me_cleaner**.<sup>[1](#1)</sup>
 
 ### What is VFIO?
+Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.<sup>[2](#2)</sup>*
+
 | Description | URL  |
 | ----------- | ---- |
 | About VFIO  | [Link](https://www.kernel.org/doc/html/latest/driver-api/vfio.html) |
@@ -144,18 +145,18 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 #### Pre-setup  <sub>(vfiolib-essentials)</sub>
 * **Allocate CPU**
     - Reduce Host overhead, and improve both Host and Guest performance.
-    - **Statically** allocate of Host CPU cores (and/or threads).<sup>[2](#2)</sup>
+    - **Statically** allocate of Host CPU cores (and/or threads).<sup>[3](#3)</sup>
     - **Dynamically** allocate as a **Libvirt hook**.
 * **Allocate RAM**
     - Eliminate the need to defragment Host memory (RAM) before allocating Guest memory.
     - Reduce Host overhead, and improve both Host and Guest performance.
     - **Statically** allocate Host memory to Guests.
-    - Implementation is known as **Hugepages**.<sup>[3](#3)</sup>
+    - Implementation is known as **Hugepages**.<sup>[4](#4)</sup>
 * **Virtual KVM (Keyboard Video Mouse) switch**
     - Allow a user to swap a group of Input devices (as a whole) between active Guest(s) and Host.
     - Use the pre-defined macro (example: **'L-CTRL' + 'R-CTRL'**).
     - Create a virtual Keyboard-Video-Mouse switch.
-    - Implementation is known as **Evdev (Event Devices)**.<sup>[4](#4)</sup>
+    - Implementation is known as **Evdev (Event Devices)**.<sup>[5](#5)</sup>
     - **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 
 #### VFIO setup <sub>(vfiolib-setup)</sub>
@@ -164,7 +165,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
     - Default menu entry is without VFIO setup.
     - Best for systems with two or more PCI VGA devices.
     - Select a GRUB menu entry with a VGA device to boot from (excludes that VGA device's IOMMU group from VFIO).
-    - **Disclaimer:** For best results, use **auto-Xorg**.<sup>[5](#5)</sup>
+    - **Disclaimer:** For best results, use **auto-Xorg**.<sup>[6](#6)</sup>
 * **Static VFIO setup**
     - Single VFIO setup.                                                    **Less flexibility.**
     - Specify method of setup:
@@ -174,21 +175,21 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
     - Traditional PCI Passthrough/VFIO setup.
 
 #### Post-setup  <sub>(vfiolib-extras)</sub>
-* **auto-Xorg** system service to find and set a valid Host boot VGA device for Xorg.<sup>[5](#5)</sup>
+* **auto-Xorg** system service to find and set a valid Host boot VGA device for Xorg.<sup>[6](#6)</sup>
 * **Guest Audio Capture**
     - Useful for systems with multiple Audio devices.
     - Create an **Audio loopback** to output on the **Host's** Audio device **Line-Out**.
     - Listen on **Host** Audio device **Line-In** (from **Guest** PCI Audio device **Line-Out**).
     - For virtual implementation, see **Virtual Audio Capture**.
 * **Libvirt Hooks**
-    - Invoke **"hooks"** (scripts) for all or individual Guests.<sup>[6](#6)</sup>
+    - Invoke **"hooks"** (scripts) for all or individual Guests.<sup>[7](#7)</sup>
     - Switch display input (video output) at Guest start.
     - **Dynamically** allocate CPU cores and CPU scheduler.
     - **Libvirt-nosleep** system service(s) per Guest to prevent Host sleep while Guest is active.
 * **RAM as Compressed Swapfile/partition**
     - Reduce swapiness to existing Host swap devices, and reduce chances of Host memory exhaustion (given an event of memory over-allocation).
     - Create a compressed Swap device in Host memory, using the **lz4** algorithm **(compression ratio of about 2:1)**.
-    - Implementation is known as **zram-swap**.<sup>[7](#7)</sup>
+    - Implementation is known as **zram-swap**.<sup>[8](#8)</sup>
 
 ### References:
 #### [1]
@@ -196,22 +197,25 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 - <sub>**[me_cleaner, updated (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
 
 #### [2]
-- <sub>**[isolcpu (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub>
+- <sub>**[VFIO documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub>
 
 #### [3]
-- <sub>**[Hugepages (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
+- <sub>**[isolcpu (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub>
 
 #### [4]
-- <sub>**[Evdev (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
+- <sub>**[Hugepages (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
 
 #### [5]
-- <sub>**[auto-Xorg (GitHub)](https://github.com/portellam/auto-Xorg)**</sub>
+- <sub>**[Evdev (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
 
 #### [6]
+- <sub>**[auto-Xorg (GitHub)](https://github.com/portellam/auto-Xorg)**</sub>
+
+#### [7]
 - <sub>**[VFIO-Tools (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)**</sub>
 - <sub>**[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub>
 
-#### [7]
+#### [8]
 - <sub>**[zram-swap (GitHub)](https://github.com/foundObjects/zram-swap)**</sub>
 - <sub>**[lz4 (GitHub)](https://github.com/lz4/lz4)**</sub>
 - <sub>**[zram package (Debian)](https://wiki.debian.org/ZRam)**</sub>
