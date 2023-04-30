@@ -8,6 +8,7 @@
 * Pre-setup:
     - Evdev, save output to logfile, for use in VM XML.
 * VFIO setup:
+    - Add Dynamic setup (not static or multiboot); Add support for VFIO bind/unbinds.
     - Detect existing setup, and recommend update or uninstall to continue.
     - Multiboot, update existing setup, upon kernel update. ***
     - Multiboot, ability to set preferred menu entry (without using GRUB-customizer).
