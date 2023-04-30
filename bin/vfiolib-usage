@@ -308,7 +308,7 @@
             "Usage:\tbash deploy-vfio [OPTION] [ARGUMENTS]"
             "Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization (PCI Passthrough).\n"
             "  --help\t\t\tPrint this help and exit."
-            # "  --quiet\t\t\tPrint only relevant questions and pass/fail statements; reduce verbosity."
+            "  --quiet\t\t\tReduce verbosity; print only relevant questions and status statements."
 
             "\nSpecify the database to reference before parsing IOMMU groups.\nOPTIONS:"
             "  -f, --file [filename]\t\tReference file database."
