@@ -1,10 +1,11 @@
 # deploy-VFIO
-#### Description
+### Description:
 Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines, on your Linux computer. Includes many common-sense quality-of-life enhancements.
 
-#### Status: Functional and [Developing](https://github.com/portellam/deploy-vfio/tree/develop). See [TODO.md](https://github.com/portellam/deploy-vfio/tree/develop/TODO.md).
+### Status:
+#### Functional and [Developing](https://github.com/portellam/deploy-vfio/tree/develop) (see [TODO.md](https://github.com/portellam/deploy-vfio/tree/develop/TODO.md)).
 
-#### Why?
+### Why?
 * **Separation of Concerns**
     - Segregate your Workstation, Gaming, or School PC, as Virtual machines under one Host machine.
 * **Securely run a modern OS**
@@ -25,26 +26,28 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 * **If it's greater control of your privacy you want**
     - Use **me_cleaner**.<sup>[1](#1)</sup>
 
-#### What is VFIO?
-* about:            https://www.kernel.org/doc/html/latest/driver-api/vfio.html
-* VFIO community:   https://old.reddit.com/r/VFIO
-* guide:            https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
+### What is VFIO?
+| Description | URL  |
+| ----------- | ---- |
+| About VFIO  | [Link](https://www.kernel.org/doc/html/latest/driver-api/vfio.html) |
+| Guide       | [Link](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF) |
+| Reddit      | [Link](https://old.reddit.com/r/VFIO) |
 
-#### Compatibility:
-| Distribution Family | Supported |
-| ------------------- | --------- |
-| Arch                | No        |
-| Debian              | Yes       |
-| Gentoo              | No        |
-| Red Hat             | No        |
-| SUSE                | No        |
+### Compatibility:
+| Distribution Family | Supported? |
+| ------------------- | ---------- |
+| Arch                | No         |
+| Debian              | Yes        |
+| Gentoo              | No         |
+| Red Hat             | No         |
+| SUSE                | No         |
 
 ### How-to:
 #### To install
 
         sudo bash installer.bash
 
-### Usage
+### Usage:
 #### * Options that skip *all* user prompts.
 
         Usage:        bash deploy-vfio [OPTION] [ARGUMENTS]
