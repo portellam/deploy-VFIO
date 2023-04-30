@@ -3,7 +3,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 
 ## Status: Functional and [Developing](https://github.com/portellam/deploy-vfio/tree/develop). See [TODO.md](https://github.com/portellam/deploy-vfio/tree/develop/TODO.md).
 
-## Why?
+#### Why?
 * **Separation of Concerns**
     - Segregate your Workstation, Gaming, or School PC, as Virtual machines under one Host machine.
 * **Securely run a modern OS**
@@ -24,12 +24,12 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 * **If it's greater control of your privacy you want**
     - Use **me_cleaner**.<sup>[1](#1)</sup>
 
-## What is VFIO?
+#### What is VFIO?
 * about:            https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 * VFIO community:   https://old.reddit.com/r/VFIO
 * guide:            https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 
-## Compatibility
+#### Compatibility
 | Distribution Family | Supported |
 | ------------------- | --------- |
 | Arch                | No        |
@@ -38,7 +38,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 | Red Hat             | No        |
 | SUSE                | No        |
 
-## How-to
+### How-to
 #### To install, execute:
 
         sudo bash installer.bash
@@ -136,8 +136,8 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 
 #### * Options that skip *all* user prompts.
 
-## Features
-### Pre-setup  <sub>(vfiolib-essentials)</sub>
+### Features
+#### Pre-setup  <sub>(vfiolib-essentials)</sub>
 * **Allocate CPU**
     - Reduce Host overhead, and improve both Host and Guest performance.
     - **Statically** allocate of Host CPU cores (and/or threads).<sup>[2](#2)</sup>
@@ -154,7 +154,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
     - Implementation is known as **Evdev (Event Devices)**.<sup>[4](#4)</sup>
     - **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 
-### VFIO setup <sub>(vfiolib-setup)</sub>
+#### VFIO setup <sub>(vfiolib-setup)</sub>
 * **Multi-boot VFIO setup**
     - Create multiple VFIO setups with corresponding GRUB menu entries.     **More flexibility.**
     - Default menu entry is without VFIO setup.
@@ -169,7 +169,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
     - Best for systems with integrated VGA device and one PCI VGA device.
     - Traditional PCI Passthrough/VFIO setup.
 
-### Post-setup  <sub>(vfiolib-extras)</sub>
+#### Post-setup  <sub>(vfiolib-extras)</sub>
 * **auto-Xorg** system service to find and set a valid Host boot VGA device for Xorg.<sup>[5](#5)</sup>
 * **Guest Audio Capture**
     - Useful for systems with multiple Audio devices.
@@ -186,7 +186,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
     - Create a compressed Swap device in Host memory, using the **lz4** algorithm **(compression ratio of about 2:1)**.
     - Implementation is known as **zram-swap**.<sup>[7](#7)</sup>
 
-## References
+### References
 #### [1]
 - <sub>**[me_cleaner, original (GitHub)](https://github.com/corna/me_cleaner)**</sub>
 - <sub>**[me_cleaner, updated (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
@@ -214,6 +214,9 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 - <sub>**[zram package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub>
 - <sub>**[zram benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
 
-## Disclaimer
+### Disclaimer
 Use at your own risk.
-Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
+
+Please review your system's specifications and resources.
+
+Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
