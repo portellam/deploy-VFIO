@@ -20,6 +20,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 * **Securely run a legacy OS**
 Hardware Compatibility
 | OS         | Device type    | Brand and model                     |
+| ---------- | -------------- | ----------------------------------- |
 | Windows XP | Video/graphics | NVIDIA GTX 900-series or before     |
 | ---------- | -------------- | AMD Radeon HD 7000-series or before |
 | Windows 98 | Video/graphics | NVIDIA 7000-series GTX or before    |
