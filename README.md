@@ -1,4 +1,5 @@
-## Description
+# deploy-VFIO
+#### Description
 Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines, on your Linux computer. Includes many common-sense quality-of-life enhancements.
 
 #### Status: Functional and [Developing](https://github.com/portellam/deploy-vfio/tree/develop). See [TODO.md](https://github.com/portellam/deploy-vfio/tree/develop/TODO.md).
@@ -29,7 +30,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 * VFIO community:   https://old.reddit.com/r/VFIO
 * guide:            https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 
-#### Compatibility
+#### Compatibility:
 | Distribution Family | Supported |
 | ------------------- | --------- |
 | Arch                | No        |
@@ -38,8 +39,8 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 | Red Hat             | No        |
 | SUSE                | No        |
 
-### How-to
-#### To install, execute:
+### How-to:
+#### To install
 
         sudo bash installer.bash
 
@@ -136,7 +137,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 
 #### * Options that skip *all* user prompts.
 
-### Features
+### Features:
 #### Pre-setup  <sub>(vfiolib-essentials)</sub>
 * **Allocate CPU**
     - Reduce Host overhead, and improve both Host and Guest performance.
@@ -186,7 +187,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
     - Create a compressed Swap device in Host memory, using the **lz4** algorithm **(compression ratio of about 2:1)**.
     - Implementation is known as **zram-swap**.<sup>[7](#7)</sup>
 
-### References
+### References:
 #### [1]
 - <sub>**[me_cleaner, original (GitHub)](https://github.com/corna/me_cleaner)**</sub>
 - <sub>**[me_cleaner, updated (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
@@ -214,7 +215,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 - <sub>**[zram package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub>
 - <sub>**[zram benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
 
-### Disclaimer
+### Disclaimer:
 Use at your own risk.
 
 Please review your system's specifications and resources.
