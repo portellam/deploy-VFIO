@@ -374,7 +374,7 @@
 
             "\nzram-swap ARGUMENTS:"
             "  [fraction]\t\t\tSet the fraction of total available memory."
-            "  default\t\t\t\tAutomatically calculate the fraction of total available memory."
+            "  default\t\t\tAutomatically calculate the fraction of total available memory."
             "  force\t\t\t\tForce changes, even if zram-swap is allocated and in use."
 
             "\n  Example (assume a Host with 32 GiB of RAM):"
