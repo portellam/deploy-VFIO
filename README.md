@@ -19,11 +19,11 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
     - Choose multiple common-sense features that are known to experienced users (see [Features](#Features)).
 * **Securely run a legacy OS**
 Hardware Compatibility
-    |     OS     |  Device  type  |           Brand and model           |
-    | Windows XP | Video/graphics | NVIDIA GTX 900-series or before     |
-    | ---------- | -------------- | AMD Radeon HD 7000-series or before |
-    | Windows 98 | Video/graphics | NVIDIA 7000-series GTX or before    |
-    | ---------- | -------------- | any ATI models                      |
+|     OS     |  Device  type  |           Brand and model           |
+| Windows XP | Video/graphics | NVIDIA GTX 900-series or before     |
+| ---------- | -------------- | AMD Radeon HD 7000-series or before |
+| Windows 98 | Video/graphics | NVIDIA 7000-series GTX or before    |
+| ---------- | -------------- | any ATI models                      |
 * **If it's greater control of your privacy you want**
     - Use *me_cleaner.<sup>[1](#1)</sup>*
 
