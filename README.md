@@ -38,14 +38,14 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 * **If it's greater control of your privacy you want**
     - Use *me_cleaner.<sup>[2](#2)</sup>*
 
-### Compatibility:
-| Distribution Family | Supported? |
-| ------------------- | ---------- |
-| Arch                | No         |
-| Debian              | Yes        |
-| Gentoo              | No         |
-| Red Hat             | No         |
-| SUSE                | No         |
+### Linux Distribution Compatibility:
+| Distro Family | Supported? |
+| ------------- | ---------- |
+| Arch          | No         |
+| Debian        | Yes        |
+| Gentoo        | No         |
+| Red Hat       | No         |
+| SUSE          | No         |
 
 ### How-to:
 #### To install
