@@ -43,6 +43,10 @@
 
     function AskToSpecifyStaticSetup
     {
+        if ! "$_ASK_TO_EXECUTE_VFIO_SETUP_STATIC"; then
+            return 0
+        fi
+
         for _TRIES_COUNT in $( seq 0 2 ); do
             read -r -p "Write output to GRUB only? [Y/n]: " _ANSWER
 
