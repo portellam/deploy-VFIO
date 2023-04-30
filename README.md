@@ -30,7 +30,6 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
         Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization (PCI Passthrough).
 
           --help        Print this help and exit.
-          --quiet       Print only relevant questions and pass/fail statements; reduce verbosity.
 
 #### Parse IOMMU groups
 

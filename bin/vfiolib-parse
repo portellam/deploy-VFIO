@@ -112,10 +112,20 @@
             SetOptionsForParsingDatabase || return 1
         fi
 
-        GetDevicesForEach_IOMMU_Group || return 1
-        AskToSelectAllGroups || return 1
-        AreParsedListsEmpty || return 1
-        return 0
+        _IOMMU_GROUP_ID_LIST_TO_USE
+
+        if ! "$_HAS_ARG_PARSE_IOMMU"; then
+            GetDevicesForEach_IOMMU_Group || return 1
+            AskToSelectAllGroups || return 1
+        else
+            for _IOMMU_GROUP_ID in "${_IOMMU_GROUP_ID_LIST_TO_USE[@]}"; do
+                PrintInfoFor_IOMMU_GroupAndSaveInfoToLists "$_IOMMU_GROUP_ID" || return 1
+            done
+        fi
+
+
+        AreParsedListsEmpty
+        return "$?"
     }
 
     function GetDevicesForEach_IOMMU_Group

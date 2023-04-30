@@ -60,6 +60,7 @@
                 shift
                 Get_IOMMU_GroupList
                 GetArgsForParseSelection "$1" || return 1
+                _HAS_ARG_PARSE_IOMMU=true
                 ShiftIfOptionIsArgument "$1" ;;
 
             # <remarks> Pre-setup </remarks>
@@ -308,7 +309,7 @@
             "Usage:\tbash deploy-vfio [OPTION] [ARGUMENTS]"
             "Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization (PCI Passthrough).\n"
             "  --help\t\t\tPrint this help and exit."
-            "  --quiet\t\t\tPrint only relevant questions and pass/fail statements; reduce verbosity."
+            # "  --quiet\t\t\tPrint only relevant questions and pass/fail statements; reduce verbosity."
 
             "\nSpecify the database to reference before parsing IOMMU groups.\nOPTIONS:"
             "  -f, --file [filename]\t\tReference file database."
@@ -444,6 +445,7 @@
     declare -g _EXECUTE_VFIO_SETUP_UNINSTALL=false
     declare -g _HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=false
     declare -g _HAS_ARG_AUTO_XORG_SORT_ORDER=false
+    declare -g _HAS_ARG_PARSE_IOMMU=false
     declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
     declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=false
     declare -g _HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
