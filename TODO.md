@@ -18,6 +18,9 @@
 * Make script distro-agnostic?
 
 ### Known Bugs:
+* VFIO setup:
+    - Found behavior: Static setup fails expectedly but without warning or tripping Failure flag.
+    - Given: passing all IOMMU groups (with zero VGA devices for host).
 * Extras:
     - Looking Glass fails to build. *
     - Scream fails to build. *
