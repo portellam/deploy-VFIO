@@ -26,15 +26,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 * **Quality of Life**
     - Choose multiple common-sense features that are known to experienced users (see [Features](#Features)).
 * **Securely run a legacy OS**
-    - Hardware Compatibility:
-
-| OS         | Device type    | Brand and model                     |
-| ---------- | -------------- | ----------------------------------- |
-| Windows XP | Video/graphics | NVIDIA GTX 900-series or before     |
-|            |                | AMD Radeon HD 7000-series or before |
-| Windows 98 | Video/graphics | NVIDIA 7000-series GTX or before    |
-|            |                | any ATI models                      |
-
+    - See [hardware compatibility](#hardware compatibility).
 * **If it's greater control of your privacy you want**
     - Use *me_cleaner.<sup>[2](#2)</sup>*
 
@@ -197,11 +189,11 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 
 ### References:
 #### [1]
-- <sub>**[me_cleaner, original (GitHub)](https://github.com/corna/me_cleaner)**</sub>
-- <sub>**[me_cleaner, updated (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
+- <sub>**[VFIO documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub>
 
 #### [2]
-- <sub>**[VFIO documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub>
+- <sub>**[me_cleaner, original (GitHub)](https://github.com/corna/me_cleaner)**</sub>
+- <sub>**[me_cleaner, updated (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
 
 #### [3]
 - <sub>**[isolcpu (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub>
@@ -225,6 +217,16 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 - <sub>**[zram package (Debian)](https://wiki.debian.org/ZRam)**</sub>
 - <sub>**[zram package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub>
 - <sub>**[zram benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
+
+
+### Miscellaneous:
+#### Legacy OS hardware compatibility
+| OS         | Device type    | Brand and model                     |
+| ---------- | -------------- | ----------------------------------- |
+| Windows XP | Video/graphics | NVIDIA GTX 900-series or before     |
+|            |                | AMD Radeon HD 7000-series or before |
+| Windows 98 | Video/graphics | NVIDIA 7000-series GTX or before    |
+|            |                | any ATI models                      |
 
 ### Disclaimer:
 Use at your own risk.
