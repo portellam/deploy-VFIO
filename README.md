@@ -27,10 +27,10 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
 #### * Options that skip *all* user prompts.
 
         Usage:        bash deploy-vfio [OPTION] [ARGUMENTS]
-        Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization and hardware passthrough (PCI Passthrough).
+        Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization and hardware passthrough.
 
-          --help        Print this help and exit.
-          --quiet       Reduce verbosity; print only relevant questions and status statements.
+          -h, --help        Print this help and exit.
+          -q, --quiet       Reduce verbosity; print only relevant questions and status statements.
 
 #### Parse IOMMU groups
 
@@ -66,7 +66,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
         Pre-setup OPTIONS: *
           -c, --cpu                     Allocate CPU.
           -e, --evdev                   Setup a virtual KVM switch.
-          -h, --hugepages               Create static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s).
+          -H, --hugepages               Create static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s).
           --uninstall-pre-setup         Undo changes made by preliminary setup.
 
         Hugepages ARGUMENTS: *

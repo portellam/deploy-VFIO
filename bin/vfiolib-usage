@@ -36,7 +36,7 @@
     function GetOptions
     {
         case "$1" in
-            "--help" )
+            "-h" | "--help" )
                 GetUsage
                 exit 1 ;;
 
@@ -71,7 +71,7 @@
                 _ASK_TO_EXECUTE_PRE_SETUPS=false
                 _EXECUTE_PRE_SETUP_EVDEV=true ;;
 
-            "-h" | "--hugepages" )
+            "-H" | "--hugepages" )
                 shift
                 _ASK_TO_EXECUTE_PRE_SETUPS=false
                 GetArgsForHugepages "$1" "$2" || return 1
@@ -307,8 +307,8 @@
         declare -a _OUTPUT=(
             "Usage:\tbash deploy-vfio [OPTION] [ARGUMENTS]"
             "Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization and hardware passthrough.\n"
-            "  --help\t\t\tPrint this help and exit."
-            "  --quiet\t\t\tReduce verbosity; print only relevant questions and status statements."
+            "  -h, --help\t\t\tPrint this help and exit."
+            "  -q, --quiet\t\t\tReduce verbosity; print only relevant questions and status statements."
 
             "\nSpecify the database to reference before parsing IOMMU groups.\nOPTIONS:"
             "  -f, --file [filename]\t\tReference file database."
