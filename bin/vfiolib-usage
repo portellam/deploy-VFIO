@@ -306,7 +306,7 @@
 
         declare -a _OUTPUT=(
             "Usage:\tbash deploy-vfio [OPTION] [ARGUMENTS]"
-            "Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization (PCI Passthrough).\n"
+            "Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization and hardware passthrough.\n"
             "  --help\t\t\tPrint this help and exit."
             "  --quiet\t\t\tReduce verbosity; print only relevant questions and status statements."
 

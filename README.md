@@ -27,7 +27,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
 #### * Options that skip *all* user prompts.
 
         Usage:        bash deploy-vfio [OPTION] [ARGUMENTS]
-        Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization (PCI Passthrough).
+        Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization and hardware passthrough (PCI Passthrough).
 
           --help        Print this help and exit.
           --quiet       Reduce verbosity; print only relevant questions and status statements.
