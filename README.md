@@ -18,7 +18,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 * **Quality of Life**
     - Choose multiple common-sense features that are known to experienced users (see [Features](#Features)).
 * **Securely run a legacy OS**
-    - Hardware Compatibility
+Hardware Compatibility
     |     OS     |  Device  type  |           Brand and model           |
     | Windows XP | Video/graphics | NVIDIA GTX 900-series or before     |
     | ---------- | -------------- | AMD Radeon HD 7000-series or before |
