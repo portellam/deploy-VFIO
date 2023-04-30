@@ -199,7 +199,7 @@
         esac
 
         if ! [[ "$_NUMERATOR" =~ ^[0-9]+$ ]] \
-            || ! [ "$_DENOMINATOR" =~ ^[0-9]+$ ]; then
+            || ! [[ "$_DENOMINATOR" =~ ^[0-9]+$ ]]; then
             echo -e "$_PREFIX_ERROR Values are not numbers."
             return 1
         fi
