@@ -205,8 +205,8 @@
         fi
 
         if [[ "$_NUMERATOR" -lt "$_DENOMINATOR" ]] || [[ "$_DENOMINATOR" -gt 1 ]]; then
+            declare -g _ARGS_FOR_ZRAM_SWAP_FRACTION="$1"
             _HAS_ARG_ZRAM_SWAP_SET_FRACTION=true
-            declare -g _HAS_ARG_ZRAM_SWAP_FRACTION="$1"
             return 0
 
         elif [[ "$_DENOMINATOR" -eq 0 ]]; then
