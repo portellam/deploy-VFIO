@@ -16,7 +16,7 @@ _OPERATION="$2"
 function StartNosleepService
 {
     if ! systemctl start libvirt-nosleep@"$_DOMAIN_NAME" &> /dev/null; then
-        echo "$_PREFIX_PROMPT An error occured: Failed to start Nosleep service for Libvirt domain '$_DOMAIN_NAME'."
+        echo "$_PREFIX_PROMPT An error occured: Failed to start Nosleep service for Libvirt domain '$_DOMAIN_NAME'." >&2
         return 1
     fi
 
@@ -26,8 +26,8 @@ function StartNosleepService
 
 function StopNosleepService
 {
-    if ! systemctl start libvirt-nosleep@"$_DOMAIN_NAME" &> /dev/null; then
-        echo "$_PREFIX_PROMPT An error occured: Failed to stop Nosleep service for Libvirt domain '$_DOMAIN_NAME'."
+    if ! systemctl stop libvirt-nosleep@"$_DOMAIN_NAME" &> /dev/null; then
+        echo "$_PREFIX_PROMPT An error occured: Failed to stop Nosleep service for Libvirt domain '$_DOMAIN_NAME'." >&2
         return 1
     fi
 
