@@ -373,9 +373,9 @@
             "  [sort] other\t\t\tPrefer any other brand."
 
             "\nzram-swap ARGUMENTS:"
-            "  default\t\t\t\tCalculate fraction automatically."
-            "  force\t\t\t\tForce changes, even if zram-swap is allocated and in use."
             "  [fraction]\t\t\tSet the fraction of total available memory."
+            "  default\t\t\t\tAutomatically calculate the fraction of total available memory."
+            "  force\t\t\t\tForce changes, even if zram-swap is allocated and in use."
 
             "\n  Example (assume a Host with 32 GiB of RAM):"
             "    force 1/4\t\t\tCompress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free."

@@ -107,6 +107,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
 
         zram-swap ARGUMENTS:
           [fraction]                    Set the fraction of total available memory.
+          default                       Automatically calculate the fraction of total available memory.
           force                         Force changes, even if zram-swap is allocated and in use. *
 
           Example (assume a Host with 32 GiB of RAM):
