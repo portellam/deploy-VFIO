@@ -29,6 +29,15 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 * VFIO community:   https://old.reddit.com/r/VFIO
 * guide:            https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 
+## Compatibility
+| Distribution Family | Supported |
+| ------------------- | --------- |
+| Arch                | No        |
+| Debian              | Yes       |
+| Gentoo              | No        |
+| Red Hat             | No        |
+| SUSE                | No        |
+
 ## How-to
 #### To install, execute:
 
