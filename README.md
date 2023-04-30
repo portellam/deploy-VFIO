@@ -9,7 +9,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
     - Segregate your Workstation, Gaming, or School PC, as Virtual machines under one Host machine.
 * **Securely run a modern OS**
     - Reduce or eliminate the negative influences an untrusted operating system (OS) may have, by reducing its access or control of real hardware.
-    - Regain privacy and/or security from spyware OSes (example: Windows 10, 11, Macintosh).
+    - Regain privacy and/or security from spyware OSes (example: *Windows 10, 11, Macintosh*).
 * **Ease of use**
     - What is tedious becomes trivial; reduce the number of manual steps a user has to make.
     - Specify answers ahead of time or answer prompts step-by-step (see [Usage](#Usage)).
@@ -19,11 +19,11 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
     - Choose multiple common-sense features that are known to experienced users (see [Features](#Features)).
 * **Securely run a legacy OS**
     - For hardware passthrough, see below.
-    - **Video devices:** NVIDIA GTX 900-series, or AMD Radeon HD 7000-series (or before) (example: **Windows XP**).
-    - **Video devices:** NVIDIA 7000-series GTX (or before), or ATI (pre-AMD) (example: **Windows 98**).
-    - **Audio devices:** Creative Soundblaster for that authentic, 1990s-2000s experience (example: **Windows 98**).
+    - **Video devices:** NVIDIA GTX 900-series, or AMD Radeon HD 7000-series (or before) (example: *Windows XP*).
+    - **Video devices:** NVIDIA 7000-series GTX (or before), or ATI (pre-AMD) (example: *Windows 98*).
+    - **Audio devices:** Creative Soundblaster for that authentic, 1990s-2000s experience (example: *Windows 98*).
 * **If it's greater control of your privacy you want**
-    - Use **me_cleaner**.<sup>[1](#1)</sup>
+    - Use *me_cleaner.<sup>[1](#1)</sup>*
 
 ### What is VFIO?
 Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.<sup>[2](#2)</sup>*
@@ -146,17 +146,17 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 * **Allocate CPU**
     - Reduce Host overhead, and improve both Host and Guest performance.
     - **Statically** allocate of Host CPU cores (and/or threads).<sup>[3](#3)</sup>
-    - **Dynamically** allocate as a **Libvirt hook**.
+    - **Dynamically** allocate as a *Libvirt hook*.
 * **Allocate RAM**
     - Eliminate the need to defragment Host memory (RAM) before allocating Guest memory.
     - Reduce Host overhead, and improve both Host and Guest performance.
     - **Statically** allocate Host memory to Guests.
-    - Implementation is known as **Hugepages**.<sup>[4](#4)</sup>
+    - Implementation is known as *Hugepages*.<sup>[4](#4)</sup>
 * **Virtual KVM (Keyboard Video Mouse) switch**
     - Allow a user to swap a group of Input devices (as a whole) between active Guest(s) and Host.
-    - Use the pre-defined macro (example: **'L-CTRL' + 'R-CTRL'**).
+    - Use the pre-defined macro (example: *'L-CTRL' + 'R-CTRL'*).
     - Create a virtual Keyboard-Video-Mouse switch.
-    - Implementation is known as **Evdev (Event Devices)**.<sup>[5](#5)</sup>
+    - Implementation is known as *Evdev (Event Devices)*.<sup>[5](#5)</sup>
     - **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 
 #### VFIO setup <sub>(vfiolib-setup)</sub>
@@ -178,9 +178,9 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 * **auto-Xorg** system service to find and set a valid Host boot VGA device for Xorg.<sup>[6](#6)</sup>
 * **Guest Audio Capture**
     - Useful for systems with multiple Audio devices.
-    - Create an **Audio loopback** to output on the **Host's** Audio device **Line-Out**.
-    - Listen on **Host** Audio device **Line-In** (from **Guest** PCI Audio device **Line-Out**).
-    - For virtual implementation, see **Virtual Audio Capture**.
+    - Create an *Audio loopback* to output on the *Host* Audio device *Line-Out*.
+    - Listen on *Host* Audio device *Line-In* (from *Guest* PCI Audio device *Line-Out*).
+    - For virtual implementation, see *Virtual Audio Capture*.
 * **Libvirt Hooks**
     - Invoke **"hooks"** (scripts) for all or individual Guests.<sup>[7](#7)</sup>
     - Switch display input (video output) at Guest start.
@@ -188,8 +188,8 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
     - **Libvirt-nosleep** system service(s) per Guest to prevent Host sleep while Guest is active.
 * **RAM as Compressed Swapfile/partition**
     - Reduce swapiness to existing Host swap devices, and reduce chances of Host memory exhaustion (given an event of memory over-allocation).
-    - Create a compressed Swap device in Host memory, using the **lz4** algorithm **(compression ratio of about 2:1)**.
-    - Implementation is known as **zram-swap**.<sup>[8](#8)</sup>
+    - Create a compressed Swap device in Host memory, using the *lz4* algorithm *(compression ratio of about 2:1)*.
+    - Implementation is known as *zram-swap*.<sup>[8](#8)</sup>
 
 ### References:
 #### [1]
