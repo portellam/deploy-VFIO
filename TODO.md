@@ -9,7 +9,10 @@
     - Evdev, save output to logfile, for use in VM XML.
 * VFIO setup:
     - Detect existing setup, and recommend update or uninstall to continue.
-    - Update existing setup, upon kernel update. ***
+    - Multiboot, update existing setup, upon kernel update. ***
+    - Multiboot, ability to set preferred menu entry (without using GRUB-customizer).
+        - Ask user?
+        - Add usage option?
     - VFIO output, read/write from/to XML file for easier updating. *
 * Post-setup:
     - Create script or program to resume VM(s) from sleep?
