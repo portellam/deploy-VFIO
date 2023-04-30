@@ -136,6 +136,7 @@ Effortlessly deploy a VFIO setup (PCI passthrough). VFIO: Run any Virtual machin
 ### VFIO setup <sub>(vfiolib-setup)</sub>
 * **Multi-boot VFIO setup**
     - Create multiple VFIO setups with corresponding GRUB menu entries.     **More flexibility.**
+    - Default menu entry is without VFIO setup.
     - Best for systems with two or more PCI VGA devices.
     - Select a GRUB menu entry with a VGA device to boot from (excludes that VGA device's IOMMU group from VFIO).
     - **Disclaimer:** For best results, use **auto-Xorg**.<sup>[5](#5)</sup>
