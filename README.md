@@ -165,7 +165,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
     - Default menu entry is without VFIO setup.
     - Best for systems with two or more PCI VGA devices.
     - Select a GRUB menu entry with a VGA device to boot from (excludes that VGA device's IOMMU group from VFIO).
-    - **Disclaimer:** For best results, use **auto-Xorg**.<sup>[6](#6)</sup>
+    - **Disclaimer:** For best results, use *auto-Xorg*.<sup>[6](#6)</sup>
 * **Static VFIO setup**
     - Single VFIO setup.                                                    **Less flexibility.**
     - Specify method of setup:
