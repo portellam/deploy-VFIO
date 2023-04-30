@@ -263,7 +263,9 @@
 
     function IsDevice_VGA
     {
-        case "$1" in
+        local -l _CLASS="$1"
+
+        case "$_CLASS" in
             *"vga"* | *"graphic"* )
                 return 0 ;;
         esac

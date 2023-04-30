@@ -41,8 +41,7 @@
                 exit 1 ;;
 
             "-q" | "--quiet" )
-                # TODO: show only Y/N or multiple choice questions and success or fail statements.
-                echo ;;
+                _IS_QUIET=true ;;
 
             # <remarks> Parse PCI for VFIO setup </remarks>
             "-f" | "--file" )
@@ -453,4 +452,5 @@
     declare -g _HAS_ARG_ZRAM_SWAP_DEFAULTS=false
     declare -g _HAS_ARG_ZRAM_SWAP_SET_FRACTION=false
     declare -g _HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU=false
+    declare -g _IS_QUIET=false
 # </params>

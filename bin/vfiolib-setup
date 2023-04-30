@@ -119,12 +119,8 @@
 
     function ExecuteUpdateAfterSetup
     {
-        if ! sudo update-grub \
-            || ! sudo update-initramfs -u -k all; then
-            echo -e "$_PREFIX_ERROR Failed to update system configuration."
-            return 1
-        fi
-
+        Update_GRUB || return 1
+        UpdateInitramfs || return 1
         return 0
     }
 
@@ -132,6 +128,10 @@
     {
         function Main
         {
+            if "$_ASK_TO_EXECUTE_VFIO_SETUP"; then
+                echo
+            fi
+
             while [[ "$?" -ne 1 ]]; do
                 if "$_ASK_TO_EXECUTE_VFIO_SETUP"; then
                     for _TRIES_COUNT in $( seq 0 2 ); do
@@ -183,9 +183,10 @@
             return "$?"
         }
 
-        echo
+        local _OUTPUT="Executing VFIO setup...\t"
+        PrintSuffixWait "$_OUTPUT"
         Main
-        PrintSuffixPassOrFail "Executing VFIO setup...\t"
+        PrintSuffixPassOrFail "$_OUTPUT"
         return "$_LAST_EXIT_CODE"
     }
 
@@ -543,7 +544,6 @@
     {
         GetListsFor_IOMMU_GroupWith_VGA "$1" || return 1
         GetTempListForAnySetup
-
         declare -g _LINE_GRUB_CMDLINE_TEMP=""
         _LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=$_THIS_DRIVER_DELIM "
         _LINE_GRUB_CMDLINE_TEMP+="pci_stub.ids=$_THIS_PCISTUB_HWID_DELIM "
@@ -605,6 +605,24 @@
         fi
 
         return 0
+    }
+
+    function Update_GRUB
+    {
+        local _OUTPUT="Updating GRUB...\t"
+        PrintSuffixWait "$_OUTPUT"
+        sudo update-grub &> /dev/null
+        PrintSuffixPassOrFail "$_OUTPUT"
+        return "$?"
+    }
+
+    function UpdateInitramfs
+    {
+        local _OUTPUT="Updating Initramfs...\t"
+        PrintSuffixWait "$_OUTPUT"
+        sudo update-initramfs -u -k all &> /dev/null
+        PrintSuffixPassOrFail "$_OUTPUT"
+        return "$?"
     }
 
     function WriteFilesFor_GRUB_StaticSetup

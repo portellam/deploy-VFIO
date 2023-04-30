@@ -47,37 +47,55 @@
     {
         for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST[@]}; do
             local _DO_PRINT=false
-            local _HAS_ASKED=false
+            local _DO_SELECT_THIS_IOMMU_GROUP=false
+            local _ARG_PARSE_LIST_CONTAINS_THIS_IOMMU_GROUP=false
             declare -g _IOMMU_GROUP_HAS_VGA=false
             declare -g _IOMMU_GROUP_IS_VALID=false
-            PrintInfoFor_IOMMU_GroupAndSaveInfoToLists "$_IOMMU_GROUP_ID" && _DO_PRINT=true
 
-            if "$_DO_PRINT" \
-                && AskToSelectThis_IOMMU_Group "$_IOMMU_GROUP_ID"; then
-                _HAS_ASKED=true
+            if "$_HAS_ARG_PARSE_IOMMU"; then
+                PrintInfoFor_IOMMU_GroupAndSaveInfoToLists "$_IOMMU_GROUP_ID" &> /dev/null && _DO_PRINT=true
+
+            else
+                PrintInfoFor_IOMMU_GroupAndSaveInfoToLists "$_IOMMU_GROUP_ID" && _DO_PRINT=true
             fi
 
-            if "$_DO_PRINT" \
-                && "$_HAS_ASKED" \
-                && ! "$_IOMMU_GROUP_HAS_VGA"; then
-                _IOMMU_GROUP_ID_LIST_FOR_VFIO+=( "$_IOMMU_GROUP_ID" )
-            fi
+            if "$_HAS_ARG_PARSE_IOMMU"; then
+                IFS=$'\n'
 
-            if "$_DO_PRINT" \
-                && "$_HAS_ASKED" \
-                && "$_IOMMU_GROUP_HAS_VGA"; then
-                _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO+=( "$_IOMMU_GROUP_ID" )
-            fi
+                if echo "${_IOMMU_GROUP_ID_LIST_TO_USE[*]}" | grep -qFx "$_IOMMU_GROUP_ID"; then
+                    _ARG_PARSE_LIST_CONTAINS_THIS_IOMMU_GROUP=true
+                fi
 
-            if (( "$_DO_PRINT" \
-                && "$_HAS_ASKED" ) \
-                || ! "$_IOMMU_GROUP_IS_VALID" ) \
-                && "$_IOMMU_GROUP_HAS_VGA"; then
-                _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_HOST+=( "$_IOMMU_GROUP_ID" )
+                unset IFS
             fi
 
             if "$_DO_PRINT"; then
-                echo
+                if "$_HAS_ARG_PARSE_IOMMU" \
+                    && "$_ARG_PARSE_LIST_CONTAINS_THIS_IOMMU_GROUP"; then
+                    _DO_SELECT_THIS_IOMMU_GROUP=true
+                fi
+
+                if ! "$_HAS_ARG_PARSE_IOMMU" \
+                    && AskToSelectThis_IOMMU_Group "$_IOMMU_GROUP_ID"; then
+                    _DO_SELECT_THIS_IOMMU_GROUP=true
+                    echo
+                fi
+
+                if "$_DO_SELECT_THIS_IOMMU_GROUP" \
+                    && ! "$_IOMMU_GROUP_HAS_VGA"; then
+                    _IOMMU_GROUP_ID_LIST_FOR_VFIO+=( "$_IOMMU_GROUP_ID" )
+                fi
+
+                if "$_DO_SELECT_THIS_IOMMU_GROUP" \
+                    && "$_IOMMU_GROUP_HAS_VGA"; then
+                    _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO+=( "$_IOMMU_GROUP_ID" )
+                fi
+
+                if ( "$_DO_SELECT_THIS_IOMMU_GROUP" \
+                    || ! "$_IOMMU_GROUP_IS_VALID" ) \
+                    && "$_IOMMU_GROUP_HAS_VGA"; then
+                    _IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_HOST+=( "$_IOMMU_GROUP_ID" )
+                fi
             fi
         done
 
@@ -103,7 +121,10 @@
 
     function ExecuteParse
     {
-        echo
+        if ! "$_HAS_ARG_PARSE_IOMMU"; then
+            echo
+        fi
+
         SelectMethodToParseDatabase || return 1
         ParseDatabaseFirstTimeAndSaveToFile || return 1
 
@@ -112,18 +133,8 @@
             SetOptionsForParsingDatabase || return 1
         fi
 
-        _IOMMU_GROUP_ID_LIST_TO_USE
-
-        if ! "$_HAS_ARG_PARSE_IOMMU"; then
-            GetDevicesForEach_IOMMU_Group || return 1
-            AskToSelectAllGroups || return 1
-        else
-            for _IOMMU_GROUP_ID in "${_IOMMU_GROUP_ID_LIST_TO_USE[@]}"; do
-                PrintInfoFor_IOMMU_GroupAndSaveInfoToLists "$_IOMMU_GROUP_ID" || return 1
-            done
-        fi
-
-
+        GetDevicesForEach_IOMMU_Group || return 1
+        AskToSelectAllGroups || return 1
         AreParsedListsEmpty
         return "$?"
     }

@@ -30,8 +30,6 @@
             return "$?"
         fi
 
-        Debug
-
         if "$_FLAG_DO_SYSTEM_CHECK" \
             && ! GetLinuxDistro \
             && ! IsSystemSupported; then
@@ -49,61 +47,13 @@
         fi
 
         ExecuteEssentials
-        ExecuteSetup
+        echo; ExecuteSetup
 
         if "$_FLAG_DO_EXECUTE_EXTRAS"; then
-            ExecuteExtras
+            echo; ExecuteExtras
         fi
 
         return 0
-    }
-
-    function Debug
-    {
-        echo "DEBUG"
-        echo
-        echo -e "_DO_PARSE_DATABASE_FROM_CACHE ==\t\t\t'$_DO_PARSE_DATABASE_FROM_CACHE'"
-        echo -e "_DO_PARSE_DATABASE_FROM_FILE ==\t\t\t\t'$_DO_PARSE_DATABASE_FROM_FILE'"
-        echo -e "_DATABASE_FILE ==\t\t\t\t\t'$_DATABASE_FILE'"
-        echo -e "_DO_PARSE_DATABASE_FROM_INTERNET ==\t\t\t'$_DO_PARSE_DATABASE_FROM_INTERNET'"
-        # echo -e "_HAS_ARG_PARSE_IOMMU_SELECT_ALL ==\t\t\t'$_HAS_ARG_PARSE_IOMMU_SELECT_ALL'"
-        # echo -e "_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA ==\t\t'$_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA'"
-        # echo -e "_HAS_ARG_PARSE_IOMMU_SELECT_SOME ==\t\t\t'$_HAS_ARG_PARSE_IOMMU_SELECT_SOME'"
-        echo -e "_IOMMU_GROUP_ID_LIST_TO_USE ==\t\t\t\t'${_IOMMU_GROUP_ID_LIST_TO_USE[@]}'"
-        echo
-        echo
-        echo -e "_ASK_TO_EXECUTE_PRE_SETUPS ==\t\t\t\t'$_ASK_TO_EXECUTE_PRE_SETUPS'"
-        echo -e "_EXECUTE_PRE_SETUP_EVDEV ==\t\t\t\t'$_EXECUTE_PRE_SETUP_EVDEV'"
-        echo -e "_EXECUTE_PRE_SETUP_HUGEPAGES ==\t\t\t\t'$_EXECUTE_PRE_SETUP_HUGEPAGES'"
-        echo -e "_IS_HUGEPAGES_COUNT_SET ==\t\t\t\t'$_IS_HUGEPAGES_COUNT_SET'"
-        echo -e "_IS_HUGEPAGES_SIZE_SET ==\t\t\t\t'$_IS_HUGEPAGES_SIZE_SET'"
-        echo -e "_HUGEPAGES_BYTE_SUFFIX ==\t\t\t\t'$_HUGEPAGES_BYTE_SUFFIX'"
-        echo -e "_HUGEPAGES_COUNT ==\t\t\t\t\t'$_HUGEPAGES_COUNT'"
-        echo
-        echo -e "_EXECUTE_PRE_SETUP_STATIC_ISOLCPU ==\t\t\t'$_EXECUTE_PRE_SETUP_STATIC_ISOLCPU'"
-        echo -e "_EXECUTE_PRE_SETUP_UNINSTALL ==\t\t\t\t'$_EXECUTE_PRE_SETUP_UNINSTALL'"
-        echo
-        echo
-        echo -e "_ASK_TO_EXECUTE_VFIO_SETUP_STATIC ==\t\t\t'$_ASK_TO_EXECUTE_VFIO_SETUP_STATIC'"
-        echo -e "_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB ==\t\t'$_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB'"
-        echo -e "_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB ==\t\t\t'$_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB'"
-        echo -e "_EXECUTE_VFIO_SETUP_UNINSTALL ==\t\t\t'$_EXECUTE_VFIO_SETUP_UNINSTALL'"
-        echo
-        echo
-        echo -e "_ASK_TO_EXECUTE_POST_SETUPS ==\t\t\t\t'$_ASK_TO_EXECUTE_POST_SETUPS'"
-        echo -e "_EXECUTE_POST_SETUP_AUDIO_LOOPBACK ==\t\t\t'$_EXECUTE_POST_SETUP_AUDIO_LOOPBACK'"
-        echo -e "_EXECUTE_POST_SETUP_AUTO_XORG ==\t\t\t'$_EXECUTE_POST_SETUP_AUTO_XORG'"
-        echo -e "_HAS_ARG_AUTO_XORG_SORT_ORDER ==\t\t\t'$_HAS_ARG_AUTO_XORG_SORT_ORDER'"
-        echo -e "_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR ==\t\t\t'$_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR'"
-
-        echo -e "_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS ==\t\t'$_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS'"
-        echo -e "_EXECUTE_POST_SETUP_ZRAM_SWAP ==\t\t\t'$_EXECUTE_POST_SETUP_ZRAM_SWAP'"
-        echo -e "_ARGS_FOR_ZRAM_SWAP_FRACTION ==\t\t\t\t'$_ARGS_FOR_ZRAM_SWAP_FRACTION'"
-        echo -e "_ARGS_FOR_ZRAM_SWAP_FORCE ==\t\t\t\t'$_ARGS_FOR_ZRAM_SWAP_FORCE'"
-        echo
-        echo -e "_EXECUTE_POST_SETUP_UNINSTALL ==\t\t\t'$_EXECUTE_POST_SETUP_UNINSTALL'"
-
-        exit 1
     }
 # </code>
 

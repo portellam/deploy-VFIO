@@ -45,6 +45,7 @@
     declare -g _SUFFIX_FAIL="${_SET_COLOR_RED}[Failure]$_RESET_COLOR"
     declare -g _SUFFIX_PASS="${_SET_COLOR_GREEN}[Success]$_RESET_COLOR"
     declare -g _SUFFIX_SKIP="${_SET_COLOR_YELLOW}[Skipped]$_RESET_COLOR"
+    declare -g _SUFFIX_WORK="${_SET_COLOR_YELLOW}[Working]$_RESET_COLOR"
 
     # <remarks> File templates. </remarks>
     declare -ga _DISCLAIMER_FILE_CONTENTS=(

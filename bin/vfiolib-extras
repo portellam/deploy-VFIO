@@ -42,7 +42,7 @@
 				return 1
 			fi
 
-			if ! sudo bash "$_SCRIPT_NAME"; then
+			if ! echo "i" | sudo bash "$_SCRIPT_NAME" &> /dev/null; then
 				echo -e "$_PREFIX_ERROR Failed to execute script '$_SCRIPT_NAME'."
 				return 1
 			fi
@@ -134,11 +134,13 @@
 		local -r _REPO_NAME="zram-swap"
 		local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
 		local _HAS_SKIPPED=false
-        echo
 
-		if ! "$_EXECUTE_POST_SETUP_ZRAM_SWAP" \
-			&& ! AskToExecuteOrSkip "Install zram-swap?"; then
-			_HAS_SKIPPED=true
+        if ! "$_EXECUTE_POST_SETUP_ZRAM_SWAP"; then
+			echo
+
+            if ! AskToExecuteOrSkip "Install zram-swap?"; then
+                _HAS_SKIPPED=true
+            fi
 		fi
 
 		if ! "$_HAS_SKIPPED" \
@@ -192,8 +194,10 @@
             return "$?"
         }
 
+        local _OUTPUT="Executing post-setup...\t"
+        PrintSuffixWait "$_OUTPUT"
         Main
-        PrintSuffixPassOrFail "Executing post-setup...\t"
+        PrintSuffixPassOrFail "$_OUTPUT"
 		return "$?"
 	}
 
@@ -298,10 +302,17 @@
 			return 0
 		}
 
-        echo
+        local _HAS_SKIPPED=false
 
-		if "$_EXECUTE_POST_SETUP_AUDIO_LOOPBACK" \
-			|| AskToExecuteOrSkip "Install audio loopback service?"; then
+        if ! "$_EXECUTE_POST_SETUP_AUDIO_LOOPBACK"; then
+			echo
+
+            if ! AskToExecuteOrSkip "Install zram-swap?"; then
+                _HAS_SKIPPED=true
+            fi
+		fi
+
+		if ! "$_HAS_SKIPPED"; then
 			Main
         else
             ( return 255 )
@@ -369,18 +380,18 @@
 		}
 
 		local _HAS_SKIPPED=false
-        echo
 
-		if ! "$_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS" \
-			&& ! AskToExecuteOrSkip "Install Libvirt hooks?"; then
-			_HAS_SKIPPED=true
+        if ! "$_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS"; then
+			echo
+
+            if ! AskToExecuteOrSkip "Install Libvirt hooks?"; then
+                _HAS_SKIPPED=true
+            fi
 		fi
 
 		if ! "$_HAS_SKIPPED"; then
 			Main
-		fi
-
-		if "$_HAS_SKIPPED"; then
+		else
 			( return 255 )
 		fi
 
@@ -436,7 +447,7 @@
 				return 1
 			fi
 
-			if ! sudo bash $_SCRIPT_NAME $_ARGS_FOR_AUTO_XORG; then
+			if ! sudo bash $_SCRIPT_NAME $_ARGS_FOR_AUTO_XORG &> /dev/null; then
 				echo -e "$_PREFIX_ERROR Failed to execute script '$_SCRIPT_NAME'."
 				return 1
 			fi
@@ -448,11 +459,13 @@
 		local -r _REPO_NAME="auto-Xorg"
 		local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
 		local _HAS_SKIPPED=false
-        echo
 
-		if ! "$_EXECUTE_POST_SETUP_AUTO_XORG" \
-			&& ! AskToExecuteOrSkip "Install $_REPO_NAME?"; then
-			_HAS_SKIPPED=true
+        if ! "$_EXECUTE_POST_SETUP_AUTO_XORG"; then
+			echo
+
+            if ! AskToExecuteOrSkip "Install $_REPO_NAME?"; then
+                _HAS_SKIPPED=true
+            fi
 		fi
 
 		if ! "$_HAS_SKIPPED"; then
