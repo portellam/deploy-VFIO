@@ -34,9 +34,9 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.<sup>[2](#2)</sup>*
 
 #### Links
-    - [About VFIO](https://www.kernel.org/doc/html/latest/driver-api/vfio.html) |
-    - [Guide](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF) |
-    - [Reddit](https://old.reddit.com/r/VFIO) |
+* [About VFIO](https://www.kernel.org/doc/html/latest/driver-api/vfio.html) |
+* [Guide](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF) |
+* [Reddit](https://old.reddit.com/r/VFIO) |
 
 ### Compatibility:
 | Distribution Family | Supported? |
