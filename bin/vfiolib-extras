@@ -280,21 +280,13 @@
 			return 0
 		}
 
-		local _HAS_SKIPPED=false
         echo
 
-		if ! "$_EXECUTE_POST_SETUP_AUDIO_LOOPBACK" \
-			&& ! AskToExecuteOrSkip "Install audio loopback service?"; then
-			_HAS_SKIPPED=true
-		fi
-
-		if ! "$_HAS_SKIPPED" \
-			&& ! Main; then
-			false
-		fi
-
-		if "$_HAS_SKIPPED"; then
-			( return 255 )
+		if "$_EXECUTE_POST_SETUP_AUDIO_LOOPBACK" \
+			|| AskToExecuteOrSkip "Install audio loopback service?"; then
+			Main
+        else
+            ( return 255 )
 		fi
 
 		PrintSuffixPassOrFail "Creating audio loopback..."
@@ -393,6 +385,25 @@
 			return 0
 		}
 
+        function GetArgs
+        {
+            IFS=$'\n'
+
+            declare -a _OUTPUT=(
+                "ARGUMENTS:"
+                "  first  [vendor]\t\tFind the first valid VGA device."
+                "  last   [vendor]\t\tFind the last valid VGA device."
+                "  [sort] amd\t\t\tPrefer AMD or ATI."
+                "  [sort] intel\t\t\tPrefer Intel."
+                "  [sort] nvidia\t\t\tPrefer NVIDIA."
+                "  [sort] other\t\t\tPrefer any other brand."
+            )
+
+            echo -e "${_OUTPUT[*]}"
+            unset IFS
+            return 0
+        }
+
 		function Install
 		{
 			local -r _SCRIPT_NAME="installer.bash"
@@ -422,12 +433,30 @@
         echo
 
 		if ! "$_EXECUTE_POST_SETUP_AUTO_XORG" \
-			&& ! AskToExecuteOrSkip "Install auto-Xorg?"; then
+			&& ! AskToExecuteOrSkip "Install $_REPO_NAME?"; then
 			_HAS_SKIPPED=true
 		fi
 
 		if ! "$_HAS_SKIPPED"; then
 			Get
+
+            if ! "$_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR" \
+                && ! "$_HAS_ARG_AUTO_XORG_SORT_ORDER" \
+                && AskToExecuteOrSkip "Add arguments?"; then
+                local -i _COUNT_OF_VALID_ARGS=2
+                echo
+                GetArgs
+
+                for _COUNT in $( seq 1 "$_COUNT_OF_VALID_ARGS" ); do
+                    read -r -p "Enter argument (to skip, leave blank): " _ANSWER
+                    GetArgsForAutoXorg "$_ANSWER" || return 1
+
+                    if [[ -z "$_ANSWER" ]]; then
+                        break
+                    fi
+                done
+            fi
+
 			Install
 		fi
 
@@ -435,7 +464,7 @@
 			( return 255 )
 		fi
 
-		PrintSuffixPassOrFail "Installing auto-Xorg...\t"
+		PrintSuffixPassOrFail "Installing $_REPO_NAME...\t"
 		return "$_LAST_EXIT_CODE"
 	}
 # </code>
