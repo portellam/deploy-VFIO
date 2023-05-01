@@ -220,13 +220,13 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 | SUSE                | No         |
 
 #### Legacy
-| OS           | Device type    | Brand and model                        |
-| ------------ | -------------- | -------------------------------------- |
-| Windows 7    | Video/graphics | NVIDIA RTX 3000-series** or before     |
-| Windows XP   | Video/graphics | NVIDIA GTX 900-series* or before**     |
-|              |                | AMD Radeon HD 7000-series* or before** |
-| Windows 98   | Video/graphics | NVIDIA 7000-series GTX ** or before    |
-|              |                | any ATI model **                       |
+| OS           | Device type    | Brand and model                          |
+| ------------ | -------------- | ---------------------------------------- |
+| Windows 7    | Video/graphics | NVIDIA RTX 3000-series ** or before      |
+| Windows XP   | Video/graphics | NVIDIA GTX 900-series * or before**      |
+|              |                | AMD Radeon HD 7000-series * or before ** |
+| Windows 98   | Video/graphics | NVIDIA 7000-series GTX ** or before      |
+|              |                | any ATI model **                         |
 
 *UEFI and BIOS compatible.
 **BIOS-only.
