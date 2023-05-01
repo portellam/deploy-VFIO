@@ -47,8 +47,6 @@
             return "$?"
         fi
 
-        ExecuteEssentials
-
         if "$_FLAG_DO_EXECUTE_PRE_SETUP"; then
             echo; ExecuteEssentials
         fi
