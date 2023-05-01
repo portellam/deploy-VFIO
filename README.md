@@ -26,7 +26,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 * **Quality of Life**
     - Choose multiple common-sense features that are known to experienced users (see [Features](#Features)).
 * **Securely run a legacy OS**
-    - See [Hardware compatibility](#Known).
+    - See [Hardware compatibility](#Known_hardware_compatibility).
 * **If it's greater control of your privacy you want**
     - Use *me_cleaner.<sup>[2](#2)</sup>*
 
