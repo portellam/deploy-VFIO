@@ -48,13 +48,15 @@
         fi
 
         if "$_FLAG_DO_EXECUTE_PRE_SETUP"; then
-            echo; ExecuteEssentials
+            ExecuteEssentials
         fi
 
-        echo; ExecuteSetup
+        echo
+        ExecuteSetup
 
         if "$_FLAG_DO_EXECUTE_POST_SETUP"; then
-            echo; ExecuteExtras
+            echo
+            ExecuteExtras
         fi
 
         return 0
