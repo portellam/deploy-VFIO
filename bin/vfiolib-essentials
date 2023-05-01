@@ -235,7 +235,7 @@
             fi
 
             if ! "$_EXECUTE_PRE_SETUP_HUGEPAGES"; then
-                if ! "_IS_QUIET"; then
+                if ! "$_IS_QUIET"; then
                     echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\nGuest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
                 fi
 
@@ -461,7 +461,7 @@
         if ! "$_EXECUTE_PRE_SETUP_EVDEV"; then
             echo
 
-            if ! "_IS_QUIET"; then
+            if ! "$_IS_QUIET"; then
                 echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between Host and Guest(s).\n${_SET_COLOR_YELLOW}HOW-TO:${_RESET_COLOR} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
             fi
 
