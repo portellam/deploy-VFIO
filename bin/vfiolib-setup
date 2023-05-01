@@ -599,24 +599,17 @@
         if "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_FIRST" \
             && [[ "$1" -eq 1 ]]; then
             _PREFERRED_MENU_ENTRY_TITLE="$2"
-            return 0
 
         elif "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE" \
             && [[ "$1" -eq "$_MULTIBOOT_PREFERRED_IOMMU_GROUP_ID" ]]; then
             _PREFERRED_MENU_ENTRY_TITLE="$2"
-            return 0
 
         elif "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_LAST" \
             && [[ "$1" -eq "${#_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[-1]}" ]]; then
             _PREFERRED_MENU_ENTRY_TITLE="$2"
-            return 0
-
-        elif "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT"; then
-            return 0
-
-        else
-            return 1
         fi
+
+        return 0
     }
 
     function GetTempListForAnySetup
