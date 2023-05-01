@@ -11,9 +11,6 @@
     - Add Dynamic setup (not static or multiboot); Add support for VFIO bind/unbinds.
     - Detect existing setup, and recommend update or uninstall to continue.
     - Multiboot, update existing setup, upon kernel update. ***
-    - Multiboot, ability to set preferred menu entry (without using GRUB-customizer).
-        - Ask user?
-        - Add usage option?
     - VFIO output, read/write from/to XML file for easier updating. *
 * Post-setup:
     - Create script or program to resume VM(s) from sleep?
