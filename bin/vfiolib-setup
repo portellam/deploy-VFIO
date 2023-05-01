@@ -803,7 +803,13 @@
         "$_HAS_EXECUTED_BACKUPS" || return 1
         IFS=$'\n'
         local -r _LINE_TO_MATCH="GRUB_DEFAULT="
-        local -r _LINE_GRUB_DEFAULT="$_LINE_TO_MATCH\"$_PREFERRED_MENU_ENTRY_TITLE\""
+
+        if "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT" \
+            || [[ "$_PREFERRED_MENU_ENTRY_TITLE" == "$_DEFAULT_MENU_ENTRY_TITLE" ]]; then
+            local -r _LINE_GRUB_DEFAULT="$_LINE_TO_MATCH$_PREFERRED_MENU_ENTRY_TITLE"
+        else
+            local -r _LINE_GRUB_DEFAULT="$_LINE_TO_MATCH\"$_PREFERRED_MENU_ENTRY_TITLE\""
+        fi
 
         if [[ -d $( dirname "$_CUSTOM_GRUB_DEST_PATH" ) ]] \
             && ! sudo mkdir -p $( dirname "$_CUSTOM_GRUB_DEST_PATH" ); then
@@ -811,7 +817,7 @@
             return 1
         fi
 
-        if ! sed -i '/'"$_LINE_TO_MATCH"'/c\'"$_LINE_GRUB_DEFAULT" "$_GRUB_DEST_PATH_1" &> /dev/null;
+        if ! sed -i '/'"$_LINE_TO_MATCH"'/c\'"$_LINE_GRUB_DEFAULT" "$_GRUB_DEST_PATH_1" &> /dev/null \
             || ! echo -e "\n${_FILE_CONTENTS_LIST[*]}" >> "$_CUSTOM_GRUB_DEST_PATH" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
@@ -823,7 +829,8 @@
 # </code>
 
 # <params>
-    declare -g _PREFERRED_MENU_ENTRY_TITLE="0"
+    declare -g _DEFAULT_MENU_ENTRY_TITLE="0"
+    declare -g _PREFERRED_MENU_ENTRY_TITLE="$_DEFAULT_MENU_ENTRY_TITLE"
     declare -ga _MENU_ENTRY_TITLE_LIST=( "$_PREFERRED_MENU_ENTRY_TITLE" )
 
     # <remarks> Flags </remarks>
