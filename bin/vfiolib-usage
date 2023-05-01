@@ -84,8 +84,11 @@
 
             # <remarks> VFIO setup </remarks>
             "-m" | "--multiboot" )
+                shift
+                GetArgsForMultiboot_VFIO "$1" || return 1
                 _ASK_TO_EXECUTE_VFIO_SETUP=false
-                _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=true ;;
+                _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=true
+                ShiftIfOptionIsArgument "$1" ;;
 
             "-s" | "--static" )
                 shift
@@ -218,6 +221,39 @@
         return 0
     }
 
+    function GetArgsForMultiboot_VFIO
+    {
+        if [[ -z "$1" ]]; then
+            return 0
+        fi
+
+        case "$1" in
+            "default" )
+                _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=true
+                return 0 ;;
+
+            "first" )
+                _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=false
+                _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_FIRST=true
+                return 0 ;;
+
+            "last" )
+                _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=false
+                _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_LAST=true
+                return 0 ;;
+
+            * )
+                if Does_IOMMU_GroupContain_ExternalVGA "$1"; then
+                    _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=false
+                    Get_Preferred_IOMMU_Group_For_Multiboot "$1"
+                    return 0
+                fi ;;
+        esac
+
+        PrintStatementInvalidArgument "$1"
+        return 1
+    }
+
     function GetArgsForStatic_VFIO
     {
         if [[ -z "$1" ]]; then
@@ -311,7 +347,7 @@
             "  -q, --quiet\t\t\tReduce verbosity; print only relevant questions and status statements."
 
             "\nSpecify the database to reference before parsing IOMMU groups.\nOPTIONS:"
-            "  -f, --file [filename]\t\tReference file database."
+            "  -f, --file [ARGS]\t\t\tReference file database."
             "  -i, --internal\t\tReference local database."
             "  -o, --online\t\t\tReference online database."
 
@@ -337,31 +373,37 @@
             "\nPre-setup OPTIONS:"
             "  -c, --cpu\t\t\tAllocate CPU."
             "  -e, --evdev\t\t\tSetup a virtual KVM switch."
-            "  -h, --hugepages\t\tCreate static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s)."
+            "  -h, --hugepages [ARGS]\tCreate static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s)."
             "  --uninstall-pre-setup\t\tUndo all changes made by pre-setup."
 
             "\nHugepages ARGUMENTS:"
             "  2M, 1G\t\t\tHugepage size (2 MiB or 1 GiB)."
-            "  [1-x]\t\t\t\tAmount of Hugepages (maximum amount is total memory subtracted by 4 GiB)."
+            "  [x]\t\t\t\tAmount of Hugepages (maximum amount is total memory subtracted by 4 GiB)."
 
             "\n  Example:"
             "    1G 16\t\t\t1 GiB hugepage 16\t== 16 GiB allocated to hugepages."
             "    2M 8192\t\t\t2 MiB hugepage 8912\t== 16 GiB allocated to hugepages."
 
             "\nVFIO setup OPTIONS:"
-            "  -m, --multiboot\t\tCreate multiple VFIO setups with corresponding GRUB menu entries."
-            "  -s, --static\t\t\tSingle VFIO setup. Specify method of setup (see ARGUMENTS)."
+            "  -m, --multiboot [ARGS]\tCreate multiple VFIO setups with corresponding GRUB menu entries. Specify default GRUB menu entry by VGA IOMMU group ID (see ARGUMENTS)."
+            "  -s, --static [ARGS]\t\tSingle VFIO setup. Specify method of setup (see ARGUMENTS)."
             "  --uninstall-vfio-setup\tUndo an existing VFIO setup."
 
-            "\nStatic VFIO setup ARGUMENTS:"
+            "\nMultiboot ARGUMENTS:"
+            "  [x]\t\t\t\tThe ID of the valid excluded VGA IOMMU group."
+            "  default\t\t\tDefault menu entry excludes VFIO setup."
+            "  first\t\t\t\tPrefer the first valid excluded VGA IOMMU group."
+            "  last\t\t\t\tPrefer the last valid excluded VGA IOMMU group."
+
+            "\nStatic ARGUMENTS:"
             "  file\t\t\t\tAppend output to system configuration files."
             "  grub\t\t\t\tAppend output to GRUB; single GRUB menu entry."
 
             "\nPost-setup OPTIONS:"
             "  --audio-loopback\t\tInstall the audio loopback service...\t\tLoopback audio from Guest to Host (over Line-out to Line-in)."
-            "  --auto-xorg\t\t\tInstall auto-Xorg...\t\t\t\tSystem service to find and set a valid boot VGA device for Xorg."
+            "  --auto-xorg [ARGS]\t\tInstall auto-Xorg...\t\t\t\tSystem service to find and set a valid boot VGA device for Xorg."
             "  --hooks\t\t\tInstall recommended Libvirt hooks."
-            "  --zram-swap\t\t\tCreate compressed swap in RAM (about 2:1)...\tReduce chances of memory exhaustion for Host."
+            "  --zram-swap [ARGS]\t\tCreate compressed swap in RAM (about 2:1)...\tReduce chances of memory exhaustion for Host."
             "  --uninstall-post-setup\tUndo all changes made by post-setup."
 
             "\nauto-xorg ARGUMENTS:"
@@ -439,6 +481,10 @@
     declare -g _EXECUTE_POST_SETUP_ZRAM_SWAP=false
     declare -g _EXECUTE_POST_SETUP_UNINSTALL=false
     # declare -g _EXECUTE_VFIO_SETUP_DYNAMIC_WTIH_HOOKS=false
+    declare -g _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=true
+    declare -g _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_FIRST=false
+    declare -g _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_LAST=false
+    declare -g _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE=false
     declare -g _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=false
     declare -g _EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=true
     declare -g _EXECUTE_VFIO_SETUP_UNINSTALL=false

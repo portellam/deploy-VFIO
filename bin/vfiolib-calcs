@@ -100,6 +100,29 @@
         return 0
     }
 
+    function Does_IOMMU_GroupContain_ExternalVGA
+    {
+        if ! Is_IOMMU_Group_ID_Valid "$1"; then
+            return 1
+        fi
+
+        local -i _IOMMU_GROUP_ID="$1"
+        local -a _DEVICE_LIST=( $( eval "$_GET_IOMMU_GROUP_DEVICE_LIST" ) )
+
+        for _DEVICE in ${_DEVICE_LIST[@]}; do
+            local -u _DEVICE_DOMAIN_ID=$( echo "$_DEVICE" | cut -d ':' -f 2 )
+            local -l _DEVICE_CLASS="$( lspci -m -s $_DEVICE $_PARSE_OPTIONS | cut -d '"' -f 2 )"
+
+            if IsDeviceExternal "$_DEVICE_DOMAIN_ID" \
+                && IsDevice_VGA "$_DEVICE_CLASS"; then
+                return 0
+            fi
+        done
+
+        echo -e "$_PREFIX_ERROR Please enter valid external VGA IOMMU group ID."
+        return 1
+    }
+
     function GetFreeMemory
     {
         _AVAILABLE_MEMORY=$(( _INT_MAX_MEMORY - _MIN_MEMORY ))
@@ -182,6 +205,13 @@
     function Get_IOMMU_GroupList
     {
         declare -ga _IOMMU_GROUP_ID_LIST_TO_USE=( )
+    }
+
+    function Get_Preferred_IOMMU_Group_For_Multiboot
+    {
+        declare -gi _MULTIBOOT_PREFERRED_IOMMU_GROUP_ID="$1"
+        _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE=true
+        return 0
     }
 
     function Get_ZRAM_SwapSize
@@ -277,8 +307,8 @@
     {
         if [[ -z "$1" ]] \
             || [[ "$1" -lt 0 ]] \
-            || [[ "$1" -gt "${_IOMMU_GROUP_ID_LIST[-1]}" ]]; then
-            echo -e "$_PREFIX_ERROR Please enter valid IOMMU group ID(s), between 0 and ${_IOMMU_GROUP_ID_LIST[-1]}."
+            || [[ "$1" -gt "$_LAST_IOMMU_GROUP_ID" ]]; then
+            echo -e "$_PREFIX_ERROR Please enter valid IOMMU group ID(s), between 0 and $_LAST_IOMMU_GROUP_ID."
             return 1
         fi
 
@@ -308,6 +338,7 @@
     declare -g _GET_IOMMU_GROUP_DEVICE_LIST='ls /sys/kernel/iommu_groups/$_IOMMU_GROUP_ID/devices'
     declare -g _REGEX_DOMAIN_ID='^[0-9A-F][1-9A-F]$'
     declare -ga _IOMMU_GROUP_ID_LIST=( $( ls -1v /sys/kernel/iommu_groups/ | sort -h ) )
+    declare -gi _LAST_IOMMU_GROUP_ID="${_IOMMU_GROUP_ID_LIST[-1]}"
     declare -ga _IOMMU_GROUP_ID_LIST_SOME=( )
     # unset IFS
 # </params>

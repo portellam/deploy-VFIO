@@ -41,6 +41,31 @@
         return 0
     }
 
+    function AskToSpecify_GRUB_MenuEntryForMultibootSetup
+    {
+        if ! "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE"; then
+            return 0
+        fi
+
+        for _TRIES_COUNT in $( seq 0 2 ); do
+            IFS=$'\n'
+            echo -e "\nList of valid GRUB menu entries:\n"
+            PrintListOf_GRUB_MenuEntry
+            read -r -p "Enter preferred GRUB menu entry [0-${_MENU_ENTRY_TITLE_LIST[-1]}]: " _ANSWER
+
+            if [[ "$_ANSWER" -ge 0 ]] \
+                && [[ "$_ANSWER" -le "${_MENU_ENTRY_TITLE_LIST[-1]}" ]]; then
+                _PREFERRED_MENU_ENTRY_TITLE="${_MENU_ENTRY_TITLE_LIST[-1]}"
+                return 0
+            fi
+
+            echo -e "Please answer between 0 and ${_MENU_ENTRY_TITLE_LIST[-1]}."
+        done
+
+        echo -e "$_PREFIX_ERROR Failed to answer."
+        return 1
+    }
+
     function AskToSpecifyStaticSetup
     {
         if ! "$_ASK_TO_EXECUTE_VFIO_SETUP_STATIC"; then
@@ -73,6 +98,7 @@
         if ! "$_HAS_EXECUTED_BACKUPS" \
             || ! GetAllParamsForMultibootSetup \
             || ! WriteFilesForMultibootSetup \
+            || ! AskToSpecify_GRUB_MenuEntryForMultibootSetup \
             || ! ExecuteUpdateAfterSetup; then
             return 1
         fi
@@ -434,8 +460,12 @@
     {
         for _KERNEL in ${_KERNELS_LIST[@]}; do
             # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
+            local _MENU_ENTRY_TITLE="$_SYSTEM_DISTRO, with $_SYSTEM_OS $_KERNEL (VFIO, w/o IOMMU '$1' w/ '$_THIS_IOMMU_GROUP_VGA_NAME')"
+            _MENU_ENTRY_TITLE_LIST+=( "$_MENU_ENTRY_TITLE" )
+            GetPreferred_GRUB_MenuEntryForMultibootSetup "$1" "$_MENU_ENTRY_TITLE" || return 1
+
             _FILE_CONTENTS_LIST+=(
-                "menuentry \"$_SYSTEM_DISTRO, with $_SYSTEM_OS $_KERNEL (VFIO, w/o IOMMU '$1' w/ '$_THIS_IOMMU_GROUP_VGA_NAME')\"{"
+                "menuentry \"$_MENU_ENTRY_TITLE\"{"
                 # "\tload_video"
                 # "insmod gzio"
                 # "if [ x\$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi"
@@ -552,6 +582,31 @@
         return 0
     }
 
+    function GetPreferred_GRUB_MenuEntryForMultibootSetup
+    {
+        if "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_FIRST" \
+            && [[ "$1" -eq "${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[0]}" ]]; then
+            _PREFERRED_MENU_ENTRY_TITLE="$2"
+            return 0
+
+        elif "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE" \
+            && [[ "$1" -eq "$_MULTIBOOT_PREFERRED_IOMMU_GROUP_ID" ]]; then
+            _PREFERRED_MENU_ENTRY_TITLE="$2"
+            return 0
+
+        elif "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_LAST" \
+            && [[ "$1" -eq "${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[-1]}" ]]; then
+            _PREFERRED_MENU_ENTRY_TITLE="$2"
+            return 0
+
+        elif "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT"; then
+            return 0
+
+        else
+            return 1
+        fi
+    }
+
     function GetTempListForAnySetup
     {
         if [[ ! -z "$_VFIOPCI_DRIVER_DELIM" ]]; then
@@ -607,6 +662,19 @@
         return 0
     }
 
+    function PrintListOf_GRUB_MenuEntry
+    {
+        for _KEY in "${!_MENU_ENTRY_TITLE_LIST[@]}"; do
+            if [[ "$_KEY" -gt 0 ]]; then
+                echo -e "[$_KEY]\t\"${_MENU_ENTRY_TITLE_LIST[$_KEY]}\"\n"
+            else
+                echo -e "[$_KEY]\tDefault (no VFIO setup)\n"
+            fi
+        done
+
+        return 0
+    }
+
     function Update_GRUB
     {
         local _OUTPUT="Updating GRUB...\t"
@@ -647,7 +715,7 @@
         _LINE_GRUB_CMDLINE_TEMP="${_LINE_GRUB_CMDLINE_TEMP::-1}"
         local -r _LINE_GRUB_CMDLINE_DEFAULT="$_LINE_TO_MATCH\"$_LINE_GRUB_CMDLINE_TEMP\""
 
-        if ! sed -i '/'"$_LINE_TO_MATCH"'/c\'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_DEST_PATH_1"; then
+        if ! sed -i '/'"$_LINE_TO_MATCH"'/c\'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_DEST_PATH_1" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi
@@ -716,12 +784,12 @@
         fi
 
         # <remarks> Write to new files. </remarks>
-        if ! sed -i '/'$_LINE_TO_MATCH'/c\'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_DEST_PATH_1" \
-            || ! sed -i "/# options vfio_pci ids=*/c\options vfio_pci_ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" \
-            || ! sed -i "/# vfio_pci ids=*/c\vfio_pci_ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" \
-            || ! echo -e "\n${_BLACKLISTS_LIST[*]}" >> "$_MODPROBE_BLACKLISTS_DEST_PATH" \
-            || ! sed -i "/# options vfio_pci ids=*/c\options vfio_pci ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_MODPROBE_VFIO_DEST_PATH" \
-            || ! sed -i "/# vfio_pci ids=*/c\vfio_pci_ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_MODULES_DEST_PATH"; then
+        if ! sed -i '/'$_LINE_TO_MATCH'/c\'"$_LINE_GRUB_CMDLINE_DEFAULT" "$_GRUB_DEST_PATH_1" &> /dev/null \
+            || ! sed -i "/# options vfio_pci ids=*/c\options vfio_pci_ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" &> /dev/null \
+            || ! sed -i "/# vfio_pci ids=*/c\vfio_pci_ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_INITRAMFS_MODULES_DEST_PATH" &> /dev/null \
+            || ! echo -e "\n${_BLACKLISTS_LIST[*]}" >> "$_MODPROBE_BLACKLISTS_DEST_PATH" &> /dev/null \
+            || ! sed -i "/# options vfio_pci ids=*/c\options vfio_pci ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_MODPROBE_VFIO_DEST_PATH" &> /dev/null \
+            || ! sed -i "/# vfio_pci ids=*/c\vfio_pci_ids=\"$_THIS_VFIOPCI_HWID_DELIM\"" "$_MODULES_DEST_PATH" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi
@@ -734,6 +802,8 @@
     {
         "$_HAS_EXECUTED_BACKUPS" || return 1
         IFS=$'\n'
+        local -r _LINE_TO_MATCH="GRUB_DEFAULT="
+        local -r _LINE_GRUB_DEFAULT="$_LINE_TO_MATCH\"$_PREFERRED_MENU_ENTRY_TITLE\""
 
         if [[ -d $( dirname "$_CUSTOM_GRUB_DEST_PATH" ) ]] \
             && ! sudo mkdir -p $( dirname "$_CUSTOM_GRUB_DEST_PATH" ); then
@@ -741,7 +811,8 @@
             return 1
         fi
 
-        if ! echo -e "\n${_FILE_CONTENTS_LIST[*]}" >> "$_CUSTOM_GRUB_DEST_PATH"; then
+        if ! sed -i '/'"$_LINE_TO_MATCH"'/c\'"$_LINE_GRUB_DEFAULT" "$_GRUB_DEST_PATH_1" &> /dev/null;
+            || ! echo -e "\n${_FILE_CONTENTS_LIST[*]}" >> "$_CUSTOM_GRUB_DEST_PATH" &> /dev/null; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi
@@ -752,6 +823,9 @@
 # </code>
 
 # <params>
+    declare -g _PREFERRED_MENU_ENTRY_TITLE="0"
+    declare -ga _MENU_ENTRY_TITLE_LIST=( "$_PREFERRED_MENU_ENTRY_TITLE" )
+
     # <remarks> Flags </remarks>
     _FLAG_ADD_EARLY_LOAD_MODULE_ARGS=true
     _FLAG_ADD_LOG_LEVEL_ARGS=true
