@@ -43,23 +43,36 @@
 
     function AskToSpecify_GRUB_MenuEntryForMultibootSetup
     {
-        if ! "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE"; then
+        if "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT" \
+            || "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_FIRST" \
+            || "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_LAST" \
+            || "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE"; then
             return 0
         fi
 
-        for _TRIES_COUNT in $( seq 0 2 ); do
-            IFS=$'\n'
-            echo -e "\nList of valid GRUB menu entries:\n"
-            PrintListOf_GRUB_MenuEntry
-            read -r -p "Enter preferred GRUB menu entry [0-${_MENU_ENTRY_TITLE_LIST[-1]}]: " _ANSWER
+        local -ar _INDEX_LIST=( "${!_MENU_ENTRY_TITLE_LIST[@]}" )
+        local -i _LAST_INDEX="${_INDEX_LIST[-1]}"
 
-            if [[ "$_ANSWER" -ge 0 ]] \
-                && [[ "$_ANSWER" -le "${_MENU_ENTRY_TITLE_LIST[-1]}" ]]; then
-                _PREFERRED_MENU_ENTRY_TITLE="${_MENU_ENTRY_TITLE_LIST[-1]}"
+        for _TRIES_COUNT in $( seq 0 2 ); do
+            echo -e "\nList of valid GRUB menu entries:"
+            PrintListOf_GRUB_MenuEntry
+            echo
+            read -r -p "Enter preferred GRUB menu entry [0-$_LAST_INDEX]: " _ANSWER
+
+            if [[ -z "$_ANSWER" ]] \
+                || [[ "$_ANSWER" -eq 0 ]]; then
+                _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=true
                 return 0
             fi
 
-            echo -e "Please answer between 0 and ${_MENU_ENTRY_TITLE_LIST[-1]}."
+            if [[ "$_ANSWER" -gt 0 ]] \
+                && [[ "$_ANSWER" -le "$_LAST_INDEX" ]]; then
+                _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=false
+                _PREFERRED_MENU_ENTRY_TITLE="${_MENU_ENTRY_TITLE_LIST[$_ANSWER]}"
+                return 0
+            fi
+
+            echo -e "Please answer between 0 and $_LAST_INDEX."
         done
 
         echo -e "$_PREFIX_ERROR Failed to answer."
@@ -98,7 +111,6 @@
         if ! "$_HAS_EXECUTED_BACKUPS" \
             || ! GetAllParamsForMultibootSetup \
             || ! WriteFilesForMultibootSetup \
-            || ! AskToSpecify_GRUB_MenuEntryForMultibootSetup \
             || ! ExecuteUpdateAfterSetup; then
             return 1
         fi
@@ -585,7 +597,7 @@
     function GetPreferred_GRUB_MenuEntryForMultibootSetup
     {
         if "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_FIRST" \
-            && [[ "$1" -eq "${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[0]}" ]]; then
+            && [[ "$1" -eq 1 ]]; then
             _PREFERRED_MENU_ENTRY_TITLE="$2"
             return 0
 
@@ -595,7 +607,7 @@
             return 0
 
         elif "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_LAST" \
-            && [[ "$1" -eq "${_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[-1]}" ]]; then
+            && [[ "$1" -eq "${#_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[-1]}" ]]; then
             _PREFERRED_MENU_ENTRY_TITLE="$2"
             return 0
 
@@ -665,10 +677,12 @@
     function PrintListOf_GRUB_MenuEntry
     {
         for _KEY in "${!_MENU_ENTRY_TITLE_LIST[@]}"; do
+            echo -en "$_KEY:\t"
+
             if [[ "$_KEY" -gt 0 ]]; then
-                echo -e "[$_KEY]\t\"${_MENU_ENTRY_TITLE_LIST[$_KEY]}\"\n"
+                echo -e "\"${_MENU_ENTRY_TITLE_LIST[$_KEY]}\""
             else
-                echo -e "[$_KEY]\tDefault (no VFIO setup)\n"
+                echo -e "Default (no VFIO setup)"
             fi
         done
 
@@ -679,7 +693,7 @@
     {
         local _OUTPUT="Updating GRUB...\t"
         PrintSuffixWait "$_OUTPUT"
-        sudo update-grub &> /dev/null
+        sudo update-grub
         PrintSuffixPassOrFail "$_OUTPUT"
         return "$?"
     }
@@ -801,12 +815,12 @@
     function WriteFilesForMultibootSetup
     {
         "$_HAS_EXECUTED_BACKUPS" || return 1
+        AskToSpecify_GRUB_MenuEntryForMultibootSetup || return 1
         IFS=$'\n'
         local -r _LINE_TO_MATCH="GRUB_DEFAULT="
 
-        if "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT" \
-            || [[ "$_PREFERRED_MENU_ENTRY_TITLE" == "$_DEFAULT_MENU_ENTRY_TITLE" ]]; then
-            local -r _LINE_GRUB_DEFAULT="$_LINE_TO_MATCH$_PREFERRED_MENU_ENTRY_TITLE"
+        if "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT"; then
+            local -r _LINE_GRUB_DEFAULT="$_LINE_TO_MATCH$_DEFAULT_MENU_ENTRY_TITLE"
         else
             local -r _LINE_GRUB_DEFAULT="$_LINE_TO_MATCH\"$_PREFERRED_MENU_ENTRY_TITLE\""
         fi
@@ -830,7 +844,7 @@
 
 # <params>
     declare -g _DEFAULT_MENU_ENTRY_TITLE="0"
-    declare -g _PREFERRED_MENU_ENTRY_TITLE="$_DEFAULT_MENU_ENTRY_TITLE"
+    declare -g _PREFERRED_MENU_ENTRY_TITLE=""
     declare -ga _MENU_ENTRY_TITLE_LIST=( "$_PREFERRED_MENU_ENTRY_TITLE" )
 
     # <remarks> Flags </remarks>

@@ -15,8 +15,8 @@
 # <params>
     # <remarks> Flags </remarks>
     declare -g _FLAG_DO_EXECUTE_BACKUPS=true
-    declare -g _FLAG_DO_EXECUTE_PRE_SETUP=false
-    declare -g _FLAG_DO_EXECUTE_POST_SETUP=false
+    declare -g _FLAG_DO_EXECUTE_PRE_SETUP=true
+    declare -g _FLAG_DO_EXECUTE_POST_SETUP=true
     declare -g _FLAG_DO_SYSTEM_CHECK=true
 # </params>
 
@@ -123,5 +123,5 @@ if [[ "$?" -eq 1 ]] \
     RestoreFiles || exit 1
 fi
 
-Debug
+# Debug
 exit "$?"

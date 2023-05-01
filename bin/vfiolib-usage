@@ -233,18 +233,15 @@
                 return 0 ;;
 
             "first" )
-                _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=false
                 _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_FIRST=true
                 return 0 ;;
 
             "last" )
-                _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=false
                 _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_LAST=true
                 return 0 ;;
 
             * )
                 if Does_IOMMU_GroupContain_ExternalVGA "$1"; then
-                    _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=false
                     Get_Preferred_IOMMU_Group_For_Multiboot "$1"
                     return 0
                 fi ;;
@@ -481,7 +478,7 @@
     declare -g _EXECUTE_POST_SETUP_ZRAM_SWAP=false
     declare -g _EXECUTE_POST_SETUP_UNINSTALL=false
     # declare -g _EXECUTE_VFIO_SETUP_DYNAMIC_WTIH_HOOKS=false
-    declare -g _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=true
+    declare -g _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=false
     declare -g _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_FIRST=false
     declare -g _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_LAST=false
     declare -g _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE=false
