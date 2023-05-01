@@ -26,7 +26,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 * **Quality of Life**
     - Choose multiple common-sense features that are known to experienced users (see [Features](#Features)).
 * **Securely run a legacy OS**
-    - See [hardware compatibility](#hardware compatibility).
+    - See [Hardware compatibility](# Known hardware compatibility).
 * **If it's greater control of your privacy you want**
     - Use *me_cleaner.<sup>[2](#2)</sup>*
 
@@ -220,13 +220,17 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 
 
 ### Miscellaneous:
-#### Legacy OS hardware compatibility
-| OS         | Device type    | Brand and model                     |
-| ---------- | -------------- | ----------------------------------- |
-| Windows XP | Video/graphics | NVIDIA GTX 900-series or before     |
-|            |                | AMD Radeon HD 7000-series or before |
-| Windows 98 | Video/graphics | NVIDIA 7000-series GTX or before    |
-|            |                | any ATI models                      |
+#### Known hardware compatibility
+| OS           | Device type    | Brand and model                        |
+| ------------ | -------------- | -------------------------------------- |
+| Windows 7    | Video/graphics | NVIDIA RTX 3000-series** or before     |
+| Windows XP   | Video/graphics | NVIDIA GTX 900-series* or before**     |
+|              |                | AMD Radeon HD 7000-series* or before** |
+| Windows 98   | Video/graphics | NVIDIA 7000-series GTX ** or before    |
+|              |                | any ATI model **                       |
+
+*UEFI and BIOS compatible.
+**BIOS-only.
 
 ### Disclaimer:
 Use at your own risk.
@@ -234,3 +238,5 @@ Use at your own risk.
 Please review your system's specifications and resources.
 
 Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
+
+If UEFI is enabled (and CSM/BIOS is disabled), BIOS-only VGA devices may not be available as Host video output; BIOS-only VGA devices may only be available explicitly for hardware passthrough.
