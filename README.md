@@ -48,7 +48,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 
         Specify the database to reference before parsing IOMMU groups.
         OPTIONS:
-          -f, --file [filename]         Reference file database.
+          -f, --file [ARGS]             Reference file database.
           -i, --internal                Reference local database.
           -o, --online                  Reference online database.
 
@@ -66,7 +66,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
           all                           Select all IOMMU groups.
           no-vga                        Select all IOMMU groups without VGA devices.
           [x]                           Select IOMMU group.
-          [x-y]                         Select IOMMU groups.
+          [0-?]                         Select IOMMU groups.
 
           Example:
             no-vga,14                   Select group 14 and all non-VGA groups.
@@ -78,12 +78,12 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
         Pre-setup OPTIONS: *
           -c, --cpu                     Allocate CPU.
           -e, --evdev                   Setup a virtual KVM switch.
-          -H, --hugepages               Create static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s).
+          -H, --hugepages [ARGS]        Create static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s).
           --uninstall-pre-setup         Undo changes made by preliminary setup.
 
         Hugepages ARGUMENTS: *
           2M, 1G                        Hugepage size (2 MiB or 1 GiB).
-          [1-?]                         Amount of Hugepages (maximum amount is total memory subtracted by 4 GiB).
+          [x]                           Amount of Hugepages (maximum amount is total memory subtracted by 4 GiB).
 
           Example:
             1G 16                       1 GiB hugepage * 16     == 16 GiB allocated to hugepages.
@@ -92,9 +92,15 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 #### VFIO setup
 
         VFIO setup OPTIONS: *
-          -m, --multiboot               Create multiple VFIO setups with corresponding GRUB menu entries.
-          -s, --static                  Single VFIO setup. Specify method of setup (see ARGUMENTS).
+          -m, --multiboot [ARGS]        Create multiple VFIO setups with corresponding GRUB menu entries. Specify default GRUB menu entry by VGA IOMMU group ID (see ARGUMENTS).
+          -s, --static [ARGS]           Single VFIO setup. Specify method of setup (see ARGUMENTS).
           --uninstall-vfio-setup        Undo an existing VFIO setup.
+
+        Multiboot ARGUMENTS:"
+          [x]                           The ID of the valid excluded VGA IOMMU group.
+          default                       Default menu entry excludes VFIO setup.
+          first                         Prefer the first valid excluded VGA IOMMU group.
+          last                          Prefer the last valid excluded VGA IOMMU group.
 
         Static VFIO setup ARGUMENTS:
           file                          Append output to system configuration files.
@@ -104,9 +110,9 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 
         Post-setup OPTIONS:
           --audio-loopback              Install the audio loopback service...           Loopback audio from Guest to Host (over Line-out to Line-in). *
-          --auto-xorg                   Install auto-Xorg...                            System service to find and set a valid boot VGA device for Xorg.
+          --auto-xorg [ARGS]            Install auto-Xorg...                            System service to find and set a valid boot VGA device for Xorg.
           --hooks                       Install recommended Libvirt hooks.
-          --zram-swap                   Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
+          --zram-swap [ARGS]            Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
           --uninstall-post-setup        Undo all changes made by post-setup. *
 
         auto-xorg ARGUMENTS:
