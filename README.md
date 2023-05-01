@@ -22,7 +22,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
     - What is tedious becomes trivial; reduce the number of manual steps a user has to make.
     - Specify answers ahead of time or answer prompts step-by-step (see [Usage](https://github.com/portellam/deploy-vfio/tree/develop/#Usage)).
 * **Hardware passthrough, not Hardware emulation**
-    - Preserve the performance of a Virtual machine PC, through use of real hardware.
+    - Preserve the performance of a Virtualized PC, through use of real hardware.
 * **Quality of Life**
     - Choose multiple common-sense features that are known to experienced users (see [Features](https://github.com/portellam/deploy-vfio/tree/develop/#Features)).
 * **Securely run a [Legacy](https://github.com/portellam/deploy-vfio/tree/develop/#Legacy) OS.**
