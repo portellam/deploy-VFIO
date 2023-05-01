@@ -28,7 +28,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 * **Securely run a [Legacy](#Legacy) OS**
 * **If it's greater control of your privacy you want**
     - Use *me_cleaner.<sup>[2](#2)</sup>*
-* **[Supported Host OS](#Linux)**
+* **Your Desktop OS is [Supported](#Linux)**
 
 ### How-to:
 #### To install
