@@ -209,7 +209,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 - <sub>**[zram package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub>
 - <sub>**[zram benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
 
-### Miscellaneous:
+### Compatibility:
 #### Linux
 | Distribution Family | Supported? |
 | ------------------- | ---------- |
@@ -230,12 +230,10 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 
 *UEFI and BIOS compatible.
 **BIOS-only.
+*If UEFI is enabled (and CSM/BIOS is disabled), BIOS-only VGA devices may not be available as Host video output; BIOS-only VGA devices may only be available explicitly for hardware passthrough.*
 
 ### Disclaimer:
 Use at your own risk.
 
-Please review your system's specifications and resources.
+Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
 
-Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
-
-If UEFI is enabled (and CSM/BIOS is disabled), BIOS-only VGA devices may not be available as Host video output; BIOS-only VGA devices may only be available explicitly for hardware passthrough.
