@@ -25,19 +25,10 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
     - Preserve the performance of a Virtual machine PC, through use of real hardware.
 * **Quality of Life**
     - Choose multiple common-sense features that are known to experienced users (see [Features](#Features)).
-* **Securely run a legacy OS**
-    - See [Hardware](#Hardware).
+* **Securely run a [Legacy](#Legacy) OS**
 * **If it's greater control of your privacy you want**
     - Use *me_cleaner.<sup>[2](#2)</sup>*
-
-### Linux Distribution Compatibility:
-| Distro Family | Supported? |
-| ------------- | ---------- |
-| Arch          | No         |
-| Debian        | Yes        |
-| Gentoo        | No         |
-| Red Hat       | No         |
-| SUSE          | No         |
+* **[Supported Host OS](#Linux)**
 
 ### How-to:
 #### To install
@@ -218,9 +209,17 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 - <sub>**[zram package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub>
 - <sub>**[zram benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
 
-
 ### Miscellaneous:
-#### Hardware
+#### Linux
+| Distribution Family | Supported? |
+| ------------------- | ---------- |
+| Arch                | No         |
+| Debian              | Yes        |
+| Gentoo              | No         |
+| Red Hat             | No         |
+| SUSE                | No         |
+
+#### Legacy
 | OS           | Device type    | Brand and model                        |
 | ------------ | -------------- | -------------------------------------- |
 | Windows 7    | Video/graphics | NVIDIA RTX 3000-series** or before     |
