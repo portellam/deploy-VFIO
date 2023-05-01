@@ -474,7 +474,7 @@
             # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
             local _MENU_ENTRY_TITLE="$_SYSTEM_DISTRO, with $_SYSTEM_OS $_KERNEL (VFIO, w/o IOMMU '$1' w/ '$_THIS_IOMMU_GROUP_VGA_NAME')"
             _MENU_ENTRY_TITLE_LIST+=( "$_MENU_ENTRY_TITLE" )
-            GetPreferred_GRUB_MenuEntryForMultibootSetup "$1" "$_MENU_ENTRY_TITLE" || return 1
+            GetPreferred_GRUB_MenuEntryForMultibootSetup "$1" "$_MENU_ENTRY_TITLE"
 
             _FILE_CONTENTS_LIST+=(
                 "menuentry \"$_MENU_ENTRY_TITLE\"{"
@@ -596,6 +596,10 @@
 
     function GetPreferred_GRUB_MenuEntryForMultibootSetup
     {
+        if [[ ! -z "$_PREFERRED_MENU_ENTRY_TITLE" ]]; then
+            return 0
+        fi
+
         if "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_FIRST" \
             && [[ "$1" -eq 1 ]]; then
             _PREFERRED_MENU_ENTRY_TITLE="$2"
