@@ -15,7 +15,8 @@
 # <params>
     # <remarks> Flags </remarks>
     declare -g _FLAG_DO_EXECUTE_BACKUPS=true
-    declare -g _FLAG_DO_EXECUTE_EXTRAS=true
+    declare -g _FLAG_DO_EXECUTE_PRE_SETUP=false
+    declare -g _FLAG_DO_EXECUTE_POST_SETUP=false
     declare -g _FLAG_DO_SYSTEM_CHECK=true
 # </params>
 
@@ -47,9 +48,14 @@
         fi
 
         ExecuteEssentials
+
+        if "$_FLAG_DO_EXECUTE_PRE_SETUP"; then
+            echo; ExecuteEssentials
+        fi
+
         echo; ExecuteSetup
 
-        if "$_FLAG_DO_EXECUTE_EXTRAS"; then
+        if "$_FLAG_DO_EXECUTE_POST_SETUP"; then
             echo; ExecuteExtras
         fi
 
