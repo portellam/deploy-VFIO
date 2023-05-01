@@ -26,7 +26,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 * **Quality of Life**
     - Choose multiple common-sense features that are known to experienced users (see [Features](#Features)).
 * **Securely run a legacy OS**
-    - See [Hardware compatibility](#Known_hardware_compatibility).
+    - See [Hardware](#Hardware).
 * **If it's greater control of your privacy you want**
     - Use *me_cleaner.<sup>[2](#2)</sup>*
 
@@ -220,7 +220,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 
 
 ### Miscellaneous:
-#### Known hardware compatibility
+#### Hardware
 | OS           | Device type    | Brand and model                        |
 | ------------ | -------------- | -------------------------------------- |
 | Windows 7    | Video/graphics | NVIDIA RTX 3000-series** or before     |
