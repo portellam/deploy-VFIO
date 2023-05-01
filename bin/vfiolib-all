@@ -11,8 +11,8 @@
     source vfiolib-calcs
     source vfiolib-checks
     source vfiolib-common
-    source vfiolib-essentials
-    source vfiolib-extras
+    source vfiolib-pre-setup
+    source vfiolib-post-setup
     source vfiolib-files
     source vfiolib-globals
     source vfiolib-parse

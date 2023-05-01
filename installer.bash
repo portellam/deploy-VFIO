@@ -43,7 +43,7 @@
             || [[ ! -e "vfiolib-calcs" ]] \
             || [[ ! -e "vfiolib-checks" ]] \
             || [[ ! -e "vfiolib-common" ]] \
-            || [[ ! -e "vfiolib-essentials" ]] \
+            || [[ ! -e "vfiolib-pre-setup" ]] \
             || [[ ! -e "vfiolib-files" ]] \
             || [[ ! -e "vfiolib-globals" ]] \
             || [[ ! -e "vfiolib-parse" ]] \

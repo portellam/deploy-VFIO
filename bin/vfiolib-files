@@ -252,6 +252,7 @@
         GetFiles || return 1
         SetFiles || return 1
         CopyFilesToPaths || return 1
+        _HAS_EXECUTED_BACKUPS=true
         return 0
     }
 # </code>

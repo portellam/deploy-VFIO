@@ -135,7 +135,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 #### * Options that skip *all* user prompts.
 
 ### Features:
-#### Pre-setup  <sub>(vfiolib-essentials)</sub>
+#### Pre-setup  <sub>(vfiolib-pre-setup)</sub>
 * **Allocate CPU**
     - Reduce Host overhead, and improve both Host and Guest performance.
     - **Statically** allocate of Host CPU cores (and/or threads).<sup>[3](#3)</sup>
@@ -167,7 +167,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
     - Best for systems with integrated VGA device and one PCI VGA device.
     - Traditional PCI Passthrough/VFIO setup.
 
-#### Post-setup  <sub>(vfiolib-extras)</sub>
+#### Post-setup  <sub>(vfiolib-post-setup)</sub>
 * **auto-Xorg** system service to find and set a valid Host boot VGA device for Xorg.<sup>[6](#6)</sup>
 * **Guest Audio Capture**
     - Useful for systems with multiple Audio devices.

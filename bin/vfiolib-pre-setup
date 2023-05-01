@@ -1,7 +1,7 @@
 #!/bin/bash sh
 
 #
-# Filename:         vfiolib-essentials
+# Filename:         vfiolib-pre-setup
 # Description:      Recommended pre-installation setups.
 # Author(s):        Alex Portell <github.com/portellam>
 # Maintainer(s):    Alex Portell <github.com/portellam>
@@ -264,14 +264,14 @@
         return "$_LAST_EXIT_CODE"
     }
 
-    function ExecuteEssentials
+    function ExecutePreSetup
     {
         function Main
         {
             while [[ "$?" -ne 1 ]]; do
                 AddUserToGroups
 
-                if "$_ASK_TO_EXECUTE_PRE_SETUPS"; then
+                if "$_ASK_TO_EXECUTE_PRE_SETUP_ALL"; then
                     Allocate_RAM_ToGuest
                     Allocate_CPU_ToGuest
                     Virtual_KVM

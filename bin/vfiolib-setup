@@ -10,7 +10,7 @@
 # <remarks> Using </remarks>
 # <code>
     source vfiolib-common
-    source vfiolib-extras
+    source vfiolib-post-setup
     source vfiolib-files
     source vfiolib-parse
     source vfiolib-usage
@@ -162,7 +162,7 @@
         return 0
     }
 
-    function ExecuteSetup
+    function ExecuteMainSetup
     {
         function Main
         {

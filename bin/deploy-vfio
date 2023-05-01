@@ -26,7 +26,7 @@
         IsSudoUser || return 1
 
         # <remarks> Gather arguments. </remarks>
-        if ! SetOptions "$@"; then
+        if ! GetOption "$@"; then
             GetHelp
             return "$?"
         fi
@@ -37,26 +37,24 @@
             return 1
         fi
 
-        if ExecuteBackups; then
-            _HAS_EXECUTED_BACKUPS=true
-        fi
+        ExecuteBackups
 
         # <remarks> Exit early. </remarks>
-        if "$_EXECUTE_VFIO_SETUP_UNINSTALL"; then
-            ExecuteSetup
-            return "$?"
-        fi
+        # if "$_EXECUTE_VFIO_SETUP_UNINSTALL"; then
+        #     ExecuteMainSetup
+        #     return "$?"
+        # fi
 
         if "$_FLAG_DO_EXECUTE_PRE_SETUP"; then
-            ExecuteEssentials
+            ExecutePreSetup
         fi
 
         echo
-        ExecuteSetup
+        ExecuteMainSetup
 
         if "$_FLAG_DO_EXECUTE_POST_SETUP"; then
             echo
-            ExecuteExtras
+            ExecutePostSetup
         fi
 
         return 0
@@ -76,7 +74,7 @@
         echo -e "_IOMMU_GROUP_ID_LIST_TO_USE ==\t\t\t\t'${_IOMMU_GROUP_ID_LIST_TO_USE[@]}'"
         echo
         echo
-        echo -e "_ASK_TO_EXECUTE_PRE_SETUPS ==\t\t\t\t'$_ASK_TO_EXECUTE_PRE_SETUPS'"
+        echo -e "_ASK_TO_EXECUTE_PRE_SETUP_ALL ==\t\t\t\t'$_ASK_TO_EXECUTE_PRE_SETUP_ALL'"
         echo -e "_EXECUTE_PRE_SETUP_EVDEV ==\t\t\t\t'$_EXECUTE_PRE_SETUP_EVDEV'"
         echo -e "_EXECUTE_PRE_SETUP_HUGEPAGES ==\t\t\t\t'$_EXECUTE_PRE_SETUP_HUGEPAGES'"
         echo -e "_IS_HUGEPAGES_COUNT_SET ==\t\t\t\t'$_IS_HUGEPAGES_COUNT_SET'"
