@@ -693,7 +693,7 @@
     {
         local _OUTPUT="Updating GRUB...\t"
         PrintSuffixWait "$_OUTPUT"
-        sudo update-grub
+        sudo update-grub &> /dev/null
         PrintSuffixPassOrFail "$_OUTPUT"
         return "$?"
     }
@@ -831,8 +831,8 @@
             return 1
         fi
 
-        if ! sed -i '/'"$_LINE_TO_MATCH"'/c\'"$_LINE_GRUB_DEFAULT" "$_GRUB_DEST_PATH_1" &> /dev/null \
-            || ! echo -e "\n${_FILE_CONTENTS_LIST[*]}" >> "$_CUSTOM_GRUB_DEST_PATH" &> /dev/null; then
+        if ! sed -i '/'"$_LINE_TO_MATCH"'/c\'"$_LINE_GRUB_DEFAULT" "$_GRUB_DEST_PATH_1" \
+            || ! echo -e "\n${_FILE_CONTENTS_LIST[*]}" >> "$_CUSTOM_GRUB_DEST_PATH" ; then
             echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
             return 1
         fi

@@ -223,10 +223,6 @@
 
     function GetArgsForMultiboot_VFIO
     {
-        if [[ -z "$1" ]]; then
-            return 0
-        fi
-
         case "$1" in
             "default" )
                 _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=true
@@ -247,7 +243,10 @@
                 fi ;;
         esac
 
-        PrintStatementInvalidArgument "$1"
+        if [[ ! -z "$1" ]]; then
+            PrintStatementInvalidArgument "$1"
+        fi
+
         return 1
     }
 
@@ -344,7 +343,7 @@
             "  -q, --quiet\t\t\tReduce verbosity; print only relevant questions and status statements."
 
             "\nSpecify the database to reference before parsing IOMMU groups.\nOPTIONS:"
-            "  -f, --file [ARGS]\t\t\tReference file database."
+            "  -f, --file [ARGS]\t\tReference file database."
             "  -i, --internal\t\tReference local database."
             "  -o, --online\t\t\tReference online database."
 
