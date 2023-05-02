@@ -237,13 +237,13 @@ In Linux, a Video device or GPU, is listed as a *VGA (Video Graphics Array)*. VG
 | SUSE                | No         | none                       |
 
 ### Legacy:
-| OS           | Device type    | Brand and model                          |
-| ------------ | -------------- | ---------------------------------------- |
-| Windows 7    | Video/graphics | NVIDIA RTX 3000-series ** or before      |
-| Windows XP   | Video/graphics | NVIDIA GTX 900-series * or before**      |
-|              |                | AMD Radeon HD 7000-series * or before ** |
-| Windows 98   | Video/graphics | NVIDIA 7000-series GTX ** or before      |
-|              |                | any ATI model **                         |
+| OS           | Device type    | Brand and model                         |
+| ------------ | -------------- | --------------------------------------- |
+| Windows 7    | Video/graphics | NVIDIA RTX 3000-series** or before      |
+| Windows XP   | Video/graphics | NVIDIA GTX 900-series* or before**      |
+|              |                | AMD Radeon HD 7000-series* or before**  |
+| Windows 98   | Video/graphics | NVIDIA 7000-series GTX* or before       |
+|              |                | any ATI model** (before AMD)            |
 
 *\*UEFI and BIOS compatible.*
 
