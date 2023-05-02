@@ -242,10 +242,12 @@ In Linux, a Video device or GPU, is listed as a *VGA (Video Graphics Array)*. VG
 
 ## References
 ### [1]
+| ------------------------------------------------------------------------------------- |
 | <sub>**[me_cleaner, original (GitHub)](https://github.com/corna/me_cleaner)**</sub>   |
 | <sub>**[me_cleaner, updated (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>  |
 
 ### [2]
+| ----------------------------------------------------------------------------------------------------------- |
 | <sub>**[isolcpu (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub> |
 
 ### [3]
