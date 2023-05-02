@@ -241,38 +241,39 @@ In Linux, a Video device or GPU, is listed as a *VGA (Video Graphics Array)*. VG
 *If UEFI is enabled (and CSM/BIOS is disabled), BIOS-only VGA devices may not be available as Host video output; BIOS-only VGA devices may only be available explicitly for hardware passthrough.*
 
 ## References
-### [1]
+#### [1]
 | me_cleaner                                                                   |
 | ---------------------------------------------------------------------------- |
 | <sub>**[source (GitHub)](https://github.com/corna/me_cleaner)**</sub>        |
 | <sub>**[source fork (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub> |
 
-### [2]
+#### [2]
 | isolcpu                                                                                           |
 | ------------------------------------------------------------------------------------------------- |
 | <sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub> |
 
-### [3]
+#### [3]
 | Hugepages                                                                                               |
 | ------------------------------------------------------------------------------------------------------- |
 | <sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub> |
 
-### [4]
+#### [4]
 | Evdev                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------ |
 | <sub>**[Evdev (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub> |
 
-### [5]
+#### [5]
 | auto-Xorg                                                                   |
 | --------------------------------------------------------------------------- |
 | <sub>**[auto-Xorg (GitHub)](https://github.com/portellam/auto-Xorg)**</sub> |
 
-### [6]
+#### [6]
 | Libvirt hooks                                                                                                                                             |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <sub>**[VFIO-Tools source (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)**</sub>                                                                |
 | <sub>**[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub> |
 
-### [7]
+#### [7]
 | zram-swap                                                                                                                                                    |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | <sub>**[source (GitHub)](https://github.com/foundObjects/zram-swap)**</sub>                                                                                  |
@@ -281,12 +282,12 @@ In Linux, a Video device or GPU, is listed as a *VGA (Video Graphics Array)*. VG
 | <sub>**[package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub>                                                                                 |
 | <sub>**[benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub> |
 
-### [8]
+#### [8]
 | VFIO                                                                                                                                                                      |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <sub>**[VFIO documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub> |
 
-### [9]
+#### [9]
 | VGA                                                                            |
 | ------------------------------------------------------------------------------ |
 | <sub>**[Wikipedia](https://en.wikipedia.org/wiki/Video_Graphics_Array)**</sub> |
