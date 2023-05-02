@@ -25,10 +25,11 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
     - Preserve the performance of a Virtualized PC, through use of real hardware.
 * **Quality of Life**
     - Choose multiple common-sense features that are known to experienced users (see [Features](#Features)).
+* **Your Desktop OS is [supported](#Linux).**
 * **Securely run a [Legacy](#Legacy) OS.**
 * **If it's greater control of your privacy you want...**
     - Use *me_cleaner.<sup>[2](#2)</sup>*
-* **Your Desktop OS is [supported](#Linux).**
+
 
 ### How-to:
 #### To install
@@ -217,13 +218,13 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 
 ### Compatibility:
 #### Linux
-| Distribution Family | Supported? |
-| ------------------- | ---------- |
-| Arch                | No         |
-| Debian              | Yes        |
-| Gentoo              | No         |
-| Red Hat             | No         |
-| SUSE                | No         |
+| Distribution Family | Supported? | Tested Distros             |
+| ------------------- | ---------- | -------------------------- |
+| Arch                | No         | none                       |
+| Debian              | Yes        | Debian 11.x                |
+| Gentoo              | No         | none                       |
+| Red Hat             | No         | none                       |
+| SUSE                | No         | none                       |
 
 #### Legacy
 | OS           | Device type    | Brand and model                          |
@@ -241,4 +242,3 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 
 ### Disclaimer:
 Use at your own risk. Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
-
