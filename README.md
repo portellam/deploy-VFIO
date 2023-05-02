@@ -12,7 +12,7 @@
 ### Description:
 Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines, on your Linux computer. Includes many common-sense quality-of-life enhancements.
 
-### What is [VFIO](#VFIO?)?
+### What is [VFIO](#VFIO)?
 #### Useful links
 * [About VFIO](https://www.kernel.org/doc/html/latest/driver-api/vfio.html)
 * [Guide](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)
