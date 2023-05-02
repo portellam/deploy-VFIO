@@ -191,7 +191,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
     - Implementation is known as *zram-swap*.<sup>[7](#7)</sup>
 
 ## Information
-### Files and paths modified by [deploy-VFIO](#deploy-VFIO):
+### Files and paths modified by *deploy-VFIO*:
 #### Pre-setup
 - */etc/apparmor.d/local/abstractions/libvirt-qemu*
 - */etc/libvirt/qemu.conf*
