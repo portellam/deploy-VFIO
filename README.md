@@ -36,7 +36,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 * **Your desktop OS is [Supported](#Linux:).**
 * **Securely run a [Legacy OS](#Legacy:).**
 * **If it's greater control of your privacy you want...**
-    - Use *me_cleaner.<sup>[1](#1)</sup>*
+    - Use *me_cleaner*.<sup>[1](#1)</sup>
 
 ## How-to
 ### To install:
@@ -204,7 +204,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 - files here
 
 ### VFIO?
-Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.<sup>[8](#8)</sup>*
+Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.*<sup>[8](#8)</sup>
 
 ### VGA?
 Throughout the script source code and documentation, the acronym *VGA* is used.
