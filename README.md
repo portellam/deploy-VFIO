@@ -143,7 +143,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 #### * Options that skip *all* user prompts.
 
 ## Features
-### Pre-setup  <sub>(vfiolib-pre-setup)</sub>:
+### Pre-setup  <sub>(vfiolib-pre-setup)</sub>
 * **Allocate CPU**
     - Reduce Host overhead, and improve both Host and Guest performance.
     - **Statically** allocate of Host CPU cores (and/or threads).<sup>[2](#2)</sup>
@@ -175,7 +175,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
     - Best for systems with integrated VGA device and one PCI VGA device.
     - Traditional PCI Passthrough/VFIO setup.
 
-### Post-setup  <sub>(vfiolib-post-setup)</sub>:
+### Post-setup  <sub>(vfiolib-post-setup)</sub>
 * **auto-Xorg** system service to find and set a valid Host boot [VGA](#VGA?) device for Xorg.<sup>[5](#5)</sup>
 * **Guest Audio Capture**
     - Useful for systems with multiple Audio devices.
@@ -283,9 +283,9 @@ In Linux, a Video device or GPU, is listed as a *VGA (Video Graphics Array)*. VG
 | <sub>**[benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub> |
 
 #### [8]
-| VFIO                                                                                                                                                                      |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <sub>**[VFIO documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub> |
+| VFIO                                                                                                                                                                 |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <sub>**[documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub> |
 
 #### [9]
 | VGA                                                                            |
