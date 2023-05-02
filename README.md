@@ -22,13 +22,25 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
     - What is tedious becomes trivial; reduce the number of manual steps a user has to make.
     - Specify answers ahead of time or answer prompts step-by-step (see [Usage](#Usage)).
 * **Hardware passthrough, not Hardware emulation**
-    - Preserve the performance of a Virtualized PC, through use of real hardware.
+    - Preserve the performance of a virtualized OS (Gaming), through use of real hardware (VGA/GPU).
 * **Quality of Life**
     - Choose multiple common-sense features that are known to experienced users (see [Features](#Features)).
 * **Your desktop OS is [Supported](#Linux).**
 * **Securely run a [Legacy OS](#Legacy).**
 * **If it's greater control of your privacy you want...**
     - Use *me_cleaner.<sup>[2](#2)</sup>*
+
+#### What is VGA?
+Throughout the script source code and documentation, the acronym *VGA* is used.
+
+In Linux, the technical description of the type or class, of a Video or GPU device, is listed as a *VGA (Video Graphics Array)*. VGA may *refer to the computer display standard, the 15-pin D-subminiature VGA connector, or the 640×480 resolution characteristic of the VGA hardware.*[3](#3)
+
+Example:
+
+    $ lspci -nnk | grep -Ei "vga|graphics"
+    01:00.0 VGA compatible controller [0300]: NVIDIA Corporation GA104 [GeForce RTX 3070] [10de:2484] (rev a1)
+    04:00.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Cayman PRO [Radeon HD 6950] [1002:6719]
+
 
 ### How-to:
 #### To install
@@ -138,18 +150,18 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 #### Pre-setup  <sub>(vfiolib-pre-setup)</sub>
 * **Allocate CPU**
     - Reduce Host overhead, and improve both Host and Guest performance.
-    - **Statically** allocate of Host CPU cores (and/or threads).<sup>[3](#3)</sup>
+    - **Statically** allocate of Host CPU cores (and/or threads).<sup>[4](#4)</sup>
     - **Dynamically** allocate as a *Libvirt hook*.
 * **Allocate RAM**
     - Eliminate the need to defragment Host memory (RAM) before allocating Guest memory.
     - Reduce Host overhead, and improve both Host and Guest performance.
     - **Statically** allocate Host memory to Guests.
-    - Implementation is known as *Hugepages*.<sup>[4](#4)</sup>
+    - Implementation is known as *Hugepages*.<sup>[5](#5)</sup>
 * **Virtual KVM (Keyboard Video Mouse) switch**
     - Allow a user to swap a group of Input devices (as a whole) between active Guest(s) and Host.
     - Use the pre-defined macro (example: *'L-CTRL' + 'R-CTRL'*).
     - Create a virtual Keyboard-Video-Mouse switch.
-    - Implementation is known as *Evdev (Event Devices)*.<sup>[5](#5)</sup>
+    - Implementation is known as *Evdev (Event Devices)*.<sup>[6](#6)</sup>
     - **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 
 #### VFIO setup <sub>(vfiolib-setup)</sub>
@@ -168,21 +180,21 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
     - Traditional PCI Passthrough/VFIO setup.
 
 #### Post-setup  <sub>(vfiolib-post-setup)</sub>
-* **auto-Xorg** system service to find and set a valid Host boot VGA device for Xorg.<sup>[6](#6)</sup>
+* **auto-Xorg** system service to find and set a valid Host boot VGA device for Xorg.<sup>[7](#7)</sup>
 * **Guest Audio Capture**
     - Useful for systems with multiple Audio devices.
     - Create an *Audio loopback* to output on the *Host* Audio device *Line-Out*.
     - Listen on *Host* Audio device *Line-In* (from *Guest* PCI Audio device *Line-Out*).
     - For virtual implementation, see *Virtual Audio Capture*.
 * **Libvirt Hooks**
-    - Invoke **"hooks"** (scripts) for all or individual Guests.<sup>[7](#7)</sup>
+    - Invoke **"hooks"** (scripts) for all or individual Guests.<sup>[8](#8)</sup>
     - Switch display input (video output) at Guest start.
     - **Dynamically** allocate CPU cores and CPU scheduler.
     - **Libvirt-nosleep** system service(s) per Guest to prevent Host sleep while Guest is active.
 * **RAM as Compressed Swapfile/partition**
     - Reduce swapiness to existing Host swap devices, and reduce chances of Host memory exhaustion (given an event of memory over-allocation).
     - Create a compressed Swap device in Host memory, using the *lz4* algorithm *(compression ratio of about 2:1)*.
-    - Implementation is known as *zram-swap*.<sup>[8](#8)</sup>
+    - Implementation is known as *zram-swap*.<sup>[9](#9)</sup>
 
 ### References:
 #### [1]
@@ -193,22 +205,24 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 - <sub>**[me_cleaner, updated (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
 
 #### [3]
+- <sub>**[Video Graphics Array (Wikipedia)](https://en.wikipedia.org/wiki/Video_Graphics_Array)**</sub>
+#### [4]
 - <sub>**[isolcpu (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub>
 
-#### [4]
+#### [5]
 - <sub>**[Hugepages (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
 
-#### [5]
+#### [6]
 - <sub>**[Evdev (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
 
-#### [6]
+#### [7]
 - <sub>**[auto-Xorg (GitHub)](https://github.com/portellam/auto-Xorg)**</sub>
 
-#### [7]
+#### [8]
 - <sub>**[VFIO-Tools (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)**</sub>
 - <sub>**[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub>
 
-#### [8]
+#### [9]
 - <sub>**[zram-swap (GitHub)](https://github.com/foundObjects/zram-swap)**</sub>
 - <sub>**[lz4 (GitHub)](https://github.com/lz4/lz4)**</sub>
 - <sub>**[zram package (Debian)](https://wiki.debian.org/ZRam)**</sub>
