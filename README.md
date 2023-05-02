@@ -1,4 +1,5 @@
 # deploy-VFIO
+### Status: Functional and [Developing](https://github.com/portellam/deploy-vfio/tree/develop) (see [TODO.md](https://github.com/portellam/deploy-vfio/tree/develop/TODO.md)).
 ## Contents
 * [About](#About)
 * [How-to](#How-to)
@@ -11,10 +12,7 @@
 ### Description:
 Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines, on your Linux computer. Includes many common-sense quality-of-life enhancements.
 
-### Status: Functional and [Developing](https://github.com/portellam/deploy-vfio/tree/develop) (see [TODO.md](https://github.com/portellam/deploy-vfio/tree/develop/TODO.md)).
-
 ### What is [VFIO](#VFIO?)?
-
 #### Useful links
 * [About VFIO](https://www.kernel.org/doc/html/latest/driver-api/vfio.html)
 * [Guide](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)
