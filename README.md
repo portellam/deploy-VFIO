@@ -303,4 +303,4 @@ In Linux, a Video device or GPU, is listed as a *VGA (Video Graphics Array)*. VG
 | <sub>**[Wikipedia](https://en.wikipedia.org/wiki/Video_Graphics_Array)**</sub> |
 
 ## Disclaimer:
-Use at your own risk. Please review list of files modified by this script. User assumes responsbility of good backups. Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
+Use at your own risk. Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
