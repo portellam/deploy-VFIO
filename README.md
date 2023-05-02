@@ -28,9 +28,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 * **Your desktop OS is [Supported](#Linux:).**
 * **Securely run a [Legacy OS](#Legacy:).**
 * **If it's greater control of your privacy you want...**
-    - Use *me_cleaner.<sup>[2](#2)</sup>*
-
-### What is [VGA](#VGA?)?
+    - Use *me_cleaner.<sup>[2](#1)</sup>*
 
 ## How-to
 ### To install:
@@ -66,7 +64,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 
         ARGUMENTS (delimited by comma): *
           all                           Select all IOMMU groups.
-          no-vga                        Select all IOMMU groups without VGA devices.
+          no-vga                        Select all IOMMU groups without [VGA](#VGA?) devices.
           [x]                           Select IOMMU group.
           [0-?]                         Select IOMMU groups.
 
@@ -94,7 +92,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 #### VFIO setup
 
         VFIO setup OPTIONS: *
-          -m, --multiboot [ARGS]        Create multiple VFIO setups with corresponding GRUB menu entries. Specify default GRUB menu entry by VGA IOMMU group ID (see ARGUMENTS).
+          -m, --multiboot [ARGS]        Create multiple VFIO setups with corresponding GRUB menu entries. Specify default GRUB menu entry by [VGA](#VGA?) IOMMU group ID (see ARGUMENTS).
           -s, --static [ARGS]           Single VFIO setup. Specify method of setup (see ARGUMENTS).
           --uninstall-vfio-setup        Undo an existing VFIO setup.
 
@@ -112,7 +110,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 
         Post-setup OPTIONS:
           --audio-loopback              Install the audio loopback service...           Loopback audio from Guest to Host (over Line-out to Line-in). *
-          --auto-xorg [ARGS]            Install auto-Xorg...                            System service to find and set a valid boot VGA device for Xorg.
+          --auto-xorg [ARGS]            Install auto-Xorg...                            System service to find and set a valid boot [VGA](#VGA?) device for Xorg.
           --hooks                       Install recommended Libvirt hooks.
           --zram-swap [ARGS]            Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
           --uninstall-post-setup        Undo all changes made by post-setup. *
@@ -158,7 +156,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 * **Multi-boot VFIO setup**
     - Create multiple VFIO setups with corresponding GRUB menu entries.     **More flexibility.**
     - Default menu entry is without VFIO setup.
-    - Best for systems with two or more PCI VGA devices.
+    - Best for systems with two or more PCI [VGA](#VGA?) devices.
     - Select a GRUB menu entry with a VGA device to boot from (excludes that VGA device's IOMMU group from VFIO).
     - **Disclaimer:** For best results, use *auto-Xorg*.<sup>[6](#6)</sup>
 * **Static VFIO setup**
@@ -170,7 +168,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
     - Traditional PCI Passthrough/VFIO setup.
 
 ### Post-setup  <sub>(vfiolib-post-setup)</sub>:
-* **auto-Xorg** system service to find and set a valid Host boot VGA device for Xorg.<sup>[7](#7)</sup>
+* **auto-Xorg** system service to find and set a valid Host boot [VGA](#VGA?) device for Xorg.<sup>[7](#7)</sup>
 * **Guest Audio Capture**
     - Useful for systems with multiple Audio devices.
     - Create an *Audio loopback* to output on the *Host* Audio device *Line-Out*.
@@ -188,48 +186,62 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 
 ## References
 ### [1]
-<sub>**[VFIO documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub>
-
-### [2]
-<sub>**[me_cleaner, original (GitHub)](https://github.com/corna/me_cleaner)**</sub>
-<sub>**[me_cleaner, updated (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
-
-### [3]
 <sub>**[Video Graphics Array (Wikipedia)](https://en.wikipedia.org/wiki/Video_Graphics_Array)**</sub>
 
-### [4]
+### [2]
 <sub>**[isolcpu (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub>
 
-### [5]
+### [3]
 <sub>**[Hugepages (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
 
-### [6]
+### [4]
 <sub>**[Evdev (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
 
-### [7]
+### [5]
 <sub>**[auto-Xorg (GitHub)](https://github.com/portellam/auto-Xorg)**</sub>
 
-### [8]
+### [6]
 <sub>**[VFIO-Tools (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)**</sub>
+
 <sub>**[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub>
 
-### [9]
+### [7]
 <sub>**[zram-swap (GitHub)](https://github.com/foundObjects/zram-swap)**</sub>
+
 <sub>**[lz4 (GitHub)](https://github.com/lz4/lz4)**</sub>
+
 <sub>**[zram package (Debian)](https://wiki.debian.org/ZRam)**</sub>
+
 <sub>**[zram package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub>
+
 <sub>**[zram benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
+
+### [8]
+<sub>**[VFIO documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub>
+
+### [9]
+<sub>**[me_cleaner, original (GitHub)](https://github.com/corna/me_cleaner)**</sub>
+
+<sub>**[me_cleaner, updated (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
 
 ## Information
 ### Files modified by [deploy-VFIO](#deploy-VFIO)
+#### Pre-setup
+- files here
+
+#### VFIO setup
+- files here
+
+#### Post-setup
+- files here
 
 ### VFIO?
-Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.<sup>[1](#1)</sup>*
+Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.<sup>[8](#8)</sup>*
 
 ### VGA?
 Throughout the script source code and documentation, the acronym *VGA* is used.
 
-In Linux, a Video device or GPU, is listed as a *VGA (Video Graphics Array)*. VGA may *refer to the computer display standard, the 15-pin D-subminiature VGA connector, or the 640×480 resolution characteristic of the VGA hardware.*<sup>[3](#3)</sup>
+In Linux, a Video device or GPU, is listed as a *VGA (Video Graphics Array)*. VGA may *refer to the computer display standard, the 15-pin D-subminiature VGA connector, or the 640×480 resolution characteristic of the VGA hardware.*<sup>[9](#9)</sup>
 
 #### Example:
 
@@ -261,4 +273,4 @@ In Linux, a Video device or GPU, is listed as a *VGA (Video Graphics Array)*. VG
 *If UEFI is enabled (and CSM/BIOS is disabled), BIOS-only VGA devices may not be available as Host video output; BIOS-only VGA devices may only be available explicitly for hardware passthrough.*
 
 ## Disclaimer:
-Use at your own risk.. Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
+Use at your own risk. Please review list of files modified by this script. User assumes responsbility of good backups. Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
