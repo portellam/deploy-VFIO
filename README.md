@@ -22,7 +22,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
     - What is tedious becomes trivial; reduce the number of manual steps a user has to make.
     - Specify answers ahead of time or answer prompts step-by-step (see [Usage](#Usage)).
 * **Hardware passthrough, not Hardware emulation**
-    - Preserve the performance of a virtualized OS (Gaming), through use of real hardware (VGA/GPU).
+    - Preserve the performance of a virtualized OS (Gaming), through use of real hardware (Video device).
 * **Quality of Life**
     - Choose multiple common-sense features that are known to experienced users (see [Features](#Features)).
 * **Your desktop OS is [Supported](#Linux).**
@@ -30,10 +30,10 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 * **If it's greater control of your privacy you want...**
     - Use *me_cleaner.<sup>[2](#2)</sup>*
 
-#### What is VGA?
+### What is VGA?
 Throughout the script source code and documentation, the acronym *VGA* is used.
 
-In Linux, the technical description of the type or class, of a Video or GPU device, is listed as a *VGA (Video Graphics Array)*. VGA may *refer to the computer display standard, the 15-pin D-subminiature VGA connector, or the 640×480 resolution characteristic of the VGA hardware.*<sup>[3](#3)</sup>
+In Linux, a Video device or GPU, is listed as a *VGA (Video Graphics Array)*. VGA may *refer to the computer display standard, the 15-pin D-subminiature VGA connector, or the 640×480 resolution characteristic of the VGA hardware.*<sup>[3](#3)</sup>
 
 Example:
 
