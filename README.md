@@ -26,13 +26,13 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
     - Regain privacy and/or security from spyware OSes (example: *Windows 10, 11, Macintosh*).
 * **Ease of use**
     - What is tedious becomes trivial; reduce the number of manual steps a user has to make.
-    - Specify answers ahead of time or answer prompts step-by-step (see [Usage](#Usage:)).
+    - Specify answers ahead of time or answer prompts step-by-step (see [Usage](#Usage)).
 * **Hardware passthrough, not Hardware emulation**
     - Preserve the performance of a virtualized OS (Gaming), through use of real hardware (Video device).
 * **Quality of Life**
-    - Choose multiple common-sense features that are known to experienced users (see [Features](#Features:)).
-* **Your desktop OS is [Supported](#Linux:).**
-* **Securely run a [Legacy OS](#Legacy:).**
+    - Choose multiple common-sense features that are known to experienced users (see [Features](#Features)).
+* **Your desktop OS is [Supported](#Linux).**
+* **Securely run a [Legacy OS](#Legacy).**
 * **If it's greater control of your privacy you want...**
     - Use *me_cleaner*.<sup>[1](#1)</sup>
 
