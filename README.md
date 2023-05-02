@@ -274,9 +274,9 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 | <sub>**[Evdev (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub> |
 
 #### [5]
-| auto-Xorg                                                                   |
-| --------------------------------------------------------------------------- |
-| <sub>**[auto-Xorg (GitHub)](https://github.com/portellam/auto-Xorg)**</sub> |
+| auto-Xorg                                                                |
+| ------------------------------------------------------------------------ |
+| <sub>**[source (GitHub)](https://github.com/portellam/auto-Xorg)**</sub> |
 
 #### [6]
 | Libvirt hooks                                                                                                                                             |
