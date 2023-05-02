@@ -220,7 +220,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 | Distribution Family | Supported? | Tested Distros             |
 | ------------------- | ---------- | -------------------------- |
 | Arch                | No         | none                       |
-| Debian              | Yes        | Debian 11.x                |
+| Debian              | Yes        | Debian 11                  |
 | Gentoo              | No         | none                       |
 | Red Hat             | No         | none                       |
 | SUSE                | No         | none                       |
