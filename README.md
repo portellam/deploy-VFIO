@@ -245,8 +245,9 @@ In Linux, a Video device or GPU, is listed as a *VGA (Video Graphics Array)*. VG
 | Windows 98   | Video/graphics | NVIDIA 7000-series GTX ** or before      |
 |              |                | any ATI model **                         |
 
-*UEFI and BIOS compatible.
-**BIOS-only.
+*\*UEFI and BIOS compatible.*
+
+*\*\*BIOS-only.*
 
 *If UEFI is enabled (and CSM/BIOS is disabled), BIOS-only VGA devices may not be available as Host video output; BIOS-only VGA devices may only be available explicitly for hardware passthrough.*
 
