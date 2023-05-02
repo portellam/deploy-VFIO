@@ -33,7 +33,7 @@ Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framew
 #### What is VGA?
 Throughout the script source code and documentation, the acronym *VGA* is used.
 
-In Linux, the technical description of the type or class, of a Video or GPU device, is listed as a *VGA (Video Graphics Array)*. VGA may *refer to the computer display standard, the 15-pin D-subminiature VGA connector, or the 640×480 resolution characteristic of the VGA hardware.*[3](#3)
+In Linux, the technical description of the type or class, of a Video or GPU device, is listed as a *VGA (Video Graphics Array)*. VGA may *refer to the computer display standard, the 15-pin D-subminiature VGA connector, or the 640×480 resolution characteristic of the VGA hardware.*<sup>[3](#3)</sup>
 
 Example:
 
