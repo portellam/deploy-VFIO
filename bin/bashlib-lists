@@ -1,0 +1,141 @@
+#!/bin/bash/env bash
+
+#
+# Filename:         bashlib-lists
+# Description:      Enumeration type functions and validation.
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+
+# <summary> Libraries </summary>
+# <code>
+    source bashlib-vars
+# </code>
+
+# <summary> Validation </summary>
+# <functions>
+    function IsArray
+    {
+        IsEnum "$1" || return "$?"
+        local -n REFERENCE="$1"
+
+        for KEY in "${!REFERENCE[@]}"; do
+            IsInt "$KEY" || return 1
+        done
+
+        return 0
+    }
+
+    function IsEnum
+    {
+        local -n REFERENCE="$1"
+        IsNonZero "${#REFERENCE[@]}"
+        return "$?"
+    }
+
+    function IsList
+    {
+        IsEnum "$1" || return "$?"
+        local -n REFERENCE="$1"
+
+        for KEY in "${!REFERENCE[@]}"; do
+            IsInt "$KEY" || return 0
+        done
+
+        return 1
+    }
+
+    function IsNestedList
+    {
+        IsList "$1" || return "$?"
+        local -n REFERENCE="$1"
+
+        for VALUE in "${REFERENCE[@]}"; do
+            IsReference "$VALUE" && return 0
+        done
+
+        return 1
+    }
+# </functions>
+
+# <summary> Changes </summary>
+# <functions>
+    function AddToEnum
+    {
+        IsString "$2" || return "$?"
+        IsArray "$1" || return "$?"
+        local -n REFERENCE="$1"
+        REFERENCE+=( "$1" )
+        return 0
+    }
+
+    function AddToList
+    {
+        HasKey "$1" "$2" && return 1
+        local -n REFERENCE="$1"
+        REFERENCE[$2]="$3"
+        return "$?"
+    }
+
+    function HasKey
+    {
+        IsString "$2" || return "$?"
+        IsString "$1" || return "$?"
+        IsArray "$1" || return 0
+        IsList "$1" || return "$?"
+        local -n REFERENCE="$1"
+
+        for KEY in ${!REFERENCE[@]}; do
+            AreEqual "$KEY" "$2" && return "$?"
+        done
+
+        return 1
+    }
+
+    function HasValue
+    {
+        IsString "$1" || return "$?"
+        local -n REFERENCE="$1"
+        [ -v "${!REFERENCE}" ] || IsEnum "$1"
+        return "$?"
+    }
+
+    function Remove
+    {
+        HasKey "$1" "$2" || return "$?"
+        local -n REFERENCE="$1"
+        REFERENCE[$2]="$3"
+        unset REFERENCE[$2]
+        return "$?"
+    }
+
+    function RemoveAt
+    {
+        HasKey "$1" "$2" || return "$?"
+        local -n REFERENCE="$1"
+        REFERENCE[$2]=""
+        return "$?"
+    }
+
+    function Replace
+    {
+        HasKey "$1" "$2" || return "$?"
+        local -n REFERENCE="$1"
+        REFERENCE[$2]="$3"
+        return "$?"
+    }
+# </functions>
+
+# <summary> Presentation </summary>
+# <functions>
+    function PrintEnum
+    {
+        IsEnum "$1" || return "$?"
+        local -n REFERENCE="$1"
+
+        for KEY in "${!REFERENCE[@]}"; do
+            echo -e "$KEY\t=> ${REFERENCE[$KEY]}"
+        done
+
+        return 0
+    }
+# </functions>

@@ -1,0 +1,201 @@
+#!/bin/bash/env bash
+
+#
+# Filename:         bashlib-vfio
+# Description:
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <summary> Libraries </summary>
+# <code>
+    source bashlib-lists
+    source bashlib-vars
+# </code>
+
+function Parse_GetParameters
+{
+    declare -g GET_DEVICES_FOR_IOMMU_GROUP='ls /sys/kernel/iommu_groups/$IOMMU_GROUP_ID/devices/'
+    declare -ag IOMMU_GROUP_ID_LIST=( $( ls /sys/kernel/iommu_groups/ | sort -n ) )
+    declare -ag IOMMU_GROUPS_FOR_HOST_LIST
+    declare -g REGEX_DOMAIN_ID='^[0-9A-F][1-9A-F]$'
+}
+
+function DoesIOMMUGroupHaveExternalDevices
+{
+    IsInt "$1" || return "$?"
+    local -i IOMMU_GROUP_ID="$1"
+    local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
+
+    for DEVICE in ${DEVICE_LIST[@]}; do
+        IsDeviceExternal "$DEVICE" && return 0
+    done
+
+    return 1
+}
+
+function DoesIOMMUGroupHaveVGADevice
+{
+    IsInt "$1" || return "$?"
+    local -i IOMMU_GROUP_ID="$1"
+    local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
+
+    for DEVICE in ${DEVICE_LIST[@]}; do
+        IsDeviceVGA "$DEVICE" && return 0
+    done
+
+    return 1
+}
+
+function GetDeviceClass
+{
+    IsString "$2" || return "$?"
+    IsString "$1" || return "$?"
+    local DEVICE="$1"
+    local -n REFERENCE="$2"
+    REFERENCE="$( lspci -ms $DEVICE | cut -d '"' -f 2 )"
+    return 0
+}
+
+function GetDeviceDriver
+{
+    IsString "$2" || return "$?"
+    IsString "$1" || return "$?"
+    local DEVICE="$1"
+    local -n REFERENCE="$2"
+    REFERENCE="$( lspci -ks "$DEVICE" | grep -i "driver" | cut -d " " -f 5 )"
+    return 0
+}
+
+function GetDeviceHardwareID
+{
+    IsString "$2" || return "$?"
+    IsString "$1" || return "$?"
+    local DEVICE="$1"
+    local -n REFERENCE="$2"
+    REFERENCE="$( lspci -ns $DEVICE | cut -d " " -f 3 )"
+    return 0
+}
+
+function GetDeviceName
+{
+    IsString "$2" || return "$?"
+    IsString "$1" || return "$?"
+    local DEVICE="$1"
+    local -n REFERENCE="$2"
+    REFERENCE="$( lspci -ms $DEVICE  | cut -d '"' -f 6 )"
+    return 0
+}
+
+function GetDeviceVendor
+{
+    IsString "$2" || return "$?"
+    IsString "$1" || return "$?"
+    local DEVICE="$1"
+    local -n REFERENCE="$2"
+    REFERENCE="$( lspci -ms $DEVICE | cut -d '"' -f 4 )"
+    return 0
+}
+
+function IsIOMMUGroupNotBindedToVFIO
+{
+    IsInt "$1" || return "$?"
+    local -i IOMMU_GROUP_ID="$1"
+    local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
+
+    for DEVICE in ${DEVICE_LIST[@]}; do
+        IsDeviceBindedToVFIO "$DEVICE" || return 1
+    done
+
+    return 0
+}
+
+function IsDeviceExternal
+{
+    IsString "$1" || return "$?"
+    local FULL_ID="$1"
+    local -u DOMAIN_ID=$( echo "$FULL_ID" | cut -d ':' -f 2 )
+
+    if echo "$DOMAIN_ID" | grep -E -q "$REGEX_DOMAIN_ID"; then
+        return 0
+    fi
+
+    return 1
+}
+
+function IsDeviceVGA
+{
+    IsString "$1" || return "$?"
+    local FULL_ID="$1"
+    local -l CLASS="$( lspci -ms $FULL_ID | cut -d '"' -f 2 )"
+
+    case "$CLASS" in
+        *"vga"* | *"graphic"* )
+            return 0 ;;
+    esac
+
+    return 1
+}
+
+function IsDeviceBindedToVFIO
+{
+    IsString "$1" || return "$?"
+    local FULL_ID="$1"
+    local -l DRIVER="$( lspci -ks "$FULL_ID" | grep -i "driver" | cut -d " " -f 5 )"
+
+    case "$DRIVER" in
+        *"vfio-pci"* | *"vfio"* )
+            return 0 ;;
+    esac
+
+    return 1
+}
+
+function PrintThisIOMMUGroupAndDevices
+{
+    IsInt "$1" || return "$?"
+    local -i IOMMU_GROUP_ID="$1"
+    local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
+
+    for DEVICE in ${DEVICE_LIST[@]}; do
+        echo ""
+    done
+
+    return 0
+}
+
+function WillHostHaveVGADeviceAfterVFIOSetup
+{
+    IsEnum "$1" || return 1
+    local -n REFERENCE="$1"
+
+    for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
+        DoesIOMMUGroupHaveVGADevice "$IOMMU_GROUP_ID" && return 0
+    done
+
+    return 1
+}
+
+Parse_GetParameters
+
+PrintEnum "IOMMU_GROUP_ID_LIST"
+echo $?
+
+WillHostHaveVGADeviceAfterVFIOSetup "IOMMU_GROUP_ID_LIST"
+echo $?
+
+LIST_ALL_WITHOUT_VGA=( 0 $( seq 2 12  ) $( seq 14 16  ) )
+
+PrintEnum "LIST_ALL_WITHOUT_VGA"
+echo $?
+
+WillHostHaveVGADeviceAfterVFIOSetup "LIST_ALL_WITHOUT_VGA"
+echo $?
+
+LIST_ALL_WITH_ONE_VGA=( 0 $( seq 2 16  ) )
+
+PrintEnum "LIST_ALL_WITH_ONE_VGA"
+echo $?
+
+WillHostHaveVGADeviceAfterVFIOSetup "LIST_ALL_WITH_ONE_VGA"
+echo $?
