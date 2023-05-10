@@ -21,6 +21,8 @@
             declare -g GET_DEVICES_FOR_IOMMU_GROUP='ls /sys/kernel/iommu_groups/$IOMMU_GROUP_ID/devices/'
             declare -ag IOMMU_GROUP_ID_LIST=( $( ls /sys/kernel/iommu_groups/ | sort -n ) )
             declare -ag IOMMU_GROUPS_FOR_HOST_LIST IOMMU_GROUPS_FOR_VFIO_LIST
+            declare -g _DEFAULT_DATABASE_FILE="/usr/local/etc/vfiolib_lspci_database"
+            declare -g PARSE_OPTIONS=""
             declare -g REGEX_DOMAIN_ID='^[0-9A-F][1-9A-F]$'
         }
 
@@ -57,7 +59,7 @@
             IsString "$1" || return "$?"
             local DEVICE="$1"
             local -n REFERENCE="$2"
-            REFERENCE="$( lspci -ms $DEVICE | cut -d '"' -f 2 )"
+            REFERENCE="$( lspci $PARSE_OPTIONS -ms $DEVICE | cut -d '"' -f 2 )"
             return 0
         }
 
@@ -67,7 +69,7 @@
             IsString "$1" || return "$?"
             local DEVICE="$1"
             local -n REFERENCE="$2"
-            REFERENCE="$( lspci -ks "$DEVICE" | grep -i "driver" | cut -d " " -f 5 )"
+            REFERENCE="$( lspci $PARSE_OPTIONS-ks "$DEVICE" | grep -i "driver" | cut -d " " -f 5 )"
             return 0
         }
 
@@ -77,7 +79,7 @@
             IsString "$1" || return "$?"
             local DEVICE="$1"
             local -n REFERENCE="$2"
-            REFERENCE="$( lspci -ns $DEVICE | cut -d " " -f 3 )"
+            REFERENCE="$( lspci $PARSE_OPTIONS-ns $DEVICE | cut -d " " -f 3 )"
             return 0
         }
 
@@ -87,7 +89,7 @@
             IsString "$1" || return "$?"
             local DEVICE="$1"
             local -n REFERENCE="$2"
-            REFERENCE="$( lspci -ms $DEVICE  | cut -d '"' -f 6 )"
+            REFERENCE="$( lspci $PARSE_OPTIONS-ms $DEVICE  | cut -d '"' -f 6 )"
             return 0
         }
 
@@ -97,7 +99,7 @@
             IsString "$1" || return "$?"
             local DEVICE="$1"
             local -n REFERENCE="$2"
-            REFERENCE="$( lspci -ms $DEVICE | cut -d '"' -f 4 )"
+            REFERENCE="$( lspci $PARSE_OPTIONS-ms $DEVICE | cut -d '"' -f 4 )"
             return 0
         }
 
@@ -119,7 +121,7 @@
         {
             IsString "$1" || return "$?"
             local FULL_ID="$1"
-            local -l CLASS="$( lspci -ms $FULL_ID | cut -d '"' -f 2 )"
+            local -l CLASS="$( lspci $PARSE_OPTIONS-ms $FULL_ID | cut -d '"' -f 2 )"
 
             case "$CLASS" in
                 *"vga"* | *"graphic"* )
@@ -133,7 +135,7 @@
         {
             IsString "$1" || return "$?"
             local FULL_ID="$1"
-            local -l DRIVER="$( lspci -ks "$FULL_ID" | grep -i "driver" | cut -d " " -f 5 )"
+            local -l DRIVER="$( lspci $PARSE_OPTIONS-ks "$FULL_ID" | grep -i "driver" | cut -d " " -f 5 )"
 
             case "$DRIVER" in
                 *"vfio-pci"* | *"vfio"* )
@@ -282,6 +284,82 @@
             return 0
         }
 
+        function ExportParseDatabase
+        {
+            if [[ ! -z "$_DEFAULT_DATABASE_FILE" ]] \
+                && [[ ! -e "$_DEFAULT_DATABASE_FILE" ]] \
+                && ! sudo mkdir -p $( dirname "$_DEFAULT_DATABASE_FILE" ) &> /dev/null; then
+                echo -e "$_PREFIX_ERROR Failed to create directory for database file."
+                return 1
+            fi
+
+            if [[ ! -z "$_DEFAULT_DATABASE_FILE" ]] \
+                && [[ ! -e "$_DEFAULT_DATABASE_FILE" ]] \
+                && ! sudo touch "$_DEFAULT_DATABASE_FILE" &> /dev/null; then
+                echo -e "$_PREFIX_ERROR Failed to create database file."
+                return 1
+            fi
+
+            if "$_DO_PARSE_DATABASE_FROM_CACHE" \
+                && [[ ! -s "$_DEFAULT_DATABASE_FILE" ]] \
+                && ! lspci -x >> "$_DEFAULT_DATABASE_FILE" &> /dev/null; then
+                echo -e "$_PREFIX_ERROR Failed to reference local database and save to file."
+                return 1
+            fi
+
+            if "$_DO_PARSE_DATABASE_FROM_INTERNET" \
+                && [[ ! -s "$_DEFAULT_DATABASE_FILE" ]] \
+                && ! lspci -q -x >> "$_DEFAULT_DATABASE_FILE" &> /dev/null; then
+                echo -e "$_PREFIX_ERROR Failed to reference online database and/or save to file."
+                return 1
+            fi
+
+            if [[ -s "$_DEFAULT_DATABASE_FILE" ]] \
+                && ! lspci -F "$_DEFAULT_DATABASE_FILE" &> /dev/null; then
+                echo -e "$_PREFIX_ERROR File is corrupt."
+                return 1
+            fi
+
+            return 0
+        }
+
+        function SelectFileToExportDatabase
+        {
+            ExportParseDatabase || return "$?"
+            read -r -p "Enter filename (leave blank for default): " _ANSWER
+
+            if [[ ! -z "$_ANSWER" ]] \
+                && [[ ! -e "$_ANSWER" ]]; then
+                echo -e "$_PREFIX_ERROR File does not exist."
+            fi
+
+            if [[ ! -z "$_ANSWER" ]] \
+                && [[ ! -s "$_ANSWER" ]]; then
+                echo -e "$_PREFIX_ERROR File is empty."
+            fi
+
+            if [[ ! -z "$_ANSWER" ]] \
+                && [[ -e "$_ANSWER" ]] \
+                && [[ -s "$_ANSWER" ]]; then
+                _DATABASE_FILE="$_ANSWER"
+                return 0
+            fi
+
+            _DATABASE_FILE="$_DEFAULT_DATABASE_FILE"
+
+            if [[ ! -e "$_DATABASE_FILE" ]]; then
+                echo -e "$_PREFIX_ERROR File does not exist."
+                return 1
+            fi
+
+            if [[ ! -s "$_DATABASE_FILE" ]]; then
+                echo -e "$_PREFIX_ERROR File is empty."
+                return 1
+            fi
+
+            return 0
+        }
+
         function SelectIOMMUGroups
         {
             local -n REFERENCE="IOMMU_GROUP_ID_LIST"
@@ -308,11 +386,74 @@
             return 0
         }
 
+        function SelectMethodToParseDatabase
+        {
+            case true in
+                "$_DO_PARSE_DATABASE_FROM_CACHE" | "$_DO_PARSE_DATABASE_FROM_FILE" | "$_DO_PARSE_DATABASE_FROM_INTERNET" )
+                    return 0 ;;
+            esac
+
+            for COUNT in $( seq 0 2 ); do
+                read -r -p "Select method of parsing IOMMU groups? [(F)ile/(I)nternal/(O)nline/(N)o]: " _ANSWER
+
+                case "$_ANSWER" in
+                    [Ff]* )
+                        _DO_PARSE_DATABASE_FROM_FILE=true ;;
+
+                    [Ii]* )
+                        _DO_PARSE_DATABASE_FROM_CACHE=true ;;
+
+                    [Oo]* )
+                        _DO_PARSE_DATABASE_FROM_INTERNET=true ;;
+
+                    [Nn]* )
+                        return 255 ;;
+
+                    * )
+                        echo "Please answer 'F', 'I', 'O', or 'N'."
+                        continue ;;
+                esac
+
+                return 0
+            done
+
+            echo -e "$_PREFIX_ERROR Failed to answer."
+            return 1
+        }
+
+        function SetOptionsToImportDatabase
+        {
+            if ! "$_DO_PARSE_DATABASE_FROM_INTERNET" \
+                && ! "$_DO_PARSE_DATABASE_FROM_FILE"; then
+                return 0
+            fi
+
+            local FILE=""
+
+            if [[ ! -s "$_DATABASE_FILE" ]]; then
+                FILE="$_DATABASE_FILE"
+            elif [[ ! -s "$_DEFAULT_DATABASE_FILE" ]]; then
+                FILE="$_DEFAULT_DATABASE_FILE"
+            else
+                return 1
+            fi
+
+            if [[ ! -s "$FILE" ]]; then
+                return 1
+            fi
+
+            PARSE_OPTIONS="-F $FILE"
+            return 0
+        }
+
     # <summary> Public functions </summary>
         function ExecuteParseSelection
         {
             SetParameters || return "$?"
             AreParametersValid || return "$?"
+            SelectFileToExportDatabase || return "$?"          ## NOTE: somewhere, add support for parsing from XML.
+            SelectMethodToParseDatabase || return "$?"
+            SetOptionsToImportDatabase || return "$?"
             DoesHostHaveExistingVFIOSetup || return "$?"
             SelectIOMMUGroups
             IsParseSelectionValid || return "$?"
