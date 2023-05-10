@@ -11,191 +11,316 @@
 # <code>
     source bashlib-lists
     source bashlib-vars
+    source vfiolib-all
 # </code>
 
-function Parse_GetParameters
-{
-    declare -g GET_DEVICES_FOR_IOMMU_GROUP='ls /sys/kernel/iommu_groups/$IOMMU_GROUP_ID/devices/'
-    declare -ag IOMMU_GROUP_ID_LIST=( $( ls /sys/kernel/iommu_groups/ | sort -n ) )
-    declare -ag IOMMU_GROUPS_FOR_HOST_LIST
-    declare -g REGEX_DOMAIN_ID='^[0-9A-F][1-9A-F]$'
-}
+# <functions>
+    # <summary> Public setters </summary>
+        function SetParameters
+        {
+            declare -g GET_DEVICES_FOR_IOMMU_GROUP='ls /sys/kernel/iommu_groups/$IOMMU_GROUP_ID/devices/'
+            declare -ag IOMMU_GROUP_ID_LIST=( $( ls /sys/kernel/iommu_groups/ | sort -n ) )
+            declare -ag IOMMU_GROUPS_FOR_HOST_LIST IOMMU_GROUPS_FOR_VFIO_LIST
+            declare -g REGEX_DOMAIN_ID='^[0-9A-F][1-9A-F]$'
+        }
 
-function DoesIOMMUGroupHaveExternalDevices
-{
-    IsInt "$1" || return "$?"
-    local -i IOMMU_GROUP_ID="$1"
-    local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
+        function AreParametersValid
+        {
+            IsEnum "IOMMU_GROUP_ID_LIST" || return "$?"
 
-    for DEVICE in ${DEVICE_LIST[@]}; do
-        IsDeviceExternal "$DEVICE" && return 0
-    done
+            for VALUE in ${IOMMU_GROUP_ID_LIST[@]}; do
+                IsInt "$VALUE" || return "$?"
+            done
 
-    return 1
-}
+            return 0
+        }
 
-function DoesIOMMUGroupHaveVGADevice
-{
-    IsInt "$1" || return "$?"
-    local -i IOMMU_GROUP_ID="$1"
-    local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
+        function IsParseSelectionValid
+        {
+            if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_FOR_HOST_LIST"; then
+                echo -e "An error occurred: Invalid allocation of devices for host."
+                return 1
+            fi
 
-    for DEVICE in ${DEVICE_LIST[@]}; do
-        IsDeviceVGA "$DEVICE" && return 0
-    done
+            if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_FOR_VFIO_LIST"; then
+                echo -e "An error occurred: Invalid selection of devices for VFIO setup."
+                return 1
+            fi
 
-    return 1
-}
+            return 0
+        }
 
-function GetDeviceClass
-{
-    IsString "$2" || return "$?"
-    IsString "$1" || return "$?"
-    local DEVICE="$1"
-    local -n REFERENCE="$2"
-    REFERENCE="$( lspci -ms $DEVICE | cut -d '"' -f 2 )"
-    return 0
-}
+    # <summary> Private setters </summary>
+        function SetDeviceClass
+        {
+            IsString "$2" || return "$?"
+            IsString "$1" || return "$?"
+            local DEVICE="$1"
+            local -n REFERENCE="$2"
+            REFERENCE="$( lspci -ms $DEVICE | cut -d '"' -f 2 )"
+            return 0
+        }
 
-function GetDeviceDriver
-{
-    IsString "$2" || return "$?"
-    IsString "$1" || return "$?"
-    local DEVICE="$1"
-    local -n REFERENCE="$2"
-    REFERENCE="$( lspci -ks "$DEVICE" | grep -i "driver" | cut -d " " -f 5 )"
-    return 0
-}
+        function SetDeviceDriver
+        {
+            IsString "$2" || return "$?"
+            IsString "$1" || return "$?"
+            local DEVICE="$1"
+            local -n REFERENCE="$2"
+            REFERENCE="$( lspci -ks "$DEVICE" | grep -i "driver" | cut -d " " -f 5 )"
+            return 0
+        }
 
-function GetDeviceHardwareID
-{
-    IsString "$2" || return "$?"
-    IsString "$1" || return "$?"
-    local DEVICE="$1"
-    local -n REFERENCE="$2"
-    REFERENCE="$( lspci -ns $DEVICE | cut -d " " -f 3 )"
-    return 0
-}
+        function SetDeviceHardwareID
+        {
+            IsString "$2" || return "$?"
+            IsString "$1" || return "$?"
+            local DEVICE="$1"
+            local -n REFERENCE="$2"
+            REFERENCE="$( lspci -ns $DEVICE | cut -d " " -f 3 )"
+            return 0
+        }
 
-function GetDeviceName
-{
-    IsString "$2" || return "$?"
-    IsString "$1" || return "$?"
-    local DEVICE="$1"
-    local -n REFERENCE="$2"
-    REFERENCE="$( lspci -ms $DEVICE  | cut -d '"' -f 6 )"
-    return 0
-}
+        function SetDeviceName
+        {
+            IsString "$2" || return "$?"
+            IsString "$1" || return "$?"
+            local DEVICE="$1"
+            local -n REFERENCE="$2"
+            REFERENCE="$( lspci -ms $DEVICE  | cut -d '"' -f 6 )"
+            return 0
+        }
 
-function GetDeviceVendor
-{
-    IsString "$2" || return "$?"
-    IsString "$1" || return "$?"
-    local DEVICE="$1"
-    local -n REFERENCE="$2"
-    REFERENCE="$( lspci -ms $DEVICE | cut -d '"' -f 4 )"
-    return 0
-}
+        function SetDeviceVendor
+        {
+            IsString "$2" || return "$?"
+            IsString "$1" || return "$?"
+            local DEVICE="$1"
+            local -n REFERENCE="$2"
+            REFERENCE="$( lspci -ms $DEVICE | cut -d '"' -f 4 )"
+            return 0
+        }
 
-function IsIOMMUGroupNotBindedToVFIO
-{
-    IsInt "$1" || return "$?"
-    local -i IOMMU_GROUP_ID="$1"
-    local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
+    # <summary> Device validation </summary>
+        function IsDeviceExternal
+        {
+            IsString "$1" || return "$?"
+            local FULL_ID="$1"
+            local -u DOMAIN_ID=$( echo "$FULL_ID" | cut -d ':' -f 2 )
 
-    for DEVICE in ${DEVICE_LIST[@]}; do
-        IsDeviceBindedToVFIO "$DEVICE" || return 1
-    done
+            if echo "$DOMAIN_ID" | grep -E -q "$REGEX_DOMAIN_ID"; then
+                return 0
+            fi
 
-    return 0
-}
+            return 1
+        }
 
-function IsDeviceExternal
-{
-    IsString "$1" || return "$?"
-    local FULL_ID="$1"
-    local -u DOMAIN_ID=$( echo "$FULL_ID" | cut -d ':' -f 2 )
+        function IsDeviceVGA
+        {
+            IsString "$1" || return "$?"
+            local FULL_ID="$1"
+            local -l CLASS="$( lspci -ms $FULL_ID | cut -d '"' -f 2 )"
 
-    if echo "$DOMAIN_ID" | grep -E -q "$REGEX_DOMAIN_ID"; then
-        return 0
-    fi
+            case "$CLASS" in
+                *"vga"* | *"graphic"* )
+                    return 0 ;;
+            esac
 
-    return 1
-}
+            return 1
+        }
 
-function IsDeviceVGA
-{
-    IsString "$1" || return "$?"
-    local FULL_ID="$1"
-    local -l CLASS="$( lspci -ms $FULL_ID | cut -d '"' -f 2 )"
+        function IsDeviceBindedToVFIO
+        {
+            IsString "$1" || return "$?"
+            local FULL_ID="$1"
+            local -l DRIVER="$( lspci -ks "$FULL_ID" | grep -i "driver" | cut -d " " -f 5 )"
 
-    case "$CLASS" in
-        *"vga"* | *"graphic"* )
-            return 0 ;;
-    esac
+            case "$DRIVER" in
+                *"vfio-pci"* | *"vfio"* )
+                    return 0 ;;
+            esac
 
-    return 1
-}
+            return 1
+        }
 
-function IsDeviceBindedToVFIO
-{
-    IsString "$1" || return "$?"
-    local FULL_ID="$1"
-    local -l DRIVER="$( lspci -ks "$FULL_ID" | grep -i "driver" | cut -d " " -f 5 )"
+    # <summary> Device group validation </summary>
+        function DoesIOMMUGroupHaveExternalDevices
+        {
+            IsInt "$1" || return "$?"
+            local -i IOMMU_GROUP_ID="$1"
+            local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
 
-    case "$DRIVER" in
-        *"vfio-pci"* | *"vfio"* )
-            return 0 ;;
-    esac
+            for DEVICE in ${DEVICE_LIST[@]}; do
+                IsDeviceExternal "$DEVICE" && return 0
+            done
 
-    return 1
-}
+            return 1
+        }
 
-function PrintThisIOMMUGroupAndDevices
-{
-    IsInt "$1" || return "$?"
-    local -i IOMMU_GROUP_ID="$1"
-    local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
+        function DoesIOMMUGroupHaveVGADevice
+        {
+            IsInt "$1" || return "$?"
+            local -i IOMMU_GROUP_ID="$1"
+            local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
 
-    for DEVICE in ${DEVICE_LIST[@]}; do
-        echo ""
-    done
+            for DEVICE in ${DEVICE_LIST[@]}; do
+                IsDeviceVGA "$DEVICE" && return 0
+            done
 
-    return 0
-}
+            return 1
+        }
 
-function WillHostHaveVGADeviceAfterVFIOSetup
-{
-    IsEnum "$1" || return 1
-    local -n REFERENCE="$1"
+        function IsIOMMUGroupNotBindedToVFIO
+        {
+            IsInt "$1" || return "$?"
+            local -i IOMMU_GROUP_ID="$1"
+            local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
 
-    for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
-        DoesIOMMUGroupHaveVGADevice "$IOMMU_GROUP_ID" && return 0
-    done
+            for DEVICE in ${DEVICE_LIST[@]}; do
+                IsDeviceBindedToVFIO "$DEVICE" || return 1
+            done
 
-    return 1
-}
+            return 0
+        }
 
-Parse_GetParameters
+        function IsValidEnumOfIOMMUGroups
+        {
+            IsEnum "$1" || return "$?"
+            local -n REFERENCE="$1"
 
-PrintEnum "IOMMU_GROUP_ID_LIST"
-echo $?
+            for VALUE in ${REFERENCE[@]}; do
+                IsInt "$VALUE" || return "$?"
+            done
+        }
 
-WillHostHaveVGADeviceAfterVFIOSetup "IOMMU_GROUP_ID_LIST"
-echo $?
+    # <summary> Host validation </summary>
+        function DoesHostHaveVGADevicesAfterVFIOSetup
+        {
+            local VALIDATE_VFIO_LIST=false
+            IsBool "$_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB" && VALIDATE_VFIO_LIST=true
 
-LIST_ALL_WITHOUT_VGA=( 0 $( seq 2 12  ) $( seq 14 16  ) )
+            if ! "$VALIDATE_VFIO_LIST"; then
+                return 0
+            fi
 
-PrintEnum "LIST_ALL_WITHOUT_VGA"
-echo $?
+            local -n REFERENCE="IOMMU_GROUPS_FOR_HOST_LIST"
 
-WillHostHaveVGADeviceAfterVFIOSetup "LIST_ALL_WITHOUT_VGA"
-echo $?
+            for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
+                DoesIOMMUGroupHaveVGADevice "$IOMMU_GROUP_ID" && return 0
+            done
 
-LIST_ALL_WITH_ONE_VGA=( 0 $( seq 2 16  ) )
+            echo -e "An error occurred: No VGA devices allocated for host."
+            return 1
+        }
 
-PrintEnum "LIST_ALL_WITH_ONE_VGA"
-echo $?
+        function DoesHostHaveExistingVFIOSetup
+        {
+            # TODO: check if parsing from XML file
 
-WillHostHaveVGADeviceAfterVFIOSetup "LIST_ALL_WITH_ONE_VGA"
-echo $?
+            local -n REFERENCE="IOMMU_GROUP_ID_LIST"
+
+            for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
+                if ! IsIOMMUGroupNotBindedToVFIO "$IOMMU_GROUP_ID"; then
+                    echo -e "An error occurred: Detected existing VFIO setup."
+                    return 1
+                fi
+            done
+
+            return 0
+        }
+
+    # <summary> Presentation </summary>
+        function PrintThisIOMMUGroupDevices
+        {
+            IsInt "$1" || return "$?"
+            local -i IOMMU_GROUP_ID="$1"
+            local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
+
+            for DEVICE in ${DEVICE_LIST[@]}; do
+                if IsDeviceExternal "$DEVICE"; then
+                    local CLASS DRIVER HW_ID NAME VENDOR
+
+                    SetDeviceClass "$DEVICE" "CLASS"
+                    SetDeviceDriver "$DEVICE" "DRIVER"
+                    SetDeviceHardwareID "$DEVICE" "HW_ID"
+                    SetDeviceName "$DEVICE" "NAME"
+                    SetDeviceVendor "$DEVICE" "VENDOR"
+
+                    echo -e "\tSlot ID:\t$DEVICE"
+                    echo -e "\tVendor name:\t$VENDOR"
+                    echo -e "\tDevice name:\t$NAME"
+                    echo -e "\tClass/Type:\t$CLASS"
+                    echo -e "\tHardware ID:\t$HW_ID"
+                    local DRIVER_OUTPUT="\tKernel driver:\t"
+
+                    if IsString "$DRIVER"; then
+                        echo -e "$DRIVER_OUTPUT$DRIVER"
+                    else
+                        echo -e "${DRIVER_OUTPUT}N/A"
+                    fi
+
+                    echo
+                fi
+            done
+
+            return 0
+        }
+
+    # <summary> Interaction </summary>
+        function AskToSelectThisIOMMUGroup
+        {
+            IsInt "$1" || return "$?"
+            local -i IOMMU_GROUP_ID="$1"
+
+            if AskToExecuteOrSkip "Select IOMMU group '$IOMMU_GROUP_ID'?"; then
+                IOMMU_GROUPS_FOR_VFIO_LIST+=( "$IOMMU_GROUP_ID" )
+            else
+                IOMMU_GROUPS_FOR_HOST_LIST+=( "$IOMMU_GROUP_ID" )
+            fi
+
+            echo
+            return 0
+        }
+
+        function SelectIOMMUGroups
+        {
+            local -n REFERENCE="IOMMU_GROUP_ID_LIST"
+
+            for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
+                SelectThisIOMMUGroup "$IOMMU_GROUP_ID"
+            done
+
+            return 0
+        }
+
+        function SelectThisIOMMUGroup
+        {
+            IsInt "$1" || return "$?"
+            local -i IOMMU_GROUP_ID="$1"
+
+            if ! DoesIOMMUGroupHaveExternalDevices "$1"; then
+                IOMMU_GROUPS_FOR_HOST_LIST+=( "$IOMMU_GROUP_ID" )
+                return 1
+            fi
+
+            PrintThisIOMMUGroupDevices "$1" || return "$?"
+            AskToSelectThisIOMMUGroup "$1" || return "$?"
+            return 0
+        }
+
+    # <summary> Public functions </summary>
+        function ExecuteParseSelection
+        {
+            SetParameters || return "$?"
+            AreParametersValid || return "$?"
+            DoesHostHaveExistingVFIOSetup || return "$?"
+            SelectIOMMUGroups
+            IsParseSelectionValid || return "$?"
+            DoesHostHaveVGADevicesAfterVFIOSetup || return "$?"
+            return 0
+        }
+# </functions>
+
+ExecuteParseSelection
+# PrintEnum "IOMMU_GROUPS_FOR_HOST_LIST"
+# PrintEnum "IOMMU_GROUPS_FOR_VFIO_LIST"
