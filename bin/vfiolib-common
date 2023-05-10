@@ -15,16 +15,16 @@
 # <code>
     function AskToExecuteOrSkip
     {
-        local _OUTPUT=""
+        local OUTPUT=""
 
         if [[ ! -z "$1" ]]; then
-            _OUTPUT="$1 "
+            OUTPUT="$1 "
         fi
 
-        for _TRIES_COUNT in $( seq 0 2 ); do
-            read -r -p "$_OUTPUT[Y/n]: " _ANSWER
+        for TRY_COUNT in $( seq 0 2 ); do
+            read -r -p "$OUTPUT[Y/n]: " ANSWER
 
-            case "$_ANSWER" in
+            case "$ANSWER" in
                 [Yy]* )
                     return 0 ;;
 
