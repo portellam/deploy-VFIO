@@ -11,7 +11,17 @@
     source vfiolib-globals
 # </sources>
 
-# <code>
+# <functions>
+    # <summary> Public setters </summary>
+        function SetParameters
+        {
+            declare -g _OUTPUT_INVALID_PACKAGE_MANAGER="$_PREFIX_ERROR Command '$_PACKAGE_MANAGER' is not supported."
+
+            # <remarks> System validation </remarks>
+            declare -gl _PACKAGE_MANAGER
+            declare -gl _OPERATING_SYSTEM="$( lsb_release -is )"
+        }
+
     function AskToExecuteOrSkip
     {
         local OUTPUT=""
@@ -464,12 +474,4 @@
             return 1
         fi
     }
-# </code>
-
-# <params>
-    declare -g _OUTPUT_INVALID_PACKAGE_MANAGER="$_PREFIX_ERROR Command '$_PACKAGE_MANAGER' is not supported."
-
-    # <remarks> System validation </remarks>
-    declare -gl _PACKAGE_MANAGER
-    declare -gl _OPERATING_SYSTEM="$( lsb_release -is )"
-# </params>
+# </functions>

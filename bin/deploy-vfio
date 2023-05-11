@@ -11,15 +11,14 @@
     source vfiolib-all
 # </sources>
 
-# <params>
-    # <remarks> Flags </remarks>
+# <flags>
     declare -g _FLAG_DO_EXECUTE_BACKUPS=true
     declare -g _FLAG_DO_EXECUTE_PRE_SETUP=true
     declare -g _FLAG_DO_EXECUTE_POST_SETUP=true
     declare -g _FLAG_DO_SYSTEM_CHECK=true
-# </params>
+# </flags>
 
-# <code>
+# <functions>
     function Main
     {
         IsSudoUser || return 1
@@ -37,6 +36,7 @@
         fi
 
         ExecuteBackups
+        ExecuteParseSelection || return "$?"
 
         # <remarks> Exit early. </remarks>
         # if "$_EXECUTE_VFIO_SETUP_UNINSTALL"; then
@@ -106,21 +106,23 @@
 
         exit 1
     }
-# </code>
+# </functions>
 
-if "$_FLAG_DO_EXECUTE_BACKUPS"; then
-    BackupFiles || exit 1
-fi
+# <main>
+    if "$_FLAG_DO_EXECUTE_BACKUPS"; then
+        BackupFiles || exit 1
+    fi
 
-while [[ "$?" -ne 1 ]]; do
-    Main "$@"
-    break
-done
+    while [[ "$?" -ne 1 ]]; do
+        Main "$@"
+        break
+    done
 
-if [[ "$?" -eq 1 ]] \
-    && "$_FLAG_DO_EXECUTE_BACKUPS"; then
-    RestoreFiles || exit 1
-fi
+    if [[ "$?" -eq 1 ]] \
+        && "$_FLAG_DO_EXECUTE_BACKUPS"; then
+        RestoreFiles || exit 1
+    fi
 
-# Debug
-exit "$?"
+    # Debug
+    exit "$?"
+# </main>

@@ -11,7 +11,14 @@
     source vfiolib-globals
 # </sources>
 
-# <code>
+# <functions>
+    # <summary> Public setters </summary>
+        function SetParameters
+        {
+            declare -g _IS_SYSTEM_SUPPORTED=false
+            declare -ga _REQUIRED_LIBRARIES=( )
+        }
+
     function AreRequiredLibrariesInstalled
     {
         for _LIBRARY in ${_REQUIRED_LIBRARIES[@]}; do
@@ -187,9 +194,4 @@
 
         return 0
     }
-# </code>
-
-# <params>
-    declare -g _IS_SYSTEM_SUPPORTED=false
-    declare -g _REQUIRED_LIBRARIES=( )
-# </params>
+# </functions>

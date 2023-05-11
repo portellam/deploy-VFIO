@@ -24,7 +24,7 @@
     declare -g _PREFIX_PASS="${_SET_COLOR_GREEN}Success:${_RESET_COLOR}"
 # </params>
 
-# <code>
+# <functions>
     function Main
     {
         if [[ $( whoami ) != "root" ]]; then
@@ -105,10 +105,10 @@
 
         return 0
     }
-# </code>
+# </functions>
 
 # <summary> Main </summary>
-# <code>
+# <functions>
     Main
 
     if [[ "$?" -ne 0 ]]; then
@@ -118,4 +118,4 @@
 
     echo -e "$_PREFIX_PASS Installed deploy-VFIO."
     exit 0
-# </code>
+# </functions>

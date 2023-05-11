@@ -7,6 +7,10 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
+## TODO:
+# -add XML
+# -test
+
 # <sources>
     source bashlib-all
     source bashlib-vars
@@ -16,6 +20,21 @@
 # </sources>
 
 # <functions>
+    # <summary> Public functions </summary>
+        function ExecuteParseSelection
+        {
+            SetParameters || return "$?"
+            AreParametersValid || return "$?"
+            SelectFileToExportDatabase || return "$?"          ## NOTE: somewhere, add support for parsing from XML.
+            SelectMethodToParseDatabase || return "$?"
+            SetOptionsToImportDatabase || return "$?"
+            DoesHostHaveExistingVFIOSetup || return "$?"
+            SelectIOMMUGroups
+            IsParseSelectionValid || return "$?"
+            DoesHostHaveVGADevicesAfterVFIOSetup || return "$?"
+            return 0
+        }
+
     # <summary> Public getters </summary>
         function GetListsForSelection
         {
@@ -325,43 +344,6 @@
             return 0
         }
 
-    # <summary> Presentation </summary>
-        function PrintThisIOMMUGroupDevices
-        {
-            IsInt "$1" || return "$?"
-            local -i IOMMU_GROUP_ID="$1"
-            local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
-
-            for DEVICE in ${DEVICE_LIST[@]}; do
-                if IsDeviceExternal "$DEVICE"; then
-                    local CLASS DRIVER HWID NAME VENDOR
-
-                    SetDeviceClass "$DEVICE" "CLASS"
-                    SetDeviceDriver "$DEVICE" "DRIVER"
-                    SetDeviceHardwareID "$DEVICE" "HWID"
-                    SetDeviceName "$DEVICE" "NAME"
-                    SetDeviceVendor "$DEVICE" "VENDOR"
-
-                    echo -e "\tSlot ID:\t$DEVICE"
-                    echo -e "\tVendor name:\t$VENDOR"
-                    echo -e "\tDevice name:\t$NAME"
-                    echo -e "\tClass/Type:\t$CLASS"
-                    echo -e "\tHardware ID:\t$HWID"
-                    local DRIVER_OUTPUT="\tKernel driver:\t"
-
-                    if IsString "$DRIVER"; then
-                        echo -e "$DRIVER_OUTPUT$DRIVER"
-                    else
-                        echo -e "${DRIVER_OUTPUT}N/A"
-                    fi
-
-                    echo
-                fi
-            done
-
-            return 0
-        }
-
     # <summary> Interaction </summary>
         function AskToSelectThisIOMMUGroup
         {
@@ -544,27 +526,41 @@
             return 0
         }
 
-    # <summary> Public functions </summary>
-        function ExecuteParseSelection
+    # <summary> Presentation </summary>
+        function PrintThisIOMMUGroupDevices
         {
-            SetParameters || return "$?"
-            AreParametersValid || return "$?"
-            SelectFileToExportDatabase || return "$?"          ## NOTE: somewhere, add support for parsing from XML.
-            SelectMethodToParseDatabase || return "$?"
-            SetOptionsToImportDatabase || return "$?"
-            DoesHostHaveExistingVFIOSetup || return "$?"
-            SelectIOMMUGroups
-            IsParseSelectionValid || return "$?"
-            DoesHostHaveVGADevicesAfterVFIOSetup || return "$?"
+            IsInt "$1" || return "$?"
+            local -i IOMMU_GROUP_ID="$1"
+            local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
+
+            for DEVICE in ${DEVICE_LIST[@]}; do
+                if IsDeviceExternal "$DEVICE"; then
+                    local CLASS DRIVER HWID NAME VENDOR
+
+                    SetDeviceClass "$DEVICE" "CLASS"
+                    SetDeviceDriver "$DEVICE" "DRIVER"
+                    SetDeviceHardwareID "$DEVICE" "HWID"
+                    SetDeviceName "$DEVICE" "NAME"
+                    SetDeviceVendor "$DEVICE" "VENDOR"
+
+                    echo -e "\tSlot ID:\t$DEVICE"
+                    echo -e "\tVendor name:\t$VENDOR"
+                    echo -e "\tDevice name:\t$NAME"
+                    echo -e "\tClass/Type:\t$CLASS"
+                    echo -e "\tHardware ID:\t$HWID"
+                    local DRIVER_OUTPUT="\tKernel driver:\t"
+
+                    if IsString "$DRIVER"; then
+                        echo -e "$DRIVER_OUTPUT$DRIVER"
+                    else
+                        echo -e "${DRIVER_OUTPUT}N/A"
+                    fi
+
+                    echo
+                fi
+            done
+
             return 0
         }
+
 # </functions>
-
-ExecuteParseSelection
-# PrintEnum "IOMMU_GROUPS_FOR_HOST_LIST"
-PrintEnum "IOMMU_GROUPS_FOR_VFIO_LIST"
-
-for IOMMU_GROUP_ID in ${IOMMU_GROUPS_FOR_VFIO_LIST[@]}; do
-    GetDevicesForEach_IOMMU_Group
-
-done

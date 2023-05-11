@@ -11,7 +11,28 @@
     source vfiolib-globals
 # </sources>
 
-# <code>
+# <functions>
+    # <summary> Public setters </summary>
+        function SetParameters
+        {
+            # IFS=$'\n'
+            declare -g _REGEX_FOR_NUM='^[0-9]+$'
+
+            # <remarks> Pre-setup: Hugepages </remarks>
+            declare -g _IS_HUGEPAGES_COUNT_SET=false
+            declare -g _IS_HUGEPAGES_SIZE_SET=false
+            declare -gi _AVAILABLE_MEMORY=0
+            declare -gi _MIN_MEMORY=8
+
+            # <remarks> Parse PCI for VFIO setup </remarks>
+            declare -g _GET_IOMMU_GROUP_DEVICE_LIST='ls /sys/kernel/iommu_groups/$_IOMMU_GROUP_ID/devices'
+            declare -g _REGEX_DOMAIN_ID='^[0-9A-F][1-9A-F]$'
+            declare -ga _IOMMU_GROUP_ID_LIST=( $( ls -1v /sys/kernel/iommu_groups/ | sort -h ) )
+            declare -gi _LAST_IOMMU_GROUP_ID="${_IOMMU_GROUP_ID_LIST[-1]}"
+            declare -ga _IOMMU_GROUP_ID_LIST_SOME=( )
+            # unset IFS
+        }
+
     function AddSome_IOMMU_GroupsParseList
     {
         local -a _IOMMU_GROUP_ID_LIST_SOME=( )
@@ -321,23 +342,4 @@
         unset IFS
         return 0
     }
-# </code>
-
-# <params>
-    # IFS=$'\n'
-    declare -g _REGEX_FOR_NUM='^[0-9]+$'
-
-    # <remarks> Pre-setup: Hugepages </remarks>
-    declare -g _IS_HUGEPAGES_COUNT_SET=false
-    declare -g _IS_HUGEPAGES_SIZE_SET=false
-    declare -gi _AVAILABLE_MEMORY=0
-    declare -gi _MIN_MEMORY=8
-
-    # <remarks> Parse PCI for VFIO setup </remarks>
-    declare -g _GET_IOMMU_GROUP_DEVICE_LIST='ls /sys/kernel/iommu_groups/$_IOMMU_GROUP_ID/devices'
-    declare -g _REGEX_DOMAIN_ID='^[0-9A-F][1-9A-F]$'
-    declare -ga _IOMMU_GROUP_ID_LIST=( $( ls -1v /sys/kernel/iommu_groups/ | sort -h ) )
-    declare -gi _LAST_IOMMU_GROUP_ID="${_IOMMU_GROUP_ID_LIST[-1]}"
-    declare -ga _IOMMU_GROUP_ID_LIST_SOME=( )
-    # unset IFS
-# </params>
+# </functions>

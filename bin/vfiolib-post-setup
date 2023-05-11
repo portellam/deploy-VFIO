@@ -14,495 +14,499 @@
 	source vfiolib-usage
 # </sources>
 
-# <code>
-	# <summary>
-	# zramswap: Setup a swap partition in host memory.
-	# Reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory.
-	# </summary>
-	function Allocate_RAM_ToSwap
-	{
-		function Get
+# <functions>
+	# <summary> Public functions </summary>
+		function ExecutePostSetup
 		{
-			UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_POST_SETUP_ZRAM_SWAP" || return 1
-			return 0
-		}
+			function Main
+			{
+				while [[ "$?" -ne 1 ]]; do
+					if "$_ASK_TO_EXECUTE_POST_SETUPS"; then
+						LibvirtHooks
+						GuestAudioLoopback
+						Allocate_RAM_ToSwap
+						SetVideoOutput
+						break
+					fi
 
-		function Install
-		{
-			local -r _SCRIPT_NAME="install.sh"
+					if "$_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS"; then
+						LibvirtHooks
+					fi
 
-			if ! cd "$_GIT_PATH$_FULL_REPO"; then
-				echo -e "$_PREFIX_ERROR Failed to find build directory."
-				return 1
-			fi
+					if "$_EXECUTE_POST_SETUP_AUDIO_LOOPBACK"; then
+						GuestAudioLoopback
+					fi
 
-			if [[ ! -e "$_SCRIPT_NAME" ]]; then
-				echo -e "$_PREFIX_ERROR Failed to find script '$_SCRIPT_NAME'."
-				return 1
-			fi
+					if "$_EXECUTE_POST_SETUP_ZRAM_SWAP"; then
+						Allocate_RAM_ToSwap
+					fi
 
-			if ! echo "i" | sudo bash "$_SCRIPT_NAME" &> /dev/null; then
-				echo -e "$_PREFIX_ERROR Failed to execute script '$_SCRIPT_NAME'."
-				return 1
-			fi
+					if "$_EXECUTE_POST_SETUP_AUTO_XORG"; then
+						SetVideoOutput
+					fi
 
-			return 0
-		}
+					break
+				done
 
-		function Modify
-		{
-			local -r _FILE="/etc/default/zram-swap"
-			local -r _LINE_TO_MATCH="_zram_fraction="
-            local _FRACTION="$_ARGS_FOR_ZRAM_SWAP_FRACTION"
+				return "$?"
+			}
 
-            if ! "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
-                && ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
-                local -ir _MAX_TRIES=2
-
-                for _TRIES_COUNT in $( seq 0 "$_MAX_TRIES" ); do
-                    read -r -p "Set fraction of total memory for zram-swap to use (to calculate default, enter 'default'): " _ANSWER
-
-                    if Get_ZRAM_SwapSize "$_ANSWER"; then
-                        _FRACTION="$_ANSWER"
-                        break
-                    fi
-
-                    if [[ "$?" -ne 0 ]] \
-                        && [[ $_TRIES_COUNT -eq "$_MAX_TRIES" ]]; then
-                        return 1
-                    fi
-                done
-            fi
-
-            if "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
-                && ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
-                local -i _ZRAM_SWAP_AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY / 2 ))
-                local -i _DENOMINATOR=$( printf "%.0f" $( echo "scale=2;$_INT_MAX_MEMORY/$_ZRAM_SWAP_AVAILABLE_MEMORY" | bc ) )
-
-                # <remarks> Round down to nearest even number. </remarks>
-                if [[ $( expr $_DENOMINATOR % 2 ) -eq 1 ]]; then
-                    (( _DENOMINATOR-- ))
-                fi
-
-                # <remarks> Is fraction positive non-zero and not equal to one. </remarks>
-                if [[ "$_DENOMINATOR" -le 0 ]]; then
-                    echo -e "$_PREFIX_ERROR Denominator is negative or zero."
-                fi
-
-                _FRACTION="1/$_DENOMINATOR"
-            fi
-
-			if ! sed -i '/'$_LINE_TO_MATCH'"*"/c\'$_LINE_TO_MATCH'"'$_FRACTION'"' "$_FILE"; then
-				echo -e "$_PREFIX_ERROR Failed to write output to zram-swap file."
-				return 1
-			fi
-
-			if ! "$_HAS_ARG_ZRAM_SWAP_FORCE" \
-                && sudo swapon -v | grep zram &> /dev/null \
-				&& sudo swapon -v | grep zram &> /dev/null \
-				&& ! sudo swapon -v | grep zram | grep 0B &> /dev/null; then
-				echo -e "$_PREFIX_NOTE zram-swap device(s) already in use. Restart system to save changes."
-				return 0
-			fi
-
-			if sudo swapon -v | grep zram &> /dev/null \
-				&& ! sudo swapoff /dev/zram* &> /dev/null; then
-				echo -e "$_PREFIX_ERROR Failed to disable zram-swap device(s)."
-				return 1
-			fi
-
-			if ! sudo systemctl daemon-reload &> /dev/null; then
-				echo -e "$_PREFIX_ERROR Failed to update systemd."
-				return 1
-			fi
-
-			if ! sudo systemctl restart zram-swap &> /dev/null; then
-				echo -e "$_PREFIX_ERROR Failed to restart zram-swap service."
-				return 1
-			fi
-
-			if ! sudo swapon -v | grep zram &> /dev/null; then
-				echo -e "$_PREFIX_ERROR Failed to enable zram-swap device."
-				return 1
-			fi
-
-			return 0
-		}
-
-		local -r _USER_NAME="foundObjects"
-		local -r _REPO_NAME="zram-swap"
-		local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
-		local _HAS_SKIPPED=false
-
-        if ! "$_EXECUTE_POST_SETUP_ZRAM_SWAP"; then
-			echo
-
-            if ! AskToExecuteOrSkip "Install zram-swap?"; then
-                _HAS_SKIPPED=true
-            fi
-		fi
-
-		if ! "$_HAS_SKIPPED" \
-			&& ( ! IsHostMemorySufficientForZramSwap \
-			|| ! Get \
-			|| ! Install \
-			|| ! Modify ); then
-			false
-		fi
-
-		if "$_HAS_SKIPPED"; then
-			( return 255 )
-		fi
-
-		PrintSuffixPassOrFail "Allocating RAM to swap..."
-		return "$_LAST_EXIT_CODE"
-	}
-
-	function ExecutePostSetup
-	{
-        function Main
-        {
-            while [[ "$?" -ne 1 ]]; do
-                if "$_ASK_TO_EXECUTE_POST_SETUPS"; then
-                    LibvirtHooks
-                    GuestAudioLoopback
-                    Allocate_RAM_ToSwap
-                    SetVideoOutput
-                    break
-                fi
-
-                if "$_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS"; then
-                    LibvirtHooks
-                fi
-
-                if "$_EXECUTE_POST_SETUP_AUDIO_LOOPBACK"; then
-                    GuestAudioLoopback
-                fi
-
-                if "$_EXECUTE_POST_SETUP_ZRAM_SWAP"; then
-                    Allocate_RAM_ToSwap
-                fi
-
-                if "$_EXECUTE_POST_SETUP_AUTO_XORG"; then
-                    SetVideoOutput
-                fi
-
-                break
-            done
-
-            return "$?"
-        }
-
-        local _OUTPUT="Executing post-setup...\t"
-        PrintSuffixWait "$_OUTPUT"
-        Main
-        PrintSuffixPassOrFail "$_OUTPUT"
-		return "$?"
-	}
-
-	# <summary>
-	# Install necessary depenencies to setup an audio capture from guest emulated audio device to host audio backend.
-	# Installs PulseAudio or ALSA.
-	# </summary>
-	# <remarks>
-	# References:
-	#   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_through_other_devices
-	# </remarks>
-	function GuestAudioCapture
-	{
-		function Main
-		{
-			local _DEPENDENCIES=""
-
-			# <remarks> Install JACK and PipeWire. </remarks>
-			case "$_PACKAGE_MANAGER" in
-				"apt" )
-					_DEPENDENCIES+="pipewire pipewire-jack " ;;
-
-				"pacman" )
-					_DEPENDENCIES+="pipewire pipewire-jack " ;;
-
-				* )
-					echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
-					return 1 ;;
-			esac
-
-			# <remarks> Include PulseAudio (and QEMU driver if available). </remarks>
-			if IsInstalledCommand "pulseaudio" &> /dev/null; then
-				case "$_PACKAGE_MANAGER" in
-					"apt" )
-						_DEPENDENCIES+="pipewire-pulse " ;;
-
-					"pacman" )
-						_DEPENDENCIES+="pipewire-pulse qemu-audio-pa " ;;
-
-					* )
-						echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
-						return 1 ;;
-				esac
-
-			# <remarks> Fallback to factory driver. </remarks>
-			else
-				case "$_PACKAGE_MANAGER" in
-					"apt" )
-						_DEPENDENCIES+="pipewire-alsa " ;;
-
-					"pacman" )
-						_DEPENDENCIES+="pipewire-alsa " ;;
-
-					* )
-						echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
-						return 1 ;;
-				esac
-			fi
-
-			IsInstalledPackage "$_DEPENDENCIES" &> /dev/null || InstallPackage "$_DEPENDENCIES" &> /dev/null
+			local _OUTPUT="Executing post-setup...\t"
+			PrintSuffixWait "$_OUTPUT"
+			Main
+			PrintSuffixPassOrFail "$_OUTPUT"
 			return "$?"
 		}
 
-		Main
-		PrintSuffixPassOrFail "Installing audio drivers..." && _IS_AUDIO_CAPTURE_SETUP=true
-		return "$_LAST_EXIT_CODE"
-	}
+	# <summary> Public setters </summary>
+        function SetParameters
+        {
+            declare -g _GIT_PATH="$HOME/source/"
+			sudo mkdir -p "$_GIT_PATH" &> /dev/null
 
-	# <summary>
-	# Setup an audio loopback service from physical guest audio device (Line-Out) to physical host audio device (Line-In).
-	# Requires physical connection between Line-Out and Line-In, and audio backend with JACK support (requires PulseAudio or ALSA).
-	# </summary>
-	function GuestAudioLoopback
-	{
-		function Main
+			# <remarks> Flags </remarks>
+			declare -g _IS_AUDIO_CAPTURE_SETUP=false
+        }
+
+	# <summary> Private functions </summary>
+		# <summary>
+		# zramswap: Setup a swap partition in host memory.
+		# Reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory.
+		# </summary>
+		function Allocate_RAM_ToSwap
 		{
-			if ! command -v "pulseaudio" &> /dev/null; then
-				echo -e "$_PREFIX_ERROR Required audio backend 'PulseAudio' is missing."
-				return 1
+			function Get
+			{
+				UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_POST_SETUP_ZRAM_SWAP" || return 1
+				return 0
+			}
+
+			function Install
+			{
+				local -r _SCRIPT_NAME="install.sh"
+
+				if ! cd "$_GIT_PATH$_FULL_REPO"; then
+					echo -e "$_PREFIX_ERROR Failed to find build directory."
+					return 1
+				fi
+
+				if [[ ! -e "$_SCRIPT_NAME" ]]; then
+					echo -e "$_PREFIX_ERROR Failed to find script '$_SCRIPT_NAME'."
+					return 1
+				fi
+
+				if ! echo "i" | sudo bash "$_SCRIPT_NAME" &> /dev/null; then
+					echo -e "$_PREFIX_ERROR Failed to execute script '$_SCRIPT_NAME'."
+					return 1
+				fi
+
+				return 0
+			}
+
+			function Modify
+			{
+				local -r _FILE="/etc/default/zram-swap"
+				local -r _LINE_TO_MATCH="_zram_fraction="
+				local _FRACTION="$_ARGS_FOR_ZRAM_SWAP_FRACTION"
+
+				if ! "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
+					&& ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
+					local -ir _MAX_TRIES=2
+
+					for _TRIES_COUNT in $( seq 0 "$_MAX_TRIES" ); do
+						read -r -p "Set fraction of total memory for zram-swap to use (to calculate default, enter 'default'): " _ANSWER
+
+						if Get_ZRAM_SwapSize "$_ANSWER"; then
+							_FRACTION="$_ANSWER"
+							break
+						fi
+
+						if [[ "$?" -ne 0 ]] \
+							&& [[ $_TRIES_COUNT -eq "$_MAX_TRIES" ]]; then
+							return 1
+						fi
+					done
+				fi
+
+				if "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
+					&& ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
+					local -i _ZRAM_SWAP_AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY / 2 ))
+					local -i _DENOMINATOR=$( printf "%.0f" $( echo "scale=2;$_INT_MAX_MEMORY/$_ZRAM_SWAP_AVAILABLE_MEMORY" | bc ) )
+
+					# <remarks> Round down to nearest even number. </remarks>
+					if [[ $( expr $_DENOMINATOR % 2 ) -eq 1 ]]; then
+						(( _DENOMINATOR-- ))
+					fi
+
+					# <remarks> Is fraction positive non-zero and not equal to one. </remarks>
+					if [[ "$_DENOMINATOR" -le 0 ]]; then
+						echo -e "$_PREFIX_ERROR Denominator is negative or zero."
+					fi
+
+					_FRACTION="1/$_DENOMINATOR"
+				fi
+
+				if ! sed -i '/'$_LINE_TO_MATCH'"*"/c\'$_LINE_TO_MATCH'"'$_FRACTION'"' "$_FILE"; then
+					echo -e "$_PREFIX_ERROR Failed to write output to zram-swap file."
+					return 1
+				fi
+
+				if ! "$_HAS_ARG_ZRAM_SWAP_FORCE" \
+					&& sudo swapon -v | grep zram &> /dev/null \
+					&& sudo swapon -v | grep zram &> /dev/null \
+					&& ! sudo swapon -v | grep zram | grep 0B &> /dev/null; then
+					echo -e "$_PREFIX_NOTE zram-swap device(s) already in use. Restart system to save changes."
+					return 0
+				fi
+
+				if sudo swapon -v | grep zram &> /dev/null \
+					&& ! sudo swapoff /dev/zram* &> /dev/null; then
+					echo -e "$_PREFIX_ERROR Failed to disable zram-swap device(s)."
+					return 1
+				fi
+
+				if ! sudo systemctl daemon-reload &> /dev/null; then
+					echo -e "$_PREFIX_ERROR Failed to update systemd."
+					return 1
+				fi
+
+				if ! sudo systemctl restart zram-swap &> /dev/null; then
+					echo -e "$_PREFIX_ERROR Failed to restart zram-swap service."
+					return 1
+				fi
+
+				if ! sudo swapon -v | grep zram &> /dev/null; then
+					echo -e "$_PREFIX_ERROR Failed to enable zram-swap device."
+					return 1
+				fi
+
+				return 0
+			}
+
+			local -r _USER_NAME="foundObjects"
+			local -r _REPO_NAME="zram-swap"
+			local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
+			local _HAS_SKIPPED=false
+
+			if ! "$_EXECUTE_POST_SETUP_ZRAM_SWAP"; then
+				echo
+
+				if ! AskToExecuteOrSkip "Install zram-swap?"; then
+					_HAS_SKIPPED=true
+				fi
 			fi
 
-			if ! sudo cp "$_AUDIO_LOOPBACK_SRC_PATH" "$_AUDIO_LOOPBACK_DEST_PATH"; then
-				echo -e "$_PREFIX_ERROR Failed to copy file."
-				return 1
+			if ! "$_HAS_SKIPPED" \
+				&& ( ! IsHostMemorySufficientForZramSwap \
+				|| ! Get \
+				|| ! Install \
+				|| ! Modify ); then
+				false
 			fi
 
-			if ! sudo systemctl daemon-reload &> /dev/null; then
-				echo -e "$_PREFIX_ERROR Failed to update systemd with new daemon/service."
-				return 1
+			if "$_HAS_SKIPPED"; then
+				( return 255 )
 			fi
 
-			if ! sudo systemctl start "$_AUDIO_LOOPBACK_FILENAME"; then
-				echo -e "$_PREFIX_ERROR Failed to start audio loopback service."
-				return 1
-			fi
-
-			if ! sudo systemctl enable "$_AUDIO_LOOPBACK_FILENAME"; then
-				echo -e "$_PREFIX_ERROR Failed to enable audio loopback service."
-				return 1
-			fi
-
-			return 0
+			PrintSuffixPassOrFail "Allocating RAM to swap..."
+			return "$_LAST_EXIT_CODE"
 		}
 
-        local _HAS_SKIPPED=false
-
-        if ! "$_EXECUTE_POST_SETUP_AUDIO_LOOPBACK"; then
-			echo
-
-            if ! AskToExecuteOrSkip "Install zram-swap?"; then
-                _HAS_SKIPPED=true
-            fi
-		fi
-
-		if ! "$_HAS_SKIPPED"; then
-			Main
-        else
-            ( return 255 )
-		fi
-
-		PrintSuffixPassOrFail "Creating audio loopback..."
-		return "$_LAST_EXIT_CODE"
-	}
-
-	# <summary>
-	# Libvirt hooks: Setup useful Quality-of-life improvements in the form of services and scripts (hooks) for QEMU guest(s).
-	# </summary>
-	function LibvirtHooks
-	{
-		function Main
+		# <summary>
+		# Install necessary depenencies to setup an audio capture from guest emulated audio device to host audio backend.
+		# Installs PulseAudio or ALSA.
+		# </summary>
+		# <remarks>
+		# References:
+		#   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_through_other_devices
+		# </remarks>
+		function GuestAudioCapture
 		{
-			if ! sudo cp "$_LIBVIRT_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_DEST_PATH" &> /dev/null \
-                || ! sudo cp "$_LIBVIRT_HOOK_CFSCPU_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH" &> /dev/null \
-				|| ! sudo cp "$_LIBVIRT_HOOK_DDCUTIL_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH" &> /dev/null \
-				|| ! sudo cp "$_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null \
-				|| ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH" &> /dev/null \
-				|| ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH" "$_LIBVIRT_HOOK_NOSLEEP_SERVICE_DEST_PATH" &> /dev/null \
-				|| ! sudo cp "$_LIBVIRT_HOOK_UPDATE_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH" &> /dev/null; then
-				echo -e "$_PREFIX_ERROR Failed to copy file(s)."
-				return 1
+			function Main
+			{
+				local _DEPENDENCIES=""
+
+				# <remarks> Install JACK and PipeWire. </remarks>
+				case "$_PACKAGE_MANAGER" in
+					"apt" )
+						_DEPENDENCIES+="pipewire pipewire-jack " ;;
+
+					"pacman" )
+						_DEPENDENCIES+="pipewire pipewire-jack " ;;
+
+					* )
+						echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
+						return 1 ;;
+				esac
+
+				# <remarks> Include PulseAudio (and QEMU driver if available). </remarks>
+				if IsInstalledCommand "pulseaudio" &> /dev/null; then
+					case "$_PACKAGE_MANAGER" in
+						"apt" )
+							_DEPENDENCIES+="pipewire-pulse " ;;
+
+						"pacman" )
+							_DEPENDENCIES+="pipewire-pulse qemu-audio-pa " ;;
+
+						* )
+							echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
+							return 1 ;;
+					esac
+
+				# <remarks> Fallback to factory driver. </remarks>
+				else
+					case "$_PACKAGE_MANAGER" in
+						"apt" )
+							_DEPENDENCIES+="pipewire-alsa " ;;
+
+						"pacman" )
+							_DEPENDENCIES+="pipewire-alsa " ;;
+
+						* )
+							echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
+							return 1 ;;
+					esac
+				fi
+
+				IsInstalledPackage "$_DEPENDENCIES" &> /dev/null || InstallPackage "$_DEPENDENCIES" &> /dev/null
+				return "$?"
+			}
+
+			Main
+			PrintSuffixPassOrFail "Installing audio drivers..." && _IS_AUDIO_CAPTURE_SETUP=true
+			return "$_LAST_EXIT_CODE"
+		}
+
+		# <summary>
+		# Setup an audio loopback service from physical guest audio device (Line-Out) to physical host audio device (Line-In).
+		# Requires physical connection between Line-Out and Line-In, and audio backend with JACK support (requires PulseAudio or ALSA).
+		# </summary>
+		function GuestAudioLoopback
+		{
+			function Main
+			{
+				if ! command -v "pulseaudio" &> /dev/null; then
+					echo -e "$_PREFIX_ERROR Required audio backend 'PulseAudio' is missing."
+					return 1
+				fi
+
+				if ! sudo cp "$_AUDIO_LOOPBACK_SRC_PATH" "$_AUDIO_LOOPBACK_DEST_PATH"; then
+					echo -e "$_PREFIX_ERROR Failed to copy file."
+					return 1
+				fi
+
+				if ! sudo systemctl daemon-reload &> /dev/null; then
+					echo -e "$_PREFIX_ERROR Failed to update systemd with new daemon/service."
+					return 1
+				fi
+
+				if ! sudo systemctl start "$_AUDIO_LOOPBACK_FILENAME"; then
+					echo -e "$_PREFIX_ERROR Failed to start audio loopback service."
+					return 1
+				fi
+
+				if ! sudo systemctl enable "$_AUDIO_LOOPBACK_FILENAME"; then
+					echo -e "$_PREFIX_ERROR Failed to enable audio loopback service."
+					return 1
+				fi
+
+				return 0
+			}
+
+			local _HAS_SKIPPED=false
+
+			if ! "$_EXECUTE_POST_SETUP_AUDIO_LOOPBACK"; then
+				echo
+
+				if ! AskToExecuteOrSkip "Install zram-swap?"; then
+					_HAS_SKIPPED=true
+				fi
 			fi
 
-			if ! sudo chmod +x "$_LIBVIRT_HOOK_DEST_PATH" &> /dev/null \
-                || ! sudo chmod +x "$_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH" &> /dev/null \
-				|| ! sudo chmod +x "$_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH" &> /dev/null \
-				|| ! sudo chmod +x "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null \
-				|| ! sudo chmod +x "$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH" &> /dev/null \
-				|| ! sudo chmod +x "$_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH" &> /dev/null; then
-				echo -e "$_PREFIX_ERROR Failed to set file permissions."
-				return 1
+			if ! "$_HAS_SKIPPED"; then
+				Main
+			else
+				( return 255 )
 			fi
 
-			if ! "$_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU"; then
-				if ! sudo cp "$_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null; then
+			PrintSuffixPassOrFail "Creating audio loopback..."
+			return "$_LAST_EXIT_CODE"
+		}
+
+		# <summary>
+		# Libvirt hooks: Setup useful Quality-of-life improvements in the form of services and scripts (hooks) for QEMU guest(s).
+		# </summary>
+		function LibvirtHooks
+		{
+			function Main
+			{
+				if ! sudo cp "$_LIBVIRT_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_DEST_PATH" &> /dev/null \
+					|| ! sudo cp "$_LIBVIRT_HOOK_CFSCPU_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH" &> /dev/null \
+					|| ! sudo cp "$_LIBVIRT_HOOK_DDCUTIL_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH" &> /dev/null \
+					|| ! sudo cp "$_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null \
+					|| ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH" &> /dev/null \
+					|| ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH" "$_LIBVIRT_HOOK_NOSLEEP_SERVICE_DEST_PATH" &> /dev/null \
+					|| ! sudo cp "$_LIBVIRT_HOOK_UPDATE_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH" &> /dev/null; then
 					echo -e "$_PREFIX_ERROR Failed to copy file(s)."
 					return 1
 				fi
 
-				if ! sudo chmod +x "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null; then
+				if ! sudo chmod +x "$_LIBVIRT_HOOK_DEST_PATH" &> /dev/null \
+					|| ! sudo chmod +x "$_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH" &> /dev/null \
+					|| ! sudo chmod +x "$_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH" &> /dev/null \
+					|| ! sudo chmod +x "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null \
+					|| ! sudo chmod +x "$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH" &> /dev/null \
+					|| ! sudo chmod +x "$_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH" &> /dev/null; then
 					echo -e "$_PREFIX_ERROR Failed to set file permissions."
 					return 1
 				fi
+
+				if ! "$_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU"; then
+					if ! sudo cp "$_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null; then
+						echo -e "$_PREFIX_ERROR Failed to copy file(s)."
+						return 1
+					fi
+
+					if ! sudo chmod +x "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null; then
+						echo -e "$_PREFIX_ERROR Failed to set file permissions."
+						return 1
+					fi
+				fi
+
+				if ! sudo echo -e "" >> "$_LIBVIRT_HOOK_DEST_PATH" \
+					|| ( ! "$_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU" && ! sudo echo -e "source \"$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH" ) \
+					|| ! sudo echo -e "source \"$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH" \
+					|| ! sudo echo -e "source \"$_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH"; then
+					echo -e "$_PREFIX_ERROR Failed to append filenames as sources to Libvirt hooks file."
+					return 1
+				fi
+
+				if ! sudo systemctl daemon-reload &> /dev/null \
+					|| ! sudo systemctl restart libvirtd &> /dev/null; then
+					echo -e "$_PREFIX_ERROR Failed to update systemd with new daemon/service."
+					return 1
+				fi
+
+				return 0
+			}
+
+			local _HAS_SKIPPED=false
+
+			if ! "$_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS"; then
+				echo
+
+				if ! AskToExecuteOrSkip "Install Libvirt hooks?"; then
+					_HAS_SKIPPED=true
+				fi
 			fi
 
-			if ! sudo echo -e "" >> "$_LIBVIRT_HOOK_DEST_PATH" \
-				|| ( ! "$_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU" && ! sudo echo -e "source \"$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH" ) \
-				|| ! sudo echo -e "source \"$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH" \
-				|| ! sudo echo -e "source \"$_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH"; then
-				echo -e "$_PREFIX_ERROR Failed to append filenames as sources to Libvirt hooks file."
-				return 1
+			if ! "$_HAS_SKIPPED"; then
+				Main
+			else
+				( return 255 )
 			fi
 
-			if ! sudo systemctl daemon-reload &> /dev/null \
-				|| ! sudo systemctl restart libvirtd &> /dev/null; then
-				echo -e "$_PREFIX_ERROR Failed to update systemd with new daemon/service."
-				return 1
-			fi
-
-			return 0
+			PrintSuffixPassOrFail "Installing Libvirt hooks..."
+			return "$_LAST_EXIT_CODE"
 		}
 
-		local _HAS_SKIPPED=false
-
-        if ! "$_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS"; then
-			echo
-
-            if ! AskToExecuteOrSkip "Install Libvirt hooks?"; then
-                _HAS_SKIPPED=true
-            fi
-		fi
-
-		if ! "$_HAS_SKIPPED"; then
-			Main
-		else
-			( return 255 )
-		fi
-
-		PrintSuffixPassOrFail "Installing Libvirt hooks..."
-		return "$_LAST_EXIT_CODE"
-	}
-
-    # <summary>
-	# auto-Xorg: System service to find and set a valid Host boot VGA device for Xorg.
-	# </summary>
-	# <remarks>
-	# References:
-	#   https://github.com/portellam/auto-Xorg
-	# </remarks>
-	function SetVideoOutput
-	{
-		function Get
+		# <summary>
+		# auto-Xorg: System service to find and set a valid Host boot VGA device for Xorg.
+		# </summary>
+		# <remarks>
+		# References:
+		#   https://github.com/portellam/auto-Xorg
+		# </remarks>
+		function SetVideoOutput
 		{
-			UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_POST_SETUP_AUTO_XORG" || return 1
-			return 0
+			function Get
+			{
+				UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_POST_SETUP_AUTO_XORG" || return 1
+				return 0
+			}
+
+			function GetArgs
+			{
+				IFS=$'\n'
+
+				declare -a _OUTPUT=(
+					"ARGUMENTS:"
+					"  first  [vendor]\t\tFind the first valid VGA device."
+					"  last   [vendor]\t\tFind the last valid VGA device."
+					"  [sort] amd\t\t\tPrefer AMD or ATI."
+					"  [sort] intel\t\t\tPrefer Intel."
+					"  [sort] nvidia\t\t\tPrefer NVIDIA."
+					"  [sort] other\t\t\tPrefer any other brand."
+				)
+
+				echo -e "${_OUTPUT[*]}"
+				unset IFS
+				return 0
+			}
+
+			function Install
+			{
+				local -r _SCRIPT_NAME="installer.bash"
+
+				if ! cd "$_GIT_PATH$_FULL_REPO"; then
+					echo -e "$_PREFIX_ERROR Failed to find build directory."
+					return 1
+				fi
+
+				if [[ ! -e "$_SCRIPT_NAME" ]]; then
+					echo -e "$_PREFIX_ERROR Failed to find script '$_SCRIPT_NAME'."
+					return 1
+				fi
+
+				if ! sudo bash $_SCRIPT_NAME $_ARGS_FOR_AUTO_XORG &> /dev/null; then
+					echo -e "$_PREFIX_ERROR Failed to execute script '$_SCRIPT_NAME'."
+					return 1
+				fi
+
+				return 0
+			}
+
+			local -r _USER_NAME="portellam"
+			local -r _REPO_NAME="auto-Xorg"
+			local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
+			local _HAS_SKIPPED=false
+
+			if ! "$_EXECUTE_POST_SETUP_AUTO_XORG"; then
+				echo
+
+				if ! AskToExecuteOrSkip "Install $_REPO_NAME?"; then
+					_HAS_SKIPPED=true
+				fi
+			fi
+
+			if ! "$_HAS_SKIPPED"; then
+				Get
+
+				if ! "$_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR" \
+					&& ! "$_HAS_ARG_AUTO_XORG_SORT_ORDER" \
+					&& AskToExecuteOrSkip "Add arguments?"; then
+					local -i _COUNT_OF_VALID_ARGS=2
+					echo
+					GetArgs
+
+					for _COUNT in $( seq 1 "$_COUNT_OF_VALID_ARGS" ); do
+						read -r -p "Enter argument (to skip, leave blank): " _ANSWER
+						GetArgsForAutoXorg "$_ANSWER" || return 1
+
+						if [[ -z "$_ANSWER" ]]; then
+							break
+						fi
+					done
+				fi
+
+				Install
+			fi
+
+			if "$_HAS_SKIPPED"; then
+				( return 255 )
+			fi
+
+			PrintSuffixPassOrFail "Installing $_REPO_NAME...\t"
+			return "$_LAST_EXIT_CODE"
 		}
-
-        function GetArgs
-        {
-            IFS=$'\n'
-
-            declare -a _OUTPUT=(
-                "ARGUMENTS:"
-                "  first  [vendor]\t\tFind the first valid VGA device."
-                "  last   [vendor]\t\tFind the last valid VGA device."
-                "  [sort] amd\t\t\tPrefer AMD or ATI."
-                "  [sort] intel\t\t\tPrefer Intel."
-                "  [sort] nvidia\t\t\tPrefer NVIDIA."
-                "  [sort] other\t\t\tPrefer any other brand."
-            )
-
-            echo -e "${_OUTPUT[*]}"
-            unset IFS
-            return 0
-        }
-
-		function Install
-		{
-			local -r _SCRIPT_NAME="installer.bash"
-
-			if ! cd "$_GIT_PATH$_FULL_REPO"; then
-				echo -e "$_PREFIX_ERROR Failed to find build directory."
-				return 1
-			fi
-
-			if [[ ! -e "$_SCRIPT_NAME" ]]; then
-				echo -e "$_PREFIX_ERROR Failed to find script '$_SCRIPT_NAME'."
-				return 1
-			fi
-
-			if ! sudo bash $_SCRIPT_NAME $_ARGS_FOR_AUTO_XORG &> /dev/null; then
-				echo -e "$_PREFIX_ERROR Failed to execute script '$_SCRIPT_NAME'."
-				return 1
-			fi
-
-			return 0
-		}
-
-		local -r _USER_NAME="portellam"
-		local -r _REPO_NAME="auto-Xorg"
-		local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
-		local _HAS_SKIPPED=false
-
-        if ! "$_EXECUTE_POST_SETUP_AUTO_XORG"; then
-			echo
-
-            if ! AskToExecuteOrSkip "Install $_REPO_NAME?"; then
-                _HAS_SKIPPED=true
-            fi
-		fi
-
-		if ! "$_HAS_SKIPPED"; then
-			Get
-
-            if ! "$_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR" \
-                && ! "$_HAS_ARG_AUTO_XORG_SORT_ORDER" \
-                && AskToExecuteOrSkip "Add arguments?"; then
-                local -i _COUNT_OF_VALID_ARGS=2
-                echo
-                GetArgs
-
-                for _COUNT in $( seq 1 "$_COUNT_OF_VALID_ARGS" ); do
-                    read -r -p "Enter argument (to skip, leave blank): " _ANSWER
-                    GetArgsForAutoXorg "$_ANSWER" || return 1
-
-                    if [[ -z "$_ANSWER" ]]; then
-                        break
-                    fi
-                done
-            fi
-
-			Install
-		fi
-
-		if "$_HAS_SKIPPED"; then
-			( return 255 )
-		fi
-
-		PrintSuffixPassOrFail "Installing $_REPO_NAME...\t"
-		return "$_LAST_EXIT_CODE"
-	}
-# </code>
-
-# <params>
-	declare -g _GIT_PATH="$HOME/source/"
-	sudo mkdir -p "$_GIT_PATH" &> /dev/null
-
-	# <remarks> Flags </remarks>
-	declare -g _IS_AUDIO_CAPTURE_SETUP=false
-# </params>
+# </functions>
