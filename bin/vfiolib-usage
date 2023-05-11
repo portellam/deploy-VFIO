@@ -24,6 +24,7 @@
 
             return 0
         }
+
     # <summary> Public setters </summary>
         function SetParameters
         {
