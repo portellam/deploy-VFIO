@@ -1,4 +1,4 @@
-#!/bin/bash sh
+#!/bin/bash/env bash
 
 #
 # Filename:         installer.bash

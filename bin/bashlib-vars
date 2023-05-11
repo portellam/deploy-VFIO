@@ -5,117 +5,114 @@
 # Description:      Generic data type functions and validation.
 # Author(s):        Alex Portell <github.com/portellam>
 # Maintainer(s):    Alex Portell <github.com/portellam>
+#
 
-# <summary> Validation </summary>
 # <functions>
-    function IsBool
-    {
-        [[ "$1" == true ]] \
-        || [[ "$1" == false ]]
-        return "$?"
-    }
+    # <summary> Validation </summary>
+        function IsBool
+        {
+            [[ "$1" == true ]] \
+            || [[ "$1" == false ]]
+            return "$?"
+        }
 
-    function IsInt
-    {
-        [[ "$1" =~ ^[0-9]+$ ]] \
-        || [[ "$1" =~ ^[-][0-9]+$ ]]
-        return "$?"
-    }
+        function IsInt
+        {
+            [[ "$1" =~ ^[0-9]+$ ]] \
+            || [[ "$1" =~ ^[-][0-9]+$ ]]
+            return "$?"
+        }
 
-    function IsString
-    {
-        [ -n "$1" ]
-        return "$?"
-    }
+        function IsString
+        {
+            [ -n "$1" ]
+            return "$?"
+        }
 
-    function IsNull
-    {
-        [ -z "$1" ]
-        return "$?"
-    }
+        function IsNull
+        {
+            [ -z "$1" ]
+            return "$?"
+        }
 
-    function IsReference
-    {
-        IsString "$1" || return "$?"
-        local -n REFERENCE="$1"
-        AreEqual "$1" "$REFERENCE" && return 1
-        return 0
-    }
-# </functions>
+        function IsReference
+        {
+            IsString "$1" || return "$?"
+            local -n REFERENCE="$1"
+            AreEqual "$1" "$REFERENCE" && return 1
+            return 0
+        }
 
-# <summary> Comparisons </summary>
-# <functions>
-    function AreEqual
-    {
-        [[ "$1" == "$2" ]]
-        return "$?"
-    }
+    # <summary> Comparisons </summary>
+        function AreEqual
+        {
+            [[ "$1" == "$2" ]]
+            return "$?"
+        }
 
-    function AreNotEqual
-    {
-        [[ "$1" != "$2" ]]
-        return "$?"
-    }
+        function AreNotEqual
+        {
+            [[ "$1" != "$2" ]]
+            return "$?"
+        }
 
-        function IsDecimal
-    {
-        [[ "$1" =~ ^[0-9]+[.]+[0-9]$ ]] \
-        || [[ "$1" =~ ^[-][0-9]+[.]+[0-9]$ ]]
-        return "$?"
-    }
+            function IsDecimal
+        {
+            [[ "$1" =~ ^[0-9]+[.]+[0-9]$ ]] \
+            || [[ "$1" =~ ^[-][0-9]+[.]+[0-9]$ ]]
+            return "$?"
+        }
 
-    function IsFraction
-    {
-        [[ "$1" =~ ^[0-9]+[/][1-9]+$ ]] \
-        || [[ "$1" =~ ^[-][0-9]+[/][1-9]+$ ]] \
-        || [[ "$1" =~ ^[0-9]+[/][-][1-9]+$ ]] \
-        || [[ "$1" =~ ^[-][0-9]+[/][-][1-9]+$ ]]
-        return "$?"
-    }
+        function IsFraction
+        {
+            [[ "$1" =~ ^[0-9]+[/][1-9]+$ ]] \
+            || [[ "$1" =~ ^[-][0-9]+[/][1-9]+$ ]] \
+            || [[ "$1" =~ ^[0-9]+[/][-][1-9]+$ ]] \
+            || [[ "$1" =~ ^[-][0-9]+[/][-][1-9]+$ ]]
+            return "$?"
+        }
 
-    function IsGreater
-    {
-        [[ "$1" -gt "$2" ]]
-        return "$?"
-    }
+        function IsGreater
+        {
+            [[ "$1" -gt "$2" ]]
+            return "$?"
+        }
 
-    function IsGreaterOrEqual
-    {
-        [[ "$1" -ge "$2" ]]
-        return "$?"
-    }
+        function IsGreaterOrEqual
+        {
+            [[ "$1" -ge "$2" ]]
+            return "$?"
+        }
 
-    function IsLess
-    {
-        [[ "$1" -lt "$2" ]]
-        return "$?"
-    }
+        function IsLess
+        {
+            [[ "$1" -lt "$2" ]]
+            return "$?"
+        }
 
-    function IsLessOrEqual
-    {
-        [[ "$1" -le "$2" ]]
-        return "$?"
-    }
+        function IsLessOrEqual
+        {
+            [[ "$1" -le "$2" ]]
+            return "$?"
+        }
 
-    function IsNonZero
-    {
-        [[ "$1" -ne 0 ]]
-        return "$?"
-    }
+        function IsNonZero
+        {
+            [[ "$1" -ne 0 ]]
+            return "$?"
+        }
 
-    function IsZero
-    {
-        [[ "$1" -eq 0 ]]
-        return "$?"
-    }
-# </functions>
+        function IsZero
+        {
+            [[ "$1" -eq 0 ]]
+            return "$?"
+        }
 
-# <summary> Presentation </summary>
-# <functions>
-    function Print
-    {
-        IsString "$1" || return "$?"
-        echo -e "$1"
-        return 0
-    }
+    # <summary> Presentation </summary>
+        function Print
+        {
+            IsString "$1" || return "$?"
+            echo -e "$1"
+            return 0
+        }
 # </functions>

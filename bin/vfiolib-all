@@ -1,13 +1,13 @@
-#!/bin/bash sh
+#!/bin/bash/env bash
 
 #
 # Filename:         vfiolib-all
+# Description:      Master sources file.
 # Author(s):        Alex Portell <github.com/portellam>
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-# <remarks> Using </remarks>
-# <code>
+# <sources>
     source vfiolib-calcs
     source vfiolib-checks
     source vfiolib-common
@@ -18,4 +18,4 @@
     source vfiolib-parse
     source vfiolib-setup
     source vfiolib-usage
-# </code>
+# </sources>

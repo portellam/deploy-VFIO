@@ -1,4 +1,4 @@
-#!/bin/bash sh
+#!/bin/bash/env bash
 
 #
 # Filename:         vfiolib-calcs
@@ -7,10 +7,9 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-# <remarks> Using </remarks>
-# <code>
+# <sources>
     source vfiolib-globals
-# </code>
+# </sources>
 
 # <code>
     function AddSome_IOMMU_GroupsParseList

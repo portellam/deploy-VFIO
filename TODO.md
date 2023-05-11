@@ -3,6 +3,9 @@
     - Anything mentioned in **To Do** is not enabled/available.
 
 ### To Do:
+* Create Setter functions, such that they will populate publicly used params only once (when called in order)
+    -This way, the script can re-execute itself?
+
 * Trim fat, remove unnecessary repetitions and code.
 * Ask question to do each function, then execute after asking all questions (pre and post-setup).
 * Pre-setup:

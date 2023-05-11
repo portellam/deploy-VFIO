@@ -1,4 +1,4 @@
-#!/bin/bash sh
+#!/bin/bash/env bash
 
 #
 # Filename:         vfiolib-checks
@@ -6,11 +6,10 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-# <summary> Using </summary>
-# <code>
+# <sources>
     source vfiolib-common
     source vfiolib-globals
-# </code>
+# </sources>
 
 # <code>
     function AreRequiredLibrariesInstalled

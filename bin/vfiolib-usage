@@ -1,20 +1,19 @@
-#!/bin/bash sh
+#!/bin/bash/env bash
 
 #
 # Filename:         vfiolib-usage
-# Description:      Usage
+# Description:      Get and set usage.
 # Author(s):        Alex Portell <github.com/portellam>
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-# <remarks> Using </remarks>
-# <code>
+# <sources>
     source vfiolib-calcs
     source vfiolib-files
     source vfiolib-globals
-# </code>
+# </sources>
 
-# <code>
+# <functions>
     function GetOption
     {
         if [[ -z "$@" ]]; then
@@ -448,7 +447,7 @@
         echo -e "$_PREFIX_ERROR Invalid option '$1'."
         return 0
     }
-# </code>
+# </functions>
 
 # <params>
     declare -g _ARGS_FOR_AUTO_XORG=""

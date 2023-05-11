@@ -1,4 +1,4 @@
-#!/bin/bash sh
+#!/bin/bash/env bash
 
 #
 # Filename:         vfiolib-post-setup
@@ -7,13 +7,12 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-# <remarks> Using </remarks>
-# <code>
+# <sources>
 	source vfiolib-calcs
 	source vfiolib-common
 	source vfiolib-files
 	source vfiolib-usage
-# </code>
+# </sources>
 
 # <code>
 	# <summary>

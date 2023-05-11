@@ -1,16 +1,15 @@
-#!/bin/bash sh
+#!/bin/bash/env bash
 
 #
 # Filename:         deploy-vfio
-# Description:      Effortlessly deploy a VFIO setup (PCI passthrough).
+# Description:      Main executable.
 # Author(s):        Alex Portell <github.com/portellam>
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-# <remarks> Using </remarks>
-# <code>
+# <sources>
     source vfiolib-all
-# </code>
+# </sources>
 
 # <params>
     # <remarks> Flags </remarks>
