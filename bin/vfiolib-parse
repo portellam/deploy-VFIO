@@ -107,12 +107,20 @@
         # <summary> Global setters </summary>
             function SetParseParameters
             {
+                if [[ ! -z "$_ARE_PARSE_PARAMS_SET" ]] \
+                    && "$_ARE_PARSE_PARAMS_SET"; then
+                    return 0
+                fi
+
                 declare -g GET_DEVICES_FOR_IOMMU_GROUP='ls /sys/kernel/iommu_groups/$IOMMU_GROUP_ID/devices/'
                 declare -ag _IOMMU_GROUP_ID_LIST=( $( ls /sys/kernel/iommu_groups/ | sort -n ) )
                 declare -ag _IOMMU_GROUPS_FOR_HOST_LIST _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST _IOMMU_GROUPS_FOR_VFIO_LIST
                 declare -g _DEFAULT_DATABASE_FILE="/usr/local/etc/vfiolib_lspci_database"
                 declare -g _PARSE_OPTIONS=""
                 declare -g _REGEX_DOMAIN_ID='^[0-9A-F][1-9A-F]$'
+                declare -g _ARE_PARSE_PARAMS_SET=true
+
+                return 0
             }
 
             function AreParametersValid
