@@ -10,6 +10,7 @@
 # <sources>
     source vfiolib-calcs
     source vfiolib-files
+    source vfiolib-parse
     source vfiolib-globals
 # </sources>
 
@@ -115,7 +116,7 @@
             function GetArgsForParseSelection
             {
                 if [[ -z "$1" ]]; then
-                    Is_IOMMU_Group_ID_Valid "$1"
+                    IsIOMMUGroupIDValid "$1"
                     return 1
                 fi
 
@@ -315,6 +316,7 @@
 
                     "-p" | "--parse" )
                         shift
+                        SetParseParameters
                         Get_IOMMU_GroupList
                         GetArgsForParseSelection "$1" || return 1
                         _HAS_ARG_PARSE_IOMMU=true

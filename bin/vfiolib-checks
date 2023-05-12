@@ -12,8 +12,35 @@
 # </sources>
 
 # <functions>
+    # <summary> Public </summary>
+        # <summary> Global setters </summary>
+            function SetParameters
+            {
+                declare -g _IS_SYSTEM_SUPPORTED=false
+                declare -ga _REQUIRED_LIBRARIES=( )
+            }
+
+        function IsSystemSupported
+        {
+            if ! ( IsSystemdInstalled \
+                && IsVirtualizationEnabled \
+                && IsIOMMUEnabled \
+                && IsSystemdInstalled ); then
+                return 1
+            fi
+
+            if ! GetLibraries \
+                || ( ! AreRequiredLibrariesInstalled \
+                    && ! InstallRequiredLibraries ); then
+                echo -e "$_PREFIX_ERROR System is not supported in its current state."
+                return 1
+            fi
+
+            return 0
+        }
+
     # <summary> Private </summary>
-        # <summary> Global getters </summary>
+        # <summary> Local getters </summary>
             function GetRequiredLibraries
             {
                 local -a _ALMA_REQUIRED_LIBRARIES=(
@@ -102,7 +129,7 @@
                 return "$?"
             }
 
-        # <summary> Global setters </summary>
+        # <summary> Local setters </summary>
             function SetRequiredLibraries
             {
                 case "$_PACKAGE_MANAGER" in
@@ -126,13 +153,6 @@
 
                 return 0
             }
-    # <summary> Public </summary>
-        # <summary> Global setters </summary>
-            function SetParameters
-            {
-                declare -g _IS_SYSTEM_SUPPORTED=false
-                declare -ga _REQUIRED_LIBRARIES=( )
-            }
 
         function AreRequiredLibrariesInstalled
         {
@@ -154,7 +174,7 @@
             return 0
         }
 
-        function Is_IOMMU_Enabled
+        function IsIOMMUEnabled
         {
             if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*" &> /dev/null; then
                 echo -e "$_PREFIX_ERROR System does not support IOMMU groups."
@@ -168,25 +188,6 @@
                 echo -e "$_PREFIX_ERROR 'systemd' is not installed."
                 return 1
             fi
-        }
-
-        function IsSystemSupported
-        {
-            if ! ( IsSystemdInstalled \
-                && IsVirtualizationEnabled \
-                && Is_IOMMU_Enabled \
-                && IsSystemdInstalled ); then
-                return 1
-            fi
-
-            if ! GetLibraries \
-                || ( ! AreRequiredLibrariesInstalled \
-                    && ! InstallRequiredLibraries ); then
-                echo -e "$_PREFIX_ERROR System is not supported in its current state."
-                return 1
-            fi
-
-            return 0
         }
 
         function IsVirtualizationEnabled
