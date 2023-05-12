@@ -34,7 +34,7 @@
                 # unset IFS
             }
 
-        # <summary> Unnamed </summary>
+        # <summary> IOMMU </summary>
             function AddSome_IOMMU_GroupsParseList
             {
                 local -a _IOMMU_GROUP_ID_LIST_SOME=( )
@@ -122,35 +122,67 @@
                 return 0
             }
 
-            function Does_IOMMU_GroupContain_ExternalVGA
+            function Get_IOMMU_GroupList
             {
-                if ! Is_IOMMU_Group_ID_Valid "$1"; then
+                declare -ga _IOMMU_GROUP_ID_LIST_TO_USE=( )
+            }
+
+            function Get_Preferred_IOMMU_Group_For_Multiboot
+            {
+                declare -gi _MULTIBOOT_PREFERRED_IOMMU_GROUP_ID="$1"
+                _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE=true
+                return 0
+            }
+
+            function IsDeviceExternal
+            {
+                if ! echo "$1" | grep -E -q "$_REGEX_DOMAIN_ID"; then
                     return 1
                 fi
 
-                local -i _IOMMU_GROUP_ID="$1"
-                local -a _DEVICE_LIST=( $( eval "$_GET_IOMMU_GROUP_DEVICE_LIST" ) )
+                return 0
+            }
 
-                for _DEVICE in ${_DEVICE_LIST[@]}; do
-                    local -u _DEVICE_DOMAIN_ID=$( echo "$_DEVICE" | cut -d ':' -f 2 )
-                    local -l _DEVICE_CLASS="$( lspci -m -s $_DEVICE $_PARSE_OPTIONS | cut -d '"' -f 2 )"
+            function IsDevice_VGA
+            {
+                local -l _CLASS="$1"
 
-                    if IsDeviceExternal "$_DEVICE_DOMAIN_ID" \
-                        && IsDevice_VGA "$_DEVICE_CLASS"; then
-                        return 0
-                    fi
-                done
+                case "$_CLASS" in
+                    *"vga"* | *"graphic"* )
+                        return 0 ;;
+                esac
 
-                echo -e "$_PREFIX_ERROR Please enter valid external VGA IOMMU group ID."
                 return 1
             }
 
+            function Is_IOMMU_Group_ID_Valid
+            {
+                if [[ -z "$1" ]] \
+                    || [[ "$1" -lt 0 ]] \
+                    || [[ "$1" -gt "$_LAST_IOMMU_GROUP_ID" ]]; then
+                    echo -e "$_PREFIX_ERROR Please enter valid IOMMU group ID(s), between 0 and $_LAST_IOMMU_GROUP_ID."
+                    return 1
+                fi
+
+                return 0
+            }
+
+            function SortListOf_IOMMU_Groups
+            {
+                IFS=$'\n'
+                _IOMMU_GROUP_ID_LIST_TO_USE=( $( sort -hu <<<"${_IOMMU_GROUP_ID_LIST_TO_USE[*]}" ) )
+                unset IFS
+                return 0
+            }
+
+        # <summary> RAM allocation </summary>
             function GetFreeMemory
             {
                 _AVAILABLE_MEMORY=$(( _INT_MAX_MEMORY - _MIN_MEMORY ))
                 return 0
             }
 
+        # <summary> Hugepages </summary>
             function GetMemoryAllocatedToHugepages
             {
                 _HUGEPAGES_ALLOCATED_MEMORY=$(( $_HUGEPAGES_COUNT * $_HUGEPAGES_SIZE_IN_KBIT ))
@@ -224,17 +256,19 @@
                 return 0
             }
 
-            function Get_IOMMU_GroupList
+            function IsHostMemorySufficientForHugepages
             {
-                declare -ga _IOMMU_GROUP_ID_LIST_TO_USE=( )
-            }
+                GetFreeMemory
 
-            function Get_Preferred_IOMMU_Group_For_Multiboot
-            {
-                declare -gi _MULTIBOOT_PREFERRED_IOMMU_GROUP_ID="$1"
-                _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE=true
+                if [[ "$_AVAILABLE_MEMORY" -le 0 ]]; then
+                    echo -e "$_PREFIX_ERROR Insufficient Host memory for Hugepages."
+                    return 1
+                fi
+
                 return 0
             }
+
+        # <summary> zram-swap </summary>
 
             function Get_ZRAM_SwapSize
             {
@@ -275,18 +309,6 @@
                 return 1
             }
 
-            function IsHostMemorySufficientForHugepages
-            {
-                GetFreeMemory
-
-                if [[ "$_AVAILABLE_MEMORY" -le 0 ]]; then
-                    echo -e "$_PREFIX_ERROR Insufficient Host memory for Hugepages."
-                    return 1
-                fi
-
-                return 0
-            }
-
             function IsHostMemorySufficientForZramSwap
             {
                 GetFreeMemory
@@ -301,47 +323,6 @@
                     return 1
                 fi
 
-                return 0
-            }
-
-            function IsDeviceExternal
-            {
-                if ! echo "$1" | grep -E -q "$_REGEX_DOMAIN_ID"; then
-                    return 1
-                fi
-
-                return 0
-            }
-
-            function IsDevice_VGA
-            {
-                local -l _CLASS="$1"
-
-                case "$_CLASS" in
-                    *"vga"* | *"graphic"* )
-                        return 0 ;;
-                esac
-
-                return 1
-            }
-
-            function Is_IOMMU_Group_ID_Valid
-            {
-                if [[ -z "$1" ]] \
-                    || [[ "$1" -lt 0 ]] \
-                    || [[ "$1" -gt "$_LAST_IOMMU_GROUP_ID" ]]; then
-                    echo -e "$_PREFIX_ERROR Please enter valid IOMMU group ID(s), between 0 and $_LAST_IOMMU_GROUP_ID."
-                    return 1
-                fi
-
-                return 0
-            }
-
-            function SortListOf_IOMMU_Groups
-            {
-                IFS=$'\n'
-                _IOMMU_GROUP_ID_LIST_TO_USE=( $( sort -hu <<<"${_IOMMU_GROUP_ID_LIST_TO_USE[*]}" ) )
-                unset IFS
                 return 0
             }
 # </functions>
