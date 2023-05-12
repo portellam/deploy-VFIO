@@ -169,7 +169,7 @@
                         return 0 ;;
 
                     * )
-                        if Does_IOMMU_GroupContain_ExternalVGA "$1"; then
+                        if DoesIOMMUGroupHaveVGADevice "$1"; then
                             Get_Preferred_IOMMU_Group_For_Multiboot "$1"
                             return 0
                         fi ;;

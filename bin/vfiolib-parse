@@ -370,6 +370,7 @@
                     IsDeviceVGA "$DEVICE" && return 0
                 done
 
+                echo -e "$_PREFIX_ERROR Please enter valid IOMMU group ID which contains one or more VGA devices."
                 return 1
             }
 
@@ -421,7 +422,7 @@
                 local -n REFERENCE="_IOMMU_GROUPS_FOR_HOST_LIST"
 
                 for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
-                    DoesIOMMUGroupHaveVGADevice "$IOMMU_GROUP_ID" && return 0
+                    DoesIOMMUGroupHaveVGADevice "$IOMMU_GROUP_ID" &> /dev/null && return 0
                 done
 
                 echo -e "An error occurred: No VGA devices allocated for host."
