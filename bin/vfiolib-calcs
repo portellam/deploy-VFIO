@@ -82,43 +82,38 @@
                 return 0
             }
 
+
+            # SUMMARY: used funcs and params from relevant sources file. TODO: migrate this to vfiolib-parse
             function AddValid_IOMMU_GroupsParseList
             {
-                local -a _IOMMU_GROUP_ID_LIST_TEMP=( )
+                SetParseParameters
 
                 for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST[@]}; do
-                    local -a _DEVICE_LIST=( $( eval "$_GET_IOMMU_GROUP_DEVICE_LIST" ) )
-                    local _THIS_IOMMU_GROUP_HAS_EXTERNAL_PCI=false
-                    local _THIS_IOMMU_GROUP_HAS_VGA=false
+                    local -a DEVICE_LIST=( $( eval "$_GET_IOMMU_GROUP_DEVICE_LIST" ) )
 
-                    for _DEVICE in ${_DEVICE_LIST[@]}; do
-                        local -u _DEVICE_DOMAIN_ID=$( echo "$_DEVICE" | cut -d ':' -f 2 )
-                        local -l _DEVICE_CLASS="$( lspci -m -s $_DEVICE $_PARSE_OPTIONS | cut -d '"' -f 2 )"
-
-                        if IsDeviceExternal "$_DEVICE_DOMAIN_ID"; then
-                            _THIS_IOMMU_GROUP_HAS_EXTERNAL_PCI=true
-
-                            if "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL"; then
-                                _IOMMU_GROUP_ID_LIST_TEMP+=( "$_IOMMU_GROUP_ID" )
-                            fi
-
-                            if "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA" \
-                                && IsDevice_VGA "$_DEVICE_CLASS"; then
-                                _IOMMU_GROUP_ID_LIST_TEMP+=( "$_IOMMU_GROUP_ID" )
-                            fi
-
-                            break
+                    for _DEVICE in ${DEVICE_LIST[@]}; do
+                        if ! IsDeviceExternal "$_DEVICE" \
+                            && "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL" \
+                            && ! IsDeviceVGA "$_DEVICE"; then
+                            _IOMMU_GROUPS_FOR_HOST_LIST+=( "$_IOMMU_GROUP_ID" )
+                            continue
                         fi
+
+                        if ! IsDeviceExternal "$_DEVICE" \
+                            && "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL" \
+                            && IsDeviceVGA "$_DEVICE"; then
+                            _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "$_IOMMU_GROUP_ID" )
+                            continue
+                        fi
+
+                        _IOMMU_GROUPS_FOR_VFIO_LIST+=( "$_IOMMU_GROUP_ID" )
+                        break
                     done
                 done
 
-                if [[ "${#_IOMMU_GROUP_ID_LIST_TEMP[@]}" -eq 0 ]]; then
-                    echo -e "$_PREFIX_ERROR List is empty."
-                    return 1
-                fi
-
-                _IOMMU_GROUP_ID_LIST_TO_USE+=( "${_IOMMU_GROUP_ID_LIST_TEMP[@]}" )
-                SortListOf_IOMMU_Groups
+                IsParseSelectionValid || return "$?"
+                IsParseSelectionOfVGAValid || return "$?"
+                # SortListOf_IOMMU_Groups
                 return 0
             }
 
@@ -132,27 +127,6 @@
                 declare -gi _MULTIBOOT_PREFERRED_IOMMU_GROUP_ID="$1"
                 _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE=true
                 return 0
-            }
-
-            function IsDeviceExternal
-            {
-                if ! echo "$1" | grep -E -q "$_REGEX_DOMAIN_ID"; then
-                    return 1
-                fi
-
-                return 0
-            }
-
-            function IsDevice_VGA
-            {
-                local -l _CLASS="$1"
-
-                case "$_CLASS" in
-                    *"vga"* | *"graphic"* )
-                        return 0 ;;
-                esac
-
-                return 1
             }
 
             function Is_IOMMU_Group_ID_Valid
