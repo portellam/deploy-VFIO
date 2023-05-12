@@ -19,179 +19,182 @@
             declare -ga _REQUIRED_LIBRARIES=( )
         }
 
-    function AreRequiredLibrariesInstalled
-    {
-        for _LIBRARY in ${_REQUIRED_LIBRARIES[@]}; do
-            IsInstalledPackage "$_LIBRARY" &> /dev/null || return 1
-        done
+    # <summary> Private getters </summary>
+        function GetRequiredLibraries
+        {
+            local -a _ALMA_REQUIRED_LIBRARIES=(
+                "qemu-kvm"
+                "virt-manager"
+                "virt-viewer"
+                "virt-install"
+                "libvirt-daemon-config-network"
+                "libvirt-daemon-kvm"
+                "swtpm"
+                "git"
+                "make"
+                "gcc"
+                "g++"
+                "ninja-build"
+                "nasm"
+                "iasl"
+                "libuuid-devel"
+                "glib2-devel"
+                "pixman-devel"
+                "spice-protocol"
+                "spice-server-devel" )
 
-        return 0
-    }
+            local -a _ARCH_REQUIRED_LIBRARIES=(
+                "qemu-base"
+                "virt-manager"
+                "virt-viewer"
+                "dnsmasq"
+                "vde2"
+                "bridge-utils"
+                "openbsd-netcat"
+                "libguestfs"
+                "swtpm"
+                "git"
+                "make"
+                "ninja"
+                "nasm"
+                "iasl"
+                "pkg-config"
+                "spice-protocol"
+                "dmidecode"
+                "gcc" )
 
-    function GetRequiredLibraries
-    {
-        local -a _ALMA_REQUIRED_LIBRARIES=(
-            "qemu-kvm"
-            "virt-manager"
-            "virt-viewer"
-            "virt-install"
-            "libvirt-daemon-config-network"
-            "libvirt-daemon-kvm"
-            "swtpm"
-            "git"
-            "make"
-            "gcc"
-            "g++"
-            "ninja-build"
-            "nasm"
-            "iasl"
-            "libuuid-devel"
-            "glib2-devel"
-            "pixman-devel"
-            "spice-protocol"
-            "spice-server-devel" )
+            local -a _DEBIAN_REQUIRED_LIBRARIES=(
+                "qemu-kvm"
+                "virt-manager"
+                "virt-viewer"
+                "libvirt-daemon-system"
+                "libvirt-clients"
+                "bridge-utils"
+                "swtpm"
+                "mesa-utils"
+                "git"
+                "ninja-build"
+                "nasm"
+                "iasl"
+                "pkg-config"
+                "libglib2.0-dev"
+                "libpixman-1-dev"
+                "meson"
+                "build-essential"
+                "uuid-dev"
+                "python-is-python3"
+                "libspice-protocol-dev"
+                "libspice-server-dev" )
 
-        local -a _ARCH_REQUIRED_LIBRARIES=(
-            "qemu-base"
-            "virt-manager"
-            "virt-viewer"
-            "dnsmasq"
-            "vde2"
-            "bridge-utils"
-            "openbsd-netcat"
-            "libguestfs"
-            "swtpm"
-            "git"
-            "make"
-            "ninja"
-            "nasm"
-            "iasl"
-            "pkg-config"
-            "spice-protocol"
-            "dmidecode"
-            "gcc" )
+            local -a _FEDORA_REQUIRED_LIBRARIES=(
+                "qemu-kvm"
+                "virt-manager"
+                "virt-viewer"
+                "virt-install"
+                "libvirt-daemon-config-network"
+                "libvirt-daemon-kvm"
+                "swtpm"
+                "g++"
+                "ninja-build"
+                "nasm"
+                "iasl"
+                "libuuid-devel"
+                "glib2-devel"
+                "pixman-devel"
+                "spice-protocol"
+                "spice-server-devel" )
 
-        local -a _DEBIAN_REQUIRED_LIBRARIES=(
-            "qemu-kvm"
-            "virt-manager"
-            "virt-viewer"
-            "libvirt-daemon-system"
-            "libvirt-clients"
-            "bridge-utils"
-            "swtpm"
-            "mesa-utils"
-            "git"
-            "ninja-build"
-            "nasm"
-            "iasl"
-            "pkg-config"
-            "libglib2.0-dev"
-            "libpixman-1-dev"
-            "meson"
-            "build-essential"
-            "uuid-dev"
-            "python-is-python3"
-            "libspice-protocol-dev"
-            "libspice-server-dev" )
+            SetLibraries
+            return "$?"
+        }
 
-        local -a _FEDORA_REQUIRED_LIBRARIES=(
-            "qemu-kvm"
-            "virt-manager"
-            "virt-viewer"
-            "virt-install"
-            "libvirt-daemon-config-network"
-            "libvirt-daemon-kvm"
-            "swtpm"
-            "g++"
-            "ninja-build"
-            "nasm"
-            "iasl"
-            "libuuid-devel"
-            "glib2-devel"
-            "pixman-devel"
-            "spice-protocol"
-            "spice-server-devel" )
+    # <summary> Private setters </summary>
+        function SetRequiredLibraries
+        {
+            case "$_PACKAGE_MANAGER" in
+                "apt" )
+                    _REQUIRED_LIBRARIES=${_DEBIAN_REQUIRED_LIBRARIES[@]} ;;
 
-        SetLibraries
-        return "$?"
-    }
+                "dnf" | "yum" )
+                    case "$_OPERATING_SYSTEM" in
+                        *"alma"* )
+                            _REQUIRED_LIBRARIES=${_ALMA_REQUIRED_LIBRARIES[@]} ;;
+                        * )
+                            _REQUIRED_LIBRARIES=${_FEDORA_REQUIRED_LIBRARIES[@]} ;;
+                    esac ;;
 
-    function InstallRequiredLibraries
-    {
-        if ! AreRequiredLibrariesInstalled \
-            && ! InstallPackage "${_REQUIRED_LIBRARIES[@]}"; then
-            echo -e "$_PREFIX_ERROR Required libraries are not installed."
-            return 1
-        fi
+                "pacman" )
+                    _REQUIRED_LIBRARIES=${_ARCH_REQUIRED_LIBRARIES[@]} ;;
 
-        return 0
-    }
+                * )
+                    return 1 ;;
+            esac
 
-    function Is_IOMMU_Enabled
-    {
-        if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*" &> /dev/null; then
-            echo -e "$_PREFIX_ERROR System does not support IOMMU groups."
-            return 1
-        fi
-    }
+            return 0
+        }
 
-    function IsSystemdInstalled
-    {
-        if ! command -v systemd &> /dev/null; then
-            echo -e "$_PREFIX_ERROR 'systemd' is not installed."
-            return 1
-        fi
-    }
+    # <summary> Public functions </summary>
+        function AreRequiredLibrariesInstalled
+        {
+            for _LIBRARY in ${_REQUIRED_LIBRARIES[@]}; do
+                IsInstalledPackage "$_LIBRARY" &> /dev/null || return 1
+            done
 
-    function IsSystemSupported
-    {
-        if ! ( IsSystemdInstalled \
-            && IsVirtualizationEnabled \
-            && Is_IOMMU_Enabled \
-            && IsSystemdInstalled ); then
-            return 1
-        fi
+            return 0
+        }
 
-        if ! GetLibraries \
-            || ( ! AreRequiredLibrariesInstalled \
-                && ! InstallRequiredLibraries ); then
-            echo -e "$_PREFIX_ERROR System is not supported in its current state."
-            return 1
-        fi
+        function InstallRequiredLibraries
+        {
+            if ! AreRequiredLibrariesInstalled \
+                && ! InstallPackage "${_REQUIRED_LIBRARIES[@]}"; then
+                echo -e "$_PREFIX_ERROR Required libraries are not installed."
+                return 1
+            fi
 
-        return 0
-    }
+            return 0
+        }
 
-    function IsVirtualizationEnabled
-    {
-        if ! LC_ALL=C lscpu | grep Virtualization &> /dev/null \
-            && ! grep -E -q --color=auto 'vmx|svm|0xc0f' /proc/cpuinfo &> /dev/null; then
-            echo -e "$_PREFIX_ERROR System does not support hardware virtualization."
-            return 1
-        fi
-    }
+        function Is_IOMMU_Enabled
+        {
+            if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*" &> /dev/null; then
+                echo -e "$_PREFIX_ERROR System does not support IOMMU groups."
+                return 1
+            fi
+        }
 
-    function SetRequiredLibraries
-    {
-        case "$_PACKAGE_MANAGER" in
-            "apt" )
-                _REQUIRED_LIBRARIES=${_DEBIAN_REQUIRED_LIBRARIES[@]} ;;
+        function IsSystemdInstalled
+        {
+            if ! command -v systemd &> /dev/null; then
+                echo -e "$_PREFIX_ERROR 'systemd' is not installed."
+                return 1
+            fi
+        }
 
-            "dnf" | "yum" )
-                case "$_OPERATING_SYSTEM" in
-                    *"alma"* )
-                        _REQUIRED_LIBRARIES=${_ALMA_REQUIRED_LIBRARIES[@]} ;;
-                    * )
-                        _REQUIRED_LIBRARIES=${_FEDORA_REQUIRED_LIBRARIES[@]} ;;
-                esac ;;
+        function IsSystemSupported
+        {
+            if ! ( IsSystemdInstalled \
+                && IsVirtualizationEnabled \
+                && Is_IOMMU_Enabled \
+                && IsSystemdInstalled ); then
+                return 1
+            fi
 
-            "pacman" )
-                _REQUIRED_LIBRARIES=${_ARCH_REQUIRED_LIBRARIES[@]} ;;
+            if ! GetLibraries \
+                || ( ! AreRequiredLibrariesInstalled \
+                    && ! InstallRequiredLibraries ); then
+                echo -e "$_PREFIX_ERROR System is not supported in its current state."
+                return 1
+            fi
 
-            * )
-                return 1 ;;
-        esac
+            return 0
+        }
 
-        return 0
-    }
+        function IsVirtualizationEnabled
+        {
+            if ! LC_ALL=C lscpu | grep Virtualization &> /dev/null \
+                && ! grep -E -q --color=auto 'vmx|svm|0xc0f' /proc/cpuinfo &> /dev/null; then
+                echo -e "$_PREFIX_ERROR System does not support hardware virtualization."
+                return 1
+            fi
+        }
 # </functions>
