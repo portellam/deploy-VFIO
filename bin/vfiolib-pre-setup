@@ -16,7 +16,7 @@
 # </sources>
 
 # <functions>
-    # <summary> Public functions </summary>
+    # <summary> Public </summary>
         function ExecutePreSetup
         {
             function Main
@@ -58,7 +58,7 @@
             return "$?"
         }
 
-    # <summary> Public setters </summary>
+        # <summary> Global setters </summary>
         function SetParameters
         {
             declare -gi _HUGEPAGES_ALLOCATED_MEMORY=0
@@ -68,7 +68,7 @@
             declare -g _IS_HUGEPAGES_SETUP=false
         }
 
-    # <summary> Private functions </summary>
+    # <summary> Private </summary>
         # <summary>
         # Add user to necessary user groups.
         # </summary>

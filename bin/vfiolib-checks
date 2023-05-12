@@ -12,128 +12,128 @@
 # </sources>
 
 # <functions>
-    # <summary> Public setters </summary>
-        function SetParameters
-        {
-            declare -g _IS_SYSTEM_SUPPORTED=false
-            declare -ga _REQUIRED_LIBRARIES=( )
-        }
+    # <summary> Private </summary>
+        # <summary> Global getters </summary>
+            function GetRequiredLibraries
+            {
+                local -a _ALMA_REQUIRED_LIBRARIES=(
+                    "qemu-kvm"
+                    "virt-manager"
+                    "virt-viewer"
+                    "virt-install"
+                    "libvirt-daemon-config-network"
+                    "libvirt-daemon-kvm"
+                    "swtpm"
+                    "git"
+                    "make"
+                    "gcc"
+                    "g++"
+                    "ninja-build"
+                    "nasm"
+                    "iasl"
+                    "libuuid-devel"
+                    "glib2-devel"
+                    "pixman-devel"
+                    "spice-protocol"
+                    "spice-server-devel" )
 
-    # <summary> Private getters </summary>
-        function GetRequiredLibraries
-        {
-            local -a _ALMA_REQUIRED_LIBRARIES=(
-                "qemu-kvm"
-                "virt-manager"
-                "virt-viewer"
-                "virt-install"
-                "libvirt-daemon-config-network"
-                "libvirt-daemon-kvm"
-                "swtpm"
-                "git"
-                "make"
-                "gcc"
-                "g++"
-                "ninja-build"
-                "nasm"
-                "iasl"
-                "libuuid-devel"
-                "glib2-devel"
-                "pixman-devel"
-                "spice-protocol"
-                "spice-server-devel" )
+                local -a _ARCH_REQUIRED_LIBRARIES=(
+                    "qemu-base"
+                    "virt-manager"
+                    "virt-viewer"
+                    "dnsmasq"
+                    "vde2"
+                    "bridge-utils"
+                    "openbsd-netcat"
+                    "libguestfs"
+                    "swtpm"
+                    "git"
+                    "make"
+                    "ninja"
+                    "nasm"
+                    "iasl"
+                    "pkg-config"
+                    "spice-protocol"
+                    "dmidecode"
+                    "gcc" )
 
-            local -a _ARCH_REQUIRED_LIBRARIES=(
-                "qemu-base"
-                "virt-manager"
-                "virt-viewer"
-                "dnsmasq"
-                "vde2"
-                "bridge-utils"
-                "openbsd-netcat"
-                "libguestfs"
-                "swtpm"
-                "git"
-                "make"
-                "ninja"
-                "nasm"
-                "iasl"
-                "pkg-config"
-                "spice-protocol"
-                "dmidecode"
-                "gcc" )
+                local -a _DEBIAN_REQUIRED_LIBRARIES=(
+                    "qemu-kvm"
+                    "virt-manager"
+                    "virt-viewer"
+                    "libvirt-daemon-system"
+                    "libvirt-clients"
+                    "bridge-utils"
+                    "swtpm"
+                    "mesa-utils"
+                    "git"
+                    "ninja-build"
+                    "nasm"
+                    "iasl"
+                    "pkg-config"
+                    "libglib2.0-dev"
+                    "libpixman-1-dev"
+                    "meson"
+                    "build-essential"
+                    "uuid-dev"
+                    "python-is-python3"
+                    "libspice-protocol-dev"
+                    "libspice-server-dev" )
 
-            local -a _DEBIAN_REQUIRED_LIBRARIES=(
-                "qemu-kvm"
-                "virt-manager"
-                "virt-viewer"
-                "libvirt-daemon-system"
-                "libvirt-clients"
-                "bridge-utils"
-                "swtpm"
-                "mesa-utils"
-                "git"
-                "ninja-build"
-                "nasm"
-                "iasl"
-                "pkg-config"
-                "libglib2.0-dev"
-                "libpixman-1-dev"
-                "meson"
-                "build-essential"
-                "uuid-dev"
-                "python-is-python3"
-                "libspice-protocol-dev"
-                "libspice-server-dev" )
+                local -a _FEDORA_REQUIRED_LIBRARIES=(
+                    "qemu-kvm"
+                    "virt-manager"
+                    "virt-viewer"
+                    "virt-install"
+                    "libvirt-daemon-config-network"
+                    "libvirt-daemon-kvm"
+                    "swtpm"
+                    "g++"
+                    "ninja-build"
+                    "nasm"
+                    "iasl"
+                    "libuuid-devel"
+                    "glib2-devel"
+                    "pixman-devel"
+                    "spice-protocol"
+                    "spice-server-devel" )
 
-            local -a _FEDORA_REQUIRED_LIBRARIES=(
-                "qemu-kvm"
-                "virt-manager"
-                "virt-viewer"
-                "virt-install"
-                "libvirt-daemon-config-network"
-                "libvirt-daemon-kvm"
-                "swtpm"
-                "g++"
-                "ninja-build"
-                "nasm"
-                "iasl"
-                "libuuid-devel"
-                "glib2-devel"
-                "pixman-devel"
-                "spice-protocol"
-                "spice-server-devel" )
+                SetLibraries
+                return "$?"
+            }
 
-            SetLibraries
-            return "$?"
-        }
+        # <summary> Global setters </summary>
+            function SetRequiredLibraries
+            {
+                case "$_PACKAGE_MANAGER" in
+                    "apt" )
+                        _REQUIRED_LIBRARIES=${_DEBIAN_REQUIRED_LIBRARIES[@]} ;;
 
-    # <summary> Private setters </summary>
-        function SetRequiredLibraries
-        {
-            case "$_PACKAGE_MANAGER" in
-                "apt" )
-                    _REQUIRED_LIBRARIES=${_DEBIAN_REQUIRED_LIBRARIES[@]} ;;
+                    "dnf" | "yum" )
+                        case "$_OPERATING_SYSTEM" in
+                            *"alma"* )
+                                _REQUIRED_LIBRARIES=${_ALMA_REQUIRED_LIBRARIES[@]} ;;
+                            * )
+                                _REQUIRED_LIBRARIES=${_FEDORA_REQUIRED_LIBRARIES[@]} ;;
+                        esac ;;
 
-                "dnf" | "yum" )
-                    case "$_OPERATING_SYSTEM" in
-                        *"alma"* )
-                            _REQUIRED_LIBRARIES=${_ALMA_REQUIRED_LIBRARIES[@]} ;;
-                        * )
-                            _REQUIRED_LIBRARIES=${_FEDORA_REQUIRED_LIBRARIES[@]} ;;
-                    esac ;;
+                    "pacman" )
+                        _REQUIRED_LIBRARIES=${_ARCH_REQUIRED_LIBRARIES[@]} ;;
 
-                "pacman" )
-                    _REQUIRED_LIBRARIES=${_ARCH_REQUIRED_LIBRARIES[@]} ;;
+                    * )
+                        return 1 ;;
+                esac
 
-                * )
-                    return 1 ;;
-            esac
+                return 0
+            }
+    # <summary> Public </summary>
+        # <summary> Global setters </summary>
+            function SetParameters
+            {
+                declare -g _IS_SYSTEM_SUPPORTED=false
+                declare -ga _REQUIRED_LIBRARIES=( )
+            }
 
-            return 0
-        }
-
-    # <summary> Public functions </summary>
         function AreRequiredLibrariesInstalled
         {
             for _LIBRARY in ${_REQUIRED_LIBRARIES[@]}; do

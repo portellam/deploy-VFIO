@@ -17,50 +17,7 @@
 # </sources>
 
 # <functions>
-    # <summary> Public setters </summary>
-        function SetParameters
-        {
-            declare -g _DEFAULT_MENU_ENTRY_TITLE="0"
-            declare -g _PREFERRED_MENU_ENTRY_TITLE=""
-            declare -ga _MENU_ENTRY_TITLE_LIST=( "$_PREFERRED_MENU_ENTRY_TITLE" )
-
-            # <remarks> Flags </remarks>
-            _FLAG_ADD_EARLY_LOAD_MODULE_ARGS=true
-            _FLAG_ADD_LOG_LEVEL_ARGS=true
-            _FLAG_ADD_SET_POWER_ARGS=true
-            _FLAG_ADD_SET_VIDEO_ARGS=true
-            _FLAG_ADD_WIN10_REQUIRED_ARGS=true
-            _FLAG_ADD_PRIVACY_ARGS=false
-
-            declare -g _LINE_GRUB_CMDLINE="quiet splash amd_iommu=on intel_iommu=on iommu=1,pt"
-
-            if "$_FLAG_ADD_LOG_LEVEL_ARGS"; then
-                _LINE_GRUB_CMDLINE="loglevel=3 $_LINE_GRUB_CMDLINE"
-            fi
-
-            if "$_FLAG_ADD_PRIVACY_ARGS" \
-                && IsInstalled "rfkill" &> /dev/null; then
-                _LINE_GRUB_CMDLINE+=" rfkill.default_state=1 systemd.restore_state=0"
-            fi
-
-            if "$_FLAG_ADD_SET_POWER_ARGS"; then
-                _LINE_GRUB_CMDLINE+=" acpi=force apm=power_off pcie_aspm=off"
-            fi
-
-            if "$_FLAG_ADD_EARLY_LOAD_MODULE_ARGS"; then
-                _LINE_GRUB_CMDLINE+=" rd.driver.pre=vfio-pci rd.modules-load=vfio-pci"
-            fi
-
-            if "$_FLAG_ADD_SET_VIDEO_ARGS"; then
-                _LINE_GRUB_CMDLINE+=" video=efifb:off,vesafb:off"
-            fi
-
-            if "$_FLAG_ADD_WIN10_REQUIRED_ARGS"; then
-                _LINE_GRUB_CMDLINE+=" kvm.ignore_msrs=1"
-            fi
-        }
-
-    # <summary> Public functions </summary>
+    # <summary> Public </summary>
         function ExecuteMainSetup
         {
             function Main
@@ -127,7 +84,50 @@
             return "$_LAST_EXIT_CODE"
         }
 
-    # <summary> Private functions </summary>
+        # <summary> Global setters </summary>
+        function SetParameters
+        {
+            declare -g _DEFAULT_MENU_ENTRY_TITLE="0"
+            declare -g _PREFERRED_MENU_ENTRY_TITLE=""
+            declare -ga _MENU_ENTRY_TITLE_LIST=( "$_PREFERRED_MENU_ENTRY_TITLE" )
+
+            # <remarks> Flags </remarks>
+            _FLAG_ADD_EARLY_LOAD_MODULE_ARGS=true
+            _FLAG_ADD_LOG_LEVEL_ARGS=true
+            _FLAG_ADD_SET_POWER_ARGS=true
+            _FLAG_ADD_SET_VIDEO_ARGS=true
+            _FLAG_ADD_WIN10_REQUIRED_ARGS=true
+            _FLAG_ADD_PRIVACY_ARGS=false
+
+            declare -g _LINE_GRUB_CMDLINE="quiet splash amd_iommu=on intel_iommu=on iommu=1,pt"
+
+            if "$_FLAG_ADD_LOG_LEVEL_ARGS"; then
+                _LINE_GRUB_CMDLINE="loglevel=3 $_LINE_GRUB_CMDLINE"
+            fi
+
+            if "$_FLAG_ADD_PRIVACY_ARGS" \
+                && IsInstalled "rfkill" &> /dev/null; then
+                _LINE_GRUB_CMDLINE+=" rfkill.default_state=1 systemd.restore_state=0"
+            fi
+
+            if "$_FLAG_ADD_SET_POWER_ARGS"; then
+                _LINE_GRUB_CMDLINE+=" acpi=force apm=power_off pcie_aspm=off"
+            fi
+
+            if "$_FLAG_ADD_EARLY_LOAD_MODULE_ARGS"; then
+                _LINE_GRUB_CMDLINE+=" rd.driver.pre=vfio-pci rd.modules-load=vfio-pci"
+            fi
+
+            if "$_FLAG_ADD_SET_VIDEO_ARGS"; then
+                _LINE_GRUB_CMDLINE+=" video=efifb:off,vesafb:off"
+            fi
+
+            if "$_FLAG_ADD_WIN10_REQUIRED_ARGS"; then
+                _LINE_GRUB_CMDLINE+=" kvm.ignore_msrs=1"
+            fi
+        }
+
+    # <summary> Private </summary>
         # <summary> Setup functions </summary>
             function ExecuteMultibootSetup
             {

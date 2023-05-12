@@ -12,7 +12,7 @@
 # </sources>
 
 # <functions>
-    # <summary> Public functions </summary>
+    # <summary> Public </summary>
         function ExecuteBackups
         {
             SetWorkingDirToBackupsFolder || return "$?"
@@ -23,7 +23,7 @@
             return 0
         }
 
-    # <summary> Public setters </summary>
+        # <summary> Global setters </summary>
         function SetParameters
         {
             # <remarks> Flags </remarks>
@@ -96,7 +96,7 @@
             declare -g _QEMU_SRC_PATH="$_BACKUPS_PATH/qemu.conf"
         }
 
-    # <summary> Private functions </summary>
+    # <summary> Private </summary>
         function BackupFile
         {
             if [[ -e "$1" ]] \

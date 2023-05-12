@@ -15,7 +15,7 @@
 # </sources>
 
 # <functions>
-	# <summary> Public functions </summary>
+	# <summary> Public </summary>
 		function ExecutePostSetup
 		{
 			function Main
@@ -58,17 +58,17 @@
 			return "$?"
 		}
 
-	# <summary> Public setters </summary>
-        function SetParameters
-        {
-            declare -g _GIT_PATH="$HOME/source/"
-			sudo mkdir -p "$_GIT_PATH" &> /dev/null
+        # <summary> Global setters </summary>
+            function SetParameters
+            {
+                declare -g _GIT_PATH="$HOME/source/"
+                sudo mkdir -p "$_GIT_PATH" &> /dev/null
 
-			# <remarks> Flags </remarks>
-			declare -g _IS_AUDIO_CAPTURE_SETUP=false
-        }
+                # <remarks> Flags </remarks>
+                declare -g _IS_AUDIO_CAPTURE_SETUP=false
+            }
 
-	# <summary> Private functions </summary>
+	# <summary> Private </summary>
 		# <summary>
 		# zramswap: Setup a swap partition in host memory.
 		# Reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory.

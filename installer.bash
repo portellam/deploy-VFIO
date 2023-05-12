@@ -107,8 +107,7 @@
     }
 # </functions>
 
-# <summary> Main </summary>
-# <functions>
+# <main>
     Main
 
     if [[ "$?" -ne 0 ]]; then
@@ -118,4 +117,4 @@
 
     echo -e "$_PREFIX_PASS Installed deploy-VFIO."
     exit 0
-# </functions>
+# </main>
