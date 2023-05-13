@@ -866,4 +866,12 @@
 
             return 0
         }
+
+
+    function SetPreferredIOMMUGroupForMultiboot
+    {
+        declare -gi _MULTIBOOT_PREFERRED_IOMMU_GROUP_ID="$1"
+        _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE=true
+        return 0
+    }
 # </functions>
