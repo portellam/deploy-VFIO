@@ -3,6 +3,9 @@
     - Anything mentioned in **To Do** is not enabled/available.
 
 ### To Do:
+* Be certain of order of execution of source setter functions.
+    - Run before end of each source file?
+    - Add conditional (inside function) to prevent overwrite?
 * Naming convention, update all local vars (remove prefix underscore).
 * Create Setter functions, such that they will populate publicly used params only once (when called in order)
     -This way, the script can re-execute itself?
