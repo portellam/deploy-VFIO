@@ -1,4 +1,4 @@
-#!/bin/bash/env bash
+#!/bin/false
 
 #
 # Filename:         vfiolib-parse
@@ -300,15 +300,15 @@
                 local -a IOMMU_GROUPS_TEMP_LIST
 
                 if echo "$1" | grep -E -q "$REGEX_FOR_RANGE_OF_NUMS"; then
-                    local -ir _RANGE_START=$( echo "$1" | cut -d '-' -f 1 )
-                    local -ir _RANGE_STOP=$( echo "$1" | cut -d '-' -f 2 )
-                    IsIOMMUGroupIDValid "$_RANGE_START" || return 1
-                    IsIOMMUGroupIDValid "$_RANGE_STOP" || return 1
-                    IOMMU_GROUPS_TEMP_LIST+=( $( seq "$_RANGE_START" "$_RANGE_STOP" ) )
+                    local -ir RANGE_START=$( echo "$1" | cut -d '-' -f 1 )
+                    local -ir RANGE_STOP=$( echo "$1" | cut -d '-' -f 2 )
+                    IsIOMMUGroupIDValid "$RANGE_START" || return 1
+                    IsIOMMUGroupIDValid "$RANGE_STOP" || return 1
+                    IOMMU_GROUPS_TEMP_LIST+=( $( seq "$RANGE_START" "$RANGE_STOP" ) )
 
                 elif IsInt "$1"; then
                     IsIOMMUGroupIDValid "$1" || return 1
-                    IOMMU_GROUPS_TEMP_LIST+=( "$_IOMMU_GROUP_ID" )
+                    IOMMU_GROUPS_TEMP_LIST+=( "$1" )
 
                 else
                     echo -e "$_PREFIX_ERROR Invalid IOMMU group ID(s)."
