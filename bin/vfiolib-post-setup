@@ -1,4 +1,4 @@
-#!/bin/bash/env bash
+#!/bin/false
 
 #
 # Filename:         vfiolib-post-setup
@@ -50,10 +50,10 @@
 				return "$?"
 			}
 
-			local _OUTPUT="Executing post-setup...\t"
-			PrintSuffixWait "$_OUTPUT"
+			local OUTPUT="Executing post-setup...\t"
+			PrintSuffixWait "$OUTPUT"
 			Main
-			PrintSuffixPassOrFail "$_OUTPUT"
+			PrintSuffixPassOrFail "$OUTPUT"
 			return "$?"
 		}
 
@@ -104,27 +104,29 @@
 
                 function Modify
                 {
-                    local -r _FILE="/etc/default/zram-swap"
-                    local -r _LINE_TO_MATCH="_zram_fraction="
-                    local _FRACTION="$_ARGS_FOR_ZRAM_SWAP_FRACTION"
+                    function AskToContinue
+                    {
+                        local -n REFERENCE="$1"
 
-                    if ! "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
-                        && ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
-                        local -ir _MAX_TRIES=2
-
-                        for COUNT in $( seq 0 "$_MAX_TRIES" ); do
+                        for COUNT in $( seq 0 2 ); do
                             read -r -p "Set fraction of total memory for zram-swap to use (to calculate default, enter 'default'): " ANSWER
 
                             if GetZRAMSwapSize "$ANSWER"; then
-                                _FRACTION="$ANSWER"
-                                break
-                            fi
-
-                            if [[ "$?" -ne 0 ]] \
-                                && [[ $COUNT -eq "$_MAX_TRIES" ]]; then
-                                return 1
+                                REFERENCE="$ANSWER"
+                                return 0
                             fi
                         done
+
+                        return 1
+                    }
+
+                    local -r _FILE="/etc/default/zram-swap"
+                    local -r _LINE_TO_MATCH="_zram_fraction="
+                    local FRACTION="$_ARGS_FOR_ZRAM_SWAP_FRACTION"
+
+                    if ! "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
+                        && ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
+                        AskToContinue "$FRACTION" || return "$?"
                     fi
 
                     if "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
@@ -142,10 +144,10 @@
                             echo -e "$_PREFIX_ERROR Denominator is negative or zero."
                         fi
 
-                        _FRACTION="1/$_DENOMINATOR"
+                        FRACTION="1/$_DENOMINATOR"
                     fi
 
-                    if ! sed -i '/'$_LINE_TO_MATCH'"*"/c\'$_LINE_TO_MATCH'"'$_FRACTION'"' "$_FILE"; then
+                    if ! sed -i '/'$_LINE_TO_MATCH'"*"/c\'$_LINE_TO_MATCH'"'$FRACTION'"' "$_FILE"; then
                         echo -e "$_PREFIX_ERROR Failed to write output to zram-swap file."
                         return 1
                     fi
@@ -185,17 +187,17 @@
                 local -r _USER_NAME="foundObjects"
                 local -r _REPO_NAME="zram-swap"
                 local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
-                local _HAS_SKIPPED=false
+                local HAS_SKIPPED=false
 
                 if ! "$_EXECUTE_POST_SETUP_ZRAM_SWAP"; then
                     echo
 
                     if ! AskToExecuteOrSkip "Install zram-swap?"; then
-                        _HAS_SKIPPED=true
+                        HAS_SKIPPED=true
                     fi
                 fi
 
-                if ! "$_HAS_SKIPPED" \
+                if ! "$HAS_SKIPPED" \
                     && ( ! IsHostMemorySufficientForZramSwap \
                     || ! Get \
                     || ! Install \
@@ -203,7 +205,7 @@
                     false
                 fi
 
-                if "$_HAS_SKIPPED"; then
+                if "$HAS_SKIPPED"; then
                     ( return 255 )
                 fi
 
@@ -276,15 +278,15 @@
 		{
 			function Main
 			{
-				local _DEPENDENCIES=""
+				local DEPENDENCIES=""
 
 				# <remarks> Install JACK and PipeWire. </remarks>
 				case "$_PACKAGE_MANAGER" in
 					"apt" )
-						_DEPENDENCIES+="pipewire pipewire-jack " ;;
+						DEPENDENCIES+="pipewire pipewire-jack " ;;
 
 					"pacman" )
-						_DEPENDENCIES+="pipewire pipewire-jack " ;;
+						DEPENDENCIES+="pipewire pipewire-jack " ;;
 
 					* )
 						echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
@@ -295,10 +297,10 @@
 				if IsInstalledCommand "pulseaudio" &> /dev/null; then
 					case "$_PACKAGE_MANAGER" in
 						"apt" )
-							_DEPENDENCIES+="pipewire-pulse " ;;
+							DEPENDENCIES+="pipewire-pulse " ;;
 
 						"pacman" )
-							_DEPENDENCIES+="pipewire-pulse qemu-audio-pa " ;;
+							DEPENDENCIES+="pipewire-pulse qemu-audio-pa " ;;
 
 						* )
 							echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
@@ -309,10 +311,10 @@
 				else
 					case "$_PACKAGE_MANAGER" in
 						"apt" )
-							_DEPENDENCIES+="pipewire-alsa " ;;
+							DEPENDENCIES+="pipewire-alsa " ;;
 
 						"pacman" )
-							_DEPENDENCIES+="pipewire-alsa " ;;
+							DEPENDENCIES+="pipewire-alsa " ;;
 
 						* )
 							echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
@@ -320,7 +322,7 @@
 					esac
 				fi
 
-				IsInstalledPackage "$_DEPENDENCIES" &> /dev/null || InstallPackage "$_DEPENDENCIES" &> /dev/null
+				IsInstalledPackage "$DEPENDENCIES" &> /dev/null || InstallPackage "$DEPENDENCIES" &> /dev/null
 				return "$?"
 			}
 
@@ -365,17 +367,17 @@
 				return 0
 			}
 
-			local _HAS_SKIPPED=false
+			local HAS_SKIPPED=false
 
 			if ! "$_EXECUTE_POST_SETUP_AUDIO_LOOPBACK"; then
 				echo
 
 				if ! AskToExecuteOrSkip "Install zram-swap?"; then
-					_HAS_SKIPPED=true
+					HAS_SKIPPED=true
 				fi
 			fi
 
-			if ! "$_HAS_SKIPPED"; then
+			if ! "$HAS_SKIPPED"; then
 				Main
 			else
 				( return 255 )
@@ -442,17 +444,17 @@
 				return 0
 			}
 
-			local _HAS_SKIPPED=false
+			local HAS_SKIPPED=false
 
 			if ! "$_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS"; then
 				echo
 
 				if ! AskToExecuteOrSkip "Install Libvirt hooks?"; then
-					_HAS_SKIPPED=true
+					HAS_SKIPPED=true
 				fi
 			fi
 
-			if ! "$_HAS_SKIPPED"; then
+			if ! "$HAS_SKIPPED"; then
 				Main
 			else
 				( return 255 )
@@ -521,17 +523,17 @@
 			local -r _USER_NAME="portellam"
 			local -r _REPO_NAME="auto-Xorg"
 			local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
-			local _HAS_SKIPPED=false
+			local HAS_SKIPPED=false
 
 			if ! "$_EXECUTE_POST_SETUP_AUTO_XORG"; then
 				echo
 
 				if ! AskToExecuteOrSkip "Install $_REPO_NAME?"; then
-					_HAS_SKIPPED=true
+					HAS_SKIPPED=true
 				fi
 			fi
 
-			if ! "$_HAS_SKIPPED"; then
+			if ! "$HAS_SKIPPED"; then
 				Get
 
 				if ! "$_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR" \
@@ -554,7 +556,7 @@
 				Install
 			fi
 
-			if "$_HAS_SKIPPED"; then
+			if "$HAS_SKIPPED"; then
 				( return 255 )
 			fi
 
