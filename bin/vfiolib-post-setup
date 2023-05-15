@@ -8,7 +8,6 @@
 #
 
 # <sources>
-	source vfiolib-calcs
 	source vfiolib-common
 	source vfiolib-files
 	source vfiolib-usage
@@ -24,7 +23,7 @@
 					if "$_ASK_TO_EXECUTE_POST_SETUPS"; then
 						LibvirtHooks
 						GuestAudioLoopback
-						Allocate_RAM_ToSwap
+						AllocateRAMToSwap
 						SetVideoOutput
 						break
 					fi
@@ -38,7 +37,7 @@
 					fi
 
 					if "$_EXECUTE_POST_SETUP_ZRAM_SWAP"; then
-						Allocate_RAM_ToSwap
+						AllocateRAMToSwap
 					fi
 
 					if "$_EXECUTE_POST_SETUP_AUTO_XORG"; then
@@ -73,144 +72,197 @@
 		# zramswap: Setup a swap partition in host memory.
 		# Reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory.
 		# </summary>
-		function Allocate_RAM_ToSwap
-		{
-			function Get
-			{
-				UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_POST_SETUP_ZRAM_SWAP" || return 1
-				return 0
-			}
+            function AllocateRAMToSwap
+            {
+                function Get
+                {
+                    UpdateOrCloneGitRepo "$_GIT_PATH" "$_FULL_REPO" "$_USER_NAME" "$_EXECUTE_POST_SETUP_ZRAM_SWAP" || return 1
+                    return 0
+                }
 
-			function Install
-			{
-				local -r _SCRIPT_NAME="install.sh"
+                function Install
+                {
+                    local -r _SCRIPT_NAME="install.sh"
 
-				if ! cd "$_GIT_PATH$_FULL_REPO"; then
-					echo -e "$_PREFIX_ERROR Failed to find build directory."
-					return 1
-				fi
+                    if ! cd "$_GIT_PATH$_FULL_REPO"; then
+                        echo -e "$_PREFIX_ERROR Failed to find build directory."
+                        return 1
+                    fi
 
-				if [[ ! -e "$_SCRIPT_NAME" ]]; then
-					echo -e "$_PREFIX_ERROR Failed to find script '$_SCRIPT_NAME'."
-					return 1
-				fi
+                    if [[ ! -e "$_SCRIPT_NAME" ]]; then
+                        echo -e "$_PREFIX_ERROR Failed to find script '$_SCRIPT_NAME'."
+                        return 1
+                    fi
 
-				if ! echo "i" | sudo bash "$_SCRIPT_NAME" &> /dev/null; then
-					echo -e "$_PREFIX_ERROR Failed to execute script '$_SCRIPT_NAME'."
-					return 1
-				fi
+                    if ! echo "i" | sudo bash "$_SCRIPT_NAME" &> /dev/null; then
+                        echo -e "$_PREFIX_ERROR Failed to execute script '$_SCRIPT_NAME'."
+                        return 1
+                    fi
 
-				return 0
-			}
+                    return 0
+                }
 
-			function Modify
-			{
-				local -r _FILE="/etc/default/zram-swap"
-				local -r _LINE_TO_MATCH="_zram_fraction="
-				local _FRACTION="$_ARGS_FOR_ZRAM_SWAP_FRACTION"
+                function Modify
+                {
+                    local -r _FILE="/etc/default/zram-swap"
+                    local -r _LINE_TO_MATCH="_zram_fraction="
+                    local _FRACTION="$_ARGS_FOR_ZRAM_SWAP_FRACTION"
 
-				if ! "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
-					&& ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
-					local -ir _MAX_TRIES=2
+                    if ! "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
+                        && ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
+                        local -ir _MAX_TRIES=2
 
-					for _TRIES_COUNT in $( seq 0 "$_MAX_TRIES" ); do
-						read -r -p "Set fraction of total memory for zram-swap to use (to calculate default, enter 'default'): " _ANSWER
+                        for TRY_COUNT in $( seq 0 "$_MAX_TRIES" ); do
+                            read -r -p "Set fraction of total memory for zram-swap to use (to calculate default, enter 'default'): " _ANSWER
 
-						if Get_ZRAM_SwapSize "$_ANSWER"; then
-							_FRACTION="$_ANSWER"
-							break
-						fi
+                            if GetZRAMSwapSize "$_ANSWER"; then
+                                _FRACTION="$_ANSWER"
+                                break
+                            fi
 
-						if [[ "$?" -ne 0 ]] \
-							&& [[ $_TRIES_COUNT -eq "$_MAX_TRIES" ]]; then
-							return 1
-						fi
-					done
-				fi
+                            if [[ "$?" -ne 0 ]] \
+                                && [[ $TRY_COUNT -eq "$_MAX_TRIES" ]]; then
+                                return 1
+                            fi
+                        done
+                    fi
 
-				if "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
-					&& ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
-					local -i _ZRAM_SWAP_AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY / 2 ))
-					local -i _DENOMINATOR=$( printf "%.0f" $( echo "scale=2;$_INT_MAX_MEMORY/$_ZRAM_SWAP_AVAILABLE_MEMORY" | bc ) )
+                    if "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
+                        && ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
+                        local -i _ZRAM_SWAP_AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY / 2 ))
+                        local -i _DENOMINATOR=$( printf "%.0f" $( echo "scale=2;$_INT_MAX_MEMORY/$_ZRAM_SWAP_AVAILABLE_MEMORY" | bc ) )
 
-					# <remarks> Round down to nearest even number. </remarks>
-					if [[ $( expr $_DENOMINATOR % 2 ) -eq 1 ]]; then
-						(( _DENOMINATOR-- ))
-					fi
+                        # <remarks> Round down to nearest even number. </remarks>
+                        if [[ $( expr $_DENOMINATOR % 2 ) -eq 1 ]]; then
+                            (( _DENOMINATOR-- ))
+                        fi
 
-					# <remarks> Is fraction positive non-zero and not equal to one. </remarks>
-					if [[ "$_DENOMINATOR" -le 0 ]]; then
-						echo -e "$_PREFIX_ERROR Denominator is negative or zero."
-					fi
+                        # <remarks> Is fraction positive non-zero and not equal to one. </remarks>
+                        if [[ "$_DENOMINATOR" -le 0 ]]; then
+                            echo -e "$_PREFIX_ERROR Denominator is negative or zero."
+                        fi
 
-					_FRACTION="1/$_DENOMINATOR"
-				fi
+                        _FRACTION="1/$_DENOMINATOR"
+                    fi
 
-				if ! sed -i '/'$_LINE_TO_MATCH'"*"/c\'$_LINE_TO_MATCH'"'$_FRACTION'"' "$_FILE"; then
-					echo -e "$_PREFIX_ERROR Failed to write output to zram-swap file."
-					return 1
-				fi
+                    if ! sed -i '/'$_LINE_TO_MATCH'"*"/c\'$_LINE_TO_MATCH'"'$_FRACTION'"' "$_FILE"; then
+                        echo -e "$_PREFIX_ERROR Failed to write output to zram-swap file."
+                        return 1
+                    fi
 
-				if ! "$_HAS_ARG_ZRAM_SWAP_FORCE" \
-					&& sudo swapon -v | grep zram &> /dev/null \
-					&& sudo swapon -v | grep zram &> /dev/null \
-					&& ! sudo swapon -v | grep zram | grep 0B &> /dev/null; then
-					echo -e "$_PREFIX_NOTE zram-swap device(s) already in use. Restart system to save changes."
-					return 0
-				fi
+                    if ! "$_HAS_ARG_ZRAM_SWAP_FORCE" \
+                        && sudo swapon -v | grep zram &> /dev/null \
+                        && sudo swapon -v | grep zram &> /dev/null \
+                        && ! sudo swapon -v | grep zram | grep 0B &> /dev/null; then
+                        echo -e "$_PREFIX_NOTE zram-swap device(s) already in use. Restart system to save changes."
+                        return 0
+                    fi
 
-				if sudo swapon -v | grep zram &> /dev/null \
-					&& ! sudo swapoff /dev/zram* &> /dev/null; then
-					echo -e "$_PREFIX_ERROR Failed to disable zram-swap device(s)."
-					return 1
-				fi
+                    if sudo swapon -v | grep zram &> /dev/null \
+                        && ! sudo swapoff /dev/zram* &> /dev/null; then
+                        echo -e "$_PREFIX_ERROR Failed to disable zram-swap device(s)."
+                        return 1
+                    fi
 
-				if ! sudo systemctl daemon-reload &> /dev/null; then
-					echo -e "$_PREFIX_ERROR Failed to update systemd."
-					return 1
-				fi
+                    if ! sudo systemctl daemon-reload &> /dev/null; then
+                        echo -e "$_PREFIX_ERROR Failed to update systemd."
+                        return 1
+                    fi
 
-				if ! sudo systemctl restart zram-swap &> /dev/null; then
-					echo -e "$_PREFIX_ERROR Failed to restart zram-swap service."
-					return 1
-				fi
+                    if ! sudo systemctl restart zram-swap &> /dev/null; then
+                        echo -e "$_PREFIX_ERROR Failed to restart zram-swap service."
+                        return 1
+                    fi
 
-				if ! sudo swapon -v | grep zram &> /dev/null; then
-					echo -e "$_PREFIX_ERROR Failed to enable zram-swap device."
-					return 1
-				fi
+                    if ! sudo swapon -v | grep zram &> /dev/null; then
+                        echo -e "$_PREFIX_ERROR Failed to enable zram-swap device."
+                        return 1
+                    fi
 
-				return 0
-			}
+                    return 0
+                }
 
-			local -r _USER_NAME="foundObjects"
-			local -r _REPO_NAME="zram-swap"
-			local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
-			local _HAS_SKIPPED=false
+                local -r _USER_NAME="foundObjects"
+                local -r _REPO_NAME="zram-swap"
+                local -r _FULL_REPO="$_USER_NAME/$_REPO_NAME"
+                local _HAS_SKIPPED=false
 
-			if ! "$_EXECUTE_POST_SETUP_ZRAM_SWAP"; then
-				echo
+                if ! "$_EXECUTE_POST_SETUP_ZRAM_SWAP"; then
+                    echo
 
-				if ! AskToExecuteOrSkip "Install zram-swap?"; then
-					_HAS_SKIPPED=true
-				fi
-			fi
+                    if ! AskToExecuteOrSkip "Install zram-swap?"; then
+                        _HAS_SKIPPED=true
+                    fi
+                fi
 
-			if ! "$_HAS_SKIPPED" \
-				&& ( ! IsHostMemorySufficientForZramSwap \
-				|| ! Get \
-				|| ! Install \
-				|| ! Modify ); then
-				false
-			fi
+                if ! "$_HAS_SKIPPED" \
+                    && ( ! IsHostMemorySufficientForZramSwap \
+                    || ! Get \
+                    || ! Install \
+                    || ! Modify ); then
+                    false
+                fi
 
-			if "$_HAS_SKIPPED"; then
-				( return 255 )
-			fi
+                if "$_HAS_SKIPPED"; then
+                    ( return 255 )
+                fi
 
-			PrintSuffixPassOrFail "Allocating RAM to swap..."
-			return "$_LAST_EXIT_CODE"
-		}
+                PrintSuffixPassOrFail "Allocating RAM to swap..."
+                return "$_LAST_EXIT_CODE"
+            }
+
+            function GetZRAMSwapSize
+            {
+                IsHostMemorySufficientForZramSwap || return 1
+
+                case "$1" in
+                    *"/"* )
+                        local -i _NUMERATOR=$( echo $1 | cut -d '/' -f1 )
+                        local -i _DENOMINATOR=$( echo $1 | cut -d '/' -f2 ) ;;
+
+                    "default" )
+                        _HAS_ARG_ZRAM_SWAP_DEFAULTS=true
+                        return 0 ;;
+
+                    * )
+                        echo -e "$_PREFIX_ERROR Not a fraction."
+                        return 1 ;;
+                esac
+
+                if ! [[ "$_NUMERATOR" =~ ^[0-9]+$ ]] \
+                    || ! [[ "$_DENOMINATOR" =~ ^[0-9]+$ ]]; then
+                    echo -e "$_PREFIX_ERROR Values are not numbers."
+                    return 1
+                fi
+
+                if [[ "$_NUMERATOR" -lt "$_DENOMINATOR" ]] || [[ "$_DENOMINATOR" -gt 1 ]]; then
+                    declare -g _ARGS_FOR_ZRAM_SWAP_FRACTION="$1"
+                    _HAS_ARG_ZRAM_SWAP_SET_FRACTION=true
+                    return 0
+
+                elif [[ "$_DENOMINATOR" -eq 0 ]]; then
+                    return 1
+
+                else
+                    echo -e "$_PREFIX_ERROR Invalid fraction."
+                fi
+
+                return 1
+            }
+
+            function IsHostMemorySufficientForZramSwap
+            {
+                if "$_IS_HUGEPAGES_SETUP"; then
+                    _AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY - _HUGEPAGES_ALLOCATED_MEMORY ))
+                fi
+
+                if ! GetFreeMemory; then
+                    echo -e "$_PREFIX_ERROR Insufficient Host memory for zram-swap."
+                    return 1
+                fi
+
+                return 0
+            }
 
 		# <summary>
 		# Install necessary depenencies to setup an audio capture from guest emulated audio device to host audio backend.

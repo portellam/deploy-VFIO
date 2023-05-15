@@ -8,7 +8,6 @@
 
 # <sources>
     source vfiolib-common
-    source vfiolib-globals
 # </sources>
 
 # <functions>
@@ -16,6 +15,9 @@
         # <summary> Global setters </summary>
             function SetParameters
             {
+                declare -g _USER="$USER"
+                SetUser &> /dev/null
+
                 declare -g _IS_SYSTEM_SUPPORTED=false
                 declare -ga _REQUIRED_LIBRARIES=( )
             }
@@ -152,6 +154,21 @@
                 esac
 
                 return 0
+            }
+
+            function SetUser
+            {
+                if [[ "$SUDO_USER" != "" ]]; then
+                    _USER="$SUDO_USER"
+                    return 0
+                fi
+
+                if [[ "$USER" != "" ]]; then
+                    _USER="$USER"
+                    return 0
+                fi
+
+                return 1
             }
 
         function AreRequiredLibrariesInstalled

@@ -28,7 +28,7 @@
 
                 while [[ "$?" -ne 1 ]]; do
                     if "$_ASK_TO_EXECUTE_VFIO_SETUP"; then
-                        for _TRIES_COUNT in $( seq 0 2 ); do
+                        for TRY_COUNT in $( seq 0 2 ); do
                             read -r -p "Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall/(N)o]: " _ANSWER
 
                             case "$_ANSWER" in
@@ -199,7 +199,7 @@
                 local -ar _INDEX_LIST=( "${!_MENU_ENTRY_TITLE_LIST[@]}" )
                 local -i _LAST_INDEX="${_INDEX_LIST[-1]}"
 
-                for _TRIES_COUNT in $( seq 0 2 ); do
+                for TRY_COUNT in $( seq 0 2 ); do
                     echo -e "\nList of valid GRUB menu entries:"
                     PrintListOf_GRUB_MenuEntry
                     echo
@@ -231,7 +231,7 @@
                     return 0
                 fi
 
-                for _TRIES_COUNT in $( seq 0 2 ); do
+                for TRY_COUNT in $( seq 0 2 ); do
                     read -r -p "Write output to GRUB only? [Y/n]: " _ANSWER
 
                     case "$_ANSWER" in

@@ -8,7 +8,7 @@
 #
 
 # <sources>
-    source vfiolib-globals
+    source vfiolib-common
 # </sources>
 
 # <functions>

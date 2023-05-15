@@ -8,10 +8,9 @@
 #
 
 # <sources>
-    source vfiolib-calcs
+    source vfiolib-common
     source vfiolib-files
     source vfiolib-parse
-    source vfiolib-globals
 # </sources>
 
 # <functions>
@@ -32,7 +31,6 @@
                 SetParseParameters
 
                 declare -g _ARGS_FOR_AUTO_XORG=""
-                
 
                 # <remarks> Statements </remarks
                 declare -g _OUTPUT_INVALID_ANSWER="$_PREFIX_ERROR Failed to answer."
@@ -218,11 +216,11 @@
             function GetArgsFor_ZRAM_Swap
             {
                 if [[ ! -z "$1" ]]; then
-                    Get_ZRAM_SwapSize "$1" || GetOverrideArgsFor_ZRAM_Swap "$1" || return 1
+                    GetZRAMSwapSize "$1" || GetOverrideArgsFor_ZRAM_Swap "$1" || return 1
                 fi
 
                 if [[ ! -z "$2" ]]; then
-                    Get_ZRAM_SwapSize "$2" || GetOverrideArgsFor_ZRAM_Swap "$2" || return 1
+                    GetZRAMSwapSize "$2" || GetOverrideArgsFor_ZRAM_Swap "$2" || return 1
                 fi
 
                 return 0

@@ -14,7 +14,6 @@
 # <sources>
     source bashlib-all
     source bashlib-vars
-    source vfiolib-calcs
     source vfiolib-common
     source vfiolib-usage
 # </sources>
@@ -266,6 +265,7 @@
                 return 1
             }
 
+            # <note> Update here for devices' that benefit from pci-stub dummy driver. </note>
             function IsDeviceForPCISTUB
             {
                 IsString "$1" || return "$?"

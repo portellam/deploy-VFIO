@@ -8,8 +8,8 @@
 #
 
 # <sources>
-    source vfiolib-calcs
     source vfiolib-common
+    source vfiolib-checks
     source vfiolib-files
     source vfiolib-parse
     source vfiolib-usage
@@ -25,26 +25,26 @@
                     AddUserToGroups
 
                     if "$_ASK_TO_EXECUTE_PRE_SETUP_ALL"; then
-                        StaticAllocateRAMToGuest
-                        StaticAllocateCPUToGuest
-                        Virtual_KVM
-                        Modify_QEMU
+                        ExecuteHugepagesSetup
+                        ExecuteStaticCPUIsolation
+                        ExecuteVirtualKVMSetup
+                        ExecuteModifyQEMUConfiguration
                         break
                     fi
 
                     if "$_EXECUTE_PRE_SETUP_HUGEPAGES"; then
-                        StaticAllocateRAMToGuest
+                        ExecuteHugepagesSetup
                     fi
 
                     if "$_EXECUTE_PRE_SETUP_STATIC_ISOLCPU"; then
-                        StaticAllocateCPUToGuest
+                        ExecuteStaticCPUIsolation
                     fi
 
                     if "$_EXECUTE_PRE_SETUP_EVDEV"; then
-                        Virtual_KVM
+                        ExecuteVirtualKVMSetup
                     fi
 
-                    Modify_QEMU
+                    ExecuteModifyQEMUConfiguration
                     break
                 done
 
@@ -61,7 +61,16 @@
         # <summary> Global setters </summary>
         function SetParameters
         {
+            declare -g _REGEX_FOR_NUM='^[0-9]+$'
+
             declare -gi _HUGEPAGES_ALLOCATED_MEMORY=0
+            declare -gi _HUGEPAGES_COUNT=0
+            declare -gu _HUGEPAGES_BYTE_SUFFIX
+            declare -gi _HUGEPAGES_MAX_SIZE=0
+            declare -gi _HUGEPAGES_MAX_SIZE_IN_KBIT=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )
+            declare -gi _HUGEPAGES_MIN_SIZE=0
+            declare -gi _HUGEPAGES_MIN_SIZE_IN_KBIT=4194304
+            declare -gi _HUGEPAGES_SIZE_IN_KBIT=0
 
             # <remarks> Flag progress of setups </remarks>
             declare -g _IS_EVDEV_SETUP=false
@@ -69,6 +78,162 @@
         }
 
     # <summary> Private </summary>
+        # <summary>
+        # Hugepages: Allocate host memory (RAM) to 'hugepages'.
+        # Eliminate the need to defragement memory, reduce host overhead, and improve both host and guest performance.
+        # </summary
+            function ExecuteHugepagesSetup
+            {
+                function AskForHugepageByteSize
+                {
+                    if "$_IS_HUGEPAGES_SIZE_SET"; then
+                        return 0
+                    fi
+
+                    for TRY_COUNT in $( seq 0 2 ); do
+                        read -r -p "Enter size of Hugepages [2M/1G]: " _HUGEPAGES_BYTE_SUFFIX
+                        GetHugepageByteSize "$_HUGEPAGES_BYTE_SUFFIX" && return 0
+                    done
+
+                    echo -e "$_OUTPUT_INVALID_ANSWER"
+                    return 1
+                }
+
+                function AskForHugepageCount
+                {
+
+                    if "$_IS_HUGEPAGES_COUNT_SET"; then
+                        return 0
+                    fi
+
+                    for TRY_COUNT in $( seq 0 2 ); do
+                        read -r -p "Enter count of Hugepages [$_HUGEPAGES_MIN_SIZE-$_HUGEPAGES_MAX_SIZE]: " _HUGEPAGES_COUNT
+                        GetHugepageCount "$_HUGEPAGES_COUNT" && return 0
+                    done
+
+                    echo -e "$_OUTPUT_INVALID_ANSWER"
+                    return 1
+                }
+
+                function Main
+                {
+                    if ! "$_EXECUTE_PRE_SETUP_HUGEPAGES"; then
+                        echo
+                    fi
+
+                    _IS_HUGEPAGES_SETUP=false
+
+                    if ! [[ "$_INT_MAX_MEMORY" =~ ^[0-9]+$ ]]; then
+                        echo -e "$_PREFIX_ERROR Could not parse system memory."
+                        return 1
+                    fi
+
+                    if ! "$_EXECUTE_PRE_SETUP_HUGEPAGES"; then
+                        if ! "$_IS_QUIET"; then
+                            echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\nGuest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
+                        fi
+
+                        AskToExecuteOrSkip "Setup Hugepages?" || return "$?"
+                    fi
+
+                    if ! "$_IS_HUGEPAGES_SIZE_SET"; then
+                        AskForHugepageByteSize || return 1
+                    fi
+
+                    GetHugepageMinAndMaxSizes || return 1
+
+                    if ! "$_IS_HUGEPAGES_COUNT_SET"; then
+                        AskForHugepageCount || return 1
+                    fi
+
+                    GetMemoryAllocatedToHugepages || return 1
+                    IsHostMemorySufficientForHugepages || return 1
+                    declare -g _OUTPUT_GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=$_HUGEPAGES_BYTE_SUFFIX hugepagesz=$_HUGEPAGES_BYTE_SUFFIX hugepages=$_HUGEPAGES_COUNT"
+                    _IS_HUGEPAGES_SETUP=true
+                    return 0
+                }
+
+                Main
+                PrintSuffixPassOrFail "Allocating RAM to pages..."
+                return "$_LAST_EXIT_CODE"
+            }
+
+            function GetMemoryAllocatedToHugepages
+            {
+                _HUGEPAGES_ALLOCATED_MEMORY=$(( $_HUGEPAGES_COUNT * $_HUGEPAGES_SIZE_IN_KBIT ))
+                return 0
+            }
+
+            function GetHugepageByteSize
+            {
+                local -u ANSWER="$1"
+
+                case "$ANSWER" in
+                    "1G" | "2M" )
+                        _HUGEPAGES_BYTE_SUFFIX="$ANSWER"
+                        _IS_HUGEPAGES_SIZE_SET=true
+                        return 0 ;;
+
+                    * )
+                        echo -e "Please a enter valid Hugepages size, '2M' or '1G'."
+                        return 1 ;;
+                esac
+            }
+
+            function GetHugepageCount
+            {
+                if [[ -z "$1" ]]; then
+                    echo -e "$_PREFIX_ERROR Hugepage count is empty."
+                    return 1
+                fi
+
+                GetHugepageMinAndMaxSizes || return 1
+
+                if ! echo "$1" | grep -E -q "$_REGEX_FOR_NUM" \
+                    || [[ "$1" -lt "$_HUGEPAGES_MIN_SIZE" ]] \
+                    || [[ "$1" -gt "$_HUGEPAGES_MAX_SIZE" ]]; then
+                    echo -e "$_PREFIX_ERROR Please enter a valid Hugepages amount, between $_HUGEPAGES_MIN_SIZE or $_HUGEPAGES_MAX_SIZE."
+                    return 1
+                fi
+
+                _IS_HUGEPAGES_COUNT_SET=true
+                _HUGEPAGES_COUNT="$1"
+                return 0
+            }
+
+            function GetHugepageMinAndMaxSizes
+            {
+                case "$_HUGEPAGES_BYTE_SUFFIX" in
+                    "2M" )
+                        _HUGEPAGES_SIZE_IN_KBIT=2048
+                        _HUGEPAGES_MIN_SIZE=2 ;;
+
+                    "1G" )
+                        _HUGEPAGES_SIZE_IN_KBIT=1048576
+                        _HUGEPAGES_MIN_SIZE=1 ;;
+
+                    * )
+                        echo -e "$_PREFIX_ERROR Failed to calculate minimum or maximum values for Hugepages."
+                        return 1 ;;
+                esac
+
+                _HUGEPAGES_MAX_SIZE=$(( "$_HUGEPAGES_MAX_SIZE_IN_KBIT" - "$_HUGEPAGES_MIN_SIZE_IN_KBIT" ))
+                _HUGEPAGES_MAX_SIZE=$(( "$_HUGEPAGES_MAX_SIZE" / "$_HUGEPAGES_SIZE_IN_KBIT" ))
+                return 0
+            }
+
+
+            function IsHostMemorySufficientForHugepages
+            {
+                if ! GetFreeMemory; then
+                    echo -e "$_PREFIX_ERROR Insufficient Host memory for Hugepages."
+                    return 1
+                fi
+
+                return 0
+            }
+
+
         # <summary>
         # Add user to necessary user groups.
         # </summary>
@@ -86,7 +251,7 @@
         # <summary>
         # isolcpus: Allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and guest performance.
         # </summary
-        function StaticAllocateCPUToGuest
+        function ExecuteStaticCPUIsolation
         {
             function GetThreadByCoreAnd_SMT
             {
@@ -233,93 +398,9 @@
         }
 
         # <summary>
-        # Hugepages: Allocate host memory (RAM) to 'hugepages'.
-        # Eliminate the need to defragement memory, reduce host overhead, and improve both host and guest performance.
-        # </summary
-        function StaticAllocateRAMToGuest
-        {
-            function AskForHugepageByteSize
-            {
-                if "$_IS_HUGEPAGES_SIZE_SET"; then
-                    return 0
-                fi
-
-                declare -gu _HUGEPAGES_BYTE_SUFFIX=""
-
-                for _TRIES_COUNT in $( seq 0 2 ); do
-                    read -r -p "Enter size of Hugepages [2M/1G]: " _HUGEPAGES_BYTE_SUFFIX
-                    GetHugepageByteSize "$_HUGEPAGES_BYTE_SUFFIX" && return 0
-                done
-
-                echo -e "$_OUTPUT_INVALID_ANSWER"
-                return 1
-            }
-
-            function AskForHugepageCount
-            {
-
-                if "$_IS_HUGEPAGES_COUNT_SET"; then
-                    return 0
-                fi
-
-                declare -gi _HUGEPAGES_COUNT=""
-
-                for _TRIES_COUNT in $( seq 0 2 ); do
-                    read -r -p "Enter count of Hugepages [$_HUGEPAGES_MIN_SIZE-$_HUGEPAGES_MAX_SIZE]: " _HUGEPAGES_COUNT
-                    GetHugepageCount "$_HUGEPAGES_COUNT" && return 0
-                done
-
-                echo -e "$_OUTPUT_INVALID_ANSWER"
-                return 1
-            }
-
-            function Main
-            {
-                if ! "$_EXECUTE_PRE_SETUP_HUGEPAGES"; then
-                    echo
-                fi
-
-                _IS_HUGEPAGES_SETUP=false
-
-                if ! [[ "$_INT_MAX_MEMORY" =~ ^[0-9]+$ ]]; then
-                    echo -e "$_PREFIX_ERROR Could not parse system memory."
-                    return 1
-                fi
-
-                if ! "$_EXECUTE_PRE_SETUP_HUGEPAGES"; then
-                    if ! "$_IS_QUIET"; then
-                        echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\nGuest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${var_yellow}NOTE:${var_reset_color} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${var_yellow}Example:${var_reset_color} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
-                    fi
-
-                    AskToExecuteOrSkip "Setup Hugepages?" || return "$?"
-                fi
-
-                if ! "$_IS_HUGEPAGES_SIZE_SET"; then
-                    AskForHugepageByteSize || return 1
-                fi
-
-                GetHugepageMinAndMaxSizes || return 1
-
-                if ! "$_IS_HUGEPAGES_COUNT_SET"; then
-                    AskForHugepageCount || return 1
-                fi
-
-                GetMemoryAllocatedToHugepages || return 1
-                IsHostMemorySufficientForHugepages || return 1
-                declare -g _OUTPUT_GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=$_HUGEPAGES_BYTE_SUFFIX hugepagesz=$_HUGEPAGES_BYTE_SUFFIX hugepages=$_HUGEPAGES_COUNT"
-                _IS_HUGEPAGES_SETUP=true
-                return 0
-            }
-
-            Main
-            PrintSuffixPassOrFail "Allocating RAM to pages..."
-            return "$_LAST_EXIT_CODE"
-        }
-
-        # <summary>
         # libvirt-qemu: Append necessary changes to QEMU system file, including user groups, Evdev, Hugepages, and NVRAM (for UEFI guest(s)).
         # </summary>
-        function Modify_QEMU
+        function ExecuteModifyQEMUConfiguration
         {
             function Main
             {
@@ -451,7 +532,7 @@
         # Evdev: Setup a virtual Keyboard-Video-Mouse switch (excluding the Video).
         # Will allow a user to swap between active guest(s) and host, with the use of a pre-defined macro (example: 'L-CTRL' + 'R-CTRL').
         # </summary>
-        function Virtual_KVM
+        function ExecuteVirtualKVMSetup
         {
             function Main
             {
