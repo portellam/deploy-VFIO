@@ -33,7 +33,7 @@
                 declare -g _ARGS_FOR_AUTO_XORG=""
 
                 # <remarks> Statements </remarks
-                declare -g _OUTPUT_INVALID_ANSWER="$_PREFIX_ERROR Failed to answer."
+                declare -g _OUTPUT_INVALIDANSWER="$_PREFIX_ERROR Failed to answer."
                 declare -g _OUTPUT_INVALID_OPTION="$_PREFIX_ERROR Invalid option."
 
                 # <remarks> Flags </remarks
@@ -113,12 +113,12 @@
                     return 1
                 fi
 
-                local -i _COUNT_DELIM=$( echo "$1" | grep -o "," | wc -l )
-                (( _COUNT_DELIM++ ))
+                local -i COUNT_DELIM=$( echo "$1" | grep -o "," | wc -l )
+                (( COUNT_DELIM++ ))
 
-                while [[ "$_COUNT_DELIM" -gt 0 ]] \
+                while [[ "$COUNT_DELIM" -gt 0 ]] \
                     && ! "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL"; do
-                    local _ARG=$( echo "$1" | cut -d ',' -f "$_COUNT_DELIM" )
+                    local _ARG=$( echo "$1" | cut -d ',' -f "$COUNT_DELIM" )
 
                     if [[ ! -z "$_ARG" ]] \
                         && ( ! "$_DO_PARSE_DATABASE_FROM_FILE" \
@@ -140,7 +140,7 @@
                         esac
                     fi
 
-                    (( _COUNT_DELIM-- ))
+                    (( COUNT_DELIM-- ))
                 done
 
                 _HAS_ARG_PARSE_IOMMU=true

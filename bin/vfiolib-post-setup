@@ -112,16 +112,16 @@
                         && ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
                         local -ir _MAX_TRIES=2
 
-                        for TRY_COUNT in $( seq 0 "$_MAX_TRIES" ); do
-                            read -r -p "Set fraction of total memory for zram-swap to use (to calculate default, enter 'default'): " _ANSWER
+                        for COUNT in $( seq 0 "$_MAX_TRIES" ); do
+                            read -r -p "Set fraction of total memory for zram-swap to use (to calculate default, enter 'default'): " ANSWER
 
-                            if GetZRAMSwapSize "$_ANSWER"; then
-                                _FRACTION="$_ANSWER"
+                            if GetZRAMSwapSize "$ANSWER"; then
+                                _FRACTION="$ANSWER"
                                 break
                             fi
 
                             if [[ "$?" -ne 0 ]] \
-                                && [[ $TRY_COUNT -eq "$_MAX_TRIES" ]]; then
+                                && [[ $COUNT -eq "$_MAX_TRIES" ]]; then
                                 return 1
                             fi
                         done
@@ -542,10 +542,10 @@
 					GetArgs
 
 					for _COUNT in $( seq 1 "$_COUNT_OF_VALID_ARGS" ); do
-						read -r -p "Enter argument (to skip, leave blank): " _ANSWER
-						GetArgsForAutoXorg "$_ANSWER" || return 1
+						read -r -p "Enter argument (to skip, leave blank): " ANSWER
+						GetArgsForAutoXorg "$ANSWER" || return 1
 
-						if [[ -z "$_ANSWER" ]]; then
+						if [[ -z "$ANSWER" ]]; then
 							break
 						fi
 					done

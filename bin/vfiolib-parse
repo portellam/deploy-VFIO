@@ -12,8 +12,6 @@
 # -test
 
 # <sources>
-    source bashlib-all
-    source bashlib-vars
     source vfiolib-common
     source vfiolib-usage
 # </sources>
@@ -55,16 +53,16 @@
                         SetDeviceDriver "$DEVICE" "DRIVER"
                         SetDeviceHardwareID "$DEVICE" "HWID"
 
-                        if IsString "$DRIVER"; then
+                        if [[ ! -z "$DRIVER" ]]; then
                             DRIVER_REFERENCE+=( "$DRIVER" )
                         fi
 
-                        if IsString "$HWID" && \
+                        if [[ ! -z "$HWID" ]] && \
                             IsDeviceForPCISTUB "$DEVICE"; then
                             STUB_HWID_REFERENCE+=( "$HWID" )
                         fi
 
-                        if IsString "$HWID" && \
+                        if [[ ! -z "$HWID" ]] && \
                             ! IsDeviceForPCISTUB "$DEVICE"; then
                             VFIO_HWID_REFERENCE+=( "$HWID" )
                         fi
@@ -85,7 +83,7 @@
 
             function GetNameForFirstVGADeviceInIOMMUGroup
             {
-                IsString "$2" || return "$?"
+                [[ ! -z "$2" ]] || return "$?"
                 IsInt "$1" || return "$?"
                 local -i IOMMU_GROUP_ID="$1"
                 local -n DEVICE_NAME="$2"
@@ -96,12 +94,17 @@
                         continue
                     fi
 
-                    local NAME
-                    SetDeviceName "NAME"
-                    return 0
+                    local NAME=""
+                    SetDeviceName "NAME" && break
                 done
 
-                return 1
+                if [[ -z $NAME ]]; then
+                    echo -e "$_PREFIX_ERROR Failed to find device name of any VGA device in IOMMU group '$IOMMU_GROUP_ID'."
+                    return 1
+                fi
+
+                DEVICE_NAME="$NAME"
+                return 0
             }
 
         # <summary> Global setters </summary>
@@ -172,8 +175,8 @@
         # <summary> Local setters </summary>
             function SetDeviceClass
             {
-                IsString "$2" || return "$?"
-                IsString "$1" || return "$?"
+                [[ ! -z "$2" ]] || return "$?"
+                [[ ! -z "$1" ]] || return "$?"
                 local DEVICE="$1"
                 local -n REFERENCE="$2"
                 REFERENCE="$( lspci $_PARSE_OPTIONS -ms $DEVICE | cut -d '"' -f 2 )"
@@ -182,8 +185,8 @@
 
             function SetDeviceDriver
             {
-                IsString "$2" || return "$?"
-                IsString "$1" || return "$?"
+                [[ ! -z "$2" ]] || return "$?"
+                [[ ! -z "$1" ]] || return "$?"
                 local DEVICE="$1"
                 local -n REFERENCE="$2"
                 REFERENCE="$( lspci $_PARSE_OPTIONS -ks "$DEVICE" | grep -i "driver" | cut -d " " -f 5 )"
@@ -192,8 +195,8 @@
 
             function SetDeviceHardwareID
             {
-                IsString "$2" || return "$?"
-                IsString "$1" || return "$?"
+                [[ ! -z "$2" ]] || return "$?"
+                [[ ! -z "$1" ]] || return "$?"
                 local DEVICE="$1"
                 local -n REFERENCE="$2"
                 REFERENCE="$( lspci $_PARSE_OPTIONS -ns $DEVICE | cut -d " " -f 3 )"
@@ -202,8 +205,8 @@
 
             function SetDeviceName
             {
-                IsString "$2" || return "$?"
-                IsString "$1" || return "$?"
+                [[ ! -z "$2" ]] || return "$?"
+                [[ ! -z "$1" ]] || return "$?"
                 local DEVICE="$1"
                 local -n REFERENCE="$2"
                 REFERENCE="$( lspci $_PARSE_OPTIONS -ms $DEVICE  | cut -d '"' -f 6 )"
@@ -212,8 +215,8 @@
 
             function SetDeviceVendor
             {
-                IsString "$2" || return "$?"
-                IsString "$1" || return "$?"
+                [[ ! -z "$2" ]] || return "$?"
+                [[ ! -z "$1" ]] || return "$?"
                 local DEVICE="$1"
                 local -n REFERENCE="$2"
                 REFERENCE="$( lspci $_PARSE_OPTIONS -ms $DEVICE | cut -d '"' -f 4 )"
@@ -240,7 +243,7 @@
         # <summary> Device validation </summary>
             function IsDeviceBindedToVFIO
             {
-                IsString "$1" || return "$?"
+                [[ ! -z "$1" ]] || return "$?"
                 local DEVICE="$1"
                 local -l DRIVER="$( lspci $_PARSE_OPTIONS -ks "$DEVICE" | grep -i "driver" | cut -d " " -f 5 )"
 
@@ -254,7 +257,7 @@
 
             function IsDeviceExternal
             {
-                IsString "$1" || return "$?"
+                [[ ! -z "$1" ]] || return "$?"
                 local DEVICE="$1"
                 local -u DOMAIN_ID=$( echo "$DEVICE" | cut -d ':' -f 2 )
 
@@ -268,7 +271,7 @@
             # <note> Update here for devices' that benefit from pci-stub dummy driver. </note>
             function IsDeviceForPCISTUB
             {
-                IsString "$1" || return "$?"
+                [[ ! -z "$1" ]] || return "$?"
                 local DEVICE="$1"
                 local -l CLASS="$( lspci $_PARSE_OPTIONS -ms $DEVICE | cut -d '"' -f 2 )"
 
@@ -282,7 +285,7 @@
 
             function IsDeviceVGA
             {
-                IsString "$1" || return "$?"
+                [[ ! -z "$1" ]] || return "$?"
                 local DEVICE="$1"
                 local -l CLASS="$( lspci $_PARSE_OPTIONS -ms $DEVICE | cut -d '"' -f 2 )"
 
@@ -535,22 +538,22 @@
                 fi
 
                 ExportParseDatabase || return "$?"
-                read -r -p "Enter filename (leave blank for default): " _ANSWER
+                read -r -p "Enter filename (leave blank for default): " ANSWER
 
-                if [[ ! -z "$_ANSWER" ]] \
-                    && [[ ! -e "$_ANSWER" ]]; then
+                if [[ ! -z "$ANSWER" ]] \
+                    && [[ ! -e "$ANSWER" ]]; then
                     echo -e "$_PREFIX_ERROR File does not exist."
                 fi
 
-                if [[ ! -z "$_ANSWER" ]] \
-                    && [[ ! -s "$_ANSWER" ]]; then
+                if [[ ! -z "$ANSWER" ]] \
+                    && [[ ! -s "$ANSWER" ]]; then
                     echo -e "$_PREFIX_ERROR File is empty."
                 fi
 
-                if [[ ! -z "$_ANSWER" ]] \
-                    && [[ -e "$_ANSWER" ]] \
-                    && [[ -s "$_ANSWER" ]]; then
-                    _DATABASE_FILE="$_ANSWER"
+                if [[ ! -z "$ANSWER" ]] \
+                    && [[ -e "$ANSWER" ]] \
+                    && [[ -s "$ANSWER" ]]; then
+                    _DATABASE_FILE="$ANSWER"
                     return 0
                 fi
 
@@ -592,9 +595,9 @@
                 esac
 
                 for COUNT in $( seq 0 2 ); do
-                    read -r -p "Select method of parsing IOMMU groups? [(F)ile/(I)nternal/(O)nline/(N)o]: " _ANSWER
+                    read -r -p "Select method of parsing IOMMU groups? [(F)ile/(I)nternal/(O)nline/(N)o]: " ANSWER
 
-                    case "$_ANSWER" in
+                    case "$ANSWER" in
                         [Ff]* )
                             _DO_PARSE_DATABASE_FROM_FILE=true ;;
 
@@ -668,7 +671,7 @@
                     echo -e "\tHardware ID:\t$HWID"
                     local DRIVER_OUTPUT="\tKernel driver:\t"
 
-                    if IsString "$DRIVER"; then
+                    if [[ ! -z "$DRIVER" ]]; then
                         echo -e "$DRIVER_OUTPUT$DRIVER"
                     else
                         echo -e "${DRIVER_OUTPUT}N/A"

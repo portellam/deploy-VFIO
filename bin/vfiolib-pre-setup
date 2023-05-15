@@ -90,12 +90,12 @@
                         return 0
                     fi
 
-                    for TRY_COUNT in $( seq 0 2 ); do
+                    for COUNT in $( seq 0 2 ); do
                         read -r -p "Enter size of Hugepages [2M/1G]: " _HUGEPAGES_BYTE_SUFFIX
                         GetHugepageByteSize "$_HUGEPAGES_BYTE_SUFFIX" && return 0
                     done
 
-                    echo -e "$_OUTPUT_INVALID_ANSWER"
+                    echo -e "$_OUTPUT_INVALIDANSWER"
                     return 1
                 }
 
@@ -106,12 +106,12 @@
                         return 0
                     fi
 
-                    for TRY_COUNT in $( seq 0 2 ); do
+                    for COUNT in $( seq 0 2 ); do
                         read -r -p "Enter count of Hugepages [$_HUGEPAGES_MIN_SIZE-$_HUGEPAGES_MAX_SIZE]: " _HUGEPAGES_COUNT
                         GetHugepageCount "$_HUGEPAGES_COUNT" && return 0
                     done
 
-                    echo -e "$_OUTPUT_INVALID_ANSWER"
+                    echo -e "$_OUTPUT_INVALIDANSWER"
                     return 1
                 }
 

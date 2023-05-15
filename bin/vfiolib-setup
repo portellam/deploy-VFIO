@@ -28,10 +28,10 @@
 
                 while [[ "$?" -ne 1 ]]; do
                     if "$_ASK_TO_EXECUTE_VFIO_SETUP"; then
-                        for TRY_COUNT in $( seq 0 2 ); do
-                            read -r -p "Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall/(N)o]: " _ANSWER
+                        for COUNT in $( seq 0 2 ); do
+                            read -r -p "Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall/(N)o]: " ANSWER
 
-                            case "$_ANSWER" in
+                            case "$ANSWER" in
                                 [Mm]* )
                                     _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=true
                                     break ;;
@@ -52,7 +52,7 @@
                             esac
                         done
 
-                        if ! [[ "$_ANSWER" =~ [MmSsUuNn] ]]; then
+                        if ! [[ "$ANSWER" =~ [MmSsUuNn] ]]; then
                             echo -e "$_PREFIX_ERROR Failed to answer."
                             return 1
                         fi
@@ -199,22 +199,22 @@
                 local -ar _INDEX_LIST=( "${!_MENU_ENTRY_TITLE_LIST[@]}" )
                 local -i _LAST_INDEX="${_INDEX_LIST[-1]}"
 
-                for TRY_COUNT in $( seq 0 2 ); do
+                for COUNT in $( seq 0 2 ); do
                     echo -e "\nList of valid GRUB menu entries:"
                     PrintListOf_GRUB_MenuEntry
                     echo
-                    read -r -p "Enter preferred GRUB menu entry [0-$_LAST_INDEX]: " _ANSWER
+                    read -r -p "Enter preferred GRUB menu entry [0-$_LAST_INDEX]: " ANSWER
 
-                    if [[ -z "$_ANSWER" ]] \
-                        || [[ "$_ANSWER" -eq 0 ]]; then
+                    if [[ -z "$ANSWER" ]] \
+                        || [[ "$ANSWER" -eq 0 ]]; then
                         _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=true
                         return 0
                     fi
 
-                    if [[ "$_ANSWER" -gt 0 ]] \
-                        && [[ "$_ANSWER" -le "$_LAST_INDEX" ]]; then
+                    if [[ "$ANSWER" -gt 0 ]] \
+                        && [[ "$ANSWER" -le "$_LAST_INDEX" ]]; then
                         _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=false
-                        _PREFERRED_MENU_ENTRY_TITLE="${_MENU_ENTRY_TITLE_LIST[$_ANSWER]}"
+                        _PREFERRED_MENU_ENTRY_TITLE="${_MENU_ENTRY_TITLE_LIST[$ANSWER]}"
                         return 0
                     fi
 
@@ -231,10 +231,10 @@
                     return 0
                 fi
 
-                for TRY_COUNT in $( seq 0 2 ); do
-                    read -r -p "Write output to GRUB only? [Y/n]: " _ANSWER
+                for COUNT in $( seq 0 2 ); do
+                    read -r -p "Write output to GRUB only? [Y/n]: " ANSWER
 
-                    case "$_ANSWER" in
+                    case "$ANSWER" in
                         [Yy]* )
                             _EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=true
                             return 0 ;;
@@ -475,8 +475,6 @@
                 return 0
             }
 
-        
-
         # <summary> to be deprecated? </summary>
         function AreParamsNotEmptyForStaticSetup
         {
@@ -504,11 +502,11 @@
             local LINE_GRUB_CMDLINE_PREFIX=""
             LINE_GRUB_CMDLINE_PREFIX+="$_LINE_GRUB_CMDLINE "
 
-            if IsString "$_LINE_GRUB_CMDLINE_ISOLCPU"; then
+            if [[ ! -z "$_LINE_GRUB_CMDLINE_ISOLCPU" ]]; then
                 LINE_GRUB_CMDLINE_PREFIX+="$_LINE_GRUB_CMDLINE_ISOLCPU "
             fi
 
-            if IsString "$_OUTPUT_GRUB_CMDLINE_HUGEPAGES"; then
+            if [[ ! -z "$_OUTPUT_GRUB_CMDLINE_HUGEPAGES" ]]; then
                 LINE_GRUB_CMDLINE_PREFIX+="$_OUTPUT_GRUB_CMDLINE_HUGEPAGES "
             fi
 

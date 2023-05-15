@@ -14,18 +14,18 @@
             {
                 function PingServer
                 {
-                    IsString $1 || return 1
+                    [ ! -z "$1" ] || return 1
                     ping -q -c 1 $1 &> /dev/null
                     return "$?"
                 }
 
-                local _IS_VERBOSE=false
+                local IS_VERBOSE=false
 
                 if [[ "$1" == true ]]; then
-                    _IS_VERBOSE=true
+                    IS_VERBOSE=true
                 fi
 
-                if "$_IS_VERBOSE"; then
+                if "$IS_VERBOSE"; then
                     echo -en "Testing Internet connection...\t"
                 fi
 
@@ -33,9 +33,9 @@
                     false
                 fi
 
-                SaveExitCode
+                SetExitCode
 
-                if "$_IS_VERBOSE"; then
+                if "$IS_VERBOSE"; then
                     ( return "$_LAST_EXIT_CODE" )
                     PrintSuffixPassOrFail
                     echo -en "Testing connection to DNS...\t"
@@ -45,9 +45,9 @@
                     false
                 fi
 
-                SaveExitCode
+                SetExitCode
 
-                if "$_IS_VERBOSE"; then
+                if "$IS_VERBOSE"; then
                     ( return "$_LAST_EXIT_CODE" )
                     PrintSuffixPassOrFail
                 fi
@@ -64,10 +64,10 @@
                 # <summary> Check if current Operating System matches Package Manager, and Check if PM is installed. </summary>
                 function GetPackageManagerBy_OS
                 {
-                    if [[ "$_OS_WITH_APT" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                    if [[ "$OS_WITH_APT" =~ .*${_OPERATING_SYSTEM}.* ]]; then
                         _PACKAGE_MANAGER="apt"
 
-                    elif [[ "$_OS_WITH_DNF_OR_YUM" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                    elif [[ "$OS_WITH_DNF_OR_YUM" =~ .*${_OPERATING_SYSTEM}.* ]]; then
                         _PACKAGE_MANAGER="dnf"
 
                         if command -v "$_PACKAGE_MANAGER"; then
@@ -76,16 +76,16 @@
 
                         _PACKAGE_MANAGER="yum"
 
-                    elif [[ "$_OS_WITH_PACMAN" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                    elif [[ "$OS_WITH_PACMAN" =~ .*${_OPERATING_SYSTEM}.* ]]; then
                         _PACKAGE_MANAGER="pacman"
 
-                    elif [[ "$_OS_WITH_PORTAGE" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                    elif [[ "$OS_WITH_PORTAGE" =~ .*${_OPERATING_SYSTEM}.* ]]; then
                         _PACKAGE_MANAGER="portage"
 
-                    elif [[ "$_OS_WITH_URPMI" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                    elif [[ "$OS_WITH_URPMI" =~ .*${_OPERATING_SYSTEM}.* ]]; then
                         _PACKAGE_MANAGER="urpmi"
 
-                    elif [[ "$_OS_WITH_ZYPPER" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                    elif [[ "$OS_WITH_ZYPPER" =~ .*${_OPERATING_SYSTEM}.* ]]; then
                         _PACKAGE_MANAGER="zypper"
 
                     else
@@ -99,20 +99,25 @@
                     return 0
                 }
 
-                local _KERNEL="$( uname -o | tr '[:upper:]' '[:lower:]' )"
-                local _OS_WITH_APT="debian bodhi deepin knoppix mint peppermint pop ubuntu kubuntu lubuntu xubuntu"
-                local _OS_WITH_DNF_OR_YUM="redhat alma berry centos cern clearos elastix fedora fermi frameos mageia opensuse oracle scientific suse"
-                local _OS_WITH_PACMAN="arch manjaro"
-                local _OS_WITH_PORTAGE="gentoo"
-                local _OS_WITH_URPMI="opensuse"
-                local _OS_WITH_ZYPPER="mandriva mageia"
+                local KERNEL="$( uname -o | tr '[:upper:]' '[:lower:]' )"
+                local OS_WITH_APT="debian bodhi deepin knoppix mint peppermint pop ubuntu kubuntu lubuntu xubuntu"
+                local OS_WITH_DNF_OR_YUM="redhat alma berry centos cern clearos elastix fedora fermi frameos mageia opensuse oracle scientific suse"
+                local OS_WITH_PACMAN="arch manjaro"
+                local OS_WITH_PORTAGE="gentoo"
+                local OS_WITH_URPMI="opensuse"
+                local OS_WITH_ZYPPER="mandriva mageia"
 
-                if [[ -z "$_KERNEL" || -z "$_OPERATING_SYSTEM" ]]; then
-                    echo -e "$_PREFIX_ERROR Null values."
+                if [[ -z "$KERNEL" ]]; then
+                    echo -e "$_PREFIX_ERROR Failed to parse system kernel."
                     return 1
                 fi
 
-                if [[ "$_KERNEL" != *"linux"* ]]; then
+                if [[ -z "$_OPERATING_SYSTEM" ]]; then
+                    echo -e "$_PREFIX_ERROR Failed to parse operating system."
+                    return 1
+                fi
+
+                if [[ "$KERNEL" != *"linux"* ]]; then
                     echo -e "$_PREFIX_ERROR Kernel '$( uname -o )' is not supported."
                     return 1
                 fi
@@ -126,6 +131,11 @@
             }
 
         # <summary> Global setters </summary>
+            function SetExitCode
+            {
+                _LAST_EXIT_CODE="$?"
+            }
+
             function SetParameters
             {
                 # <summary>
@@ -175,6 +185,33 @@
                 declare -gl _OPERATING_SYSTEM="$( lsb_release -is )"
             }
 
+        # <summary> Variable data-type validaiton </summary>
+            function IsEnum
+            {
+                local -n REFERENCE="$1"
+                [ "${#REFERENCE[@]}" -gt 0 ]
+                return "$?"
+            }
+
+            function IsEmptyEnum
+            {
+                IsEnum "$1" || return "$?"
+                local -n REFERENCE="$1"
+
+                for VALUE in "${REFERENCE[@]}"; do
+                    [ ! -z "$VALUE" ] || return 1
+                done
+
+                return 0
+            }
+
+            function IsInt
+            {
+                [[ "$1" =~ ^[0-9]+$ ]] \
+                || [[ "$1" =~ ^[-][0-9]+$ ]]
+                return "$?"
+            }
+
         # <summary> Interaction </summary>
             function AskToExecuteOrSkip
             {
@@ -184,7 +221,7 @@
                     OUTPUT="$1 "
                 fi
 
-                for TRY_COUNT in $( seq 0 2 ); do
+                for COUNT in $( seq 0 2 ); do
                     read -r -p "$OUTPUT[Y/n]: " ANSWER
 
                     case "$ANSWER" in
@@ -205,7 +242,7 @@
         # <summary> Presentation </summary>
             function PrintPrefixPassOrFail
             {
-                SaveExitCode
+                SetExitCode
 
                 case "$_LAST_EXIT_CODE" in
                     0 )
@@ -229,7 +266,7 @@
 
             function PrintSuffixPassOrFail
             {
-                SaveExitCode
+                SetExitCode
 
                 if [[ ! -z "$1" ]]; then
                     echo -en "$1\t"
@@ -307,7 +344,7 @@
                     return 1 ;;
             esac
 
-            SaveExitCode
+            SetExitCode
 
             if [[ "$_LAST_EXIT_CODE" -ne 0 ]]; then
                 case "$_PACKAGE_MANAGER" in
@@ -332,17 +369,17 @@
                 return 1
             fi
 
-            local _DO_REINSTALL=false
+            local DO_REINSTALL=false
             local _OPTION=""
 
             if [[ "$2" == true ]]; then
-                _DO_REINSTALL=true
+                DO_REINSTALL=true
             fi
 
             # <remarks> Auto-update and auto-install selected packages </remarks>
             case "$_PACKAGE_MANAGER" in
                 "apt" )
-                    if "$_DO_REINSTALL"; then
+                    if "$DO_REINSTALL"; then
                         _OPTION="--reinstall -o Dpkg::Options::=--force-confmiss"
                     fi
 
@@ -383,24 +420,25 @@
                 return 1
             fi
 
-            local _GET_COMMAND=""
+            local GET_COMMAND=""
 
             # <remarks> Check if package is not installed </remarks>
             case "$_PACKAGE_MANAGER" in
                 "apt" )
-                    _GET_COMMAND="sudo dpkg -s $1" ;;
+                    GET_COMMAND="sudo dpkg -s" ;;
 
                 * )
                     echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
                     return 1 ;;
             esac
 
-            local -i _COUNT_DELIM=$( echo "$1" | wc -w )
+            local -i COUNT_DELIM=$( echo "$1" | wc -w )
+            local GET_PACKAGE='echo "$1" | cut -d ' ' -f "$COUNT_DELIM"'
 
-            while [[ "$_COUNT_DELIM" -gt 0 ]]; do
-                local str_package=$( echo "$1" | cut -d ' ' -f "$_COUNT_DELIM" )
-                eval "$_GET_COMMAND" || return 1
-                (( _COUNT_DELIM-- ))
+            while [[ ! -z "$PACKAGE" ]]; do
+                local PACKAGE=$( eval "$GET_PACKAGE" )
+                eval "$GET_COMMAND $PACKAGE" || return 1
+                (( COUNT_DELIM-- ))
             done
 
             return 0
@@ -414,11 +452,6 @@
             fi
 
             return 0
-        }
-
-        function SaveExitCode
-        {
-            _LAST_EXIT_CODE="$?"
         }
 
         function UninstallPackage
@@ -463,10 +496,10 @@
 
         function UpdateOrCloneGitRepo
         {
-            local _AUTO_ANSWER_YES=false
+            local DO_AUTO_ANSWER_YES=false
 
             if [[ "$4" == true ]]; then
-                _AUTO_ANSWER_YES=true
+                DO_AUTO_ANSWER_YES=true
             fi
 
             if [[ -z "$3" ]] \
@@ -495,14 +528,14 @@
 
             # <remarks> Clone new GitHub repository. </remarks>
             elif [[ -d "$1$3" ]]; then
-                for TRY_COUNT in $( seq 0 2 ); do
-                    if ! "$_AUTO_ANSWER_YES"; then
-                        read -r -p "Clone repo '$2'? [Y/n]: " _ANSWER
+                for COUNT in $( seq 0 2 ); do
+                    if ! "$DO_AUTO_ANSWER_YES"; then
+                        read -r -p "Clone repo '$2'? [Y/n]: " ANSWER
                     else
-                        _ANSWER="Y"
+                        ANSWER="Y"
                     fi
 
-                    case "$_ANSWER" in
+                    case "$ANSWER" in
                         [Yy]* )
                             cd "$1$3"
 
