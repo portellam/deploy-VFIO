@@ -7,10 +7,6 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-## TODO:
-# -add XML
-# -test
-
 # <sources>
     source vfiolib-common
     source vfiolib-usage
@@ -22,7 +18,7 @@
         {
             SetParseParameters
             AreParametersValid || return "$?"
-            SelectFileToExportDatabase || return "$?"          ## NOTE: somewhere, add support for parsing from XML.
+            SelectFileToExportDatabase || return "$?"
             SetFileForParseSelection || return "$?"
             SelectMethodToParseDatabase || return "$?"
             SetOptionsToImportDatabase || return "$?"

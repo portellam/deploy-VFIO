@@ -8,7 +8,6 @@
 #
 
 # <sources>
-    source bashlib-all
     source vfiolib-common
     source vfiolib-post-setup
     source vfiolib-files

@@ -3,6 +3,7 @@
     - Anything mentioned in **To Do** is not enabled/available.
 
 ### To Do:
+* Naming convention, update all local vars (remove prefix underscore).
 * Create Setter functions, such that they will populate publicly used params only once (when called in order)
     -This way, the script can re-execute itself?
 
