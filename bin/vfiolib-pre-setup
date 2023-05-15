@@ -1,4 +1,4 @@
-#!/bin/bash/env bash
+#!/bin/false
 
 #
 # Filename:         vfiolib-pre-setup
@@ -51,10 +51,10 @@
                 return "$?"
             }
 
-            local _OUTPUT="Executing pre-setup...\t"
-            PrintSuffixWait "$_OUTPUT"
+            local OUTPUT="Executing pre-setup...\t"
+            PrintSuffixWait "$OUTPUT"
             Main
-            PrintSuffixPassOrFail "$_OUTPUT"
+            PrintSuffixPassOrFail "$OUTPUT"
             return "$?"
         }
 
@@ -261,44 +261,44 @@
             function GetThreadSetsForHostAndGuest
             {
                 for _SMT_FACTOR in ${_SMT_FACTOR_LIST[@]}; do
-                    declare -a _HOST_THREADS_DELIM_LIST=( )
-                    declare -a _GUEST_THREADS_DELIM_LIST=( )
-                    local -i _THREAD
+                    declare -a HOST_THREADS_DELIM_LIST=( )
+                    declare -a GUEST_THREADS_DELIM_LIST=( )
+                    local -i THREAD
 
                     # <remarks> Find thread sets for host. </remarks>
                     for _CORE in ${_HOST_CORES_LIST[@]}; do
                         GetThreadByCoreAnd_SMT
-                        _HOST_THREADS_LIST+=( "$_THREAD" )
-                        _HOST_THREADS_DELIM_LIST+=( "$_THREAD" )
+                        _HOST_THREADS_LIST+=( "$THREAD" )
+                        HOST_THREADS_DELIM_LIST+=( "$THREAD" )
                     done
 
                     # <remarks> Find thread sets for guest(s). </remarks>
                     for _CORE in ${_GUEST_CORES_LIST[@]}; do
                         GetThreadByCoreAnd_SMT
-                        _GUEST_THREADS_LIST+=( "$_THREAD" )
-                        _GUEST_THREADS_DELIM_LIST+=( "$_THREAD" )
+                        _GUEST_THREADS_LIST+=( "$THREAD" )
+                        GUEST_THREADS_DELIM_LIST+=( "$THREAD" )
                     done
 
                     # <remarks> Save thread sets to delimited list. </remarks>
-                    local -i _FIRST_THREAD_SET="${_HOST_THREADS_DELIM_LIST[0]}"
-                    local -i _LAST_THREAD_SET="${_HOST_THREADS_DELIM_LIST[-1]}"
-                    local _THREAD_SET="$_FIRST_THREAD_SET"
+                    local -i _FIRST_THREAD_SET="${HOST_THREADS_DELIM_LIST[0]}"
+                    local -i _LAST_THREAD_SET="${HOST_THREADS_DELIM_LIST[-1]}"
+                    local THREAD_SET="$_FIRST_THREAD_SET"
 
                     if [[ "$_FIRST_THREAD_SET" -ne "$_LAST_THREAD_SET" ]]; then
-                        local _THREAD_SET="$_FIRST_THREAD_SET-$_LAST_THREAD_SET"
+                        local THREAD_SET="$_FIRST_THREAD_SET-$_LAST_THREAD_SET"
                     fi
 
-                    _HOST_THREADS_DELIM+="$_THREAD_SET,"
+                    HOST_THREADS_DELIM+="$THREAD_SET,"
 
-                    local -i _FIRST_THREAD_SET="${_GUEST_THREADS_DELIM_LIST[0]}"
-                    local -i _LAST_THREAD_SET="${_GUEST_THREADS_DELIM_LIST[-1]}"
-                    local _THREAD_SET="$_FIRST_THREAD_SET"
+                    local -i _FIRST_THREAD_SET="${GUEST_THREADS_DELIM_LIST[0]}"
+                    local -i _LAST_THREAD_SET="${GUEST_THREADS_DELIM_LIST[-1]}"
+                    local THREAD_SET="$_FIRST_THREAD_SET"
 
                     if [[ "$_FIRST_THREAD_SET" -ne "$_LAST_THREAD_SET" ]]; then
-                        local _THREAD_SET="$_FIRST_THREAD_SET-$_LAST_THREAD_SET"
+                        local THREAD_SET="$_FIRST_THREAD_SET-$_LAST_THREAD_SET"
                     fi
 
-                    _GUEST_THREADS_DELIM+="$_THREAD_SET,"
+                    GUEST_THREADS_DELIM+="$THREAD_SET,"
                 done
 
                 return 0
@@ -330,16 +330,16 @@
                 local -a _GUEST_THREADS_LIST=( )
                 local -i _SMT_FACTOR=$(( "$_TOTAL_THREADS_COUNT" / "$_TOTAL_CORES_COUNT" ))
                 local -a _SMT_FACTOR_LIST=( $( seq 0 $(( "$_SMT_FACTOR" - 1 )) ) )
-                local _HOST_THREADS_DELIM _GUEST_THREADS_DELIM
+                local HOST_THREADS_DELIM GUEST_THREADS_DELIM
                 GetThreadSetsForHostAndGuest
 
                 # <remarks> Truncate last delimiter. </remarks>
-                if [[ ${_HOST_THREADS_DELIM: -1} == "," ]]; then
-                    _HOST_THREADS_DELIM="${_HOST_THREADS_DELIM::-1}"
+                if [[ ${HOST_THREADS_DELIM: -1} == "," ]]; then
+                    HOST_THREADS_DELIM="${HOST_THREADS_DELIM::-1}"
                 fi
 
-                if [[ ${_GUEST_THREADS_DELIM: -1} == "," ]]; then
-                    _GUEST_THREADS_DELIM="${_GUEST_THREADS_DELIM::-1}"
+                if [[ ${GUEST_THREADS_DELIM: -1} == "," ]]; then
+                    GUEST_THREADS_DELIM="${GUEST_THREADS_DELIM::-1}"
                 fi
 
                 # <remarks>
@@ -375,11 +375,11 @@
                 local -i _TOTAL_THREADS_HEX_MASK=$(( ( 2 ** ${_TOTAL_THREADS_COUNT} ) - 1 ))
                 # declare -g _GUEST_THREADS_HEX=$( printf '%x\n' "$_TOTAL_THREADS_HEX_MASK" )
 
-                echo -e "Allocated to Host:\t$_HOST_THREADS_DELIM"
-                echo -e "Allocated to Guest:\t$_GUEST_THREADS_DELIM"
+                echo -e "Allocated to Host:\t$HOST_THREADS_DELIM"
+                echo -e "Allocated to Guest:\t$GUEST_THREADS_DELIM"
 
                 # <remarks> Save changes. </remarks>
-                declare -g _LINE_GRUB_CMDLINE_ISOLCPU="isolcpus=$_GUEST_THREADS_DELIM nohz_full=$_GUEST_THREADS_DELIM rcu_nocbs=$_GUEST_THREADS_DELIM"
+                declare -g _LINE_GRUB_CMDLINE_ISOLCPU="isolcpus=$GUEST_THREADS_DELIM nohz_full=$GUEST_THREADS_DELIM rcu_nocbs=$GUEST_THREADS_DELIM"
                 return 0
             }
 
