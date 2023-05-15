@@ -131,20 +131,20 @@
 
                     if "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
                         && ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
-                        local -i _ZRAM_SWAP_AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY / 2 ))
-                        local -i _DENOMINATOR=$( printf "%.0f" $( echo "scale=2;$_INT_MAX_MEMORY/$_ZRAM_SWAP_AVAILABLE_MEMORY" | bc ) )
+                        local -i ZRAM_SWAP_AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY / 2 ))
+                        local -i DENOMINATOR=$( printf "%.0f" $( echo "scale=2;$_INT_MAX_MEMORY/$ZRAM_SWAP_AVAILABLE_MEMORY" | bc ) )
 
                         # <remarks> Round down to nearest even number. </remarks>
-                        if [[ $( expr $_DENOMINATOR % 2 ) -eq 1 ]]; then
-                            (( _DENOMINATOR-- ))
+                        if [[ $( expr $DENOMINATOR % 2 ) -eq 1 ]]; then
+                            (( DENOMINATOR-- ))
                         fi
 
                         # <remarks> Is fraction positive non-zero and not equal to one. </remarks>
-                        if [[ "$_DENOMINATOR" -le 0 ]]; then
+                        if [[ "$DENOMINATOR" -le 0 ]]; then
                             echo -e "$_PREFIX_ERROR Denominator is negative or zero."
                         fi
 
-                        FRACTION="1/$_DENOMINATOR"
+                        FRACTION="1/$DENOMINATOR"
                     fi
 
                     if ! sed -i '/'$_LINE_TO_MATCH'"*"/c\'$_LINE_TO_MATCH'"'$FRACTION'"' "$_FILE"; then
@@ -219,8 +219,8 @@
 
                 case "$1" in
                     *"/"* )
-                        local -i _NUMERATOR=$( echo $1 | cut -d '/' -f1 )
-                        local -i _DENOMINATOR=$( echo $1 | cut -d '/' -f2 ) ;;
+                        local -i NUMERATOR=$( echo $1 | cut -d '/' -f1 )
+                        local -i DENOMINATOR=$( echo $1 | cut -d '/' -f2 ) ;;
 
                     "default" )
                         _HAS_ARG_ZRAM_SWAP_DEFAULTS=true
@@ -231,18 +231,18 @@
                         return 1 ;;
                 esac
 
-                if ! [[ "$_NUMERATOR" =~ ^[0-9]+$ ]] \
-                    || ! [[ "$_DENOMINATOR" =~ ^[0-9]+$ ]]; then
+                if ! [[ "$NUMERATOR" =~ ^[0-9]+$ ]] \
+                    || ! [[ "$DENOMINATOR" =~ ^[0-9]+$ ]]; then
                     echo -e "$_PREFIX_ERROR Values are not numbers."
                     return 1
                 fi
 
-                if [[ "$_NUMERATOR" -lt "$_DENOMINATOR" ]] || [[ "$_DENOMINATOR" -gt 1 ]]; then
+                if [[ "$NUMERATOR" -lt "$DENOMINATOR" ]] || [[ "$DENOMINATOR" -gt 1 ]]; then
                     declare -g _ARGS_FOR_ZRAM_SWAP_FRACTION="$1"
                     _HAS_ARG_ZRAM_SWAP_SET_FRACTION=true
                     return 0
 
-                elif [[ "$_DENOMINATOR" -eq 0 ]]; then
+                elif [[ "$DENOMINATOR" -eq 0 ]]; then
                     return 1
 
                 else
@@ -539,11 +539,11 @@
 				if ! "$_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR" \
 					&& ! "$_HAS_ARG_AUTO_XORG_SORT_ORDER" \
 					&& AskToExecuteOrSkip "Add arguments?"; then
-					local -i _COUNT_OF_VALID_ARGS=2
+					local -i COUNT_OF_VALID_ARGS=2
 					echo
 					GetArgs
 
-					for _COUNT in $( seq 1 "$_COUNT_OF_VALID_ARGS" ); do
+					for _COUNT in $( seq 1 "$COUNT_OF_VALID_ARGS" ); do
 						read -r -p "Enter argument (to skip, leave blank): " ANSWER
 						GetArgsForAutoXorg "$ANSWER" || return 1
 

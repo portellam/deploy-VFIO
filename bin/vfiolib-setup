@@ -7,6 +7,11 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
+# TODO:
+# -remove prefix underscore to local variable names
+#
+#
+
 # <sources>
     source vfiolib-common
     source vfiolib-post-setup
@@ -195,14 +200,14 @@
                     return 0
                 fi
 
-                local -ar _INDEX_LIST=( "${!_MENU_ENTRY_TITLE_LIST[@]}" )
-                local -i _LAST_INDEX="${_INDEX_LIST[-1]}"
+                local -ar INDEX_LIST=( "${!_MENU_ENTRY_TITLE_LIST[@]}" )
+                local -i LAST_INDEX="${INDEX_LIST[-1]}"
 
                 for COUNT in $( seq 0 2 ); do
                     echo -e "\nList of valid GRUB menu entries:"
                     PrintListOf_GRUB_MenuEntry
                     echo
-                    read -r -p "Enter preferred GRUB menu entry [0-$_LAST_INDEX]: " ANSWER
+                    read -r -p "Enter preferred GRUB menu entry [0-$LAST_INDEX]: " ANSWER
 
                     if [[ -z "$ANSWER" ]] \
                         || [[ "$ANSWER" -eq 0 ]]; then
@@ -211,13 +216,13 @@
                     fi
 
                     if [[ "$ANSWER" -gt 0 ]] \
-                        && [[ "$ANSWER" -le "$_LAST_INDEX" ]]; then
+                        && [[ "$ANSWER" -le "$LAST_INDEX" ]]; then
                         _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=false
                         _PREFERRED_MENU_ENTRY_TITLE="${_MENU_ENTRY_TITLE_LIST[$ANSWER]}"
                         return 0
                     fi
 
-                    echo -e "Please answer between 0 and $_LAST_INDEX."
+                    echo -e "Please answer between 0 and $LAST_INDEX."
                 done
 
                 echo -e "$_PREFIX_ERROR Failed to answer."
@@ -307,11 +312,11 @@
         # <summary> Presentation </summary>
             function PrintListOf_GRUB_MenuEntry
             {
-                for _KEY in "${!_MENU_ENTRY_TITLE_LIST[@]}"; do
-                    echo -en "$_KEY:\t"
+                for KEY in "${!_MENU_ENTRY_TITLE_LIST[@]}"; do
+                    echo -en "$KEY:\t"
 
-                    if [[ "$_KEY" -gt 0 ]]; then
-                        echo -e "\"${_MENU_ENTRY_TITLE_LIST[$_KEY]}\""
+                    if [[ "$KEY" -gt 0 ]]; then
+                        echo -e "\"${_MENU_ENTRY_TITLE_LIST[$KEY]}\""
                     else
                         echo -e "Default (no VFIO setup)"
                     fi
@@ -391,18 +396,18 @@
                 local -r _LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"$LINE_GRUB_CMDLINE_TEMP\""
 
                 # <remarks> Write to new file. </remarks>
-                local -i _KEY=$(( "${#_INITRAMFS_LIST[@]}" - 1 ))
-                local -i _NUM_LINE=23
+                local -i KEY=$(( "${#_INITRAMFS_LIST[@]}" - 1 ))
+                local -i NUM_LINE=23
 
-                while [[ "$_KEY" -ge 0 ]]; do
-                    _LINE="${_INITRAMFS_LIST[$_KEY]}"
+                while [[ "$KEY" -ge 0 ]]; do
+                    _LINE="${_INITRAMFS_LIST[$KEY]}"
 
                     if ! sed -i "23i $_LINE" "$_INITRAMFS_MODULES_DEST_PATH"; then
                         echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
                         return 1
                     fi
 
-                    (( --_KEY ))
+                    (( --KEY ))
                 done
 
                 if [[ "$?" -ne 0 ]]; then
@@ -411,18 +416,18 @@
                 fi
 
                 # <remarks> Write to new file. </remarks>
-                local -i _KEY=$(( "${#_MODULES_LIST[@]}" - 1 ))
-                local -i _NUM_LINE=7
+                local -i KEY=$(( "${#_MODULES_LIST[@]}" - 1 ))
+                local -i NUM_LINE=7
 
-                while [[ "$_KEY" -ge 0 ]]; do
-                    _LINE="${_MODULES_LIST[$_KEY]}"
+                while [[ "$KEY" -ge 0 ]]; do
+                    _LINE="${_MODULES_LIST[$KEY]}"
 
                     if ! sed -i "7i $_LINE" "$_MODPROBE_VFIO_DEST_PATH"; then
                         echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
                         return 1
                     fi
 
-                    (( --_KEY ))
+                    (( --KEY ))
                 done
 
                 if [[ "$?" -ne 0 ]]; then
@@ -545,10 +550,10 @@
             local -a _DRIVER_LIST="${_DRIVER_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
             local -a _HWID_LIST="${_HWID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
-            for _KEY in ${!_HWID_LIST[@]}; do
-                local _CLASS=${_CLASS_LIST[$_KEY]}
-                local _DRIVER=${_DRIVER_LIST[$_KEY]}
-                local _HWID=${_HWID_LIST[$_KEY]}
+            for KEY in ${!_HWID_LIST[@]}; do
+                local _CLASS=${_CLASS_LIST[$KEY]}
+                local _DRIVER=${_DRIVER_LIST[$KEY]}
+                local _HWID=${_HWID_LIST[$KEY]}
 
                 if [[ ! -z "$_HWID" ]] \
                     && IsDeviceFor_PCISTUB "$_CLASS"; then
@@ -573,13 +578,13 @@
         {
             local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
-            for _KEY in ${!_PCI_ID_LIST[@]}; do
-                local _PCI_ID_DELIM=${_PCI_ID_LIST[$_KEY]}
-                local -i _DELIM_COUNT=1
-                local _PCI_ID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_PCI_ID_DELIM" )
+            for KEY in ${!_PCI_ID_LIST[@]}; do
+                local _PCI_ID_DELIM=${_PCI_ID_LIST[$KEY]}
+                local -i DELIM_COUNT=1
+                local _PCI_ID=$( cut -d ' ' -f $DELIM_COUNT <<< "$_PCI_ID_DELIM" )
 
                 while [[ ! -z "$_PCI_ID" ]]; do
-                    local _PCI_ID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_PCI_ID_DELIM" )
+                    local _PCI_ID=$( cut -d ' ' -f $DELIM_COUNT <<< "$_PCI_ID_DELIM" )
                     local _CLASS="$( lspci -ms $_PCI_ID | cut -d '"' -f 2 )"
                     local _DRIVER=$( lspci -ks $_PCI_ID | grep -i "driver" | cut -d " " -f 5 )
                     local _HWID=$( lspci -ns $_PCI_ID | cut -d " " -f 3 )
@@ -599,7 +604,7 @@
                         _VFIOPCI_DRIVER_LIST+=( "$_DRIVER" )
                     fi
 
-                    (( _DELIM_COUNT++ ))
+                    (( DELIM_COUNT++ ))
                 done
             done
 
@@ -612,19 +617,19 @@
             local -a _DRIVER_LIST="${_DRIVER_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
             local -a _HWID_LIST="${_HWID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
-            for _KEY in ${!_HWID_LIST[@]}; do
-                local _CLASS_DELIM=${_CLASS_LIST[$_KEY]}
-                local _DRIVER_DELIM=${_DRIVER_LIST[$_KEY]}
-                local _HWID_DELIM=${_HWID_LIST[$_KEY]}
-                local _NAME_DELIM=${_NAME_LIST[$_KEY]}
-                local -i _DELIM_COUNT=1
-                local _HWID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_HWID_DELIM" )
+            for KEY in ${!_HWID_LIST[@]}; do
+                local _CLASS_DELIM=${_CLASS_LIST[$KEY]}
+                local _DRIVER_DELIM=${_DRIVER_LIST[$KEY]}
+                local _HWID_DELIM=${_HWID_LIST[$KEY]}
+                local _NAME_DELIM=${_NAME_LIST[$KEY]}
+                local -i DELIM_COUNT=1
+                local _HWID=$( cut -d ' ' -f $DELIM_COUNT <<< "$_HWID_DELIM" )
 
                 while [[ ! -z "$_HWID" ]]; do
-                    local _CLASS=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_CLASS_DELIM" )
-                    local _DRIVER=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_DRIVER_DELIM" )
-                    _HWID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_HWID_DELIM" )
-                    local _NAME=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_NAME_DELIM" )
+                    local _CLASS=$( cut -d ' ' -f $DELIM_COUNT <<< "$_CLASS_DELIM" )
+                    local _DRIVER=$( cut -d ' ' -f $DELIM_COUNT <<< "$_DRIVER_DELIM" )
+                    _HWID=$( cut -d ' ' -f $DELIM_COUNT <<< "$_HWID_DELIM" )
+                    local _NAME=$( cut -d ' ' -f $DELIM_COUNT <<< "$_NAME_DELIM" )
 
                     if [[ ! -z "$_HWID" ]] \
                         && IsDeviceFor_PCISTUB "$_CLASS"; then
@@ -647,7 +652,7 @@
                         _VGA_VFIOPCI_DRIVER_LIST+=( "$_DRIVER" )
                     fi
 
-                    (( _DELIM_COUNT++ ))
+                    (( DELIM_COUNT++ ))
                 done
             done
 
@@ -658,13 +663,13 @@
         {
             local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
-            for _KEY in ${!_PCI_ID_LIST[@]}; do
-                local _PCI_ID_DELIM=${_PCI_ID_LIST[$_KEY]}
-                local -i _DELIM_COUNT=1
-                local _PCI_ID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_PCI_ID_DELIM" )
+            for KEY in ${!_PCI_ID_LIST[@]}; do
+                local _PCI_ID_DELIM=${_PCI_ID_LIST[$KEY]}
+                local -i DELIM_COUNT=1
+                local _PCI_ID=$( cut -d ' ' -f $DELIM_COUNT <<< "$_PCI_ID_DELIM" )
 
                 while [[ ! -z "$_PCI_ID" ]]; do
-                    local _PCI_ID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_PCI_ID_DELIM" )
+                    local _PCI_ID=$( cut -d ' ' -f $DELIM_COUNT <<< "$_PCI_ID_DELIM" )
                     local _CLASS="$( lspci -ms $_PCI_ID | cut -d '"' -f 2 )"
                     local _DRIVER=$( lspci -ks $_PCI_ID | grep -i "driver" | cut -d " " -f 5 )
                     local _HWID=$( lspci -ns $_PCI_ID | cut -d " " -f 3 )
@@ -691,7 +696,7 @@
                         _VGA_VFIOPCI_DRIVER_LIST+=( "$_DRIVER" )
                     fi
 
-                    (( _DELIM_COUNT++ ))
+                    (( DELIM_COUNT++ ))
                 done
             done
 
@@ -702,13 +707,13 @@
         {
             local -a _PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
-            for _KEY in ${!_PCI_ID_LIST[@]}; do
-                local _PCI_ID_DELIM=${_PCI_ID_LIST[$_KEY]}
-                local -i _DELIM_COUNT=1
-                local _PCI_ID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_PCI_ID_DELIM" )
+            for KEY in ${!_PCI_ID_LIST[@]}; do
+                local _PCI_ID_DELIM=${_PCI_ID_LIST[$KEY]}
+                local -i DELIM_COUNT=1
+                local _PCI_ID=$( cut -d ' ' -f $DELIM_COUNT <<< "$_PCI_ID_DELIM" )
 
                 while [[ ! -z "$_PCI_ID" ]]; do
-                    local _PCI_ID=$( cut -d ' ' -f $_DELIM_COUNT <<< "$_PCI_ID_DELIM" )
+                    local _PCI_ID=$( cut -d ' ' -f $DELIM_COUNT <<< "$_PCI_ID_DELIM" )
                     local _CLASS="$( lspci -ms $_PCI_ID | cut -d '"' -f 2 )"
                     local _NAME="$( lspci -ms $_PCI_ID | cut -d '"' -f 6 )"
 
@@ -717,7 +722,7 @@
                         return 0
                     fi
 
-                    (( _DELIM_COUNT++ ))
+                    (( DELIM_COUNT++ ))
                 done
             done
 

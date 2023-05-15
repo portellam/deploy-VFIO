@@ -45,7 +45,7 @@
         # <summary> Local getters </summary>
             function GetRequiredLibraries
             {
-                local -a _ALMA_REQUIRED_LIBRARIES=(
+                local -a ALMA_REQUIRED_LIBRARIES=(
                     "qemu-kvm"
                     "virt-manager"
                     "virt-viewer"
@@ -66,7 +66,7 @@
                     "spice-protocol"
                     "spice-server-devel" )
 
-                local -a _ARCH_REQUIRED_LIBRARIES=(
+                local -a ARCH_REQUIRED_LIBRARIES=(
                     "qemu-base"
                     "virt-manager"
                     "virt-viewer"
@@ -86,7 +86,7 @@
                     "dmidecode"
                     "gcc" )
 
-                local -a _DEBIAN_REQUIRED_LIBRARIES=(
+                local -a DEBIAN_REQUIRED_LIBRARIES=(
                     "qemu-kvm"
                     "virt-manager"
                     "virt-viewer"
@@ -109,7 +109,7 @@
                     "libspice-protocol-dev"
                     "libspice-server-dev" )
 
-                local -a _FEDORA_REQUIRED_LIBRARIES=(
+                local -a FEDORA_REQUIRED_LIBRARIES=(
                     "qemu-kvm"
                     "virt-manager"
                     "virt-viewer"
@@ -136,18 +136,18 @@
             {
                 case "$_PACKAGE_MANAGER" in
                     "apt" )
-                        _REQUIRED_LIBRARIES=${_DEBIAN_REQUIRED_LIBRARIES[@]} ;;
+                        _REQUIRED_LIBRARIES=${DEBIAN_REQUIRED_LIBRARIES[@]} ;;
 
                     "dnf" | "yum" )
                         case "$_OPERATING_SYSTEM" in
                             *"alma"* )
-                                _REQUIRED_LIBRARIES=${_ALMA_REQUIRED_LIBRARIES[@]} ;;
+                                _REQUIRED_LIBRARIES=${ALMA_REQUIRED_LIBRARIES[@]} ;;
                             * )
-                                _REQUIRED_LIBRARIES=${_FEDORA_REQUIRED_LIBRARIES[@]} ;;
+                                _REQUIRED_LIBRARIES=${FEDORA_REQUIRED_LIBRARIES[@]} ;;
                         esac ;;
 
                     "pacman" )
-                        _REQUIRED_LIBRARIES=${_ARCH_REQUIRED_LIBRARIES[@]} ;;
+                        _REQUIRED_LIBRARIES=${ARCH_REQUIRED_LIBRARIES[@]} ;;
 
                     * )
                         return 1 ;;

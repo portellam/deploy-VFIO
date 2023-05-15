@@ -245,7 +245,7 @@
             {
                 while [[ ! -z "$1" ]]; do
                     shift
-                    (( _ARGS_COUNT++ ))
+                    (( ARGS_COUNT++ ))
                 done
 
                 return 0
@@ -260,13 +260,13 @@
 
                 while [[ "$1" =~ ^- ]] \
                     || [[ "$1" =~ ^-- ]]; do
-                    local -i _ARGS_COUNT=0
+                    local -i ARGS_COUNT=0
 
                     if ! GetThisOption "$@"; then
                         return 1
                     fi
 
-                    for _COUNT in $( seq 0 "$_ARGS_COUNT" ); do
+                    for _COUNT in $( seq 0 "$ARGS_COUNT" ); do
                         shift
                     done
                 done
