@@ -118,13 +118,13 @@
 
                 while [[ "$COUNT_DELIM" -gt 0 ]] \
                     && ! "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL"; do
-                    local _ARG=$( echo "$1" | cut -d ',' -f "$COUNT_DELIM" )
+                    local ARG=$( echo "$1" | cut -d ',' -f "$COUNT_DELIM" )
 
-                    if [[ ! -z "$_ARG" ]] \
+                    if [[ ! -z "$ARG" ]] \
                         && ( ! "$_DO_PARSE_DATABASE_FROM_FILE" \
                             || ( "$_DO_PARSE_DATABASE_FROM_FILE" \
-                            && [[ "$_ARG" != "$_DATABASE_FILE" ]] )); then
-                        case "$_ARG" in
+                            && [[ "$ARG" != "$_DATABASE_FILE" ]] )); then
+                        case "$ARG" in
                             "all" )
                                 _HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
                                 AddValidIOMMUGroupsParseList || return 1 ;;
@@ -136,7 +136,7 @@
 
                             * )
                                 _HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
-                                AddSomeIOMMUGroupsParseList "$_ARG" || return 1 ;;
+                                AddSomeIOMMUGroupsParseList "$ARG" || return 1 ;;
                         esac
                     fi
 

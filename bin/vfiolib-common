@@ -370,7 +370,7 @@
             fi
 
             local DO_REINSTALL=false
-            local _OPTION=""
+            local OPTION=""
 
             if [[ "$2" == true ]]; then
                 DO_REINSTALL=true
@@ -380,10 +380,10 @@
             case "$_PACKAGE_MANAGER" in
                 "apt" )
                     if "$DO_REINSTALL"; then
-                        _OPTION="--reinstall -o Dpkg::Options::=--force-confmiss"
+                        OPTION="--reinstall -o Dpkg::Options::=--force-confmiss"
                     fi
 
-                    apt update && apt full-upgrade -y && apt install -y "$_OPTION" "$1" || return 1 ;;
+                    apt update && apt full-upgrade -y && apt install -y "$OPTION" "$1" || return 1 ;;
 
                 "dnf" )
                     dnf upgrade && dnf install "$1" ;;
