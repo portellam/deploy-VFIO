@@ -4,6 +4,13 @@
 
 ### To Do:
 * Be certain of order of execution of source setter functions.
+    - How-to: "CTRL-SHIFT-F" > "local " + some combination of the following:
+        - "_"
+        - "-i _"
+        - "-a _"
+        - "-r _"
+        - "-ar _"
+        - "-ir _"
     - Run before end of each source file?
     - Add conditional (inside function) to prevent overwrite?
 * Naming convention, update all local vars (remove prefix underscore).
