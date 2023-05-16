@@ -19,28 +19,28 @@
 # Make sure you specify the right settings for your setup below or it won't work.
 # </remarks>
 
-_HOOK_NAME="ddcutil"
-_PREFIX_PROMPT="libvirt-qemu $_HOOK_NAME:"
-_OPERATION="$2"
-_SUBOPERATION="$3"
+HOOK_NAME="ddcutil"
+PREFIX_PROMPT="libvirt-qemu $HOOK_NAME:"
+OPERATION="$2"
+SUBOPERATION="$3"
 
 # <remarks> The display shown in `ddcutil detect` </remarks>
-_DOMAIN_DISPLAY="0"
+DOMAIN_DISPLAY="0"
 
 # <remarks> Video input values (without 0x, but with leading zeroes, if any. See `ddcutil capabilities`) </remarks>
-_DOMAIN_VIDEO_INPUT="12"
-_HOST_VIDEO_INPUT="0f"
-_VIDEO_INPUT=""
+DOMAIN_VIDEO_INPUT="12"
+HOST_VIDEO_INPUT="0f"
+VIDEO_INPUT=""
 
 function GetVideoInput
 {
-	case "$_OPERATION/$_SUBOPERATION" in
+	case "$OPERATION/$SUBOPERATION" in
 		"started/begin" )
-			_VIDEO_INPUT="$_DOMAIN_VIDEO_INPUT"
+			VIDEO_INPUT="$DOMAIN_VIDEO_INPUT"
 			return 0 ;;
 
 		"stopped/end" )
-			_VIDEO_INPUT="$_HOST_VIDEO_INPUT"
+			VIDEO_INPUT="$HOST_VIDEO_INPUT"
 			return 0 ;;
 	esac
 
@@ -49,12 +49,12 @@ function GetVideoInput
 
 function SetVideoOutput
 {
-    if [[ "$( ddcutil -d "$_DOMAIN_DISPLAY" getvcp 60 --terse | awk '{print $4}' )" == "x$_VIDEO_INPUT" ]]; then
+    if [[ "$( ddcutil -d "$DOMAIN_DISPLAY" getvcp 60 --terse | awk '{print $4}' )" == "x$VIDEO_INPUT" ]]; then
         return 0
     fi
 
-	if ! ddcutil -d "$_DOMAIN_DISPLAY" setvcp 60 "0x$_VIDEO_INPUT"; then
-        echo "$_PREFIX_PROMPT An error occured: Failed to switch video input."
+	if ! ddcutil -d "$DOMAIN_DISPLAY" setvcp 60 "0x$VIDEO_INPUT"; then
+        echo "$PREFIX_PROMPT An error occured: Failed to switch video input."
 		return 1
 	fi
 

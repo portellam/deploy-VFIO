@@ -8,5 +8,3 @@
 
 # <remarks> If a script exits with an error, exit Libvirt. </remarks>
 set -e
-
-# <remarks> Usage </remarks>

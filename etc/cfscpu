@@ -24,43 +24,43 @@
 # </remarks>
 
 # <remarks> Ranges from 20 (lowest priority) to -20 (highest priority). </remarks>
-_TARGET_NICE="-1"
-_DOMAIN_NAME="$1"
-_HOOK_NAME="cfscpu"
-_PREFIX_PROMPT="libvirt-qemu $_HOOK_NAME:"
+TARGET_NICE="-1"
+DOMAIN_NAME="$1"
+HOOK_NAME="cfscpu"
+PREFIX_PROMPT="libvirt-qemu $HOOK_NAME:"
 
-function Get_vCPU_Path
+function GetVCPUPath
 {
-    if ls /sys/fs/cgroup/cpu/machine.slice/machine-qemu*$_DOMAIN_NAME.scope/libvirt/vcpu* 1> /dev/null 2>&1; then
-        echo "$_PREFIX_PROMPT Found vCPU paths in Libvirt subdirectory." > /dev/kmsg
-        _VCPU_PATH="/sys/fs/cgroup/cpu/machine.slice/machine-qemu*$_DOMAIN_NAME.scope/libvirt/vcpu*"
+    if ls /sys/fs/cgroup/cpu/machine.slice/machine-qemu*$DOMAIN_NAME.scope/libvirt/vcpu* 1> /dev/null 2>&1; then
+        echo "$PREFIX_PROMPT Found vCPU paths in Libvirt subdirectory." > /dev/kmsg
+        VCPU_PATH="/sys/fs/cgroup/cpu/machine.slice/machine-qemu*$DOMAIN_NAME.scope/libvirt/vcpu*"
     else
-        echo "$_PREFIX_PROMPT Failed to find vCPU paths in Libvirt subdirectory. Found vCPU directory." > /dev/kmsg
-        _VCPU_PATH="/sys/fs/cgroup/cpu/machine.slice/machine-qemu*$_DOMAIN_NAME.scope/vcpu*"
+        echo "$PREFIX_PROMPT Failed to find vCPU paths in Libvirt subdirectory. Found vCPU directory." > /dev/kmsg
+        VCPU_PATH="/sys/fs/cgroup/cpu/machine.slice/machine-qemu*$DOMAIN_NAME.scope/vcpu*"
     fi
 
     return 0
 }
 
-function Prioritize_vCPU_ForDomain
+function PrioritizeVCPUForDomain
 {
     if ! SetNiceLevelForDomain; then
-        echo "$_PREFIX_PROMPT Failed to prioritize vCPU threads of Libvirt domain '$_DOMAIN_NAME'" > /dev/kmsg
+        echo "$PREFIX_PROMPT Failed to prioritize vCPU threads of Libvirt domain '$DOMAIN_NAME'" > /dev/kmsg
         return 1
     fi
 
-    echo "$_PREFIX_PROMPT Prioritized vCPU threads of Libvirt domain '$_DOMAIN_NAME'" > /dev/kmsg
+    echo "$PREFIX_PROMPT Prioritized vCPU threads of Libvirt domain '$DOMAIN_NAME'" > /dev/kmsg
     return 0
 }
 
 function SetNiceLevelForDomain
 {
-    for _VCPU_GROUP in $_VCPU_PATH; do
-        echo "$_PREFIX_PROMPT Setting nice level of $_TARGET_NICE to vCPU group '$( basename $_VCPU_GROUP ).'" > /dev/kmsg
+    for VCPU_GROUP in $VCPU_PATH; do
+        echo "$PREFIX_PROMPT Setting nice level of $TARGET_NICE to vCPU group '$( basename $VCPU_GROUP ).'" > /dev/kmsg
 
-        for _PID in $( cat $_VCPU_GROUP/tasks ); do
-            if ! renice -n "$_TARGET_NICE" -p "$_PID" 2> /dev/null; then
-                echo "$_PREFIX_PROMPT An error occured: Failed to set nice level for PID '$_PID'"
+        for PID in $( cat $VCPU_GROUP/tasks ); do
+            if ! renice -n "$TARGET_NICE" -p "$PID" 2> /dev/null; then
+                echo "$PREFIX_PROMPT An error occured: Failed to set nice level for PID '$PID'"
                 return 1
             fi
         done
@@ -69,7 +69,7 @@ function SetNiceLevelForDomain
     return 0
 }
 
-if [[ ! -z "$_DOMAIN" ]]; then
-    Get_vCPU_Path
-    Prioritize_vCPU_ForDomain
+if [[ ! -z "$DOMAIN_NAME" ]]; then
+    GetVCPUPath
+    PrioritizeVCPUForDomain
 fi

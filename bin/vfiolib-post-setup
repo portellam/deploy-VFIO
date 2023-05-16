@@ -427,10 +427,12 @@
 					fi
 				fi
 
-				if ! sudo echo -e "" >> "$_LIBVIRT_HOOK_DEST_PATH" \
+				if ! sudo echo -e "\n\n# <sources>" >> "$_LIBVIRT_HOOK_DEST_PATH" \
+                    || ! sudo echo -e "" >> "$_LIBVIRT_HOOK_DEST_PATH" \
 					|| ( ! "$_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU" && ! sudo echo -e "source \"$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH" ) \
 					|| ! sudo echo -e "source \"$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH" \
-					|| ! sudo echo -e "source \"$_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH"; then
+					|| ! sudo echo -e "source \"$_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH" \
+                    || ! sudo echo -e "# </sources>" >> "$_LIBVIRT_HOOK_DEST_PATH"; then
 					echo -e "$_PREFIX_ERROR Failed to append filenames as sources to Libvirt hooks file."
 					return 1
 				fi

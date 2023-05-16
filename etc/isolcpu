@@ -30,9 +30,9 @@ _HOOK_NAME="isolcpu"
 _PREFIX_PROMPT="libvirt-qemu $_HOOK_NAME:"
 _OPERATION="$2"
 _GUEST_THREADS_DELIM=""
-_GUEST_THREADS_HEX=""
+GUEST_THREADS_HEX=""
 _HOST_THREADS_DELIM=""
-_HOST_THREADS_HEX=""
+HOST_THREADS_HEX=""
 
 function AreValuesNotEmpty
 {
@@ -49,8 +49,8 @@ function AreValuesNotEmpty
 
 function AreHexMasksNotEmpty
 {
-    if [[ -z "$_GUEST_THREADS_HEX" ]] \
-        || [[ -z "$_HOST_THREADS_HEX" ]]; then
+    if [[ -z "$GUEST_THREADS_HEX" ]] \
+        || [[ -z "$HOST_THREADS_HEX" ]]; then
         echo "$_PREFIX_PROMPT An error occured: Failed to get CPU hexadecimal masks."
         return 1
     fi
@@ -175,16 +175,16 @@ function GetHexMasksForHostAndLibvirt
     done
 
     # <remarks> Convert hexadecimal mask into hexadecimal. </remarks>
-    _HOST_THREADS_HEX=$( printf '%x\n' "$HOST_THREADS_HEX_MASK" )
+    HOST_THREADS_HEX=$( printf '%x\n' "$HOST_THREADS_HEX_MASK" )
     local -i TOTAL_THREADS_HEX_MASK=$(( ( 2 ** ${TOTAL_THREADS_COUNT} ) - 1 ))
-    _GUEST_THREADS_HEX=$( printf '%x\n' "$TOTAL_THREADS_HEX_MASK" )
+    GUEST_THREADS_HEX=$( printf '%x\n' "$TOTAL_THREADS_HEX_MASK" )
     AreHexMasksNotEmpty
     return "$?"
 }
 
 function ReleaseHexMask
 {
-    if ! echo "$_HOST_THREADS_HEX" > /sys/bus/workqueue/devices/writeback/cpumask \
+    if ! echo "$HOST_THREADS_HEX" > /sys/bus/workqueue/devices/writeback/cpumask \
         || ! echo 0 > /sys/bus/workqueue/devices/writeback/numa; then
         echo "$_PREFIX_PROMPT An error occured: Failed to release CPU mask to Host."
         return 1
@@ -208,7 +208,7 @@ function ReleaseThreadSets
 
 function ReserveHexMask
 {
-    if ! echo "$_GUEST_THREADS_HEX" > /sys/bus/workqueue/devices/writeback/cpumask \
+    if ! echo "$GUEST_THREADS_HEX" > /sys/bus/workqueue/devices/writeback/cpumask \
         || ! echo 1 > /sys/bus/workqueue/devices/writeback/numa; then
         echo "An error occured: Failed to reserve CPU mask to Libvirt domain(s)."
         return 1
