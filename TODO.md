@@ -3,6 +3,7 @@
     - Anything mentioned in **To Do** is not enabled/available.
 
 ### To Do:
+* Ask question to do each function, then execute after asking all questions (pre and post-setup).
 * Be certain of order of execution of source setter functions.
     - How-to: "CTRL-SHIFT-F" > "local " + some combination of the following:
         - "_"
@@ -18,7 +19,6 @@
     -This way, the script can re-execute itself?
 
 * Trim fat, remove unnecessary repetitions and code.
-* Ask question to do each function, then execute after asking all questions (pre and post-setup).
 * Pre-setup:
     - Evdev, save output to logfile, for use in VM XML.
 * VFIO setup:
