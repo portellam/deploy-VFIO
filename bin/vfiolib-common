@@ -61,7 +61,7 @@
 
             function GetLinuxDistro
             {
-                # <summary> Check if current Operating System matches Package Manager, and Check if PM is installed. </summary>
+                # <summary> Check if current Operating System matches Package Manager (PM), and Check if PM is installed. </summary>
                 function GetPackageManagerByOS
                 {
                     if [[ "$OS_WITH_APT" =~ .*${_OPERATING_SYSTEM}.* ]]; then
