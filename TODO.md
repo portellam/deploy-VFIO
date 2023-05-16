@@ -3,6 +3,7 @@
     - Anything mentioned in **To Do** is not enabled/available.
 
 ### To Do:
+* Double-check all vars' names.
 * Ask question to do each function, then execute after asking all questions (pre and post-setup).
 * Be certain of order of execution of source setter functions.
     - How-to: "CTRL-SHIFT-F" > "local " + some combination of the following:
