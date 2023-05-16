@@ -412,7 +412,7 @@
         {
             IFS=$'\n'
 
-            declare -a _OUTPUT=(
+            local -a _OUTPUT=(
                 "Usage:\tbash deploy-vfio [OPTION] [ARGUMENTS]"
                 "Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization and hardware passthrough.\n"
                 "  -h, --help\t\t\tPrint this help and exit."

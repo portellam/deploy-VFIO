@@ -92,8 +92,9 @@
         function SetParameters
         {
             declare -g _DEFAULT_MENU_ENTRY_TITLE="0"
-            declare -g _PREFERREDMENU_ENTRY_TITLE=""
-            declare -ga MENU_ENTRY_TITLE_LIST=( "$_PREFERREDMENU_ENTRY_TITLE" )
+            declare -g _PREFERRED_MENU_ENTRY_TITLE=""
+            declare -ag _CUSTOM_GRUB_FILE_CONTENTS=( )
+            declare -ag _MENU_ENTRY_TITLE_LIST=( "$_PREFERRED_MENU_ENTRY_TITLE" )
 
             # <remarks> Flags </remarks>
             _FLAG_ADD_EARLY_LOAD_MODULE_ARGS=true
@@ -200,7 +201,7 @@
                     return 0
                 fi
 
-                local -ar INDEX_LIST=( "${!MENU_ENTRY_TITLE_LIST[@]}" )
+                local -ar INDEX_LIST=( "${!_MENU_ENTRY_TITLE_LIST[@]}" )
                 local -i LAST_INDEX="${INDEX_LIST[-1]}"
 
                 for COUNT in $( seq 0 2 ); do
@@ -218,7 +219,7 @@
                     if [[ "$ANSWER" -gt 0 ]] \
                         && [[ "$ANSWER" -le "$LAST_INDEX" ]]; then
                         _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=false
-                        _PREFERREDMENU_ENTRY_TITLE="${MENU_ENTRY_TITLE_LIST[$ANSWER]}"
+                        _PREFERRED_MENU_ENTRY_TITLE="${_MENU_ENTRY_TITLE_LIST[$ANSWER]}"
                         return 0
                     fi
 
@@ -259,21 +260,21 @@
         # <summary> Multiboot setup getters </summary>
             function GetPreferredGRUBMenuEntryForMultibootSetup
             {
-                if [[ ! -z "$_PREFERREDMENU_ENTRY_TITLE" ]]; then
+                if [[ ! -z "$_PREFERRED_MENU_ENTRY_TITLE" ]]; then
                     return 0
                 fi
 
                 if "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_FIRST" \
                     && [[ "$1" -eq 1 ]]; then
-                    _PREFERREDMENU_ENTRY_TITLE="$2"
+                    _PREFERRED_MENU_ENTRY_TITLE="$2"
 
                 elif "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE" \
                     && [[ "$1" -eq "$_MULTIBOOT_PREFERRED_IOMMU_GROUP_ID" ]]; then
-                    _PREFERREDMENU_ENTRY_TITLE="$2"
+                    _PREFERRED_MENU_ENTRY_TITLE="$2"
 
                 elif "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_LAST" \
                     && [[ "$1" -eq "${#_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[-1]}" ]]; then
-                    _PREFERREDMENU_ENTRY_TITLE="$2"
+                    _PREFERRED_MENU_ENTRY_TITLE="$2"
                 fi
 
                 return 0
@@ -285,10 +286,10 @@
                 for _KERNEL in ${KERNELS_LIST[@]}; do
                     # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
                     local MENU_ENTRY_TITLE="$SYSTEM_DISTRO, with $SYSTEM_OS $_KERNEL (VFIO, w/o IOMMU '$1' w/ '$THIS_IOMMU_GROUP_VGA_NAME')"
-                    MENU_ENTRY_TITLE_LIST+=( "$MENU_ENTRY_TITLE" )
+                    _MENU_ENTRY_TITLE_LIST+=( "$MENU_ENTRY_TITLE" )
                     GetPreferredGRUBMenuEntryForMultibootSetup "$1" "$MENU_ENTRY_TITLE"
 
-                    _FILE_CONTENTS_LIST+=(
+                    _CUSTOM_GRUB_FILE_CONTENTS+=(
                         "menuentry \"$MENU_ENTRY_TITLE\"{"
                         # "\tload_video"
                         # "insmod gzio"
@@ -312,11 +313,11 @@
         # <summary> Presentation </summary>
             function PrintListOfGRUBMenuEntry
             {
-                for KEY in "${!MENU_ENTRY_TITLE_LIST[@]}"; do
+                for KEY in "${!_MENU_ENTRY_TITLE_LIST[@]}"; do
                     echo -en "$KEY:\t"
 
                     if [[ "$KEY" -gt 0 ]]; then
-                        echo -e "\"${MENU_ENTRY_TITLE_LIST[$KEY]}\""
+                        echo -e "\"${_MENU_ENTRY_TITLE_LIST[$KEY]}\""
                     else
                         echo -e "Default (no VFIO setup)"
                     fi
@@ -458,7 +459,7 @@
                 if "$_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT"; then
                     local -r LINE_GRUB_DEFAULT="$LINE_TO_MATCH$_DEFAULT_MENU_ENTRY_TITLE"
                 else
-                    local -r LINE_GRUB_DEFAULT="$LINE_TO_MATCH\"$_PREFERREDMENU_ENTRY_TITLE\""
+                    local -r LINE_GRUB_DEFAULT="$LINE_TO_MATCH\"$_PREFERRED_MENU_ENTRY_TITLE\""
                 fi
 
                 if [[ -d $( dirname "$_CUSTOM_GRUB_DEST_PATH" ) ]] \
@@ -468,7 +469,7 @@
                 fi
 
                 if ! sed -i '/'"$LINE_TO_MATCH"'/c\'"$LINE_GRUB_DEFAULT" "$_GRUB_DEST_PATH_1" \
-                    || ! echo -e "\n${_FILE_CONTENTS_LIST[*]}" >> "$_CUSTOM_GRUB_DEST_PATH" ; then
+                    || ! echo -e "\n${_CUSTOM_GRUB_FILE_CONTENTS[*]}" >> "$_CUSTOM_GRUB_DEST_PATH" ; then
                     echo -e "$_PREFIX_ERROR Failed to overwrite target lines of files."
                     return 1
                 fi
@@ -534,7 +535,7 @@
                 GetListsForMultibootSetup
             done
 
-            if IsEnum "_FILE_CONTENTS_LIST"; then
+            if IsEnum "_CUSTOM_GRUB_FILE_CONTENTS"; then
                 echo -e "$_PREFIX_ERROR Multiboot setup output is empty."
                 return 1
             fi
@@ -574,18 +575,18 @@
 
         function GetListsForIOMMUGroupWithByDevice
         {
-            local -a PCI_ID_LIST="${PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
+            local -a DEVICE_LIST="${DEVICE_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
-            for KEY in ${!PCI_ID_LIST[@]}; do
-                local PCI_ID_DELIM=${PCI_ID_LIST[$KEY]}
+            for KEY in ${!DEVICE_LIST[@]}; do
+                local DEVICE_DELIM=${DEVICE_LIST[$KEY]}
                 local -i DELIM_COUNT=1
-                local PCI_ID=$( cut -d ' ' -f $DELIM_COUNT <<< "$PCI_ID_DELIM" )
+                local DEVICE=$( cut -d ' ' -f $DELIM_COUNT <<< "$DEVICE_DELIM" )
 
-                while [[ ! -z "$PCI_ID" ]]; do
-                    local PCI_ID=$( cut -d ' ' -f $DELIM_COUNT <<< "$PCI_ID_DELIM" )
-                    local CLASS="$( lspci -ms $PCI_ID | cut -d '"' -f 2 )"
-                    local DRIVER=$( lspci -ks $PCI_ID | grep -i "driver" | cut -d " " -f 5 )
-                    local HWID=$( lspci -ns $PCI_ID | cut -d " " -f 3 )
+                while [[ ! -z "$DEVICE" ]]; do
+                    local DEVICE=$( cut -d ' ' -f $DELIM_COUNT <<< "$DEVICE_DELIM" )
+                    local CLASS="$( lspci -ms $DEVICE | cut -d '"' -f 2 )"
+                    local DRIVER=$( lspci -ks $DEVICE | grep -i "driver" | cut -d " " -f 5 )
+                    local HWID=$( lspci -ns $DEVICE | cut -d " " -f 3 )
 
                     if [[ ! -z "$HWID" ]] \
                         && IsDeviceFor_PCISTUB "$CLASS"; then
@@ -659,19 +660,19 @@
 
         function GetListsForIOMMUGroupWithVGAByDevice
         {
-            local -a PCI_ID_LIST="${PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
+            local -a DEVICE_LIST="${DEVICE_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
-            for KEY in ${!PCI_ID_LIST[@]}; do
-                local PCI_ID_DELIM=${PCI_ID_LIST[$KEY]}
+            for KEY in ${!DEVICE_LIST[@]}; do
+                local DEVICE_DELIM=${DEVICE_LIST[$KEY]}
                 local -i DELIM_COUNT=1
-                local PCI_ID=$( cut -d ' ' -f $DELIM_COUNT <<< "$PCI_ID_DELIM" )
+                local DEVICE=$( cut -d ' ' -f $DELIM_COUNT <<< "$DEVICE_DELIM" )
 
-                while [[ ! -z "$PCI_ID" ]]; do
-                    local PCI_ID=$( cut -d ' ' -f $DELIM_COUNT <<< "$PCI_ID_DELIM" )
-                    local CLASS="$( lspci -ms $PCI_ID | cut -d '"' -f 2 )"
-                    local DRIVER=$( lspci -ks $PCI_ID | grep -i "driver" | cut -d " " -f 5 )
-                    local HWID=$( lspci -ns $PCI_ID | cut -d " " -f 3 )
-                    local NAME="$( lspci -ms $PCI_ID | cut -d '"' -f 6 )"
+                while [[ ! -z "$DEVICE" ]]; do
+                    local DEVICE=$( cut -d ' ' -f $DELIM_COUNT <<< "$DEVICE_DELIM" )
+                    local CLASS="$( lspci -ms $DEVICE | cut -d '"' -f 2 )"
+                    local DRIVER=$( lspci -ks $DEVICE | grep -i "driver" | cut -d " " -f 5 )
+                    local HWID=$( lspci -ns $DEVICE | cut -d " " -f 3 )
+                    local NAME="$( lspci -ms $DEVICE | cut -d '"' -f 6 )"
 
                     if [[ ! -z "$HWID" ]] \
                         && IsDeviceFor_PCISTUB "$CLASS"; then
@@ -703,17 +704,17 @@
 
         function GetNameForIOMMUGroupWithVGA
         {
-            local -a PCI_ID_LIST="${_PCI_ID_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
+            local -a DEVICE_LIST="${DEVICE_BY_VALID_IOMMU_GROUP_ID_LIST[$1]}"
 
-            for KEY in ${!PCI_ID_LIST[@]}; do
-                local PCI_ID_DELIM=${PCI_ID_LIST[$KEY]}
+            for KEY in ${!DEVICE_LIST[@]}; do
+                local DEVICE_DELIM=${DEVICE_LIST[$KEY]}
                 local -i DELIM_COUNT=1
-                local PCI_ID=$( cut -d ' ' -f $DELIM_COUNT <<< "$PCI_ID_DELIM" )
+                local DEVICE=$( cut -d ' ' -f $DELIM_COUNT <<< "$DEVICE_DELIM" )
 
-                while [[ ! -z "$PCI_ID" ]]; do
-                    local PCI_ID=$( cut -d ' ' -f $DELIM_COUNT <<< "$PCI_ID_DELIM" )
-                    local CLASS="$( lspci -ms $PCI_ID | cut -d '"' -f 2 )"
-                    local NAME="$( lspci -ms $PCI_ID | cut -d '"' -f 6 )"
+                while [[ ! -z "$DEVICE" ]]; do
+                    local DEVICE=$( cut -d ' ' -f $DELIM_COUNT <<< "$DEVICE_DELIM" )
+                    local CLASS="$( lspci -ms $DEVICE | cut -d '"' -f 2 )"
+                    local NAME="$( lspci -ms $DEVICE | cut -d '"' -f 6 )"
 
                     if IsDevice_VGA "$CLASS"; then
                         THIS_IOMMU_GROUP_VGA_NAME="$NAME"
@@ -775,8 +776,8 @@
             declare -g _VGA_VFIOPCIHWID_DELIM=""
 
             if ! "$_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB"; then
-                declare -ga _VFIOPCI_DRIVER_LIST=( )
-                declare -ga _VGA_VFIOPCI_DRIVER_LIST=( )
+                declare -ag _VFIOPCI_DRIVER_LIST=( )
+                declare -ag _VGA_VFIOPCI_DRIVER_LIST=( )
             fi
 
             for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_FOR_VFIO[@]}; do

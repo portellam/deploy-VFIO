@@ -19,7 +19,7 @@
                 SetUser &> /dev/null
 
                 declare -g _IS_SYSTEM_SUPPORTED=false
-                declare -ga _REQUIRED_LIBRARIES=( )
+                declare -ag _REQUIRED_LIBRARIES=( )
             }
 
         function IsSystemSupported

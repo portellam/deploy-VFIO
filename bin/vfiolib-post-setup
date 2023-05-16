@@ -485,7 +485,7 @@
 			{
 				IFS=$'\n'
 
-				declare -a _OUTPUT=(
+				local -a _OUTPUT=(
 					"ARGUMENTS:"
 					"  first  [vendor]\t\tFind the first valid VGA device."
 					"  last   [vendor]\t\tFind the last valid VGA device."
