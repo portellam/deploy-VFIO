@@ -7,7 +7,7 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-DOMAIN_NAME="$1"
+DOMAIN_NAME="${1}"
 HOOKS_BASE_DIR="/etc/libvirt/hooks"
 DOMAIN_NAME_BASE_DIR="$HOOKS_BASE_DIR/qemu.d/$DOMAIN_NAME"
 BEGIN_DIR="$DOMAIN_NAME_BASE_DIR/started/begin/"
@@ -41,19 +41,19 @@ function GetHooks
 
 function SetHooksForDomain
 {
-    if [[ -z "$1" ]]; then
+    if [[ -z "${1}" ]]; then
         return 0
     fi
 
-    if ! ln -s "$BEGIN_DIR/$1" "$HOOKS_BASE_DIR/$1" &> /dev/null \
-        || ! ln -s "$END_DIR/$1" "$HOOKS_BASE_DIR/$1" &> /dev/null; then
-        echo -e "An error occured: Failed to set symlinks for hook '$1'."
+    if ! ln -s "$BEGIN_DIR/${1}" "$HOOKS_BASE_DIR/${1}" &> /dev/null \
+        || ! ln -s "$END_DIR/${1}" "$HOOKS_BASE_DIR/${1}" &> /dev/null; then
+        echo -e "An error occured: Failed to set symlinks for hook '${1}'."
         return 1
     fi
 
-    if ! chmod +x "$BEGIN_DIR/$1" &> /dev/null \
-        || ! chmod +x "$END_DIR/$1" &> /dev/null; then
-        echo -e "An error occured: Failed to set file permissions for hook '$1'."
+    if ! chmod +x "$BEGIN_DIR/${1}" &> /dev/null \
+        || ! chmod +x "$END_DIR/${1}" &> /dev/null; then
+        echo -e "An error occured: Failed to set file permissions for hook '${1}'."
         return 1
     fi
 

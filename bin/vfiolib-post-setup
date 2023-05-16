@@ -19,7 +19,7 @@
 		{
 			function Main
 			{
-				while [[ "$?" -ne 1 ]]; do
+				while [[ "${?}" -ne 1 ]]; do
 					if "$_ASK_TO_EXECUTE_POST_SETUPS"; then
 						LibvirtHooks
 						GuestAudioLoopback
@@ -47,14 +47,14 @@
 					break
 				done
 
-				return "$?"
+				return "${?}"
 			}
 
 			local OUTPUT="Executing post-setup...\t"
-			PrintSuffixWait "$OUTPUT"
+			PrintSuffixWait "${OUTPUT}"
 			Main
-			PrintSuffixPassOrFail "$OUTPUT"
-			return "$?"
+			PrintSuffixPassOrFail "${OUTPUT}"
+			return "${?}"
 		}
 
         # <summary> Global setters </summary>
@@ -85,17 +85,17 @@
                     local -r SCRIPT_NAME="install.sh"
 
                     if ! cd "$_GIT_PATH$FULL_REPO"; then
-                        echo -e "$_PREFIX_ERROR Failed to find build directory."
+                        echo -e "${_PREFIX_ERROR} Failed to find build directory."
                         return 1
                     fi
 
                     if [[ ! -e "$SCRIPT_NAME" ]]; then
-                        echo -e "$_PREFIX_ERROR Failed to find script '$SCRIPT_NAME'."
+                        echo -e "${_PREFIX_ERROR} Failed to find script '$SCRIPT_NAME'."
                         return 1
                     fi
 
                     if ! echo "i" | sudo bash "$SCRIPT_NAME" &> /dev/null; then
-                        echo -e "$_PREFIX_ERROR Failed to execute script '$SCRIPT_NAME'."
+                        echo -e "${_PREFIX_ERROR} Failed to execute script '$SCRIPT_NAME'."
                         return 1
                     fi
 
@@ -106,13 +106,13 @@
                 {
                     function AskToContinue
                     {
-                        local -n REFERENCE="$1"
+                        local -n REFERENCE="${1}"
 
                         for COUNT in $( seq 0 2 ); do
                             read -r -p "Set fraction of total memory for zram-swap to use (to calculate default, enter 'default'): " ANSWER
 
-                            if GetZRAMSwapSize "$ANSWER"; then
-                                REFERENCE="$ANSWER"
+                            if GetZRAMSwapSize "${ANSWER}"; then
+                                REFERENCE="${ANSWER}"
                                 return 0
                             fi
                         done
@@ -126,7 +126,7 @@
 
                     if ! "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
                         && ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
-                        AskToContinue "$FRACTION" || return "$?"
+                        AskToContinue "$FRACTION" || return "${?}"
                     fi
 
                     if "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
@@ -141,14 +141,14 @@
 
                         # <remarks> Is fraction positive non-zero and not equal to one. </remarks>
                         if [[ "$DENOMINATOR" -le 0 ]]; then
-                            echo -e "$_PREFIX_ERROR Denominator is negative or zero."
+                            echo -e "${_PREFIX_ERROR} Denominator is negative or zero."
                         fi
 
                         FRACTION="1/$DENOMINATOR"
                     fi
 
-                    if ! sed -i '/'$LINE_TO_MATCH'"*"/c\'$LINE_TO_MATCH'"'$FRACTION'"' "$FILE"; then
-                        echo -e "$_PREFIX_ERROR Failed to write output to zram-swap file."
+                    if ! sed -i '/'${LINE_TO_MATCH}'"*"/c\'${LINE_TO_MATCH}'"'$FRACTION'"' "${FILE}"; then
+                        echo -e "${_PREFIX_ERROR} Failed to write output to zram-swap file."
                         return 1
                     fi
 
@@ -162,22 +162,22 @@
 
                     if sudo swapon -v | grep zram &> /dev/null \
                         && ! sudo swapoff /dev/zram* &> /dev/null; then
-                        echo -e "$_PREFIX_ERROR Failed to disable zram-swap device(s)."
+                        echo -e "${_PREFIX_ERROR} Failed to disable zram-swap device(s)."
                         return 1
                     fi
 
                     if ! sudo systemctl daemon-reload &> /dev/null; then
-                        echo -e "$_PREFIX_ERROR Failed to update systemd."
+                        echo -e "${_PREFIX_ERROR} Failed to update systemd."
                         return 1
                     fi
 
                     if ! sudo systemctl restart zram-swap &> /dev/null; then
-                        echo -e "$_PREFIX_ERROR Failed to restart zram-swap service."
+                        echo -e "${_PREFIX_ERROR} Failed to restart zram-swap service."
                         return 1
                     fi
 
                     if ! sudo swapon -v | grep zram &> /dev/null; then
-                        echo -e "$_PREFIX_ERROR Failed to enable zram-swap device."
+                        echo -e "${_PREFIX_ERROR} Failed to enable zram-swap device."
                         return 1
                     fi
 
@@ -217,28 +217,28 @@
             {
                 IsHostMemorySufficientForZRAMSwap || return 1
 
-                case "$1" in
+                case "${1}" in
                     *"/"* )
-                        local -i NUMERATOR=$( echo $1 | cut -d '/' -f1 )
-                        local -i DENOMINATOR=$( echo $1 | cut -d '/' -f2 ) ;;
+                        local -i NUMERATOR=$( echo ${1} | cut -d '/' -f1 )
+                        local -i DENOMINATOR=$( echo ${1} | cut -d '/' -f2 ) ;;
 
                     "default" )
                         _HAS_ARG_ZRAM_SWAP_DEFAULTS=true
                         return 0 ;;
 
                     * )
-                        echo -e "$_PREFIX_ERROR Not a fraction."
+                        echo -e "${_PREFIX_ERROR} Not a fraction."
                         return 1 ;;
                 esac
 
                 if ! [[ "$NUMERATOR" =~ ^[0-9]+$ ]] \
                     || ! [[ "$DENOMINATOR" =~ ^[0-9]+$ ]]; then
-                    echo -e "$_PREFIX_ERROR Values are not numbers."
+                    echo -e "${_PREFIX_ERROR} Values are not numbers."
                     return 1
                 fi
 
                 if [[ "$NUMERATOR" -lt "$DENOMINATOR" ]] || [[ "$DENOMINATOR" -gt 1 ]]; then
-                    declare -g _ARGS_FOR_ZRAM_SWAP_FRACTION="$1"
+                    declare -g _ARGS_FOR_ZRAM_SWAP_FRACTION="${1}"
                     _HAS_ARG_ZRAM_SWAP_SET_FRACTION=true
                     return 0
 
@@ -246,7 +246,7 @@
                     return 1
 
                 else
-                    echo -e "$_PREFIX_ERROR Invalid fraction."
+                    echo -e "${_PREFIX_ERROR} Invalid fraction."
                 fi
 
                 return 1
@@ -259,7 +259,7 @@
                 fi
 
                 if ! GetFreeMemory; then
-                    echo -e "$_PREFIX_ERROR Insufficient Host memory for zram-swap."
+                    echo -e "${_PREFIX_ERROR} Insufficient Host memory for zram-swap."
                     return 1
                 fi
 
@@ -323,7 +323,7 @@
 				fi
 
 				IsInstalledPackage "$DEPENDENCIES" &> /dev/null || InstallPackage "$DEPENDENCIES" &> /dev/null
-				return "$?"
+				return "${?}"
 			}
 
 			Main
@@ -340,27 +340,27 @@
 			function Main
 			{
 				if ! command -v "pulseaudio" &> /dev/null; then
-					echo -e "$_PREFIX_ERROR Required audio backend 'PulseAudio' is missing."
+					echo -e "${_PREFIX_ERROR} Required audio backend 'PulseAudio' is missing."
 					return 1
 				fi
 
 				if ! sudo cp "$_AUDIO_LOOPBACK_SRC_PATH" "$_AUDIO_LOOPBACK_DEST_PATH"; then
-					echo -e "$_PREFIX_ERROR Failed to copy file."
+					echo -e "${_PREFIX_ERROR} Failed to copy file."
 					return 1
 				fi
 
 				if ! sudo systemctl daemon-reload &> /dev/null; then
-					echo -e "$_PREFIX_ERROR Failed to update systemd with new daemon/service."
+					echo -e "${_PREFIX_ERROR} Failed to update systemd with new daemon/service."
 					return 1
 				fi
 
 				if ! sudo systemctl start "$_AUDIO_LOOPBACK_FILENAME"; then
-					echo -e "$_PREFIX_ERROR Failed to start audio loopback service."
+					echo -e "${_PREFIX_ERROR} Failed to start audio loopback service."
 					return 1
 				fi
 
 				if ! sudo systemctl enable "$_AUDIO_LOOPBACK_FILENAME"; then
-					echo -e "$_PREFIX_ERROR Failed to enable audio loopback service."
+					echo -e "${_PREFIX_ERROR} Failed to enable audio loopback service."
 					return 1
 				fi
 
@@ -401,7 +401,7 @@
 					|| ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH" &> /dev/null \
 					|| ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH" "$_LIBVIRT_HOOK_NOSLEEP_SERVICE_DEST_PATH" &> /dev/null \
 					|| ! sudo cp "$_LIBVIRT_HOOK_UPDATE_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH" &> /dev/null; then
-					echo -e "$_PREFIX_ERROR Failed to copy file(s)."
+					echo -e "${_PREFIX_ERROR} Failed to copy file(s)."
 					return 1
 				fi
 
@@ -411,18 +411,18 @@
 					|| ! sudo chmod +x "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null \
 					|| ! sudo chmod +x "$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH" &> /dev/null \
 					|| ! sudo chmod +x "$_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH" &> /dev/null; then
-					echo -e "$_PREFIX_ERROR Failed to set file permissions."
+					echo -e "${_PREFIX_ERROR} Failed to set file permissions."
 					return 1
 				fi
 
 				if ! "$_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU"; then
 					if ! sudo cp "$_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null; then
-						echo -e "$_PREFIX_ERROR Failed to copy file(s)."
+						echo -e "${_PREFIX_ERROR} Failed to copy file(s)."
 						return 1
 					fi
 
 					if ! sudo chmod +x "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null; then
-						echo -e "$_PREFIX_ERROR Failed to set file permissions."
+						echo -e "${_PREFIX_ERROR} Failed to set file permissions."
 						return 1
 					fi
 				fi
@@ -433,13 +433,13 @@
 					|| ! sudo echo -e "source \"$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH" \
 					|| ! sudo echo -e "source \"$_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH" \
                     || ! sudo echo -e "# </sources>" >> "$_LIBVIRT_HOOK_DEST_PATH"; then
-					echo -e "$_PREFIX_ERROR Failed to append filenames as sources to Libvirt hooks file."
+					echo -e "${_PREFIX_ERROR} Failed to append filenames as sources to Libvirt hooks file."
 					return 1
 				fi
 
 				if ! sudo systemctl daemon-reload &> /dev/null \
 					|| ! sudo systemctl restart libvirtd &> /dev/null; then
-					echo -e "$_PREFIX_ERROR Failed to update systemd with new daemon/service."
+					echo -e "${_PREFIX_ERROR} Failed to update systemd with new daemon/service."
 					return 1
 				fi
 
@@ -505,17 +505,17 @@
 				local -r SCRIPT_NAME="installer.bash"
 
 				if ! cd "$_GIT_PATH$FULL_REPO"; then
-					echo -e "$_PREFIX_ERROR Failed to find build directory."
+					echo -e "${_PREFIX_ERROR} Failed to find build directory."
 					return 1
 				fi
 
 				if [[ ! -e "$SCRIPT_NAME" ]]; then
-					echo -e "$_PREFIX_ERROR Failed to find script '$SCRIPT_NAME'."
+					echo -e "${_PREFIX_ERROR} Failed to find script '$SCRIPT_NAME'."
 					return 1
 				fi
 
 				if ! sudo bash $SCRIPT_NAME $_ARGS_FOR_AUTO_XORG &> /dev/null; then
-					echo -e "$_PREFIX_ERROR Failed to execute script '$SCRIPT_NAME'."
+					echo -e "${_PREFIX_ERROR} Failed to execute script '$SCRIPT_NAME'."
 					return 1
 				fi
 
@@ -547,9 +547,9 @@
 
 					for _COUNT in $( seq 1 "$COUNT_OF_VALID_ARGS" ); do
 						read -r -p "Enter argument (to skip, leave blank): " ANSWER
-						GetArgsForAutoXorg "$ANSWER" || return 1
+						GetArgsForAutoXorg "${ANSWER}" || return 1
 
-						if [[ -z "$ANSWER" ]]; then
+						if [[ -z "${ANSWER}" ]]; then
 							break
 						fi
 					done

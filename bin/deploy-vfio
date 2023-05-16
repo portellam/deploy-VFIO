@@ -24,9 +24,9 @@
         IsSudoUser || return 1
 
         # <remarks> Gather arguments. </remarks>
-        if ! GetOption "$@"; then
+        if ! GetOption "${@}"; then
             GetHelp
-            return "$?"
+            return "${?}"
         fi
 
         if "$_FLAG_DO_SYSTEM_CHECK" \
@@ -36,12 +36,12 @@
         fi
 
         ExecuteBackups
-        ExecuteParseSelection || return "$?"
+        ExecuteParseSelection || return "${?}"
 
         # <remarks> Exit early. </remarks>
-        # if "$_EXECUTE_VFIO_SETUP_UNINSTALL"; then
+        # if "${_EXECUTE_VFIO_SETUP_UNINSTALL}"; then
         #     ExecuteMainSetup
-        #     return "$?"
+        #     return "${?}"
         # fi
 
         if "$_FLAG_DO_EXECUTE_PRE_SETUP"; then
@@ -64,8 +64,8 @@
         echo "DEBUG"
         echo
         echo -e "_DO_PARSE_DATABASE_FROM_CACHE ==\t\t\t'$_DO_PARSE_DATABASE_FROM_CACHE'"
-        echo -e "_DO_PARSE_DATABASE_FROM_FILE ==\t\t\t\t'$_DO_PARSE_DATABASE_FROM_FILE'"
-        echo -e "_DATABASE_FILE ==\t\t\t\t\t'$_DATABASE_FILE'"
+        echo -e "_DO_PARSE_DATABASE_FROM_FILE ==\t\t\t\t'${_DO_PARSE_DATABASE_FROM_FILE}'"
+        echo -e "_DATABASE_FILE ==\t\t\t\t\t'${_DATABASE_FILE}'"
         echo -e "_DO_PARSE_DATABASE_FROM_INTERNET ==\t\t\t'$_DO_PARSE_DATABASE_FROM_INTERNET'"
         # echo -e "_HAS_ARG_PARSE_IOMMU_SELECT_ALL ==\t\t\t'$_HAS_ARG_PARSE_IOMMU_SELECT_ALL'"
         # echo -e "_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA ==\t\t'$_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA'"
@@ -85,10 +85,10 @@
         echo -e "_EXECUTE_PRE_SETUP_UNINSTALL ==\t\t\t\t'$_EXECUTE_PRE_SETUP_UNINSTALL'"
         echo
         echo
-        echo -e "_ASK_TO_EXECUTE_VFIO_SETUP_STATIC ==\t\t\t'$_ASK_TO_EXECUTE_VFIO_SETUP_STATIC'"
-        echo -e "_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB ==\t\t'$_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB'"
+        echo -e "_ASK_TO_EXECUTE_VFIO_SETUP_STATIC ==\t\t\t'${_ASK_TO_EXECUTE_VFIO_SETUP_STATIC}'"
+        echo -e "_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB ==\t\t'${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}'"
         echo -e "_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB ==\t\t\t'$_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB'"
-        echo -e "_EXECUTE_VFIO_SETUP_UNINSTALL ==\t\t\t'$_EXECUTE_VFIO_SETUP_UNINSTALL'"
+        echo -e "_EXECUTE_VFIO_SETUP_UNINSTALL ==\t\t\t'${_EXECUTE_VFIO_SETUP_UNINSTALL}'"
         echo
         echo
         echo -e "_ASK_TO_EXECUTE_POST_SETUPS ==\t\t\t\t'$_ASK_TO_EXECUTE_POST_SETUPS'"
@@ -113,16 +113,16 @@
         BackupFiles || exit 1
     fi
 
-    while [[ "$?" -ne 1 ]]; do
-        Main "$@"
+    while [[ "${?}" -ne 1 ]]; do
+        Main "${@}"
         break
     done
 
-    if [[ "$?" -eq 1 ]] \
+    if [[ "${?}" -eq 1 ]] \
         && "$_FLAG_DO_EXECUTE_BACKUPS"; then
         RestoreFiles || exit 1
     fi
 
     # Debug
-    exit "$?"
+    exit "${?}"
 # </main>

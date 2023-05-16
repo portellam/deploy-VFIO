@@ -21,8 +21,8 @@
 
 HOOK_NAME="ddcutil"
 PREFIX_PROMPT="libvirt-qemu $HOOK_NAME:"
-OPERATION="$2"
-SUBOPERATION="$3"
+OPERATION="${2}"
+SUBOPERATION="${3}"
 
 # <remarks> The display shown in `ddcutil detect` </remarks>
 DOMAIN_DISPLAY="0"
@@ -49,7 +49,7 @@ function GetVideoInput
 
 function SetVideoOutput
 {
-    if [[ "$( ddcutil -d "$DOMAIN_DISPLAY" getvcp 60 --terse | awk '{print $4}' )" == "x$VIDEO_INPUT" ]]; then
+    if [[ "$( ddcutil -d "$DOMAIN_DISPLAY" getvcp 60 --terse | awk '{print ${4}}' )" == "x$VIDEO_INPUT" ]]; then
         return 0
     fi
 

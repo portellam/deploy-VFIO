@@ -10,8 +10,8 @@
 
 HOOK_NAME="nosleep"
 PREFIX_PROMPT="libvirt-qemu $HOOK_NAME:"
-DOMAIN_NAME="$1"
-OPERATION="$2"
+DOMAIN_NAME="${1}"
+OPERATION="${2}"
 
 function StartNosleepService
 {

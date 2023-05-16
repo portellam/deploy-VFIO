@@ -21,9 +21,9 @@
     # <summary> Public </summary>
         function ExecuteUsage
         {
-            if ! GetOption "$@"; then
+            if ! GetOption "${@}"; then
                 GetHelp
-                return "$?"
+                return "${?}"
             fi
 
             return 0
@@ -37,8 +37,8 @@
                 declare -g _ARGS_FOR_AUTO_XORG=""
 
                 # <remarks> Statements </remarks
-                declare -g _OUTPUT_INVALIDANSWER="$_PREFIX_ERROR Failed to answer."
-                declare -g _OUTPUT_INVALID_OPTION="$_PREFIX_ERROR Invalid option."
+                declare -g _OUTPUT_INVALIDANSWER="${_PREFIX_ERROR} Failed to answer."
+                declare -g _OUTPUT_INVALID_OPTION="${_PREFIX_ERROR} Invalid option."
 
                 # <remarks> Flags </remarks
                 declare -g _ASK_TO_EXECUTE_POST_SETUPS=true
@@ -78,12 +78,12 @@
         # <summary> Argument getters </summary>
             function GetArgsForAutoXorg
             {
-                if [[ -z "$1" ]]; then
+                if [[ -z "${1}" ]]; then
                     return 0
                 fi
 
-                while [[ ! -z "$1" ]]; do
-                    case "$1" in
+                while [[ ! -z "${1}" ]]; do
+                    case "${1}" in
                         "first" | "last" )
                             if "$_HAS_ARG_AUTO_XORG_SORT_ORDER"; then
                                 return 1
@@ -99,11 +99,11 @@
                             _HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=true ;;
 
                         * )
-                            PrintStatementInvalidArgument "$1"
+                            PrintStatementInvalidArgument "${1}"
                             return 1 ;;
                     esac
 
-                    _ARGS_FOR_AUTO_XORG+=" --$1"
+                    _ARGS_FOR_AUTO_XORG+=" --${1}"
                     shift
                 done
 
@@ -112,22 +112,22 @@
 
             function GetArgsForParseSelection
             {
-                if [[ -z "$1" ]]; then
-                    IsIOMMUGroupIDValid "$1"
+                if [[ -z "${1}" ]]; then
+                    IsIOMMUGroupIDValid "${1}"
                     return 1
                 fi
 
-                local -i COUNT_DELIM=$( echo "$1" | grep -o "," | wc -l )
+                local -i COUNT_DELIM=$( echo "${1}" | grep -o "," | wc -l )
                 (( COUNT_DELIM++ ))
 
                 while [[ "$COUNT_DELIM" -gt 0 ]] \
                     && ! "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL"; do
-                    local ARG=$( echo "$1" | cut -d ',' -f "$COUNT_DELIM" )
+                    local ARG=$( echo "${1}" | cut -d ',' -f "$COUNT_DELIM" )
 
                     if [[ ! -z "$ARG" ]] \
-                        && ( ! "$_DO_PARSE_DATABASE_FROM_FILE" \
-                            || ( "$_DO_PARSE_DATABASE_FROM_FILE" \
-                            && [[ "$ARG" != "$_DATABASE_FILE" ]] )); then
+                        && ( ! "${_DO_PARSE_DATABASE_FROM_FILE}" \
+                            || ( "${_DO_PARSE_DATABASE_FROM_FILE}" \
+                            && [[ "$ARG" != "${_DATABASE_FILE}" ]] )); then
                         case "$ARG" in
                             "all" )
                                 _HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
@@ -153,7 +153,7 @@
 
             function GetArgsForMultibootVFIO
             {
-                case "$1" in
+                case "${1}" in
                     "default" )
                         _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=true
                         return 0 ;;
@@ -167,14 +167,14 @@
                         return 0 ;;
 
                     * )
-                        if DoesIOMMUGroupHaveVGADevice "$1" \
-                            && SetPreferredIOMMUGroupForMultiboot "$1"; then
+                        if DoesIOMMUGroupHaveVGADevice "${1}" \
+                            && SetPreferredIOMMUGroupForMultiboot "${1}"; then
                             return 0
                         fi ;;
                 esac
 
-                if [[ ! -z "$1" ]]; then
-                    PrintStatementInvalidArgument "$1"
+                if [[ ! -z "${1}" ]]; then
+                    PrintStatementInvalidArgument "${1}"
                 fi
 
                 return 1
@@ -182,11 +182,11 @@
 
             function GetArgsForStaticVFIO
             {
-                if [[ -z "$1" ]]; then
+                if [[ -z "${1}" ]]; then
                     return 0
                 fi
 
-                case "$1" in
+                case "${1}" in
                     "grub" )
                         _EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=true
                         return 0 ;;
@@ -196,21 +196,21 @@
                         return 0 ;;
                 esac
 
-                PrintStatementInvalidArgument "$1"
+                PrintStatementInvalidArgument "${1}"
                 return 1
             }
 
             function GetArgsForHugepages
             {
-                if [[ ! -z "$1" ]] \
-                    && ! GetHugepageByteSize "$1"; then
-                    PrintStatementInvalidArgument "$1"
+                if [[ ! -z "${1}" ]] \
+                    && ! GetHugepageByteSize "${1}"; then
+                    PrintStatementInvalidArgument "${1}"
                     return 1
                 fi
 
-                if [[ ! -z "$2" ]] \
-                    && ! GetHugepageCount "$2"; then
-                    PrintStatementInvalidArgument "$2"
+                if [[ ! -z "${2}" ]] \
+                    && ! GetHugepageCount "${2}"; then
+                    PrintStatementInvalidArgument "${2}"
                     return 1
                 fi
 
@@ -219,12 +219,12 @@
 
             function GetArgsForZRAMSwap
             {
-                if [[ ! -z "$1" ]]; then
-                    GetZRAMSwapSize "$1" || GetOverrideArgsForZRAMSwap "$1" || return 1
+                if [[ ! -z "${1}" ]]; then
+                    GetZRAMSwapSize "${1}" || GetOverrideArgsForZRAMSwap "${1}" || return 1
                 fi
 
-                if [[ ! -z "$2" ]]; then
-                    GetZRAMSwapSize "$2" || GetOverrideArgsForZRAMSwap "$2" || return 1
+                if [[ ! -z "${2}" ]]; then
+                    GetZRAMSwapSize "${2}" || GetOverrideArgsForZRAMSwap "${2}" || return 1
                 fi
 
                 return 0
@@ -232,12 +232,12 @@
 
             function GetOverrideArgsForZRAMSwap
             {
-                case "$1" in
+                case "${1}" in
                     "force" )
                         _HAS_ARG_ZRAM_SWAP_FORCE=true ;;
 
                     * )
-                        PrintStatementInvalidArgument "$1"
+                        PrintStatementInvalidArgument "${1}"
                         return 1 ;;
                 esac
 
@@ -247,7 +247,7 @@
         # <summary> Argument validation </summary>
             function ShiftInputIfOptionHasArgument
             {
-                while [[ ! -z "$1" ]]; do
+                while [[ ! -z "${1}" ]]; do
                     shift
                     (( ARGS_COUNT++ ))
                 done
@@ -258,15 +258,15 @@
         # <summary> Options getters </summary>
             function GetOption
             {
-                if [[ -z "$@" ]]; then
+                if [[ -z "${@}" ]]; then
                     return 0
                 fi
 
-                while [[ "$1" =~ ^- ]] \
-                    || [[ "$1" =~ ^-- ]]; do
+                while [[ "${1}" =~ ^- ]] \
+                    || [[ "${1}" =~ ^-- ]]; do
                     local -i ARGS_COUNT=0
 
-                    if ! GetThisOption "$@"; then
+                    if ! GetThisOption "${@}"; then
                         return 1
                     fi
 
@@ -280,7 +280,7 @@
 
             function GetThisOption
             {
-                case "$1" in
+                case "${1}" in
                     "-h" | "--help" )
                         PrintUsage
                         exit 1 ;;
@@ -291,7 +291,7 @@
                     # <remarks> Parse PCI for VFIO setup </remarks>
                     "-f" | "--file" )
                         shift
-                        SetFileForParseSelection "$1" || return 1 ;;
+                        SetFileForParseSelection "${1}" || return 1 ;;
 
                     "-i" | "--internal" )
                         _DO_PARSE_DATABASE_FROM_CACHE=true ;;
@@ -302,8 +302,8 @@
                     "-p" | "--parse" )
                         shift
                         SetParseParameters
-                        GetArgsForParseSelection "$1" || return 1
-                        ShiftInputIfOptionHasArgument "$1" ;;
+                        GetArgsForParseSelection "${1}" || return 1
+                        ShiftInputIfOptionHasArgument "${1}" ;;
 
                     # <remarks> Pre-setup </remarks>
                     "-c" | "--cpu" )
@@ -318,12 +318,12 @@
 
                     "-H" | "--hugepages" )
                         shift
-                        GetArgsForHugepages "$1" "$2" || return 1
+                        GetArgsForHugepages "${1}" "${2}" || return 1
                         IsHostMemorySufficientForHugepages || return 1
                         _ASK_TO_EXECUTE_PRE_SETUP_ALL=false
                         _EXECUTE_PRE_SETUP_SKIP_ALL=false
                         _EXECUTE_PRE_SETUP_HUGEPAGES=true
-                        ShiftInputIfOptionHasArgument "$1" "$2" ;;
+                        ShiftInputIfOptionHasArgument "${1}" "${2}" ;;
 
                     "--uninstall-pre-setup" )
                         _ASK_TO_EXECUTE_PRE_SETUP_ALL=false
@@ -333,17 +333,17 @@
                     # <remarks> VFIO setup </remarks>
                     "-m" | "--multiboot" )
                         shift
-                        GetArgsForMultibootVFIO "$1" || return 1
+                        GetArgsForMultibootVFIO "${1}" || return 1
                         _ASK_TO_EXECUTE_VFIO_SETUP=false
                         _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=true
-                        ShiftInputIfOptionHasArgument "$1" ;;
+                        ShiftInputIfOptionHasArgument "${1}" ;;
 
                     "-s" | "--static" )
                         shift
-                        GetArgsForStaticVFIO "$1" || return 1
+                        GetArgsForStaticVFIO "${1}" || return 1
                         _ASK_TO_EXECUTE_VFIO_SETUP=false
                         _ASK_TO_EXECUTE_VFIO_SETUP_STATIC=false
-                        ShiftInputIfOptionHasArgument "$1" ;;
+                        ShiftInputIfOptionHasArgument "${1}" ;;
 
                     "--uninstall-vfio-setup" )
                         _ASK_TO_EXECUTE_VFIO_SETUP=false
@@ -362,23 +362,23 @@
                         shift
                         _ASK_TO_EXECUTE_POST_SETUPS=false
                         _EXECUTE_POST_SETUP_AUTO_XORG=true
-                        GetArgsForAutoXorg "$1" "$2" || return 1
-                        ShiftInputIfOptionHasArgument "$1" "$2" ;;
+                        GetArgsForAutoXorg "${1}" "${2}" || return 1
+                        ShiftInputIfOptionHasArgument "${1}" "${2}" ;;
 
                     "--zram-swap" )
                         shift
                         _ASK_TO_EXECUTE_POST_SETUPS=false
-                        GetArgsForZRAMSwap "$1" "$2" || return 1
+                        GetArgsForZRAMSwap "${1}" "${2}" || return 1
                         IsHostMemorySufficientForZRAMSwap || return 1
                         _EXECUTE_POST_SETUP_ZRAM_SWAP=true
-                        ShiftInputIfOptionHasArgument "$1" "$2" ;;
+                        ShiftInputIfOptionHasArgument "${1}" "${2}" ;;
 
                     "--uninstall-post-setup" )
                         _EXECUTE_POST_SETUP_UNINSTALL=true ;;
 
                     # <remarks> Else </remarks>
                     * )
-                        PrintStatementInvalidOption "$1"
+                        PrintStatementInvalidOption "${1}"
                         return 1 ;;
                 esac
 
@@ -394,17 +394,17 @@
 
         function PrintStatementInvalidArgument
         {
-            echo -e "$_PREFIX_ERROR Invalid argument '$1'."
+            echo -e "${_PREFIX_ERROR} Invalid argument '${1}'."
             return 0
         }
 
         function PrintStatementInvalidOption
         {
-            if [[ -z "$1" ]]; then
+            if [[ -z "${1}" ]]; then
                 echo -e "$_OUTPUT_INVALID_OPTION"
             fi
 
-            echo -e "$_PREFIX_ERROR Invalid option '$1'."
+            echo -e "${_PREFIX_ERROR} Invalid option '${1}'."
             return 0
         }
 

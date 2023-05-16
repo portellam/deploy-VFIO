@@ -17,50 +17,51 @@
         function ExecuteParseSelection
         {
             SetParseParameters
-            AreParametersValid || return "$?"
-            SelectFileToExportDatabase || return "$?"
-            SetFileForParseSelection || return "$?"
-            SelectMethodToParseDatabase || return "$?"
-            SetOptionsToImportDatabase || return "$?"
-            DoesHostHaveExistingVFIOSetup || return "$?"
+            AreParametersValid || return "${?}"
+            SelectFileToExportDatabase || return "${?}"
+            SetFileForParseSelection || return "${?}"
+            SelectMethodToParseDatabase || return "${?}"
+            SetOptionsToImportDatabase || return "${?}"
+            DoesHostHaveExistingVFIOSetup || return "${?}"
             SelectIOMMUGroups
-            IsParseSelectionValid || return "$?"
-            DoesHostHaveVGADevicesAfterVFIOSetup || return "$?"
+            IsParseSelectionValid || return "${?}"
+            DoesHostHaveVGADevicesAfterVFIOSetup || return "${?}"
             return 0
         }
 
         # <summary> Global getters </summary>
             function GetListsForSelection
             {
-                IsEnum "$4" || return "$?"
-                IsEnum "$3" || return "$?"
-                IsEnum "$2" || return "$?"
-                IsValidEnumOfIOMMUGroups "$1" || return "$?"
-                local -i IOMMU_GROUP_ID_REFERENCE="$1"
-                local -n DRIVER_REFERENCE="$2"
-                local -n VFIO_HWID_REFERENCE="$3"
-                local -n STUB_HWID_REFERENCE="$4"
+                IsEnum "${4}" || return "${?}"
+                IsEnum "${3}" || return "${?}"
+                IsEnum "${2}" || return "${?}"
+                IsValidEnumOfIOMMUGroups "${1}" || return "${?}"
+                local -i IOMMU_GROUP_ID_REFERENCE="${1}"
+                local -n DRIVER_REFERENCE="${2}"
+                local -n VFIO_HWID_REFERENCE="${3}"
+                local -n STUB_HWID_REFERENCE="${4}"
 
                 for IOMMU_GROUP_ID in ${IOMMU_GROUP_ID_REFERENCE[@]}; do
-                    local -a DEVICE_LIST=$( eval GET_DEVICES_FOR_IOMMU_GROUP )
+                    local -a DEVICE_LIST=$( eval _GET_DEVICES_FOR_IOMMU_GROUP )
 
                     for DEVICE in ${DEVICE_LIST[@]}; do
-                        local DRIVER HWID
-                        SetDeviceDriver "$DEVICE" "DRIVER"
-                        SetDeviceHardwareID "$DEVICE" "HWID"
+                        local DRIVER=""
+                        local HWID=""
+                        SetDeviceDriver "${DEVICE}" "DRIVER"
+                        SetDeviceHardwareID "${DEVICE}" "HWID"
 
-                        if [[ ! -z "$DRIVER" ]]; then
-                            DRIVER_REFERENCE+=( "$DRIVER" )
+                        if [[ ! -z "${DRIVER}" ]]; then
+                            DRIVER_REFERENCE+=( "${DRIVER}" )
                         fi
 
-                        if [[ ! -z "$HWID" ]] && \
-                            IsDeviceForPCISTUB "$DEVICE"; then
-                            STUB_HWID_REFERENCE+=( "$HWID" )
+                        if [[ ! -z "${HWID}" ]] && \
+                            IsDeviceForPCISTUB "${DEVICE}"; then
+                            STUB_HWID_REFERENCE+=( "${HWID}" )
                         fi
 
-                        if [[ ! -z "$HWID" ]] && \
-                            ! IsDeviceForPCISTUB "$DEVICE"; then
-                            VFIO_HWID_REFERENCE+=( "$HWID" )
+                        if [[ ! -z "${HWID}" ]] && \
+                            ! IsDeviceForPCISTUB "${DEVICE}"; then
+                            VFIO_HWID_REFERENCE+=( "${HWID}" )
                         fi
                     done
                 done
@@ -79,14 +80,14 @@
 
             function GetNameForFirstVGADeviceInIOMMUGroup
             {
-                [[ ! -z "$2" ]] || return "$?"
-                IsInt "$1" || return "$?"
-                local -i IOMMU_GROUP_ID="$1"
-                local -n DEVICE_NAME="$2"
-                local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
+                [[ ! -z "${2}" ]] || return "${?}"
+                IsInt "${1}" || return "${?}"
+                local -i IOMMU_GROUP_ID="${1}"
+                local -n DEVICE_NAME="${2}"
+                local -a DEVICE_LIST="$( eval "${_GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
                 for DEVICE in ${DEVICE_LIST[@]}; do
-                    if ! IsDeviceVGA "$DEVICE"; then
+                    if ! IsDeviceVGA "${DEVICE}"; then
                         continue
                     fi
 
@@ -94,12 +95,12 @@
                     SetDeviceName "NAME" && break
                 done
 
-                if [[ -z $NAME ]]; then
-                    echo -e "$_PREFIX_ERROR Failed to find device name of any VGA device in IOMMU group '$IOMMU_GROUP_ID'."
+                if [[ -z ${NAME} ]]; then
+                    echo -e "${_PREFIX_ERROR} Failed to find device name of any VGA device in IOMMU group '${IOMMU_GROUP_ID}'."
                     return 1
                 fi
 
-                DEVICE_NAME="$NAME"
+                DEVICE_NAME="${NAME}"
                 return 0
             }
 
@@ -111,15 +112,22 @@
                     return 0
                 fi
 
-                declare -ag _IOMMU_GROUP_ID_LIST=( $( ls /sys/kernel/iommu_groups/ | sort -n ) )
-                declare -ag _IOMMU_GROUPS_FOR_HOST_LIST _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST _IOMMU_GROUPS_FOR_VFIO_LIST
-                declare -g _DATABASE_FILE _PARSE_OPTIONS
-
-                declare -g _DEFAULT_DATABASE_FILE="/usr/local/etc/vfiolib_lspci_database"
-                declare -g GET_DEVICES_FOR_IOMMU_GROUP='ls /sys/kernel/iommu_groups/$IOMMU_GROUP_ID/devices/'
-                declare -g _REGEX_DOMAIN_ID='^[0-9A-F][1-9A-F]$'
-
                 declare -g _ARE_PARSE_PARAMS_SET=true
+
+                # <remarks> IOMMU groups lists and validation. </remarks>
+                declare -gr _GET_DEVICES_FOR_IOMMU_GROUP='ls /sys/kernel/iommu_groups/${IOMMU_GROUP_ID}/devices/'
+                declare -ag _IOMMU_GROUP_ID_LIST=( $( ls /sys/kernel/iommu_groups/ | sort -n ) )
+                declare -ag _IOMMU_GROUPS_FOR_HOST_LIST=()
+                declare -ag _IOMMU_GROUPS_FOR_VFIO_LIST=()
+                declare -ag _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST=()
+                declare -gr _REGEX_DOMAIN_ID='^[0-9A-F][1-9A-F]$'
+
+                # <remarks> Parse arguments </remarks>
+                declare -g _DATABASE_FILE=""
+                declare -g _PARSE_OPTIONS=""
+                declare -gr _DEFAULT_DATABASE_FILE="/usr/local/etc/vfiolib_lspci_database"
+
+                # <remarks> Usage flags </remarks>
                 declare -g _DO_PARSE_DATABASE_FROM_CACHE=false
                 declare -g _DO_PARSE_DATABASE_FROM_FILE=false
                 declare -g _DO_PARSE_DATABASE_FROM_INTERNET=false
@@ -127,16 +135,15 @@
                 declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
                 declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=false
                 declare -g _HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
-
                 return 0
             }
 
             function AreParametersValid
             {
-                IsEnum "_IOMMU_GROUP_ID_LIST" || return "$?"
+                IsEnum "_IOMMU_GROUP_ID_LIST" || return "${?}"
 
                 for VALUE in ${_IOMMU_GROUP_ID_LIST[@]}; do
-                    IsInt "$VALUE" || return "$?"
+                    IsInt "$VALUE" || return "${?}"
                 done
 
                 return 0
@@ -160,7 +167,7 @@
             function IsParseSelectionOfVGAValid
             {
                 if ! IsValidEnumOfIOMMUGroups "_IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST"; then
-                    echo -e "$_PREFIX_ERROR No groups with VGA devices selected."
+                    echo -e "${_PREFIX_ERROR} No groups with VGA devices selected."
                     return 1
                 fi
 
@@ -171,67 +178,67 @@
         # <summary> Local setters </summary>
             function SetDeviceClass
             {
-                [[ ! -z "$2" ]] || return "$?"
-                [[ ! -z "$1" ]] || return "$?"
-                local DEVICE="$1"
-                local -n REFERENCE="$2"
-                REFERENCE="$( lspci $_PARSE_OPTIONS -ms $DEVICE | cut -d '"' -f 2 )"
+                [[ ! -z "${2}" ]] || return "${?}"
+                [[ ! -z "${1}" ]] || return "${?}"
+                local DEVICE="${1}"
+                local -n REFERENCE="${2}"
+                REFERENCE="$( lspci ${_PARSE_OPTIONS} -ms ${DEVICE} | cut -d '"' -f 2 )"
                 return 0
             }
 
             function SetDeviceDriver
             {
-                [[ ! -z "$2" ]] || return "$?"
-                [[ ! -z "$1" ]] || return "$?"
-                local DEVICE="$1"
-                local -n REFERENCE="$2"
-                REFERENCE="$( lspci $_PARSE_OPTIONS -ks "$DEVICE" | grep -i "driver" | cut -d " " -f 5 )"
+                [[ ! -z "${2}" ]] || return "${?}"
+                [[ ! -z "${1}" ]] || return "${?}"
+                local DEVICE="${1}"
+                local -n REFERENCE="${2}"
+                REFERENCE="$( lspci ${_PARSE_OPTIONS} -ks "${DEVICE}" | grep -i "driver" | cut -d " " -f 5 )"
                 return 0
             }
 
             function SetDeviceHardwareID
             {
-                [[ ! -z "$2" ]] || return "$?"
-                [[ ! -z "$1" ]] || return "$?"
-                local DEVICE="$1"
-                local -n REFERENCE="$2"
-                REFERENCE="$( lspci $_PARSE_OPTIONS -ns $DEVICE | cut -d " " -f 3 )"
+                [[ ! -z "${2}" ]] || return "${?}"
+                [[ ! -z "${1}" ]] || return "${?}"
+                local DEVICE="${1}"
+                local -n REFERENCE="${2}"
+                REFERENCE="$( lspci ${_PARSE_OPTIONS} -ns ${DEVICE} | cut -d " " -f 3 )"
                 return 0
             }
 
             function SetDeviceName
             {
-                [[ ! -z "$2" ]] || return "$?"
-                [[ ! -z "$1" ]] || return "$?"
-                local DEVICE="$1"
-                local -n REFERENCE="$2"
-                REFERENCE="$( lspci $_PARSE_OPTIONS -ms $DEVICE  | cut -d '"' -f 6 )"
+                [[ ! -z "${2}" ]] || return "${?}"
+                [[ ! -z "${1}" ]] || return "${?}"
+                local DEVICE="${1}"
+                local -n REFERENCE="${2}"
+                REFERENCE="$( lspci ${_PARSE_OPTIONS} -ms ${DEVICE}  | cut -d '"' -f 6 )"
                 return 0
             }
 
             function SetDeviceVendor
             {
-                [[ ! -z "$2" ]] || return "$?"
-                [[ ! -z "$1" ]] || return "$?"
-                local DEVICE="$1"
-                local -n REFERENCE="$2"
-                REFERENCE="$( lspci $_PARSE_OPTIONS -ms $DEVICE | cut -d '"' -f 4 )"
+                [[ ! -z "${2}" ]] || return "${?}"
+                [[ ! -z "${1}" ]] || return "${?}"
+                local DEVICE="${1}"
+                local -n REFERENCE="${2}"
+                REFERENCE="$( lspci ${_PARSE_OPTIONS} -ms ${DEVICE} | cut -d '"' -f 4 )"
                 return 0
             }
 
             function SetFileForParseSelection
             {
-                if "$_DO_PARSE_DATABASE_FROM_FILE"; then
+                if "${_DO_PARSE_DATABASE_FROM_FILE}"; then
                     return 0
                 fi
 
-                if [[ ! -e "$1" ]] \
-                    || [[ ! -s "$1" ]]; then
-                    echo -e "$_PREFIX_ERROR File is not valid."
+                if [[ ! -e "${1}" ]] \
+                    || [[ ! -s "${1}" ]]; then
+                    echo -e "${_PREFIX_ERROR} File is not valid."
                     return 1
                 fi
 
-                _DATABASE_FILE="$1"
+                _DATABASE_FILE="${1}"
                 _DO_PARSE_DATABASE_FROM_FILE=true
                 return 0
             }
@@ -239,11 +246,11 @@
         # <summary> Device validation </summary>
             function IsDeviceBindedToVFIO
             {
-                [[ ! -z "$1" ]] || return "$?"
-                local DEVICE="$1"
-                local -l DRIVER="$( lspci $_PARSE_OPTIONS -ks "$DEVICE" | grep -i "driver" | cut -d " " -f 5 )"
+                [[ ! -z "${1}" ]] || return "${?}"
+                local DEVICE="${1}"
+                local -l DRIVER="$( lspci ${_PARSE_OPTIONS} -ks "${DEVICE}" | grep -i "driver" | cut -d " " -f 5 )"
 
-                case "$DRIVER" in
+                case "${DRIVER}" in
                     *"vfio-pci"* | *"vfio"* )
                         return 0 ;;
                 esac
@@ -253,9 +260,9 @@
 
             function IsDeviceExternal
             {
-                [[ ! -z "$1" ]] || return "$?"
-                local DEVICE="$1"
-                local -u DOMAIN_ID=$( echo "$DEVICE" | cut -d ':' -f 2 )
+                [[ ! -z "${1}" ]] || return "${?}"
+                local DEVICE="${1}"
+                local -u DOMAIN_ID=$( echo "${DEVICE}" | cut -d ':' -f 2 )
 
                 if echo "$DOMAIN_ID" | grep -E -q "$_REGEX_DOMAIN_ID"; then
                     return 0
@@ -267,11 +274,11 @@
             # <note> Update here for devices' that benefit from pci-stub dummy driver. </note>
             function IsDeviceForPCISTUB
             {
-                [[ ! -z "$1" ]] || return "$?"
-                local DEVICE="$1"
-                local -l CLASS="$( lspci $_PARSE_OPTIONS -ms $DEVICE | cut -d '"' -f 2 )"
+                [[ ! -z "${1}" ]] || return "${?}"
+                local DEVICE="${1}"
+                local -l CLASS="$( lspci ${_PARSE_OPTIONS} -ms ${DEVICE} | cut -d '"' -f 2 )"
 
-                case "$CLASS" in
+                case "${CLASS}" in
                     *"usb"* )
                         return 0 ;;
                 esac
@@ -281,11 +288,11 @@
 
             function IsDeviceVGA
             {
-                [[ ! -z "$1" ]] || return "$?"
-                local DEVICE="$1"
-                local -l CLASS="$( lspci $_PARSE_OPTIONS -ms $DEVICE | cut -d '"' -f 2 )"
+                [[ ! -z "${1}" ]] || return "${?}"
+                local DEVICE="${1}"
+                local -l CLASS="$( lspci ${_PARSE_OPTIONS} -ms ${DEVICE} | cut -d '"' -f 2 )"
 
-                case "$CLASS" in
+                case "${CLASS}" in
                     *"vga"* | *"graphic"* )
                         return 0 ;;
                 esac
@@ -299,19 +306,19 @@
                 local -r REGEX_FOR_RANGE_OF_NUMS='^[0-9]+[-][0-9]+$'
                 local -a IOMMU_GROUPS_TEMP_LIST
 
-                if echo "$1" | grep -E -q "$REGEX_FOR_RANGE_OF_NUMS"; then
-                    local -ir RANGE_START=$( echo "$1" | cut -d '-' -f 1 )
-                    local -ir RANGE_STOP=$( echo "$1" | cut -d '-' -f 2 )
+                if echo "${1}" | grep -E -q "$REGEX_FOR_RANGE_OF_NUMS"; then
+                    local -ir RANGE_START=$( echo "${1}" | cut -d '-' -f 1 )
+                    local -ir RANGE_STOP=$( echo "${1}" | cut -d '-' -f 2 )
                     IsIOMMUGroupIDValid "$RANGE_START" || return 1
                     IsIOMMUGroupIDValid "$RANGE_STOP" || return 1
                     IOMMU_GROUPS_TEMP_LIST+=( $( seq "$RANGE_START" "$RANGE_STOP" ) )
 
-                elif IsInt "$1"; then
-                    IsIOMMUGroupIDValid "$1" || return 1
-                    IOMMU_GROUPS_TEMP_LIST+=( "$1" )
+                elif IsInt "${1}"; then
+                    IsIOMMUGroupIDValid "${1}" || return 1
+                    IOMMU_GROUPS_TEMP_LIST+=( "${1}" )
 
                 else
-                    echo -e "$_PREFIX_ERROR Invalid IOMMU group ID(s)."
+                    echo -e "${_PREFIX_ERROR} Invalid IOMMU group ID(s)."
                     return 1
                 fi
 
@@ -321,7 +328,7 @@
 
                 for IOMMU_GROUP_ID in ${IOMMU_GROUPS_TEMP_LIST[@]}; do
                     if DoesIOMMUGroupHaveExternalDevices "$_DEVICE"; then
-                        _IOMMU_GROUPS_FOR_VFIO_LIST+=( "$IOMMU_GROUP_ID" )
+                        _IOMMU_GROUPS_FOR_VFIO_LIST+=( "${IOMMU_GROUP_ID}" )
                         break
                     fi
                 done
@@ -330,7 +337,7 @@
                     local IS_IN_VFIO_LIST=false
 
                     for THIS_IOMMU_GROUP_ID in ${_IOMMU_GROUPS_FOR_VFIO_LIST[@]}; do
-                        if [[ "$THIS_IOMMU_GROUP_ID" -eq "$IOMMU_GROUP_ID" ]]; then
+                        if [[ "${THIS_IOMMU_GROUP_ID}" -eq "${IOMMU_GROUP_ID}" ]]; then
                             IS_IN_VFIO_LIST=true
                             break
                         fi
@@ -340,10 +347,10 @@
                         continue
                     fi
 
-                    if DoesIOMMUGroupHaveVGADevice "$IOMMU_GROUP_ID"; then
-                        _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "$IOMMU_GROUP_ID" )
+                    if DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}"; then
+                        _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${IOMMU_GROUP_ID}" )
                     else
-                        _IOMMU_GROUPS_FOR_HOST_LIST+=( "$IOMMU_GROUP_ID" )
+                        _IOMMU_GROUPS_FOR_HOST_LIST+=( "${IOMMU_GROUP_ID}" )
                     fi
                 done
 
@@ -357,14 +364,14 @@
                 for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST[@]}; do
                     local -a DEVICE_LIST=( $( eval "$_GET_IOMMU_GROUP_DEVICE_LIST" ) )
 
-                    if ! DoesIOMMUGroupHaveExternalDevices "$_IOMMU_GROUP_ID"; then
-                        _IOMMU_GROUPS_FOR_VFIO_LIST+=( "$_IOMMU_GROUP_ID" )
+                    if ! DoesIOMMUGroupHaveExternalDevices "${_IOMMU_GROUP_ID}"; then
+                        _IOMMU_GROUPS_FOR_VFIO_LIST+=( "${_IOMMU_GROUP_ID}" )
                         break
                     else
-                        if DoesIOMMUGroupHaveVGADevice "$_IOMMU_GROUP_ID"; then
-                            _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "$_IOMMU_GROUP_ID" )
+                        if DoesIOMMUGroupHaveVGADevice "${_IOMMU_GROUP_ID}"; then
+                            _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${_IOMMU_GROUP_ID}" )
                         else
-                            _IOMMU_GROUPS_FOR_HOST_LIST+=( "$_IOMMU_GROUP_ID" )
+                            _IOMMU_GROUPS_FOR_HOST_LIST+=( "${_IOMMU_GROUP_ID}" )
                         fi
                     fi
                 done
@@ -374,12 +381,12 @@
 
             function DoesIOMMUGroupHaveExternalDevices
             {
-                IsInt "$1" || return "$?"
-                local -i IOMMU_GROUP_ID="$1"
-                local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
+                IsInt "${1}" || return "${?}"
+                local -i IOMMU_GROUP_ID="${1}"
+                local -a DEVICE_LIST="$( eval "${_GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
                 for DEVICE in ${DEVICE_LIST[@]}; do
-                    IsDeviceExternal "$DEVICE" && return 0
+                    IsDeviceExternal "${DEVICE}" && return 0
                 done
 
                 return 1
@@ -387,26 +394,26 @@
 
             function DoesIOMMUGroupHaveVGADevice
             {
-                IsInt "$1" || return "$?"
-                local -i IOMMU_GROUP_ID="$1"
-                local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
+                IsInt "${1}" || return "${?}"
+                local -i IOMMU_GROUP_ID="${1}"
+                local -a DEVICE_LIST="$( eval "${_GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
                 for DEVICE in ${DEVICE_LIST[@]}; do
-                    IsDeviceVGA "$DEVICE" && return 0
+                    IsDeviceVGA "${DEVICE}" && return 0
                 done
 
-                echo -e "$_PREFIX_ERROR Please enter valid IOMMU group ID which contains one or more VGA devices."
+                echo -e "${_PREFIX_ERROR} Please enter valid IOMMU group ID which contains one or more VGA devices."
                 return 1
             }
 
             function IsIOMMUGroupNotBindedToVFIO
             {
-                IsInt "$1" || return "$?"
-                local -i IOMMU_GROUP_ID="$1"
-                local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
+                IsInt "${1}" || return "${?}"
+                local -i IOMMU_GROUP_ID="${1}"
+                local -a DEVICE_LIST="$( eval "${_GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
                 for DEVICE in ${DEVICE_LIST[@]}; do
-                    IsDeviceBindedToVFIO "$DEVICE" || return 1
+                    IsDeviceBindedToVFIO "${DEVICE}" || return 1
                 done
 
                 return 0
@@ -414,10 +421,10 @@
 
             function IsIOMMUGroupIDValid
             {
-                if ! IsInt "$1" \
-                    || IsLessOrEqual "$1" "0" \
-                    || IsGreaterOrEqual "$1" "${_IOMMU_GROUP_ID_LIST[-1]}"; then
-                    echo -e "$_PREFIX_ERROR Please enter valid IOMMU group ID(s), between 0 and ${_IOMMU_GROUP_ID_LIST[-1]}."
+                if ! IsInt "${1}" \
+                    || IsLessOrEqual "${1}" "0" \
+                    || IsGreaterOrEqual "${1}" "${_IOMMU_GROUP_ID_LIST[-1]}"; then
+                    echo -e "${_PREFIX_ERROR} Please enter valid IOMMU group ID(s), between 0 and ${_IOMMU_GROUP_ID_LIST[-1]}."
                     return 1
                 fi
 
@@ -426,11 +433,11 @@
 
             function IsValidEnumOfIOMMUGroups
             {
-                IsEnum "$1" || return "$?"
-                local -n REFERENCE="$1"
+                IsEnum "${1}" || return "${?}"
+                local -n REFERENCE="${1}"
 
                 for VALUE in ${REFERENCE[@]}; do
-                    IsInt "$VALUE" || return "$?"
+                    IsInt "$VALUE" || return "${?}"
                 done
             }
 
@@ -438,7 +445,7 @@
             function DoesHostHaveVGADevicesAfterVFIOSetup
             {
                 local VALIDATE_VFIO_LIST=false
-                IsBool "$_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB" && VALIDATE_VFIO_LIST=true
+                IsBool "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}" && VALIDATE_VFIO_LIST=true
 
                 if ! "$VALIDATE_VFIO_LIST"; then
                     return 0
@@ -447,7 +454,7 @@
                 local -n REFERENCE="_IOMMU_GROUPS_FOR_HOST_LIST"
 
                 for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
-                    DoesIOMMUGroupHaveVGADevice "$IOMMU_GROUP_ID" &> /dev/null && return 0
+                    DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}" &> /dev/null && return 0
                 done
 
                 echo -e "An error occurred: No VGA devices allocated for host."
@@ -459,7 +466,7 @@
                 local -n REFERENCE="_IOMMU_GROUP_ID_LIST"
 
                 for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
-                    if ! IsIOMMUGroupNotBindedToVFIO "$IOMMU_GROUP_ID"; then
+                    if ! IsIOMMUGroupNotBindedToVFIO "${IOMMU_GROUP_ID}"; then
                         echo -e "An error occurred: Detected existing VFIO setup."
                         return 1
                     fi
@@ -471,16 +478,16 @@
         # <summary> Interaction </summary>
             function AskToSelectThisIOMMUGroup
             {
-                IsInt "$1" || return "$?"
-                local -i IOMMU_GROUP_ID="$1"
+                IsInt "${1}" || return "${?}"
+                local -i IOMMU_GROUP_ID="${1}"
 
-                if AskToExecuteOrSkip "Select IOMMU group '$IOMMU_GROUP_ID'?"; then
-                    _IOMMU_GROUPS_FOR_VFIO_LIST+=( "$IOMMU_GROUP_ID" )
+                if AskToExecuteOrSkip "Select IOMMU group '${IOMMU_GROUP_ID}'?"; then
+                    _IOMMU_GROUPS_FOR_VFIO_LIST+=( "${IOMMU_GROUP_ID}" )
                 else
-                    if DoesIOMMUGroupHaveVGADevice "$IOMMU_GROUP_ID"; then
-                        _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "$IOMMU_GROUP_ID" )
+                    if DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}"; then
+                        _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${IOMMU_GROUP_ID}" )
                     else
-                        _IOMMU_GROUPS_FOR_HOST_LIST+=( "$IOMMU_GROUP_ID" )
+                        _IOMMU_GROUPS_FOR_HOST_LIST+=( "${IOMMU_GROUP_ID}" )
                     fi
                 fi
 
@@ -490,37 +497,37 @@
 
             function ExportParseDatabase
             {
-                if [[ ! -z "$_DEFAULT_DATABASE_FILE" ]] \
-                    && [[ ! -e "$_DEFAULT_DATABASE_FILE" ]] \
-                    && ! sudo mkdir -p $( dirname "$_DEFAULT_DATABASE_FILE" ) &> /dev/null; then
-                    echo -e "$_PREFIX_ERROR Failed to create directory for database file."
+                if [[ ! -z "${_DEFAULT_DATABASE_FILE}" ]] \
+                    && [[ ! -e "${_DEFAULT_DATABASE_FILE}" ]] \
+                    && ! sudo mkdir -p $( dirname "${_DEFAULT_DATABASE_FILE}" ) &> /dev/null; then
+                    echo -e "${_PREFIX_ERROR} Failed to create directory for database file."
                     return 1
                 fi
 
-                if [[ ! -z "$_DEFAULT_DATABASE_FILE" ]] \
-                    && [[ ! -e "$_DEFAULT_DATABASE_FILE" ]] \
-                    && ! sudo touch "$_DEFAULT_DATABASE_FILE" &> /dev/null; then
-                    echo -e "$_PREFIX_ERROR Failed to create database file."
+                if [[ ! -z "${_DEFAULT_DATABASE_FILE}" ]] \
+                    && [[ ! -e "${_DEFAULT_DATABASE_FILE}" ]] \
+                    && ! sudo touch "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
+                    echo -e "${_PREFIX_ERROR} Failed to create database file."
                     return 1
                 fi
 
-                if "$_DO_PARSE_DATABASE_FROM_CACHE" \
-                    && [[ ! -s "$_DEFAULT_DATABASE_FILE" ]] \
-                    && ! lspci -x >> "$_DEFAULT_DATABASE_FILE" &> /dev/null; then
-                    echo -e "$_PREFIX_ERROR Failed to reference local database and save to file."
+                if "${_DO_PARSE_DATABASE_FROM_CACHE}" \
+                    && [[ ! -s "${_DEFAULT_DATABASE_FILE}" ]] \
+                    && ! lspci -x >> "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
+                    echo -e "${_PREFIX_ERROR} Failed to reference local database and save to file."
                     return 1
                 fi
 
-                if "$_DO_PARSE_DATABASE_FROM_INTERNET" \
-                    && [[ ! -s "$_DEFAULT_DATABASE_FILE" ]] \
-                    && ! lspci -q -x >> "$_DEFAULT_DATABASE_FILE" &> /dev/null; then
-                    echo -e "$_PREFIX_ERROR Failed to reference online database and/or save to file."
+                if "${_DO_PARSE_DATABASE_FROM_INTERNET}" \
+                    && [[ ! -s "${_DEFAULT_DATABASE_FILE}" ]] \
+                    && ! lspci -q -x >> "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
+                    echo -e "${_PREFIX_ERROR} Failed to reference online database and/or save to file."
                     return 1
                 fi
 
-                if [[ -s "$_DEFAULT_DATABASE_FILE" ]] \
-                    && ! lspci -F "$_DEFAULT_DATABASE_FILE" &> /dev/null; then
-                    echo -e "$_PREFIX_ERROR File is corrupt."
+                if [[ -s "${_DEFAULT_DATABASE_FILE}" ]] \
+                    && ! lspci -F "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
+                    echo -e "${_PREFIX_ERROR} File is corrupt."
                     return 1
                 fi
 
@@ -529,31 +536,31 @@
 
             function SelectFileToExportDatabase
             {
-                if "$_DO_PARSE_DATABASE_FROM_FILE"; then
+                if "${_DO_PARSE_DATABASE_FROM_FILE}"; then
                     return 0
                 fi
 
-                ExportParseDatabase || return "$?"
+                ExportParseDatabase || return "${?}"
                 read -r -p "Enter filename (leave blank for default): " ANSWER
 
-                if [[ ! -z "$ANSWER" ]] \
-                    && [[ ! -e "$ANSWER" ]]; then
-                    echo -e "$_PREFIX_ERROR File does not exist."
+                if [[ ! -z "${ANSWER}" ]] \
+                    && [[ ! -e "${ANSWER}" ]]; then
+                    echo -e "${_PREFIX_ERROR} File does not exist."
                 fi
 
-                if [[ ! -z "$ANSWER" ]] \
-                    && [[ ! -s "$ANSWER" ]]; then
-                    echo -e "$_PREFIX_ERROR File is empty."
+                if [[ ! -z "${ANSWER}" ]] \
+                    && [[ ! -s "${ANSWER}" ]]; then
+                    echo -e "${_PREFIX_ERROR} File is empty."
                 fi
 
-                if [[ ! -z "$ANSWER" ]] \
-                    && [[ -e "$ANSWER" ]] \
-                    && [[ -s "$ANSWER" ]]; then
-                    _DATABASE_FILE="$ANSWER"
+                if [[ ! -z "${ANSWER}" ]] \
+                    && [[ -e "${ANSWER}" ]] \
+                    && [[ -s "${ANSWER}" ]]; then
+                    _DATABASE_FILE="${ANSWER}"
                     return 0
                 fi
 
-                _DATABASE_FILE="$_DEFAULT_DATABASE_FILE"
+                _DATABASE_FILE="${_DEFAULT_DATABASE_FILE}"
                 return 0
             }
 
@@ -562,7 +569,7 @@
                 local -n REFERENCE="_IOMMU_GROUP_ID_LIST"
 
                 for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
-                    SelectThisIOMMUGroup "$IOMMU_GROUP_ID"
+                    SelectThisIOMMUGroup "${IOMMU_GROUP_ID}"
                 done
 
                 return 0
@@ -570,30 +577,30 @@
 
             function SelectThisIOMMUGroup
             {
-                IsInt "$1" || return "$?"
-                local -i IOMMU_GROUP_ID="$1"
+                IsInt "${1}" || return "${?}"
+                local -i IOMMU_GROUP_ID="${1}"
 
-                if ! DoesIOMMUGroupHaveExternalDevices "$1"; then
-                    _IOMMU_GROUPS_FOR_HOST_LIST+=( "$IOMMU_GROUP_ID" )
+                if ! DoesIOMMUGroupHaveExternalDevices "${1}"; then
+                    _IOMMU_GROUPS_FOR_HOST_LIST+=( "${IOMMU_GROUP_ID}" )
                     return 1
                 fi
 
-                PrintThisIOMMUGroupDevices "$1" || return "$?"
-                AskToSelectThisIOMMUGroup "$1" || return "$?"
+                PrintThisIOMMUGroupDevices "${1}" || return "${?}"
+                AskToSelectThisIOMMUGroup "${1}" || return "${?}"
                 return 0
             }
 
             function SelectMethodToParseDatabase
             {
                 case true in
-                    "$_DO_PARSE_DATABASE_FROM_CACHE" | "$_DO_PARSE_DATABASE_FROM_FILE" | "$_DO_PARSE_DATABASE_FROM_INTERNET" )
+                    "${_DO_PARSE_DATABASE_FROM_CACHE}" | "${_DO_PARSE_DATABASE_FROM_FILE}" | "${_DO_PARSE_DATABASE_FROM_INTERNET}" )
                         return 0 ;;
                 esac
 
                 for COUNT in $( seq 0 2 ); do
                     read -r -p "Select method of parsing IOMMU groups? [(F)ile/(I)nternal/(O)nline/(N)o]: " ANSWER
 
-                    case "$ANSWER" in
+                    case "${ANSWER}" in
                         [Ff]* )
                             _DO_PARSE_DATABASE_FROM_FILE=true ;;
 
@@ -614,61 +621,61 @@
                     return 0
                 done
 
-                echo -e "$_PREFIX_ERROR Failed to answer."
+                echo -e "${_PREFIX_ERROR} Failed to answer."
                 return 1
             }
 
             function SetOptionsToImportDatabase
             {
-                if ! "$_DO_PARSE_DATABASE_FROM_INTERNET" \
-                    && ! "$_DO_PARSE_DATABASE_FROM_FILE"; then
+                if ! "${_DO_PARSE_DATABASE_FROM_INTERNET}" \
+                    && ! "${_DO_PARSE_DATABASE_FROM_FILE}"; then
                     return 0
                 fi
 
                 local FILE=""
 
-                if [[ ! -s "$_DATABASE_FILE" ]]; then
-                    FILE="$_DATABASE_FILE"
-                elif [[ ! -s "$_DEFAULT_DATABASE_FILE" ]]; then
-                    FILE="$_DEFAULT_DATABASE_FILE"
+                if [[ ! -s "${_DATABASE_FILE}" ]]; then
+                    FILE="${_DATABASE_FILE}"
+                elif [[ ! -s "${_DEFAULT_DATABASE_FILE}" ]]; then
+                    FILE="${_DEFAULT_DATABASE_FILE}"
                 else
                     return 1
                 fi
 
-                if [[ ! -s "$FILE" ]]; then
+                if [[ ! -s "${FILE}" ]]; then
                     return 1
                 fi
 
-                _PARSE_OPTIONS="-F $FILE"
+                _PARSE_OPTIONS="-F ${FILE}"
                 return 0
             }
 
         # <summary> Presentation </summary>
         function PrintThisIOMMUGroupDevices
         {
-            IsInt "$1" || return "$?"
-            local -i IOMMU_GROUP_ID="$1"
-            local -a DEVICE_LIST="$( eval "$GET_DEVICES_FOR_IOMMU_GROUP" )"
+            IsInt "${1}" || return "${?}"
+            local -i IOMMU_GROUP_ID="${1}"
+            local -a DEVICE_LIST="$( eval "${_GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
             for DEVICE in ${DEVICE_LIST[@]}; do
-                if IsDeviceExternal "$DEVICE"; then
+                if IsDeviceExternal "${DEVICE}"; then
                     local CLASS DRIVER HWID NAME VENDOR
 
-                    SetDeviceClass "$DEVICE" "CLASS"
-                    SetDeviceDriver "$DEVICE" "DRIVER"
-                    SetDeviceHardwareID "$DEVICE" "HWID"
-                    SetDeviceName "$DEVICE" "NAME"
-                    SetDeviceVendor "$DEVICE" "VENDOR"
+                    SetDeviceClass "${DEVICE}" "CLASS"
+                    SetDeviceDriver "${DEVICE}" "DRIVER"
+                    SetDeviceHardwareID "${DEVICE}" "HWID"
+                    SetDeviceName "${DEVICE}" "NAME"
+                    SetDeviceVendor "${DEVICE}" "VENDOR"
 
-                    echo -e "\tSlot ID:\t$DEVICE"
-                    echo -e "\tVendor name:\t$VENDOR"
-                    echo -e "\tDevice name:\t$NAME"
-                    echo -e "\tClass/Type:\t$CLASS"
-                    echo -e "\tHardware ID:\t$HWID"
+                    echo -e "\tSlot ID:\t${DEVICE}"
+                    echo -e "\tVendor name:\t${VENDOR}"
+                    echo -e "\tDevice name:\t${NAME}"
+                    echo -e "\tClass/Type:\t${CLASS}"
+                    echo -e "\tHardware ID:\t${HWID}"
                     local DRIVER_OUTPUT="\tKernel driver:\t"
 
-                    if [[ ! -z "$DRIVER" ]]; then
-                        echo -e "$DRIVER_OUTPUT$DRIVER"
+                    if [[ ! -z "${DRIVER}" ]]; then
+                        echo -e "${DRIVER_OUTPUT}${DRIVER}"
                     else
                         echo -e "${DRIVER_OUTPUT}N/A"
                     fi

@@ -28,7 +28,7 @@
     function Main
     {
         if [[ $( whoami ) != "root" ]]; then
-            echo -e "$_PREFIX_ERROR User is not sudo/root."
+            echo -e "${_PREFIX_ERROR} User is not sudo/root."
             return 1
         fi
 
@@ -47,7 +47,7 @@
             || [[ ! -e "vfiolib-parse" ]] \
             || [[ ! -e "vfiolib-setup" ]] \
             || [[ ! -e "vfiolib-usage" ]]; then
-            echo -e "$_PREFIX_ERROR Missing project binaries."
+            echo -e "${_PREFIX_ERROR} Missing project binaries."
             return 1
         fi
 
@@ -63,18 +63,18 @@
             || [[ ! -e "pci-blacklists.conf" ]] \
             || [[ ! -e "qemu.conf" ]] \
             || [[ ! -e "vfio.conf" ]]; then
-            echo -e "$_PREFIX_ERROR Missing project files."
+            echo -e "${_PREFIX_ERROR} Missing project files."
             return 1
         fi
 
         if [[ ! -d "$_BIN_DEST_PATH" ]]; then
-            echo -e "$_PREFIX_ERROR Could not find directory '$_BIN_DEST_PATH'."
+            echo -e "${_PREFIX_ERROR} Could not find directory '$_BIN_DEST_PATH'."
             return 1
         fi
 
         if [[ ! -d "$_ETC_DEST_PATH" ]] \
             && ! sudo mkdir -p "$_ETC_DEST_PATH"; then
-            echo -e "$_PREFIX_ERROR Could not create directory '$_ETC_DEST_PATH'."
+            echo -e "${_PREFIX_ERROR} Could not create directory '$_ETC_DEST_PATH'."
             return 1
         fi
 
@@ -82,7 +82,7 @@
         cd "$_BIN_SOURCE_PATH" || return 1
 
         if ! sudo cp -rf * "$_BIN_DEST_PATH" &> /dev/null; then
-            echo -e "$_PREFIX_ERROR Failed to copy project binaries."
+            echo -e "${_PREFIX_ERROR} Failed to copy project binaries."
             return 1
         fi
 
@@ -90,14 +90,14 @@
         cd "$_ETC_SOURCE_PATH" || return 1
 
         if ! sudo cp -rf * "$_ETC_DEST_PATH" &> /dev/null; then
-            echo -e "$_PREFIX_ERROR Failed to copy project file(s)."
+            echo -e "${_PREFIX_ERROR} Failed to copy project file(s)."
             return 1
         fi
 
         if ! sudo chown -R root:root "$_BIN_DEST_PATH" &> /dev/null \
             || ! sudo chmod -R +x "$_BIN_DEST_PATH" &> /dev/null \
             || ! sudo chown -R root:root "$_ETC_DEST_PATH" &> /dev/null; then
-            echo -e "$_PREFIX_ERROR Failed to set file permissions."
+            echo -e "${_PREFIX_ERROR} Failed to set file permissions."
             return 1
         fi
 
@@ -108,7 +108,7 @@
 # <main>
     Main
 
-    if [[ "$?" -ne 0 ]]; then
+    if [[ "${?}" -ne 0 ]]; then
         echo -e "$_PREFIX_FAIL Could not install deploy-VFIO."
         exit 1
     fi

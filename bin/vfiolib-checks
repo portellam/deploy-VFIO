@@ -34,7 +34,7 @@
             if ! GetLibraries \
                 || ( ! AreRequiredLibrariesInstalled \
                     && ! InstallRequiredLibraries ); then
-                echo -e "$_PREFIX_ERROR System is not supported in its current state."
+                echo -e "${_PREFIX_ERROR} System is not supported in its current state."
                 return 1
             fi
 
@@ -128,7 +128,7 @@
                     "spice-server-devel" )
 
                 SetLibraries
-                return "$?"
+                return "${?}"
             }
 
         # <summary> Local setters </summary>
@@ -184,7 +184,7 @@
         {
             if ! AreRequiredLibrariesInstalled \
                 && ! InstallPackage "${_REQUIRED_LIBRARIES[@]}"; then
-                echo -e "$_PREFIX_ERROR Required libraries are not installed."
+                echo -e "${_PREFIX_ERROR} Required libraries are not installed."
                 return 1
             fi
 
@@ -194,7 +194,7 @@
         function IsIOMMUEnabled
         {
             if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*" &> /dev/null; then
-                echo -e "$_PREFIX_ERROR System does not support IOMMU groups."
+                echo -e "${_PREFIX_ERROR} System does not support IOMMU groups."
                 return 1
             fi
         }
@@ -202,7 +202,7 @@
         function IsSystemdInstalled
         {
             if ! command -v systemd &> /dev/null; then
-                echo -e "$_PREFIX_ERROR 'systemd' is not installed."
+                echo -e "${_PREFIX_ERROR} 'systemd' is not installed."
                 return 1
             fi
         }
@@ -211,7 +211,7 @@
         {
             if ! LC_ALL=C lscpu | grep Virtualization &> /dev/null \
                 && ! grep -E -q --color=auto 'vmx|svm|0xc0f' /proc/cpuinfo &> /dev/null; then
-                echo -e "$_PREFIX_ERROR System does not support hardware virtualization."
+                echo -e "${_PREFIX_ERROR} System does not support hardware virtualization."
                 return 1
             fi
         }

@@ -28,7 +28,7 @@
 _FLAG_USE_HEX_MASKS=true
 _HOOK_NAME="isolcpu"
 _PREFIX_PROMPT="libvirt-qemu $_HOOK_NAME:"
-_OPERATION="$2"
+_OPERATION="${2}"
 _GUEST_THREADS_DELIM=""
 GUEST_THREADS_HEX=""
 _HOST_THREADS_DELIM=""
@@ -71,7 +71,7 @@ function AreThreadSetsNotEmpty
 
 function GetThreadByCoreAndSMT
 {
-    local -n REFERENCE="$1"
+    local -n REFERENCE="${1}"
     REFERENCE=$(( _CORE + ( SMT_FACTOR * TOTAL_CORES_COUNT )))
     return 0
 }
@@ -104,7 +104,7 @@ function GetCPU
     local -a SMT_FACTOR_LIST=( $( seq 0 $(( "$SMT_FACTOR" - 1 )) ) )
 
     AreValuesNotEmpty
-    return "$?"
+    return "${?}"
 }
 
 function GetThreadSetsForHostAndLibvirt
@@ -179,7 +179,7 @@ function GetHexMasksForHostAndLibvirt
     local -i TOTAL_THREADS_HEX_MASK=$(( ( 2 ** ${TOTAL_THREADS_COUNT} ) - 1 ))
     GUEST_THREADS_HEX=$( printf '%x\n' "$TOTAL_THREADS_HEX_MASK" )
     AreHexMasksNotEmpty
-    return "$?"
+    return "${?}"
 }
 
 function ReleaseHexMask
@@ -195,9 +195,9 @@ function ReleaseHexMask
 
 function ReleaseThreadSets
 {
-    if ! systemctl set-property --runtime -- system.slice AllowedCPUs=$1 \
-        || ! systemctl set-property --runtime -- user.slice AllowedCPUs=$1 \
-        || ! systemctl set-property --runtime -- init.scope AllowedCPUs=$1; then
+    if ! systemctl set-property --runtime -- system.slice AllowedCPUs=${1} \
+        || ! systemctl set-property --runtime -- user.slice AllowedCPUs=${1} \
+        || ! systemctl set-property --runtime -- init.scope AllowedCPUs=${1}; then
         echo "An error occured: Failed to release CPU threads to Host."
         return 1
     fi

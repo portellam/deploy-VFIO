@@ -25,7 +25,7 @@
 
 # <remarks> Ranges from 20 (lowest priority) to -20 (highest priority). </remarks>
 TARGET_NICE="-1"
-DOMAIN_NAME="$1"
+DOMAIN_NAME="${1}"
 HOOK_NAME="cfscpu"
 PREFIX_PROMPT="libvirt-qemu $HOOK_NAME:"
 
