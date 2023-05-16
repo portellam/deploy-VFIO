@@ -198,7 +198,7 @@
                 fi
 
                 if ! "$HAS_SKIPPED" \
-                    && ( ! IsHostMemorySufficientForZramSwap \
+                    && ( ! IsHostMemorySufficientForZRAMSwap \
                     || ! Get \
                     || ! Install \
                     || ! Modify ); then
@@ -215,7 +215,7 @@
 
             function GetZRAMSwapSize
             {
-                IsHostMemorySufficientForZramSwap || return 1
+                IsHostMemorySufficientForZRAMSwap || return 1
 
                 case "$1" in
                     *"/"* )
@@ -252,7 +252,7 @@
                 return 1
             }
 
-            function IsHostMemorySufficientForZramSwap
+            function IsHostMemorySufficientForZRAMSwap
             {
                 if "$_IS_HUGEPAGES_SETUP"; then
                     _AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY - _HUGEPAGES_ALLOCATED_MEMORY ))

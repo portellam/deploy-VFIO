@@ -8,9 +8,13 @@
 #
 
 # <sources>
+    source vfiolib-checks
     source vfiolib-common
     source vfiolib-files
     source vfiolib-parse
+    source vfiolib-pre-setup
+    source vfiolib-post-setup
+    source vfiolib-setup
 # </sources>
 
 # <functions>
@@ -25,7 +29,7 @@
             return 0
         }
 
-        # <summary> Global setters </summary>
+        # <summary> Global setters </summary>               # TODO: evaluate these params and move to respective sources accordingly.
             function SetParameters
             {
                 SetParseParameters
@@ -147,7 +151,7 @@
                 return 0
             }
 
-            function GetArgsForMultiboot_VFIO
+            function GetArgsForMultibootVFIO
             {
                 case "$1" in
                     "default" )
@@ -176,7 +180,7 @@
                 return 1
             }
 
-            function GetArgsForStatic_VFIO
+            function GetArgsForStaticVFIO
             {
                 if [[ -z "$1" ]]; then
                     return 0
@@ -213,20 +217,20 @@
                 return 0
             }
 
-            function GetArgsFor_ZRAM_Swap
+            function GetArgsForZRAMSwap
             {
                 if [[ ! -z "$1" ]]; then
-                    GetZRAMSwapSize "$1" || GetOverrideArgsFor_ZRAM_Swap "$1" || return 1
+                    GetZRAMSwapSize "$1" || GetOverrideArgsForZRAMSwap "$1" || return 1
                 fi
 
                 if [[ ! -z "$2" ]]; then
-                    GetZRAMSwapSize "$2" || GetOverrideArgsFor_ZRAM_Swap "$2" || return 1
+                    GetZRAMSwapSize "$2" || GetOverrideArgsForZRAMSwap "$2" || return 1
                 fi
 
                 return 0
             }
 
-            function GetOverrideArgsFor_ZRAM_Swap
+            function GetOverrideArgsForZRAMSwap
             {
                 case "$1" in
                     "force" )
@@ -329,14 +333,14 @@
                     # <remarks> VFIO setup </remarks>
                     "-m" | "--multiboot" )
                         shift
-                        GetArgsForMultiboot_VFIO "$1" || return 1
+                        GetArgsForMultibootVFIO "$1" || return 1
                         _ASK_TO_EXECUTE_VFIO_SETUP=false
                         _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=true
                         ShiftInputIfOptionHasArgument "$1" ;;
 
                     "-s" | "--static" )
                         shift
-                        GetArgsForStatic_VFIO "$1" || return 1
+                        GetArgsForStaticVFIO "$1" || return 1
                         _ASK_TO_EXECUTE_VFIO_SETUP=false
                         _ASK_TO_EXECUTE_VFIO_SETUP_STATIC=false
                         ShiftInputIfOptionHasArgument "$1" ;;
@@ -364,8 +368,8 @@
                     "--zram-swap" )
                         shift
                         _ASK_TO_EXECUTE_POST_SETUPS=false
-                        GetArgsFor_ZRAM_Swap "$1" "$2" || return 1
-                        IsHostMemorySufficientForZramSwap || return 1
+                        GetArgsForZRAMSwap "$1" "$2" || return 1
+                        IsHostMemorySufficientForZRAMSwap || return 1
                         _EXECUTE_POST_SETUP_ZRAM_SWAP=true
                         ShiftInputIfOptionHasArgument "$1" "$2" ;;
 
