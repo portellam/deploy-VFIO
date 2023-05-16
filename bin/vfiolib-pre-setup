@@ -253,9 +253,9 @@
         # </summary
         function ExecuteStaticCPUIsolation
         {
-            function GetThreadByCoreAnd_SMT
+            function GetThreadByCoreAndSMT
             {
-                _THREAD=$(( _CORE + ( SMT_FACTOR * TOTAL_CORES_COUNT ) ))             # NOTE: VS Code reports a syntax error here. There is none.
+                _THREAD=$(( CORE + ( SMT_FACTOR * TOTAL_CORES_COUNT ) ))             # NOTE: VS Code reports a syntax error here. There is none.
             }
 
             function GetThreadSetsForHostAndGuest
@@ -266,16 +266,16 @@
                     local -i THREAD
 
                     # <remarks> Find thread sets for host. </remarks>
-                    for _CORE in ${_HOST_CORES_LIST[@]}; do
-                        GetThreadByCoreAnd_SMT
-                        _HOST_THREADS_LIST+=( "$THREAD" )
+                    for CORE in ${HOST_CORES_LIST[@]}; do
+                        GetThreadByCoreAndSMT
+                        HOST_THREADS_LIST+=( "$THREAD" )
                         HOST_THREADS_DELIM_LIST+=( "$THREAD" )
                     done
 
                     # <remarks> Find thread sets for guest(s). </remarks>
-                    for _CORE in ${_GUEST_CORES_LIST[@]}; do
-                        GetThreadByCoreAnd_SMT
-                        _GUEST_THREADS_LIST+=( "$THREAD" )
+                    for CORE in ${GUEST_CORES_LIST[@]}; do
+                        GetThreadByCoreAndSMT
+                        GUEST_THREADS_LIST+=( "$THREAD" )
                         GUEST_THREADS_DELIM_LIST+=( "$THREAD" )
                     done
 
@@ -324,13 +324,14 @@
                 fi
 
                 # <remarks> Get thread sets, for host and guest(s). </remarks>
-                local -a _HOST_CORES_LIST=( $( seq 0 $(( "$CORES_ALLOCATED_TO_HOST" - 1 )) ) )
-                local -a _HOST_THREADS_LIST=( )
-                local -a _GUEST_CORES_LIST=( $( seq "$CORES_ALLOCATED_TO_HOST" $(( "$TOTAL_CORES_COUNT" - 1 )) ) )
-                local -a _GUEST_THREADS_LIST=( )
+                local -a HOST_CORES_LIST=( $( seq 0 $(( "$CORES_ALLOCATED_TO_HOST" - 1 )) ) )
+                local -a HOST_THREADS_LIST=( )
+                local -a GUEST_CORES_LIST=( $( seq "$CORES_ALLOCATED_TO_HOST" $(( "$TOTAL_CORES_COUNT" - 1 )) ) )
+                local -a GUEST_THREADS_LIST=( )
                 local -i SMT_FACTOR=$(( "$TOTAL_THREADS_COUNT" / "$TOTAL_CORES_COUNT" ))
                 local -a SMT_FACTOR_LIST=( $( seq 0 $(( "$SMT_FACTOR" - 1 )) ) )
-                local HOST_THREADS_DELIM GUEST_THREADS_DELIM
+                local HOST_THREADS_DELIM=""
+                local GUEST_THREADS_DELIM=""
                 GetThreadSetsForHostAndGuest
 
                 # <remarks> Truncate last delimiter. </remarks>
@@ -364,22 +365,22 @@
                 local -i TOTAL_THREADS_HEX_MASK=0
 
                 # <remarks> Add each decimal mask to sum. </remarks>
-                for _THREAD in ${_HOST_THREADS_LIST[@]}; do
+                for _THREAD in ${HOST_THREADS_LIST[@]}; do
                     local -i THREAD_DECIMAL=$(( 2 ** $_THREAD ))
                     local -i THREAD_HEX_MASK=$( eval "$GET_HEX_MASK" )
                     HOST_THREADS_HEX_MASK+="$THREAD_HEX_MASK"
                 done
 
                 # <remarks> Convert hexadecimal mask into hexadecimal. </remarks>
-                declare -g _HOST_THREADS_HEX=$( printf '%x\n' "$HOST_THREADS_HEX_MASK" )
+                declare -g HOST_THREADS_HEX=$( printf '%x\n' "$HOST_THREADS_HEX_MASK" )
                 local -i TOTAL_THREADS_HEX_MASK=$(( ( 2 ** ${TOTAL_THREADS_COUNT} ) - 1 ))
-                # declare -g _GUEST_THREADS_HEX=$( printf '%x\n' "$TOTAL_THREADS_HEX_MASK" )
+                declare -g GUEST_THREADS_HEX=$( printf '%x\n' "$TOTAL_THREADS_HEX_MASK" )
 
                 echo -e "Allocated to Host:\t$HOST_THREADS_DELIM"
                 echo -e "Allocated to Guest:\t$GUEST_THREADS_DELIM"
 
                 # <remarks> Save changes. </remarks>
-                declare -g _LINE_GRUB_CMDLINE_ISOLCPU="isolcpus=$GUEST_THREADS_DELIM nohz_full=$GUEST_THREADS_DELIM rcu_nocbs=$GUEST_THREADS_DELIM"
+                declare -g LINE_GRUB_CMDLINE_ISOLCPU="isolcpus=$GUEST_THREADS_DELIM nohz_full=$GUEST_THREADS_DELIM rcu_nocbs=$GUEST_THREADS_DELIM"
                 return 0
             }
 
@@ -404,8 +405,8 @@
         {
             function Main
             {
-                local -a _FILE_1_CONTENTS _FILE_1_CONTENTS_EVDEV_CGROUPS _FILE_2_CONTENTS
-                local -a _FILE_1_CONTENTS_DEFAULT_CGROUPS=(
+                local -a FILE_1_CONTENTS FILE_1_CONTENTS_EVDEV_CGROUPS FILE_2_CONTENTS
+                local -a FILE_1_CONTENTS_DEFAULT_CGROUPS=(
                     "        \"/dev/null\", \"/dev/full\", \"/dev/zero\","
                     "        \"/dev/random\", \"/dev/urandom\","
                     "        \"/dev/ptmx\", \"/dev/kvm\","
@@ -414,30 +415,30 @@
                 # <remarks> Format input for Evdev. </remarks>
                 if "$_IS_EVDEV_SETUP"; then
                     for _DEVICE in ${_EVENT_DEVICES_LIST[@]}; do
-                        _FILE_1_CONTENTS_EVDEV_CGROUPS+=( "        \"/dev/input/by-id/$_DEVICE\"," )
+                        FILE_1_CONTENTS_EVDEV_CGROUPS+=( "        \"/dev/input/by-id/$_DEVICE\"," )
                     done
 
                     for _DEVICE in ${_INPUT_DEVICES_LIST[@]}; do
-                        _FILE_1_CONTENTS_EVDEV_CGROUPS+=( "        \"/dev/input/by-id/$_DEVICE\"," )
+                        FILE_1_CONTENTS_EVDEV_CGROUPS+=( "        \"/dev/input/by-id/$_DEVICE\"," )
                     done
                 fi
 
                 # <remarks> Preface file contents. </remarks>
-                _FILE_1_CONTENTS=( "${_DISCLAIMER_FILE_CONTENTS[@]}" )
-                _FILE_2_CONTENTS=( "${_DISCLAIMER_FILE_CONTENTS[@]}" )
-                _FILE_1_CONTENTS+=(
+                FILE_1_CONTENTS=( "${_DISCLAIMER_FILE_CONTENTS[@]}" )
+                FILE_2_CONTENTS=( "${_DISCLAIMER_FILE_CONTENTS[@]}" )
+                FILE_1_CONTENTS+=(
                     ""
                     "### User permissions ###"
                 )
 
                 # <remarks> Add user and group for Evdev. </remarks>
                 if "$_IS_EVDEV_SETUP"; then
-                    _FILE_1_CONTENTS+=(
+                    FILE_1_CONTENTS+=(
                         "user = \"$_USER\""
                         "group = \"user\""
                     )
                 else
-                    _FILE_1_CONTENTS+=(
+                    FILE_1_CONTENTS+=(
                         "#user = \"user\""
                         "#group = \"user\""
                     )
@@ -446,23 +447,23 @@
                 fi
 
                 # <remarks> Hugepages </remarks>
-                _FILE_1_CONTENTS+=(
+                FILE_1_CONTENTS+=(
                     ""
                     "### Hugepages ###"
                 )
 
                 if "$_IS_HUGEPAGES_SETUP"; then
-                    _FILE_1_CONTENTS+=(
+                    FILE_1_CONTENTS+=(
                         "hugetlbfs_mount = \"/dev/hugepages\""
                     )
 
-                    _FILE_2_CONTENTS+=(
+                    FILE_2_CONTENTS+=(
                         ""
                         "# Hugepages"
                         "/dev/hugepages rw,"
                     )
                 else
-                    _FILE_1_CONTENTS+=(
+                    FILE_1_CONTENTS+=(
                         "#hugetlbfs_mount = \"/dev/hugepages\""
                     )
 
@@ -470,28 +471,28 @@
                 fi
 
                 # <remarks> Add cgroups for Evdev. </remarks>
-                _FILE_1_CONTENTS+=(
+                FILE_1_CONTENTS+=(
                     ""
                     "### Devices ###"
                     "cgroup_device_acl = ["
                 )
 
                 if $_IS_EVDEV_SETUP; then
-                    _FILE_1_CONTENTS+=(
-                        "${_FILE_1_CONTENTS_EVDEV_CGROUPS[@]}"
-                        "${_FILE_1_CONTENTS_DEFAULT_CGROUPS[@]}"
+                    FILE_1_CONTENTS+=(
+                        "${FILE_1_CONTENTS_EVDEV_CGROUPS[@]}"
+                        "${FILE_1_CONTENTS_DEFAULT_CGROUPS[@]}"
                         "]"
                     )
 
-                    _FILE_2_CONTENTS+=(
+                    FILE_2_CONTENTS+=(
                         ""
                         "# Evdev"
                         "/dev/input/* rw,"
                         "/dev/input/by-id/* rw,"
                     )
                 else
-                    _FILE_1_CONTENTS+=(
-                        "${_FILE_1_CONTENTS_DEFAULT_CGROUPS[@]}"
+                    FILE_1_CONTENTS+=(
+                        "${FILE_1_CONTENTS_DEFAULT_CGROUPS[@]}"
                         "]"
                     )
 
@@ -499,7 +500,7 @@
                 fi
 
                 # <remarks> Adds NVRAM for EFI kernels in UEFI guest(s). </remarks>
-                _FILE_1_CONTENTS+=(
+                FILE_1_CONTENTS+=(
                     ""
                     "nvram = ["
                     "        \"/usr/share/OVMF/OVMF_CODE.fd:/usr/share/OVMF/OVMF_VARS.fd\","
@@ -510,11 +511,11 @@
                 )
 
                 # <remarks> Append changes to file(s). </remarks>
-                if ! sudo echo -e "${_FILE_1_CONTENTS[*]}" >> "$_QEMU_DEST_PATH"; then
+                if ! sudo echo -e "${FILE_1_CONTENTS[*]}" >> "$_QEMU_DEST_PATH"; then
                     echo -e "$_PREFIX_ERROR Failed to write to file '$_QEMU_DEST_PATH'."
                 fi
 
-                if ! sudo echo -e "${_FILE_2_CONTENTS[*]}" >> "$_APPARMOR_QEMU_DEST_PATH"; then
+                if ! sudo echo -e "${FILE_2_CONTENTS[*]}" >> "$_APPARMOR_QEMU_DEST_PATH"; then
                     echo -e "$_PREFIX_ERROR Failed to write to file '$_APPARMOR_QEMU_DEST_PATH'."
                 fi
 
