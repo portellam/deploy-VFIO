@@ -150,12 +150,12 @@
             function IsParseSelectionValid
             {
                 if ! IsValidEnumOfIOMMUGroups "_IOMMU_GROUPS_FOR_HOST_LIST"; then
-                    echo -e "An error occurred: Invalid allocation of devices for host."
+                    echo -e "${_PREFIX_ERROR} Invalid allocation of devices for host."
                     return 1
                 fi
 
                 if ! IsValidEnumOfIOMMUGroups "_IOMMU_GROUPS_FOR_VFIO_LIST"; then
-                    echo -e "An error occurred: Invalid selection of devices for VFIO setup."
+                    echo -e "${_PREFIX_ERROR} Invalid selection of devices for VFIO setup."
                     return 1
                 fi
 
@@ -230,14 +230,12 @@
                     return 0
                 fi
 
-                if [[ ! -e "${1}" ]] \
-                    || [[ ! -s "${1}" ]]; then
+                if [[ ! -e "${_DATABASE_FILE}" ]] \
+                    || [[ ! -s "${_DATABASE_FILE}" ]]; then
                     echo -e "${_PREFIX_ERROR} File is not valid."
                     return 1
                 fi
 
-                _DATABASE_FILE="${1}"
-                _DO_PARSE_DATABASE_FROM_FILE=true
                 return 0
             }
 
@@ -455,7 +453,7 @@
                     DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}" &> /dev/null && return 0
                 done
 
-                echo -e "An error occurred: No VGA devices allocated for host."
+                echo -e "${_PREFIX_ERROR} No VGA devices allocated for host."
                 return 1
             }
 
@@ -465,7 +463,7 @@
 
                 for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
                     if ! IsIOMMUGroupNotBindedToVFIO "${IOMMU_GROUP_ID}"; then
-                        echo -e "An error occurred: Detected existing VFIO setup."
+                        echo -e "${_PREFIX_ERROR} Detected existing VFIO setup."
                         return 1
                     fi
                 done
@@ -541,19 +539,20 @@
                 ExportParseDatabase || return "${?}"
                 read -r -p "Enter filename (leave blank for default): " ANSWER
 
-                if [[ ! -z "${ANSWER}" ]] \
-                    && [[ ! -e "${ANSWER}" ]]; then
-                    echo -e "${_PREFIX_ERROR} File does not exist."
-                fi
+                # if [[ ! -z "${ANSWER}" ]] \
+                #     && [[ ! -e "${ANSWER}" ]]; then
+                #     echo -e "${_PREFIX_ERROR} File does not exist."
+                # fi
 
-                if [[ ! -z "${ANSWER}" ]] \
-                    && [[ ! -s "${ANSWER}" ]]; then
-                    echo -e "${_PREFIX_ERROR} File is empty."
-                fi
+                # if [[ ! -z "${ANSWER}" ]] \
+                #     && [[ ! -s "${ANSWER}" ]]; then
+                #     echo -e "${_PREFIX_ERROR} File is empty."
+                # fi
 
                 if [[ ! -z "${ANSWER}" ]] \
                     && [[ -e "${ANSWER}" ]] \
                     && [[ -s "${ANSWER}" ]]; then
+                    echo -e "${_PREFIX_NOTE} File is not valid."
                     _DATABASE_FILE="${ANSWER}"
                     return 0
                 fi
@@ -590,10 +589,11 @@
 
             function SelectMethodToParseDatabase
             {
-                case true in
-                    "${_DO_PARSE_DATABASE_FROM_CACHE}" | "${_DO_PARSE_DATABASE_FROM_FILE}" | "${_DO_PARSE_DATABASE_FROM_INTERNET}" )
-                        return 0 ;;
-                esac
+                if "${_DO_PARSE_DATABASE_FROM_CACHE}" \
+                    || "${_DO_PARSE_DATABASE_FROM_FILE}" \
+                    || "${_DO_PARSE_DATABASE_FROM_INTERNET}"; then
+                    return 0
+                fi
 
                 for COUNT in $( seq 0 2 ); do
                     read -r -p "Select method of parsing IOMMU groups? [(F)ile/(I)nternal/(O)nline/(N)o]: " ANSWER
