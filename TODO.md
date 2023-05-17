@@ -3,6 +3,7 @@
     - Anything mentioned in **To Do** is not enabled/available.
 
 ### To Do:
+* Add functionality to deploy a vfio setup with hooks? Or leave that to the pros?
 * Ask question to do each function, then execute after asking all questions (pre and post-setup).
 * Trim fat, remove unnecessary repetitions and code.
 * Pre-setup:
