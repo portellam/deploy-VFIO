@@ -145,6 +145,9 @@
 
                 declare -g _ARE_COMMON_PARAMS_SET=true
 
+                # <remarks> Execution Flags </remarks>
+                declare -g _IS_EXECUTION_QUIET=false
+
                 # <remarks>
                 # Color coding
                 # Reference URL: 'https://www.shellhacks.com/bash-colors'
@@ -571,4 +574,5 @@
 
 # <main>
     SetParameters
+    unset SetParameters
 # </main>

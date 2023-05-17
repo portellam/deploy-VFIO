@@ -78,8 +78,15 @@
             declare -gu _HUGEPAGES_BYTE_SUFFIX=""
 
             # <remarks> Execution flags </remarks>
-            declare -g _IS_EVDEV_SETUP=false
-            declare -g _IS_HUGEPAGES_SETUP=false
+            declare -g _ASK_TO_EXECUTE_PRE_SETUP_ALL=true
+            declare -g _EXECUTE_PRE_SETUP_SKIP_ALL=true
+            declare -g _EXECUTE_PRE_SETUP_EVDEV=false
+            declare -g _EXECUTE_PRE_SETUP_HUGEPAGES=false
+            declare -g _EXECUTE_PRE_SETUP_STATIC_ISOLCPU=false
+            declare -g _EXECUTE_PRE_SETUP_UNINSTALL=false
+            declare -g _HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU=false
+            declare -g _IS_SETUP_EVDEV=false
+            declare -g _IS_SETUP_HUGEPAGES=false
         }
 
     # <summary> Private </summary>
@@ -126,7 +133,7 @@
                         echo
                     fi
 
-                    _IS_HUGEPAGES_SETUP=false
+                    _IS_SETUP_HUGEPAGES=false
 
                     if ! [[ "${_INT_MAX_MEMORY}" =~ ^[0-9]+$ ]]; then
                         echo -e "${_PREFIX_ERROR} Could not parse system memory."
@@ -134,7 +141,7 @@
                     fi
 
                     if ! "${_EXECUTE_PRE_SETUP_HUGEPAGES}"; then
-                        if ! "${_IS_QUIET}"; then
+                        if ! "${_IS_EXECUTION_QUIET}"; then
                             echo -e "Hugepages is a feature which statically allocates system memory to pagefiles.\nGuest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${_SET_COLOR_YELLOW}NOTE:${_RESET_COLOR} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${_SET_COLOR_YELLOW}Example:${_RESET_COLOR} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
                         fi
 
@@ -154,7 +161,7 @@
                     GetMemoryAllocatedToHugepages || return 1
                     IsHostMemorySufficientForHugepages || return 1
                     declare -g _OUTPUT_GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=${_HUGEPAGES_BYTE_SUFFIX} hugepagesz=${_HUGEPAGES_BYTE_SUFFIX} hugepages=${_HUGEPAGES_COUNT}"
-                    _IS_HUGEPAGES_SETUP=true
+                    _IS_SETUP_HUGEPAGES=true
                     return 0
                 }
 
@@ -418,7 +425,7 @@
                     "        \"/dev/rtc\", \"/dev/hpet\""
                 )
                 # <remarks> Format input for Evdev. </remarks>
-                if "${_IS_EVDEV_SETUP}"; then
+                if "${_IS_SETUP_EVDEV}"; then
                     for DEVICE in ${_EVENT_DEVICES_LIST[@]}; do
                         FILE_1_CONTENTS_EVDEV_CGROUPS+=( "        \"/dev/input/by-id/${DEVICE}\"," )
                     done
@@ -437,7 +444,7 @@
                 )
 
                 # <remarks> Add user and group for Evdev. </remarks>
-                if "${_IS_EVDEV_SETUP}"; then
+                if "${_IS_SETUP_EVDEV}"; then
                     FILE_1_CONTENTS+=(
                         "user = \"${_USER}\""
                         "group = \"user\""
@@ -457,7 +464,7 @@
                     "### Hugepages ###"
                 )
 
-                if "${_IS_HUGEPAGES_SETUP}"; then
+                if "${_IS_SETUP_HUGEPAGES}"; then
                     FILE_1_CONTENTS+=(
                         "hugetlbfs_mount = \"/dev/hugepages\""
                     )
@@ -482,7 +489,7 @@
                     "cgroup_device_acl = ["
                 )
 
-                if ${_IS_EVDEV_SETUP}; then
+                if ${_IS_SETUP_EVDEV}; then
                     FILE_1_CONTENTS+=(
                         "${FILE_1_CONTENTS_EVDEV_CGROUPS[@]}"
                         "${FILE_1_CONTENTS_DEFAULT_CGROUPS[@]}"
@@ -547,19 +554,19 @@
 
                 if [[ "${#_EVENT_DEVICES_LIST[@]}" -eq 0 ]] \
                     ||[[ "${#_INPUT_DEVICES_LIST[@]}" -eq 0 ]]; then
-                    _IS_EVDEV_SETUP=false
+                    _IS_SETUP_EVDEV=false
                     echo -e "${_PREFIX_ERROR} Cannot parse input devices."
                     return 1
                 fi
 
-                _IS_EVDEV_SETUP=true
+                _IS_SETUP_EVDEV=true
                 return 0
             }
 
             if ! "${_EXECUTE_PRE_SETUP_EVDEV}"; then
                 echo
 
-                if ! "${_IS_QUIET}"; then
+                if ! "${_IS_EXECUTION_QUIET}"; then
                     echo -e "Evdev (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between Host and Guest(s).\n${_SET_COLOR_YELLOW}HOW-TO:${_RESET_COLOR} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
                 fi
 
@@ -574,4 +581,5 @@
 
 # <main>
     SetParameters
+    unset SetParameters
 # </main>

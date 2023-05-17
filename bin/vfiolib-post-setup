@@ -10,6 +10,7 @@
 # <sources>
 	source vfiolib-common
 	source vfiolib-files
+	source vfiolib-pre-setup
 # </sources>
 
 # <functions>
@@ -69,11 +70,23 @@
                 declare -g _GIT_PATH="${HOME}/source/"
 
 				if [[ ! -d "${_GIT_PATH}" ]]; then
-	                sudo mkdir -p "${_GIT_PATH}" &> /dev/null
+	            	sudo mkdir -p "${_GIT_PATH}" &> /dev/null
 				fi
 
                 # <remarks> Execution Flags </remarks>
-                declare -g _IS_AUDIO_CAPTURE_SETUP=false
+				declare -g _ASK_TO_EXECUTE_POST_SETUPS=true
+				declare -g _EXECUTE_POST_SETUP_SKIP_ALL=true
+                declare -g _EXECUTE_POST_SETUP_AUDIO_LOOPBACK=false
+                declare -g _EXECUTE_POST_SETUP_AUTO_XORG=false
+                declare -g _EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS=false
+                declare -g _EXECUTE_POST_SETUP_ZRAM_SWAP=false
+                declare -g _EXECUTE_POST_SETUP_UNINSTALL=false
+                declare -g _HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=false
+                declare -g _HAS_ARG_AUTO_XORG_SORT_ORDER=false
+                declare -g _HAS_ARG_ZRAM_SWAP_FORCE=false
+                declare -g _HAS_ARG_ZRAM_SWAP_DEFAULTS=false
+                declare -g _HAS_ARG_ZRAM_SWAP_SET_FRACTION=false
+                declare -g _IS_SETUP_AUDIO_CAPTURE=false
             }
 
 	# <summary> Private </summary>
@@ -263,7 +276,7 @@
 
             function IsHostMemorySufficientForZRAMSwap
             {
-                if "${_IS_HUGEPAGES_SETUP}"; then
+                if "${_IS_SETUP_HUGEPAGES}"; then
                     _AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY - _HUGEPAGES_ALLOCATED_MEMORY ))
                 fi
 
@@ -336,7 +349,7 @@
 			}
 
 			Main
-			PrintSuffixPassOrFail "Installing audio drivers..." && _IS_AUDIO_CAPTURE_SETUP=true
+			PrintSuffixPassOrFail "Installing audio drivers..." && _IS_SETUP_AUDIO_CAPTURE=true
 			return "${_LAST_EXIT_CODE}"
 		}
 
@@ -578,4 +591,5 @@
 
 # <main>
     SetParameters
+    unset SetParameters
 # </main>

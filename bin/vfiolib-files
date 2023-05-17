@@ -337,4 +337,5 @@
 
 # <main>
     SetParameters
+    unset SetParameters
 # </main>
