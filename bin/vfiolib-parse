@@ -263,7 +263,7 @@
                 local DEVICE="${1}"
                 local -u DOMAIN_ID=$( echo "${DEVICE}" | cut -d ':' -f 2 )
 
-                if echo "$DOMAIN_ID" | grep -E -q "$_REGEX_DOMAIN_ID"; then
+                if echo "${DOMAIN_ID}" | grep -E -q "${_REGEX_DOMAIN_ID}"; then
                     return 0
                 fi
 
@@ -305,12 +305,12 @@
                 local -r REGEX_FOR_RANGE_OF_NUMS='^[0-9]+[-][0-9]+$'
                 local -a IOMMU_GROUPS_TEMP_LIST
 
-                if echo "${1}" | grep -E -q "$REGEX_FOR_RANGE_OF_NUMS"; then
+                if echo "${1}" | grep -E -q "${REGEX_FOR_RANGE_OF_NUMS}"; then
                     local -ir RANGE_START=$( echo "${1}" | cut -d '-' -f 1 )
                     local -ir RANGE_STOP=$( echo "${1}" | cut -d '-' -f 2 )
-                    IsIOMMUGroupIDValid "$RANGE_START" || return 1
-                    IsIOMMUGroupIDValid "$RANGE_STOP" || return 1
-                    IOMMU_GROUPS_TEMP_LIST+=( $( seq "$RANGE_START" "$RANGE_STOP" ) )
+                    IsIOMMUGroupIDValid "${RANGE_START}" || return 1
+                    IsIOMMUGroupIDValid "${RANGE_STOP}" || return 1
+                    IOMMU_GROUPS_TEMP_LIST+=( $( seq "${RANGE_START}" "${RANGE_STOP}" ) )
 
                 elif IsInt "${1}"; then
                     IsIOMMUGroupIDValid "${1}" || return 1
@@ -326,7 +326,7 @@
                 unset IFS
 
                 for IOMMU_GROUP_ID in ${IOMMU_GROUPS_TEMP_LIST[@]}; do
-                    if DoesIOMMUGroupHaveExternalDevices "$_DEVICE"; then
+                    if DoesIOMMUGroupHaveExternalDevices "${IOMMU_GROUP_ID}"; then
                         _IOMMU_GROUPS_FOR_VFIO_LIST+=( "${IOMMU_GROUP_ID}" )
                         break
                     fi
@@ -360,17 +360,17 @@
             {
                 SetParseParameters
 
-                for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST[@]}; do
+                for IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST[@]}; do
                     local -a DEVICE_LIST=( $( eval "$_GET_IOMMU_GROUP_DEVICE_LIST" ) )
 
-                    if ! DoesIOMMUGroupHaveExternalDevices "${_IOMMU_GROUP_ID}"; then
-                        _IOMMU_GROUPS_FOR_VFIO_LIST+=( "${_IOMMU_GROUP_ID}" )
+                    if ! DoesIOMMUGroupHaveExternalDevices "${IOMMU_GROUP_ID}"; then
+                        _IOMMU_GROUPS_FOR_VFIO_LIST+=( "${IOMMU_GROUP_ID}" )
                         break
                     else
-                        if DoesIOMMUGroupHaveVGADevice "${_IOMMU_GROUP_ID}"; then
-                            _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${_IOMMU_GROUP_ID}" )
+                        if DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}"; then
+                            _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${IOMMU_GROUP_ID}" )
                         else
-                            _IOMMU_GROUPS_FOR_HOST_LIST+=( "${_IOMMU_GROUP_ID}" )
+                            _IOMMU_GROUPS_FOR_HOST_LIST+=( "${IOMMU_GROUP_ID}" )
                         fi
                     fi
                 done
