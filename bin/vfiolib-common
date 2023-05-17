@@ -25,7 +25,7 @@
                     IS_VERBOSE=true
                 fi
 
-                if "$IS_VERBOSE"; then
+                if "${IS_VERBOSE}"; then
                     echo -en "Testing Internet connection...\t"
                 fi
 
@@ -35,7 +35,7 @@
 
                 SetExitCode
 
-                if "$IS_VERBOSE"; then
+                if "${IS_VERBOSE}"; then
                     ( return "${_LAST_EXIT_CODE}" )
                     PrintSuffixPassOrFail
                     echo -en "Testing connection to DNS...\t"
@@ -47,7 +47,7 @@
 
                 SetExitCode
 
-                if "$IS_VERBOSE"; then
+                if "${IS_VERBOSE}"; then
                     ( return "${_LAST_EXIT_CODE}" )
                     PrintSuffixPassOrFail
                 fi
@@ -64,10 +64,10 @@
                 # <summary> Check if current Operating System matches Package Manager (PM), and Check if PM is installed. </summary>
                 function GetPackageManagerByOS
                 {
-                    if [[ "$OS_WITH_APT" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                    if [[ "${OS_WITH_APT}" =~ .*${_OPERATING_SYSTEM}.* ]]; then
                         _PACKAGE_MANAGER="apt"
 
-                    elif [[ "$OS_WITH_DNF_OR_YUM" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                    elif [[ "${OS_WITH_DNF_OR_YUM}" =~ .*${_OPERATING_SYSTEM}.* ]]; then
                         _PACKAGE_MANAGER="dnf"
 
                         if command -v "${_PACKAGE_MANAGER}"; then
@@ -76,16 +76,16 @@
 
                         _PACKAGE_MANAGER="yum"
 
-                    elif [[ "$OS_WITH_PACMAN" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                    elif [[ "${OS_WITH_PACMAN}" =~ .*${_OPERATING_SYSTEM}.* ]]; then
                         _PACKAGE_MANAGER="pacman"
 
-                    elif [[ "$OS_WITH_PORTAGE" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                    elif [[ "${OS_WITH_PORTAGE}" =~ .*${_OPERATING_SYSTEM}.* ]]; then
                         _PACKAGE_MANAGER="portage"
 
-                    elif [[ "$OS_WITH_URPMI" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                    elif [[ "${OS_WITH_URPMI}" =~ .*${_OPERATING_SYSTEM}.* ]]; then
                         _PACKAGE_MANAGER="urpmi"
 
-                    elif [[ "$OS_WITH_ZYPPER" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                    elif [[ "${OS_WITH_ZYPPER}" =~ .*${_OPERATING_SYSTEM}.* ]]; then
                         _PACKAGE_MANAGER="zypper"
 
                     else
@@ -107,7 +107,7 @@
                 local OS_WITH_URPMI="opensuse"
                 local OS_WITH_ZYPPER="mandriva mageia"
 
-                if [[ -z "$KERNEL" ]]; then
+                if [[ -z "${KERNEL}" ]]; then
                     echo -e "${_PREFIX_ERROR} Failed to parse system kernel."
                     return 1
                 fi
@@ -117,7 +117,7 @@
                     return 1
                 fi
 
-                if [[ "$KERNEL" != *"linux"* ]]; then
+                if [[ "${KERNEL}" != *"linux"* ]]; then
                     echo -e "${_PREFIX_ERROR} Kernel '$( uname -o )' is not supported."
                     return 1
                 fi
@@ -390,7 +390,7 @@
                         OPTION="--reinstall -o Dpkg::Options::=--force-confmiss"
                     fi
 
-                    apt update && apt full-upgrade -y && apt install -y "$OPTION" "${1}" || return 1 ;;
+                    apt update && apt full-upgrade -y && apt install -y "${OPTION}" "${1}" || return 1 ;;
 
                 "dnf" )
                     dnf upgrade && dnf install "${1}" ;;
