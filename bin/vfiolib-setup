@@ -7,11 +7,6 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
-# TODO:
-# -remove prefix underscore to local variable names
-#
-#
-
 # <sources>
     source vfiolib-common
     source vfiolib-post-setup
