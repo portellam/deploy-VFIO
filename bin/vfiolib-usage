@@ -21,8 +21,8 @@
     # <summary> Public </summary>
         function ExecuteUsage
         {
-            if ! GetOption "${@}"; then
-                GetHelp
+            if ! GetOption "${@}" \
+                && GetHelp; then
                 return "${?}"
             fi
 
@@ -32,15 +32,21 @@
         # <summary> Global setters </summary>               # TODO: evaluate these params and move to respective sources accordingly.
             function SetParameters
             {
-                SetParseParameters
+                if [[ ! -z "${_ARE_USAGE_PARAMS_SET}" ]] \
+                    && "${_ARE_USAGE_PARAMS_SET}"; then
+                    return 0
+                fi
 
+                declare -g _ARE_USAGE_PARAMS_SET=true
+
+                # <remarks> Arguments </remarks
                 declare -g _ARGS_FOR_AUTO_XORG=""
 
-                # <remarks> Statements </remarks
-                declare -g _OUTPUT_INVALIDANSWER="${_PREFIX_ERROR} Failed to answer."
+                # <remarks> Output statements </remarks
+                declare -g _OUTPUT_INVALID_ANSWER="${_PREFIX_ERROR} Failed to answer."
                 declare -g _OUTPUT_INVALID_OPTION="${_PREFIX_ERROR} Invalid option."
 
-                # <remarks> Flags </remarks
+                # <remarks> Execution Flags </remarks
                 declare -g _ASK_TO_EXECUTE_POST_SETUPS=true
                 declare -g _ASK_TO_EXECUTE_PRE_SETUP_ALL=true
                 declare -g _ASK_TO_EXECUTE_VFIO_SETUP=true
@@ -85,14 +91,14 @@
                 while [[ ! -z "${1}" ]]; do
                     case "${1}" in
                         "first" | "last" )
-                            if "$_HAS_ARG_AUTO_XORG_SORT_ORDER"; then
+                            if "${_HAS_ARG_AUTO_XORG_SORT_ORDER}"; then
                                 return 1
                             fi
 
                             _HAS_ARG_AUTO_XORG_SORT_ORDER=true ;;
 
                         "amd" | "intel" | "nvidia" | "other" )
-                            if "$_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR"; then
+                            if "${_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR}"; then
                                 return 1
                             fi
 
@@ -120,15 +126,15 @@
                 local -i COUNT_DELIM=$( echo "${1}" | grep -o "," | wc -l )
                 (( COUNT_DELIM++ ))
 
-                while [[ "$COUNT_DELIM" -gt 0 ]] \
-                    && ! "$_HAS_ARG_PARSE_IOMMU_SELECT_ALL"; do
-                    local ARG=$( echo "${1}" | cut -d ',' -f "$COUNT_DELIM" )
+                while [[ "${COUNT_DELIM}" -gt 0 ]] \
+                    && ! "${_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; do
+                    local ARG=$( echo "${1}" | cut -d ',' -f "${COUNT_DELIM}" )
 
-                    if [[ ! -z "$ARG" ]] \
+                    if [[ ! -z "${ARG}" ]] \
                         && ( ! "${_DO_PARSE_DATABASE_FROM_FILE}" \
                             || ( "${_DO_PARSE_DATABASE_FROM_FILE}" \
-                            && [[ "$ARG" != "${_DATABASE_FILE}" ]] )); then
-                        case "$ARG" in
+                            && [[ "${ARG}" != "${_DATABASE_FILE}" ]] )); then
+                        case "${ARG}" in
                             "all" )
                                 _HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
                                 AddValidIOMMUGroupsParseList || return 1 ;;
@@ -140,7 +146,7 @@
 
                             * )
                                 _HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
-                                AddSomeIOMMUGroupsParseList "$ARG" || return 1 ;;
+                                AddSomeIOMMUGroupsParseList "${ARG}" || return 1 ;;
                         esac
                     fi
 
@@ -270,7 +276,7 @@
                         return 1
                     fi
 
-                    for _COUNT in $( seq 0 "$ARGS_COUNT" ); do
+                    for _COUNT in $( seq 0 "${ARGS_COUNT}" ); do
                         shift
                     done
                 done
@@ -401,7 +407,7 @@
         function PrintStatementInvalidOption
         {
             if [[ -z "${1}" ]]; then
-                echo -e "$_OUTPUT_INVALID_OPTION"
+                echo -e "${_OUTPUT_INVALID_OPTION}"
             fi
 
             echo -e "${_PREFIX_ERROR} Invalid option '${1}'."
@@ -499,5 +505,8 @@
             unset IFS
             return 0
         }
-
 # </functions>
+
+# <main>
+    SetParameters
+# </main>

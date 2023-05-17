@@ -84,11 +84,11 @@ function GetCPU
     local -i TOTAL_THREADS_COUNT=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+" )
 
     # <remarks> Set maximum number of cores allocated to host. </remarks>
-    if [[ "$TOTAL_CORES_COUNT" -ge 4 ]]; then
+    if [[ "${TOTAL_CORES_COUNT}" -ge 4 ]]; then
         CORES_ALLOCATED_TO_HOST=2
 
-    elif [[ "$TOTAL_CORES_COUNT" -le 3 ]] \
-        && [[ "$TOTAL_CORES_COUNT" -ge 2 ]]; then
+    elif [[ "${TOTAL_CORES_COUNT}" -le 3 ]] \
+        && [[ "${TOTAL_CORES_COUNT}" -ge 2 ]]; then
         CORES_ALLOCATED_TO_HOST=1
 
     else
@@ -96,12 +96,12 @@ function GetCPU
         return 1
     fi
 
-    local -a HOST_CORES_LIST=( $( seq 0 $(( "$CORES_ALLOCATED_TO_HOST" - 1 )) ) )
+    local -a HOST_CORES_LIST=( $( seq 0 $(( "${CORES_ALLOCATED_TO_HOST}" - 1 )) ) )
     local -a HOST_THREADS_LIST=( )
-    local -a GUEST_CORES_LIST=( $( seq "$CORES_ALLOCATED_TO_HOST" $(( "$TOTAL_CORES_COUNT" - 1 )) ) )
+    local -a GUEST_CORES_LIST=( $( seq "${CORES_ALLOCATED_TO_HOST}" $(( "${TOTAL_CORES_COUNT}" - 1 )) ) )
     local -a GUEST_THREADS_LIST=( )
-    local -i SMT_FACTOR=$(( "$TOTAL_THREADS_COUNT" / "$TOTAL_CORES_COUNT" ))
-    local -a SMT_FACTOR_LIST=( $( seq 0 $(( "$SMT_FACTOR" - 1 )) ) )
+    local -i SMT_FACTOR=$(( "${TOTAL_THREADS_COUNT}" / "${TOTAL_CORES_COUNT}" ))
+    local -a SMT_FACTOR_LIST=( $( seq 0 $(( "${SMT_FACTOR}" - 1 )) ) )
 
     AreValuesNotEmpty
     return "${?}"
@@ -115,15 +115,15 @@ function GetThreadSetsForHostAndLibvirt
         local -i THREAD
 
         for _CORE in ${HOST_CORES_LIST[@]}; do
-            GetThreadByCoreAndSMT "$THREAD"
-            HOST_THREADS_LIST+=( "$THREAD" )
-            HOST_THREADS_DELIM_LIST+=( "$THREAD" )
+            GetThreadByCoreAndSMT "${THREAD}"
+            HOST_THREADS_LIST+=( "${THREAD}" )
+            HOST_THREADS_DELIM_LIST+=( "${THREAD}" )
         done
 
         for _CORE in ${GUEST_CORES_LIST[@]}; do
-            GetThreadByCoreAndSMT "$THREAD"
-            GUEST_THREADS_LIST+=( "$THREAD" )
-            GUEST_THREADS_DELIM_LIST+=( "$THREAD" )
+            GetThreadByCoreAndSMT "${THREAD}"
+            GUEST_THREADS_LIST+=( "${THREAD}" )
+            GUEST_THREADS_DELIM_LIST+=( "${THREAD}" )
         done
 
         local -i FIRST_THREAD_SET="${HOST_THREADS_DELIM_LIST[0]}"
@@ -135,7 +135,7 @@ function GetThreadSetsForHostAndLibvirt
             local THREAD_SET="$_FIRSTTHREAD_SET-$_LASTTHREAD_SET"
         fi
 
-        _HOST_THREADS_DELIM+="$THREAD_SET,"
+        _HOST_THREADS_DELIM+="${THREAD_SET},"
 
         local -i FIRST_THREAD_SET="${GUEST_THREADS_DELIM_LIST[0]}"
         local -i LAST_THREAD_SET="${GUEST_THREADS_DELIM_LIST[-1]}"
@@ -145,7 +145,7 @@ function GetThreadSetsForHostAndLibvirt
             local THREAD_SET="$FIRST_THREAD_SET-$_LASTTHREAD_SET"
         fi
 
-        _GUEST_THREADS_DELIM+="$THREAD_SET,"
+        _GUEST_THREADS_DELIM+="${THREAD_SET},"
     done
 
     AreThreadSetsNotEmpty || return 1
@@ -169,15 +169,15 @@ function GetHexMasksForHostAndLibvirt
 
     # <remarks> Add each decimal mask to sum. </remarks>
     for _THREAD in ${HOST_THREADS_LIST[@]}; do
-        local -i THREAD_DECIMAL=$(( 2 ** $_THREAD ))
-        local -i THREAD_HEX_MASK=$( echo "obase=16; $THREAD_DECIMAL" | bc )
-        HOST_THREADS_HEX_MASK+="$THREAD_HEX_MASK"
+        local -i THREAD_DECIMAL=$(( 2 ** ${_THREAD} ))
+        local -i THREAD_HEX_MASK=$( echo "obase=16; ${THREAD}_DECIMAL" | bc )
+        HOST_THREADS_HEX_MASK+="${THREAD_HEX_MASK}"
     done
 
     # <remarks> Convert hexadecimal mask into hexadecimal. </remarks>
-    HOST_THREADS_HEX=$( printf '%x\n' "$HOST_THREADS_HEX_MASK" )
+    HOST_THREADS_HEX=$( printf '%x\n' "${HOST_THREADS_HEX_MASK}" )
     local -i TOTAL_THREADS_HEX_MASK=$(( ( 2 ** ${TOTAL_THREADS_COUNT} ) - 1 ))
-    GUEST_THREADS_HEX=$( printf '%x\n' "$TOTAL_THREADS_HEX_MASK" )
+    GUEST_THREADS_HEX=$( printf '%x\n' "${TOTAL_THREADS_HEX_MASK}" )
     AreHexMasksNotEmpty
     return "${?}"
 }

@@ -85,26 +85,32 @@
             PrintSuffixWait "${OUTPUT}"
             Main
             PrintSuffixPassOrFail "${OUTPUT}"
-            return "$_LAST_EXIT_CODE"
+            return "${_LAST_EXIT_CODE}"
         }
 
         # <summary> Global setters </summary>
         function SetParameters
         {
-            declare -g _DEFAULT_MENU_ENTRY_TITLE="0"
-            declare -g _PREFERRED_MENU_ENTRY_TITLE=""
-            declare -ag _CUSTOM_GRUB_FILE_CONTENTS=( )
-            declare -ag _MENU_ENTRY_TITLE_LIST=( "${_PREFERRED_MENU_ENTRY_TITLE}" )
+            if [[ ! -z "${_ARE_MAIN_SETUP_PARAMS_SET}" ]] \
+                && "${_ARE_MAIN_SETUP_PARAMS_SET}"; then
+                return 0
+            fi
 
-            # <remarks> Feature flags </remarks>
+            declare -g _ARE_MAIN_SETUP_PARAMS_SET=true
+
+            declare -g _DEFAULT_MENU_ENTRY_TITLE="0"
+            declare -g _LINE_GRUB_CMDLINE="quiet splash amd_iommu=on intel_iommu=on iommu=1,pt"
+            declare -g _PREFERRED_MENU_ENTRY_TITLE=""
+            declare -ga _CUSTOM_GRUB_FILE_CONTENTS=( )
+            declare -ga _MENU_ENTRY_TITLE_LIST=( "${_PREFERRED_MENU_ENTRY_TITLE}" )
+
+            # <remarks> Feature Flags </remarks>
             _FLAG_ADD_EARLY_LOAD_MODULE_ARGS=true
             _FLAG_ADD_LOG_LEVEL_ARGS=true
             _FLAG_ADD_PRIVACY_ARGS=false
             _FLAG_ADD_SET_POWER_ARGS=true
             _FLAG_ADD_SET_VIDEO_ARGS=true
             _FLAG_ADD_WIN10_REQUIRED_ARGS=true
-
-            declare -g _LINE_GRUB_CMDLINE="quiet splash amd_iommu=on intel_iommu=on iommu=1,pt"
 
             if "${_FLAG_ADD_LOG_LEVEL_ARGS}"; then
                 _LINE_GRUB_CMDLINE="loglevel=3 ${_LINE_GRUB_CMDLINE}"
@@ -737,9 +743,9 @@
 
         function GetListsForNoGRUBStaticSetup
         {
-            declare -ag _BLACKLISTS_LIST=( )
-            declare -ag _INITRAMFS_LIST=( )
-            declare -ag _MODULES_LIST=( )
+            declare -ga _BLACKLISTS_LIST=( )
+            declare -ga _INITRAMFS_LIST=( )
+            declare -ga _MODULES_LIST=( )
             declare -g HWID_DELIM=""
 
             for _DRIVER in ${_VFIOPCI_DRIVER_LIST[@]}; do
@@ -783,8 +789,8 @@
             declare -g _VGA_VFIOPCIHWID_DELIM=""
 
             if ! "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}"; then
-                declare -ag _VFIOPCI_DRIVER_LIST=( )
-                declare -ag _VGA_VFIOPCI_DRIVER_LIST=( )
+                declare -ga _VFIOPCI_DRIVER_LIST=( )
+                declare -ga _VGA_VFIOPCI_DRIVER_LIST=( )
             fi
 
             for _IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST_FOR_VFIO[@]}; do
@@ -883,3 +889,7 @@
         return 0
     }
 # </functions>
+
+# <main>
+    SetParameters
+# </main>

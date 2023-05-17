@@ -20,7 +20,7 @@
 			function Main
 			{
 				while [[ "${?}" -ne 1 ]]; do
-					if "$_ASK_TO_EXECUTE_POST_SETUPS"; then
+					if "${_ASK_TO_EXECUTE_POST_SETUPS}"; then
 						LibvirtHooks
 						GuestAudioLoopback
 						AllocateRAMToSwap
@@ -28,19 +28,19 @@
 						break
 					fi
 
-					if "$_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS"; then
+					if "${_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS}"; then
 						LibvirtHooks
 					fi
 
-					if "$_EXECUTE_POST_SETUP_AUDIO_LOOPBACK"; then
+					if "${_EXECUTE_POST_SETUP_AUDIO_LOOPBACK}"; then
 						GuestAudioLoopback
 					fi
 
-					if "$_EXECUTE_POST_SETUP_ZRAM_SWAP"; then
+					if "${_EXECUTE_POST_SETUP_ZRAM_SWAP}"; then
 						AllocateRAMToSwap
 					fi
 
-					if "$_EXECUTE_POST_SETUP_AUTO_XORG"; then
+					if "${_EXECUTE_POST_SETUP_AUTO_XORG}"; then
 						SetVideoOutput
 					fi
 
@@ -60,10 +60,20 @@
         # <summary> Global setters </summary>
             function SetParameters
             {
-                declare -g _GIT_PATH="$HOME/source/"
-                sudo mkdir -p "$_GIT_PATH" &> /dev/null
+				if [[ ! -z "${_ARE_POST_SETUP_PARAMS_SET}" ]] \
+                    && "${_ARE_POST_SETUP_PARAMS_SET}"; then
+                    return 0
+                fi
 
-                # <remarks> Flags </remarks>
+                declare -g _ARE_POST_SETUP_PARAMS_SET=true
+
+                declare -g _GIT_PATH="${HOME}/source/"
+
+				if [[ ! -d "${_GIT_PATH}" ]]; then
+	                sudo mkdir -p "${_GIT_PATH}" &> /dev/null
+				fi
+
+                # <remarks> Execution Flags </remarks>
                 declare -g _IS_AUDIO_CAPTURE_SETUP=false
             }
 
@@ -76,7 +86,7 @@
             {
                 function Get
                 {
-                    UpdateOrCloneGitRepo "$_GIT_PATH" "$FULL_REPO" "$USER_NAME" "$_EXECUTE_POST_SETUP_ZRAM_SWAP" || return 1
+                    UpdateOrCloneGitRepo "${_GIT_PATH}" "${FULL_REPO}" "${USER_NAME}" "${_EXECUTE_POST_SETUP_ZRAM_SWAP}" || return 1
                     return 0
                 }
 
@@ -84,18 +94,18 @@
                 {
                     local -r SCRIPT_NAME="install.sh"
 
-                    if ! cd "$_GIT_PATH$FULL_REPO"; then
+                    if ! cd "${_GIT_PATH}${FULL_REPO}"; then
                         echo -e "${_PREFIX_ERROR} Failed to find build directory."
                         return 1
                     fi
 
-                    if [[ ! -e "$SCRIPT_NAME" ]]; then
-                        echo -e "${_PREFIX_ERROR} Failed to find script '$SCRIPT_NAME'."
+                    if [[ ! -e "${SCRIPT_NAME}" ]]; then
+                        echo -e "${_PREFIX_ERROR} Failed to find script '${SCRIPT_NAME}'."
                         return 1
                     fi
 
-                    if ! echo "i" | sudo bash "$SCRIPT_NAME" &> /dev/null; then
-                        echo -e "${_PREFIX_ERROR} Failed to execute script '$SCRIPT_NAME'."
+                    if ! echo "i" | sudo bash "${SCRIPT_NAME}" &> /dev/null; then
+                        echo -e "${_PREFIX_ERROR} Failed to execute script '${SCRIPT_NAME}'."
                         return 1
                     fi
 
@@ -122,41 +132,41 @@
 
                     local -r FILE="/etc/default/zram-swap"
                     local -r LINE_TO_MATCH="_zram_fraction="
-                    local FRACTION="$_ARGS_FOR_ZRAM_SWAP_FRACTION"
+                    local FRACTION="${_ARGS_FOR_ZRAM_SWAP_FRACTION}"
 
-                    if ! "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
-                        && ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
-                        AskToContinue "$FRACTION" || return "${?}"
+                    if ! "${_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
+                        && ! "${_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
+                        AskToContinue "${FRACTION}" || return "${?}"
                     fi
 
-                    if "$_HAS_ARG_ZRAM_SWAP_DEFAULTS" \
-                        && ! "$_HAS_ARG_ZRAM_SWAP_SET_FRACTION"; then
+                    if "${_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
+                        && ! "${_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
                         local -i ZRAM_SWAP_AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY / 2 ))
-                        local -i DENOMINATOR=$( printf "%.0f" $( echo "scale=2;$_INT_MAX_MEMORY/$ZRAM_SWAP_AVAILABLE_MEMORY" | bc ) )
+                        local -i DENOMINATOR=$( printf "%.0f" $( echo "scale=2;${_INT_MAX_MEMORY}/${ZRAM_SWAP_AVAILABLE_MEMORY}" | bc ) )
 
                         # <remarks> Round down to nearest even number. </remarks>
-                        if [[ $( expr $DENOMINATOR % 2 ) -eq 1 ]]; then
+                        if [[ $( expr ${DENOMINATOR} % 2 ) -eq 1 ]]; then
                             (( DENOMINATOR-- ))
                         fi
 
                         # <remarks> Is fraction positive non-zero and not equal to one. </remarks>
-                        if [[ "$DENOMINATOR" -le 0 ]]; then
+                        if [[ "${DENOMINATOR}" -le 0 ]]; then
                             echo -e "${_PREFIX_ERROR} Denominator is negative or zero."
                         fi
 
-                        FRACTION="1/$DENOMINATOR"
+                        FRACTION="1/${DENOMINATOR}"
                     fi
 
-                    if ! sed -i '/'${LINE_TO_MATCH}'"*"/c\'${LINE_TO_MATCH}'"'$FRACTION'"' "${FILE}"; then
+                    if ! sed -i '/'${LINE_TO_MATCH}'"*"/c\'${LINE_TO_MATCH}'"'${FRACTION}'"' "${FILE}"; then
                         echo -e "${_PREFIX_ERROR} Failed to write output to zram-swap file."
                         return 1
                     fi
 
-                    if ! "$_HAS_ARG_ZRAM_SWAP_FORCE" \
+                    if ! "${_HAS_ARG_ZRAM_SWAP_FORCE}" \
                         && sudo swapon -v | grep zram &> /dev/null \
                         && sudo swapon -v | grep zram &> /dev/null \
                         && ! sudo swapon -v | grep zram | grep 0B &> /dev/null; then
-                        echo -e "$_PREFIX_NOTE zram-swap device(s) already in use. Restart system to save changes."
+                        echo -e "${_PREFIX_NOTE} zram-swap device(s) already in use. Restart system to save changes."
                         return 0
                     fi
 
@@ -186,10 +196,10 @@
 
                 local -r USER_NAME="foundObjects"
                 local -r REPO_NAME="zram-swap"
-                local -r FULL_REPO="$USER_NAME/$REPO_NAME"
+                local -r FULL_REPO="${USER_NAME}/${REPO_NAME}"
                 local HAS_SKIPPED=false
 
-                if ! "$_EXECUTE_POST_SETUP_ZRAM_SWAP"; then
+                if ! "${_EXECUTE_POST_SETUP_ZRAM_SWAP}"; then
                     echo
 
                     if ! AskToExecuteOrSkip "Install zram-swap?"; then
@@ -197,7 +207,7 @@
                     fi
                 fi
 
-                if ! "$HAS_SKIPPED" \
+                if ! "${HAS_SKIPPED}" \
                     && ( ! IsHostMemorySufficientForZRAMSwap \
                     || ! Get \
                     || ! Install \
@@ -205,12 +215,12 @@
                     false
                 fi
 
-                if "$HAS_SKIPPED"; then
+                if "${HAS_SKIPPED}"; then
                     ( return 255 )
                 fi
 
                 PrintSuffixPassOrFail "Allocating RAM to swap..."
-                return "$_LAST_EXIT_CODE"
+                return "${_LAST_EXIT_CODE}"
             }
 
             function GetZRAMSwapSize
@@ -231,18 +241,18 @@
                         return 1 ;;
                 esac
 
-                if ! [[ "$NUMERATOR" =~ ^[0-9]+$ ]] \
-                    || ! [[ "$DENOMINATOR" =~ ^[0-9]+$ ]]; then
+                if ! [[ "${NUMERATOR}" =~ ^[0-9]+$ ]] \
+                    || ! [[ "${DENOMINATOR}" =~ ^[0-9]+$ ]]; then
                     echo -e "${_PREFIX_ERROR} Values are not numbers."
                     return 1
                 fi
 
-                if [[ "$NUMERATOR" -lt "$DENOMINATOR" ]] || [[ "$DENOMINATOR" -gt 1 ]]; then
+                if [[ "${NUMERATOR}" -lt "${DENOMINATOR}" ]] || [[ "${DENOMINATOR}" -gt 1 ]]; then
                     declare -g _ARGS_FOR_ZRAM_SWAP_FRACTION="${1}"
                     _HAS_ARG_ZRAM_SWAP_SET_FRACTION=true
                     return 0
 
-                elif [[ "$DENOMINATOR" -eq 0 ]]; then
+                elif [[ "${DENOMINATOR}" -eq 0 ]]; then
                     return 1
 
                 else
@@ -254,7 +264,7 @@
 
             function IsHostMemorySufficientForZRAMSwap
             {
-                if "$_IS_HUGEPAGES_SETUP"; then
+                if "${_IS_HUGEPAGES_SETUP}"; then
                     _AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY - _HUGEPAGES_ALLOCATED_MEMORY ))
                 fi
 
@@ -281,7 +291,7 @@
 				local DEPENDENCIES=""
 
 				# <remarks> Install JACK and PipeWire. </remarks>
-				case "$_PACKAGE_MANAGER" in
+				case "${_PACKAGE_MANAGER}" in
 					"apt" )
 						DEPENDENCIES+="pipewire pipewire-jack " ;;
 
@@ -289,13 +299,13 @@
 						DEPENDENCIES+="pipewire pipewire-jack " ;;
 
 					* )
-						echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
+						echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
 						return 1 ;;
 				esac
 
 				# <remarks> Include PulseAudio (and QEMU driver if available). </remarks>
 				if IsInstalledCommand "pulseaudio" &> /dev/null; then
-					case "$_PACKAGE_MANAGER" in
+					case "${_PACKAGE_MANAGER}" in
 						"apt" )
 							DEPENDENCIES+="pipewire-pulse " ;;
 
@@ -303,13 +313,13 @@
 							DEPENDENCIES+="pipewire-pulse qemu-audio-pa " ;;
 
 						* )
-							echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
+							echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
 							return 1 ;;
 					esac
 
 				# <remarks> Fallback to factory driver. </remarks>
 				else
-					case "$_PACKAGE_MANAGER" in
+					case "${_PACKAGE_MANAGER}" in
 						"apt" )
 							DEPENDENCIES+="pipewire-alsa " ;;
 
@@ -317,18 +327,18 @@
 							DEPENDENCIES+="pipewire-alsa " ;;
 
 						* )
-							echo -e "$_OUTPUT_INVALID_PACKAGE_MANAGER"
+							echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
 							return 1 ;;
 					esac
 				fi
 
-				IsInstalledPackage "$DEPENDENCIES" &> /dev/null || InstallPackage "$DEPENDENCIES" &> /dev/null
+				IsInstalledPackage "${DEPENDENCIES}" &> /dev/null || InstallPackage "${DEPENDENCIES}" &> /dev/null
 				return "${?}"
 			}
 
 			Main
 			PrintSuffixPassOrFail "Installing audio drivers..." && _IS_AUDIO_CAPTURE_SETUP=true
-			return "$_LAST_EXIT_CODE"
+			return "${_LAST_EXIT_CODE}"
 		}
 
 		# <summary>
@@ -344,7 +354,7 @@
 					return 1
 				fi
 
-				if ! sudo cp "$_AUDIO_LOOPBACK_SRC_PATH" "$_AUDIO_LOOPBACK_DEST_PATH"; then
+				if ! sudo cp "${_AUDIO_LOOPBACK_SRC_PATH}" "${_AUDIO_LOOPBACK_DEST_PATH}"; then
 					echo -e "${_PREFIX_ERROR} Failed to copy file."
 					return 1
 				fi
@@ -354,12 +364,12 @@
 					return 1
 				fi
 
-				if ! sudo systemctl start "$_AUDIO_LOOPBACK_FILENAME"; then
+				if ! sudo systemctl start "${_AUDIO_LOOPBACK_FILENAME}"; then
 					echo -e "${_PREFIX_ERROR} Failed to start audio loopback service."
 					return 1
 				fi
 
-				if ! sudo systemctl enable "$_AUDIO_LOOPBACK_FILENAME"; then
+				if ! sudo systemctl enable "${_AUDIO_LOOPBACK_FILENAME}"; then
 					echo -e "${_PREFIX_ERROR} Failed to enable audio loopback service."
 					return 1
 				fi
@@ -369,7 +379,7 @@
 
 			local HAS_SKIPPED=false
 
-			if ! "$_EXECUTE_POST_SETUP_AUDIO_LOOPBACK"; then
+			if ! "${_EXECUTE_POST_SETUP_AUDIO_LOOPBACK}"; then
 				echo
 
 				if ! AskToExecuteOrSkip "Install zram-swap?"; then
@@ -377,14 +387,14 @@
 				fi
 			fi
 
-			if ! "$HAS_SKIPPED"; then
+			if ! "${HAS_SKIPPED}"; then
 				Main
 			else
 				( return 255 )
 			fi
 
 			PrintSuffixPassOrFail "Creating audio loopback..."
-			return "$_LAST_EXIT_CODE"
+			return "${_LAST_EXIT_CODE}"
 		}
 
 		# <summary>
@@ -394,45 +404,45 @@
 		{
 			function Main
 			{
-				if ! sudo cp "$_LIBVIRT_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_DEST_PATH" &> /dev/null \
-					|| ! sudo cp "$_LIBVIRT_HOOK_CFSCPU_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH" &> /dev/null \
-					|| ! sudo cp "$_LIBVIRT_HOOK_DDCUTIL_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH" &> /dev/null \
-					|| ! sudo cp "$_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null \
-					|| ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH" &> /dev/null \
-					|| ! sudo cp "$_LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH" "$_LIBVIRT_HOOK_NOSLEEP_SERVICE_DEST_PATH" &> /dev/null \
-					|| ! sudo cp "$_LIBVIRT_HOOK_UPDATE_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH" &> /dev/null; then
+				if ! sudo cp "${_LIBVIRT_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_DEST_PATH}" &> /dev/null \
+					|| ! sudo cp "${_LIBVIRT_HOOK_CFSCPU_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH}" &> /dev/null \
+					|| ! sudo cp "${_LIBVIRT_HOOK_DDCUTIL_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH}" &> /dev/null \
+					|| ! sudo cp "${_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null \
+					|| ! sudo cp "${_LIBVIRT_HOOK_NOSLEEP_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH}" &> /dev/null \
+					|| ! sudo cp "${_LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH}" "${_LIBVIRT_HOOK_NOSLEEP_SERVICE_DEST_PATH}" &> /dev/null \
+					|| ! sudo cp "${_LIBVIRT_HOOK_UPDATE_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH}" &> /dev/null; then
 					echo -e "${_PREFIX_ERROR} Failed to copy file(s)."
 					return 1
 				fi
 
-				if ! sudo chmod +x "$_LIBVIRT_HOOK_DEST_PATH" &> /dev/null \
-					|| ! sudo chmod +x "$_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH" &> /dev/null \
-					|| ! sudo chmod +x "$_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH" &> /dev/null \
-					|| ! sudo chmod +x "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null \
-					|| ! sudo chmod +x "$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH" &> /dev/null \
-					|| ! sudo chmod +x "$_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH" &> /dev/null; then
+				if ! sudo chmod +x "${_LIBVIRT_HOOK_DEST_PATH}" &> /dev/null \
+					|| ! sudo chmod +x "${_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH}" &> /dev/null \
+					|| ! sudo chmod +x "${_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH}" &> /dev/null \
+					|| ! sudo chmod +x "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null \
+					|| ! sudo chmod +x "${_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH}" &> /dev/null \
+					|| ! sudo chmod +x "${_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH}" &> /dev/null; then
 					echo -e "${_PREFIX_ERROR} Failed to set file permissions."
 					return 1
 				fi
 
-				if ! "$_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU"; then
-					if ! sudo cp "$_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH" "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null; then
+				if ! "${_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU}"; then
+					if ! sudo cp "${_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null; then
 						echo -e "${_PREFIX_ERROR} Failed to copy file(s)."
 						return 1
 					fi
 
-					if ! sudo chmod +x "$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH" &> /dev/null; then
+					if ! sudo chmod +x "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null; then
 						echo -e "${_PREFIX_ERROR} Failed to set file permissions."
 						return 1
 					fi
 				fi
 
-				if ! sudo echo -e "\n\n# <sources>" >> "$_LIBVIRT_HOOK_DEST_PATH" \
-                    || ! sudo echo -e "" >> "$_LIBVIRT_HOOK_DEST_PATH" \
-					|| ( ! "$_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU" && ! sudo echo -e "source \"$_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH" ) \
-					|| ! sudo echo -e "source \"$_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH" \
-					|| ! sudo echo -e "source \"$_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH\"" >> "$_LIBVIRT_HOOK_DEST_PATH" \
-                    || ! sudo echo -e "# </sources>" >> "$_LIBVIRT_HOOK_DEST_PATH"; then
+				if ! sudo echo -e "\n\n# <sources>" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
+                    || ! sudo echo -e "" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
+					|| ( ! "${_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU}" && ! sudo echo -e "source \"${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" ) \
+					|| ! sudo echo -e "source \"${_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
+					|| ! sudo echo -e "source \"${_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
+                    || ! sudo echo -e "# </sources>" >> "${_LIBVIRT_HOOK_DEST_PATH}"; then
 					echo -e "${_PREFIX_ERROR} Failed to append filenames as sources to Libvirt hooks file."
 					return 1
 				fi
@@ -448,7 +458,7 @@
 
 			local HAS_SKIPPED=false
 
-			if ! "$_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS"; then
+			if ! "${_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS}"; then
 				echo
 
 				if ! AskToExecuteOrSkip "Install Libvirt hooks?"; then
@@ -456,14 +466,14 @@
 				fi
 			fi
 
-			if ! "$HAS_SKIPPED"; then
+			if ! "${HAS_SKIPPED}"; then
 				Main
 			else
 				( return 255 )
 			fi
 
 			PrintSuffixPassOrFail "Installing Libvirt hooks..."
-			return "$_LAST_EXIT_CODE"
+			return "${_LAST_EXIT_CODE}"
 		}
 
 		# <summary>
@@ -477,7 +487,7 @@
 		{
 			function Get
 			{
-				UpdateOrCloneGitRepo "$_GIT_PATH" "$FULL_REPO" "$USER_NAME" "$_EXECUTE_POST_SETUP_AUTO_XORG" || return 1
+				UpdateOrCloneGitRepo "${_GIT_PATH}" "${FULL_REPO}" "${USER_NAME}" "${_EXECUTE_POST_SETUP_AUTO_XORG}" || return 1
 				return 0
 			}
 
@@ -504,18 +514,18 @@
 			{
 				local -r SCRIPT_NAME="installer.bash"
 
-				if ! cd "$_GIT_PATH$FULL_REPO"; then
+				if ! cd "${_GIT_PATH}${FULL_REPO}"; then
 					echo -e "${_PREFIX_ERROR} Failed to find build directory."
 					return 1
 				fi
 
-				if [[ ! -e "$SCRIPT_NAME" ]]; then
-					echo -e "${_PREFIX_ERROR} Failed to find script '$SCRIPT_NAME'."
+				if [[ ! -e "${SCRIPT_NAME}" ]]; then
+					echo -e "${_PREFIX_ERROR} Failed to find script '${SCRIPT_NAME}'."
 					return 1
 				fi
 
-				if ! sudo bash $SCRIPT_NAME $_ARGS_FOR_AUTO_XORG &> /dev/null; then
-					echo -e "${_PREFIX_ERROR} Failed to execute script '$SCRIPT_NAME'."
+				if ! sudo bash ${SCRIPT_NAME} ${_ARGS_FOR_AUTO_XORG} &> /dev/null; then
+					echo -e "${_PREFIX_ERROR} Failed to execute script '${SCRIPT_NAME}'."
 					return 1
 				fi
 
@@ -524,28 +534,28 @@
 
 			local -r USER_NAME="portellam"
 			local -r REPO_NAME="auto-Xorg"
-			local -r FULL_REPO="$USER_NAME/$REPO_NAME"
+			local -r FULL_REPO="${USER_NAME}/${REPO_NAME}"
 			local HAS_SKIPPED=false
 
-			if ! "$_EXECUTE_POST_SETUP_AUTO_XORG"; then
+			if ! "${_EXECUTE_POST_SETUP_AUTO_XORG}"; then
 				echo
 
-				if ! AskToExecuteOrSkip "Install $REPO_NAME?"; then
+				if ! AskToExecuteOrSkip "Install ${REPO_NAME}?"; then
 					HAS_SKIPPED=true
 				fi
 			fi
 
-			if ! "$HAS_SKIPPED"; then
+			if ! "${HAS_SKIPPED}"; then
 				Get
 
-				if ! "$_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR" \
-					&& ! "$_HAS_ARG_AUTO_XORG_SORT_ORDER" \
+				if ! "${_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR}" \
+					&& ! "${_HAS_ARG_AUTO_XORG_SORT_ORDER}" \
 					&& AskToExecuteOrSkip "Add arguments?"; then
 					local -i COUNT_OF_VALID_ARGS=2
 					echo
 					GetArgs
 
-					for _COUNT in $( seq 1 "$COUNT_OF_VALID_ARGS" ); do
+					for _COUNT in $( seq 1 "${COUNT_OF_VALID_ARGS}" ); do
 						read -r -p "Enter argument (to skip, leave blank): " ANSWER
 						GetArgsForAutoXorg "${ANSWER}" || return 1
 
@@ -558,11 +568,15 @@
 				Install
 			fi
 
-			if "$HAS_SKIPPED"; then
+			if "${HAS_SKIPPED}"; then
 				( return 255 )
 			fi
 
-			PrintSuffixPassOrFail "Installing $REPO_NAME...\t"
-			return "$_LAST_EXIT_CODE"
+			PrintSuffixPassOrFail "Installing ${REPO_NAME}...\t"
+			return "${_LAST_EXIT_CODE}"
 		}
 # </functions>
+
+# <main>
+    SetParameters
+# </main>

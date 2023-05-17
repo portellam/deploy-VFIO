@@ -16,7 +16,6 @@
     # <summary> Public </summary>
         function ExecuteParseSelection
         {
-            SetParseParameters
             AreParametersValid || return "${?}"
             SelectFileToExportDatabase || return "${?}"
             SetFileForParseSelection || return "${?}"
@@ -105,10 +104,10 @@
             }
 
         # <summary> Global setters </summary>
-            function SetParseParameters
+            function SetParameters
             {
-                if [[ ! -z "$_ARE_PARSE_PARAMS_SET" ]] \
-                    && "$_ARE_PARSE_PARAMS_SET"; then
+                if [[ ! -z "${_ARE_PARSE_PARAMS_SET}" ]] \
+                    && "${_ARE_PARSE_PARAMS_SET}"; then
                     return 0
                 fi
 
@@ -116,10 +115,10 @@
 
                 # <remarks> IOMMU groups lists and validation. </remarks>
                 declare -gr _GET_DEVICES_FOR_IOMMU_GROUP='ls /sys/kernel/iommu_groups/${IOMMU_GROUP_ID}/devices/'
-                declare -ag _IOMMU_GROUP_ID_LIST=( $( ls /sys/kernel/iommu_groups/ | sort -n ) )
-                declare -ag _IOMMU_GROUPS_FOR_HOST_LIST=()
-                declare -ag _IOMMU_GROUPS_FOR_VFIO_LIST=()
-                declare -ag _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST=()
+                declare -ga _IOMMU_GROUP_ID_LIST=( $( ls /sys/kernel/iommu_groups/ | sort -n ) )
+                declare -ga _IOMMU_GROUPS_FOR_HOST_LIST=()
+                declare -ga _IOMMU_GROUPS_FOR_VFIO_LIST=()
+                declare -ga _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST=()
                 declare -gr _REGEX_DOMAIN_ID='^[0-9A-F][1-9A-F]$'
 
                 # <remarks> Parse arguments </remarks>
@@ -127,7 +126,7 @@
                 declare -g _PARSE_OPTIONS=""
                 declare -gr _DEFAULT_DATABASE_FILE="/usr/local/etc/vfiolib_lspci_database"
 
-                # <remarks> Usage flags </remarks>
+                # <remarks> Execution Flags </remarks>
                 declare -g _DO_PARSE_DATABASE_FROM_CACHE=false
                 declare -g _DO_PARSE_DATABASE_FROM_FILE=false
                 declare -g _DO_PARSE_DATABASE_FROM_INTERNET=false
@@ -143,7 +142,7 @@
                 IsEnum "_IOMMU_GROUP_ID_LIST" || return "${?}"
 
                 for VALUE in ${_IOMMU_GROUP_ID_LIST[@]}; do
-                    IsInt "$VALUE" || return "${?}"
+                    IsInt "${VALUE}" || return "${?}"
                 done
 
                 return 0
@@ -437,7 +436,7 @@
                 local -n REFERENCE="${1}"
 
                 for VALUE in ${REFERENCE[@]}; do
-                    IsInt "$VALUE" || return "${?}"
+                    IsInt "${VALUE}" || return "${?}"
                 done
             }
 
@@ -686,5 +685,8 @@
 
             return 0
         }
-
 # </functions>
+
+# <main>
+    SetParameters
+# </main>

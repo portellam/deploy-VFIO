@@ -15,11 +15,19 @@
         # <summary> Global setters </summary>
             function SetParameters
             {
-                declare -g _USER="$USER"
-                SetUser &> /dev/null
+                if [[ ! -z "${_ARE_CHECKS_PARAMS_SET}" ]] \
+                    && "${_ARE_CHECKS_PARAMS_SET}"; then
+                    return 0
+                fi
 
+                declare -g _ARE_CHECKS_PARAMS_SET=true
+
+                declare -g _USER="${USER}"
+                SetUser &> /dev/null
+                declare -ga _REQUIRED_LIBRARIES=( )
+
+                # <remarks> Execution Flags </remarks>
                 declare -g _IS_SYSTEM_SUPPORTED=false
-                declare -ag _REQUIRED_LIBRARIES=( )
             }
 
         function IsSystemSupported
@@ -134,12 +142,12 @@
         # <summary> Local setters </summary>
             function SetRequiredLibraries
             {
-                case "$_PACKAGE_MANAGER" in
+                case "${_PACKAGE_MANAGER}" in
                     "apt" )
                         _REQUIRED_LIBRARIES=${DEBIAN_REQUIRED_LIBRARIES[@]} ;;
 
                     "dnf" | "yum" )
-                        case "$_OPERATING_SYSTEM" in
+                        case "${_OPERATING_SYSTEM}" in
                             *"alma"* )
                                 _REQUIRED_LIBRARIES=${ALMA_REQUIRED_LIBRARIES[@]} ;;
                             * )
@@ -158,13 +166,13 @@
 
             function SetUser
             {
-                if [[ "$SUDO_USER" != "" ]]; then
-                    _USER="$SUDO_USER"
+                if [[ "${SUDO_USER}" != "" ]]; then
+                    _USER="${SUDO_USER}"
                     return 0
                 fi
 
-                if [[ "$USER" != "" ]]; then
-                    _USER="$USER"
+                if [[ "${USER}" != "" ]]; then
+                    _USER="${USER}"
                     return 0
                 fi
 
@@ -173,8 +181,8 @@
 
         function AreRequiredLibrariesInstalled
         {
-            for _LIBRARY in ${_REQUIRED_LIBRARIES[@]}; do
-                IsInstalledPackage "$_LIBRARY" &> /dev/null || return 1
+            for LIBRARY in ${_REQUIRED_LIBRARIES[@]}; do
+                IsInstalledPackage "${LIBRARY}" &> /dev/null || return 1
             done
 
             return 0
@@ -216,3 +224,7 @@
             fi
         }
 # </functions>
+
+# <main>
+    SetParameters
+# </main>

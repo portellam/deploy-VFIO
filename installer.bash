@@ -109,10 +109,10 @@
     Main
 
     if [[ "${?}" -ne 0 ]]; then
-        echo -e "$_PREFIX_FAIL Could not install deploy-VFIO."
+        echo -e "${_PREFIX_FAIL} Could not install deploy-VFIO."
         exit 1
     fi
 
-    echo -e "$_PREFIX_PASS Installed deploy-VFIO."
+    echo -e "${_PREFIX_PASS} Installed deploy-VFIO."
     exit 0
 # </main>
