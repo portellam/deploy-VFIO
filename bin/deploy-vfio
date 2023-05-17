@@ -36,8 +36,7 @@
             return 1
         fi
 
-        ExecuteBackups
-        ExecuteParseSelection || return "${?}"
+        # ExecuteBackups
 
         # <remarks> Exit early. </remarks>
         if "${_EXECUTE_VFIO_SETUP_UNINSTALL}"; then
@@ -50,6 +49,7 @@
         fi
 
         echo
+        ExecuteParseSelection || return "${?}"
         ExecuteMainSetup
 
         if "${_FLAG_DO_EXECUTE_POST_SETUP}"; then
