@@ -3,22 +3,7 @@
     - Anything mentioned in **To Do** is not enabled/available.
 
 ### To Do:
-* Double-check all vars' names.
 * Ask question to do each function, then execute after asking all questions (pre and post-setup).
-* Be certain of order of execution of source setter functions.
-    - How-to: "CTRL-SHIFT-F" > "local " + some combination of the following:
-        - "_"
-        - "-i _"
-        - "-a _"
-        - "-r _"
-        - "-ar _"
-        - "-ir _"
-    - Run before end of each source file?
-    - Add conditional (inside function) to prevent overwrite?
-* Naming convention, update all local vars (remove prefix underscore).
-* Create Setter functions, such that they will populate publicly used params only once (when called in order)
-    -This way, the script can re-execute itself?
-
 * Trim fat, remove unnecessary repetitions and code.
 * Pre-setup:
     - Evdev, save output to logfile, for use in VM XML.
