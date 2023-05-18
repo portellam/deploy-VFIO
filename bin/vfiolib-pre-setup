@@ -20,6 +20,8 @@
         {
             function Main
             {
+                # TODO: preserve last exit code, so that pre-setup fails as expected.
+
                 while [[ "${?}" -ne 1 ]]; do
                     AddUserToGroups
 
@@ -54,7 +56,7 @@
             PrintSuffixWait "${OUTPUT}"
             Main
             PrintSuffixPassOrFail "${OUTPUT}"
-            return "${?}"
+            return "${_LAST_EXIT_CODE}"
         }
 
         # <summary> Global setters </summary>
@@ -66,6 +68,10 @@
             fi
 
             declare -g _ARE_PRE_SETUP_PARAMS_SET=true
+
+            # <remarks> Evdev </remarks>
+            declare -ga _EVENT_DEVICES_LIST=( )
+            declare -ga _INPUT_DEVICES_LIST=( )
 
             # <remarks> Hugepages </remarks>
             declare -gi _HUGEPAGES_ALLOCATED_MEMORY=0
@@ -398,10 +404,7 @@
 
             if ! "${_EXECUTE_PRE_SETUP_STATIC_ISOLCPU}"; then
                 echo
-
-                if AskToExecuteOrSkip "Statically allocate CPU threads to Guest(s)?"; then
-                    Main
-                fi
+                AskToExecuteOrSkip "Statically allocate CPU threads to Guest(s)?" && Main
             fi
 
             PrintSuffixPassOrFail "Allocating CPU threads..." && _HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU=true
@@ -547,10 +550,15 @@
         # </summary>
         function ExecuteVirtualKVMSetup
         {
+            function SetParameters
+            {
+                _EVENT_DEVICES_LIST=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )
+                _INPUT_DEVICES_LIST=( $( ls /dev/input/by-id ) )
+            }
+
             function Main
             {
-                declare -ga _EVENT_DEVICES_LIST=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )
-                declare -ga _INPUT_DEVICES_LIST=( $( ls /dev/input/by-id ) )
+                SetParameters &> /dev/null
 
                 if [[ "${#_EVENT_DEVICES_LIST[@]}" -eq 0 ]] \
                     ||[[ "${#_INPUT_DEVICES_LIST[@]}" -eq 0 ]]; then
