@@ -20,7 +20,7 @@
 # </remarks>
 
 HOOK_NAME="ddcutil"
-PREFIX_PROMPT="libvirt-qemu $HOOK_NAME:"
+PREFIX_PROMPT="libvirt-qemu ${HOOK_NAME}:"
 OPERATION="${2}"
 SUBOPERATION="${3}"
 
@@ -34,13 +34,13 @@ VIDEO_INPUT=""
 
 function GetVideoInput
 {
-	case "$OPERATION/$SUBOPERATION" in
+	case "${OPERATION}/${SUBOPERATION}" in
 		"started/begin" )
-			VIDEO_INPUT="$DOMAIN_VIDEO_INPUT"
+			VIDEO_INPUT="${DOMAIN_VIDEO_INPUT}"
 			return 0 ;;
 
 		"stopped/end" )
-			VIDEO_INPUT="$HOST_VIDEO_INPUT"
+			VIDEO_INPUT="${HOST_VIDEO_INPUT}"
 			return 0 ;;
 	esac
 
@@ -49,12 +49,12 @@ function GetVideoInput
 
 function SetVideoOutput
 {
-    if [[ "$( ddcutil -d "$DOMAIN_DISPLAY" getvcp 60 --terse | awk '{print ${4}}' )" == "x$VIDEO_INPUT" ]]; then
+    if [[ "$( ddcutil -d "${DOMAIN_DISPLAY}" getvcp 60 --terse | awk '{print ${4}}' )" == "x${VIDEO_INPUT}" ]]; then
         return 0
     fi
 
-	if ! ddcutil -d "$DOMAIN_DISPLAY" setvcp 60 "0x$VIDEO_INPUT"; then
-        echo "$PREFIX_PROMPT An error occured: Failed to switch video input."
+	if ! ddcutil -d "${DOMAIN_DISPLAY}" setvcp 60 "0x${VIDEO_INPUT}"; then
+        echo "${PREFIX_PROMPT} An error occured: Failed to switch video input."
 		return 1
 	fi
 

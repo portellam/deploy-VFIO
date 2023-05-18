@@ -36,7 +36,7 @@
         declare -g _BIN_SOURCE_PATH="bin"
         declare -g _ETC_DEST_PATH="/usr/local/etc/vfiolib.d/"
         declare -g _ETC_SOURCE_PATH="etc"
-        cd "$_BIN_SOURCE_PATH" || return 1
+        cd "${_BIN_SOURCE_PATH}" || return 1
 
         if  [[ ! -e "deploy-vfio" ]] \
             || [[ ! -e "vfiolib-all" ]] \
@@ -52,7 +52,7 @@
         fi
 
         cd .. || return 1
-        cd "$_ETC_SOURCE_PATH" || return 1
+        cd "${_ETC_SOURCE_PATH}" || return 1
 
         if [[ ! -e "audio-loopback-user.service" ]] \
             || [[ ! -e "custom" ]] \
@@ -67,36 +67,36 @@
             return 1
         fi
 
-        if [[ ! -d "$_BIN_DEST_PATH" ]]; then
-            echo -e "${_PREFIX_ERROR} Could not find directory '$_BIN_DEST_PATH'."
+        if [[ ! -d "${_BIN_DEST_PATH}" ]]; then
+            echo -e "${_PREFIX_ERROR} Could not find directory '${_BIN_DEST_PATH}'."
             return 1
         fi
 
-        if [[ ! -d "$_ETC_DEST_PATH" ]] \
-            && ! sudo mkdir -p "$_ETC_DEST_PATH"; then
-            echo -e "${_PREFIX_ERROR} Could not create directory '$_ETC_DEST_PATH'."
+        if [[ ! -d "${_ETC_DEST_PATH}" ]] \
+            && ! sudo mkdir -p "${_ETC_DEST_PATH}"; then
+            echo -e "${_PREFIX_ERROR} Could not create directory '${_ETC_DEST_PATH}'."
             return 1
         fi
 
         cd ..
-        cd "$_BIN_SOURCE_PATH" || return 1
+        cd "${_BIN_SOURCE_PATH}" || return 1
 
-        if ! sudo cp -rf * "$_BIN_DEST_PATH" &> /dev/null; then
+        if ! sudo cp -rf * "${_BIN_DEST_PATH}" &> /dev/null; then
             echo -e "${_PREFIX_ERROR} Failed to copy project binaries."
             return 1
         fi
 
         cd .. || return 1
-        cd "$_ETC_SOURCE_PATH" || return 1
+        cd "${_ETC_SOURCE_PATH}" || return 1
 
-        if ! sudo cp -rf * "$_ETC_DEST_PATH" &> /dev/null; then
+        if ! sudo cp -rf * "${_ETC_DEST_PATH}" &> /dev/null; then
             echo -e "${_PREFIX_ERROR} Failed to copy project file(s)."
             return 1
         fi
 
-        if ! sudo chown -R root:root "$_BIN_DEST_PATH" &> /dev/null \
-            || ! sudo chmod -R +x "$_BIN_DEST_PATH" &> /dev/null \
-            || ! sudo chown -R root:root "$_ETC_DEST_PATH" &> /dev/null; then
+        if ! sudo chown -R root:root "${_BIN_DEST_PATH}" &> /dev/null \
+            || ! sudo chmod -R +x "${_BIN_DEST_PATH}" &> /dev/null \
+            || ! sudo chown -R root:root "${_ETC_DEST_PATH}" &> /dev/null; then
             echo -e "${_PREFIX_ERROR} Failed to set file permissions."
             return 1
         fi

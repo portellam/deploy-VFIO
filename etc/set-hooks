@@ -9,9 +9,9 @@
 
 DOMAIN_NAME="${1}"
 HOOKS_BASE_DIR="/etc/libvirt/hooks"
-DOMAIN_NAME_BASE_DIR="$HOOKS_BASE_DIR/qemu.d/$DOMAIN_NAME"
-BEGIN_DIR="$DOMAIN_NAME_BASE_DIR/started/begin/"
-END_DIR="$DOMAIN_NAME_BASE_DIR/stopped/end/"
+DOMAIN_NAME_BASE_DIR="${HOOKS_BASE_DIR}/qemu.d/${DOMAIN_NAME}"
+BEGIN_DIR="${DOMAIN_NAME_BASE_DIR}/started/begin/"
+END_DIR="${DOMAIN_NAME_BASE_DIR}/stopped/end/"
 
 # <remarks> Add domain-specific hooks here. </remarks>
 HOOK_NAME_1="ddcutil"
@@ -19,9 +19,9 @@ HOOK_NAME_2="cfscpu"
 
 function GetPathsForDomain
 {
-    if ( [[ ! -d "$_BASE_DIR" ]] && ! mkdir -p "$_BASE_DIR" &> /dev/null ) \
-        || ( [[ ! -d "$BEGIN_DIR" ]] && ! mkdir -p "$BEGIN_DIR" &> /dev/null ) \
-        || ( [[ ! -d "$END_DIR" ]] && ! mkdir -p "$END_DIR" &> /dev/null ); then
+    if ( [[ ! -d "${DOMAIN_NAME_BASE_DIR}" ]] && ! mkdir -p "${DOMAIN_NAME_BASE_DIR}" &> /dev/null ) \
+        || ( [[ ! -d "${BEGIN_DIR}" ]] && ! mkdir -p "${BEGIN_DIR}" &> /dev/null ) \
+        || ( [[ ! -d "${END_DIR}" ]] && ! mkdir -p "${END_DIR}" &> /dev/null ); then
         echo -e "An error occured: Failed to create directories for domain."
         return 1
     fi
@@ -31,7 +31,7 @@ function GetPathsForDomain
 
 function GetHooks
 {
-    if [[ ! -e "$HOOKS_BASE_DIR/$HOOK_NAME_1" ]]; then
+    if [[ ! -e "${HOOKS_BASE_DIR}/${HOOK_NAME_1}" ]]; then
         echo -e "An error occured: Failed to find domain hook(s)."
         return 1
     fi
@@ -45,14 +45,14 @@ function SetHooksForDomain
         return 0
     fi
 
-    if ! ln -s "$BEGIN_DIR/${1}" "$HOOKS_BASE_DIR/${1}" &> /dev/null \
-        || ! ln -s "$END_DIR/${1}" "$HOOKS_BASE_DIR/${1}" &> /dev/null; then
+    if ! ln -s "${BEGIN_DIR}/${1}" "${HOOKS_BASE_DIR}/${1}" &> /dev/null \
+        || ! ln -s "${END_DIR}/${1}" "${HOOKS_BASE_DIR}/${1}" &> /dev/null; then
         echo -e "An error occured: Failed to set symlinks for hook '${1}'."
         return 1
     fi
 
-    if ! chmod +x "$BEGIN_DIR/${1}" &> /dev/null \
-        || ! chmod +x "$END_DIR/${1}" &> /dev/null; then
+    if ! chmod +x "${BEGIN_DIR}/${1}" &> /dev/null \
+        || ! chmod +x "${END_DIR}/${1}" &> /dev/null; then
         echo -e "An error occured: Failed to set file permissions for hook '${1}'."
         return 1
     fi
@@ -60,11 +60,11 @@ function SetHooksForDomain
     return 0
 }
 
-if [[ ! -z "$DOMAIN_NAME" ]] \
-    && GetPathsForDomain "$DOMAIN_NAME" \
+if [[ ! -z "${DOMAIN_NAME}" ]] \
+    && GetPathsForDomain "${DOMAIN_NAME}" \
     && GetHooks; then
 
     # <remarks> Call domain-specific hooks here. </remarks>
-    SetHooksForDomain "$HOOK_NAME_1"
-    SetHooksForDomain "$HOOK_NAME_2"
+    SetHooksForDomain "${HOOK_NAME_1}"
+    SetHooksForDomain "${HOOK_NAME_2}"
 fi

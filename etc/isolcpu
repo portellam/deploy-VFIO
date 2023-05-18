@@ -25,21 +25,21 @@
 # </remarks>
 
 
-_FLAG_USE_HEX_MASKS=true
-_HOOK_NAME="isolcpu"
-_PREFIX_PROMPT="libvirt-qemu $_HOOK_NAME:"
-_OPERATION="${2}"
-_GUEST_THREADS_DELIM=""
+FLAG_USE_HEX_MASKS=true
+HOOK_NAME="isolcpu"
+PREFIX_PROMPT="libvirt-qemu $HOOK_NAME:"
+OPERATION="${2}"
+GUEST_THREADS_DELIM=""
 GUEST_THREADS_HEX=""
-_HOST_THREADS_DELIM=""
+HOST_THREADS_DELIM=""
 HOST_THREADS_HEX=""
 
 function AreValuesNotEmpty
 {
-    if ( "$_FLAG_USE_HEX_MASKS" \
+    if ( "${FLAG_USE_HEX_MASKS}" \
         && AreHexMasksNotEmpty  \
         && AreThreadSetsNotEmpty ) \
-        || ( ! "$_FLAG_USE_HEX_MASKS" \
+        || ( ! "${FLAG_USE_HEX_MASKS}" \
             && AreThreadSetsNotEmpty ); then
         return 0
     fi
@@ -49,9 +49,9 @@ function AreValuesNotEmpty
 
 function AreHexMasksNotEmpty
 {
-    if [[ -z "$GUEST_THREADS_HEX" ]] \
-        || [[ -z "$HOST_THREADS_HEX" ]]; then
-        echo "$_PREFIX_PROMPT An error occured: Failed to get CPU hexadecimal masks."
+    if [[ -z "${GUEST_THREADS_HEX}" ]] \
+        || [[ -z "${HOST_THREADS_HEX}" ]]; then
+        echo "${PREFIX_PROMPT} An error occured: Failed to get CPU hexadecimal masks."
         return 1
     fi
 
@@ -60,9 +60,9 @@ function AreHexMasksNotEmpty
 
 function AreThreadSetsNotEmpty
 {
-    if [[ -z "$_GUEST_THREADS_DELIM" ]] \
-        || [[ -z "$_HOST_THREADS_DELIM" ]]; then
-        echo "$_PREFIX_PROMPT An error occured: Failed to get CPU thread sets."
+    if [[ -z "${GUEST_THREADS_DELIM}" ]] \
+        || [[ -z "${HOST_THREADS_DELIM}" ]]; then
+        echo "${PREFIX_PROMPT} An error occured: Failed to get CPU thread sets."
         return 1
     fi
 
@@ -92,7 +92,7 @@ function GetCPU
         CORES_ALLOCATED_TO_HOST=1
 
     else
-        echo "$_PREFIX_PROMPT An error occured: Insufficient CPU cores. Minimum is two (2) cores."
+        echo "${PREFIX_PROMPT} An error occured: Insufficient CPU cores. Minimum is two (2) cores."
         return 1
     fi
 
@@ -129,34 +129,34 @@ function GetThreadSetsForHostAndLibvirt
         local -i FIRST_THREAD_SET="${HOST_THREADS_DELIM_LIST[0]}"
         local -i LAST_THREAD_SET="${HOST_THREADS_DELIM_LIST[-1]}"
 
-        local THREAD_SET="$FIRST_THREAD_SET"
+        local THREAD_SET="${FIRST_THREAD_SET}"
 
-        if [[ "$FIRST_THREAD_SET" -ne "$LAST_THREAD_SET" ]]; then
-            local THREAD_SET="$_FIRSTTHREAD_SET-$_LASTTHREAD_SET"
+        if [[ "${FIRST_THREAD_SET}" -ne "${LAST_THREAD_SET}" ]]; then
+            local THREAD_SET="$_FIRSTTHREAD_SET-${_LASTTHREAD_SET}"
         fi
 
-        _HOST_THREADS_DELIM+="${THREAD_SET},"
+        HOST_THREADS_DELIM+="${THREAD_SET},"
 
         local -i FIRST_THREAD_SET="${GUEST_THREADS_DELIM_LIST[0]}"
         local -i LAST_THREAD_SET="${GUEST_THREADS_DELIM_LIST[-1]}"
-        local THREAD_SET="$FIRST_THREAD_SET"
+        local THREAD_SET="${FIRST_THREAD_SET}"
 
-        if [[ "$FIRST_THREAD_SET" -ne "$LAST_THREAD_SET" ]]; then
-            local THREAD_SET="$FIRST_THREAD_SET-$_LASTTHREAD_SET"
+        if [[ "${FIRST_THREAD_SET}" -ne "${LAST_THREAD_SET}" ]]; then
+            local THREAD_SET="${FIRST_THREAD_SET}-${_LASTTHREAD_SET}"
         fi
 
-        _GUEST_THREADS_DELIM+="${THREAD_SET},"
+        GUEST_THREADS_DELIM+="${THREAD_SET},"
     done
 
     AreThreadSetsNotEmpty || return 1
 
     # <remarks> Truncate last delimiter. </remarks>
-    if [[ ${_HOST_THREADS_DELIM: -1} == "," ]]; then
-        _HOST_THREADS_DELIM="${_HOST_THREADS_DELIM::-1}"
+    if [[ ${HOST_THREADS_DELIM: -1} == "," ]]; then
+        HOST_THREADS_DELIM="${HOST_THREADS_DELIM::-1}"
     fi
 
-    if [[ ${_GUEST_THREADS_DELIM: -1} == "," ]]; then
-        _GUEST_THREADS_DELIM="${_GUEST_THREADS_DELIM::-1}"
+    if [[ ${GUEST_THREADS_DELIM: -1} == "," ]]; then
+        GUEST_THREADS_DELIM="${GUEST_THREADS_DELIM::-1}"
     fi
 
     return 0
@@ -184,13 +184,13 @@ function GetHexMasksForHostAndLibvirt
 
 function ReleaseHexMask
 {
-    if ! echo "$HOST_THREADS_HEX" > /sys/bus/workqueue/devices/writeback/cpumask \
+    if ! echo "${HOST_THREADS_HEX}" > /sys/bus/workqueue/devices/writeback/cpumask \
         || ! echo 0 > /sys/bus/workqueue/devices/writeback/numa; then
-        echo "$_PREFIX_PROMPT An error occured: Failed to release CPU mask to Host."
+        echo "${PREFIX_PROMPT} An error occured: Failed to release CPU mask to Host."
         return 1
     fi
 
-    echo "$_PREFIX_PROMPT Releasing CPU mask to Host."
+    echo "${PREFIX_PROMPT} Releasing CPU mask to Host."
 }
 
 function ReleaseThreadSets
@@ -208,7 +208,7 @@ function ReleaseThreadSets
 
 function ReserveHexMask
 {
-    if ! echo "$GUEST_THREADS_HEX" > /sys/bus/workqueue/devices/writeback/cpumask \
+    if ! echo "${GUEST_THREADS_HEX}" > /sys/bus/workqueue/devices/writeback/cpumask \
         || ! echo 1 > /sys/bus/workqueue/devices/writeback/numa; then
         echo "An error occured: Failed to reserve CPU mask to Libvirt domain(s)."
         return 1
@@ -220,36 +220,36 @@ function ReserveHexMask
 
 function ReserveThreadSets
 {
-    if ! systemctl set-property --runtime -- system.slice AllowedCPUs="$_GUEST_THREADS_DELIM" \
-        || ! systemctl set-property --runtime -- user.slice AllowedCPUs="$_GUEST_THREADS_DELIM" \
-        || ! systemctl set-property --runtime -- init.scope AllowedCPUs="$_GUEST_THREADS_DELIM"; then
-        echo "$_PREFIX_PROMPT An error occured: Failed to reserve CPU threads to Libvirt domain(s)."
+    if ! systemctl set-property --runtime -- system.slice AllowedCPUs="${GUEST_THREADS_DELIM}" \
+        || ! systemctl set-property --runtime -- user.slice AllowedCPUs="${GUEST_THREADS_DELIM}" \
+        || ! systemctl set-property --runtime -- init.scope AllowedCPUs="${GUEST_THREADS_DELIM}"; then
+        echo "${PREFIX_PROMPT} An error occured: Failed to reserve CPU threads to Libvirt domain(s)."
         return 1
     fi
 
-    echo "$_PREFIX_PROMPT Reserving CPU threads to Libvirt domain(s)."
+    echo "${PREFIX_PROMPT} Reserving CPU threads to Libvirt domain(s)."
     return 0
 }
 
 function ReleaseOrReserveCPU
 {
-    case "$_OPERATION" in
+    case "${OPERATION}" in
         "started" )
-            if "$_FLAG_USE_HEX_MASKS"; then
+            if "${FLAG_USE_HEX_MASKS}"; then
                 ReserveHexMask || return 1
             fi
 
             ReserveThreadSets || return 1 ;;
 
         "release" )
-            if "$_FLAG_USE_HEX_MASKS"; then
+            if "${FLAG_USE_HEX_MASKS}"; then
                 ReleaseHexMask || return 1
             fi
 
             local -i LAST_THREAD_ID=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+" )
             (( LAST_THREAD_ID-- ))
-            local RELEASED_CPU_SET="0-$LAST_THREAD_ID"
-            ReleaseThreadSets "$RELEASED_CPU_SET" || return 1 ;;
+            local RELEASED_CPU_SET="0-${LAST_THREAD_ID}"
+            ReleaseThreadSets "${RELEASED_CPU_SET}" || return 1 ;;
     esac
 
     return 0
