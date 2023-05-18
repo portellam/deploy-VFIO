@@ -66,7 +66,6 @@
                 fi
 
                 declare -g _ARE_POST_SETUP_PARAMS_SET=true
-
                 declare -g _GIT_PATH="${HOME}/source/"
 
 				if [[ ! -d "${_GIT_PATH}" ]]; then
@@ -296,197 +295,197 @@
 		# References:
 		#   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_through_other_devices
 		# </remarks>
-		function GuestAudioCapture
-		{
-			function Main
+			function GuestAudioCapture
 			{
-				local DEPENDENCIES=""
+				function Main
+				{
+					local DEPENDENCIES=""
 
-				# <remarks> Install JACK and PipeWire. </remarks>
-				case "${_PACKAGE_MANAGER}" in
-					"apt" )
-						DEPENDENCIES+="pipewire pipewire-jack " ;;
-
-					"pacman" )
-						DEPENDENCIES+="pipewire pipewire-jack " ;;
-
-					* )
-						echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
-						return 1 ;;
-				esac
-
-				# <remarks> Include PulseAudio (and QEMU driver if available). </remarks>
-				if IsInstalledCommand "pulseaudio" &> /dev/null; then
+					# <remarks> Install JACK and PipeWire. </remarks>
 					case "${_PACKAGE_MANAGER}" in
 						"apt" )
-							DEPENDENCIES+="pipewire-pulse " ;;
+							DEPENDENCIES+="pipewire pipewire-jack " ;;
 
 						"pacman" )
-							DEPENDENCIES+="pipewire-pulse qemu-audio-pa " ;;
+							DEPENDENCIES+="pipewire pipewire-jack " ;;
 
 						* )
 							echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
 							return 1 ;;
 					esac
 
-				# <remarks> Fallback to factory driver. </remarks>
-				else
-					case "${_PACKAGE_MANAGER}" in
-						"apt" )
-							DEPENDENCIES+="pipewire-alsa " ;;
+					# <remarks> Include PulseAudio (and QEMU driver if available). </remarks>
+					if IsInstalledCommand "pulseaudio" &> /dev/null; then
+						case "${_PACKAGE_MANAGER}" in
+							"apt" )
+								DEPENDENCIES+="pipewire-pulse " ;;
 
-						"pacman" )
-							DEPENDENCIES+="pipewire-alsa " ;;
+							"pacman" )
+								DEPENDENCIES+="pipewire-pulse qemu-audio-pa " ;;
 
-						* )
-							echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
-							return 1 ;;
-					esac
-				fi
+							* )
+								echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
+								return 1 ;;
+						esac
 
-				IsInstalledPackage "${DEPENDENCIES}" &> /dev/null || InstallPackage "${DEPENDENCIES}" &> /dev/null
-				return "${?}"
+					# <remarks> Fallback to factory driver. </remarks>
+					else
+						case "${_PACKAGE_MANAGER}" in
+							"apt" )
+								DEPENDENCIES+="pipewire-alsa " ;;
+
+							"pacman" )
+								DEPENDENCIES+="pipewire-alsa " ;;
+
+							* )
+								echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
+								return 1 ;;
+						esac
+					fi
+
+					IsInstalledPackage "${DEPENDENCIES}" &> /dev/null || InstallPackage "${DEPENDENCIES}" &> /dev/null
+					return "${?}"
+				}
+
+				Main
+				PrintSuffixPassOrFail "Installing audio drivers..." && _IS_SETUP_AUDIO_CAPTURE=true
+				return "${_LAST_EXIT_CODE}"
 			}
-
-			Main
-			PrintSuffixPassOrFail "Installing audio drivers..." && _IS_SETUP_AUDIO_CAPTURE=true
-			return "${_LAST_EXIT_CODE}"
-		}
 
 		# <summary>
 		# Setup an audio loopback service from physical guest audio device (Line-Out) to physical host audio device (Line-In).
 		# Requires physical connection between Line-Out and Line-In, and audio backend with JACK support (requires PulseAudio or ALSA).
 		# </summary>
-		function GuestAudioLoopback
-		{
-			function Main
+			function GuestAudioLoopback
 			{
-				if ! command -v "pulseaudio" &> /dev/null; then
-					echo -e "${_PREFIX_ERROR} Required audio backend 'PulseAudio' is missing."
-					return 1
+				function Main
+				{
+					if ! command -v "pulseaudio" &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Required audio backend 'PulseAudio' is missing."
+						return 1
+					fi
+
+					if ! sudo cp "${_AUDIO_LOOPBACK_SRC_PATH}" "${_AUDIO_LOOPBACK_DEST_PATH}"; then
+						echo -e "${_PREFIX_ERROR} Failed to copy file."
+						return 1
+					fi
+
+					if ! sudo systemctl daemon-reload &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to update systemd with new daemon/service."
+						return 1
+					fi
+
+					if ! sudo systemctl start "${_AUDIO_LOOPBACK_FILENAME}"; then
+						echo -e "${_PREFIX_ERROR} Failed to start audio loopback service."
+						return 1
+					fi
+
+					if ! sudo systemctl enable "${_AUDIO_LOOPBACK_FILENAME}"; then
+						echo -e "${_PREFIX_ERROR} Failed to enable audio loopback service."
+						return 1
+					fi
+
+					return 0
+				}
+
+				local HAS_SKIPPED=false
+
+				if ! "${_EXECUTE_POST_SETUP_AUDIO_LOOPBACK}"; then
+					echo
+
+					if ! AskToExecuteOrSkip "Install zram-swap?"; then
+						HAS_SKIPPED=true
+					fi
 				fi
 
-				if ! sudo cp "${_AUDIO_LOOPBACK_SRC_PATH}" "${_AUDIO_LOOPBACK_DEST_PATH}"; then
-					echo -e "${_PREFIX_ERROR} Failed to copy file."
-					return 1
+				if ! "${HAS_SKIPPED}"; then
+					Main
+				else
+					( return 255 )
 				fi
 
-				if ! sudo systemctl daemon-reload &> /dev/null; then
-					echo -e "${_PREFIX_ERROR} Failed to update systemd with new daemon/service."
-					return 1
-				fi
-
-				if ! sudo systemctl start "${_AUDIO_LOOPBACK_FILENAME}"; then
-					echo -e "${_PREFIX_ERROR} Failed to start audio loopback service."
-					return 1
-				fi
-
-				if ! sudo systemctl enable "${_AUDIO_LOOPBACK_FILENAME}"; then
-					echo -e "${_PREFIX_ERROR} Failed to enable audio loopback service."
-					return 1
-				fi
-
-				return 0
+				PrintSuffixPassOrFail "Creating audio loopback..."
+				return "${_LAST_EXIT_CODE}"
 			}
-
-			local HAS_SKIPPED=false
-
-			if ! "${_EXECUTE_POST_SETUP_AUDIO_LOOPBACK}"; then
-				echo
-
-				if ! AskToExecuteOrSkip "Install zram-swap?"; then
-					HAS_SKIPPED=true
-				fi
-			fi
-
-			if ! "${HAS_SKIPPED}"; then
-				Main
-			else
-				( return 255 )
-			fi
-
-			PrintSuffixPassOrFail "Creating audio loopback..."
-			return "${_LAST_EXIT_CODE}"
-		}
 
 		# <summary>
 		# Libvirt hooks: Setup useful Quality-of-life improvements in the form of services and scripts (hooks) for QEMU guest(s).
 		# </summary>
-		function LibvirtHooks
-		{
-			function Main
+			function LibvirtHooks
 			{
-				if ! sudo cp "${_LIBVIRT_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_DEST_PATH}" &> /dev/null \
-					|| ! sudo cp "${_LIBVIRT_HOOK_CFSCPU_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH}" &> /dev/null \
-					|| ! sudo cp "${_LIBVIRT_HOOK_DDCUTIL_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH}" &> /dev/null \
-					|| ! sudo cp "${_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null \
-					|| ! sudo cp "${_LIBVIRT_HOOK_NOSLEEP_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH}" &> /dev/null \
-					|| ! sudo cp "${_LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH}" "${_LIBVIRT_HOOK_NOSLEEP_SERVICE_DEST_PATH}" &> /dev/null \
-					|| ! sudo cp "${_LIBVIRT_HOOK_UPDATE_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH}" &> /dev/null; then
-					echo -e "${_PREFIX_ERROR} Failed to copy file(s)."
-					return 1
-				fi
-
-				if ! sudo chmod +x "${_LIBVIRT_HOOK_DEST_PATH}" &> /dev/null \
-					|| ! sudo chmod +x "${_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH}" &> /dev/null \
-					|| ! sudo chmod +x "${_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH}" &> /dev/null \
-					|| ! sudo chmod +x "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null \
-					|| ! sudo chmod +x "${_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH}" &> /dev/null \
-					|| ! sudo chmod +x "${_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH}" &> /dev/null; then
-					echo -e "${_PREFIX_ERROR} Failed to set file permissions."
-					return 1
-				fi
-
-				if ! "${_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU}"; then
-					if ! sudo cp "${_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null; then
+				function Main
+				{
+					if ! sudo cp "${_LIBVIRT_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_DEST_PATH}" &> /dev/null \
+						|| ! sudo cp "${_LIBVIRT_HOOK_CFSCPU_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH}" &> /dev/null \
+						|| ! sudo cp "${_LIBVIRT_HOOK_DDCUTIL_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH}" &> /dev/null \
+						|| ! sudo cp "${_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null \
+						|| ! sudo cp "${_LIBVIRT_HOOK_NOSLEEP_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH}" &> /dev/null \
+						|| ! sudo cp "${_LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH}" "${_LIBVIRT_HOOK_NOSLEEP_SERVICE_DEST_PATH}" &> /dev/null \
+						|| ! sudo cp "${_LIBVIRT_HOOK_UPDATE_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH}" &> /dev/null; then
 						echo -e "${_PREFIX_ERROR} Failed to copy file(s)."
 						return 1
 					fi
 
-					if ! sudo chmod +x "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null; then
+					if ! sudo chmod +x "${_LIBVIRT_HOOK_DEST_PATH}" &> /dev/null \
+						|| ! sudo chmod +x "${_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH}" &> /dev/null \
+						|| ! sudo chmod +x "${_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH}" &> /dev/null \
+						|| ! sudo chmod +x "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null \
+						|| ! sudo chmod +x "${_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH}" &> /dev/null \
+						|| ! sudo chmod +x "${_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH}" &> /dev/null; then
 						echo -e "${_PREFIX_ERROR} Failed to set file permissions."
 						return 1
 					fi
+
+					if ! "${_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU}"; then
+						if ! sudo cp "${_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null; then
+							echo -e "${_PREFIX_ERROR} Failed to copy file(s)."
+							return 1
+						fi
+
+						if ! sudo chmod +x "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null; then
+							echo -e "${_PREFIX_ERROR} Failed to set file permissions."
+							return 1
+						fi
+					fi
+
+					if ! sudo echo -e "\n\n# <sources>" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
+						|| ! sudo echo -e "" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
+						|| ( ! "${_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU}" && ! sudo echo -e "source \"${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" ) \
+						|| ! sudo echo -e "source \"${_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
+						|| ! sudo echo -e "source \"${_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
+						|| ! sudo echo -e "# </sources>" >> "${_LIBVIRT_HOOK_DEST_PATH}"; then
+						echo -e "${_PREFIX_ERROR} Failed to append filenames as sources to Libvirt hooks file."
+						return 1
+					fi
+
+					if ! sudo systemctl daemon-reload &> /dev/null \
+						|| ! sudo systemctl restart libvirtd &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to update systemd with new daemon/service."
+						return 1
+					fi
+
+					return 0
+				}
+
+				local HAS_SKIPPED=false
+
+				if ! "${_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS}"; then
+					echo
+
+					if ! AskToExecuteOrSkip "Install Libvirt hooks?"; then
+						HAS_SKIPPED=true
+					fi
 				fi
 
-				if ! sudo echo -e "\n\n# <sources>" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
-                    || ! sudo echo -e "" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
-					|| ( ! "${_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU}" && ! sudo echo -e "source \"${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" ) \
-					|| ! sudo echo -e "source \"${_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
-					|| ! sudo echo -e "source \"${_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
-                    || ! sudo echo -e "# </sources>" >> "${_LIBVIRT_HOOK_DEST_PATH}"; then
-					echo -e "${_PREFIX_ERROR} Failed to append filenames as sources to Libvirt hooks file."
-					return 1
+				if ! "${HAS_SKIPPED}"; then
+					Main
+				else
+					( return 255 )
 				fi
 
-				if ! sudo systemctl daemon-reload &> /dev/null \
-					|| ! sudo systemctl restart libvirtd &> /dev/null; then
-					echo -e "${_PREFIX_ERROR} Failed to update systemd with new daemon/service."
-					return 1
-				fi
-
-				return 0
+				PrintSuffixPassOrFail "Installing Libvirt hooks..."
+				return "${_LAST_EXIT_CODE}"
 			}
-
-			local HAS_SKIPPED=false
-
-			if ! "${_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS}"; then
-				echo
-
-				if ! AskToExecuteOrSkip "Install Libvirt hooks?"; then
-					HAS_SKIPPED=true
-				fi
-			fi
-
-			if ! "${HAS_SKIPPED}"; then
-				Main
-			else
-				( return 255 )
-			fi
-
-			PrintSuffixPassOrFail "Installing Libvirt hooks..."
-			return "${_LAST_EXIT_CODE}"
-		}
 
 		# <summary>
 		# auto-Xorg: System service to find and set a valid Host boot VGA device for Xorg.
@@ -495,98 +494,98 @@
 		# References:
 		#   https://github.com/portellam/auto-Xorg
 		# </remarks>
-		function SetVideoOutput
-		{
-			function Get
+			function SetVideoOutput
 			{
-				UpdateOrCloneGitRepo "${_GIT_PATH}" "${FULL_REPO}" "${USER_NAME}" "${_EXECUTE_POST_SETUP_AUTO_XORG}" || return 1
-				return 0
-			}
+				function Get
+				{
+					UpdateOrCloneGitRepo "${_GIT_PATH}" "${FULL_REPO}" "${USER_NAME}" "${_EXECUTE_POST_SETUP_AUTO_XORG}" || return 1
+					return 0
+				}
 
-			function GetArgs
-			{
-				IFS=$'\n'
+				function GetArgs
+				{
+					IFS=$'\n'
 
-				local -a _OUTPUT=(
-					"ARGUMENTS:"
-					"  first  [vendor]\t\tFind the first valid VGA device."
-					"  last   [vendor]\t\tFind the last valid VGA device."
-					"  [sort] amd\t\t\tPrefer AMD or ATI."
-					"  [sort] intel\t\t\tPrefer Intel."
-					"  [sort] nvidia\t\t\tPrefer NVIDIA."
-					"  [sort] other\t\t\tPrefer any other brand."
-				)
+					local -a _OUTPUT=(
+						"ARGUMENTS:"
+						"  first  [vendor]\t\tFind the first valid VGA device."
+						"  last   [vendor]\t\tFind the last valid VGA device."
+						"  [sort] amd\t\t\tPrefer AMD or ATI."
+						"  [sort] intel\t\t\tPrefer Intel."
+						"  [sort] nvidia\t\t\tPrefer NVIDIA."
+						"  [sort] other\t\t\tPrefer any other brand."
+					)
 
-				echo -e "${_OUTPUT[*]}"
-				unset IFS
-				return 0
-			}
+					echo -e "${_OUTPUT[*]}"
+					unset IFS
+					return 0
+				}
 
-			function Install
-			{
-				local SCRIPT_NAME="installer.bash"
+				function Install
+				{
+					local SCRIPT_NAME="installer.bash"
 
-				if ! cd "${_GIT_PATH}${FULL_REPO}"; then
-					echo -e "${_PREFIX_ERROR} Failed to find build directory."
-					return 1
-				fi
+					if ! cd "${_GIT_PATH}${FULL_REPO}"; then
+						echo -e "${_PREFIX_ERROR} Failed to find build directory."
+						return 1
+					fi
 
-				if [[ ! -e "${SCRIPT_NAME}" ]]; then
-					echo -e "${_PREFIX_ERROR} Failed to find script '${SCRIPT_NAME}'."
-					return 1
-				fi
+					if [[ ! -e "${SCRIPT_NAME}" ]]; then
+						echo -e "${_PREFIX_ERROR} Failed to find script '${SCRIPT_NAME}'."
+						return 1
+					fi
 
-				if ! sudo bash ${SCRIPT_NAME} ${_ARGS_FOR_AUTO_XORG} &> /dev/null; then
-					echo -e "${_PREFIX_ERROR} Failed to execute script '${SCRIPT_NAME}'."
-					return 1
-				fi
+					if ! sudo bash ${SCRIPT_NAME} ${_ARGS_FOR_AUTO_XORG} &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to execute script '${SCRIPT_NAME}'."
+						return 1
+					fi
 
-				return 0
-			}
+					return 0
+				}
 
-			local USER_NAME="portellam"
-			local REPO_NAME="auto-Xorg"
-			local FULL_REPO="${USER_NAME}/${REPO_NAME}"
-			local HAS_SKIPPED=false
+				local USER_NAME="portellam"
+				local REPO_NAME="auto-Xorg"
+				local FULL_REPO="${USER_NAME}/${REPO_NAME}"
+				local HAS_SKIPPED=false
 
-			if ! "${_EXECUTE_POST_SETUP_AUTO_XORG}"; then
-				echo
-
-				if ! AskToExecuteOrSkip "Install ${REPO_NAME}?"; then
-					HAS_SKIPPED=true
-				fi
-			fi
-
-			if ! "${HAS_SKIPPED}"; then
-				Get
-
-				if ! "${_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR}" \
-					&& ! "${_HAS_ARG_AUTO_XORG_SORT_ORDER}" \
-					&& AskToExecuteOrSkip "Add arguments?"; then
-					local -i COUNT_OF_VALID_ARGS=2
+				if ! "${_EXECUTE_POST_SETUP_AUTO_XORG}"; then
 					echo
-					GetArgs
 
-					for _COUNT in $( seq 1 "${COUNT_OF_VALID_ARGS}" ); do
-						read -r -p "Enter argument (to skip, leave blank): " ANSWER
-						GetArgsForAutoXorg "${ANSWER}" || return 1
-
-						if [[ -z "${ANSWER}" ]]; then
-							break
-						fi
-					done
+					if ! AskToExecuteOrSkip "Install ${REPO_NAME}?"; then
+						HAS_SKIPPED=true
+					fi
 				fi
 
-				Install
-			fi
+				if ! "${HAS_SKIPPED}"; then
+					Get
 
-			if "${HAS_SKIPPED}"; then
-				( return 255 )
-			fi
+					if ! "${_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR}" \
+						&& ! "${_HAS_ARG_AUTO_XORG_SORT_ORDER}" \
+						&& AskToExecuteOrSkip "Add arguments?"; then
+						local -i COUNT_OF_VALID_ARGS=2
+						echo
+						GetArgs
 
-			PrintSuffixPassOrFail "Installing ${REPO_NAME}...\t"
-			return "${_LAST_EXIT_CODE}"
-		}
+						for _COUNT in $( seq 1 "${COUNT_OF_VALID_ARGS}" ); do
+							read -r -p "Enter argument (to skip, leave blank): " ANSWER
+							GetArgsForAutoXorg "${ANSWER}" || return 1
+
+							if [[ -z "${ANSWER}" ]]; then
+								break
+							fi
+						done
+					fi
+
+					Install
+				fi
+
+				if "${HAS_SKIPPED}"; then
+					( return 255 )
+				fi
+
+				PrintSuffixPassOrFail "Installing ${REPO_NAME}...\t"
+				return "${_LAST_EXIT_CODE}"
+			}
 # </functions>
 
 # <main>

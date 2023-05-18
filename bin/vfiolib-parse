@@ -358,7 +358,7 @@
                 SetParseParameters
 
                 for IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST[@]}; do
-                    local -a DEVICE_LIST=( $( eval "$_GET_IOMMU_GROUP_DEVICE_LIST" ) )
+                    local -a DEVICE_LIST=( $( eval "${_GET_IOMMU_GROUP_DEVICE_LIST}" ) )
 
                     if ! DoesIOMMUGroupHaveExternalDevices "${IOMMU_GROUP_ID}"; then
                         _IOMMU_GROUPS_FOR_VFIO_LIST+=( "${IOMMU_GROUP_ID}" )
@@ -649,41 +649,41 @@
             }
 
         # <summary> Presentation </summary>
-        function PrintThisIOMMUGroupDevices
-        {
-            IsInt "${1}" || return "${?}"
-            local -i IOMMU_GROUP_ID="${1}"
-            local -a DEVICE_LIST="$( eval "${_GET_DEVICES_FOR_IOMMU_GROUP}" )"
+            function PrintThisIOMMUGroupDevices
+            {
+                IsInt "${1}" || return "${?}"
+                local -i IOMMU_GROUP_ID="${1}"
+                local -a DEVICE_LIST="$( eval "${_GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
-            for DEVICE in ${DEVICE_LIST[@]}; do
-                if IsDeviceExternal "${DEVICE}"; then
-                    local CLASS DRIVER HWID NAME VENDOR
+                for DEVICE in ${DEVICE_LIST[@]}; do
+                    if IsDeviceExternal "${DEVICE}"; then
+                        local CLASS DRIVER HWID NAME VENDOR
 
-                    SetDeviceClass "${DEVICE}" "CLASS"
-                    SetDeviceDriver "${DEVICE}" "DRIVER"
-                    SetDeviceHardwareID "${DEVICE}" "HWID"
-                    SetDeviceName "${DEVICE}" "NAME"
-                    SetDeviceVendor "${DEVICE}" "VENDOR"
+                        SetDeviceClass "${DEVICE}" "CLASS"
+                        SetDeviceDriver "${DEVICE}" "DRIVER"
+                        SetDeviceHardwareID "${DEVICE}" "HWID"
+                        SetDeviceName "${DEVICE}" "NAME"
+                        SetDeviceVendor "${DEVICE}" "VENDOR"
 
-                    echo -e "\tSlot ID:\t${DEVICE}"
-                    echo -e "\tVendor name:\t${VENDOR}"
-                    echo -e "\tDevice name:\t${NAME}"
-                    echo -e "\tClass/Type:\t${CLASS}"
-                    echo -e "\tHardware ID:\t${HWID}"
-                    local DRIVER_OUTPUT="\tKernel driver:\t"
+                        echo -e "\tSlot ID:\t${DEVICE}"
+                        echo -e "\tVendor name:\t${VENDOR}"
+                        echo -e "\tDevice name:\t${NAME}"
+                        echo -e "\tClass/Type:\t${CLASS}"
+                        echo -e "\tHardware ID:\t${HWID}"
+                        local DRIVER_OUTPUT="\tKernel driver:\t"
 
-                    if [[ ! -z "${DRIVER}" ]]; then
-                        echo -e "${DRIVER_OUTPUT}${DRIVER}"
-                    else
-                        echo -e "${DRIVER_OUTPUT}N/A"
+                        if [[ ! -z "${DRIVER}" ]]; then
+                            echo -e "${DRIVER_OUTPUT}${DRIVER}"
+                        else
+                            echo -e "${DRIVER_OUTPUT}N/A"
+                        fi
+
+                        echo
                     fi
+                done
 
-                    echo
-                fi
-            done
-
-            return 0
-        }
+                return 0
+            }
 # </functions>
 
 # <main>
