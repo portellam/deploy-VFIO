@@ -299,12 +299,12 @@
         # <summary> Device group validation </summary>
             function AddSomeIOMMUGroupsParseList
             {
-                local -r REGEX_FOR_RANGE_OF_NUMS='^[0-9]+[-][0-9]+$'
+                local REGEX_FOR_RANGE_OF_NUMS='^[0-9]+[-][0-9]+$'
                 local -a IOMMU_GROUPS_TEMP_LIST
 
                 if echo "${1}" | grep -E -q "${REGEX_FOR_RANGE_OF_NUMS}"; then
-                    local -ir RANGE_START=$( echo "${1}" | cut -d '-' -f 1 )
-                    local -ir RANGE_STOP=$( echo "${1}" | cut -d '-' -f 2 )
+                    local -i RANGE_START=$( echo "${1}" | cut -d '-' -f 1 )
+                    local -i RANGE_STOP=$( echo "${1}" | cut -d '-' -f 2 )
                     IsIOMMUGroupIDValid "${RANGE_START}" || return 1
                     IsIOMMUGroupIDValid "${RANGE_STOP}" || return 1
                     IOMMU_GROUPS_TEMP_LIST+=( $( seq "${RANGE_START}" "${RANGE_STOP}" ) )

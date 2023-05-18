@@ -310,8 +310,8 @@
             fi
 
             # <remarks> Overwrite target lines, lines that need to be set to defaults. </remarks>
-            local -r LINE_GRUB_DISTRIBUTOR="GRUB_DISTRIBUTOR=\`lsb_release -i -s 2> /dev/null || echo "$( lsb_release -i -s )"\`"
-            local -r LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\""
+            local LINE_GRUB_DISTRIBUTOR="GRUB_DISTRIBUTOR=\`lsb_release -i -s 2> /dev/null || echo "$( lsb_release -i -s )"\`"
+            local LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\""
 
             if ! sed -i '/GRUB_DISTRIBUTOR=*/c\'"${LINE_GRUB_DISTRIBUTOR}" "${_GRUB_SRC_BACKUP_PATH}" \
                 || ! sed -i '/GRUB_CMDLINE_LINUX_DEFAULT=*/c\'"${LINE_GRUB_CMDLINE_DEFAULT}" "${_GRUB_SRC_BACKUP_PATH}"; then

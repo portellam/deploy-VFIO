@@ -104,7 +104,7 @@
 
                 function Install
                 {
-                    local -r SCRIPT_NAME="install.sh"
+                    local SCRIPT_NAME="install.sh"
 
                     if ! cd "${_GIT_PATH}${FULL_REPO}"; then
                         echo -e "${_PREFIX_ERROR} Failed to find build directory."
@@ -142,8 +142,8 @@
                         return 1
                     }
 
-                    local -r FILE="/etc/default/zram-swap"
-                    local -r LINE_TO_MATCH="_zram_fraction="
+                    local FILE="/etc/default/zram-swap"
+                    local LINE_TO_MATCH="_zram_fraction="
                     local FRACTION="${_ARGS_FOR_ZRAM_SWAP_FRACTION}"
 
                     if ! "${_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
@@ -206,9 +206,9 @@
                     return 0
                 }
 
-                local -r USER_NAME="foundObjects"
-                local -r REPO_NAME="zram-swap"
-                local -r FULL_REPO="${USER_NAME}/${REPO_NAME}"
+                local USER_NAME="foundObjects"
+                local REPO_NAME="zram-swap"
+                local FULL_REPO="${USER_NAME}/${REPO_NAME}"
                 local HAS_SKIPPED=false
 
                 if ! "${_EXECUTE_POST_SETUP_ZRAM_SWAP}"; then
@@ -524,7 +524,7 @@
 
 			function Install
 			{
-				local -r SCRIPT_NAME="installer.bash"
+				local SCRIPT_NAME="installer.bash"
 
 				if ! cd "${_GIT_PATH}${FULL_REPO}"; then
 					echo -e "${_PREFIX_ERROR} Failed to find build directory."
@@ -544,9 +544,9 @@
 				return 0
 			}
 
-			local -r USER_NAME="portellam"
-			local -r REPO_NAME="auto-Xorg"
-			local -r FULL_REPO="${USER_NAME}/${REPO_NAME}"
+			local USER_NAME="portellam"
+			local REPO_NAME="auto-Xorg"
+			local FULL_REPO="${USER_NAME}/${REPO_NAME}"
 			local HAS_SKIPPED=false
 
 			if ! "${_EXECUTE_POST_SETUP_AUTO_XORG}"; then
