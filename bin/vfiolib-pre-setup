@@ -160,7 +160,7 @@
 
                     GetMemoryAllocatedToHugepages || return 1
                     IsHostMemorySufficientForHugepages || return 1
-                    declare -g _OUTPUT_GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=${_HUGEPAGES_BYTE_SUFFIX} hugepagesz=${_HUGEPAGES_BYTE_SUFFIX} hugepages=${_HUGEPAGES_COUNT}"
+                    declare -g _LINE_GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=${_HUGEPAGES_BYTE_SUFFIX} hugepagesz=${_HUGEPAGES_BYTE_SUFFIX} hugepages=${_HUGEPAGES_COUNT}"
                     _IS_SETUP_HUGEPAGES=true
                     return 0
                 }
@@ -372,7 +372,7 @@
                 # </remarks>
 
                 # <remarks> Find CPU mask. </remarks>
-                local -r GET_HEX_MASK='echo "obase=16; ${THREAD}_DECIMAL" | bc'
+                local GET_HEX_MASK='echo "obase=16; ${THREAD}_DECIMAL" | bc'
                 local -i HOST_THREADS_HEX_MASK=0
                 local -i TOTAL_THREADS_HEX_MASK=0
 
@@ -392,7 +392,7 @@
                 echo -e "Allocated to Guest:\t${GUEST_THREADS_DELIM}"
 
                 # <remarks> Save changes. </remarks>
-                declare -g LINE_GRUB_CMDLINE_ISOLCPU="isolcpus=${GUEST_THREADS_DELIM} nohz_full=${GUEST_THREADS_DELIM} rcu_nocbs=${GUEST_THREADS_DELIM}"
+                declare -g _LINE_GRUB_CMDLINE_ISOLCPU="isolcpus=${GUEST_THREADS_DELIM} nohz_full=${GUEST_THREADS_DELIM} rcu_nocbs=${GUEST_THREADS_DELIM}"
                 return 0
             }
 
