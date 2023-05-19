@@ -58,11 +58,9 @@
 
                     case true in
                         "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}" )
-                            ExecuteParse || return 1
                             ExecuteMultibootSetup || return 1 ;;
 
                         "${_EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB}" )
-                            ExecuteParse || return 1
                             ExecuteStaticSetup || return 1 ;;
 
                         "${_EXECUTE_VFIO_SETUP_UNINSTALL}" )
