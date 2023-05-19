@@ -23,11 +23,13 @@
 # script is useful.
 # </remarks>
 
+HOOK_NAME="cfscpu"
+PREFIX_ERROR="An error occurred:"
+PREFIX_PROMPT="libvirt-qemu ${HOOK_NAME}:"
+DOMAIN_NAME="${1}"
+
 # <remarks> Ranges from 20 (lowest priority) to -20 (highest priority). </remarks>
 TARGET_NICE="-1"
-DOMAIN_NAME="${1}"
-HOOK_NAME="cfscpu"
-PREFIX_PROMPT="libvirt-qemu ${HOOK_NAME}:"
 
 function GetVCPUPath
 {
@@ -45,7 +47,7 @@ function GetVCPUPath
 function PrioritizeVCPUForDomain
 {
     if ! SetNiceLevelForDomain; then
-        echo "${PREFIX_PROMPT} Failed to prioritize vCPU threads of Libvirt domain '${DOMAIN_NAME}'" > /dev/kmsg
+        echo "${PREFIX_PROMPT} ${PREFIX_ERROR} Failed to prioritize vCPU threads of Libvirt domain '${DOMAIN_NAME}'" > /dev/kmsg
         return 1
     fi
 
@@ -60,7 +62,7 @@ function SetNiceLevelForDomain
 
         for PID in $( cat ${VCPU_GROUP}/tasks ); do
             if ! renice -n "${TARGET_NICE}" -p "${PID}" 2> /dev/null; then
-                echo "${PREFIX_PROMPT} An error occured: Failed to set nice level for PID '${PID}'"
+                echo "${PREFIX_PROMPT} ${PREFIX_ERROR} Failed to set nice level for PID '${PID}'"
                 return 1
             fi
         done

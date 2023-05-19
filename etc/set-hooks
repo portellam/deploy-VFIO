@@ -7,6 +7,7 @@
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
 
+PREFIX_ERROR="An error occurred:"
 DOMAIN_NAME="${1}"
 HOOKS_BASE_DIR="/etc/libvirt/hooks"
 DOMAIN_NAME_BASE_DIR="${HOOKS_BASE_DIR}/qemu.d/${DOMAIN_NAME}"
@@ -22,7 +23,7 @@ function GetPathsForDomain
     if ( [[ ! -d "${DOMAIN_NAME_BASE_DIR}" ]] && ! mkdir -p "${DOMAIN_NAME_BASE_DIR}" &> /dev/null ) \
         || ( [[ ! -d "${BEGIN_DIR}" ]] && ! mkdir -p "${BEGIN_DIR}" &> /dev/null ) \
         || ( [[ ! -d "${END_DIR}" ]] && ! mkdir -p "${END_DIR}" &> /dev/null ); then
-        echo -e "An error occured: Failed to create directories for domain."
+        echo -e "${PREFIX_ERROR} Failed to create directories for domain."
         return 1
     fi
 
@@ -32,7 +33,7 @@ function GetPathsForDomain
 function GetHooks
 {
     if [[ ! -e "${HOOKS_BASE_DIR}/${HOOK_NAME_1}" ]]; then
-        echo -e "An error occured: Failed to find domain hook(s)."
+        echo -e "${PREFIX_ERROR} Failed to find domain hook(s)."
         return 1
     fi
 
@@ -47,13 +48,13 @@ function SetHooksForDomain
 
     if ! ln -s "${BEGIN_DIR}/${1}" "${HOOKS_BASE_DIR}/${1}" &> /dev/null \
         || ! ln -s "${END_DIR}/${1}" "${HOOKS_BASE_DIR}/${1}" &> /dev/null; then
-        echo -e "An error occured: Failed to set symlinks for hook '${1}'."
+        echo -e "${PREFIX_ERROR} Failed to set symlinks for hook '${1}'."
         return 1
     fi
 
     if ! chmod +x "${BEGIN_DIR}/${1}" &> /dev/null \
         || ! chmod +x "${END_DIR}/${1}" &> /dev/null; then
-        echo -e "An error occured: Failed to set file permissions for hook '${1}'."
+        echo -e "${PREFIX_ERROR} Failed to set file permissions for hook '${1}'."
         return 1
     fi
 

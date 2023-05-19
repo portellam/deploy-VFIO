@@ -9,6 +9,7 @@
 #
 
 HOOK_NAME="nosleep"
+PREFIX_ERROR="An error occurred:"
 PREFIX_PROMPT="libvirt-qemu ${HOOK_NAME}:"
 DOMAIN_NAME="${1}"
 OPERATION="${2}"
@@ -16,7 +17,7 @@ OPERATION="${2}"
 function StartNosleepService
 {
     if ! systemctl start libvirt-nosleep@"${DOMAIN_NAME}" &> /dev/null; then
-        echo "${PREFIX_PROMPT} An error occured: Failed to start Nosleep service for Libvirt domain '${DOMAIN_NAME}'." >&2
+        echo "${PREFIX_PROMPT} ${PREFIX_ERROR} Failed to start Nosleep service for Libvirt domain '${DOMAIN_NAME}'." >&2
         return 1
     fi
 
@@ -27,7 +28,7 @@ function StartNosleepService
 function StopNosleepService
 {
     if ! systemctl stop libvirt-nosleep@"${DOMAIN_NAME}" &> /dev/null; then
-        echo "${PREFIX_PROMPT} An error occured: Failed to stop Nosleep service for Libvirt domain '${DOMAIN_NAME}'." >&2
+        echo "${PREFIX_PROMPT} ${PREFIX_ERROR} Failed to stop Nosleep service for Libvirt domain '${DOMAIN_NAME}'." >&2
         return 1
     fi
 

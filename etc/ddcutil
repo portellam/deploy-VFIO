@@ -20,6 +20,7 @@
 # </remarks>
 
 HOOK_NAME="ddcutil"
+PREFIX_ERROR="An error occurred:"
 PREFIX_PROMPT="libvirt-qemu ${HOOK_NAME}:"
 OPERATION="${2}"
 SUBOPERATION="${3}"
@@ -54,7 +55,7 @@ function SetVideoOutput
     fi
 
 	if ! ddcutil -d "${DOMAIN_DISPLAY}" setvcp 60 "0x${VIDEO_INPUT}"; then
-        echo "${PREFIX_PROMPT} An error occured: Failed to switch video input."
+        echo "${PREFIX_PROMPT} ${PREFIX_ERROR} Failed to switch video input."
 		return 1
 	fi
 
