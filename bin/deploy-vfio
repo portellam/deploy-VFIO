@@ -36,7 +36,10 @@
             return 1
         fi
 
-        # ExecuteBackups
+        if "${_FLAG_DO_EXECUTE_BACKUPS}" \
+            && ! ExecuteBackups; then
+            exit "${?}"
+        fi
 
         # <remarks> Exit early. </remarks>
         if "${_EXECUTE_VFIO_SETUP_UNINSTALL}"; then
@@ -44,20 +47,29 @@
             return "${?}"
         fi
 
-        if "${_FLAG_DO_EXECUTE_PRE_SETUP}"; then
-            ExecutePreSetup
+        if "${_FLAG_DO_EXECUTE_PRE_SETUP}" \
+            && ! ExecutePreSetup; then
+            return 1
         fi
 
-        echo
-        ExecuteParseSelection || return "${?}"
-        ExecuteMainSetup
+        if ( GetPassExitCode \
+                || GetSkipExitCode ); then
+            ExecuteMainSetup
 
-        if "${_FLAG_DO_EXECUTE_POST_SETUP}"; then
-            echo
-            ExecutePostSetup
+            if ! GetPassExitCode \
+                && ! GetSkipExitCode; then
+                return 1
+            fi
         fi
 
-        return 0
+        if "${_FLAG_DO_EXECUTE_POST_SETUP}" \
+            && ( GetPassExitCode \
+                || GetSkipExitCode ) \
+            && ! ExecutePostSetup; then
+            return 1
+        fi
+
+        return "${?}"
     }
 # </functions>
 
@@ -66,13 +78,10 @@
         BackupFiles || exit 1
     fi
 
-    while [[ "${?}" -ne 1 ]]; do
-        Main "${@}"
-        break
-    done
+    Main "${@}"
 
-    if [[ "${?}" -eq 1 ]] \
-        && "${_FLAG_DO_EXECUTE_BACKUPS}"; then
+    if "${_FLAG_DO_EXECUTE_BACKUPS}" \
+        && GetPassExitCode; then
         RestoreFiles || exit 1
     fi
 

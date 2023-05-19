@@ -3,6 +3,8 @@
     - Anything mentioned in **To Do** is not enabled/available.
 
 ### To Do:
+* Add boolean to keep track if any steps were successful and rest were skipped.
+    -If true, set output to success.
 * Add functionality to deploy a vfio setup with hooks? Or leave that to the pros?
 * Ask question to do each function, then execute after asking all questions (pre and post-setup).
 * Trim fat, remove unnecessary repetitions and code.

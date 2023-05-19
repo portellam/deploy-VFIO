@@ -10,6 +10,40 @@
 # <functions>
     # <summary> Public </summary>
         # <summary> Global getters </summary>
+            function GetExitCode
+            {
+                if IsInt "${_LAST_EXIT_CODE}"; then
+                    return "${_LAST_EXIT_CODE}"
+                fi
+            }
+
+            function GetPassExitCode
+            {
+                if [[ "${_LAST_EXIT_CODE}" -ne 0 ]]; then
+                    return 1
+                fi
+
+                return 0
+            }
+
+            function GetFailExitCode
+            {
+                if [[ "${_LAST_EXIT_CODE}" -ne 0 ]]; then
+                    return 0
+                fi
+
+                return 1
+            }
+
+            function GetSkipExitCode
+            {
+                if [[ "${_LAST_EXIT_CODE}" -ne 255 ]]; then
+                    return 1
+                fi
+
+                return 0
+            }
+
             function GetInternetStatus
             {
                 function PingServer
@@ -133,7 +167,18 @@
         # <summary> Global setters </summary>
             function SetExitCode
             {
-                _LAST_EXIT_CODE="${?}"
+                declare -ig _LAST_EXIT_CODE="${?}"
+            }
+
+            function SetPassExitCode
+            {
+                case "${?}" in
+                    0 | 255 )
+                        declare -ig _LAST_EXIT_CODE=0 ;;
+
+                    * )
+                        declare -ig _LAST_EXIT_CODE=1 ;;
+                esac
             }
 
             function SetParameters

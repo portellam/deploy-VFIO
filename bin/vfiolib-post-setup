@@ -19,35 +19,55 @@
 		{
 			function Main
 			{
-				while [[ "${?}" -ne 1 ]]; do
-					if "${_ASK_TO_EXECUTE_POST_SETUPS}"; then
-						LibvirtHooks
-						GuestAudioLoopback
-						AllocateRAMToSwap
-						SetVideoOutput
-						break
-					fi
+				SetExitCode
 
-					if "${_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS}"; then
+				if "${_ASK_TO_EXECUTE_POST_SETUPS}"; then
+					if GetPassExitCode \
+                        || GetSkipExitCode; then
 						LibvirtHooks
 					fi
 
-					if "${_EXECUTE_POST_SETUP_AUDIO_LOOPBACK}"; then
+					if GetPassExitCode \
+                        || GetSkipExitCode; then
 						GuestAudioLoopback
 					fi
 
-					if "${_EXECUTE_POST_SETUP_ZRAM_SWAP}"; then
+					if GetPassExitCode \
+                        || GetSkipExitCode; then
 						AllocateRAMToSwap
 					fi
 
-					if "${_EXECUTE_POST_SETUP_AUTO_XORG}"; then
+					if GetPassExitCode \
+                        || GetSkipExitCode; then
 						SetVideoOutput
 					fi
+				else
+					if ( GetPassExitCode \
+                        || GetSkipExitCode ) \
+						&& "${_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS}"; then
+						LibvirtHooks
+					fi
 
-					break
-				done
+					if ( GetPassExitCode \
+                        || GetSkipExitCode ) \
+						&& "${_EXECUTE_POST_SETUP_AUDIO_LOOPBACK}"; then
+						GuestAudioLoopback
+					fi
 
-				return "${?}"
+					if ( GetPassExitCode \
+                        || GetSkipExitCode ) \
+						&& "${_EXECUTE_POST_SETUP_ZRAM_SWAP}"; then
+						AllocateRAMToSwap
+					fi
+
+					if ( GetPassExitCode \
+                        || GetSkipExitCode ) \
+						&& "${_EXECUTE_POST_SETUP_AUTO_XORG}"; then
+						SetVideoOutput
+					fi
+				fi
+
+				return "${_LAST_EXIT_CODE}"
 			}
 
 			local OUTPUT="Executing post-setup...\t"
@@ -393,7 +413,7 @@
 				if ! "${_EXECUTE_POST_SETUP_AUDIO_LOOPBACK}"; then
 					echo
 
-					if ! AskToExecuteOrSkip "Install zram-swap?"; then
+					if ! AskToExecuteOrSkip "Install audio loopback?"; then
 						HAS_SKIPPED=true
 					fi
 				fi

@@ -20,35 +20,54 @@
         {
             function Main
             {
-                # TODO: preserve last exit code, so that pre-setup fails as expected.
+                SetExitCode
 
-                while [[ "${?}" -ne 1 ]]; do
-                    AddUserToGroups
+                if "${_ASK_TO_EXECUTE_PRE_SETUP_ALL}"; then
+					if GetPassExitCode \
+                        || GetSkipExitCode; then
+						ExecuteHugepagesSetup
+					fi
 
-                    if "${_ASK_TO_EXECUTE_PRE_SETUP_ALL}"; then
-                        ExecuteHugepagesSetup
-                        ExecuteStaticCPUIsolation
-                        ExecuteVirtualKVMSetup
-                        ExecuteModifyQEMUConfiguration
-                        break
-                    fi
+					if GetPassExitCode \
+                        || GetSkipExitCode; then
+						ExecuteStaticCPUIsolation
+					fi
 
-                    if "${_EXECUTE_PRE_SETUP_HUGEPAGES}"; then
-                        ExecuteHugepagesSetup
-                    fi
+					if GetPassExitCode \
+                        || GetSkipExitCode; then
+						ExecuteVirtualKVMSetup
+					fi
 
-                    if "${_EXECUTE_PRE_SETUP_STATIC_ISOLCPU}"; then
-                        ExecuteStaticCPUIsolation
-                    fi
+					if GetPassExitCode \
+                        || GetSkipExitCode; then
+						ExecuteModifyQEMUConfiguration
+					fi
+				else
+					if ( GetPassExitCode \
+                            || GetSkipExitCode ) \
+						&& "${_EXECUTE_PRE_SETUP_HUGEPAGES}"; then
+						ExecuteHugepagesSetup
+					fi
 
-                    if "${_EXECUTE_PRE_SETUP_EVDEV}"; then
-                        ExecuteVirtualKVMSetup
-                    fi
+					if ( GetPassExitCode \
+                            || GetSkipExitCode ) \
+						&& "${_EXECUTE_PRE_SETUP_STATIC_ISOLCPU}"; then
+						ExecuteStaticCPUIsolation
+					fi
 
-                    ExecuteModifyQEMUConfiguration
-                    break
-                done
+					if ( GetPassExitCode \
+                            || GetSkipExitCode ) \
+						&& "${_EXECUTE_PRE_SETUP_EVDEV}"; then
+						ExecuteVirtualKVMSetup
+					fi
 
+					if GetPassExitCode \
+                        || GetSkipExitCode; then
+						ExecuteModifyQEMUConfiguration
+					fi
+				fi
+
+                GetExitCode
                 return "${?}"
             }
 
@@ -82,6 +101,11 @@
             declare -gi _HUGEPAGES_MIN_SIZE_IN_KBIT=4194304
             declare -gi _HUGEPAGES_SIZE_IN_KBIT=0
             declare -gu _HUGEPAGES_BYTE_SUFFIX=""
+            declare -g _IS_HUGEPAGES_COUNT_SET=false
+            declare -g _IS_HUGEPAGES_SIZE_SET=false
+
+            # <remarks> Isolcpus </remarks>
+            declare -g _LINE_GRUB_CMDLINE_ISOLCPU=""
 
             # <remarks> Execution flags </remarks>
             declare -g _ASK_TO_EXECUTE_PRE_SETUP_ALL=true
@@ -235,7 +259,7 @@
                         return 1 ;;
                 esac
 
-                _HUGEPAGES_MAX_SIZE=$(( "${_HUGEPAGES_MAX_SIZE}_IN_KBIT" - "${_HUGEPAGES_MIN_SIZE_IN_KBIT}" ))
+                _HUGEPAGES_MAX_SIZE=$(( "${_HUGEPAGES_MAX_SIZE_IN_KBIT}" - "${_HUGEPAGES_MIN_SIZE_IN_KBIT}" ))
                 _HUGEPAGES_MAX_SIZE=$(( "${_HUGEPAGES_MAX_SIZE}" / "${_HUGEPAGES_SIZE_IN_KBIT}" ))
                 return 0
             }
@@ -265,6 +289,8 @@
 
             return 0
         }
+
+        # TODO: fix isolcpu function.
 
         # <summary>
         # isolcpus: Allocate host CPU cores (and/or threads), to reduce host overhead, and improve both host and guest performance.
@@ -390,15 +416,15 @@
                 done
 
                 # <remarks> Convert hexadecimal mask into hexadecimal. </remarks>
-                declare -g HOST_THREADS_HEX=$( printf '%x\n' "${HOST_THREADS_HEX_MASK}" )
+                # local HOST_THREADS_HEX=$( printf '%x\n' "${HOST_THREADS_HEX_MASK}" )
                 local -i TOTAL_THREADS_HEX_MASK=$(( ( 2 ** ${TOTAL_THREADS_COUNT} ) - 1 ))
-                declare -g GUEST_THREADS_HEX=$( printf '%x\n' "${TOTAL_THREADS_HEX_MASK}" )
+                # local GUEST_THREADS_HEX=$( printf '%x\n' "${TOTAL_THREADS_HEX_MASK}" )
 
                 echo -e "Allocated to Host:\t${HOST_THREADS_DELIM}"
                 echo -e "Allocated to Guest:\t${GUEST_THREADS_DELIM}"
 
                 # <remarks> Save changes. </remarks>
-                declare -g _LINE_GRUB_CMDLINE_ISOLCPU="isolcpus=${GUEST_THREADS_DELIM} nohz_full=${GUEST_THREADS_DELIM} rcu_nocbs=${GUEST_THREADS_DELIM}"
+                _LINE_GRUB_CMDLINE_ISOLCPU="isolcpus=${GUEST_THREADS_DELIM} nohz_full=${GUEST_THREADS_DELIM} rcu_nocbs=${GUEST_THREADS_DELIM}"
                 return 0
             }
 

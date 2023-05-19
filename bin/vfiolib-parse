@@ -18,13 +18,19 @@
             AreParametersValid || return "${?}"
             SelectFileToExportDatabase || return "${?}"
             SetFileForParseSelection || return "${?}"
-            SelectMethodToParseDatabase || return "${?}"
-            SetOptionsToImportDatabase || return "${?}"
-            DoesHostHaveExistingVFIOSetup || return "${?}"
-            SelectIOMMUGroups
-            IsParseSelectionValid || return "${?}"
-            DoesHostHaveVGADevicesAfterVFIOSetup || return "${?}"
-            return 0
+            SelectMethodToParseDatabase
+            SetExitCode
+
+            if GetPassExitCode; then
+                SetOptionsToImportDatabase || return "${?}"
+                DoesHostHaveExistingVFIOSetup || return "${?}"
+                SelectIOMMUGroups
+                IsParseSelectionValid || return "${?}"
+                DoesHostHaveVGADevicesAfterVFIOSetup || return "${?}"
+                return 0
+            fi
+
+            return "${_LAST_EXIT_CODE}"
         }
 
         # <summary> Global getters </summary>
@@ -609,7 +615,8 @@
                             _DO_PARSE_DATABASE_FROM_INTERNET=true ;;
 
                         [Nn]* )
-                            return 255 ;;
+                            (return 255)
+                            return "${?}" ;;
 
                         * )
                             echo "Please answer 'F', 'I', 'O', or 'N'."

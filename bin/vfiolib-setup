@@ -75,7 +75,15 @@
 
             local OUTPUT="Executing VFIO setup...\t"
             PrintSuffixWait "${OUTPUT}"
-            Main
+            echo
+            ExecuteParseSelection
+
+            if GetPassExitCode; then
+                Main
+            else
+                GetExitCode
+            fi
+
             PrintSuffixPassOrFail "${OUTPUT}"
             return "${_LAST_EXIT_CODE}"
         }
