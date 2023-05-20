@@ -252,7 +252,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 *If UEFI is enabled (and CSM/BIOS is disabled), BIOS-only VGA devices may not be available as Host video output; BIOS-only VGA devices may only be available explicitly for hardware passthrough.*
 
 ## References
-<sub>####1.
+#### <sub>1.
 **[source (GitHub)](https://github.com/corna/me_cleaner), [source fork (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
 
 #### 2.
