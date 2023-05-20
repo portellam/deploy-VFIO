@@ -543,7 +543,7 @@
                 fi
 
                 ExportParseDatabase || return "${?}"
-                read -r -p "Enter filename (leave blank for default): " ANSWER
+                read -r -p "Enter filename to read/write parsing of IOMMU groups (leave blank for default): " ANSWER
 
                 # if [[ ! -z "${ANSWER}" ]] \
                 #     && [[ ! -e "${ANSWER}" ]]; then
