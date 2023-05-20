@@ -253,37 +253,46 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 
 ## References
 #### [1]
-| <sub>**[source (GitHub)](https://github.com/corna/me_cleaner)**</sub>        |
-| <sub>**[source fork (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub> |
+me_cleaner
+<sub>**[source (GitHub)](https://github.com/corna/me_cleaner)**</sub>
+<sub>**[source fork (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
 
 #### [2]
-| <sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub> |
+Isolcpu
+<sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub>
 
 #### [3]
-| <sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub> |
+Hugepages
+<sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
 
 #### [4]
-| <sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub> |
+Evdev
+<sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
 
 #### [5]
-| <sub>**[source (GitHub)](https://github.com/portellam/auto-Xorg)**</sub> |
+auto-Xorg
+<sub>**[source (GitHub)](https://github.com/portellam/auto-Xorg)**</sub> |
 
 #### [6]
-| <sub>**[VFIO-Tools source (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)**</sub>                                                                |
-| <sub>**[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub> |
+Libvirt hooks
+<sub>**[VFIO-Tools source (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)**</sub>
+<sub>**[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub>
 
 #### [7]
-| <sub>**[source (GitHub)](https://github.com/foundObjects/zram-swap)**</sub>                                                                                  |
-| <sub>**[lz4 source (GitHub)](https://github.com/lz4/lz4)**</sub>                                                                                             |
-| <sub>**[package (Debian)](https://wiki.debian.org/ZRam)**</sub>                                                                                              |
-| <sub>**[package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub>                                                                                 |
-| <sub>**[benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub> |
+zram-swap
+<sub>**[source (GitHub)](https://github.com/foundObjects/zram-swap)**</sub>
+<sub>**[lz4 source (GitHub)](https://github.com/lz4/lz4)**</sub>
+<sub>**[package (Debian)](https://wiki.debian.org/ZRam)**</sub>
+<sub>**[package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub>
+<sub>**[benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
 
 #### [8]
-| <sub>**[documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub> |
+VFIO
+<sub>**[documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub>
 
 #### [9]
-| <sub>**[Wikipedia](https://en.wikipedia.org/wiki/Video_Graphics_Array)**</sub> |
+VGA
+<sub>**[Wikipedia](https://en.wikipedia.org/wiki/Video_Graphics_Array)**</sub>
 
 ## Disclaimer:
 Use at your own risk. Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
