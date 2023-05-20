@@ -98,19 +98,23 @@
 
             declare -g _ARE_MAIN_SETUP_PARAMS_SET=true
 
-            declare -g _DEFAULT_MENU_ENTRY_TITLE="0"
+            # <remarks> Kernel commands </remarks>
+            declare -g _DRIVER_DELIM=""
+            declare -g _HWID_DELIM=""
             declare -g _LINE_GRUB_CMDLINE="quiet splash amd_iommu=on intel_iommu=on iommu=1,pt"
-            declare -g _LINE_GRUB_CMDLINE_DEFAULT=""
-            declare -g _PREFERRED_MENU_ENTRY_TITLE=""
 
-            # <remarks> File output </remarks>
+            # <remarks> File output: Static VFIO with GRUB </remarks>
+            declare -g _LINE_GRUB_CMDLINE_DEFAULT=""
+
+            # <remarks> File output: Static VFIO without GRUB </remarks>
             declare -ga _BLACKLISTS_LIST=( )
             declare -ga _INITRAMFS_LIST=( )
             declare -ga _MODULES_LIST=( )
+
+            # <remarks> File output: Multiboot VFIO with GRUB </remarks>
+            declare -g _PREFERRED_MENU_ENTRY_TITLE=""
             declare -ga _CUSTOM_GRUB_FILE_CONTENTS=( )
-            declare -ga _MENU_ENTRY_TITLE_LIST=( "${_PREFERRED_MENU_ENTRY_TITLE}" )
-            declare -g _DRIVER_DELIM=""
-            declare -g _HWID_DELIM=""
+            declare -ga _MENU_ENTRY_TITLE_LIST=( )
 
             # <remarks> Execution Flags </remarks>
             declare -g _ASK_TO_EXECUTE_VFIO_SETUP=true
@@ -125,38 +129,41 @@
             declare -g _EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=true
             declare -g _EXECUTE_VFIO_SETUP_UNINSTALL=false
 
-            # <remarks> Feature Flags </remarks>
-            _FLAG_ADD_EARLY_LOAD_MODULE_ARGS=true
-            _FLAG_ADD_LOG_LEVEL_ARGS=true
-            _FLAG_ADD_PRIVACY_ARGS=false
-            _FLAG_ADD_SET_POWER_ARGS=true
-            _FLAG_ADD_SET_VIDEO_ARGS=true
-            _FLAG_ADD_WIN10_REQUIRED_ARGS=true
+            # <summary> File output: GRUB </summary>
+            declare -g _DEFAULT_MENU_ENTRY_TITLE="0"
 
-            if "${_FLAG_ADD_LOG_LEVEL_ARGS}"; then
-                _LINE_GRUB_CMDLINE="loglevel=3 ${_LINE_GRUB_CMDLINE}"
-            fi
+                # <remarks> Feature Flags </remarks>
+                _FLAG_ADD_EARLY_LOAD_MODULE_ARGS=true
+                _FLAG_ADD_LOG_LEVEL_ARGS=true
+                _FLAG_ADD_PRIVACY_ARGS=false
+                _FLAG_ADD_SET_POWER_ARGS=true
+                _FLAG_ADD_SET_VIDEO_ARGS=true
+                _FLAG_ADD_WIN10_REQUIRED_ARGS=true
 
-            if "${_FLAG_ADD_PRIVACY_ARGS}" \
-                && IsInstalled "rfkill" &> /dev/null; then
-                _LINE_GRUB_CMDLINE+=" rfkill.default_state=1 systemd.restore_state=0"
-            fi
+                if "${_FLAG_ADD_LOG_LEVEL_ARGS}"; then
+                    _LINE_GRUB_CMDLINE="loglevel=3 ${_LINE_GRUB_CMDLINE}"
+                fi
 
-            if "${_FLAG_ADD_SET_POWER_ARGS}"; then
-                _LINE_GRUB_CMDLINE+=" acpi=force apm=power_off pcie_aspm=off"
-            fi
+                if "${_FLAG_ADD_PRIVACY_ARGS}" \
+                    && IsInstalled "rfkill" &> /dev/null; then
+                    _LINE_GRUB_CMDLINE+=" rfkill.default_state=1 systemd.restore_state=0"
+                fi
 
-            if "${_FLAG_ADD_EARLY_LOAD_MODULE_ARGS}"; then
-                _LINE_GRUB_CMDLINE+=" rd.driver.pre=vfio-pci rd.modules-load=vfio-pci"
-            fi
+                if "${_FLAG_ADD_SET_POWER_ARGS}"; then
+                    _LINE_GRUB_CMDLINE+=" acpi=force apm=power_off pcie_aspm=off"
+                fi
 
-            if "${_FLAG_ADD_SET_VIDEO_ARGS}"; then
-                _LINE_GRUB_CMDLINE+=" video=efifb:off,vesafb:off"
-            fi
+                if "${_FLAG_ADD_EARLY_LOAD_MODULE_ARGS}"; then
+                    _LINE_GRUB_CMDLINE+=" rd.driver.pre=vfio-pci rd.modules-load=vfio-pci"
+                fi
 
-            if "${_FLAG_ADD_WIN10_REQUIRED_ARGS}"; then
-                _LINE_GRUB_CMDLINE+=" kvm.ignore_msrs=1"
-            fi
+                if "${_FLAG_ADD_SET_VIDEO_ARGS}"; then
+                    _LINE_GRUB_CMDLINE+=" video=efifb:off,vesafb:off"
+                fi
+
+                if "${_FLAG_ADD_WIN10_REQUIRED_ARGS}"; then
+                    _LINE_GRUB_CMDLINE+=" kvm.ignore_msrs=1"
+                fi
         }
 
         function SetPreferredIOMMUGroupForMultiboot
