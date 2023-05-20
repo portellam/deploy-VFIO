@@ -20,61 +20,67 @@
 			function Main
 			{
 				SetExitCode
+				local ANY_PASSED=false
 
 				if "${_ASK_TO_EXECUTE_POST_SETUPS}"; then
 					if GetPassExitCode \
                         || GetSkipExitCode; then
-						LibvirtHooks
+						LibvirtHooks && ANY_PASSED=true
 					fi
 
 					if GetPassExitCode \
                         || GetSkipExitCode; then
-						GuestAudioLoopback
+						GuestAudioLoopback && ANY_PASSED=true
 					fi
 
 					if GetPassExitCode \
                         || GetSkipExitCode; then
-						AllocateRAMToSwap
+						AllocateRAMToSwap && ANY_PASSED=true
 					fi
 
 					if GetPassExitCode \
                         || GetSkipExitCode; then
-						SetVideoOutput
+						SetVideoOutput && ANY_PASSED=true
 					fi
 				else
 					if ( GetPassExitCode \
-                        || GetSkipExitCode ) \
+                        	|| GetSkipExitCode ) \
 						&& "${_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS}"; then
-						LibvirtHooks
+						LibvirtHooks && ANY_PASSED=true
 					fi
 
 					if ( GetPassExitCode \
-                        || GetSkipExitCode ) \
+                        	|| GetSkipExitCode ) \
 						&& "${_EXECUTE_POST_SETUP_AUDIO_LOOPBACK}"; then
-						GuestAudioLoopback
+						GuestAudioLoopback && ANY_PASSED=true
 					fi
 
 					if ( GetPassExitCode \
-                        || GetSkipExitCode ) \
+                        	|| GetSkipExitCode ) \
 						&& "${_EXECUTE_POST_SETUP_ZRAM_SWAP}"; then
-						AllocateRAMToSwap
+						AllocateRAMToSwap && ANY_PASSED=true
 					fi
 
 					if ( GetPassExitCode \
-                        || GetSkipExitCode ) \
+                        	|| GetSkipExitCode ) \
 						&& "${_EXECUTE_POST_SETUP_AUTO_XORG}"; then
-						SetVideoOutput
+						SetVideoOutput && ANY_PASSED=true
 					fi
 				fi
 
-				return "${_LAST_EXIT_CODE}"
+				if "${ANY_PASSED}"; then
+                    SetExitCode
+                fi
+
+				GetExitCode
+                return "${?}"
 			}
 
 			local OUTPUT="Executing post-setup...\t"
 			PrintSuffixWait "${OUTPUT}"
 			Main
 			PrintSuffixPassOrFail "${OUTPUT}"
-			return "${?}"
+			return "${_LAST_EXIT_CODE}"
 		}
 
         # <summary> Global setters </summary>

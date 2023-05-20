@@ -21,51 +21,56 @@
             function Main
             {
                 SetExitCode
+                local ANY_PASSED=false
 
                 if "${_ASK_TO_EXECUTE_PRE_SETUP_ALL}"; then
 					if GetPassExitCode \
                         || GetSkipExitCode; then
-						ExecuteHugepagesSetup
+						ExecuteHugepagesSetup && ANY_PASSED=true
 					fi
 
 					if GetPassExitCode \
                         || GetSkipExitCode; then
-						ExecuteStaticCPUIsolation
+						ExecuteStaticCPUIsolation && ANY_PASSED=true
 					fi
 
 					if GetPassExitCode \
                         || GetSkipExitCode; then
-						ExecuteVirtualKVMSetup
+						ExecuteVirtualKVMSetup && ANY_PASSED=true
 					fi
 
 					if GetPassExitCode \
                         || GetSkipExitCode; then
-						ExecuteModifyQEMUConfiguration
+						ExecuteModifyQEMUConfiguration && ANY_PASSED=true
 					fi
 				else
 					if ( GetPassExitCode \
                             || GetSkipExitCode ) \
 						&& "${_EXECUTE_PRE_SETUP_HUGEPAGES}"; then
-						ExecuteHugepagesSetup
+						ExecuteHugepagesSetup && ANY_PASSED=true
 					fi
 
 					if ( GetPassExitCode \
                             || GetSkipExitCode ) \
 						&& "${_EXECUTE_PRE_SETUP_STATIC_ISOLCPU}"; then
-						ExecuteStaticCPUIsolation
+						ExecuteStaticCPUIsolation && ANY_PASSED=true
 					fi
 
 					if ( GetPassExitCode \
                             || GetSkipExitCode ) \
 						&& "${_EXECUTE_PRE_SETUP_EVDEV}"; then
-						ExecuteVirtualKVMSetup
+						ExecuteVirtualKVMSetup && ANY_PASSED=true
 					fi
 
 					if GetPassExitCode \
                         || GetSkipExitCode; then
-						ExecuteModifyQEMUConfiguration
+						ExecuteModifyQEMUConfiguration && ANY_PASSED=true
 					fi
 				fi
+
+                if "${ANY_PASSED}"; then
+                    SetExitCode
+                fi
 
                 GetExitCode
                 return "${?}"
