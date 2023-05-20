@@ -34,7 +34,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 * **Your desktop OS is [Supported](#Linux).**
 * **Securely run a [Legacy OS](#Legacy).**
 * **If it's greater control of your privacy you want...**
-    - Use *me_cleaner*.<sup>[1](#1)</sup>
+    - Use *me_cleaner*.<sup>[1](#1: me_cleaner)</sup>
 
 ## How-to
 ### To install:
