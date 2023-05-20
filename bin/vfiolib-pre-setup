@@ -114,7 +114,6 @@
             declare -g _EXECUTE_PRE_SETUP_HUGEPAGES=false
             declare -g _EXECUTE_PRE_SETUP_STATIC_ISOLCPU=false
             declare -g _EXECUTE_PRE_SETUP_UNINSTALL=false
-            declare -g _HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU=false
             declare -g _IS_SETUP_EVDEV=false
             declare -g _IS_SETUP_HUGEPAGES=false
             declare -g _IS_SETUP_ISOLCPU=false
@@ -192,12 +191,11 @@
                     GetMemoryAllocatedToHugepages || return 1
                     IsHostMemorySufficientForHugepages || return 1
                     declare -g _LINE_GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=${_HUGEPAGES_BYTE_SUFFIX} hugepagesz=${_HUGEPAGES_BYTE_SUFFIX} hugepages=${_HUGEPAGES_COUNT}"
-                    _IS_SETUP_HUGEPAGES=true
                     return 0
                 }
 
                 Main
-                PrintSuffixPassOrFail "Allocating RAM to pages..."
+                PrintSuffixPassOrFail "Allocating RAM to pages..." && _IS_SETUP_HUGEPAGES=true
                 return "${_LAST_EXIT_CODE}"
             }
 
@@ -425,7 +423,6 @@
 
                 # <remarks> Save changes. </remarks>
                 _LINE_GRUB_CMDLINE_ISOLCPU="isolcpus=${GUEST_THREADS_DELIM} nohz_full=${GUEST_THREADS_DELIM} rcu_nocbs=${GUEST_THREADS_DELIM}"
-                _IS_SETUP_ISOLCPU=true
                 return 0
             }
 
@@ -441,7 +438,7 @@
                 AskToExecuteOrSkip "Setup ${_SET_COLOR_YELLOW}Static Isolcpu${_RESET_COLOR}?" && Main
             fi
 
-            PrintSuffixPassOrFail "Allocating CPU threads..." && _HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU=true
+            PrintSuffixPassOrFail "Allocating CPU threads..." && _IS_SETUP_ISOLCPU=true
             return "${_LAST_EXIT_CODE}"
         }
 
@@ -601,7 +598,6 @@
                     return 1
                 fi
 
-                _IS_SETUP_EVDEV=true
                 return 0
             }
 
@@ -616,7 +612,7 @@
             fi
 
             Main
-            PrintSuffixPassOrFail "Executing Evdev setup..."
+            PrintSuffixPassOrFail "Executing Evdev setup..." && _IS_SETUP_EVDEV=true
             return "${_LAST_EXIT_CODE}"
         }
 # </functions>

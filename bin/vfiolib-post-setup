@@ -437,6 +437,7 @@
 			{
 				function Main
 				{
+					# <remarks> Copy hook file from source. </remarks>
 					if ! sudo cp "${_LIBVIRT_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_DEST_PATH}" &> /dev/null \
 						|| ! sudo cp "${_LIBVIRT_HOOK_CFSCPU_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH}" &> /dev/null \
 						|| ! sudo cp "${_LIBVIRT_HOOK_DDCUTIL_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH}" &> /dev/null \
@@ -447,10 +448,26 @@
 							&& ! sudo cp "${_LIBVIRT_HOOK_RAMPAGE_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_RAMPAGE_HOOK_DEST_PATH}" &> /dev/null ) \
 						|| ! sudo cp "${_LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH}" "${_LIBVIRT_HOOK_NOSLEEP_SERVICE_DEST_PATH}" &> /dev/null \
 						|| ! sudo cp "${_LIBVIRT_HOOK_UPDATE_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH}" &> /dev/null; then
-						echo -e "${_PREFIX_ERROR} Failed to copy file(s)."
+						echo -e "${_PREFIX_ERROR} Failed to copy hook(s)."
 						return 1
 					fi
 
+					# <remarks> Delete existing dynamic implementation (hook) of feature if static implementation is installed. </remarks>
+					if "${_IS_SETUP_ISOLCPU}" \
+						&& [[ -e "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" ]] \
+						&& ! sudo rm -rf "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to delete unused hook."
+						return 1
+					fi
+
+					if "${_IS_SETUP_HUGEPAGES}" \
+						&& [[ -e "${_LIBVIRT_HOOK_RAMPAGE_HOOK_DEST_PATH}" ]] \
+						&& ! sudo rm -rf "${_LIBVIRT_HOOK_RAMPAGE_HOOK_DEST_PATH}" &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to delete unused hook."
+						return 1
+					fi
+
+					# <remarks> Set file permissions. </remarks>
 					if ! sudo chmod +x "${_LIBVIRT_HOOK_DEST_PATH}" &> /dev/null \
 						|| ! sudo chmod +x "${_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH}" &> /dev/null \
 						|| ! sudo chmod +x "${_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH}" &> /dev/null \
@@ -460,29 +477,20 @@
 						|| ( ! "${_IS_SETUP_HUGEPAGES}" \
 							&& ! sudo chmod +x "${_LIBVIRT_HOOK_RAMPAGE_HOOK_DEST_PATH}"  &> /dev/null ) \
 						|| ! sudo chmod +x "${_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH}" &> /dev/null; then
-						echo -e "${_PREFIX_ERROR} Failed to set file permissions."
+						echo -e "${_PREFIX_ERROR} Failed to set file permissions for hook(s)."
 						return 1
 					fi
 
-					if ! "${_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU}"; then
-						if ! sudo cp "${_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null; then
-							echo -e "${_PREFIX_ERROR} Failed to copy file(s)."
-							return 1
-						fi
-
-						if ! sudo chmod +x "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null; then
-							echo -e "${_PREFIX_ERROR} Failed to set file permissions."
-							return 1
-						fi
-					fi
-
+					# <remarks> Add non-domain-specific hooks here. </remarks>
+					# <remarks> Domain-specific hooks will be referenced in "/etc/libvirt/qemu/set-hooks" </remarks>
 					if ! sudo echo -e "\n\n# <sources>" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
 						|| ! sudo echo -e "" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
-						|| ( ! "${_HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU}" && ! sudo echo -e "source \"${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" ) \
+						|| ( ! "${_IS_SETUP_ISOLCPU}" \
+							&& ! sudo echo -e "source \"${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" ) \
 						|| ! sudo echo -e "source \"${_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
 						|| ! sudo echo -e "source \"${_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
 						|| ! sudo echo -e "# </sources>" >> "${_LIBVIRT_HOOK_DEST_PATH}"; then
-						echo -e "${_PREFIX_ERROR} Failed to append filenames as sources to Libvirt hooks file."
+						echo -e "${_PREFIX_ERROR} Failed to append hook(s) filenames as sources to master hook."
 						return 1
 					fi
 
