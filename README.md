@@ -10,7 +10,7 @@
 
 ## About
 ### Description:
-Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines, on your Linux computer. Includes many common-sense quality-of-life enhancements.
+Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines with real hardware, on your Linux computer. Includes many common-sense quality-of-life enhancements.
 
 ### What is [VFIO](#VFIO)?
 #### Useful links
@@ -70,14 +70,13 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 
         ARGUMENTS (delimited by comma): *
           all                           Select all IOMMU groups.
-          no-vga                        Select all IOMMU groups without [VGA](#VGA?) devices.
+          no-vga                        Select all IOMMU groups without [VGA](#VGA) devices.
           [x]                           Select IOMMU group.
           [0-?]                         Select IOMMU groups.
 
           Example:
             no-vga,14                   Select group 14 and all non-VGA groups.
             1,14-16                     Select groups 1, 14, 15, and 16.
-
 
 #### Pre-setup
 
@@ -98,7 +97,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 #### VFIO setup
 
         VFIO setup OPTIONS: *
-          -m, --multiboot [ARGS]        Create multiple VFIO setups with corresponding GRUB menu entries. Specify default GRUB menu entry by [VGA](#VGA?) IOMMU group ID (see ARGUMENTS).
+          -m, --multiboot [ARGS]        Create multiple VFIO setups with corresponding GRUB menu entries. Specify default GRUB menu entry by [VGA](#VGA) IOMMU group ID (see ARGUMENTS).
           -s, --static [ARGS]           Single VFIO setup. Specify method of setup (see ARGUMENTS).
           --uninstall-vfio-setup        Undo an existing VFIO setup.
 
@@ -116,7 +115,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 
         Post-setup OPTIONS:
           --audio-loopback              Install the audio loopback service...           Loopback audio from Guest to Host (over Line-out to Line-in). *
-          --auto-xorg [ARGS]            Install auto-Xorg...                            System service to find and set a valid boot [VGA](#VGA?) device for Xorg.
+          --auto-xorg [ARGS]            Install auto-Xorg...                            System service to find and set a valid boot [VGA](#VGA) device for Xorg.
           --hooks                       Install recommended Libvirt hooks.
           --zram-swap [ARGS]            Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
           --uninstall-post-setup        Undo all changes made by post-setup. *
@@ -145,12 +144,13 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 * **Allocate CPU**
     - Reduce Host overhead, and improve both Host and Guest performance.
     - **Statically** allocate of Host CPU cores (and/or threads).<sup>[2](#2)</sup>
-    - **Dynamically** allocate as a *Libvirt hook*.
+    - If skipped, setup will install the *Libvirt hook* for **Dynamic** isolation.
 * **Allocate RAM**
     - Eliminate the need to defragment Host memory (RAM) before allocating Guest memory.
     - Reduce Host overhead, and improve both Host and Guest performance.
     - **Statically** allocate Host memory to Guests.
-    - Implementation is known as *Hugepages*.<sup>[3](#3)</sup>
+    - Implementation is known as *Static Hugepages*.<sup>[3](#3)</sup>
+    - If skipped, setup will install the *Libvirt hook* for **Dynamic** allocation (*Transparent* hugepages).
 * **Virtual KVM (Keyboard Video Mouse) switch**
     - Allow a user to swap a group of Input devices (as a whole) between active Guest(s) and Host.
     - Use the pre-defined macro (example: *'L-CTRL' + 'R-CTRL'*).
@@ -162,7 +162,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 * **Multi-boot VFIO setup**
     - Create multiple VFIO setups with corresponding GRUB menu entries.     **More flexibility.**
     - Default menu entry is without VFIO setup.
-    - Best for systems with two or more PCI [VGA](#VGA?) devices.
+    - Best for systems with two or more PCI [VGA](#VGA) devices.
     - Select a GRUB menu entry with a VGA device to boot from (excludes that VGA device's IOMMU group from VFIO).
     - **Disclaimer:** For best results, use *auto-Xorg*.<sup>[5](#5)</sup>
 * **Static VFIO setup**
@@ -174,7 +174,7 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
     - Traditional PCI Passthrough/VFIO setup.
 
 ### Post-setup  <sub>(vfiolib-post-setup)</sub>
-* **auto-Xorg** system service to find and set a valid Host boot [VGA](#VGA?) device for Xorg.<sup>[5](#5)</sup>
+* **auto-Xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.<sup>[5](#5)</sup>
 * **Guest Audio Capture**
     - Useful for systems with multiple Audio devices.
     - Create an *Audio loopback* to output on the *Host* Audio device *Line-Out*.
