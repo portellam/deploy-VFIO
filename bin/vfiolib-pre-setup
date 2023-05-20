@@ -117,6 +117,7 @@
             declare -g _HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU=false
             declare -g _IS_SETUP_EVDEV=false
             declare -g _IS_SETUP_HUGEPAGES=false
+            declare -g _IS_SETUP_ISOLCPU=false
         }
 
     # <summary> Private </summary>
@@ -172,10 +173,10 @@
 
                     if ! "${_EXECUTE_PRE_SETUP_HUGEPAGES}"; then
                         if ! "${_IS_EXECUTION_QUIET}"; then
-                            echo -e "${_SET_COLOR_YELLOW}Hugepages${_RESET_COLOR} is a feature which statically allocates system memory to pagefiles.\nGuest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${_SET_COLOR_YELLOW}NOTE:${_RESET_COLOR} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${_SET_COLOR_YELLOW}Example:${_RESET_COLOR} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n"
+                            echo -e "${_SET_COLOR_YELLOW}Hugepages${_RESET_COLOR} is a feature which statically allocates system memory to pagefiles.\nGuest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${_SET_COLOR_YELLOW}NOTE:${_RESET_COLOR} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${_SET_COLOR_YELLOW}Example:${_RESET_COLOR} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n${_SET_COLOR_YELLOW}NOTE:${_RESET_COLOR} If this is skipped, the Libvirt hook for dynamic allocation will be installed.\n"
                         fi
 
-                        AskToExecuteOrSkip "Setup ${_SET_COLOR_YELLOW}Hugepages${_RESET_COLOR}?" || return "${?}"
+                        AskToExecuteOrSkip "Setup ${_SET_COLOR_YELLOW}Static Hugepages${_RESET_COLOR}?" || return "${?}"
                     fi
 
                     if ! "${_IS_HUGEPAGES_SIZE_SET}"; then
@@ -424,17 +425,20 @@
 
                 # <remarks> Save changes. </remarks>
                 _LINE_GRUB_CMDLINE_ISOLCPU="isolcpus=${GUEST_THREADS_DELIM} nohz_full=${GUEST_THREADS_DELIM} rcu_nocbs=${GUEST_THREADS_DELIM}"
+                _IS_SETUP_ISOLCPU=true
                 return 0
             }
+
+            _IS_SETUP_ISOLCPU=false
 
             if ! "${_EXECUTE_PRE_SETUP_STATIC_ISOLCPU}"; then
                 echo
 
                 if ! "${_IS_EXECUTION_QUIET}"; then
-                        echo -e "${_SET_COLOR_YELLOW}Isolcpu${_RESET_COLOR} is a feature which isolates CPU threads from the Host machine.\nGuest(s) can use Isolcpu to a peformance benefit. Guest(s) can use isolated CPU threads, increasing responsiveness and stability, without interferrence from the Host.\n"
+                        echo -e "${_SET_COLOR_YELLOW}Isolcpu${_RESET_COLOR} is a feature which isolates CPU threads from the Host machine.\nGuest(s) can use Isolcpu to a peformance benefit. Guest(s) can use isolated CPU threads, increasing responsiveness and stability, without interferrence from the Host.\n${_SET_COLOR_YELLOW}NOTE:${_RESET_COLOR} If this is skipped, the Libvirt hook for dynamic isolation will be installed."
                     fi
 
-                AskToExecuteOrSkip "Setup ${_SET_COLOR_YELLOW}Isolcpu${_RESET_COLOR} statically?" && Main
+                AskToExecuteOrSkip "Setup ${_SET_COLOR_YELLOW}Static Isolcpu${_RESET_COLOR}?" && Main
             fi
 
             PrintSuffixPassOrFail "Allocating CPU threads..." && _HAS_EXECUTED_PRE_SETUP_STATIC_ISOLCPU=true
