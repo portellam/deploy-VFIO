@@ -2,7 +2,7 @@
 
 #
 # Filename:         /etc/libvirt/hooks/set-hooks
-# Description:      Create symlinks of hooks for valid Libvirt domains.
+# Description:      Create symlinks of domain-specific hooks.
 # Author(s):        Alex Portell <github.com/portellam>
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
