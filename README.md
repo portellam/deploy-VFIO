@@ -34,7 +34,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 * **Your desktop OS is [Supported](#Linux).**
 * **Securely run a [Legacy OS](#Legacy).**
 * **If it's greater control of your privacy you want...**
-    - Use *me_cleaner*.<sup>[1](1)</sup>
+    - Use *me_cleaner*.<sup>[1](#1)</sup>
 
 ## How-to
 ### To install:
@@ -252,8 +252,8 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 *If UEFI is enabled (and CSM/BIOS is disabled), BIOS-only VGA devices may not be available as Host video output; BIOS-only VGA devices may only be available explicitly for hardware passthrough.*
 
 ## References
-<sub>**1.
-[source (GitHub)](https://github.com/corna/me_cleaner), [source fork (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
+<sub>####1.
+**[source (GitHub)](https://github.com/corna/me_cleaner), [source fork (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
 
 #### 2.
 <sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub>
