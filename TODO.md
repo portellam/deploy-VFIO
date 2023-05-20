@@ -3,6 +3,8 @@
     - Anything mentioned in **To Do** is not enabled/available.
 
 ### To Do:
+* Explain user difference between static allocation of RAM and CPU, vs with hooks. Pros and cons for both.
+* If user chooses static, omit the hook. Vice versa.
 * hooks
     -hugepages
 * Add boolean to keep track if any steps were successful and rest were skipped.
