@@ -144,11 +144,12 @@ Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines
 * **Allocate CPU**
     - Reduce Host overhead, and improve both Host and Guest performance.
     - **Statically** allocate of Host CPU cores (and/or threads).<sup>[2](#2)</sup>
-    - **Dynamically** allocate as a *Libvirt hook*.
+    - If skipped, setup will install the *Libvirt hook* for **Dynamic** allocation.
 * **Allocate RAM**
     - Eliminate the need to defragment Host memory (RAM) before allocating Guest memory.
     - Reduce Host overhead, and improve both Host and Guest performance.
-    - **Statically** allocate Host memory to Guests.
+    - **Statically** allocate Host memory to Guests (*Static* hugepages).
+    - If skipped, setup will install the *Libvirt hook* for **Dynamic** allocation (*Transparent* hugepages).
     - Implementation is known as *Hugepages*.<sup>[3](#3)</sup>
 * **Virtual KVM (Keyboard Video Mouse) switch**
     - Allow a user to swap a group of Input devices (as a whole) between active Guest(s) and Host.
