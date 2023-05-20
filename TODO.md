@@ -3,6 +3,8 @@
     - Anything mentioned in **To Do** is not enabled/available.
 
 ### To Do:
+* hooks
+    -hugepages
 * Add boolean to keep track if any steps were successful and rest were skipped.
     -If true, set output to success.
 * Add functionality to deploy a vfio setup with hooks? Or leave that to the pros?
