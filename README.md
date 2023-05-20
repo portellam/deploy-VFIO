@@ -10,7 +10,7 @@
 
 ## About
 ### Description:
-Effortlessly deploy a hardware passthrough (VFIO) setup, to run Virtual machines, on your Linux computer. Includes many common-sense quality-of-life enhancements.
+Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines with real hardware, on your Linux computer. Includes many common-sense quality-of-life enhancements.
 
 ### What is [VFIO](#VFIO)?
 #### Useful links
