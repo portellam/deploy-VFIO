@@ -86,7 +86,9 @@
                 fi
 
                 declare -g _ARE_POST_SETUP_PARAMS_SET=true
-                declare -g _GIT_PATH="${HOME}/source/"
+
+				# <remarks> Files </remarks>
+				declare -g _GIT_PATH="${HOME}/source/"
 
 				if [[ ! -d "${_GIT_PATH}" ]]; then
 	            	sudo mkdir -p "${_GIT_PATH}" &> /dev/null

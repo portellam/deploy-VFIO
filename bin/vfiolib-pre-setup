@@ -93,6 +93,8 @@
             declare -ga _INPUT_DEVICES_LIST=( )
 
             # <remarks> Hugepages </remarks>
+            declare -g _IS_HUGEPAGES_COUNT_SET=false
+            declare -g _IS_HUGEPAGES_SIZE_SET=false
             declare -gi _HUGEPAGES_ALLOCATED_MEMORY=0
             declare -gi _HUGEPAGES_COUNT=0
             declare -gi _HUGEPAGES_MAX_SIZE=0
@@ -101,8 +103,6 @@
             declare -gi _HUGEPAGES_MIN_SIZE_IN_KBIT=4194304
             declare -gi _HUGEPAGES_SIZE_IN_KBIT=0
             declare -gu _HUGEPAGES_BYTE_SUFFIX=""
-            declare -g _IS_HUGEPAGES_COUNT_SET=false
-            declare -g _IS_HUGEPAGES_SIZE_SET=false
 
             # <remarks> Isolcpus </remarks>
             declare -g _LINE_GRUB_CMDLINE_ISOLCPU=""

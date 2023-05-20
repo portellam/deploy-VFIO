@@ -36,69 +36,75 @@
             # <remarks> Execution Flags </remarks>
             declare -g _HAS_EXECUTED_BACKUPS=false
 
-            # <remarks> Files </remarks>
-            declare -g _BACKUPS_PATH="/usr/local/etc/vfiolib.d"
-            declare -g _HOOKS_PATH="/etc/libvirt/hooks"
-            declare -g _SUFFIX_BACKUP=".old"
+            # <summary> Files </summary>
+                # <remarks> Main </remarks>
+                declare -g _BACKUPS_PATH="/usr/local/etc/vfiolib.d"
+                declare -g _HOOKS_PATH="/etc/libvirt/hooks"
+                declare -g _SUFFIX_BACKUP=".old"
 
-            declare -g _APPARMOR_QEMU_DEST_PATH="/etc/apparmor.d/local/abstractions/libvirt-qemu"
-            # declare -g _APPARMOR_QEMU_FILE_URL=""
-            declare -g _APPARMOR_QEMU_SRC_PATH="${_BACKUPS_PATH}/libvirt-qemu"
+                # <remarks> Audio loopback service </remarks>
+                declare -g _AUDIO_LOOPBACK_DEST_PATH="/etc/systemd/system/${_AUDIO_LOOPBACK_FILENAME}"
+                declare -g _AUDIO_LOOPBACK_FILENAME="audio-loopback-user.service"
+                declare -g _AUDIO_LOOPBACK_SRC_PATH="${_BACKUPS_PATH}/${_AUDIO_LOOPBACK_FILENAME}"
 
-            declare -g _AUDIO_LOOPBACK_DEST_PATH="/etc/systemd/system/${_AUDIO_LOOPBACK_FILENAME}"
-            declare -g _AUDIO_LOOPBACK_FILENAME="audio-loopback-user.service"
-            declare -g _AUDIO_LOOPBACK_SRC_PATH="${_BACKUPS_PATH}/${_AUDIO_LOOPBACK_FILENAME}"
+                # <remarks> Multiboot VFIO setup with GRUB </remarks>
+                declare -g _CUSTOM_GRUB_DEST_PATH="/etc/grub.d/proxifiedScripts/custom"
+                declare -g _CUSTOM_GRUB_SRC_PATH="${_BACKUPS_PATH}/custom"
 
-            declare -g _CUSTOM_GRUB_DEST_PATH="/etc/grub.d/proxifiedScripts/custom"
-            declare -g _CUSTOM_GRUB_SRC_PATH="${_BACKUPS_PATH}/custom"
+                # <remarks> QEMU files </remarks>
+                declare -g _APPARMOR_QEMU_DEST_PATH="/etc/apparmor.d/local/abstractions/libvirt-qemu"
+                declare -g _APPARMOR_QEMU_SRC_PATH="${_BACKUPS_PATH}/libvirt-qemu"
 
-            declare -g _GRUB_SRC_BACKUP_PATH="${_BACKUPS_PATH}/grub.new"
-            declare -g _GRUB_SRC_PATH="${_BACKUPS_PATH}/grub"
-            declare -g _GRUB_DEST_PATH_1="/etc/default/grub"
-            declare -g _GRUB_DEST_PATH_2="/usr/share/grub/default/grub"
+                declare -g _QEMU_DEST_PATH="/etc/libvirt/qemu.conf"
+                declare -g _QEMU_FILE_URL="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"
+                declare -g _QEMU_SRC_PATH="${_BACKUPS_PATH}/qemu.conf"
 
-            declare -g _INITRAMFS_MODULES_DEST_PATH="/etc/initramfs-tools/modules"
-            declare -g _INITRAMFS_MODULES_SRC_PATH="${_BACKUPS_PATH}/initramfs-tools"
+                # <remarks> QEMU hooks </remarks>
+                declare -g _LIBVIRT_HOOK_DEST_PATH="${_HOOKS_PATH}/qemu"
+                declare -g _LIBVIRT_HOOK_SRC_PATH="${_BACKUPS_PATH}/qemu"
 
-            declare -g _LIBVIRT_HOOK_DEST_PATH="${_HOOKS_PATH}/qemu"
-            declare -g _LIBVIRT_HOOK_SRC_PATH="${_BACKUPS_PATH}/qemu"
+                declare -g _LIBVIRT_HOOK_CFSCPU_HOOK_FILENAME="cfscpu"
+                declare -g _LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_CFSCPU_HOOK_FILENAME}"
+                declare -g _LIBVIRT_HOOK_CFSCPU_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_CFSCPU_HOOK_FILENAME}"
 
-            declare -g _LIBVIRT_HOOK_CFSCPU_HOOK_FILENAME="cfscpu"
-            declare -g _LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_CFSCPU_HOOK_FILENAME}"
-            declare -g _LIBVIRT_HOOK_CFSCPU_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_CFSCPU_HOOK_FILENAME}"
+                declare -g _LIBVIRT_HOOK_DDCUTIL_HOOK_FILENAME="ddcutil"
+                declare -g _LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_DDCUTIL_HOOK_FILENAME}"
+                declare -g _LIBVIRT_HOOK_DDCUTIL_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_DDCUTIL_HOOK_FILENAME}"
 
-            declare -g _LIBVIRT_HOOK_DDCUTIL_HOOK_FILENAME="ddcutil"
-            declare -g _LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_DDCUTIL_HOOK_FILENAME}"
-            declare -g _LIBVIRT_HOOK_DDCUTIL_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_DDCUTIL_HOOK_FILENAME}"
+                declare -g _LIBVIRT_HOOK_ISOLCPU_HOOK_FILENAME="isolcpu"
+                declare -g _LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_ISOLCPU_HOOK_FILENAME}"
+                declare -g _LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_ISOLCPU_HOOK_FILENAME}"
 
-            declare -g _LIBVIRT_HOOK_ISOLCPU_HOOK_FILENAME="isolcpu"
-            declare -g _LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_ISOLCPU_HOOK_FILENAME}"
-            declare -g _LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_ISOLCPU_HOOK_FILENAME}"
+                declare -g _LIBVIRT_HOOK_NOSLEEP_HOOK_FILENAME="nosleep"
+                declare -g _LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_NOSLEEP_HOOK_FILENAME}"
+                declare -g _LIBVIRT_HOOK_NOSLEEP_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_NOSLEEP_HOOK_FILENAME}"
 
-            declare -g _LIBVIRT_HOOK_NOSLEEP_HOOK_FILENAME="nosleep"
-            declare -g _LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_NOSLEEP_HOOK_FILENAME}"
-            declare -g _LIBVIRT_HOOK_NOSLEEP_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_NOSLEEP_HOOK_FILENAME}"
+                declare -g _LIBVIRT_HOOK_NOSLEEP_SERVICE_DEST_PATH="/etc/systemd/system/${_LIBVIRT_HOOK_NOSLEEP_SERVICE_FILENAME}"
+                declare -g _LIBVIRT_HOOK_NOSLEEP_SERVICE_FILENAME="libvirt-nosleep@.service"
+                declare -g _LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_NOSLEEP_SERVICE_FILENAME}"
 
-            declare -g _LIBVIRT_HOOK_NOSLEEP_SERVICE_DEST_PATH="/etc/systemd/system/${_LIBVIRT_HOOK_NOSLEEP_SERVICE_FILENAME}"
-            declare -g _LIBVIRT_HOOK_NOSLEEP_SERVICE_FILENAME="libvirt-nosleep@.service"
-            declare -g _LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_NOSLEEP_SERVICE_FILENAME}"
+                declare -g _LIBVIRT_HOOK_UPDATE_HOOK_FILENAME="set-hooks"
+                declare -g _LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_UPDATE_HOOK_FILENAME}"
+                declare -g _LIBVIRT_HOOK_UPDATE_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_UPDATE_HOOK_FILENAME}"
 
-            declare -g _LIBVIRT_HOOK_UPDATE_HOOK_FILENAME="set-hooks"
-            declare -g _LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_UPDATE_HOOK_FILENAME}"
-            declare -g _LIBVIRT_HOOK_UPDATE_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_UPDATE_HOOK_FILENAME}"
+                # <remarks> Static VFIO setup with GRUB </remarks>
+                declare -g _GRUB_SRC_BACKUP_PATH="${_BACKUPS_PATH}/grub.new"
+                declare -g _GRUB_SRC_PATH="${_BACKUPS_PATH}/grub"
 
-            declare -g _MODPROBE_BLACKLISTS_DEST_PATH="/etc/modprobe.d/pci-blacklists.conf"
-            declare -g _MODPROBE_BLACKLISTS_SRC_PATH="${_BACKUPS_PATH}/pci-blacklists.conf"
+                declare -g _GRUB_DEST_PATH_1="/etc/default/grub"
+                declare -g _GRUB_DEST_PATH_2="/usr/share/grub/default/grub"
 
-            declare -g _MODPROBE_VFIO_DEST_PATH="/etc/modprobe.d/vfio.conf"
-            declare -g _MODPROBE_VFIO_SRC_PATH="${_BACKUPS_PATH}/vfio.conf"
+                # <remarks> Static VFIO setup without GRUB </remarks>
+                declare -g _INITRAMFS_MODULES_DEST_PATH="/etc/initramfs-tools/modules"
+                declare -g _INITRAMFS_MODULES_SRC_PATH="${_BACKUPS_PATH}/initramfs-tools"
 
-            declare -g _MODULES_DEST_PATH="/etc/modules"
-            declare -g _MODULES_SRC_PATH="${_BACKUPS_PATH}/modules"
+                declare -g _MODPROBE_BLACKLISTS_DEST_PATH="/etc/modprobe.d/pci-blacklists.conf"
+                declare -g _MODPROBE_BLACKLISTS_SRC_PATH="${_BACKUPS_PATH}/pci-blacklists.conf"
+                declare -g _MODPROBE_VFIO_DEST_PATH="/etc/modprobe.d/vfio.conf"
+                declare -g _MODPROBE_VFIO_SRC_PATH="${_BACKUPS_PATH}/vfio.conf"
 
-            declare -g _QEMU_DEST_PATH="/etc/libvirt/qemu.conf"
-            declare -g _QEMU_FILE_URL="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"
-            declare -g _QEMU_SRC_PATH="${_BACKUPS_PATH}/qemu.conf"
+                declare -g _MODULES_DEST_PATH="/etc/modules"
+                declare -g _MODULES_SRC_PATH="${_BACKUPS_PATH}/modules"
         }
 
     # <summary> Private </summary>
