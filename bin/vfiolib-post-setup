@@ -167,8 +167,9 @@
 
                     if ! "${_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
                         && ! "${_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
-                        AskToContinue "${FRACTION}" || return "${?}"
+                        AskToContinue "FRACTION" || return "${?}"
                     fi
+
 
                     if "${_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
                         && ! "${_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
@@ -233,14 +234,13 @@
                 if ! "${_EXECUTE_POST_SETUP_ZRAM_SWAP}"; then
                     echo
 
-                    if ! AskToExecuteOrSkip "Install zram-swap?"; then
+                    if ! AskToExecuteOrSkip "Install ${_SET_COLOR_YELLOW}zram-swap${_RESET_COLOR}?"; then
                         HAS_SKIPPED=true
                     fi
                 fi
 
                 if ! "${HAS_SKIPPED}" \
-                    && ( ! IsHostMemorySufficientForZRAMSwap \
-                    || ! Get \
+                    && ( ! Get \
                     || ! Install \
                     || ! Modify ); then
                     false
@@ -413,7 +413,7 @@
 				if ! "${_EXECUTE_POST_SETUP_AUDIO_LOOPBACK}"; then
 					echo
 
-					if ! AskToExecuteOrSkip "Install audio loopback?"; then
+					if ! AskToExecuteOrSkip "Install ${_SET_COLOR_YELLOW}audio loopback${_RESET_COLOR}?"; then
 						HAS_SKIPPED=true
 					fi
 				fi
@@ -492,7 +492,7 @@
 				if ! "${_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS}"; then
 					echo
 
-					if ! AskToExecuteOrSkip "Install Libvirt hooks?"; then
+					if ! AskToExecuteOrSkip "Install ${_SET_COLOR_YELLOW}Libvirt hooks${_RESET_COLOR}?"; then
 						HAS_SKIPPED=true
 					fi
 				fi
@@ -571,7 +571,7 @@
 				if ! "${_EXECUTE_POST_SETUP_AUTO_XORG}"; then
 					echo
 
-					if ! AskToExecuteOrSkip "Install ${REPO_NAME}?"; then
+					if ! AskToExecuteOrSkip "Install ${_SET_COLOR_YELLOW}${REPO_NAME}${_RESET_COLOR}?"; then
 						HAS_SKIPPED=true
 					fi
 				fi

@@ -233,6 +233,7 @@
                 declare -gi _INT_MAX_MEMORY=${_STR_MAX_MEMORY## }
                 declare -gi _AVAILABLE_MEMORY=0
                 declare -gi _MIN_MEMORY=8
+                SetFreeMemory
 
                 # <remarks> System validation </remarks>
                 declare -g _OUTPUT_INVALID_PACKAGE_MANAGER="${_PREFIX_ERROR} Command '${_PACKAGE_MANAGER}' is not supported."
@@ -277,7 +278,8 @@
                 fi
 
                 for COUNT in $( seq 0 2 ); do
-                    read -r -p "${OUTPUT}[Y/n]: " ANSWER
+                    echo -en "${OUTPUT}[Y/n]: "
+                    read -r -p "" ANSWER
 
                     case "${ANSWER}" in
                         [Yy]* )
@@ -354,13 +356,16 @@
         # <summary> RAM allocation </summary>
         function GetFreeMemory
         {
-            _AVAILABLE_MEMORY=$(( _INT_MAX_MEMORY - _MIN_MEMORY ))
-
             if [[ "${_AVAILABLE_MEMORY}" -le 0 ]]; then
                 return 1
             fi
 
             return 0
+        }
+
+        function SetFreeMemory
+        {
+            _AVAILABLE_MEMORY=$(( _INT_MAX_MEMORY - _MIN_MEMORY ))
         }
 
         # <summary> Unnamed </summary>
