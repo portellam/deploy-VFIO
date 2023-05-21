@@ -37,9 +37,13 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
     - Use *me_cleaner*.<sup>[1](#1: me_cleaner)</sup>
 
 ## How-to
-### To install:
+### To install script:
 
-        sudo bash installer.bash
+        sudo bash installer.bash -i
+
+### To uninstall script:
+
+        sudo bash installer.bash -u
 
 ### Usage:
 #### * Options that skip *all* user prompts.
