@@ -15,7 +15,7 @@
     function Main
     {
         IsSudoUser          || return "${?}"
-        ExecuteUsage        || return "${?}"
+        ExecuteUsage "${@}" || return "${?}"
 
         if "${_DO_UNDO_CHANGES}"; then
             RestoreAllFiles
