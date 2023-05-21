@@ -392,7 +392,7 @@
         {
             IFS=$'\n'
 
-            local -a _OUTPUT=(
+            local -a OUTPUT=(
                 "Usage:\tbash deploy-vfio [OPTION] [ARGUMENTS]"
                 "Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization and hardware passthrough.\n"
                 "  -h, --help\t\t\tPrint this help and exit."
@@ -477,7 +477,7 @@
                 "    force 1/4\t\t\tCompress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free."
             )
 
-            echo -e "${_OUTPUT[*]}"
+            echo -e "${OUTPUT[*]}"
             unset IFS
             return 0
         }

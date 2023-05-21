@@ -548,7 +548,7 @@
 				{
 					IFS=$'\n'
 
-					local -a _OUTPUT=(
+					local -a OUTPUT=(
 						"ARGUMENTS:"
 						"  first  [vendor]\t\tFind the first valid VGA device."
 						"  last   [vendor]\t\tFind the last valid VGA device."
@@ -558,7 +558,7 @@
 						"  [sort] other\t\t\tPrefer any other brand."
 					)
 
-					echo -e "${_OUTPUT[*]}"
+					echo -e "${OUTPUT[*]}"
 					unset IFS
 					return 0
 				}
