@@ -135,7 +135,7 @@
                 declare -g _PARSE_OPTIONS=""
                 declare -gr _DEFAULT_DATABASE_FILE="${_BACKUPS_PATH}/parse.txt"
                 declare -gr _DEFAULT_XML_FILE="${_BACKUPS_PATH}/parse.xml"
-                declare -g _DATABASE_FILE=""
+                declare -g _DATABASE_FILE="${_DEFAULT_DATABASE_FILE}"
                 declare -g _XML_FILE="${_DEFAULT_XML_FILE}"
 
                 # <remarks> Execution Flags </remarks>
@@ -533,7 +533,7 @@
                 local DEVICE="${1}"
                 local DRIVER=""
                 SetDeviceDriver "${DEVICE}" "DRIVER"
-                IsDeviceNotExcluded "${DEVICE}" || return 1
+                IsDeviceDriverNotExcluded "${DRIVER}" || return 1
                 return 0
             }
 
