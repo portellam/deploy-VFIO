@@ -263,19 +263,19 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 [source fork (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
 
 #### 2.
-<sub>isolcpu | **[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub>
+<sub>Isolcpu | **[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub>
 
 #### 3.
-<sub>hugepages | **[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
+<sub>Hugepages | **[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
 
 #### 4.
-<sub>evdev | **[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
+<sub>Evdev | **[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
 
 #### 5.
 <sub> auto-Xorg | **[source (GitHub)](https://github.com/portellam/auto-Xorg)**</sub>
 
 #### 6.
-<sub>libvirt hooks | **[VFIO-Tools source (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)** |
+<sub>Libvirt hooks | **[VFIO-Tools source (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)** |
 **[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub>
 
 #### 7.
@@ -286,10 +286,10 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 **[benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
 
 #### 8.
-<sub> vfio | **[documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub>
+<sub> VFIO | **[documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub>
 
 #### 9.
-<sub> vga | **[Wikipedia](https://en.wikipedia.org/wiki/Video_Graphics_Array)**</sub>
+<sub> VGA | **[Wikipedia](https://en.wikipedia.org/wiki/Video_Graphics_Array)**</sub>
 
 ## Disclaimer:
 Use at your own risk. Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
