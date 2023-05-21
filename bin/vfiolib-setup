@@ -331,57 +331,59 @@
         # <summary> Setters </summary>
             function SetOutputForStaticSetup
             {
-                local -a _THIS_STUB_HWID_LIST=( )
-                local -a _THIS_VFIO_HWID_LIST=( )
-                local LINE_GRUB_CMDLINE_PREFIX=""
-                LINE_GRUB_CMDLINE_PREFIX+="${_LINE_GRUB_CMDLINE} "
-                local LINE_GRUB_CMDLINE_TEMP=""
+                local -a DRIVER_LIST=( )
+                local -a STUB_HWID_LIST=( )
+                local -a VFIO_HWID_LIST=( )
+                local DRIVER_DELIM=""
+                local STUB_HWID_DELIM=""
+                local VFIO_HWID_DELIM=""
+                local LINE_GRUB_CMDLINE_PREFIX="${_LINE_GRUB_CMDLINE} "
 
-                if [[ ! -z "${_LINE_GRUB_CMDLINE_ISOLCPU}" ]]; then
+                if "${_IS_SETUP_ISOLCPU}"; then
                     LINE_GRUB_CMDLINE_PREFIX+="${_LINE_GRUB_CMDLINE_ISOLCPU} "
                 fi
 
-                if [[ ! -z "${_LINE_GRUB_CMDLINE_HUGEPAGES}" ]]; then
+                if "${_IS_SETUP_HUGEPAGES}"; then
                     LINE_GRUB_CMDLINE_PREFIX+="${_LINE_GRUB_CMDLINE_HUGEPAGES} "
                 fi
 
-                GetListsForSelection "IOMMU_GROUPS_FOR_VFIO_LIST" "DRIVER_LIST" "_THIS_STUB_HWID_LIST" "_THIS_VFIO_HWID_LIST" || continue
-                SetCommaDelimitedStringFromEnum "DRIVER_LIST" "_DRIVER_DELIM"
-                SetCommaDelimitedStringFromEnum "_THIS_STUB_HWID_LIST" "_STUB_HWID_DELIM"
-                SetCommaDelimitedStringFromEnum "_THIS_VFIO_HWID_LIST" "_VFIO_HWID_DELIM"
+                GetListsForSelection "_IOMMU_GROUPS_FOR_VFIO_LIST" "DRIVER_LIST" "STUB_HWID_LIST" "VFIO_HWID_LIST"
+                SetCommaDelimitedStringFromEnum "DRIVER_LIST" "DRIVER_DELIM"
+                SetCommaDelimitedStringFromEnum "STUB_HWID_LIST" "STUB_HWID_DELIM"
+                SetCommaDelimitedStringFromEnum "VFIO_HWID_LIST" "VFIO_HWID_DELIM"
 
-                if IsEnum "DRIVER_LIST" \
-                    || ( IsEnum "STUB_HWID_LIST" \
-                        && IsEnum "VFIO_HWID_LIST" ); then
+                if ! IsEnum "DRIVER_LIST" \
+                    && ! IsEnum "STUB_HWID_LIST" \
+                    && ! IsEnum "VFIO_HWID_LIST"; then
                     echo -e "${_PREFIX_ERROR} Static setup output is empty."
                     return 1
                 fi
 
                 if "${_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB}"; then
-                    LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=${THIS_DRIVER_DELIM} "
-                    LINE_GRUB_CMDLINE_TEMP+="pci_stub.ids=${THIS_STUB_HWID_DELIM} "
-                    LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=${THIS_VFIO_HWID_DELIM} "
+                    local LINE_GRUB_CMDLINE_TEMP="modprobe.blacklist=${DRIVER_DELIM} "
+                    LINE_GRUB_CMDLINE_TEMP+="pci_stub.ids=${STUB_HWID_DELIM} "
+                    LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=${VFIO_HWID_DELIM} "
                     _LINE_GRUB_CMDLINE_DEFAULT="${LINE_GRUB_CMDLINE_PREFIX}${LINE_GRUB_CMDLINE_TEMP::-1}"
                 else
-                    for _DRIVER in ${_DRIVER_LIST[@]}; do
+                    for DRIVER in ${DRIVER_LIST[@]}; do
                         _BLACKLISTS_LIST+=(
-                            "blacklist ${_DRIVER}"
+                            "blacklist ${DRIVER}"
                         )
                         _INITRAMFS_LIST+=(
-                            "softdep ${_DRIVER} pre: vfio-pci"
+                            "softdep ${DRIVER} pre: vfio-pci"
                             "${DRIVER}"
                         )
                         _MODULES_LIST+=(
-                            "softdep ${_DRIVER} pre: vfio-pci"
+                            "softdep ${DRIVER} pre: vfio-pci"
                         )
                     done
 
-                    if [[ ! -z "${_STUB_HWID_DELIM}" ]]; then
-                        _HWID_DELIM="${_STUB_HWID_DELIM},"
+                    if [[ ! -z "${STUB_HWID_DELIM}" ]]; then
+                        _HWID_DELIM="${STUB_HWID_DELIM},"
                     fi
 
-                    if [[ ! -z "${_STUB_HWID_DELIM}" ]]; then
-                        _HWID_DELIM="${_VFIO_HWID_DELIM}"
+                    if [[ ! -z "${VFIO_HWID_DELIM}" ]]; then
+                        _HWID_DELIM+="${VFIO_HWID_DELIM}"
                     else
                         _HWID_DELIM="${_HWID_DELIM::-1}"
                     fi
