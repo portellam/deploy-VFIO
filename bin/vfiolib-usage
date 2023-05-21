@@ -271,11 +271,9 @@
                         _DATABASE_FILE="${1}" ;;
 
                     "-i" | "--internal" )
-                        # TODO: add xml check here.
                         _DO_PARSE_DATABASE_FROM_CACHE=true ;;
 
                     "-o" | "--online" )
-                        # TODO: add xml check here.
                         _DO_PARSE_DATABASE_FROM_INTERNET=true ;;
 
                     "-p" | "--parse" )
@@ -283,6 +281,9 @@
                         SetParseParameters
                         GetArgsForParseSelection "${1}" || return 1
                         ShiftInputIfOptionHasArgument "${1}" ;;
+
+                    "-x" | "--xml" )
+                        _DO_PARSE_DATABASE_FROM_XML=true ;;
 
                     # <remarks> Pre-setup </remarks>
                     "-c" | "--cpu" )
@@ -400,16 +401,11 @@
 
                 "\nSpecify the database to reference before parsing IOMMU groups.\nOPTIONS:"
                 "  -f, --file [ARGS]\t\tReference file database."
-                "  -i, --internal [ARGS]\tReference local database."
-                "  -o, --online [ARGS]\t\tReference online database."
+                "  -i, --internal\t\tReference local database."
+                "  -o, --online\t\t\tReference online database."
+                "  -x, --xml\t\tCross-reference XML file. Execute once to export, prior to import. Import if VFIO setup exists, to grab valid drivers."
 
-                "\nNon-File ARGUMENTS:"
-                "  -x, --xml\t\tCross-reference XML file. Execute once to export, prior to import (given existing VFIO setup)."
-
-                "\n  Example:"
-                "    --internal --xml"
-
-                "\nFile ARGUMENTS:"
+                "\nARGUMENTS:"
                 "  [filename]\t\t\tReference specific file."
 
                 "\n  Example:"

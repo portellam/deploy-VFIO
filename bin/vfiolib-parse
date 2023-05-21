@@ -149,7 +149,6 @@
                 declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
                 declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=false
                 declare -g _HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
-                declare -g _HAS_ANSWERED_YES_NO_TO_PARSE_XML=false
                 return 0
             }
 
@@ -365,9 +364,13 @@
                     return 1
                 fi
 
-                for LINE in "$( eval "${_GET_PARSE_FROM_XML}" )"; do
-                    local DEVICE=$( echo "${LINE}" | cut -d '"' -f 4 )
+                IFS=$'\n'
+                local -a XML_CONTENTS=( $( eval "${_GET_PARSE_FROM_XML}" ) )
+                unset IFS
+
+                for LINE in "${XML_CONTENTS[@]}"; do
                     local DRIVER=$( echo "${LINE}" | cut -d '"' -f 6 )
+                    local DEVICE=$( echo "${LINE}" | cut -d '"' -f 4 )
 
                     case "${DRIVER}" in
                         *"vfio-pci"* | *"vfio"* )
@@ -375,7 +378,7 @@
                             return 1 ;;
                     esac
 
-                    _DEVICE_DRIVER_XML_LIST["${DEVICE}"]+="${DRIVER}"
+                    _DEVICE_DRIVER_XML_LIST["${DEVICE}"]="${DRIVER}"
                 done
 
                 if ! IsEnum "_DEVICE_DRIVER_XML_LIST"; then
@@ -388,6 +391,17 @@
 
             function IsXMLValid
             {
+                # local -a DEVICE_LIST=$( lspci -mn | cut -d ' ' -f 1 )
+
+                # if [[ "${#DEVICE_LIST[@]}" -ne "${#_DEVICE_DRIVER_XML_LIST[@]}" ]]; then
+                #     return 1
+                # fi
+
+                # for KEY in ${!DEVICE_LIST[@]}; do
+                #     local THIS_DEVICE="${DEVICE_LIST[KEY]}"
+                #     local THAT_DEVICE="${_DEVICE_DRIVER_XML_LIST}"
+                # done
+
                 DoesXMLNotHaveExistingVFIOSetup || return "${?}"
 
                 if ! xmllint "${_XML_FILE}" &> /dev/null; then
@@ -407,8 +421,6 @@
                 return 0
             }
 
-
-            # TODO: fix here. XML list returns null values. Why?
             function SetDeviceDriver
             {
                 [[ ! -z "${2}" ]] || return "${?}"
@@ -421,8 +433,6 @@
                 else
                     REFERENCE="${_DEVICE_DRIVER_XML_LIST["${DEVICE}"]}"
                 fi
-
-                echo -e "REFERENCE\t== '$REFERENCE'"
 
                 return 0
             }
@@ -759,7 +769,7 @@
 
             function AskToParseFromXML
             {
-                if "${_HAS_ANSWERED_YES_NO_TO_PARSE_XML}"; then
+                if "${_DO_PARSE_DATABASE_FROM_XML}"; then
                     return 0
                 fi
 
