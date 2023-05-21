@@ -271,9 +271,11 @@
                         _DATABASE_FILE="${1}" ;;
 
                     "-i" | "--internal" )
+                        # TODO: add xml check here.
                         _DO_PARSE_DATABASE_FROM_CACHE=true ;;
 
                     "-o" | "--online" )
+                        # TODO: add xml check here.
                         _DO_PARSE_DATABASE_FROM_INTERNET=true ;;
 
                     "-p" | "--parse" )
