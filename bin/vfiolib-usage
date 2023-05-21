@@ -1,0 +1,489 @@
+#!/bin/false
+
+#
+# Filename:         vfiolib-usage
+# Description:      Get and set usage.
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <sources>
+    source vfiolib-checks
+    source vfiolib-common
+    source vfiolib-files
+    source vfiolib-parse
+    source vfiolib-pre-setup
+    source vfiolib-post-setup
+    source vfiolib-setup
+# </sources>
+
+# <functions>
+    # <summary> Public </summary>
+        function ExecuteUsage
+        {
+            if ! GetOptions "${@}" \
+                && PrintUsage; then
+                return "${?}"
+            fi
+
+            return 0
+        }
+
+        # <summary> Global setters </summary>               # TODO: evaluate these params and move to respective sources accordingly.
+            function SetParameters
+            {
+                if [[ ! -z "${_ARE_USAGE_PARAMS_SET}" ]] \
+                    && "${_ARE_USAGE_PARAMS_SET}"; then
+                    return 0
+                fi
+
+                declare -g _ARE_USAGE_PARAMS_SET=true
+
+                # <remarks> Arguments </remarks
+                declare -g _ARGS_FOR_AUTO_XORG=""
+
+                # <remarks> Output statements </remarks
+                declare -g _OUTPUT_INVALID_ANSWER="${_PREFIX_ERROR} Failed to answer."
+                declare -g _OUTPUT_INVALID_OPTION="${_PREFIX_ERROR} Invalid option."
+            }
+
+    # <summary> Private </summary>
+        # <summary> Argument getters </summary>
+            function GetArgsForAutoXorg
+            {
+                if [[ -z "${1}" ]]; then
+                    return 0
+                fi
+
+                while [[ ! -z "${1}" ]]; do
+                    case "${1}" in
+                        "first" | "last" )
+                            if "${_HAS_ARG_AUTO_XORG_SORT_ORDER}"; then
+                                return 1
+                            fi
+
+                            _HAS_ARG_AUTO_XORG_SORT_ORDER=true ;;
+
+                        "amd" | "intel" | "nvidia" | "other" )
+                            if "${_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR}"; then
+                                return 1
+                            fi
+
+                            _HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=true ;;
+
+                        * )
+                            PrintStatementInvalidArgument "${1}"
+                            return 1 ;;
+                    esac
+
+                    _ARGS_FOR_AUTO_XORG+=" --${1}"
+                    shift
+                done
+
+                return 0
+            }
+
+            function GetArgsForParseSelection
+            {
+                if [[ -z "${1}" ]]; then
+                    IsIOMMUGroupIDValid "${1}"
+                    return 1
+                fi
+
+                local -i COUNT_DELIM=$( echo "${1}" | grep -o "," | wc -l )
+                (( COUNT_DELIM++ ))
+
+                while [[ "${COUNT_DELIM}" -gt 0 ]] \
+                    && ! "${_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; do
+                    local ARG=$( echo "${1}" | cut -d ',' -f "${COUNT_DELIM}" )
+
+                    if [[ ! -z "${ARG}" ]] \
+                        && ( ! "${_DO_PARSE_DATABASE_FROM_FILE}" \
+                            || ( "${_DO_PARSE_DATABASE_FROM_FILE}" \
+                            && [[ "${ARG}" != "${_DATABASE_FILE}" ]] )); then
+                        case "${ARG}" in
+                            "all" )
+                                _HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
+                                AddValidIOMMUGroupsParseList || return 1 ;;
+
+                            "no-vga" )
+                                _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true
+                                AddValidIOMMUGroupsParseList || return 1
+                                _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=false ;;
+
+                            * )
+                                _HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
+                                AddSomeIOMMUGroupsParseList "${ARG}" || return 1 ;;
+                        esac
+                    fi
+
+                    (( COUNT_DELIM-- ))
+                done
+
+                _HAS_ARG_PARSE_IOMMU=true
+                return 0
+            }
+
+            function GetArgsForMultibootVFIO
+            {
+                case "${1}" in
+                    "default" )
+                        _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT=true
+                        return 0 ;;
+
+                    "first" )
+                        _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_FIRST=true
+                        return 0 ;;
+
+                    "last" )
+                        _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_LAST=true
+                        return 0 ;;
+
+                    * )
+                        if DoesIOMMUGroupHaveVGADevice "${1}" \
+                            && SetPreferredIOMMUGroupForMultiboot "${1}"; then
+                            return 0
+                        fi ;;
+                esac
+
+                if [[ ! -z "${1}" ]]; then
+                    PrintStatementInvalidArgument "${1}"
+                fi
+
+                return 1
+            }
+
+            function GetArgsForStaticVFIO
+            {
+                if [[ -z "${1}" ]]; then
+                    return 0
+                fi
+
+                case "${1}" in
+                    "grub" )
+                        _EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=true
+                        return 0 ;;
+
+                    "file" )
+                        _EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=false
+                        return 0 ;;
+                esac
+
+                PrintStatementInvalidArgument "${1}"
+                return 1
+            }
+
+            function GetArgsForHugepages
+            {
+                if [[ ! -z "${1}" ]] \
+                    && ! GetHugepageByteSize "${1}"; then
+                    PrintStatementInvalidArgument "${1}"
+                    return 1
+                fi
+
+                if [[ ! -z "${2}" ]] \
+                    && ! GetHugepageCount "${2}"; then
+                    PrintStatementInvalidArgument "${2}"
+                    return 1
+                fi
+
+                return 0
+            }
+
+            function GetArgsForZRAMSwap
+            {
+                if [[ ! -z "${1}" ]]; then
+                    GetZRAMSwapSize "${1}" || GetOverrideArgsForZRAMSwap "${1}" || return 1
+                fi
+
+                if [[ ! -z "${2}" ]]; then
+                    GetZRAMSwapSize "${2}" || GetOverrideArgsForZRAMSwap "${2}" || return 1
+                fi
+
+                return 0
+            }
+
+            function GetOverrideArgsForZRAMSwap
+            {
+                case "${1}" in
+                    "force" )
+                        _HAS_ARG_ZRAM_SWAP_FORCE=true ;;
+
+                    * )
+                        PrintStatementInvalidArgument "${1}"
+                        return 1 ;;
+                esac
+
+                return 0
+            }
+
+        # <summary> Argument validation </summary>
+            function ShiftInputIfOptionHasArgument
+            {
+                while [[ ! -z "${1}" ]]; do
+                    shift
+                    (( ARGS_COUNT++ ))
+                done
+
+                return 0
+            }
+
+        # <summary> Options getters </summary>
+            function GetOptions
+            {
+                if [[ -z "${@}" ]]; then
+                    return 0
+                fi
+
+                while [[ "${1}" =~ ^- ]] \
+                    || [[ "${1}" =~ ^-- ]]; do
+                    local -i ARGS_COUNT=0
+
+                    if ! GetOption "${@}"; then
+                        return 1
+                    fi
+
+                    for _COUNT in $( seq 0 "${ARGS_COUNT}" ); do
+                        shift
+                    done
+                done
+
+                return 0
+            }
+
+            function GetOption
+            {
+                case "${1}" in
+                    "-h" | "--help" )
+                        PrintUsage
+                        exit 1 ;;
+
+                    "-q" | "--quiet" )
+                        _IS_EXECUTION_QUIET=true ;;
+
+                    "-u" | "--undo" )
+                        _DO_UNDO_CHANGES=true ;;
+
+                    # <remarks> Parse PCI for VFIO setup </remarks>
+                    "-f" | "--file" )
+                        shift
+                        _DO_PARSE_DATABASE_FROM_FILE=true
+                        _DATABASE_FILE="${1}" ;;
+
+                    "-i" | "--internal" )
+                        _DO_PARSE_DATABASE_FROM_CACHE=true ;;
+
+                    "-o" | "--online" )
+                        _DO_PARSE_DATABASE_FROM_INTERNET=true ;;
+
+                    "-p" | "--parse" )
+                        shift
+                        SetParseParameters
+                        GetArgsForParseSelection "${1}" || return 1
+                        ShiftInputIfOptionHasArgument "${1}" ;;
+
+                    "-x" | "--xml" )
+                        _DO_PARSE_DATABASE_FROM_XML=true ;;
+
+                    # <remarks> Pre-setup </remarks>
+                    "-c" | "--cpu" )
+                        _ASK_TO_EXECUTE_PRE_SETUP_ALL=false
+                        _EXECUTE_PRE_SETUP_SKIP_ALL=false
+                        _EXECUTE_PRE_SETUP_STATIC_ISOLCPU=true ;;
+
+                    "-e" | "--evdev" )
+                        _ASK_TO_EXECUTE_PRE_SETUP_ALL=false
+                        _EXECUTE_PRE_SETUP_SKIP_ALL=false
+                        _EXECUTE_PRE_SETUP_EVDEV=true ;;
+
+                    "-H" | "--hugepages" )
+                        shift
+                        GetArgsForHugepages "${1}" "${2}" || return 1
+                        IsHostMemorySufficientForHugepages || return 1
+                        _ASK_TO_EXECUTE_PRE_SETUP_ALL=false
+                        _EXECUTE_PRE_SETUP_SKIP_ALL=false
+                        _EXECUTE_PRE_SETUP_HUGEPAGES=true
+                        ShiftInputIfOptionHasArgument "${1}" "${2}" ;;
+
+                    "--uninstall-pre-setup" )
+                        _ASK_TO_EXECUTE_PRE_SETUP_ALL=false
+                        _EXECUTE_PRE_SETUP_SKIP_ALL=true
+                        _EXECUTE_PRE_SETUP_UNINSTALL=true ;;
+
+                    # <remarks> VFIO setup </remarks>
+                    "-m" | "--multiboot" )
+                        shift
+                        GetArgsForMultibootVFIO "${1}" || return 1
+                        _ASK_TO_EXECUTE_VFIO_SETUP=false
+                        _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=true
+                        ShiftInputIfOptionHasArgument "${1}" ;;
+
+                    "-s" | "--static" )
+                        shift
+                        GetArgsForStaticVFIO "${1}" || return 1
+                        _ASK_TO_EXECUTE_VFIO_SETUP=false
+                        _ASK_TO_EXECUTE_VFIO_SETUP_STATIC=false
+                        ShiftInputIfOptionHasArgument "${1}" ;;
+
+                    "--uninstall-vfio-setup" )
+                        _ASK_TO_EXECUTE_VFIO_SETUP=false
+                        _EXECUTE_VFIO_SETUP_UNINSTALL=true ;;
+
+                    # <remarks> Post-setup </remarks>
+                    "--hooks" )
+                        _ASK_TO_EXECUTE_POST_SETUPS=false
+                        _EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS=true ;;
+
+                    "--audio-loopback" )
+                        _ASK_TO_EXECUTE_POST_SETUPS=false
+                        _EXECUTE_POST_SETUP_AUDIO_LOOPBACK=true ;;
+
+                    "--auto-xorg" )
+                        shift
+                        _ASK_TO_EXECUTE_POST_SETUPS=false
+                        _EXECUTE_POST_SETUP_AUTO_XORG=true
+                        GetArgsForAutoXorg "${1}" "${2}" || return 1
+                        ShiftInputIfOptionHasArgument "${1}" "${2}" ;;
+
+                    "--zram-swap" )
+                        shift
+                        _ASK_TO_EXECUTE_POST_SETUPS=false
+                        GetArgsForZRAMSwap "${1}" "${2}" || return 1
+                        IsHostMemorySufficientForZRAMSwap || return 1
+                        _EXECUTE_POST_SETUP_ZRAM_SWAP=true
+                        ShiftInputIfOptionHasArgument "${1}" "${2}" ;;
+
+                    "--uninstall-post-setup" )
+                        _EXECUTE_POST_SETUP_UNINSTALL=true ;;
+
+                    # <remarks> Else </remarks>
+                    * )
+                        PrintStatementInvalidOption "${1}"
+                        return 1 ;;
+                esac
+
+                return 0
+            }
+
+        # <summary> Presentation </summary>
+        function PrintHelp
+        {
+            echo -e "Try 'sudo bash deploy-vfio --help' for usage."
+            return 0
+        }
+
+        function PrintStatementInvalidArgument
+        {
+            echo -e "${_PREFIX_ERROR} Invalid argument '${1}'."
+            return 0
+        }
+
+        function PrintStatementInvalidOption
+        {
+            if [[ -z "${1}" ]]; then
+                echo -e "${_OUTPUT_INVALID_OPTION}"
+            fi
+
+            echo -e "${_PREFIX_ERROR} Invalid option '${1}'."
+            return 0
+        }
+
+        function PrintUsage
+        {
+            IFS=$'\n'
+
+            local -a OUTPUT=(
+                "Usage:\tbash deploy-vfio [OPTION] [ARGUMENTS]"
+                "Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization and hardware passthrough.\n"
+                "  -h, --help\t\t\tPrint this help and exit."
+                "  -q, --quiet\t\t\tReduce verbosity; print only relevant questions and status statements."
+                "  -u, --undo\t\t\tUndo changes (restore files) if script has exited early or unexpectedly."
+
+                "\nSpecify the database to reference before parsing IOMMU groups.\nOPTIONS:"
+                "  -f, --file [ARGS]\t\tReference file database."
+                "  -i, --internal\t\tReference local database."
+                "  -o, --online\t\t\tReference online database."
+                "  -x, --xml\t\tCross-reference XML file. Execute once to export, prior to import. Import if VFIO setup exists, to grab valid drivers."
+
+                "\nARGUMENTS:"
+                "  [filename]\t\t\tReference specific file."
+
+                "\n  Example:"
+                "    -f database.txt\t\tReference file 'database.txt'."
+
+                "\nSpecify the IOMMU groups to parse.\nOPTIONS:"
+                "  -p, --parse [groups]\t\tParse given IOMMU groups."
+
+                "\nARGUMENTS (delimited by comma):"
+                "  all\t\t\t\tSelect all IOMMU groups."
+                "  no-vga\t\t\tSelect all IOMMU groups without VGA devices."
+                "  [x]\t\t\t\tSelect IOMMU group."
+                "  [x-y]\t\t\t\tSelect IOMMU groups."
+
+                "\n  Example:"
+                "    no-vga,14\t\t\tSelect group 14 and all non-VGA groups."
+                "    1,14-16\t\t\tSelect groups 1, 14, 15, and 16."
+
+                "\nPre-setup OPTIONS:"
+                "  -c, --cpu\t\t\tAllocate CPU."
+                "  -e, --evdev\t\t\tSetup a virtual KVM switch."
+                "  -h, --hugepages [ARGS]\tCreate static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s)."
+                "  --uninstall-pre-setup\t\tUndo all changes made by pre-setup."
+
+                "\nHugepages ARGUMENTS:"
+                "  2M, 1G\t\t\tHugepage size (2 MiB or 1 GiB)."
+                "  [x]\t\t\t\tAmount of Hugepages (maximum amount is total memory subtracted by 4 GiB)."
+
+                "\n  Example:"
+                "    1G 16\t\t\t1 GiB hugepage 16\t== 16 GiB allocated to hugepages."
+                "    2M 8192\t\t\t2 MiB hugepage 8912\t== 16 GiB allocated to hugepages."
+
+                "\nVFIO setup OPTIONS:"
+                "  -m, --multiboot [ARGS]\tCreate multiple VFIO setups with corresponding GRUB menu entries. Specify default GRUB menu entry by VGA IOMMU group ID (see ARGUMENTS)."
+                "  -s, --static [ARGS]\t\tSingle VFIO setup. Specify method of setup (see ARGUMENTS)."
+                "  --uninstall-vfio-setup\tUndo an existing VFIO setup."
+
+                "\nMultiboot ARGUMENTS:"
+                "  [x]\t\t\t\tThe ID of the valid excluded VGA IOMMU group."
+                "  default\t\t\tDefault menu entry excludes VFIO setup."
+                "  first\t\t\t\tPrefer the first valid excluded VGA IOMMU group."
+                "  last\t\t\t\tPrefer the last valid excluded VGA IOMMU group."
+
+                "\nStatic ARGUMENTS:"
+                "  file\t\t\t\tAppend output to system configuration files."
+                "  grub\t\t\t\tAppend output to GRUB; single GRUB menu entry."
+
+                "\nPost-setup OPTIONS:"
+                "  --audio-loopback\t\tInstall the audio loopback service...\t\tLoopback audio from Guest to Host (over Line-out to Line-in)."
+                "  --auto-xorg [ARGS]\t\tInstall auto-Xorg...\t\t\t\tSystem service to find and set a valid boot VGA device for Xorg."
+                "  --hooks\t\t\tInstall recommended Libvirt hooks."
+                "  --zram-swap [ARGS]\t\tCreate compressed swap in RAM (about 2:1)...\tReduce chances of memory exhaustion for Host."
+                "  --uninstall-post-setup\tUndo all changes made by post-setup."
+
+                "\nauto-xorg ARGUMENTS:"
+                "  first  [vendor]\t\tFind the first valid VGA device."
+                "  last   [vendor]\t\tFind the last valid VGA device."
+                "  [sort] amd\t\t\tPrefer AMD or ATI."
+                "  [sort] intel\t\t\tPrefer Intel."
+                "  [sort] nvidia\t\t\tPrefer NVIDIA."
+                "  [sort] other\t\t\tPrefer any other brand."
+
+                "\nzram-swap ARGUMENTS:"
+                "  [fraction]\t\t\tSet the fraction of total available memory."
+                "  default\t\t\tAutomatically calculate the fraction of total available memory."
+                "  force\t\t\t\tForce changes, even if zram-swap is allocated and in use."
+
+                "\n  Example (assume a Host with 32 GiB of RAM):"
+                "    force 1/4\t\t\tCompress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free."
+            )
+
+            echo -e "${OUTPUT[*]}"
+            unset IFS
+            return 0
+        }
+# </functions>
+
+# <main>
+    SetParameters
+    unset SetParameters
+# </main>

@@ -1,0 +1,645 @@
+#!/bin/false
+
+#
+# Filename:         vfiolib-common
+# Description:      Common-use functions and variables.
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <functions>
+    # <summary> Public </summary>
+        # <summary> Global getters </summary>
+            function GetExitCode
+            {
+                if IsInt "${_LAST_EXIT_CODE}"; then
+                    return "${_LAST_EXIT_CODE}"
+                fi
+            }
+
+            function GetPassExitCode
+            {
+                if [[ "${_LAST_EXIT_CODE}" -ne 0 ]]; then
+                    return 1
+                fi
+
+                return 0
+            }
+
+            function GetFailExitCode
+            {
+                if [[ "${_LAST_EXIT_CODE}" -ne 0 ]]; then
+                    return 0
+                fi
+
+                return 1
+            }
+
+            function GetSkipExitCode
+            {
+                if [[ "${_LAST_EXIT_CODE}" -ne 255 ]]; then
+                    return 1
+                fi
+
+                return 0
+            }
+
+            function GetInternetStatus
+            {
+                function PingServer
+                {
+                    [ ! -z "${1}" ] || return 1
+                    ping -q -c 1 ${1} &> /dev/null
+                    return "${?}"
+                }
+
+                local IS_VERBOSE=false
+
+                if [[ "${1}" == true ]]; then
+                    IS_VERBOSE=true
+                fi
+
+                if "${IS_VERBOSE}"; then
+                    echo -en "Testing Internet connection...\t"
+                fi
+
+                if ! PingServer "8.8.8.8" || ! PingServer "1.1.1.1"; then
+                    false
+                fi
+
+                SetExitCode
+
+                if "${IS_VERBOSE}"; then
+                    ( return "${_LAST_EXIT_CODE}" )
+                    PrintSuffixPassOrFail
+                    echo -en "Testing connection to DNS...\t"
+                fi
+
+                if ! PingServer "www.google.com" || ! PingServer "www.yandex.com"; then
+                    false
+                fi
+
+                SetExitCode
+
+                if "${IS_VERBOSE}"; then
+                    ( return "${_LAST_EXIT_CODE}" )
+                    PrintSuffixPassOrFail
+                fi
+
+                if [[ "${_LAST_EXIT_CODE}" -ne 0 ]]; then
+                    echo -e "Failed to ping Internet/DNS servers. Check network settings or firewall, and try again."
+                fi
+
+                return "${_LAST_EXIT_CODE}"
+            }
+
+            function GetLinuxDistro
+            {
+                # <summary> Check if current Operating System matches Package Manager (PM), and Check if PM is installed. </summary>
+                function GetPackageManagerByOS
+                {
+                    if [[ "${OS_WITH_APT}" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                        _PACKAGE_MANAGER="apt"
+
+                    elif [[ "${OS_WITH_DNF_OR_YUM}" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                        _PACKAGE_MANAGER="dnf"
+
+                        if command -v "${_PACKAGE_MANAGER}"; then
+                            return 0
+                        fi
+
+                        _PACKAGE_MANAGER="yum"
+
+                    elif [[ "${OS_WITH_PACMAN}" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                        _PACKAGE_MANAGER="pacman"
+
+                    elif [[ "${OS_WITH_PORTAGE}" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                        _PACKAGE_MANAGER="portage"
+
+                    elif [[ "${OS_WITH_URPMI}" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                        _PACKAGE_MANAGER="urpmi"
+
+                    elif [[ "${OS_WITH_ZYPPER}" =~ .*${_OPERATING_SYSTEM}.* ]]; then
+                        _PACKAGE_MANAGER="zypper"
+
+                    else
+                        _PACKAGE_MANAGER=""
+                    fi
+
+                    if ! command -v "${_PACKAGE_MANAGER}" &> /dev/null; then
+                        return 1
+                    fi
+
+                    return 0
+                }
+
+                local KERNEL="$( uname -o | tr '[:upper:]' '[:lower:]' )"
+                local OS_WITH_APT="debian bodhi deepin knoppix mint peppermint pop ubuntu kubuntu lubuntu xubuntu"
+                local OS_WITH_DNF_OR_YUM="redhat alma berry centos cern clearos elastix fedora fermi frameos mageia opensuse oracle scientific suse"
+                local OS_WITH_PACMAN="arch manjaro"
+                local OS_WITH_PORTAGE="gentoo"
+                local OS_WITH_URPMI="opensuse"
+                local OS_WITH_ZYPPER="mandriva mageia"
+
+                if [[ -z "${KERNEL}" ]]; then
+                    echo -e "${_PREFIX_ERROR} Failed to parse system kernel."
+                    return 1
+                fi
+
+                if [[ -z "${_OPERATING_SYSTEM}" ]]; then
+                    echo -e "${_PREFIX_ERROR} Failed to parse operating system."
+                    return 1
+                fi
+
+                if [[ "${KERNEL}" != *"linux"* ]]; then
+                    echo -e "${_PREFIX_ERROR} Kernel '$( uname -o )' is not supported."
+                    return 1
+                fi
+
+                if ! GetPackageManagerByOS; then
+                    echo -e "${_PREFIX_ERROR} Distribution '$( lsb_release -is )' is not supported."
+                    return 1
+                fi
+
+                return 0
+            }
+
+        # <summary> Global setters </summary>
+            function SetExitCode
+            {
+                declare -ig _LAST_EXIT_CODE="${?}"
+            }
+
+            function SetPassExitCode
+            {
+                case "${?}" in
+                    0 | 255 )
+                        declare -ig _LAST_EXIT_CODE=0 ;;
+
+                    * )
+                        declare -ig _LAST_EXIT_CODE=1 ;;
+                esac
+            }
+
+            function SetParameters
+            {
+                if [[ ! -z "${_ARE_COMMON_PARAMS_SET}" ]] \
+                    && "${_ARE_COMMON_PARAMS_SET}"; then
+                    return 0
+                fi
+
+                declare -g _ARE_COMMON_PARAMS_SET=true
+
+                # <remarks> Execution Flags </remarks>
+                declare -g _IS_EXECUTION_QUIET=false
+
+                # <remarks>
+                # Color coding
+                # Reference URL: 'https://www.shellhacks.com/bash-colors'
+                # </remarks>
+                declare -g _SET_COLOR_GREEN='\033[0;32m'
+                declare -g _SET_COLOR_RED='\033[0;31m'
+                declare -g _SET_COLOR_YELLOW='\033[0;33m'
+                declare -g _RESET_COLOR='\033[0m'
+
+                # <remarks> Append output </remarks>
+                declare -g _PREFIX_NOTE="${_SET_COLOR_YELLOW}Note:${_RESET_COLOR}"
+                declare -g _PREFIX_ERROR="${_SET_COLOR_YELLOW}An error occurred:${_RESET_COLOR}"
+                declare -g _PREFIX_FAIL="${_SET_COLOR_RED}Failure:${_RESET_COLOR}"
+                declare -g _PREFIX_PASS="${_SET_COLOR_GREEN}Success:${_RESET_COLOR}"
+                declare -g _SUFFIX_FAIL="${_SET_COLOR_RED}[Failure]${_RESET_COLOR}"
+                declare -g _SUFFIX_PASS="${_SET_COLOR_GREEN}[Success]${_RESET_COLOR}"
+                declare -g _SUFFIX_SKIP="${_SET_COLOR_YELLOW}[Skipped]${_RESET_COLOR}"
+                declare -g _SUFFIX_WORK="${_SET_COLOR_YELLOW}[Working]${_RESET_COLOR}"
+
+                # <remarks> File templates. </remarks>
+                declare -g _PREFIX_COMMENT="#"              # <note> Added this var, to prevent IDE from showing visual errors when a string contains a comment variable. </note>
+
+                declare -ga _DISCLAIMER_FILE_CONTENTS=(
+                    "${_PREFIX_COMMENT} Generated by 'portellam/deploy-vfio-main'"
+                    "${_PREFIX_COMMENT} WARNING: Any modifications to this file will be modified by 'deploy-vfio-main'"
+                    "${_PREFIX_COMMENT}"
+                )
+
+                declare -ga _VFIO_DISCLAIMER_FILE_CONTENTS=(
+                    "${_DISCLAIMER_FILE_CONTENTS[@]}"
+                    "${_PREFIX_COMMENT} Run lspci to view hardware information."
+                    "${_PREFIX_COMMENT} You must run update-initramfs(8) to effect this change."
+                    "${_PREFIX_COMMENT}"
+                )
+
+                # <remarks> Memory </remarks>
+                declare -g _STR_MAX_MEMORY=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | cut -d "k" -f 1 )
+                declare -gi _INT_MAX_MEMORY=${_STR_MAX_MEMORY## }
+                declare -gi _AVAILABLE_MEMORY=0
+                declare -gi _MIN_MEMORY=8
+                SetFreeMemory
+
+                # <remarks> System validation </remarks>
+                declare -g _OUTPUT_INVALID_PACKAGE_MANAGER="${_PREFIX_ERROR} Command '${_PACKAGE_MANAGER}' is not supported."
+                declare -gl _PACKAGE_MANAGER
+                declare -gl _OPERATING_SYSTEM="$( lsb_release -is )"
+            }
+
+        # <summary> Variable data-type validaiton </summary>
+            function IsEnum
+            {
+                local -n REFERENCE="${1}"
+                [ "${#REFERENCE[@]}" -gt 0 ]
+                return "${?}"
+            }
+
+            function IsEmptyEnum
+            {
+                IsEnum "${1}" || return "${?}"
+                local -n REFERENCE="${1}"
+
+                for VALUE in "${REFERENCE[@]}"; do
+                    [ ! -z "${VALUE}" ] || return 1
+                done
+
+                return 0
+            }
+
+            function IsInt
+            {
+                [[ "${1}" =~ ^[0-9]+$ ]] \
+                || [[ "${1}" =~ ^[-][0-9]+$ ]]
+                return "${?}"
+            }
+
+            function SetCommaDelimitedStringFromEnum
+            {
+                # IsEnum "${1}" || return "${?}"
+                local -n ENUM_REFERENCE="${1}"
+                local -n DELIM_REFERENCE="${2}"
+
+                for VALUE in ${ENUM_REFERENCE[@]}; do
+                    DELIM_REFERENCE+="${VALUE},"
+                done
+
+                if [[ ${DELIM_REFERENCE: -1} == "," ]]; then
+                    DELIM_REFERENCE="${DELIM_REFERENCE::-1}"
+                fi
+
+                return 0
+            }
+
+        # <summary> Interaction </summary>
+            function AskToExecuteOrSkip
+            {
+                local OUTPUT=""
+
+                if [[ ! -z "${1}" ]]; then
+                    OUTPUT="${1} "
+                fi
+
+                for COUNT in $( seq 0 2 ); do
+                    echo -en "${OUTPUT}[Y/n]: "
+                    read -r -p "" ANSWER
+
+                    case "${ANSWER}" in
+                        [Yy]* )
+                            return 0 ;;
+
+                        [Nn]* )
+                            return 255 ;;
+
+                        * )
+                            echo "Please answer 'Y' or 'N'." ;;
+                    esac
+                done
+
+                return 1
+            }
+
+        # <summary> Presentation </summary>
+            function PrintPrefixPassOrFail
+            {
+                SetExitCode
+
+                case "${_LAST_EXIT_CODE}" in
+                    0 )
+                        echo -en "${_PREFIX_PASS}" ;;
+
+                    255 )
+                        echo -en "${_PREFIX_SKIP}" ;;
+
+                    * )
+                        echo -en "${_PREFIX_FAIL}" ;;
+                esac
+
+                if [[ -z "${1}" ]]; then
+                    echo
+                else
+                    echo -e " ${1}"
+                fi
+
+                return "${_LAST_EXIT_CODE}"
+            }
+
+            function PrintSuffixPassOrFail
+            {
+                SetExitCode
+
+                if [[ ! -z "${1}" ]]; then
+                    echo -en "${1}\t"
+                fi
+
+                case "${_LAST_EXIT_CODE}" in
+                    0 )
+                        echo -e "${_SUFFIX_PASS}" ;;
+
+                    255 )
+                        echo -e "${_SUFFIX_SKIP}" ;;
+
+                    * )
+                        echo -e "${_SUFFIX_FAIL}" ;;
+                esac
+
+                return "${_LAST_EXIT_CODE}"
+            }
+
+            function PrintSuffixWait
+            {
+                if [[ ! -z "${1}" ]]; then
+                    echo -en "${1}\t"
+                fi
+
+                echo -e "${_SUFFIX_WORK}"
+                return 0
+            }
+
+        # <summary> RAM allocation </summary>
+        function GetFreeMemory
+        {
+            if [[ "${_AVAILABLE_MEMORY}" -le 0 ]]; then
+                return 1
+            fi
+
+            return 0
+        }
+
+        function SetFreeMemory
+        {
+            _AVAILABLE_MEMORY=$(( _INT_MAX_MEMORY - _MIN_MEMORY ))
+        }
+
+        # <summary> Unnamed </summary>
+        function FindPackage
+        {
+            if [[ -z "${1}" ]] \
+                || [[ -z "${_PACKAGE_MANAGER}" ]]; then
+                echo -e "${_PREFIX_ERROR} Input values are empty."
+                return 1
+            fi
+
+            case "${_PACKAGE_MANAGER}" in
+                "apt" )
+                    apt list "${1}" ;;
+
+                "dnf" )
+                    dnf search "${1}" ;;
+
+                "pacman" )
+                    pacman -Ss "${1}" ;;
+
+                "gentoo" )
+                    emerge --search "${1}" ;;
+
+                "urpmi" )
+                    urpmq "${1}" ;;
+
+                "yum" )
+                    yum search "${1}" ;;
+
+                "zypper" )
+                    zypper se "${1}" ;;
+
+                * )
+                    echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
+                    return 1 ;;
+            esac
+
+            SetExitCode
+
+            if [[ "${_LAST_EXIT_CODE}" -ne 0 ]]; then
+                case "${_PACKAGE_MANAGER}" in
+                    *" "* )
+                        echo -e "${_PREFIX_ERROR} Packages '${_PACKAGE_MANAGER}' were not found." ;;
+
+                    * )
+                        echo -e "${_PREFIX_ERROR} Package '${_PACKAGE_MANAGER}' was not found." ;;
+                esac
+
+                return 1
+            fi
+
+            return "${_LAST_EXIT_CODE}"
+        }
+
+        function InstallPackage
+        {
+            if [[ -z "${_PACKAGE_MANAGER}" ]] \
+                || [[ -z "${1}" ]]; then
+                echo -e "${_PREFIX_ERROR} Input values are empty."
+                return 1
+            fi
+
+            local DO_REINSTALL=false
+            local OPTION=""
+
+            if [[ "${2}" == true ]]; then
+                DO_REINSTALL=true
+            fi
+
+            # <remarks> Auto-update and auto-install selected packages </remarks>
+            case "${_PACKAGE_MANAGER}" in
+                "apt" )
+                    if "${DO_REINSTALL}"; then
+                        OPTION="--reinstall -o Dpkg::Options::=--force-confmiss"
+                    fi
+
+                    apt update && apt full-upgrade -y && apt install -y "${OPTION}" "${1}" || return 1 ;;
+
+                "dnf" )
+                    dnf upgrade && dnf install "${1}" ;;
+
+                "pacman" )
+                    pacman -Syu && pacman -S "${1}" ;;
+
+                "gentoo" )
+                    emerge -u @world && emerge "${1}" ;;
+
+                "urpmi" )
+                    urpmi --auto-update && urpmi "${1}" ;;
+
+                "yum" )
+                    yum update && yum install "${1}" ;;
+
+                "zypper" )
+                    zypper refresh && zypper in "${1}" ;;
+
+                * )
+                    echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
+                    false ;;
+            esac
+
+            PrintSuffixPassOrFail "Installing software packages..."
+            return "${?}"
+        }
+
+        function IsInstalledPackage
+        {
+            if [[ -z "${_PACKAGE_MANAGER}" ]] \
+                || [[ -z "${1}" ]]; then
+                echo -e "${_PREFIX_ERROR} Input values are empty."
+                return 1
+            fi
+
+            local GET_COMMAND=""
+
+            # <remarks> Check if package is not installed </remarks>
+            case "${_PACKAGE_MANAGER}" in
+                "apt" )
+                    GET_COMMAND="sudo dpkg -s" ;;
+
+                * )
+                    echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
+                    return 1 ;;
+            esac
+
+            local -i COUNT_DELIM=$( echo "${1}" | wc -w )
+            local GET_PACKAGE='echo "${1}" | cut -d ' ' -f "${COUNT_DELIM}"'
+
+            while [[ ! -z "${PACKAGE}" ]]; do
+                local PACKAGE=$( eval "${GET_PACKAGE}" )
+                eval "${GET_COMMAND} ${PACKAGE}" || return 1
+                (( COUNT_DELIM-- ))
+            done
+
+            return 0
+        }
+
+        function IsSudoUser
+        {
+            if [[ $( whoami ) != "root" ]]; then
+                echo -e "${_PREFIX_ERROR} User is not sudo/root."
+                return 1
+            fi
+
+            return 0
+        }
+
+        function UninstallPackage
+        {
+            if [[ -z "${_PACKAGE_MANAGER}" ]] \
+                || [[ -z "${1}" ]]; then
+                echo -e "${_PREFIX_ERROR} Input values are empty."
+                return 1
+            fi
+
+            # <remarks> Uninstall selected packages </remarks>
+            case "${_PACKAGE_MANAGER}" in
+                "apt" )
+                    apt uninstall "${1}" ;;
+
+                "dnf" )
+                    dnf remove "${1}" ;;
+
+                "pacman" )
+                    pacman -R "${1}" ;;
+
+                "gentoo" )
+                    emerge -Cv "${1}" ;;
+
+                "urpmi" )
+                    urpme "${1}" ;;
+
+                "yum" )
+                    yum remove "${1}" ;;
+
+                "zypper" )
+                    zypper remove "${1}" ;;
+
+                * )
+                    echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
+                    false ;;
+            esac
+
+            PrintSuffixPassOrFail "Uninstalling software packages..."
+            return "${?}"
+        }
+
+        function UpdateOrCloneGitRepo
+        {
+            local DO_AUTO_ANSWER_YES=false
+
+            if [[ "${4}" == true ]]; then
+                DO_AUTO_ANSWER_YES=true
+            fi
+
+            if [[ -z "${3}" ]] \
+                || [[ -z "${2}" ]] \
+                || [[ -z "${1}" ]]; then
+                echo -e "${_PREFIX_ERROR} Input values are empty."
+                return 1
+            fi
+
+            if [[ ! -d "${1}${2}" ]] \
+                && ! sudo mkdir -p "${1}${3}"; then
+                echo -e "${_PREFIX_ERROR} Failed to create directory '${1}${3}'."
+                return 1
+            fi
+
+            # <remarks> Update existing GitHub repository. </remarks>
+            if [[ -d "${1}${2}" ]]; then
+                cd "${1}${2}"
+
+                if ! git pull &> /dev/null; then
+                    echo -e "${_PREFIX_ERROR} Failed to update repository."
+                    return 1
+                fi
+
+                return 0
+
+            # <remarks> Clone new GitHub repository. </remarks>
+            elif [[ -d "${1}${3}" ]]; then
+                for COUNT in $( seq 0 2 ); do
+                    if ! "${DO_AUTO_ANSWER_YES}"; then
+                        read -r -p "Clone repo '${2}'? [Y/n]: " ANSWER
+                    else
+                        ANSWER="Y"
+                    fi
+
+                    case "${ANSWER}" in
+                        [Yy]* )
+                            cd "${1}${3}"
+
+                            if ! git clone "https://github.com/${2}" &> /dev/null; then
+                                echo -e "${_PREFIX_ERROR} Failed to download repository."
+                                return 1
+                            fi
+
+                            return 0 ;;
+
+                        [Nn]* )
+                            return 255 ;;
+
+                        * )
+                            echo "Please answer 'Y' or 'N'." ;;
+                    esac
+                done
+
+                return 1
+
+            else
+                return 1
+            fi
+        }
+# </functions>
+
+# <main>
+    SetParameters
+    unset SetParameters
+# </main>

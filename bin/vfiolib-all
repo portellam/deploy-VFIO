@@ -1,0 +1,19 @@
+#!/bin/false
+
+#
+# Filename:         vfiolib-all
+# Description:      Master sources file.
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <sources>
+    source vfiolib-checks
+    source vfiolib-common
+    source vfiolib-pre-setup
+    source vfiolib-post-setup
+    source vfiolib-files
+    source vfiolib-parse
+    source vfiolib-setup
+    source vfiolib-usage
+# </sources>
