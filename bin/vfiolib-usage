@@ -267,7 +267,8 @@
                     # <remarks> Parse PCI for VFIO setup </remarks>
                     "-f" | "--file" )
                         shift
-                        SetFileForParseSelection "${1}" || return 1 ;;
+                        _DO_PARSE_DATABASE_FROM_FILE=true
+                        _DATABASE_FILE="${1}" ;;
 
                     "-i" | "--internal" )
                         _DO_PARSE_DATABASE_FROM_CACHE=true ;;
@@ -397,14 +398,20 @@
 
                 "\nSpecify the database to reference before parsing IOMMU groups.\nOPTIONS:"
                 "  -f, --file [ARGS]\t\tReference file database."
-                "  -i, --internal\t\tReference local database."
-                "  -o, --online\t\t\tReference online database."
+                "  -i, --internal [ARGS]\tReference local database."
+                "  -o, --online [ARGS]\t\tReference online database."
 
-                "\nARGUMENTS:"
+                "\nNon-File ARGUMENTS:"
+                "  -x, --xml\t\tCross-reference XML file. Execute once to export, prior to import (given existing VFIO setup)."
+
+                "\n  Example:"
+                "    --internal --xml"
+
+                "\nFile ARGUMENTS:"
                 "  [filename]\t\t\tReference specific file."
 
                 "\n  Example:"
-                "    -f some_file.txt\t\tReference file 'some_file.txt'."
+                "    -f database.txt\t\tReference file 'database.txt'."
 
                 "\nSpecify the IOMMU groups to parse.\nOPTIONS:"
                 "  -p, --parse [groups]\t\tParse given IOMMU groups."

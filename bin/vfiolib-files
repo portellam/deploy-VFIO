@@ -39,7 +39,8 @@
 
             # <summary> Files </summary>
                 # <remarks> Main </remarks>
-                declare -g _BACKUPS_PATH="/usr/local/etc/vfiolib.d"
+                declare -g _ETC_PATH="/usr/local/etc"
+                declare -g _BACKUPS_PATH="${_ETC_PATH}/vfiolib.d"
                 declare -g _HOOKS_PATH="/etc/libvirt/hooks"
                 declare -g _SUFFIX_BACKUP=".old"
 

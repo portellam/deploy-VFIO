@@ -1,4 +1,4 @@
-#!/bin/false
+#!/bin/bash
 
 #
 # Filename:         vfiolib-parse
@@ -16,14 +16,14 @@
         function ExecuteParseSelection
         {
             AreParametersValid || return "${?}"
-            SelectMethodToParseDatabase
+            AskToSelectDatabase
             SetExitCode
 
             if GetPassExitCode; then
-                SelectDatabaseFile || return "${?}"
-                DoesHostNotHaveExistingVFIOSetup || return "${?}"
+                AskToParseFromXML
+                AreParsedIOMMUGroupsValid || return "${?}"
                 SelectIOMMUGroups
-                IsParseSelectionValid || return "${?}"
+                AreSelectedIOMMUGroupsValid || return "${?}"
                 return 0
             fi
 
@@ -52,7 +52,7 @@
                         SetDeviceHardwareID "${DEVICE}" "HWID"
 
                         if [[ ! -z "${DRIVER}" ]] \
-                            && IsDeviceDriverNotExcluded "${DEVICE}"; then
+                            && IsDeviceNotExcluded "${DEVICE}"; then
                             DRIVER_REFERENCE+=( "${DRIVER}" )
                         fi
 
@@ -123,6 +123,7 @@
 
                 # <remarks> IOMMU groups lists and validation. </remarks>
                 declare -gr _GET_DEVICES_FOR_IOMMU_GROUP='ls /sys/kernel/iommu_groups/${IOMMU_GROUP_ID}/devices/'
+                declare -gA _DEVICE_DRIVER_XML_LIST=( )
                 declare -ga _IOMMU_GROUP_ID_LIST=( $( ls /sys/kernel/iommu_groups/ | sort -n ) )
                 declare -ga _IOMMU_GROUPS_FOR_HOST_LIST=( )
                 declare -ga _IOMMU_GROUPS_FOR_VFIO_LIST=( )
@@ -130,19 +131,25 @@
                 declare -gr _REGEX_DOMAIN_ID='^[0-9A-F][1-9A-F]$'
 
                 # <remarks> Parse arguments </remarks>
-                declare -g _DATABASE_FILE=""
+                declare -gr _GET_PARSE_FROM_XML='echo "cat /*" | xmllint  --shell ${_XML_FILE} | grep -v "^/ >" | grep -Ev xml'
                 declare -g _PARSE_OPTIONS=""
-                declare -gr _DEFAULT_DATABASE_FILE="/usr/local/etc/vfiolib_lspci_database"
+                declare -gr _DEFAULT_DATABASE_FILE="${_ETC_PATH}/vfiolib-parse.txt"
+                declare -gr _DEFAULT_XML_FILE="${_ETC_PATH}/vfiolib-parse.xml"
+                declare -g _DATABASE_FILE=""
+                declare -g _XML_FILE="${_DEFAULT_XML_FILE}"
 
                 # <remarks> Execution Flags </remarks>
                 declare -g _DO_PARSE_DATABASE_FROM_CACHE=false
                 declare -g _DO_PARSE_DATABASE_FROM_FILE=false
                 declare -g _DO_PARSE_DATABASE_FROM_INTERNET=false
                 declare -g _DO_PARSE_DATABASE_FROM_XML=false
+                declare -g _DOES_XML_HAVE_VFIO=true
+                declare -g _DOES_HOST_HAVE_VFIO=true
                 declare -g _HAS_ARG_PARSE_IOMMU=false
                 declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
                 declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=false
                 declare -g _HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
+                declare -g _HAS_ANSWERED_YES_NO_TO_PARSE_XML=false
                 return 0
             }
 
@@ -157,7 +164,7 @@
                 return 0
             }
 
-            function IsParseSelectionValid
+            function AreSelectedIOMMUGroupsValid
             {
                 if ! IsValidEnumOfIOMMUGroups "_IOMMU_GROUPS_FOR_HOST_LIST"; then
                     echo -e "${_PREFIX_ERROR} Invalid allocation of devices for host."
@@ -187,36 +194,69 @@
         # <summary> Database </summary
             function ExportParseDatabase
             {
-                if [[ ! -z "${_DEFAULT_DATABASE_FILE}" ]] \
-                    && [[ ! -e "${_DEFAULT_DATABASE_FILE}" ]] \
-                    && ! sudo mkdir -p $( dirname "${_DEFAULT_DATABASE_FILE}" ) &> /dev/null; then
+                DoesHostNotHaveExistingVFIOSetup || return "${?}"
+
+                if [[ -z "${_DATABASE_FILE}" ]]; then
+                    echo -e "${_PREFIX_ERROR} Filename is invalid."
+                    return 1
+                fi
+
+                if [[ ! -z "${_DATABASE_FILE}" ]] \
+                    && [[ ! -e "${_DATABASE_FILE}" ]] \
+                    && ! sudo mkdir -p $( dirname "${_DATABASE_FILE}" ) &> /dev/null; then
                     echo -e "${_PREFIX_ERROR} Failed to create directory for database file."
                     return 1
                 fi
 
-                if [[ ! -z "${_DEFAULT_DATABASE_FILE}" ]] \
-                    && [[ ! -e "${_DEFAULT_DATABASE_FILE}" ]] \
-                    && ! sudo touch "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
+                if [[ ! -z "${_DATABASE_FILE}" ]] \
+                    && [[ ! -e "${_DATABASE_FILE}" ]] \
+                    && ! sudo touch "${_DATABASE_FILE}" &> /dev/null; then
                     echo -e "${_PREFIX_ERROR} Failed to create database file."
                     return 1
                 fi
 
                 if "${_DO_PARSE_DATABASE_FROM_CACHE}" \
-                    && [[ ! -s "${_DEFAULT_DATABASE_FILE}" ]] \
-                    && ! lspci -x >> "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
+                    && [[ ! -s "${_DATABASE_FILE}" ]] \
+                    && ! lspci -x >> "${_DATABASE_FILE}" &> /dev/null; then
                     echo -e "${_PREFIX_ERROR} Failed to reference local database and save to file."
                     return 1
                 fi
 
                 if "${_DO_PARSE_DATABASE_FROM_INTERNET}" \
-                    && [[ ! -s "${_DEFAULT_DATABASE_FILE}" ]] \
-                    && ! lspci -q -x >> "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
+                    && [[ ! -s "${_DATABASE_FILE}" ]] \
+                    && ! lspci -q -x >> "${_DATABASE_FILE}" &> /dev/null; then
                     echo -e "${_PREFIX_ERROR} Failed to reference online database and/or save to file."
                     return 1
                 fi
 
-                if [[ -s "${_DEFAULT_DATABASE_FILE}" ]] \
-                    && ! lspci -F "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
+                IsDatabaseFile "${_DATABASE_FILE}" || return "${?}"
+                return 0
+            }
+
+            function ImportParseDatabase
+            {
+                DoesHostNotHaveExistingVFIOSetup || return "${?}"
+                IsDatabaseFile "${_DATABASE_FILE}" || return "${?}"
+                _PARSE_OPTIONS="-F ${_DATABASE_FILE}"
+                return 0
+            }
+
+            function IsDatabaseFile
+            {
+                local FILE="${1}"
+
+                if [[ -z "${1}" ]]; then
+                    echo -e "${_PREFIX_ERROR} Filename is invalid."
+                    return 1
+                fi
+
+                if [[ ! -e "${1}" ]]; then
+                    echo -e "${_PREFIX_ERROR} Failed to find database file."
+                    return 1
+                fi
+
+                if [[ -s "${FILE}" ]] \
+                    && ! lspci -F "${FILE}" &> /dev/null; then
                     echo -e "${_PREFIX_ERROR} File is corrupt."
                     return 1
                 fi
@@ -224,46 +264,138 @@
                 return 0
             }
 
-            function ImportParseDatabase
+            function AreParsedIOMMUGroupsValid
             {
-                if ! "${_DO_PARSE_DATABASE_FROM_INTERNET}" \
-                    && ! "${_DO_PARSE_DATABASE_FROM_FILE}"; then
-                    return 0
-                fi
+                if "${_DO_PARSE_DATABASE_FROM_XML}"; then
+                    AreXMLLibrariesInstalled || return "${?}"
 
-                local FILE=""
+                    if ! ImportParseXML; then
+                        DoesHostNotHaveExistingVFIOSetup || return "${?}"
+                        ExportParseXML || return "${?}"
+                        ImportParseXML || return "${?}"
+                    else
+                        if DoesHostNotHaveExistingVFIOSetup; then
+                            return "${?}"
+                        else
+                            ExportParseXML || return "${?}"
+                        fi
 
-                if [[ ! -s "${_DATABASE_FILE}" ]]; then
-                    FILE="${_DATABASE_FILE}"
-                elif [[ ! -s "${_DEFAULT_DATABASE_FILE}" ]]; then
-                    FILE="${_DEFAULT_DATABASE_FILE}"
+                        ImportParseXML || return "${?}"
+                    fi
+
+                    IsXMLValid || return "${?}"
+                elif "${_DO_PARSE_DATABASE_FROM_FILE}"; then
+                    ImportParseDatabase || return "${?}"
                 else
-                    return 1
+                    ExportParseDatabase || return "${?}"
                 fi
 
-                if [[ ! -s "${FILE}" ]]; then
-                    return 1
-                fi
-
-                _PARSE_OPTIONS="-F ${FILE}"
                 return 0
             }
 
         # <summary> XML </summary
-            # function ExportParseXML
-            # {
-            #     return 1
-            # }
+            function AreXMLLibrariesInstalled
+            {
+                if ! command -v "xmllint" &> /dev/null \
+                    || command -v "xmlstarlet" &> /dev/null; then
+                    echo -e "$_PREFIX_ERROR Required 'XML' libraries are not installed."
+                    return 1
+                fi
 
-            # function ImportParseXML
-            # {
-            #     return 1
-            # }
+                return 0
+            }
 
-            # function IsXMLValid
-            # {
-            #     return 1
-            # }
+            function ExportParseXML
+            {
+                local -a OUTPUT=( )
+                local -a IOMMU_OUTPUT=( )
+
+                for IOMMU_GROUP_ID in $( ls -1v /sys/kernel/iommu_groups/ | sort -h ); do
+                    local -a DEVICE_OUTPUT=( )
+                    local LINE_IOMMU_ID="id=\"${IOMMU_GROUP_ID}\""
+
+                    for DEVICE in $( eval "${_GET_DEVICES_FOR_IOMMU_GROUP}" ); do
+                        # local -u _DEVICE_BUS_ID=${DEVICE:5}
+                        # local DEVICE_CLASS="$( lspci -ms ${DEVICE} | cut -d \" -f 2 )"
+                        local DEVICE_DRIVER=$( lspci -ks ${DEVICE} | grep -i "driver" | cut -d " " -f 5 )
+                        # local DEVICE_HWID=$( lspci -ns ${DEVICE} | cut -d " " -f 3 )
+                        # local DEVICE_NAME="$( lspci -ms ${DEVICE} | cut -d \" -f 6 )"
+                        # local DEVICE_VENDOR="$( lspci -ms ${DEVICE} | cut -d \" -f 4 )"
+                        # local LINE_DEVICE_ID="dev_id=\"${DEVICE_BUS_ID}\""
+                        local LINE_DEVICE_ID="dev_id=\"${DEVICE}\""
+                        # local LINE_DEVICE_CLASS="class=\"${DEVICE_CLASS}\""
+                        local LINE_DEVICE_DRIVER="driver=\"${DEVICE_DRIVER}\""
+                        # local LINE_DEVICE_HWID="hw_id=\"${DEVICE_HWID}\""
+                        # local LINE_DEVICE_NAME="name=\"${DEVICE_NAME}\""
+                        # local LINE_DEVICE_VENDOR="vendor=\"${DEVICE_VENDOR}\""
+                        # local LINE_DEVICE="${LINE_DEVICE_ID} ${LINE_DEVICE_HWID} ${LINE_DEVICE_DRIVER} ${LINE_DEVICE_CLASS} ${LINE_DEVICE_VENDOR} ${LINE_DEVICE_NAME}"
+                        local LINE_DEVICE="${LINE_DEVICE_ID} ${LINE_DEVICE_DRIVER}"
+                        local LINE_IOMMU="<iommu ${LINE_IOMMU_ID} ${LINE_DEVICE}/>"
+
+                        DEVICE_OUTPUT+=(
+                            "\t${LINE_IOMMU}"
+                        )
+                    done
+
+                    IOMMU_OUTPUT+=(
+                        "${DEVICE_OUTPUT[@]}"
+                    )
+                done
+
+                OUTPUT=(
+                    "<xml>"
+                    "${IOMMU_OUTPUT[@]}"
+                    "</xml>"
+                )
+
+                IFS=$'\n'
+
+                if ! sudo echo -e "${OUTPUT[*]}" > "${_XML_FILE}"; then
+                    echo -e "${_PREFIX_ERROR} Failed to write to file '${FILE}'."
+                fi
+
+                unset IFS
+                return 0
+            }
+
+            function ImportParseXML
+            {
+                if ! IsXMLValid; then
+                    return 1
+                fi
+
+                local -a XML_FILE_CONTENTS=( $( eval "${_GET_PARSE_FROM_XML}" ) )
+
+                for LINE in ${XML_FILE_CONTENTS[@]}; do
+                    local DEVICE=$( echo "${LINE}" | cut -d '"' -f 4 )
+                    local DRIVER=$( echo "${LINE}" | cut -d '"' -f 6 )
+
+                    case "${DRIVER}" in
+                        *"vfio-pci"* | *"vfio"* )
+                            echo -e "${_PREFIX_ERROR} XML file '${FILE}' contains invalid drivers."
+                            return 1 ;;
+                    esac
+
+                    _DEVICE_DRIVER_XML_LIST[$DEVICE]=( "${DRIVER}" )
+                done
+
+                if ! IsEnum "_DEVICE_DRIVER_XML_LIST"; then
+                    echo -e "${_PREFIX_ERROR} XML file is empty."
+                    return 1
+                fi
+
+                return 0
+            }
+
+            function IsXMLValid
+            {
+                DoesXMLNotHaveExistingVFIOSetup || return "${?}"
+
+                if ! xmllint "${_XML_FILE}" &> /dev/null; then
+                    echo -e "${_PREFIX_ERROR} XML file '${FILE}' is invalid."
+                    return 1
+                fi
+            }
 
         # <summary> Local setters </summary>
             function SetDeviceClass
@@ -285,8 +417,8 @@
 
                 if ! "${_DO_PARSE_DATABASE_FROM_XML}"; then
                     REFERENCE="$( lspci ${_PARSE_OPTIONS} -ks "${DEVICE}" | grep -i "driver" | cut -d " " -f 5 )"
-                # else
-                #     REFERENCE=""
+                else
+                    REFERENCE="${DEVICE_DRIVER_XML_LIST[$DEVICE]}"
                 fi
 
                 return 0
@@ -323,11 +455,23 @@
             }
 
         # <summary> Device validation </summary>
-            function IsDeviceNotBindedToVFIO
+            function IsDeviceDriverNotExcluded
             {
-                [[ ! -z "${1}" ]] || return "${?}"
-                local DEVICE="${1}"
-                local -l DRIVER="$( lspci ${_PARSE_OPTIONS} -ks "${DEVICE}" | grep -i "driver" | cut -d " " -f 5 )"
+                [[ ! -z "${1}" ]] || return 1
+                local DRIVER="${1}"
+
+                case "${DRIVER}" in
+                    *"snd_hda_intel"* )
+                        return 1 ;;
+                esac
+
+                return 0
+            }
+
+            function IsDeviceDriverNotVFIO
+            {
+                [[ ! -z "${1}" ]] || return 1
+                local DRIVER="${1}"
 
                 case "${DRIVER}" in
                     *"vfio-pci"* | *"vfio"* )
@@ -350,22 +494,6 @@
                 return 1
             }
 
-            function IsDeviceDriverNotExcluded
-            {
-                [[ ! -z "${1}" ]] || return "${?}"
-                local DEVICE="${1}"
-                local DRIVER=""
-                SetDeviceDriver "${DEVICE}" "DRIVER"
-                IsDeviceExternal "${DEVICE}" || return 1
-
-                case "${DRIVER}" in
-                    *"snd_hda_intel"* )
-                        return 1 ;;
-                esac
-
-                return 0
-            }
-
             # <note> Update here for devices' that benefit from pci-stub dummy driver. </note>
             function IsDeviceForPCISTUB
             {
@@ -379,6 +507,26 @@
                 esac
 
                 return 1
+            }
+
+            function IsDeviceNotExcluded
+            {
+                [[ ! -z "${1}" ]] || return 1
+                local DEVICE="${1}"
+                local DRIVER=""
+                SetDeviceDriver "${DEVICE}" "DRIVER"
+                IsDeviceNotExcluded "${DEVICE}" || return 1
+                return 0
+            }
+
+            function IsDeviceNotExternal
+            {
+                [[ ! -z "${1}" ]] || return 1
+                local DEVICE="${1}"
+                local DRIVER=""
+                SetDeviceDriver "${DEVICE}" "DRIVER"
+                IsDeviceExternal "${DEVICE}" || return 1
+                return 0
             }
 
             function IsDeviceVGA
@@ -561,6 +709,18 @@
                     fi
                 done
 
+                _DOES_HOST_HAVE_VFIO=false
+                return 0
+            }
+
+            function DoesXMLNotHaveExistingVFIOSetup
+            {
+                if eval "${_GET_PARSE_FROM_XML}" | grep -E "vfio"; then
+                    echo -e "${_PREFIX_ERROR} Detected VFIO drivers in XML file."
+                    return 1
+                fi
+
+                _DOES_XML_HAVE_VFIO=false
                 return 0
             }
 
@@ -584,10 +744,19 @@
                 return 0
             }
 
+            function AskToParseFromXML
+            {
+                if "${_HAS_ANSWERED_YES_NO_TO_PARSE_XML}"; then
+                    return 0
+                fi
+
+                AskToExecuteOrSkip "Reference database with XML file?" || return 1
+                _DO_PARSE_DATABASE_FROM_XML=true
+                return 0
+            }
+
             function SelectDatabaseFile
             {
-                ExportParseDatabase || return "${?}"
-
                 if "${_DO_PARSE_DATABASE_FROM_CACHE}"; then
                      _DATABASE_FILE="${_DEFAULT_DATABASE_FILE}"
                 else
@@ -629,13 +798,6 @@
                     echo -e "${_PREFIX_NOTE} Using default database file."
                 fi
 
-                if ! "${_DO_PARSE_DATABASE_FROM_CACHE}" \
-                    && ! lspci -i "${_DATABASE_FILE}" &> /dev/null; then
-                    echo -e "${_PREFIX_ERROR} Database file is not valid. Please try again with another option."
-                    return 1
-                fi
-
-                ImportParseDatabase || return "${?}"
                 return 0
             }
 
@@ -699,7 +861,7 @@
                 return 0
             }
 
-            function SelectMethodToParseDatabase
+            function AskToSelectDatabase
             {
                 if "${_DO_PARSE_DATABASE_FROM_CACHE}" \
                     || "${_DO_PARSE_DATABASE_FROM_FILE}" \
@@ -776,5 +938,6 @@
 
 # <main>
     SetParameters
+    ExportParseXML
     unset SetParameters
 # </main>
