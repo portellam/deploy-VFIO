@@ -3,6 +3,7 @@
     - Anything mentioned in **To Do** is not enabled/available.
 
 ### To Do:
+* Add option to restore all files, should setup be forced exit.
 * Add boolean to keep track if any steps were successful and rest were skipped.
     -If true, set output to success.
 * Add functionality to deploy a vfio setup with hooks? Or leave that to the pros?

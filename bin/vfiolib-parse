@@ -16,13 +16,11 @@
         function ExecuteParseSelection
         {
             AreParametersValid || return "${?}"
-            SelectFileToExportDatabase || return "${?}"
-            SetFileForParseSelection || return "${?}"
             SelectMethodToParseDatabase
             SetExitCode
 
             if GetPassExitCode; then
-                SetOptionsToImportDatabase || return "${?}"
+                SelectDatabaseFile || return "${?}"
                 DoesHostNotHaveExistingVFIOSetup || return "${?}"
                 SelectIOMMUGroups
                 IsParseSelectionValid || return "${?}"
@@ -38,14 +36,14 @@
                 # IsEnum "${4}" || return "${?}"    # NOTE: this validation is not necessary, as this will always work.
                 # IsEnum "${3}" || return "${?}"
                 # IsEnum "${2}" || return "${?}"
-                IsValidEnumOfIOMMUGroups "${1}" || return "${?}"
-                local -i REFERENCE="${1}"
+                # IsValidEnumOfIOMMUGroups "${1}" || return "${?}"
+                local -n REFERENCE="${1}"
                 local -n DRIVER_REFERENCE="${2}"
-                local -n VFIO_HWID_REFERENCE="${3}"
-                local -n STUB_HWID_REFERENCE="${4}"
+                local -n STUB_HWID_REFERENCE="${3}"
+                local -n VFIO_HWID_REFERENCE="${4}"
 
                 for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
-                    local -a DEVICE_LIST=$( eval "${_GET_DEVICES_FOR_IOMMU_GROUP}" )
+                    local -a DEVICE_LIST="$( eval "${_GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
                     for DEVICE in ${DEVICE_LIST[@]}; do
                         local DRIVER=""
@@ -53,7 +51,8 @@
                         SetDeviceDriver "${DEVICE}" "DRIVER"
                         SetDeviceHardwareID "${DEVICE}" "HWID"
 
-                        if [[ ! -z "${DRIVER}" ]]; then
+                        if [[ ! -z "${DRIVER}" ]] \
+                            && IsDeviceDriverNotExcluded "${DEVICE}"; then
                             DRIVER_REFERENCE+=( "${DRIVER}" )
                         fi
 
@@ -66,6 +65,12 @@
                         fi
                     done
                 done
+
+                IFS=$'\n'
+                DRIVER_REFERENCE=( $( sort -u <<<"${DRIVER_REFERENCE[*]}" ) )
+                STUB_HWID_REFERENCE=( $( sort -u <<<"${STUB_HWID_REFERENCE[*]}" ) )
+                VFIO_HWID_REFERENCE=( $( sort -u <<<"${VFIO_HWID_REFERENCE[*]}" ) )
+                unset IFS
 
                 if IsEmptyEnum "DRIVER_REFERENCE"; then
                     if IsEmptyEnum "STUB_HWID_REFERENCE" \
@@ -133,6 +138,7 @@
                 declare -g _DO_PARSE_DATABASE_FROM_CACHE=false
                 declare -g _DO_PARSE_DATABASE_FROM_FILE=false
                 declare -g _DO_PARSE_DATABASE_FROM_INTERNET=false
+                declare -g _DO_PARSE_DATABASE_FROM_XML=false
                 declare -g _HAS_ARG_PARSE_IOMMU=false
                 declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
                 declare -g _HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=false
@@ -178,6 +184,87 @@
             }
 
     # <summary> Private </summary
+        # <summary> Database </summary
+            function ExportParseDatabase
+            {
+                if [[ ! -z "${_DEFAULT_DATABASE_FILE}" ]] \
+                    && [[ ! -e "${_DEFAULT_DATABASE_FILE}" ]] \
+                    && ! sudo mkdir -p $( dirname "${_DEFAULT_DATABASE_FILE}" ) &> /dev/null; then
+                    echo -e "${_PREFIX_ERROR} Failed to create directory for database file."
+                    return 1
+                fi
+
+                if [[ ! -z "${_DEFAULT_DATABASE_FILE}" ]] \
+                    && [[ ! -e "${_DEFAULT_DATABASE_FILE}" ]] \
+                    && ! sudo touch "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
+                    echo -e "${_PREFIX_ERROR} Failed to create database file."
+                    return 1
+                fi
+
+                if "${_DO_PARSE_DATABASE_FROM_CACHE}" \
+                    && [[ ! -s "${_DEFAULT_DATABASE_FILE}" ]] \
+                    && ! lspci -x >> "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
+                    echo -e "${_PREFIX_ERROR} Failed to reference local database and save to file."
+                    return 1
+                fi
+
+                if "${_DO_PARSE_DATABASE_FROM_INTERNET}" \
+                    && [[ ! -s "${_DEFAULT_DATABASE_FILE}" ]] \
+                    && ! lspci -q -x >> "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
+                    echo -e "${_PREFIX_ERROR} Failed to reference online database and/or save to file."
+                    return 1
+                fi
+
+                if [[ -s "${_DEFAULT_DATABASE_FILE}" ]] \
+                    && ! lspci -F "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
+                    echo -e "${_PREFIX_ERROR} File is corrupt."
+                    return 1
+                fi
+
+                return 0
+            }
+
+            function ImportParseDatabase
+            {
+                if ! "${_DO_PARSE_DATABASE_FROM_INTERNET}" \
+                    && ! "${_DO_PARSE_DATABASE_FROM_FILE}"; then
+                    return 0
+                fi
+
+                local FILE=""
+
+                if [[ ! -s "${_DATABASE_FILE}" ]]; then
+                    FILE="${_DATABASE_FILE}"
+                elif [[ ! -s "${_DEFAULT_DATABASE_FILE}" ]]; then
+                    FILE="${_DEFAULT_DATABASE_FILE}"
+                else
+                    return 1
+                fi
+
+                if [[ ! -s "${FILE}" ]]; then
+                    return 1
+                fi
+
+                _PARSE_OPTIONS="-F ${FILE}"
+                return 0
+            }
+
+        # <summary> XML </summary
+            # function ExportParseXML
+            # {
+            #     return 1
+            # }
+
+            # function ImportParseXML
+            # {
+            #     return 1
+            # }
+
+            # function IsXMLValid
+            # {
+            #     return 1
+            # }
+
         # <summary> Local setters </summary>
             function SetDeviceClass
             {
@@ -195,7 +282,13 @@
                 [[ ! -z "${1}" ]] || return "${?}"
                 local DEVICE="${1}"
                 local -n REFERENCE="${2}"
-                REFERENCE="$( lspci ${_PARSE_OPTIONS} -ks "${DEVICE}" | grep -i "driver" | cut -d " " -f 5 )"
+
+                if ! "${_DO_PARSE_DATABASE_FROM_XML}"; then
+                    REFERENCE="$( lspci ${_PARSE_OPTIONS} -ks "${DEVICE}" | grep -i "driver" | cut -d " " -f 5 )"
+                # else
+                #     REFERENCE=""
+                fi
+
                 return 0
             }
 
@@ -229,21 +322,6 @@
                 return 0
             }
 
-            function SetFileForParseSelection
-            {
-                if "${_DO_PARSE_DATABASE_FROM_FILE}"; then
-                    return 0
-                fi
-
-                if [[ ! -e "${_DATABASE_FILE}" ]] \
-                    || [[ ! -s "${_DATABASE_FILE}" ]]; then
-                    echo -e "${_PREFIX_ERROR} File is not valid."
-                    return 1
-                fi
-
-                return 0
-            }
-
         # <summary> Device validation </summary>
             function IsDeviceNotBindedToVFIO
             {
@@ -270,6 +348,22 @@
                 fi
 
                 return 1
+            }
+
+            function IsDeviceDriverNotExcluded
+            {
+                [[ ! -z "${1}" ]] || return "${?}"
+                local DEVICE="${1}"
+                local DRIVER=""
+                SetDeviceDriver "${DEVICE}" "DRIVER"
+                IsDeviceExternal "${DEVICE}" || return 1
+
+                case "${DRIVER}" in
+                    *"snd_hda_intel"* )
+                        return 1 ;;
+                esac
+
+                return 0
             }
 
             # <note> Update here for devices' that benefit from pci-stub dummy driver. </note>
@@ -490,74 +584,93 @@
                 return 0
             }
 
-            function ExportParseDatabase
+            function SelectDatabaseFile
             {
-                if [[ ! -z "${_DEFAULT_DATABASE_FILE}" ]] \
-                    && [[ ! -e "${_DEFAULT_DATABASE_FILE}" ]] \
-                    && ! sudo mkdir -p $( dirname "${_DEFAULT_DATABASE_FILE}" ) &> /dev/null; then
-                    echo -e "${_PREFIX_ERROR} Failed to create directory for database file."
+                ExportParseDatabase || return "${?}"
+
+                if "${_DO_PARSE_DATABASE_FROM_CACHE}"; then
+                     _DATABASE_FILE="${_DEFAULT_DATABASE_FILE}"
+                else
+                    if "${_DO_PARSE_DATABASE_FROM_FILE}" ; then
+                        local OUTPUT="Enter filename to save database (leave blank for default): "
+                    else
+                        local OUTPUT="Enter filename to read database (leave blank for default): "
+                    fi
+
+                    for COUNT in $( seq 0 2 ); do
+                        read -r -p "${OUTPUT}" ANSWER
+
+                        if "${_DO_PARSE_DATABASE_FROM_FILE}"; then
+                            if [[ ! -z "${ANSWER}" ]] \
+                                && [[ ! -e "${ANSWER}" ]]; then
+                                echo -e "${_PREFIX_ERROR} File does not exist."
+                                continue
+                            fi
+
+                            if [[ ! -z "${ANSWER}" ]] \
+                                && [[ ! -s "${ANSWER}" ]]; then
+                                echo -e "${_PREFIX_ERROR} File is empty."
+                                continue
+                            fi
+                        else
+                            if [[ -z "${ANSWER}" ]]; then
+                                _DATABASE_FILE="${_DEFAULT_DATABASE_FILE}"
+                                break
+                            fi
+                        fi
+
+                        _DATABASE_FILE="${ANSWER}"
+                        return 0
+                    done
+                fi
+
+                if [[ "${_DEFAULT_DATABASE_FILE}" == "${_DEFAULT_DATABASE_FILE}" ]] \
+                    || cmp -s "${_DEFAULT_DATABASE_FILE}" "${_DATABASE_FILE}"; then
+                    echo -e "${_PREFIX_NOTE} Using default database file."
+                fi
+
+                if ! "${_DO_PARSE_DATABASE_FROM_CACHE}" \
+                    && ! lspci -i "${_DATABASE_FILE}" &> /dev/null; then
+                    echo -e "${_PREFIX_ERROR} Database file is not valid. Please try again with another option."
                     return 1
                 fi
 
-                if [[ ! -z "${_DEFAULT_DATABASE_FILE}" ]] \
-                    && [[ ! -e "${_DEFAULT_DATABASE_FILE}" ]] \
-                    && ! sudo touch "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
-                    echo -e "${_PREFIX_ERROR} Failed to create database file."
-                    return 1
-                fi
-
-                if "${_DO_PARSE_DATABASE_FROM_CACHE}" \
-                    && [[ ! -s "${_DEFAULT_DATABASE_FILE}" ]] \
-                    && ! lspci -x >> "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
-                    echo -e "${_PREFIX_ERROR} Failed to reference local database and save to file."
-                    return 1
-                fi
-
-                if "${_DO_PARSE_DATABASE_FROM_INTERNET}" \
-                    && [[ ! -s "${_DEFAULT_DATABASE_FILE}" ]] \
-                    && ! lspci -q -x >> "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
-                    echo -e "${_PREFIX_ERROR} Failed to reference online database and/or save to file."
-                    return 1
-                fi
-
-                if [[ -s "${_DEFAULT_DATABASE_FILE}" ]] \
-                    && ! lspci -F "${_DEFAULT_DATABASE_FILE}" &> /dev/null; then
-                    echo -e "${_PREFIX_ERROR} File is corrupt."
-                    return 1
-                fi
-
+                ImportParseDatabase || return "${?}"
                 return 0
             }
 
-            function SelectFileToExportDatabase
+            function SelectXMLFile
             {
-                if "${_DO_PARSE_DATABASE_FROM_FILE}"; then
-                    return 0
-                fi
+                ExportParseXML || return "${?}"
 
-                ExportParseDatabase || return "${?}"
-                read -r -p "Enter filename to read/write parsing of IOMMU groups (leave blank for default): " ANSWER
+                for COUNT in $( seq 0 2 ); do
+                        read -r -p "${OUTPUT}" ANSWER
 
-                # if [[ ! -z "${ANSWER}" ]] \
-                #     && [[ ! -e "${ANSWER}" ]]; then
-                #     echo -e "${_PREFIX_ERROR} File does not exist."
-                # fi
+                        if "${_DO_PARSE_DATABASE_FROM_FILE}"; then
+                            if [[ ! -z "${ANSWER}" ]] \
+                                && [[ ! -e "${ANSWER}" ]]; then
+                                echo -e "${_PREFIX_ERROR} File does not exist."
+                                continue
+                            fi
 
-                # if [[ ! -z "${ANSWER}" ]] \
-                #     && [[ ! -s "${ANSWER}" ]]; then
-                #     echo -e "${_PREFIX_ERROR} File is empty."
-                # fi
+                            if [[ ! -z "${ANSWER}" ]] \
+                                && [[ ! -s "${ANSWER}" ]]; then
+                                echo -e "${_PREFIX_ERROR} File is empty."
+                                continue
+                            fi
+                        else
+                            if [[ -z "${ANSWER}" ]]; then
+                                _DATABASE_FILE="${_DEFAULT_DATABASE_FILE}"
+                                break
+                            fi
+                        fi
 
-                if [[ ! -z "${ANSWER}" ]] \
-                    && [[ -e "${ANSWER}" ]] \
-                    && [[ -s "${ANSWER}" ]]; then
-                    echo -e "${_PREFIX_NOTE} File is not valid."
-                    _DATABASE_FILE="${ANSWER}"
-                    return 0
-                fi
+                        _DATABASE_FILE="${ANSWER}"
+                        return 0
+                    done
 
-                _DATABASE_FILE="${_DEFAULT_DATABASE_FILE}"
-                return 0
+                ImportParseXML || return "${?}"
+                return 1
             }
 
             function SelectIOMMUGroups
@@ -621,31 +734,6 @@
 
                 echo -e "${_PREFIX_ERROR} Failed to answer."
                 return 1
-            }
-
-            function SetOptionsToImportDatabase
-            {
-                if ! "${_DO_PARSE_DATABASE_FROM_INTERNET}" \
-                    && ! "${_DO_PARSE_DATABASE_FROM_FILE}"; then
-                    return 0
-                fi
-
-                local FILE=""
-
-                if [[ ! -s "${_DATABASE_FILE}" ]]; then
-                    FILE="${_DATABASE_FILE}"
-                elif [[ ! -s "${_DEFAULT_DATABASE_FILE}" ]]; then
-                    FILE="${_DEFAULT_DATABASE_FILE}"
-                else
-                    return 1
-                fi
-
-                if [[ ! -s "${FILE}" ]]; then
-                    return 1
-                fi
-
-                _PARSE_OPTIONS="-F ${FILE}"
-                return 0
             }
 
         # <summary> Presentation </summary>

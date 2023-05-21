@@ -79,9 +79,12 @@
             ExecuteParseSelection
 
             if GetPassExitCode; then
-                Main
+                if BackupFiles; then
+                    Main
+                fi
             else
                 GetExitCode
+                RestoreFiles || ( SetExitCode; GetExitCode )
             fi
 
             PrintSuffixPassOrFail "${OUTPUT}"
@@ -177,7 +180,7 @@
         # <summary> Execution </summary>
             function ExecuteMultibootSetup
             {
-                if ! "${_HAS_EXECUTED_BACKUPS}" \
+                if ! "${_HAS_RESTORED_DEFAULT_FILES}" \
                     || ! SetOutputForMultibootSetup \
                     || ! AskToSpecifyGRUBMenuEntryForMultibootSetup \
                     || ! WriteOutputForMultibootSetup \
@@ -190,7 +193,7 @@
 
             function ExecuteStaticSetup
             {
-                if ! "${_HAS_EXECUTED_BACKUPS}" \
+                if ! "${_HAS_RESTORED_DEFAULT_FILES}" \
                     || ! IsParseSelectionOfVGAValid \
                     || ! AskToSpecifyStaticSetup \
                     || ! SetOutputForStaticSetup \
@@ -204,7 +207,7 @@
 
             function ExecuteUninstallSetup
             {
-                if ! "${_HAS_EXECUTED_BACKUPS}" \
+                if ! "${_HAS_RESTORED_DEFAULT_FILES}" \
                     || ! ExecuteUpdateAfterSetup; then
                     echo -e "${_PREFIX_ERROR} Uninstall has failed."
                 fi
@@ -216,6 +219,28 @@
             {
                 UpdateGRUB || return 1
                 UpdateInitramfs || return 1
+                return 0
+            }
+
+            function BackupFiles
+            {
+                BackupFile "${_CUSTOM_GRUB_DEST_PATH}" || return 1
+                BackupFile "${_GRUB_DEST_PATH_1}" || return 1
+                BackupFile "${_INITRAMFS_MODULES_DEST_PATH}" || return 1
+                BackupFile "${_MODPROBE_BLACKLISTS_DEST_PATH}" || return 1
+                BackupFile "${_MODPROBE_VFIO_DEST_PATH}" || return 1
+                BackupFile "${_MODULES_DEST_PATH}" || return 1
+                return 0
+            }
+
+            function RestoreFiles
+            {
+                RestoreFile "${_CUSTOM_GRUB_DEST_PATH}" || return 1
+                RestoreFile "${_GRUB_DEST_PATH_1}" || return 1
+                RestoreFile "${_INITRAMFS_MODULES_DEST_PATH}" || return 1
+                RestoreFile "${_MODPROBE_BLACKLISTS_DEST_PATH}" || return 1
+                RestoreFile "${_MODPROBE_VFIO_DEST_PATH}" || return 1
+                RestoreFile "${_MODULES_DEST_PATH}" || return 1
                 return 0
             }
 
@@ -392,8 +417,9 @@
                 fi
 
                 for THIS_IOMMU_GROUP_ID in ${_IOMMU_GROUPS_FOR_VFIO_LIST[@]}; do
+                    DoesIOMMUGroupHaveVGADevice "${THIS_IOMMU_GROUP_ID}" &> /dev/null || continue
                     local -a DRIVER_LIST=( )
-                    local -a IOMMU_GROUPS_WITHOUT_THIS_VGA_LIST=( )
+                    local -a SELECTION_WITHOUT_THIS_GROUP_LIST=( )
                     local -a STUB_HWID_LIST=( )
                     local -a VFIO_HWID_LIST=( )
                     local LINE_GRUB_CMDLINE_TEMP=""
@@ -403,16 +429,13 @@
                     local THIS_VFIO_HWID_DELIM=""
 
                     for IOMMU_GROUP_ID in ${_IOMMU_GROUPS_FOR_VFIO_LIST[@]}; do
-                        if [[ "${IOMMU_GROUP_ID}" -ne "${THIS_IOMMU_GROUP_ID}" ]]; then
-                            IOMMU_GROUPS_WITHOUT_THIS_VGA_LIST+=( "${IOMMU_GROUP_ID}" )
+                        if [[ "${IOMMU_GROUP_ID}" != "${THIS_IOMMU_GROUP_ID}" ]]; then
+                            SELECTION_WITHOUT_THIS_GROUP_LIST+=( "${IOMMU_GROUP_ID}" )
                         fi
                     done
 
-                    DoesIOMMUGroupHaveVGADevice "${THIS_IOMMU_GROUP_ID}" &> /dev/null || continue
                     GetNameForFirstVGADeviceInIOMMUGroup "${THIS_IOMMU_GROUP_ID}" "THIS_IOMMU_GROUP_VGA_NAME" &> /dev/null
-                    GetListsForSelection "IOMMU_GROUPS_WITHOUT_THIS_VGA_LIST" "DRIVER_LIST" "STUB_HWID_LIST" "VFIO_HWID_LIST"
-
-                    # TODO: fix this function here.
+                    GetListsForSelection "SELECTION_WITHOUT_THIS_GROUP_LIST" "DRIVER_LIST" "STUB_HWID_LIST" "VFIO_HWID_LIST"
                     SetCommaDelimitedStringFromEnum "DRIVER_LIST" "THIS_DRIVER_DELIM"
                     SetCommaDelimitedStringFromEnum "STUB_HWID_LIST" "THIS_STUB_HWID_DELIM"
                     SetCommaDelimitedStringFromEnum "VFIO_HWID_LIST" "THIS_VFIO_HWID_DELIM"
@@ -420,8 +443,6 @@
                     LINE_GRUB_CMDLINE_TEMP+="pci_stub.ids=${THIS_STUB_HWID_DELIM} "
                     LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=${THIS_VFIO_HWID_DELIM} "
                     LINE_GRUB_CMDLINE_TEMP="${LINE_GRUB_CMDLINE_PREFIX}${LINE_GRUB_CMDLINE_TEMP::-1}"
-
-                    echo "LINE_GRUB_CMDLINE_TEMP == '$LINE_GRUB_CMDLINE_TEMP'"
                     SetThisMenuEntryForMultibootSetup "KERNELS_LIST" "${THIS_IOMMU_GROUP_ID}"
                 done
 
@@ -467,7 +488,7 @@
                     # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
                     local MENU_ENTRY_TITLE="$SYSTEM_DISTRO, with ${SYSTEM_OS} ${KERNEL} (VFIO, w/o IOMMU '${IOMMU_GROUP_ID}' w/ '${THIS_IOMMU_GROUP_VGA_NAME}')"
                     _MENU_ENTRY_TITLE_LIST+=( "${MENU_ENTRY_TITLE}" )
-                    SetPreferredGRUBMenuEntryForMultibootSetup "${IOMMU_GROUP_ID}" "${MENU_ENTRY_TITLE}" || return "${?}"
+                    SetPreferredGRUBMenuEntryForMultibootSetup "${IOMMU_GROUP_ID}" "${MENU_ENTRY_TITLE}"
 
                     _CUSTOM_GRUB_FILE_CONTENTS+=(
                         "menuentry \"${MENU_ENTRY_TITLE}\"{"
@@ -512,7 +533,7 @@
         # <summary> Write output </summary>
             function WriteOutputForMultibootSetup
             {
-                "${_HAS_EXECUTED_BACKUPS}" || return 1
+                "${_HAS_RESTORED_DEFAULT_FILES}" || return 1
                 IFS=$'\n'
                 local LINE_TO_MATCH="GRUB_DEFAULT="
 
@@ -541,7 +562,7 @@
             function WriteOutputForStaticSetup
             {
                 IFS=$'\n'
-                "${_HAS_EXECUTED_BACKUPS}" || return 1
+                "${_HAS_RESTORED_DEFAULT_FILES}" || return 1
                 local LINE_TO_MATCH="GRUB_CMDLINE_LINUX_DEFAULT="
                 local LINE_TO_REPLACE="${LINE_TO_MATCH}\"${_LINE_GRUB_CMDLINE_DEFAULT}\""
 

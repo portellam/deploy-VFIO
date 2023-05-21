@@ -49,6 +49,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 
           -h, --help        Print this help and exit.
           -q, --quiet       Reduce verbosity; print only relevant questions and status statements.
+          -u, --undo        Undo changes (restore files) if script has exited early or unexpectedly.
 
 #### Parse IOMMU groups
 

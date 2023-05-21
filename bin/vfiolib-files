@@ -13,13 +13,13 @@
 
 # <functions>
     # <summary> Public </summary>
-        function ExecuteBackups
+        function RestoreDefaultFiles
         {
             SetWorkingDirToBackupsFolder || return "${?}"
             GetFiles || return "${?}"
             SetFiles || return "${?}"
             CopyFilesToPaths || return "${?}"
-            _HAS_EXECUTED_BACKUPS=true
+            _HAS_RESTORED_DEFAULT_FILES=true
             return 0
         }
 
@@ -34,7 +34,8 @@
             declare -g _ARE_FILES_PARAMS_SET=true
 
             # <remarks> Execution Flags </remarks>
-            declare -g _HAS_EXECUTED_BACKUPS=false
+            declare -g _HAS_RESTORED_DEFAULT_FILES=false
+            declare -g _DO_UNDO_CHANGES=false
 
             # <summary> Files </summary>
                 # <remarks> Main </remarks>
@@ -128,17 +129,26 @@
             return 0
         }
 
-        function BackupFiles
+        function BackupAllFiles
         {
-            BackupFile "${_APPARMOR_QEMU_DEST_PATH}" || return 1
-            BackupFile "${_CUSTOM_GRUB_DEST_PATH}" || return 1
-            BackupFile "${_GRUB_DEST_PATH_1}" || return 1
-            BackupFile "${_INITRAMFS_MODULES_DEST_PATH}" || return 1
-            BackupFile "${_MODPROBE_BLACKLISTS_DEST_PATH}" || return 1
-            BackupFile "${_MODPROBE_VFIO_DEST_PATH}" || return 1
-            BackupFile "${_MODULES_DEST_PATH}" || return 1
-            BackupFile "${_QEMU_DEST_PATH}" || return 1
-            return 0
+            function Main
+            {
+                BackupFile "${_APPARMOR_QEMU_DEST_PATH}" || return "${?}"
+                BackupFile "${_CUSTOM_GRUB_DEST_PATH}" || return "${?}"
+                BackupFile "${_GRUB_DEST_PATH_1}" || return "${?}"
+                BackupFile "${_INITRAMFS_MODULES_DEST_PATH}" || return "${?}"
+                BackupFile "${_MODPROBE_BLACKLISTS_DEST_PATH}" || return "${?}"
+                BackupFile "${_MODPROBE_VFIO_DEST_PATH}" || return "${?}"
+                BackupFile "${_MODULES_DEST_PATH}" || return "${?}"
+                BackupFile "${_QEMU_DEST_PATH}" || return "${?}"
+                return 0
+            }
+
+            local OUTPUT="Executing backups...\t"
+            PrintSuffixWait "${OUTPUT}"
+            Main
+            PrintSuffixPassOrFail "${OUTPUT}"
+            return "${_LAST_EXIT_CODE}"
         }
 
         function CopyFilesToPaths
@@ -247,24 +257,33 @@
 
             if [[ -e "${1}${_SUFFIX_BACKUP}" ]] \
                 && ! sudo rm -f "${1}${_SUFFIX_BACKUP}" &> /dev/null; then
-                echo -e "${_PREFIX_ERROR} Failed to delete file '${1}'."
+                echo -e "${_PREFIX_ERROR} Failed to delete backup '${1}'."
                 return 1
             fi
 
             return 0
         }
 
-        function RestoreFiles
+        function RestoreAllFiles
         {
-            RestoreFile "${_APPARMOR_QEMU_DEST_PATH}" || return 1
-            RestoreFile "${_CUSTOM_GRUB_DEST_PATH}" || return 1
-            RestoreFile "${_GRUB_DEST_PATH_1}" || return 1
-            RestoreFile "${_INITRAMFS_MODULES_DEST_PATH}" || return 1
-            RestoreFile "${_MODPROBE_BLACKLISTS_DEST_PATH}" || return 1
-            RestoreFile "${_MODPROBE_VFIO_DEST_PATH}" || return 1
-            RestoreFile "${_MODULES_DEST_PATH}" || return 1
-            RestoreFile "${_QEMU_DEST_PATH}" || return 1
-            return 0
+            function Main
+            {
+                RestoreFile "${_APPARMOR_QEMU_DEST_PATH}" || return "${?}"
+                RestoreFile "${_CUSTOM_GRUB_DEST_PATH}" || return "${?}"
+                RestoreFile "${_GRUB_DEST_PATH_1}" || return "${?}"
+                RestoreFile "${_INITRAMFS_MODULES_DEST_PATH}" || return "${?}"
+                RestoreFile "${_MODPROBE_BLACKLISTS_DEST_PATH}" || return "${?}"
+                RestoreFile "${_MODPROBE_VFIO_DEST_PATH}" || return "${?}"
+                RestoreFile "${_MODULES_DEST_PATH}" || return "${?}"
+                RestoreFile "${_QEMU_DEST_PATH}" || return "${?}"
+                return 0
+            }
+
+            local OUTPUT="Undoing changes...\t"
+            PrintSuffixWait "${OUTPUT}"
+            Main
+            PrintSuffixPassOrFail "${OUTPUT}"
+            return "${_LAST_EXIT_CODE}"
         }
 
         function SetFilesForQEMU

@@ -21,8 +21,8 @@
     # <summary> Public </summary>
         function ExecuteUsage
         {
-            if ! GetOption "${@}" \
-                && GetHelp; then
+            if ! GetOptions "${@}" \
+                && PrintUsage; then
                 return "${?}"
             fi
 
@@ -229,7 +229,7 @@
             }
 
         # <summary> Options getters </summary>
-            function GetOption
+            function GetOptions
             {
                 if [[ -z "${@}" ]]; then
                     return 0
@@ -239,7 +239,7 @@
                     || [[ "${1}" =~ ^-- ]]; do
                     local -i ARGS_COUNT=0
 
-                    if ! GetThisOption "${@}"; then
+                    if ! GetOption "${@}"; then
                         return 1
                     fi
 
@@ -251,7 +251,7 @@
                 return 0
             }
 
-            function GetThisOption
+            function GetOption
             {
                 case "${1}" in
                     "-h" | "--help" )
@@ -260,6 +260,9 @@
 
                     "-q" | "--quiet" )
                         _IS_EXECUTION_QUIET=true ;;
+
+                    "-u" | "--undo" )
+                        _DO_UNDO_CHANGES=true ;;
 
                     # <remarks> Parse PCI for VFIO setup </remarks>
                     "-f" | "--file" )
@@ -390,6 +393,7 @@
                 "Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization and hardware passthrough.\n"
                 "  -h, --help\t\t\tPrint this help and exit."
                 "  -q, --quiet\t\t\tReduce verbosity; print only relevant questions and status statements."
+                "  -u, --undo\t\t\tUndo changes (restore files) if script has exited early or unexpectedly."
 
                 "\nSpecify the database to reference before parsing IOMMU groups.\nOPTIONS:"
                 "  -f, --file [ARGS]\t\tReference file database."

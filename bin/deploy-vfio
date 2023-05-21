@@ -2,7 +2,7 @@
 
 #
 # Filename:         deploy-vfio
-# Description:      Main executable.
+# Description:      Main executable. See README for details and usage.
 # Author(s):        Alex Portell <github.com/portellam>
 # Maintainer(s):    Alex Portell <github.com/portellam>
 #
@@ -11,79 +11,35 @@
     source vfiolib-all
 # </sources>
 
-# <params>
-    # <remarks> Feature Flags </remarks>
-    declare -g _FLAG_DO_EXECUTE_BACKUPS=true
-    declare -g _FLAG_DO_EXECUTE_PRE_SETUP=true
-    declare -g _FLAG_DO_EXECUTE_POST_SETUP=true
-    declare -g _FLAG_DO_SYSTEM_CHECK=true
-# </params>
-
 # <functions>
     function Main
     {
-        IsSudoUser || return 1
+        IsSudoUser          || return "${?}"
+        ExecuteUsage        || return "${?}"
 
-        # <remarks> Gather arguments. </remarks>
-        if ! GetOption "${@}"; then
-            GetHelp
+        if "${_DO_UNDO_CHANGES}"; then
+            RestoreAllFiles
             return "${?}"
         fi
 
-        if "${_FLAG_DO_SYSTEM_CHECK}" \
-            && ! GetLinuxDistro \
-            && ! IsSystemSupported; then
-            return 1
-        fi
+        GetLinuxDistro      || return "${?}"
+        IsSystemSupported   || return "${?}"
+        BackupAllFiles      || return "${?}"
+        RestoreDefaultFiles || return "${?}"
 
-        if "${_FLAG_DO_EXECUTE_BACKUPS}" \
-            && ! ExecuteBackups; then
-            exit "${?}"
-        fi
-
-        # <remarks> Exit early. </remarks>
         if "${_EXECUTE_VFIO_SETUP_UNINSTALL}"; then
             ExecuteMainSetup
             return "${?}"
         fi
 
-        if "${_FLAG_DO_EXECUTE_PRE_SETUP}" \
-            && ! ExecutePreSetup; then
-            return 1
-        fi
-
-        if ( GetPassExitCode \
-                || GetSkipExitCode ); then
-            ExecuteMainSetup
-
-            if ! GetPassExitCode \
-                && ! GetSkipExitCode; then
-                return 1
-            fi
-        fi
-
-        if "${_FLAG_DO_EXECUTE_POST_SETUP}" \
-            && ( GetPassExitCode \
-                || GetSkipExitCode ) \
-            && ! ExecutePostSetup; then
-            return 1
-        fi
-
-        return "${?}"
+        ExecutePreSetup     || return "${?}"
+        ExecuteMainSetup    || return "${?}"
+        ExecutePostSetup    || return "${?}"
+        return 0
     }
 # </functions>
 
 # <main>
-    if "${_FLAG_DO_EXECUTE_BACKUPS}"; then
-        BackupFiles || exit 1
-    fi
-
     Main "${@}"
-
-    if "${_FLAG_DO_EXECUTE_BACKUPS}" \
-        && GetPassExitCode; then
-        RestoreFiles || exit 1
-    fi
-
     exit "${?}"
 # </main>

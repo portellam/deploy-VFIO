@@ -270,7 +270,7 @@
 
             function SetCommaDelimitedStringFromEnum
             {
-                IsEnum "${1}" || return "${?}"
+                # IsEnum "${1}" || return "${?}"
                 local -n ENUM_REFERENCE="${1}"
                 local -n DELIM_REFERENCE="${2}"
 

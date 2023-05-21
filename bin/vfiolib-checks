@@ -39,7 +39,9 @@
                 return 1
             fi
 
-            if ! GetLibraries \
+            GetRequiredLibraries
+
+            if ! SetRequiredLibraries \
                 || ( ! AreRequiredLibrariesInstalled \
                     && ! InstallRequiredLibraries ); then
                 echo -e "${_PREFIX_ERROR} System is not supported in its current state."
@@ -135,8 +137,7 @@
                     "spice-protocol"
                     "spice-server-devel" )
 
-                SetLibraries
-                return "${?}"
+                return 0
             }
 
         # <summary> Local setters </summary>
@@ -219,7 +220,7 @@
         {
             if ! LC_ALL=C lscpu | grep Virtualization &> /dev/null \
                 && ! grep -E -q --color=auto 'vmx|svm|0xc0f' /proc/cpuinfo &> /dev/null; then
-                echo -e "${_PREFIX_ERROR} System does not support hardware virtualization."
+                echo -e "${_PREFIX_ERROR} System does not or cannot support hardware virtualization."
                 return 1
             fi
         }
