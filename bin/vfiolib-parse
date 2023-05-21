@@ -133,8 +133,8 @@
                 # <remarks> Parse arguments </remarks>
                 declare -gr _GET_PARSE_FROM_XML='echo "cat /*" | xmllint  --shell ${_XML_FILE} | grep -v "^/ >" | grep -Ev xml'
                 declare -g _PARSE_OPTIONS=""
-                declare -gr _DEFAULT_DATABASE_FILE="${_ETC_PATH}/vfiolib-parse.txt"
-                declare -gr _DEFAULT_XML_FILE="${_ETC_PATH}/vfiolib-parse.xml"
+                declare -gr _DEFAULT_DATABASE_FILE="${_BACKUPS_PATH}/parse.txt"
+                declare -gr _DEFAULT_XML_FILE="${_BACKUPS_PATH}/parse.xml"
                 declare -g _DATABASE_FILE=""
                 declare -g _XML_FILE="${_DEFAULT_XML_FILE}"
 
@@ -196,7 +196,7 @@
                 DoesHostNotHaveExistingVFIOSetup || return "${?}"
 
                 if [[ -z "${_DATABASE_FILE}" ]]; then
-                    echo -e "${_PREFIX_ERROR} Filename is invalid."
+                    echo -e "${_PREFIX_ERROR} Database filename is invalid."
                     return 1
                 fi
 
@@ -244,11 +244,6 @@
             {
                 local FILE="${1}"
 
-                if [[ -z "${1}" ]]; then
-                    echo -e "${_PREFIX_ERROR} Filename is invalid."
-                    return 1
-                fi
-
                 if [[ ! -e "${1}" ]]; then
                     echo -e "${_PREFIX_ERROR} Failed to find database file."
                     return 1
@@ -256,7 +251,7 @@
 
                 if [[ -s "${FILE}" ]] \
                     && ! lspci -F "${FILE}" &> /dev/null; then
-                    echo -e "${_PREFIX_ERROR} File is corrupt."
+                    echo -e "${_PREFIX_ERROR} Database file is corrupt."
                     return 1
                 fi
 
