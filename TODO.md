@@ -7,6 +7,9 @@
         - Looking Glass
         - Scream
 * Nice-to-haves:
+    * VGA BIOS dumping and prep for VFIO.
+        - Important for pre 2022/2021 NVIDIA firmware/drivers.
+        - Also important for early UEFI/late BIOS graphics devices.
     * Output information for virsh xml
         - Evdev
         - Isolcpu
