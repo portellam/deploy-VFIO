@@ -34,7 +34,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 * **Your desktop OS is [Supported](#Linux).**
 * **Securely run a [Legacy OS](#Legacy).**
 * **If it's greater control of your privacy you want...**
-    - Use *me_cleaner*.<sup>[1](#1: me_cleaner)</sup>
+    - Use *me_cleaner*.<sup>[1](#1)</sup>
 
 ## How-to
 ### To install script:
@@ -259,37 +259,37 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 
 ## References
 #### 1.
-<sub>**[source (GitHub)](https://github.com/corna/me_cleaner) |
+<sub>me_cleaner | **[source (GitHub)](https://github.com/corna/me_cleaner) |
 [source fork (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
 
 #### 2.
-<sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub>
+<sub>isolcpu | **[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub>
 
 #### 3.
-<sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
+<sub>hugepages | **[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
 
 #### 4.
-<sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
+<sub>evdev | **[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
 
 #### 5.
-<sub>**[source (GitHub)](https://github.com/portellam/auto-Xorg)**</sub>
+<sub> auto-Xorg | **[source (GitHub)](https://github.com/portellam/auto-Xorg)**</sub>
 
 #### 6.
-<sub>**[VFIO-Tools source (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)**</sub> |
-<sub>**[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub>
+<sub>libvirt hooks | **[VFIO-Tools source (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)** |
+**[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub>
 
 #### 7.
-<sub>**[source (GitHub)](https://github.com/foundObjects/zram-swap)**</sub> |
-<sub>**[lz4 source (GitHub)](https://github.com/lz4/lz4)**</sub> |
-<sub>**[package (Debian)](https://wiki.debian.org/ZRam)**</sub> |
-<sub>**[package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub> |
-<sub>**[benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
+<sub> zram-swap | **[source (GitHub)](https://github.com/foundObjects/zram-swap)** |
+**[lz4 source (GitHub)](https://github.com/lz4/lz4)** |
+**[package (Debian)](https://wiki.debian.org/ZRam)** |
+**[package (Arch)](https://aur.archlinux.org/packages/zramswap)** |
+**[benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
 
 #### 8.
-<sub>**[documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub>
+<sub> vfio | **[documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub>
 
 #### 9.
-<sub>**[Wikipedia](https://en.wikipedia.org/wiki/Video_Graphics_Array)**</sub>
+<sub> vga | **[Wikipedia](https://en.wikipedia.org/wiki/Video_Graphics_Array)**</sub>
 
 ## Disclaimer:
 Use at your own risk. Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
