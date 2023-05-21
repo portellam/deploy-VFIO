@@ -345,12 +345,6 @@
                     LINE_GRUB_CMDLINE_PREFIX+="${_LINE_GRUB_CMDLINE_HUGEPAGES} "
                 fi
 
-                for THIS_IOMMU_GROUP_ID in ${IOMMU_GROUPS_FOR_VFIO_LIST[@]}; do
-                    GetListsForSelection "${_IOMMU_GROUP_ID}" "DRIVER_LIST" "_THIS_STUB_HWID_LIST" "_THIS_VFIO_HWID_LIST" || continue
-                    SetCommaDelimitedStringFromEnum "DRIVER_LIST" "_DRIVER_DELIM"
-                    SetCommaDelimitedStringFromEnum "_THIS_STUB_HWID_LIST" "_STUB_HWID_DELIM"
-                    SetCommaDelimitedStringFromEnum "_THIS_VFIO_HWID_LIST" "_VFIO_HWID_DELIM"
-                done
                 GetListsForSelection "IOMMU_GROUPS_FOR_VFIO_LIST" "DRIVER_LIST" "_THIS_STUB_HWID_LIST" "_THIS_VFIO_HWID_LIST" || continue
                 SetCommaDelimitedStringFromEnum "DRIVER_LIST" "_DRIVER_DELIM"
                 SetCommaDelimitedStringFromEnum "_THIS_STUB_HWID_LIST" "_STUB_HWID_DELIM"
@@ -438,6 +432,7 @@
                         fi
                     done
 
+                    GetNameForFirstVGADeviceInIOMMUGroup "${THIS_IOMMU_GROUP_ID}" "THIS_IOMMU_GROUP_VGA_NAME" &> /dev/null
                     GetListsForSelection "SELECTION_WITHOUT_THIS_GROUP_LIST" "DRIVER_LIST" "STUB_HWID_LIST" "VFIO_HWID_LIST"
                     SetCommaDelimitedStringFromEnum "DRIVER_LIST" "THIS_DRIVER_DELIM"
                     SetCommaDelimitedStringFromEnum "STUB_HWID_LIST" "THIS_STUB_HWID_DELIM"
