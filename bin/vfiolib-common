@@ -268,6 +268,23 @@
                 return "${?}"
             }
 
+            function SetCommaDelimitedStringFromEnum
+            {
+                IsEnum "${1}" || return "${?}"
+                local -n ENUM_REFERENCE="${1}"
+                local -n DELIM_REFERENCE="${2}"
+
+                for VALUE in ${ENUM_REFERENCE[@]}; do
+                    DELIM_REFERENCE+="${VALUE},"
+                done
+
+                if [[ ${DELIM_REFERENCE: -1} == "," ]]; then
+                    DELIM_REFERENCE="${DELIM_REFERENCE::-1}"
+                fi
+
+                return 0
+            }
+
         # <summary> Interaction </summary>
             function AskToExecuteOrSkip
             {

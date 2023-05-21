@@ -114,7 +114,7 @@
             # <remarks> File output: Multiboot VFIO with GRUB </remarks>
             declare -g _PREFERRED_MENU_ENTRY_TITLE=""
             declare -ga _CUSTOM_GRUB_FILE_CONTENTS=( )
-            declare -ga _MENU_ENTRY_TITLE_LIST=( )
+            declare -ga _MENU_ENTRY_TITLE_LIST=( "" )
 
             # <remarks> Execution Flags </remarks>
             declare -g _ASK_TO_EXECUTE_VFIO_SETUP=true
@@ -178,8 +178,8 @@
             function ExecuteMultibootSetup
             {
                 if ! "${_HAS_EXECUTED_BACKUPS}" \
-                    || ! IsParseSelectionOfVGAValid \
                     || ! SetOutputForMultibootSetup \
+                    || ! AskToSpecifyGRUBMenuEntryForMultibootSetup \
                     || ! WriteOutputForMultibootSetup \
                     || ! ExecuteUpdateAfterSetup; then
                     return 1
@@ -191,7 +191,7 @@
             function ExecuteStaticSetup
             {
                 if ! "${_HAS_EXECUTED_BACKUPS}" \
-                    || ! DoesHostHaveVGADevicesAfterVFIOSetup \
+                    || ! IsParseSelectionOfVGAValid \
                     || ! AskToSpecifyStaticSetup \
                     || ! SetOutputForStaticSetup \
                     || ! WriteOutputForStaticSetup \
@@ -229,8 +229,7 @@
                     return 0
                 fi
 
-                local -a INDEX_LIST=( "${!_MENU_ENTRY_TITLE_LIST[@]}" )
-                local -i LAST_INDEX="${INDEX_LIST[-1]}"
+                local -i LAST_INDEX=$(( ${#_MENU_ENTRY_TITLE_LIST[@]} - 1 ))
 
                 for COUNT in $( seq 0 2 ); do
                     echo -e "\nList of valid GRUB menu entries:"
@@ -289,12 +288,15 @@
             function PrintListOfGRUBMenuEntry
             {
                 for KEY in "${!_MENU_ENTRY_TITLE_LIST[@]}"; do
+                    local VALUE="${_MENU_ENTRY_TITLE_LIST[${KEY}]}"
                     echo -en "${KEY}:\t"
 
-                    if [[ "${KEY}" -gt 0 ]]; then
-                        echo -e "\"${_MENU_ENTRY_TITLE_LIST[${KEY}]}\""
+                    if [[ "${KEY}" -eq 0 ]] \
+                        && [[ -z "${VALUE}" ]]; then
+                        VALUE="Default: no VFIO setup"
+                        echo -e "${VALUE}"
                     else
-                        echo -e "Default (no VFIO setup)"
+                        echo -e "\"${VALUE}\""
                     fi
                 done
 
@@ -320,9 +322,9 @@
 
                 for THIS_IOMMU_GROUP_ID in ${IOMMU_GROUPS_FOR_VFIO_LIST[@]}; do
                     GetListsForSelection "${_IOMMU_GROUP_ID}" "DRIVER_LIST" "_THIS_STUB_HWID_LIST" "_THIS_VFIO_HWID_LIST" || continue
-                    GetCommaDelimitedStringFromEnum "DRIVER_LIST" "_DRIVER_DELIM"
-                    GetCommaDelimitedStringFromEnum "_THIS_STUB_HWID_LIST" "_STUB_HWID_DELIM"
-                    GetCommaDelimitedStringFromEnum "_THIS_VFIO_HWID_LIST" "_VFIO_HWID_DELIM"
+                    SetCommaDelimitedStringFromEnum "DRIVER_LIST" "_DRIVER_DELIM"
+                    SetCommaDelimitedStringFromEnum "_THIS_STUB_HWID_LIST" "_STUB_HWID_DELIM"
+                    SetCommaDelimitedStringFromEnum "_THIS_VFIO_HWID_LIST" "_VFIO_HWID_DELIM"
                 done
 
                 if IsEnum "DRIVER_LIST" \
@@ -389,7 +391,7 @@
                     LINE_GRUB_CMDLINE_PREFIX+="${_LINE_GRUB_CMDLINE_HUGEPAGES} "
                 fi
 
-                for THIS_IOMMU_GROUP_ID in ${IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST[@]}; do
+                for THIS_IOMMU_GROUP_ID in ${_IOMMU_GROUPS_FOR_VFIO_LIST[@]}; do
                     local -a DRIVER_LIST=( )
                     local -a IOMMU_GROUPS_WITHOUT_THIS_VGA_LIST=( )
                     local -a STUB_HWID_LIST=( )
@@ -400,25 +402,30 @@
                     local THIS_STUB_HWID_DELIM=""
                     local THIS_VFIO_HWID_DELIM=""
 
-                    for IOMMU_GROUP_ID in ${IOMMU_GROUPS_FOR_VFIO_LIST[@]}; do
-                        if AreNotEqual "${IOMMU_GROUP_ID}" "${THIS_IOMMU_GROUP_ID}"; then
+                    for IOMMU_GROUP_ID in ${_IOMMU_GROUPS_FOR_VFIO_LIST[@]}; do
+                        if [[ "${IOMMU_GROUP_ID}" -ne "${THIS_IOMMU_GROUP_ID}" ]]; then
                             IOMMU_GROUPS_WITHOUT_THIS_VGA_LIST+=( "${IOMMU_GROUP_ID}" )
                         fi
                     done
 
-                    GetNameForFirstVGADeviceInIOMMUGroup "${THIS_IOMMU_GROUP_ID}" "THIS_IOMMU_GROUP_VGA_NAME"
-                    GetListsForSelection "${_IOMMU_GROUP_ID}" "DRIVER_LIST" "STUB_HWID_LIST" "VFIO_HWID_LIST" || continue
-                    GetCommaDelimitedStringFromEnum "DRIVER_LIST" "THIS_DRIVER_DELIM"
-                    GetCommaDelimitedStringFromEnum "STUB_HWID_LIST" "THIS_STUB_HWID_DELIM"
-                    GetCommaDelimitedStringFromEnum "VFIO_HWID_LIST" "THIS_VFIO_HWID_DELIM"
+                    DoesIOMMUGroupHaveVGADevice "${THIS_IOMMU_GROUP_ID}" &> /dev/null || continue
+                    GetNameForFirstVGADeviceInIOMMUGroup "${THIS_IOMMU_GROUP_ID}" "THIS_IOMMU_GROUP_VGA_NAME" &> /dev/null
+                    GetListsForSelection "IOMMU_GROUPS_WITHOUT_THIS_VGA_LIST" "DRIVER_LIST" "STUB_HWID_LIST" "VFIO_HWID_LIST"
+
+                    # TODO: fix this function here.
+                    SetCommaDelimitedStringFromEnum "DRIVER_LIST" "THIS_DRIVER_DELIM"
+                    SetCommaDelimitedStringFromEnum "STUB_HWID_LIST" "THIS_STUB_HWID_DELIM"
+                    SetCommaDelimitedStringFromEnum "VFIO_HWID_LIST" "THIS_VFIO_HWID_DELIM"
                     LINE_GRUB_CMDLINE_TEMP+="modprobe.blacklist=${THIS_DRIVER_DELIM} "
                     LINE_GRUB_CMDLINE_TEMP+="pci_stub.ids=${THIS_STUB_HWID_DELIM} "
                     LINE_GRUB_CMDLINE_TEMP+="vfio_pci.ids=${THIS_VFIO_HWID_DELIM} "
                     LINE_GRUB_CMDLINE_TEMP="${LINE_GRUB_CMDLINE_PREFIX}${LINE_GRUB_CMDLINE_TEMP::-1}"
-                    SetThisMenuEntryForMultibootSetup
+
+                    echo "LINE_GRUB_CMDLINE_TEMP == '$LINE_GRUB_CMDLINE_TEMP'"
+                    SetThisMenuEntryForMultibootSetup "KERNELS_LIST" "${THIS_IOMMU_GROUP_ID}"
                 done
 
-                if IsEnum "_CUSTOM_GRUB_FILE_CONTENTS"; then
+                if ! IsEnum "_CUSTOM_GRUB_FILE_CONTENTS"; then
                     echo -e "${_PREFIX_ERROR} Multiboot setup output is empty."
                     return 1
                 fi
@@ -428,21 +435,24 @@
 
             function SetPreferredGRUBMenuEntryForMultibootSetup
             {
+                local MENU_ENTRY_TITLE="${1}"
+                local IOMMU_GROUP_ID="${2}"
+
                 if [[ ! -z "${_PREFERRED_MENU_ENTRY_TITLE}" ]]; then
                     return 0
                 fi
 
                 if "${_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_FIRST}" \
-                    && [[ "${1}" -eq 1 ]]; then
-                    _PREFERRED_MENU_ENTRY_TITLE="${2}"
+                    && [[ "${IOMMU_GROUP_ID}" -eq 1 ]]; then
+                    _PREFERRED_MENU_ENTRY_TITLE="${MENU_ENTRY_TITLE}"
 
                 elif "${_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE}" \
-                    && [[ "${1}" -eq "${_MULTIBOOT_PREFERRED_IOMMU_GROUP_ID}" ]]; then
-                    _PREFERRED_MENU_ENTRY_TITLE="${2}"
+                    && [[ "${IOMMU_GROUP_ID}" -eq "${_MULTIBOOT_PREFERRED_IOMMU_GROUP_ID}" ]]; then
+                    _PREFERRED_MENU_ENTRY_TITLE="${MENU_ENTRY_TITLE}"
 
                 elif "${_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_LAST}" \
-                    && [[ "${1}" -eq "${#_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[-1]}" ]]; then
-                    _PREFERRED_MENU_ENTRY_TITLE="${2}"
+                    && [[ "${IOMMU_GROUP_ID}" -eq "${#_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[-1]}" ]]; then
+                    _PREFERRED_MENU_ENTRY_TITLE="${MENU_ENTRY_TITLE}"
                 fi
 
                 return 0
@@ -450,11 +460,14 @@
 
             function SetThisMenuEntryForMultibootSetup
             {
-                for KERNEL in ${KERNELS_LIST[@]}; do
+                local -n REFERENCE="${1}"
+                local IOMMU_GROUP_ID="${2}"
+
+                for KERNEL in ${REFERENCE[@]}; do
                     # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
-                    local MENU_ENTRY_TITLE="$SYSTEM_DISTRO, with ${SYSTEM_OS} ${KERNEL} (VFIO, w/o IOMMU '${1}' w/ '${THIS_IOMMU_GROUP_VGA_NAME}')"
+                    local MENU_ENTRY_TITLE="$SYSTEM_DISTRO, with ${SYSTEM_OS} ${KERNEL} (VFIO, w/o IOMMU '${IOMMU_GROUP_ID}' w/ '${THIS_IOMMU_GROUP_VGA_NAME}')"
                     _MENU_ENTRY_TITLE_LIST+=( "${MENU_ENTRY_TITLE}" )
-                    SetPreferredGRUBMenuEntryForMultibootSetup "${1}" "${MENU_ENTRY_TITLE}"
+                    SetPreferredGRUBMenuEntryForMultibootSetup "${IOMMU_GROUP_ID}" "${MENU_ENTRY_TITLE}" || return "${?}"
 
                     _CUSTOM_GRUB_FILE_CONTENTS+=(
                         "menuentry \"${MENU_ENTRY_TITLE}\"{"
@@ -468,7 +481,7 @@
                         "\techo    'Loading ${SYSTEM_OS} ${KERNEL} ...'"
                         "\tlinux   /boot/vmlinuz-${KERNEL} root=UUID=${SYSTEM_UUID} ${LINE_GRUB_CMDLINE_TEMP}"
                         "\tinitrd  /boot/initrd.img-${KERNEL}"
-                        "\techo    \"VFIO, w/o IOMMU '${1}' w/ '${THIS_IOMMU_GROUP_VGA_NAME}'\""
+                        "\techo    \"VFIO, w/o IOMMU '${IOMMU_GROUP_ID}' w/ '${THIS_IOMMU_GROUP_VGA_NAME}'\""
                         "}"
                         ""
                     )
@@ -500,7 +513,6 @@
             function WriteOutputForMultibootSetup
             {
                 "${_HAS_EXECUTED_BACKUPS}" || return 1
-                AskToSpecifyGRUBMenuEntryForMultibootSetup || return 1
                 IFS=$'\n'
                 local LINE_TO_MATCH="GRUB_DEFAULT="
 

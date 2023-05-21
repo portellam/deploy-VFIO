@@ -23,10 +23,9 @@
 
             if GetPassExitCode; then
                 SetOptionsToImportDatabase || return "${?}"
-                DoesHostHaveExistingVFIOSetup || return "${?}"
+                DoesHostNotHaveExistingVFIOSetup || return "${?}"
                 SelectIOMMUGroups
                 IsParseSelectionValid || return "${?}"
-                DoesHostHaveVGADevicesAfterVFIOSetup || return "${?}"
                 return 0
             fi
 
@@ -36,17 +35,17 @@
         # <summary> Global getters </summary>
             function GetListsForSelection
             {
-                IsEnum "${4}" || return "${?}"
-                IsEnum "${3}" || return "${?}"
-                IsEnum "${2}" || return "${?}"
+                # IsEnum "${4}" || return "${?}"    # NOTE: this validation is not necessary, as this will always work.
+                # IsEnum "${3}" || return "${?}"
+                # IsEnum "${2}" || return "${?}"
                 IsValidEnumOfIOMMUGroups "${1}" || return "${?}"
-                local -i IOMMU_GROUP_ID_REFERENCE="${1}"
+                local -i REFERENCE="${1}"
                 local -n DRIVER_REFERENCE="${2}"
                 local -n VFIO_HWID_REFERENCE="${3}"
                 local -n STUB_HWID_REFERENCE="${4}"
 
-                for IOMMU_GROUP_ID in ${IOMMU_GROUP_ID_REFERENCE[@]}; do
-                    local -a DEVICE_LIST=$( eval _GET_DEVICES_FOR_IOMMU_GROUP )
+                for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
+                    local -a DEVICE_LIST=$( eval "${_GET_DEVICES_FOR_IOMMU_GROUP}" )
 
                     for DEVICE in ${DEVICE_LIST[@]}; do
                         local DRIVER=""
@@ -58,24 +57,23 @@
                             DRIVER_REFERENCE+=( "${DRIVER}" )
                         fi
 
-                        if [[ ! -z "${HWID}" ]] && \
-                            IsDeviceForPCISTUB "${DEVICE}"; then
-                            STUB_HWID_REFERENCE+=( "${HWID}" )
-                        fi
-
-                        if [[ ! -z "${HWID}" ]] && \
-                            ! IsDeviceForPCISTUB "${DEVICE}"; then
-                            VFIO_HWID_REFERENCE+=( "${HWID}" )
+                        if [[ ! -z "${HWID}" ]]; then
+                            if IsDeviceForPCISTUB "${DEVICE}"; then
+                                STUB_HWID_REFERENCE+=( "${HWID}" )
+                            else
+                                VFIO_HWID_REFERENCE+=( "${HWID}" )
+                            fi
                         fi
                     done
                 done
 
                 if IsEmptyEnum "DRIVER_REFERENCE"; then
-                    if ! IsEmptyEnum "STUB_HWID_REFERENCE" \
-                        || ! IsEmptyEnum "VFIO_HWID_REFERENCE"; then
+                    if IsEmptyEnum "STUB_HWID_REFERENCE" \
+                        && IsEmptyEnum "VFIO_HWID_REFERENCE"; then
                         return 0
                     fi
 
+                    echo -e "${_PREFIX_ERROR} No drivers or hardware IDs found for selection."
                     return 1
                 fi
 
@@ -89,17 +87,17 @@
                 local -i IOMMU_GROUP_ID="${1}"
                 local -n DEVICE_NAME="${2}"
                 local -a DEVICE_LIST="$( eval "${_GET_DEVICES_FOR_IOMMU_GROUP}" )"
+                local NAME=""
 
                 for DEVICE in ${DEVICE_LIST[@]}; do
                     if ! IsDeviceVGA "${DEVICE}"; then
                         continue
                     fi
 
-                    local NAME=""
-                    SetDeviceName "NAME" && break
+                    SetDeviceName "${DEVICE}" "NAME" && break
                 done
 
-                if [[ -z ${NAME} ]]; then
+                if [[ -z "${NAME}" ]]; then
                     echo -e "${_PREFIX_ERROR} Failed to find device name of any VGA device in IOMMU group '${IOMMU_GROUP_ID}'."
                     return 1
                 fi
@@ -121,9 +119,9 @@
                 # <remarks> IOMMU groups lists and validation. </remarks>
                 declare -gr _GET_DEVICES_FOR_IOMMU_GROUP='ls /sys/kernel/iommu_groups/${IOMMU_GROUP_ID}/devices/'
                 declare -ga _IOMMU_GROUP_ID_LIST=( $( ls /sys/kernel/iommu_groups/ | sort -n ) )
-                declare -ga _IOMMU_GROUPS_FOR_HOST_LIST=()
-                declare -ga _IOMMU_GROUPS_FOR_VFIO_LIST=()
-                declare -ga _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST=()
+                declare -ga _IOMMU_GROUPS_FOR_HOST_LIST=( )
+                declare -ga _IOMMU_GROUPS_FOR_VFIO_LIST=( )
+                declare -ga _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST=( )
                 declare -gr _REGEX_DOMAIN_ID='^[0-9A-F][1-9A-F]$'
 
                 # <remarks> Parse arguments </remarks>
@@ -170,7 +168,8 @@
 
             function IsParseSelectionOfVGAValid
             {
-                if ! IsValidEnumOfIOMMUGroups "_IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST"; then
+                if ! "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}" \
+                    && ! IsValidEnumOfIOMMUGroups "_IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST"; then
                     echo -e "${_PREFIX_ERROR} No groups with VGA devices selected."
                     return 1
                 fi
@@ -246,7 +245,7 @@
             }
 
         # <summary> Device validation </summary>
-            function IsDeviceBindedToVFIO
+            function IsDeviceNotBindedToVFIO
             {
                 [[ ! -z "${1}" ]] || return "${?}"
                 local DEVICE="${1}"
@@ -254,10 +253,10 @@
 
                 case "${DRIVER}" in
                     *"vfio-pci"* | *"vfio"* )
-                        return 0 ;;
+                        return 1 ;;
                 esac
 
-                return 1
+                return 0
             }
 
             function IsDeviceExternal
@@ -290,12 +289,12 @@
 
             function IsDeviceVGA
             {
-                [[ ! -z "${1}" ]] || return "${?}"
+                [[ ! -z "${1}" ]] || return 1
                 local DEVICE="${1}"
                 local -l CLASS="$( lspci ${_PARSE_OPTIONS} -ms ${DEVICE} | cut -d '"' -f 2 )"
 
                 case "${CLASS}" in
-                    *"vga"* | *"graphic"* )
+                    *"vga"* | *"graphic"* | *"display"* )
                         return 0 ;;
                 esac
 
@@ -408,6 +407,21 @@
                 return 1
             }
 
+            function DoesListHaveVGADevice
+            {
+                local -n REFERENCE="${1}"
+
+                if [[ "${#REFERENCE[@]}" -eq 0 ]]; then
+                    return 1
+                fi
+
+                for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
+                    DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}" &> /dev/null && return 0
+                done
+
+                return 1
+            }
+
             function IsIOMMUGroupNotBindedToVFIO
             {
                 IsInt "${1}" || return "${?}"
@@ -415,7 +429,7 @@
                 local -a DEVICE_LIST="$( eval "${_GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
                 for DEVICE in ${DEVICE_LIST[@]}; do
-                    IsDeviceBindedToVFIO "${DEVICE}" || return 1
+                    IsDeviceNotBindedToVFIO "${DEVICE}" || return 1
                 done
 
                 return 0
@@ -444,30 +458,9 @@
             }
 
         # <summary> Host validation </summary>
-            function DoesHostHaveVGADevicesAfterVFIOSetup
+            function DoesHostNotHaveExistingVFIOSetup
             {
-                local VALIDATE_VFIO_LIST=false
-                IsBool "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}" && VALIDATE_VFIO_LIST=true
-
-                if ! "$VALIDATE_VFIO_LIST"; then
-                    return 0
-                fi
-
-                local -n REFERENCE="_IOMMU_GROUPS_FOR_HOST_LIST"
-
-                for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
-                    DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}" &> /dev/null && return 0
-                done
-
-                echo -e "${_PREFIX_ERROR} No VGA devices allocated for host."
-                return 1
-            }
-
-            function DoesHostHaveExistingVFIOSetup
-            {
-                local -n REFERENCE="_IOMMU_GROUP_ID_LIST"
-
-                for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
+                for IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST[@]}; do
                     if ! IsIOMMUGroupNotBindedToVFIO "${IOMMU_GROUP_ID}"; then
                         echo -e "${_PREFIX_ERROR} Detected existing VFIO setup."
                         return 1
