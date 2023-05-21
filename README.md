@@ -34,7 +34,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 * **Your desktop OS is [Supported](#Linux).**
 * **Securely run a [Legacy OS](#Legacy).**
 * **If it's greater control of your privacy you want...**
-    - Use *me_cleaner*.<sup>[1](#1)</sup>
+    - Use *me_cleaner*.<sup>[1](#1: me_cleaner)</sup>
 
 ## How-to
 ### To install:
@@ -49,6 +49,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 
           -h, --help        Print this help and exit.
           -q, --quiet       Reduce verbosity; print only relevant questions and status statements.
+          -u, --undo        Undo changes (restore files) if script has exited early or unexpectedly.
 
 #### Parse IOMMU groups
 
@@ -57,12 +58,13 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
           -f, --file [ARGS]             Reference file database.
           -i, --internal                Reference local database.
           -o, --online                  Reference online database.
+          -x, --xml                     Cross-reference XML file. Execute once to export, prior to import. Import if VFIO setup exists, to grab valid drivers.
 
         ARGUMENTS: *
           [filename]                    Reference specific file.
 
           Example:
-            -f some_file.txt            Reference file 'some_file.txt'.
+            -f database.txt             Reference file 'database.txt'.
 
         Specify the IOMMU groups to parse.
         OPTIONS:
@@ -191,12 +193,12 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
     - Implementation is known as *zram-swap*.<sup>[7](#7)</sup>
 
 ## Information
-### Files and paths modified by *deploy-VFIO*:
-#### Pre-setup
+### Filenames and pathnames modified by *deploy-VFIO*:
+#### Pre-setup files
 - */etc/apparmor.d/local/abstractions/libvirt-qemu*
 - */etc/libvirt/qemu.conf*
 
-#### VFIO setup
+#### VFIO setup files
 - */etc/default/grub*
 - */etc/grub.d/proxifiedScripts/custom*
 - */etc/initramfs-tools/modules*
@@ -204,14 +206,14 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 - */etc/modprobe.d/vfio.conf*
 - */etc/modules*
 
-#### Post-setup
+#### Post-setup paths
 - */etc/libvirt/hooks/\**
 - */usr/local/bin/\**
 - */etc/systemd/system/\**
 
-#### Source code and files
+#### Paths for source binaries and files
 - */usr/local/bin/\**
-- */usr/local/etc/\**
+- */usr/local/etc/vfiolib.d\**
 
 ### VFIO?
 Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.*<sup>[8](#8)</sup>
@@ -252,56 +254,38 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 *If UEFI is enabled (and CSM/BIOS is disabled), BIOS-only VGA devices may not be available as Host video output; BIOS-only VGA devices may only be available explicitly for hardware passthrough.*
 
 ## References
-#### [1]
-| me_cleaner                                                                   |
-| ---------------------------------------------------------------------------- |
-| <sub>**[source (GitHub)](https://github.com/corna/me_cleaner)**</sub>        |
-| <sub>**[source fork (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub> |
+#### 1.
+<sub>**[source (GitHub)](https://github.com/corna/me_cleaner) |
+[source fork (GitHub)](https://github.com/dt-zero/me_cleaner)**</sub>
 
-#### [2]
-| isolcpu                                                                                           |
-| ------------------------------------------------------------------------------------------------- |
-| <sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub> |
+#### 2.
+<sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning)**</sub>
 
-#### [3]
-| Hugepages                                                                                               |
-| ------------------------------------------------------------------------------------------------------- |
-| <sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub> |
+#### 3.
+<sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
 
-#### [4]
-| Evdev                                                                                                                  |
-| ---------------------------------------------------------------------------------------------------------------------- |
-| <sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub> |
+#### 4.
+<sub>**[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
 
-#### [5]
-| auto-Xorg                                                                |
-| ------------------------------------------------------------------------ |
-| <sub>**[source (GitHub)](https://github.com/portellam/auto-Xorg)**</sub> |
+#### 5.
+<sub>**[source (GitHub)](https://github.com/portellam/auto-Xorg)**</sub>
 
-#### [6]
-| Libvirt hooks                                                                                                                                             |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <sub>**[VFIO-Tools source (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)**</sub>                                                                |
-| <sub>**[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub> |
+#### 6.
+<sub>**[VFIO-Tools source (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)**</sub> |
+<sub>**[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub>
 
-#### [7]
-| zram-swap                                                                                                                                                    |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| <sub>**[source (GitHub)](https://github.com/foundObjects/zram-swap)**</sub>                                                                                  |
-| <sub>**[lz4 source (GitHub)](https://github.com/lz4/lz4)**</sub>                                                                                             |
-| <sub>**[package (Debian)](https://wiki.debian.org/ZRam)**</sub>                                                                                              |
-| <sub>**[package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub>                                                                                 |
-| <sub>**[benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub> |
+#### 7.
+<sub>**[source (GitHub)](https://github.com/foundObjects/zram-swap)**</sub> |
+<sub>**[lz4 source (GitHub)](https://github.com/lz4/lz4)**</sub> |
+<sub>**[package (Debian)](https://wiki.debian.org/ZRam)**</sub> |
+<sub>**[package (Arch)](https://aur.archlinux.org/packages/zramswap)**</sub> |
+<sub>**[benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
 
-#### [8]
-| VFIO                                                                                                                                                                 |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <sub>**[documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub> |
+#### 8.
+<sub>**[documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub>
 
-#### [9]
-| VGA                                                                            |
-| ------------------------------------------------------------------------------ |
-| <sub>**[Wikipedia](https://en.wikipedia.org/wiki/Video_Graphics_Array)**</sub> |
+#### 9.
+<sub>**[Wikipedia](https://en.wikipedia.org/wiki/Video_Graphics_Array)**</sub>
 
 ## Disclaimer:
 Use at your own risk. Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
