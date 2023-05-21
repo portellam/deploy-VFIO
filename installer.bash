@@ -39,7 +39,7 @@
 
                 "-h" | "--help" | * )
                     PrintUsage
-                    exit 1 ;;
+                    return 1 ;;
             esac
 
             return 0
@@ -51,6 +51,8 @@
                 echo -e "${_PREFIX_ERROR} User is not sudo/root."
                 return 1
             fi
+
+            GetOption "${1}" || return 1
 
             local BIN_DEST_PATH="/usr/local/bin/"
             local BIN_SOURCE_PATH="bin"
@@ -220,7 +222,6 @@
 # </functions>
 
 # <main>
-    GetOption "${1}"
-    Main
+    Main "${1}"
     exit "${?}"
 # </main>
