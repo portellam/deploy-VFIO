@@ -193,12 +193,12 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
     - Implementation is known as *zram-swap*.<sup>[7](#7)</sup>
 
 ## Information
-### Files and paths modified by *deploy-VFIO*:
-#### Pre-setup
+### Filenames and pathnames modified by *deploy-VFIO*:
+#### Pre-setup files
 - */etc/apparmor.d/local/abstractions/libvirt-qemu*
 - */etc/libvirt/qemu.conf*
 
-#### VFIO setup
+#### VFIO setup files
 - */etc/default/grub*
 - */etc/grub.d/proxifiedScripts/custom*
 - */etc/initramfs-tools/modules*
@@ -206,14 +206,14 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 - */etc/modprobe.d/vfio.conf*
 - */etc/modules*
 
-#### Post-setup
+#### Post-setup paths
 - */etc/libvirt/hooks/\**
 - */usr/local/bin/\**
 - */etc/systemd/system/\**
 
-#### Source code and files
+#### Paths for source binaries and files
 - */usr/local/bin/\**
-- */usr/local/etc/\**
+- */usr/local/etc/vfiolib.d\**
 
 ### VFIO?
 Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.*<sup>[8](#8)</sup>
