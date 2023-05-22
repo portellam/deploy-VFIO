@@ -33,7 +33,13 @@
         fi
 
         ExecutePreSetup     || return "${?}"
-        ExecuteMainSetup    || return "${?}"
+        ExecuteMainSetup
+
+        if GetFailExitCode \
+            && ! GetSkipExitCode; then
+            return 1
+        fi
+
         ExecutePostSetup    || return "${?}"
         return 0
     }
