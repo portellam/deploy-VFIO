@@ -24,6 +24,11 @@
                 AreParsedIOMMUGroupsValid || return "${?}"
                 SelectIOMMUGroups
                 AreSelectedIOMMUGroupsValid || return "${?}"
+
+                if ! "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}"; then
+                    IsParseSelectionOfVGAValid || return "${?}"
+                fi
+
                 return 0
             fi
 
@@ -263,25 +268,15 @@
                 if "${_DO_PARSE_DATABASE_FROM_XML}"; then
                     AreXMLLibrariesInstalled || return "${?}"
 
-                    if ! ImportParseXML; then
-                        DoesHostNotHaveExistingVFIOSetup || return "${?}"
+                    if ! ImportParseXML &> /dev/null; then
+                        ImportParseDatabase || return "${?}"
                         ExportParseXML || return "${?}"
                         ImportParseXML || return "${?}"
-                    else
-                        if DoesHostNotHaveExistingVFIOSetup; then
-                            return "${?}"
-                        else
-                            ExportParseXML || return "${?}"
-                        fi
-
-                        ImportParseXML || return "${?}"
                     fi
-
-                    IsXMLValid || return "${?}"
-                elif "${_DO_PARSE_DATABASE_FROM_FILE}"; then
-                    ImportParseDatabase || return "${?}"
                 else
-                    ExportParseDatabase || return "${?}"
+                    if ! ImportParseDatabase &> /dev/null; then
+                        ExportParseDatabase || return "${?}"
+                    fi
                 fi
 
                 return 0
@@ -302,6 +297,8 @@
 
             function ExportParseXML
             {
+                DoesXMLNotHaveExistingVFIOSetup || return "${?}"
+
                 local -a OUTPUT=( )
                 local -a IOMMU_OUTPUT=( )
 
@@ -355,9 +352,7 @@
 
             function ImportParseXML
             {
-                if ! IsXMLValid; then
-                    return 1
-                fi
+                IsXMLValid || return "${?}"
 
                 IFS=$'\n'
                 local -a XML_CONTENTS=( $( eval "${_GET_PARSE_FROM_XML}" ) )
@@ -366,13 +361,6 @@
                 for LINE in "${XML_CONTENTS[@]}"; do
                     local DRIVER=$( echo "${LINE}" | cut -d '"' -f 6 )
                     local DEVICE=$( echo "${LINE}" | cut -d '"' -f 4 )
-
-                    case "${DRIVER}" in
-                        *"vfio-pci"* | *"vfio"* )
-                            echo -e "${_PREFIX_ERROR} XML file '${FILE}' contains invalid drivers."
-                            return 1 ;;
-                    esac
-
                     _DEVICE_DRIVER_XML_LIST["${DEVICE}"]="${DRIVER}"
                 done
 
@@ -397,12 +385,13 @@
                 #     local THAT_DEVICE="${_DEVICE_DRIVER_XML_LIST}"
                 # done
 
-                DoesXMLNotHaveExistingVFIOSetup || return "${?}"
-
                 if ! xmllint "${_XML_FILE}" &> /dev/null; then
                     echo -e "${_PREFIX_ERROR} XML file '${FILE}' is invalid."
                     return 1
                 fi
+
+                DoesXMLNotHaveExistingVFIOSetup || return "${?}"
+                return 0
             }
 
         # <summary> Local setters </summary>
@@ -523,7 +512,7 @@
                 local DEVICE="${1}"
                 local DRIVER=""
                 SetDeviceDriver "${DEVICE}" "DRIVER"
-                IsDeviceDriverNotVFIO "${DEVICE}" || return 1
+                IsDeviceDriverNotVFIO "${DRIVER}" || return 1
                 return 0
             }
 
@@ -733,7 +722,7 @@
 
             function DoesXMLNotHaveExistingVFIOSetup
             {
-                if eval "${_GET_PARSE_FROM_XML}" | grep -E "vfio"; then
+                if eval "${_GET_PARSE_FROM_XML}" | grep -E "vfio" &> /dev/null; then
                     echo -e "${_PREFIX_ERROR} Detected VFIO drivers in XML file."
                     return 1
                 fi
@@ -956,6 +945,5 @@
 
 # <main>
     SetParameters
-    ExportParseXML
     unset SetParameters
 # </main>
