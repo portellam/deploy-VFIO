@@ -438,7 +438,7 @@
                 echo
 
                 if ! "${_IS_EXECUTION_QUIET}"; then
-                        echo -e "${_SET_COLOR_YELLOW}Isolcpu${_RESET_COLOR} is a feature which isolates CPU threads from the Host machine.\nGuest(s) can use Isolcpu to a peformance benefit. Guest(s) can use isolated CPU threads, increasing responsiveness and stability, without interferrence from the Host.\n${_SET_COLOR_YELLOW}NOTE:${_RESET_COLOR} If this is skipped, the equivalent Libvirt hook for dynamic isolation will be installed."
+                        echo -e "${_SET_COLOR_YELLOW}Isolcpu${_RESET_COLOR} is a feature which isolates CPU threads from the Host machine.\nGuest(s) can use Isolcpu to a peformance benefit. Guest(s) can use isolated CPU threads, increasing responsiveness and stability, without interferrence from the Host.\n${_SET_COLOR_YELLOW}NOTE:${_RESET_COLOR} If this is skipped, the equivalent Libvirt hook for dynamic isolation will be installed.\n"
                     fi
 
                 AskToExecuteOrSkip "Setup ${_SET_COLOR_YELLOW}Static Isolcpu${_RESET_COLOR}?" && Main
