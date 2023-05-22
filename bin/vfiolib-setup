@@ -27,7 +27,8 @@
                 while [[ "${?}" -ne 1 ]]; do
                     if "${_ASK_TO_EXECUTE_VFIO_SETUP}"; then
                         for COUNT in $( seq 0 2 ); do
-                            read -r -p "Execute VFIO setup? [(M)ultiboot/(S)tatic/(U)ninstall/(N)o]: " ANSWER
+                            echo -en "Execute ${_SET_COLOR_YELLOW}VFIO setup${_RESET_COLOR}? "
+                            read -r -p "[(M)ultiboot/(S)tatic/(U)ninstall/(N)o]: " ANSWER
 
                             case "${ANSWER}" in
                                 [Mm]* )
@@ -57,26 +58,22 @@
                     fi
 
                     case true in
-                        "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}" )
-                            ExecuteMultibootSetup || return 1 ;;
-
-                        "${_EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB}" )
-                            ExecuteStaticSetup || return 1 ;;
+                        "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}" |  "${_EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB}" )
+                            return 0 ;;
 
                         "${_EXECUTE_VFIO_SETUP_UNINSTALL}" )
-                            ExecuteUninstallSetup || return 1 ;;
+                            ExecuteUninstallSetup || return "${?}"
+                            return 0 ;;
                     esac
 
                     break
                 done
 
-                return "${?}"
+                return 1
             }
 
             local OUTPUT="Executing VFIO setup...\t"
             PrintSuffixWait "${OUTPUT}"
-            echo
-            ExecuteParseSelection
 
             if GetPassExitCode; then
                 if BackupFiles; then
@@ -84,9 +81,29 @@
                 fi
             else
                 GetExitCode
-                RestoreFiles || ( SetExitCode; GetExitCode )
+                RestoreFiles
             fi
 
+            SetExitCode
+            echo
+
+            if ! "${_EXECUTE_VFIO_SETUP_UNINSTALL}" \
+                && GetPassExitCode; then
+                if ExecuteParseSelection; then
+                    case true in
+                        "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}" )
+                            ExecuteMultibootSetup ;;
+
+                        "${_EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB}" )
+                            ExecuteStaticSetup ;;
+                    esac
+
+                else
+                    SetExitCode
+                fi
+            fi
+
+            GetExitCode
             PrintSuffixPassOrFail "${OUTPUT}"
             return "${_LAST_EXIT_CODE}"
         }
