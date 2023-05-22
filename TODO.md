@@ -1,5 +1,7 @@
 ### To Do:
 * Important
+    * "error" prompt at start of grub menu entry, does nothing.
+    * multi boot prompts do not appear in grub, unless you "undo changes" in grub menu customizer gui.
     * test support for cross-distro/distro-agnosticism.
     * allow for skips of certain subfunctions.
     * test automation.
