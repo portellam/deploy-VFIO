@@ -21,9 +21,10 @@
     # <summary> Public </summary>
         function ExecuteUsage
         {
-            if ! GetOptions "${@}" \
-                && PrintUsage; then
-                return "${?}"
+            if ! GetOptions "${@}"; then
+                echo
+                PrintUsage
+                return 1
             fi
 
             return 0
@@ -278,7 +279,6 @@
 
                     "-p" | "--parse" )
                         shift
-                        SetParseParameters
                         GetArgsForParseSelection "${1}" || return 1
                         ShiftInputIfOptionHasArgument "${1}" ;;
 
