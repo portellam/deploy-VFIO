@@ -480,7 +480,7 @@
                     _PREFERRED_MENU_ENTRY_TITLE="${MENU_ENTRY_TITLE}"
 
                 elif "${_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_LAST}" \
-                    && [[ "${IOMMU_GROUP_ID}" -eq "${#_IOMMU_GROUP_ID_LIST_WITH_VGA_FOR_VFIO[-1]}" ]]; then
+                    && [[ "${IOMMU_GROUP_ID}" == "${_IOMMU_GROUPS_FOR_VFIO_LIST[-1]}" ]]; then
                     _PREFERRED_MENU_ENTRY_TITLE="${MENU_ENTRY_TITLE}"
                 fi
 
@@ -522,7 +522,7 @@
         # <summary> Update functions </summary>
             function UpdateGRUB
             {
-                local OUTPUT="Updating GRUB...\t\t"
+                local OUTPUT="Updating GRUB...\t\t\t\t"
                 PrintSuffixWait "${OUTPUT}"
                 sudo update-grub &> /dev/null
                 PrintSuffixPassOrFail "${OUTPUT}"
@@ -531,9 +531,15 @@
 
             function UpdateInitramfs
             {
+                function Main
+                {
+                    sudo update-initramfs -u -k all &> /dev/null
+                    return "${?}"
+                }
+
                 local OUTPUT="Updating Initramfs...\t"
                 PrintSuffixWait "${OUTPUT}"
-                sudo update-initramfs -u -k all &> /dev/null
+                Main &> /dev/null
                 PrintSuffixPassOrFail "${OUTPUT}"
                 return "${?}"
             }
