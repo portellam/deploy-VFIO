@@ -20,50 +20,47 @@
         {
             function Main
             {
+                if "${_EXECUTE_VFIO_SETUP_UNINSTALL}" \
+                    || GetFailExitCode; then
+                    return 255
+                fi
+
                 SetExitCode
                 local ANY_PASSED=false
 
                 if "${_ASK_TO_EXECUTE_PRE_SETUP_ALL}"; then
-					if GetPassExitCode \
-                        || GetSkipExitCode; then
+					if GetPassExitCode; then
 						ExecuteHugepagesSetup && ANY_PASSED=true
 					fi
 
-					if GetPassExitCode \
-                        || GetSkipExitCode; then
+					if GetPassExitCode; then
 						ExecuteStaticCPUIsolation && ANY_PASSED=true
 					fi
 
-					if GetPassExitCode \
-                        || GetSkipExitCode; then
+					if GetPassExitCode; then
 						ExecuteVirtualKVMSetup && ANY_PASSED=true
 					fi
 
-					if GetPassExitCode \
-                        || GetSkipExitCode; then
+					if GetPassExitCode; then
 						ExecuteModifyQEMUConfiguration && ANY_PASSED=true
 					fi
 				else
-					if ( GetPassExitCode \
-                            || GetSkipExitCode ) \
+					if GetPassExitCode \
 						&& "${_EXECUTE_PRE_SETUP_HUGEPAGES}"; then
 						ExecuteHugepagesSetup && ANY_PASSED=true
 					fi
 
-					if ( GetPassExitCode \
-                            || GetSkipExitCode ) \
+					if GetPassExitCode \
 						&& "${_EXECUTE_PRE_SETUP_STATIC_ISOLCPU}"; then
 						ExecuteStaticCPUIsolation && ANY_PASSED=true
 					fi
 
-					if ( GetPassExitCode \
-                            || GetSkipExitCode ) \
+					if GetPassExitCode \
 						&& "${_EXECUTE_PRE_SETUP_EVDEV}"; then
 						ExecuteVirtualKVMSetup && ANY_PASSED=true
 					fi
 
-					if GetPassExitCode \
-                        || GetSkipExitCode; then
+					if GetPassExitCode; then
 						ExecuteModifyQEMUConfiguration && ANY_PASSED=true
 					fi
 				fi
