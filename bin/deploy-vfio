@@ -27,21 +27,10 @@
         BackupAllFiles      || return "${?}"
         RestoreDefaultFiles || return "${?}"
 
-        if "${_EXECUTE_VFIO_SETUP_UNINSTALL}"; then
-            ExecuteMainSetup
-            return "${?}"
-        fi
-
-        ExecutePreSetup     || return "${?}"
+        ExecutePreSetup
         ExecuteMainSetup
-
-        if GetFailExitCode \
-            && ! GetSkipExitCode; then
-            return 1
-        fi
-
-        ExecutePostSetup    || return "${?}"
-        return 0
+        ExecutePostSetup
+        return "${?}"
     }
 # </functions>
 
