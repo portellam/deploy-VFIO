@@ -282,6 +282,10 @@
                 return 0
             }
 
+            if ! "${_DO_UNDO_CHANGES}"; then
+                return 0
+            fi
+
             local OUTPUT="Undoing changes...\t"
             PrintSuffixWait "${OUTPUT}"
             Main

@@ -16,17 +16,11 @@
     {
         IsSudoUser          || return "${?}"
         ExecuteUsage "${@}" || return "${?}"
-
-        if "${_DO_UNDO_CHANGES}"; then
-            RestoreAllFiles
-            return "${?}"
-        fi
-
+        RestoreAllFiles     || return "${?}"
         GetLinuxDistro      || return "${?}"
         IsSystemSupported   || return "${?}"
         BackupAllFiles      || return "${?}"
         RestoreDefaultFiles || return "${?}"
-
         ExecutePreSetup
         ExecuteMainSetup
         ExecutePostSetup
