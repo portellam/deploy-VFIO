@@ -522,7 +522,7 @@
         # <summary> Update functions </summary>
             function UpdateGRUB
             {
-                local OUTPUT="Updating GRUB...\t\t\t\t"
+                local OUTPUT="Updating GRUB...\t"
                 PrintSuffixWait "${OUTPUT}"
                 sudo update-grub &> /dev/null
                 PrintSuffixPassOrFail "${OUTPUT}"

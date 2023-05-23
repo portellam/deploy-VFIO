@@ -926,7 +926,7 @@
                         echo -e "\tDevice name:\t${NAME}"
                         echo -e "\tClass/Type:\t${CLASS}"
                         echo -e "\tHardware ID:\t${HWID}"
-                        local DRIVER_OUTPUT="\tDriver:\t"
+                        local DRIVER_OUTPUT="\tDriver:\t\t"
 
                         if [[ ! -z "${DRIVER}" ]]; then
                             echo -e "${DRIVER_OUTPUT}${DRIVER}"
