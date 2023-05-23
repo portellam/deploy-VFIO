@@ -845,6 +845,7 @@
             function SelectIOMMUGroups
             {
                 local -n REFERENCE="_IOMMU_GROUP_ID_LIST"
+                echo
 
                 for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
                     SelectThisIOMMUGroup "${IOMMU_GROUP_ID}"
@@ -927,7 +928,7 @@
                         echo -e "\tDevice name:\t${NAME}"
                         echo -e "\tClass/Type:\t${CLASS}"
                         echo -e "\tHardware ID:\t${HWID}"
-                        local DRIVER_OUTPUT="\tKernel driver:\t"
+                        local DRIVER_OUTPUT="\tDriver:\t"
 
                         if [[ ! -z "${DRIVER}" ]]; then
                             echo -e "${DRIVER_OUTPUT}${DRIVER}"

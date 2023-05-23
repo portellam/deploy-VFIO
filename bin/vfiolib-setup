@@ -85,7 +85,6 @@
             fi
 
             SetExitCode
-            echo
 
             if ! "${_EXECUTE_VFIO_SETUP_UNINSTALL}" \
                 && GetPassExitCode; then
@@ -532,7 +531,7 @@
         # <summary> Update functions </summary>
             function UpdateGRUB
             {
-                local OUTPUT="Updating GRUB...\t"
+                local OUTPUT="Updating GRUB...\t\t"
                 PrintSuffixWait "${OUTPUT}"
                 sudo update-grub &> /dev/null
                 PrintSuffixPassOrFail "${OUTPUT}"
