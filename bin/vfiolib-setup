@@ -20,74 +20,21 @@
         {
             function Main
             {
-                if "${_ASK_TO_EXECUTE_VFIO_SETUP}"; then
-                    echo
-                fi
-
-                while [[ "${?}" -ne 1 ]]; do
-                    if "${_ASK_TO_EXECUTE_VFIO_SETUP}"; then
-                        for COUNT in $( seq 0 2 ); do
-                            echo -en "Execute ${_SET_COLOR_YELLOW}VFIO setup${_RESET_COLOR}? "
-                            read -r -p "[(M)ultiboot/(S)tatic/(U)ninstall/(N)o]: " ANSWER
-
-                            case "${ANSWER}" in
-                                [Mm]* )
-                                    _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=true
-                                    break ;;
-
-                                [Ss]* )
-                                    _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB=true
-                                    break ;;
-
-                                [Uu]* )
-                                    _EXECUTE_VFIO_SETUP_UNINSTALL=true
-                                    break ;;
-
-                                [Nn]* )
-                                    return 255 ;;
-
-                                * )
-                                    echo "Please answer 'M', 'S', 'U', or 'N'." ;;
-                            esac
-                        done
-
-                        if ! [[ "${ANSWER}" =~ [MmSsUuNn] ]]; then
-                            echo -e "${_PREFIX_ERROR} Failed to answer."
-                            return 1
-                        fi
+                if GetPassExitCode; then
+                    if BackupFiles; then
+                        AskToSpecifyVFIOSetup || return "${?}"
                     fi
-
-                    case true in
-                        "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}" |  "${_EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB}" )
-                            return 0 ;;
-
-                        "${_EXECUTE_VFIO_SETUP_UNINSTALL}" )
-                            ExecuteUninstallSetup || return "${?}"
-                            return 0 ;;
-                    esac
-
-                    break
-                done
-
-                return 1
-            }
-
-            local OUTPUT="Executing VFIO setup...\t"
-            PrintSuffixWait "${OUTPUT}"
-
-            if GetPassExitCode; then
-                if BackupFiles; then
-                    Main
+                else
+                    GetExitCode
+                    RestoreFiles
+                    return "${?}"
                 fi
-            else
-                GetExitCode
-                RestoreFiles
-            fi
 
-            SetExitCode
+                if "${_EXECUTE_VFIO_SETUP_UNINSTALL}"; then
+                    ExecuteUninstallSetup
+                    return "${?}"
+                fi
 
-            if ! "${_EXECUTE_VFIO_SETUP_UNINSTALL}" \
-                && GetPassExitCode; then
                 if ExecuteParseSelection; then
                     case true in
                         "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}" )
@@ -96,13 +43,14 @@
                         "${_EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB}" )
                             ExecuteStaticSetup ;;
                     esac
-
-                else
-                    SetExitCode
                 fi
-            fi
 
-            GetExitCode
+                return 0
+            }
+
+            local OUTPUT="Executing VFIO setup...\t"
+            PrintSuffixWait "${OUTPUT}"
+            Main
             PrintSuffixPassOrFail "${OUTPUT}"
             return "${_LAST_EXIT_CODE}"
         }
@@ -136,7 +84,6 @@
             declare -ga _MENU_ENTRY_TITLE_LIST=( "" )
 
             # <remarks> Execution Flags </remarks>
-            declare -g _ASK_TO_EXECUTE_VFIO_SETUP=true
             declare -g _ASK_TO_EXECUTE_VFIO_SETUP_STATIC=true
             # declare -g _EXECUTE_VFIO_SETUP_DYNAMIC_WTIH_HOOKS=false
             declare -g _EXECUTE_VFIO_SETUP_SKIP_ALL=true
@@ -262,6 +209,50 @@
             }
 
         # <summary> Interaction </summary>
+            function AskToSpecifyVFIOSetup
+            {
+                if "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}" \
+                    || "${_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB}" \
+                    || "${_EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB}" \
+                    || "${_EXECUTE_VFIO_SETUP_UNINSTALL}" ; then
+                    return 0
+                fi
+
+                local ANSWER=""
+
+                for COUNT in $( seq 0 2 ); do
+                    echo -en "Execute ${_SET_COLOR_YELLOW}VFIO setup${_RESET_COLOR}? "
+                    read -r -p "[(M)ultiboot/(S)tatic/(U)ninstall/(N)o]: " ANSWER
+
+                    case "${ANSWER}" in
+                        [Mm]* )
+                            _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=true
+                            break ;;
+
+                        [Ss]* )
+                            _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB=true
+                            break ;;
+
+                        [Uu]* )
+                            _EXECUTE_VFIO_SETUP_UNINSTALL=true
+                            break ;;
+
+                        [Nn]* )
+                            return 255 ;;
+
+                        * )
+                            echo "Please answer 'M', 'S', 'U', or 'N'." ;;
+                    esac
+                done
+
+                if ! [[ "${ANSWER}" =~ [MmSsUuNn] ]]; then
+                    echo -e "${_PREFIX_ERROR} Failed to answer."
+                    return 1
+                fi
+
+                return 0
+            }
+
             function AskToSpecifyGRUBMenuEntryForMultibootSetup
             {
                 if "${_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_DEFAULT}" \
