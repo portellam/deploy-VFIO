@@ -1,8 +1,8 @@
 ### To Do:
 * Important
+    * Test options and args.
     * Test across distros.
     * Allow for skips of certain subfunctions.
-    * Test automation.
     * Post-setup:
         - Looking Glass
         - Scream
@@ -26,6 +26,8 @@
 
 
 ### Known Bugs:
+* Some options and args are not working as before.
+    - Parse does not fill out automatically.
 * VFIO setup:
     - Error prompt at start of custom GRUB entry. Does not stop or negatively affect execution.
 * Post-setup:
