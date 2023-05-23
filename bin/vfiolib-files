@@ -50,8 +50,10 @@
                 declare -g _AUDIO_LOOPBACK_SRC_PATH="${_BACKUPS_PATH}/${_AUDIO_LOOPBACK_FILENAME}"
 
                 # <remarks> Multiboot VFIO setup with GRUB </remarks>
-                declare -g _CUSTOM_GRUB_DEST_PATH="/etc/grub.d/proxifiedScripts/custom"
-                declare -g _CUSTOM_GRUB_SRC_PATH="${_BACKUPS_PATH}/custom"
+                declare -g _GRUB_PATH="/etc/grub.d"
+                declare -g _GRUB_CUSTOM_PROXY_FILENAME="_custom_proxy"
+                declare -g _GRUB_CUSTOM_DEST_PATH="${_GRUB_PATH}/proxifiedScripts/custom"
+                declare -g _GRUB_CUSTOM_SRC_PATH="${_BACKUPS_PATH}/custom"
 
                 # <remarks> QEMU files </remarks>
                 declare -g _APPARMOR_QEMU_DEST_PATH="/etc/apparmor.d/local/abstractions/libvirt-qemu"
@@ -135,7 +137,7 @@
             function Main
             {
                 BackupFile "${_APPARMOR_QEMU_DEST_PATH}" || return "${?}"
-                BackupFile "${_CUSTOM_GRUB_DEST_PATH}" || return "${?}"
+                BackupFile "${_GRUB_CUSTOM_DEST_PATH}" || return "${?}"
                 BackupFile "${_GRUB_DEST_PATH_1}" || return "${?}"
                 BackupFile "${_INITRAMFS_MODULES_DEST_PATH}" || return "${?}"
                 BackupFile "${_MODPROBE_BLACKLISTS_DEST_PATH}" || return "${?}"
@@ -155,7 +157,7 @@
         function CopyFilesToPaths
         {
             if ! sudo mkdir -p $( dirname "${_APPARMOR_QEMU_DEST_PATH}" ) \
-                || ! sudo mkdir -p $( dirname "${_CUSTOM_GRUB_DEST_PATH}" ) \
+                || ! sudo mkdir -p $( dirname "${_GRUB_CUSTOM_DEST_PATH}" ) \
                 || ! sudo mkdir -p $( dirname "${_QEMU_DEST_PATH}" ); then
                 echo -e "${_PREFIX_ERROR} Failed to create directories."
                 return 1
@@ -172,7 +174,7 @@
                 return 1
             fi
 
-            if ! sudo cp -rv "${_CUSTOM_GRUB_SRC_PATH}" "${_CUSTOM_GRUB_DEST_PATH}" &> /dev/null \
+            if ! sudo cp -rv "${_GRUB_CUSTOM_SRC_PATH}" "${_GRUB_CUSTOM_DEST_PATH}" &> /dev/null \
                 || ! sudo cp -rv "${_INITRAMFS_MODULES_SRC_PATH}" "${_INITRAMFS_MODULES_DEST_PATH}" &> /dev/null \
                 || ! sudo cp -rv "${_MODPROBE_BLACKLISTS_SRC_PATH}" "${_MODPROBE_BLACKLISTS_DEST_PATH}" &> /dev/null \
                 || ! sudo cp -rv "${_MODPROBE_VFIO_SRC_PATH}" "${_MODPROBE_VFIO_DEST_PATH}" &> /dev/null \
@@ -183,8 +185,8 @@
             fi
 
             if ! sudo chown root:root "${_APPARMOR_QEMU_DEST_PATH}" &> /dev/null \
-                || ! sudo chown root:root "${_CUSTOM_GRUB_DEST_PATH}" &> /dev/null \
-                || ! sudo chmod +x "${_CUSTOM_GRUB_DEST_PATH}" &> /dev/null \
+                || ! sudo chown root:root "${_GRUB_CUSTOM_DEST_PATH}" &> /dev/null \
+                || ! sudo chmod +x "${_GRUB_CUSTOM_DEST_PATH}" &> /dev/null \
                 || ! sudo chown root:root "${_INITRAMFS_MODULES_DEST_PATH}" &> /dev/null \
                 || ! sudo chown root:root "${_MODPROBE_BLACKLISTS_DEST_PATH}" &> /dev/null \
                 || ! sudo chown root:root "${_MODPROBE_VFIO_DEST_PATH}" &> /dev/null \
@@ -203,7 +205,7 @@
         function GetFiles
         {
             if [[ ! -e "${_AUDIO_LOOPBACK_SRC_PATH}" ]] \
-                || [[ ! -e "${_CUSTOM_GRUB_SRC_PATH}" ]] \
+                || [[ ! -e "${_GRUB_CUSTOM_SRC_PATH}" ]] \
                 || [[ ! -e "${_INITRAMFS_MODULES_SRC_PATH}" ]] \
                 || [[ ! -e "${_LIBVIRT_HOOK_SRC_PATH}" ]] \
                 || [[ ! -e "${_LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH}" ]] \
@@ -270,7 +272,7 @@
             function Main
             {
                 RestoreFile "${_APPARMOR_QEMU_DEST_PATH}" || return "${?}"
-                RestoreFile "${_CUSTOM_GRUB_DEST_PATH}" || return "${?}"
+                RestoreFile "${_GRUB_CUSTOM_DEST_PATH}" || return "${?}"
                 RestoreFile "${_GRUB_DEST_PATH_1}" || return "${?}"
                 RestoreFile "${_INITRAMFS_MODULES_DEST_PATH}" || return "${?}"
                 RestoreFile "${_MODPROBE_BLACKLISTS_DEST_PATH}" || return "${?}"

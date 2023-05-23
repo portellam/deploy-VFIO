@@ -1,10 +1,8 @@
 ### To Do:
 * Important
-    * "error" prompt at start of grub menu entry, does nothing.
-    * multi boot prompts do not appear in grub, unless you "undo changes" in grub menu customizer gui.
-    * test support for cross-distro/distro-agnosticism.
-    * allow for skips of certain subfunctions.
-    * test automation.
+    * Test across distros.
+    * Allow for skips of certain subfunctions.
+    * Test automation.
     * Post-setup:
         - Looking Glass
         - Scream
@@ -26,7 +24,10 @@
         - Create script to resume VM(s) from sleep?
     * Errors/exceptions, handle and/or save to logfile (subjectively, important for user-operation, not development).
 
+
 ### Known Bugs:
+* VFIO setup:
+    - Error prompt at start of custom GRUB entry. Does not stop or negatively affect execution.
 * Post-setup:
     - Looking Glass fails to build.
     - Scream fails to build.

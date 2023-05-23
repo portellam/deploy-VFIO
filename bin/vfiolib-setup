@@ -133,7 +133,7 @@
 
             # <remarks> File output: Multiboot VFIO with GRUB </remarks>
             declare -g _PREFERRED_MENU_ENTRY_TITLE=""
-            declare -ga _CUSTOM_GRUB_FILE_CONTENTS=( )
+            declare -ga _GRUB_CUSTOM_FILE_CONTENTS=( )
             declare -ga _MENU_ENTRY_TITLE_LIST=( "" )
 
             # <remarks> Execution Flags </remarks>
@@ -234,6 +234,7 @@
 
             function ExecuteUpdateAfterSetup
             {
+                SetEntriesForGRUB || return 1
                 UpdateGRUB || return 1
                 UpdateInitramfs || return 1
                 return 0
@@ -241,7 +242,7 @@
 
             function BackupFiles
             {
-                BackupFile "${_CUSTOM_GRUB_DEST_PATH}" || return 1
+                BackupFile "${_GRUB_CUSTOM_DEST_PATH}" || return 1
                 BackupFile "${_GRUB_DEST_PATH_1}" || return 1
                 BackupFile "${_INITRAMFS_MODULES_DEST_PATH}" || return 1
                 BackupFile "${_MODPROBE_BLACKLISTS_DEST_PATH}" || return 1
@@ -252,7 +253,7 @@
 
             function RestoreFiles
             {
-                RestoreFile "${_CUSTOM_GRUB_DEST_PATH}" || return 1
+                RestoreFile "${_GRUB_CUSTOM_DEST_PATH}" || return 1
                 RestoreFile "${_GRUB_DEST_PATH_1}" || return 1
                 RestoreFile "${_INITRAMFS_MODULES_DEST_PATH}" || return 1
                 RestoreFile "${_MODPROBE_BLACKLISTS_DEST_PATH}" || return 1
@@ -463,7 +464,7 @@
                     SetThisMenuEntryForMultibootSetup "KERNELS_LIST" "${THIS_IOMMU_GROUP_ID}"
                 done
 
-                if ! IsEnum "_CUSTOM_GRUB_FILE_CONTENTS"; then
+                if ! IsEnum "_GRUB_CUSTOM_FILE_CONTENTS"; then
                     echo -e "${_PREFIX_ERROR} Multiboot setup output is empty."
                     return 1
                 fi
@@ -507,7 +508,7 @@
                     _MENU_ENTRY_TITLE_LIST+=( "${MENU_ENTRY_TITLE}" )
                     SetPreferredGRUBMenuEntryForMultibootSetup "${IOMMU_GROUP_ID}" "${MENU_ENTRY_TITLE}"
 
-                    _CUSTOM_GRUB_FILE_CONTENTS+=(
+                    _GRUB_CUSTOM_FILE_CONTENTS+=(
                         "menuentry \"${MENU_ENTRY_TITLE}\"{"
                         # "\tload_video"
                         # "insmod gzio"
@@ -547,6 +548,32 @@
                 return "${?}"
             }
 
+            function SetEntriesForGRUB
+            {
+                local GRUB_CUSTOM_PROXY_FILE=$( find "${_GRUB_PATH}" -name *"${_GRUB_CUSTOM_PROXY_FILENAME}" )
+
+                if "${_EXECUTE_VFIO_SETUP_UNINSTALL}"; then
+                    sed -i "s/-'/+'/g" "${GRUB_CUSTOM_PROXY_FILE}" &> /dev/null
+                    return 0
+
+                elif ! "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}"; then
+                    return 0
+
+                else
+                    if [[ ! -e "${GRUB_CUSTOM_PROXY_FILE}" ]]; then
+                        echo -e "${_PREFIX_ERROR} Failed to find GRUB proxy file in directory '/etc/grub.d/'."
+                        return 1
+                    fi
+
+                    if ! sed -i "s/-'/+'/g" "${GRUB_CUSTOM_PROXY_FILE}" &> /dev/null; then
+                        echo -e "${_PREFIX_ERROR} Failed to enable entries for GRUB proxy file."
+                        return 1
+                    fi
+                fi
+
+                return 0
+            }
+
         # <summary> Write output </summary>
             function WriteOutputForMultibootSetup
             {
@@ -560,14 +587,14 @@
                     local LINE_GRUB_DEFAULT="${LINE_TO_MATCH}\"${_PREFERRED_MENU_ENTRY_TITLE}\""
                 fi
 
-                if [[ -d $( dirname "${_CUSTOM_GRUB_DEST_PATH}" ) ]] \
-                    && ! sudo mkdir -p $( dirname "${_CUSTOM_GRUB_DEST_PATH}" ); then
-                    echo -e "${_PREFIX_ERROR} Failed to create directory '"$( dirname "${_CUSTOM_GRUB_DEST_PATH}" )"'."
+                if [[ -d $( dirname "${_GRUB_CUSTOM_DEST_PATH}" ) ]] \
+                    && ! sudo mkdir -p $( dirname "${_GRUB_CUSTOM_DEST_PATH}" ); then
+                    echo -e "${_PREFIX_ERROR} Failed to create directory '"$( dirname "${_GRUB_CUSTOM_DEST_PATH}" )"'."
                     return 1
                 fi
 
                 if ! sed -i '/'"${LINE_TO_MATCH}"'/c\'"${LINE_GRUB_DEFAULT}" "${_GRUB_DEST_PATH_1}" \
-                    || ! echo -e "\n${_CUSTOM_GRUB_FILE_CONTENTS[*]}" >> "${_CUSTOM_GRUB_DEST_PATH}" ; then
+                    || ! echo -e "\n${_GRUB_CUSTOM_FILE_CONTENTS[*]}" >> "${_GRUB_CUSTOM_DEST_PATH}" ; then
                     echo -e "${_PREFIX_ERROR} Failed to overwrite target lines of files."
                     return 1
                 fi
