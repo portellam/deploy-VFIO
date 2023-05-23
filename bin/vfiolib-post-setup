@@ -19,50 +19,47 @@
 		{
 			function Main
 			{
+				if "${_EXECUTE_VFIO_SETUP_UNINSTALL}" \
+                    || GetFailExitCode; then
+                    return 255
+                fi
+
 				SetExitCode
 				local ANY_PASSED=false
 
 				if "${_ASK_TO_EXECUTE_POST_SETUPS}"; then
-					if GetPassExitCode \
-                        || GetSkipExitCode; then
+					if GetPassExitCode; then
 						LibvirtHooks && ANY_PASSED=true
 					fi
 
-					if GetPassExitCode \
-                        || GetSkipExitCode; then
+					if GetPassExitCode; then
 						GuestAudioLoopback && ANY_PASSED=true
 					fi
 
-					if GetPassExitCode \
-                        || GetSkipExitCode; then
+					if GetPassExitCode; then
 						AllocateRAMToSwap && ANY_PASSED=true
 					fi
 
-					if GetPassExitCode \
-                        || GetSkipExitCode; then
+					if GetPassExitCode; then
 						SetVideoOutput && ANY_PASSED=true
 					fi
 				else
-					if ( GetPassExitCode \
-                        	|| GetSkipExitCode ) \
+					if GetPassExitCode \
 						&& "${_EXECUTE_POST_SETUP_STATIC_LIBVIRT_HOOKS}"; then
 						LibvirtHooks && ANY_PASSED=true
 					fi
 
-					if ( GetPassExitCode \
-                        	|| GetSkipExitCode ) \
+					if GetPassExitCode \
 						&& "${_EXECUTE_POST_SETUP_AUDIO_LOOPBACK}"; then
 						GuestAudioLoopback && ANY_PASSED=true
 					fi
 
-					if ( GetPassExitCode \
-                        	|| GetSkipExitCode ) \
+					if GetPassExitCode \
 						&& "${_EXECUTE_POST_SETUP_ZRAM_SWAP}"; then
 						AllocateRAMToSwap && ANY_PASSED=true
 					fi
 
-					if ( GetPassExitCode \
-                        	|| GetSkipExitCode ) \
+					if GetPassExitCode \
 						&& "${_EXECUTE_POST_SETUP_AUTO_XORG}"; then
 						SetVideoOutput && ANY_PASSED=true
 					fi

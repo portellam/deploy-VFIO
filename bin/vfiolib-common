@@ -17,15 +17,6 @@
                 fi
             }
 
-            function GetPassExitCode
-            {
-                if [[ "${_LAST_EXIT_CODE}" -ne 0 ]]; then
-                    return 1
-                fi
-
-                return 0
-            }
-
             function GetFailExitCode
             {
                 if [[ "${_LAST_EXIT_CODE}" -ne 0 ]]; then
@@ -33,6 +24,16 @@
                 fi
 
                 return 1
+            }
+
+            function GetPassExitCode
+            {
+                if [[ "${_LAST_EXIT_CODE}" -ne 0 ]] \
+                    && ! GetSkipExitCode; then
+                    return 1
+                fi
+
+                return 0
             }
 
             function GetSkipExitCode
@@ -371,272 +372,272 @@
             }
 
         # <summary> RAM allocation </summary>
-        function GetFreeMemory
-        {
-            if [[ "${_AVAILABLE_MEMORY}" -le 0 ]]; then
-                return 1
-            fi
-
-            return 0
-        }
-
-        function SetFreeMemory
-        {
-            _AVAILABLE_MEMORY=$(( _INT_MAX_MEMORY - _MIN_MEMORY ))
-        }
-
-        # <summary> Unnamed </summary>
-        function FindPackage
-        {
-            if [[ -z "${1}" ]] \
-                || [[ -z "${_PACKAGE_MANAGER}" ]]; then
-                echo -e "${_PREFIX_ERROR} Input values are empty."
-                return 1
-            fi
-
-            case "${_PACKAGE_MANAGER}" in
-                "apt" )
-                    apt list "${1}" ;;
-
-                "dnf" )
-                    dnf search "${1}" ;;
-
-                "pacman" )
-                    pacman -Ss "${1}" ;;
-
-                "gentoo" )
-                    emerge --search "${1}" ;;
-
-                "urpmi" )
-                    urpmq "${1}" ;;
-
-                "yum" )
-                    yum search "${1}" ;;
-
-                "zypper" )
-                    zypper se "${1}" ;;
-
-                * )
-                    echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
-                    return 1 ;;
-            esac
-
-            SetExitCode
-
-            if [[ "${_LAST_EXIT_CODE}" -ne 0 ]]; then
-                case "${_PACKAGE_MANAGER}" in
-                    *" "* )
-                        echo -e "${_PREFIX_ERROR} Packages '${_PACKAGE_MANAGER}' were not found." ;;
-
-                    * )
-                        echo -e "${_PREFIX_ERROR} Package '${_PACKAGE_MANAGER}' was not found." ;;
-                esac
-
-                return 1
-            fi
-
-            return "${_LAST_EXIT_CODE}"
-        }
-
-        function InstallPackage
-        {
-            if [[ -z "${_PACKAGE_MANAGER}" ]] \
-                || [[ -z "${1}" ]]; then
-                echo -e "${_PREFIX_ERROR} Input values are empty."
-                return 1
-            fi
-
-            local DO_REINSTALL=false
-            local OPTION=""
-
-            if [[ "${2}" == true ]]; then
-                DO_REINSTALL=true
-            fi
-
-            # <remarks> Auto-update and auto-install selected packages </remarks>
-            case "${_PACKAGE_MANAGER}" in
-                "apt" )
-                    if "${DO_REINSTALL}"; then
-                        OPTION="--reinstall -o Dpkg::Options::=--force-confmiss"
-                    fi
-
-                    apt update && apt full-upgrade -y && apt install -y "${OPTION}" "${1}" || return 1 ;;
-
-                "dnf" )
-                    dnf upgrade && dnf install "${1}" ;;
-
-                "pacman" )
-                    pacman -Syu && pacman -S "${1}" ;;
-
-                "gentoo" )
-                    emerge -u @world && emerge "${1}" ;;
-
-                "urpmi" )
-                    urpmi --auto-update && urpmi "${1}" ;;
-
-                "yum" )
-                    yum update && yum install "${1}" ;;
-
-                "zypper" )
-                    zypper refresh && zypper in "${1}" ;;
-
-                * )
-                    echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
-                    false ;;
-            esac
-
-            PrintSuffixPassOrFail "Installing software packages..."
-            return "${?}"
-        }
-
-        function IsInstalledPackage
-        {
-            if [[ -z "${_PACKAGE_MANAGER}" ]] \
-                || [[ -z "${1}" ]]; then
-                echo -e "${_PREFIX_ERROR} Input values are empty."
-                return 1
-            fi
-
-            local GET_COMMAND=""
-
-            # <remarks> Check if package is not installed </remarks>
-            case "${_PACKAGE_MANAGER}" in
-                "apt" )
-                    GET_COMMAND="sudo dpkg -s" ;;
-
-                * )
-                    echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
-                    return 1 ;;
-            esac
-
-            local -i COUNT_DELIM=$( echo "${1}" | wc -w )
-            local GET_PACKAGE='echo "${1}" | cut -d ' ' -f "${COUNT_DELIM}"'
-
-            while [[ ! -z "${PACKAGE}" ]]; do
-                local PACKAGE=$( eval "${GET_PACKAGE}" )
-                eval "${GET_COMMAND} ${PACKAGE}" || return 1
-                (( COUNT_DELIM-- ))
-            done
-
-            return 0
-        }
-
-        function IsSudoUser
-        {
-            if [[ $( whoami ) != "root" ]]; then
-                echo -e "${_PREFIX_ERROR} User is not sudo/root."
-                return 1
-            fi
-
-            return 0
-        }
-
-        function UninstallPackage
-        {
-            if [[ -z "${_PACKAGE_MANAGER}" ]] \
-                || [[ -z "${1}" ]]; then
-                echo -e "${_PREFIX_ERROR} Input values are empty."
-                return 1
-            fi
-
-            # <remarks> Uninstall selected packages </remarks>
-            case "${_PACKAGE_MANAGER}" in
-                "apt" )
-                    apt uninstall "${1}" ;;
-
-                "dnf" )
-                    dnf remove "${1}" ;;
-
-                "pacman" )
-                    pacman -R "${1}" ;;
-
-                "gentoo" )
-                    emerge -Cv "${1}" ;;
-
-                "urpmi" )
-                    urpme "${1}" ;;
-
-                "yum" )
-                    yum remove "${1}" ;;
-
-                "zypper" )
-                    zypper remove "${1}" ;;
-
-                * )
-                    echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
-                    false ;;
-            esac
-
-            PrintSuffixPassOrFail "Uninstalling software packages..."
-            return "${?}"
-        }
-
-        function UpdateOrCloneGitRepo
-        {
-            local DO_AUTO_ANSWER_YES=false
-
-            if [[ "${4}" == true ]]; then
-                DO_AUTO_ANSWER_YES=true
-            fi
-
-            if [[ -z "${3}" ]] \
-                || [[ -z "${2}" ]] \
-                || [[ -z "${1}" ]]; then
-                echo -e "${_PREFIX_ERROR} Input values are empty."
-                return 1
-            fi
-
-            if [[ ! -d "${1}${2}" ]] \
-                && ! sudo mkdir -p "${1}${3}"; then
-                echo -e "${_PREFIX_ERROR} Failed to create directory '${1}${3}'."
-                return 1
-            fi
-
-            # <remarks> Update existing GitHub repository. </remarks>
-            if [[ -d "${1}${2}" ]]; then
-                cd "${1}${2}"
-
-                if ! git pull &> /dev/null; then
-                    echo -e "${_PREFIX_ERROR} Failed to update repository."
+            function GetFreeMemory
+            {
+                if [[ "${_AVAILABLE_MEMORY}" -le 0 ]]; then
                     return 1
                 fi
 
                 return 0
+            }
 
-            # <remarks> Clone new GitHub repository. </remarks>
-            elif [[ -d "${1}${3}" ]]; then
-                for COUNT in $( seq 0 2 ); do
-                    if ! "${DO_AUTO_ANSWER_YES}"; then
-                        read -r -p "Clone repo '${2}'? [Y/n]: " ANSWER
-                    else
-                        ANSWER="Y"
-                    fi
+            function SetFreeMemory
+            {
+                _AVAILABLE_MEMORY=$(( _INT_MAX_MEMORY - _MIN_MEMORY ))
+            }
 
-                    case "${ANSWER}" in
-                        [Yy]* )
-                            cd "${1}${3}"
+        # <summary> Unnamed </summary>
+            function FindPackage
+            {
+                if [[ -z "${1}" ]] \
+                    || [[ -z "${_PACKAGE_MANAGER}" ]]; then
+                    echo -e "${_PREFIX_ERROR} Input values are empty."
+                    return 1
+                fi
 
-                            if ! git clone "https://github.com/${2}" &> /dev/null; then
-                                echo -e "${_PREFIX_ERROR} Failed to download repository."
-                                return 1
-                            fi
+                case "${_PACKAGE_MANAGER}" in
+                    "apt" )
+                        apt list "${1}" ;;
 
-                            return 0 ;;
+                    "dnf" )
+                        dnf search "${1}" ;;
 
-                        [Nn]* )
-                            return 255 ;;
+                    "pacman" )
+                        pacman -Ss "${1}" ;;
+
+                    "gentoo" )
+                        emerge --search "${1}" ;;
+
+                    "urpmi" )
+                        urpmq "${1}" ;;
+
+                    "yum" )
+                        yum search "${1}" ;;
+
+                    "zypper" )
+                        zypper se "${1}" ;;
+
+                    * )
+                        echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
+                        return 1 ;;
+                esac
+
+                SetExitCode
+
+                if [[ "${_LAST_EXIT_CODE}" -ne 0 ]]; then
+                    case "${_PACKAGE_MANAGER}" in
+                        *" "* )
+                            echo -e "${_PREFIX_ERROR} Packages '${_PACKAGE_MANAGER}' were not found." ;;
 
                         * )
-                            echo "Please answer 'Y' or 'N'." ;;
+                            echo -e "${_PREFIX_ERROR} Package '${_PACKAGE_MANAGER}' was not found." ;;
                     esac
+
+                    return 1
+                fi
+
+                return "${_LAST_EXIT_CODE}"
+            }
+
+            function InstallPackage
+            {
+                if [[ -z "${_PACKAGE_MANAGER}" ]] \
+                    || [[ -z "${1}" ]]; then
+                    echo -e "${_PREFIX_ERROR} Input values are empty."
+                    return 1
+                fi
+
+                local DO_REINSTALL=false
+                local OPTION=""
+
+                if [[ "${2}" == true ]]; then
+                    DO_REINSTALL=true
+                fi
+
+                # <remarks> Auto-update and auto-install selected packages </remarks>
+                case "${_PACKAGE_MANAGER}" in
+                    "apt" )
+                        if "${DO_REINSTALL}"; then
+                            OPTION="--reinstall -o Dpkg::Options::=--force-confmiss"
+                        fi
+
+                        apt update && apt full-upgrade -y && apt install -y "${OPTION}" "${1}" || return 1 ;;
+
+                    "dnf" )
+                        dnf upgrade && dnf install "${1}" ;;
+
+                    "pacman" )
+                        pacman -Syu && pacman -S "${1}" ;;
+
+                    "gentoo" )
+                        emerge -u @world && emerge "${1}" ;;
+
+                    "urpmi" )
+                        urpmi --auto-update && urpmi "${1}" ;;
+
+                    "yum" )
+                        yum update && yum install "${1}" ;;
+
+                    "zypper" )
+                        zypper refresh && zypper in "${1}" ;;
+
+                    * )
+                        echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
+                        false ;;
+                esac
+
+                PrintSuffixPassOrFail "Installing software packages..."
+                return "${?}"
+            }
+
+            function IsInstalledPackage
+            {
+                if [[ -z "${_PACKAGE_MANAGER}" ]] \
+                    || [[ -z "${1}" ]]; then
+                    echo -e "${_PREFIX_ERROR} Input values are empty."
+                    return 1
+                fi
+
+                local GET_COMMAND=""
+
+                # <remarks> Check if package is not installed </remarks>
+                case "${_PACKAGE_MANAGER}" in
+                    "apt" )
+                        GET_COMMAND="sudo dpkg -s" ;;
+
+                    * )
+                        echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
+                        return 1 ;;
+                esac
+
+                local -i COUNT_DELIM=$( echo "${1}" | wc -w )
+                local GET_PACKAGE='echo "${1}" | cut -d ' ' -f "${COUNT_DELIM}"'
+
+                while [[ ! -z "${PACKAGE}" ]]; do
+                    local PACKAGE=$( eval "${GET_PACKAGE}" )
+                    eval "${GET_COMMAND} ${PACKAGE}" || return 1
+                    (( COUNT_DELIM-- ))
                 done
 
-                return 1
+                return 0
+            }
 
-            else
-                return 1
-            fi
-        }
+            function IsSudoUser
+            {
+                if [[ $( whoami ) != "root" ]]; then
+                    echo -e "${_PREFIX_ERROR} User is not sudo/root."
+                    return 1
+                fi
+
+                return 0
+            }
+
+            function UninstallPackage
+            {
+                if [[ -z "${_PACKAGE_MANAGER}" ]] \
+                    || [[ -z "${1}" ]]; then
+                    echo -e "${_PREFIX_ERROR} Input values are empty."
+                    return 1
+                fi
+
+                # <remarks> Uninstall selected packages </remarks>
+                case "${_PACKAGE_MANAGER}" in
+                    "apt" )
+                        apt uninstall "${1}" ;;
+
+                    "dnf" )
+                        dnf remove "${1}" ;;
+
+                    "pacman" )
+                        pacman -R "${1}" ;;
+
+                    "gentoo" )
+                        emerge -Cv "${1}" ;;
+
+                    "urpmi" )
+                        urpme "${1}" ;;
+
+                    "yum" )
+                        yum remove "${1}" ;;
+
+                    "zypper" )
+                        zypper remove "${1}" ;;
+
+                    * )
+                        echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
+                        false ;;
+                esac
+
+                PrintSuffixPassOrFail "Uninstalling software packages..."
+                return "${?}"
+            }
+
+            function UpdateOrCloneGitRepo
+            {
+                local DO_AUTO_ANSWER_YES=false
+
+                if [[ "${4}" == true ]]; then
+                    DO_AUTO_ANSWER_YES=true
+                fi
+
+                if [[ -z "${3}" ]] \
+                    || [[ -z "${2}" ]] \
+                    || [[ -z "${1}" ]]; then
+                    echo -e "${_PREFIX_ERROR} Input values are empty."
+                    return 1
+                fi
+
+                if [[ ! -d "${1}${2}" ]] \
+                    && ! sudo mkdir -p "${1}${3}"; then
+                    echo -e "${_PREFIX_ERROR} Failed to create directory '${1}${3}'."
+                    return 1
+                fi
+
+                # <remarks> Update existing GitHub repository. </remarks>
+                if [[ -d "${1}${2}" ]]; then
+                    cd "${1}${2}"
+
+                    if ! git pull &> /dev/null; then
+                        echo -e "${_PREFIX_ERROR} Failed to update repository."
+                        return 1
+                    fi
+
+                    return 0
+
+                # <remarks> Clone new GitHub repository. </remarks>
+                elif [[ -d "${1}${3}" ]]; then
+                    for COUNT in $( seq 0 2 ); do
+                        if ! "${DO_AUTO_ANSWER_YES}"; then
+                            read -r -p "Clone repo '${2}'? [Y/n]: " ANSWER
+                        else
+                            ANSWER="Y"
+                        fi
+
+                        case "${ANSWER}" in
+                            [Yy]* )
+                                cd "${1}${3}"
+
+                                if ! git clone "https://github.com/${2}" &> /dev/null; then
+                                    echo -e "${_PREFIX_ERROR} Failed to download repository."
+                                    return 1
+                                fi
+
+                                return 0 ;;
+
+                            [Nn]* )
+                                return 255 ;;
+
+                            * )
+                                echo "Please answer 'Y' or 'N'." ;;
+                        esac
+                    done
+
+                    return 1
+
+                else
+                    return 1
+                fi
+            }
 # </functions>
 
 # <main>

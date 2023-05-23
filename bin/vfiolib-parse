@@ -108,7 +108,7 @@
                 done
 
                 if [[ -z "${NAME}" ]]; then
-                    echo -e "${_PREFIX_ERROR} Failed to find device name of any VGA device in IOMMU group '${IOMMU_GROUP_ID}'."
+                    echo -e "${_PREFIX_ERROR} Failed to find device name of any VGA device in IOMMU group ${IOMMU_GROUP_ID}."
                     return 1
                 fi
 
@@ -609,8 +609,6 @@
 
             function AddValidIOMMUGroupsParseList
             {
-                SetParseParameters
-
                 for IOMMU_GROUP_ID in ${_IOMMU_GROUP_ID_LIST[@]}; do
                     local -a DEVICE_LIST=( $( eval "${_GET_IOMMU_GROUP_DEVICE_LIST}" ) )
 
@@ -737,7 +735,7 @@
                 IsInt "${1}" || return "${?}"
                 local -i IOMMU_GROUP_ID="${1}"
 
-                if AskToExecuteOrSkip "Select IOMMU group '${IOMMU_GROUP_ID}'?"; then
+                if AskToExecuteOrSkip "Select IOMMU group ${_SET_COLOR_YELLOW}${IOMMU_GROUP_ID}${_RESET_COLOR}?"; then
                     _IOMMU_GROUPS_FOR_VFIO_LIST+=( "${IOMMU_GROUP_ID}" )
                 else
                     if DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}"; then
@@ -845,6 +843,7 @@
             function SelectIOMMUGroups
             {
                 local -n REFERENCE="_IOMMU_GROUP_ID_LIST"
+                echo
 
                 for IOMMU_GROUP_ID in ${REFERENCE[@]}; do
                     SelectThisIOMMUGroup "${IOMMU_GROUP_ID}"
@@ -927,7 +926,7 @@
                         echo -e "\tDevice name:\t${NAME}"
                         echo -e "\tClass/Type:\t${CLASS}"
                         echo -e "\tHardware ID:\t${HWID}"
-                        local DRIVER_OUTPUT="\tKernel driver:\t"
+                        local DRIVER_OUTPUT="\tDriver:\t\t"
 
                         if [[ ! -z "${DRIVER}" ]]; then
                             echo -e "${DRIVER_OUTPUT}${DRIVER}"
