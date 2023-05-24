@@ -751,11 +751,11 @@
                 if AskToExecuteOrSkip "Select IOMMU group ${_SET_COLOR_YELLOW}${IOMMU_GROUP_ID}${_RESET_COLOR}?"; then
                     _IOMMU_GROUPS_FOR_VFIO_LIST+=( "${IOMMU_GROUP_ID}" )
 
-                    if DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}"; then
+                    if DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}" &> /dev/null; then
                         _IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST+=( "${IOMMU_GROUP_ID}" )
                     fi
                 else
-                    if DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}"; then
+                    if DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}" &> /dev/null; then
                         _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${IOMMU_GROUP_ID}" )
                     else
                         _IOMMU_GROUPS_FOR_HOST_LIST+=( "${IOMMU_GROUP_ID}" )
