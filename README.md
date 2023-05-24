@@ -165,19 +165,24 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
     - **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 
 ### VFIO setup <sub>(vfiolib-setup)</sub>
-* **Multi-boot VFIO setup**
-    - Create multiple VFIO setups with corresponding GRUB menu entries.     **More flexibility.**
+* **Multi-boot VFIO setup**                                                 **Great flexibility.**
+    - Create multiple VFIO setups with corresponding GRUB menu entries.
     - Default menu entry is without VFIO setup.
-    - Best for systems with two or more PCI [VGA](#VGA) devices.
+    - Best for systems with two or more PCI [VGA](#VGA) devices, *without* an integrated VGA device (iGPU).
     - Select a GRUB menu entry with a VGA device to boot from (excludes that VGA device's IOMMU group from VFIO).
     - **Disclaimer:** For best results, use *auto-Xorg*.<sup>[5](#5)</sup>
 * **Static VFIO setup**
-    - Single VFIO setup.                                                    **Less flexibility.**
+    - Single VFIO setup.                                                    **Least flexibility.**
     - Specify method of setup:
         - Append output to GRUB; single GRUB menu entry.
         - Append output to system configuration files.
-    - Best for systems with integrated VGA device and one PCI VGA device.
+    - Best for systems with one or more PCI VGA device(s) **and** one integrated VGA device (iGPU).
     - Traditional PCI Passthrough/VFIO setup.
+* **Dynamic VFIO setup *(unsupported currently)***
+    - Use Libvirt hooks to bind or unbind devices at Guest start or stop.   **Most flexibility.**
+    - Most responsibility; best for more experienced users.
+    - Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
+    - For examples, review the referenced guides. Search for *"libvirt hook vfio bind scripts"*, Google is your friend.
 
 ### Post-setup  <sub>(vfiolib-post-setup)</sub>
 * **auto-Xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.<sup>[5](#5)</sup>
