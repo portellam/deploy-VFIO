@@ -157,7 +157,6 @@
             function ExecuteStaticSetup
             {
                 if ! "${_HAS_RESTORED_DEFAULT_FILES}" \
-                    || ! IsParseSelectionOfVGAValid \
                     || ! AskToSpecifyStaticSetup \
                     || ! SetOutputForStaticSetup \
                     || ! WriteOutputForStaticSetup \
@@ -471,16 +470,12 @@
                     return 0
                 fi
 
-                if "${_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_FIRST}" \
-                    && [[ "${IOMMU_GROUP_ID}" -eq 1 ]]; then
-                    _PREFERRED_MENU_ENTRY_TITLE="${MENU_ENTRY_TITLE}"
-
-                elif "${_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE}" \
-                    && [[ "${IOMMU_GROUP_ID}" -eq "${_MULTIBOOT_PREFERRED_IOMMU_GROUP_ID}" ]]; then
-                    _PREFERRED_MENU_ENTRY_TITLE="${MENU_ENTRY_TITLE}"
-
-                elif "${_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_LAST}" \
-                    && [[ "${IOMMU_GROUP_ID}" == "${_IOMMU_GROUPS_FOR_VFIO_LIST[-1]}" ]]; then
+                if ( "${_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_FIRST}" \
+                        && [[ "${IOMMU_GROUP_ID}" -eq "${_IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST[0]}" ]] ) \
+                    || ( "${_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE}" \
+                        && [[ "${IOMMU_GROUP_ID}" -eq "${_MULTIBOOT_PREFERRED_IOMMU_GROUP_ID}" ]] ) \
+                    || ( "${_EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_LAST}" \
+                        && [[ "${IOMMU_GROUP_ID}" -eq "${_IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST[-1]}" ]] ); then
                     _PREFERRED_MENU_ENTRY_TITLE="${MENU_ENTRY_TITLE}"
                 fi
 
@@ -492,11 +487,15 @@
                 local -n REFERENCE="${1}"
                 local IOMMU_GROUP_ID="${2}"
 
-                for KERNEL in ${REFERENCE[@]}; do
-                    # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
-                    local MENU_ENTRY_TITLE="$SYSTEM_DISTRO, with ${SYSTEM_OS} ${KERNEL} (VFIO, w/o IOMMU '${IOMMU_GROUP_ID}' w/ '${THIS_IOMMU_GROUP_VGA_NAME}')"
+                # <remarks> Organize menu entry for excluded VGA group and given system kernel. </remarks>
+                for KEY in ${!REFERENCE[@]}; do
+                    local KERNEL="${REFERENCE[$KEY]}"
+                    local MENU_ENTRY_TITLE="${SYSTEM_DISTRO}, with ${SYSTEM_OS} ${KERNEL} (VFIO, w/o IOMMU ${IOMMU_GROUP_ID} w/ ${THIS_IOMMU_GROUP_VGA_NAME})"
                     _MENU_ENTRY_TITLE_LIST+=( "${MENU_ENTRY_TITLE}" )
-                    SetPreferredGRUBMenuEntryForMultibootSetup "${IOMMU_GROUP_ID}" "${MENU_ENTRY_TITLE}"
+
+                    if [[ "${KEY}" -eq 0 ]]; then
+                        SetPreferredGRUBMenuEntryForMultibootSetup "${IOMMU_GROUP_ID}" "${MENU_ENTRY_TITLE}"
+                    fi
 
                     _GRUB_CUSTOM_FILE_CONTENTS+=(
                         "menuentry \"${MENU_ENTRY_TITLE}\"{"

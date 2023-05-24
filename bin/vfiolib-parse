@@ -23,12 +23,8 @@
                 AskToParseFromXML
                 AreParsedIOMMUGroupsValid || return "${?}"
                 SelectIOMMUGroups
-                AreSelectedIOMMUGroupsValid || return "${?}"
-
-                if ! "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}"; then
-                    IsParseSelectionOfVGAValid || return "${?}"
-                fi
-
+                IsValidParseSelection || return "${?}"
+                IsValidParseSelectionOfVGA || return "${?}"
                 return 0
             fi
 
@@ -133,6 +129,7 @@
                 declare -ga _IOMMU_GROUPS_FOR_HOST_LIST=( )
                 declare -ga _IOMMU_GROUPS_FOR_VFIO_LIST=( )
                 declare -ga _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST=( )
+                declare -ga _IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST=( )
                 declare -gr _REGEX_DOMAIN_ID='^[0-9A-F][1-9A-F]$'
 
                 # <remarks> Parse arguments </remarks>
@@ -168,27 +165,33 @@
                 return 0
             }
 
-            function AreSelectedIOMMUGroupsValid
+            function IsValidParseSelection
             {
                 if ! IsValidEnumOfIOMMUGroups "_IOMMU_GROUPS_FOR_HOST_LIST"; then
-                    echo -e "${_PREFIX_ERROR} Invalid allocation of devices for host."
+                    echo -e "${_PREFIX_ERROR} Invalid selection of devices for Host."
                     return 1
                 fi
 
                 if ! IsValidEnumOfIOMMUGroups "_IOMMU_GROUPS_FOR_VFIO_LIST"; then
-                    echo -e "${_PREFIX_ERROR} Invalid selection of devices for VFIO setup."
+                    echo -e "${_PREFIX_ERROR} Invalid selection of devices for VFIO."
                     return 1
                 fi
 
                 return 0
             }
 
-            function IsParseSelectionOfVGAValid
+            function IsValidParseSelectionOfVGA
             {
-                if ! "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}" \
-                    && ! IsValidEnumOfIOMMUGroups "_IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST"; then
-                    echo -e "${_PREFIX_ERROR} No groups with VGA devices selected."
-                    return 1
+                if "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}"; then
+                    if ! IsValidEnumOfIOMMUGroups "_IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST"; then
+                        echo -e "${_PREFIX_ERROR} Invalid selection of VGA devices for VFIO."
+                        return 1
+                    fi
+                else
+                    if ! IsValidEnumOfIOMMUGroups "_IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST"; then
+                        echo -e "${_PREFIX_ERROR} Invalid selection of VGA devices for Host."
+                        return 1
+                    fi
                 fi
 
                 return 0
@@ -579,6 +582,11 @@
                 for IOMMU_GROUP_ID in ${IOMMU_GROUPS_TEMP_LIST[@]}; do
                     if DoesIOMMUGroupHaveExternalDevices "${IOMMU_GROUP_ID}"; then
                         _IOMMU_GROUPS_FOR_VFIO_LIST+=( "${IOMMU_GROUP_ID}" )
+
+                        if DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}"; then
+                            _IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST+=( "${IOMMU_GROUP_ID}" )
+                        fi
+
                         break
                     fi
                 done
@@ -593,7 +601,7 @@
                         fi
                     done
 
-                    if "$IS_IN_VFIO_LIST"; then
+                    if "${IS_IN_VFIO_LIST}"; then
                         continue
                     fi
 
@@ -614,6 +622,11 @@
 
                     if ! DoesIOMMUGroupHaveExternalDevices "${IOMMU_GROUP_ID}"; then
                         _IOMMU_GROUPS_FOR_VFIO_LIST+=( "${IOMMU_GROUP_ID}" )
+
+                        if DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}"; then
+                            _IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST+=( "${IOMMU_GROUP_ID}" )
+                        fi
+
                         break
                     else
                         if DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}"; then
@@ -737,6 +750,10 @@
 
                 if AskToExecuteOrSkip "Select IOMMU group ${_SET_COLOR_YELLOW}${IOMMU_GROUP_ID}${_RESET_COLOR}?"; then
                     _IOMMU_GROUPS_FOR_VFIO_LIST+=( "${IOMMU_GROUP_ID}" )
+
+                    if DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}"; then
+                        _IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST+=( "${IOMMU_GROUP_ID}" )
+                    fi
                 else
                     if DoesIOMMUGroupHaveVGADevice "${IOMMU_GROUP_ID}"; then
                         _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${IOMMU_GROUP_ID}" )
