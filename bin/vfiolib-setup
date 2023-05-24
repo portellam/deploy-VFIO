@@ -20,15 +20,8 @@
         {
             function Main
             {
-                if GetPassExitCode; then
-                    if BackupFiles; then
-                        AskToSpecifyVFIOSetup || return "${?}"
-                    fi
-                else
-                    GetExitCode
-                    RestoreFiles
-                    return "${?}"
-                fi
+                BackupFiles || return "${?}"
+                AskToSpecifyVFIOSetup || return "${?}"
 
                 if "${_EXECUTE_VFIO_SETUP_UNINSTALL}"; then
                     ExecuteUninstallSetup
@@ -50,7 +43,16 @@
 
             local OUTPUT="Executing VFIO setup...\t"
             PrintSuffixWait "${OUTPUT}"
+
             Main
+            SetExitCode
+
+            if ! GetPassExitCode; then
+                RestoreFiles
+                false
+                SetExitCode
+            fi
+
             PrintSuffixPassOrFail "${OUTPUT}"
             return "${_LAST_EXIT_CODE}"
         }
@@ -92,7 +94,8 @@
             declare -g _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_LAST=false
             declare -g _EXECUTE_VFIO_SETUP_MULTIBOOT_PREFER_VALUE=false
             declare -g _EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB=false
-            declare -g _EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=true
+            declare -g _EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB=false
+            declare -g _EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB=false
             declare -g _EXECUTE_VFIO_SETUP_UNINSTALL=false
 
             # <summary> File output: GRUB </summary>
@@ -213,7 +216,7 @@
                 if "${_EXECUTE_VFIO_SETUP_MULTIBOOT_WITH_GRUB}" \
                     || "${_EXECUTE_VFIO_SETUP_STATIC_WITH_GRUB}" \
                     || "${_EXECUTE_VFIO_SETUP_STATIC_WITHOUT_GRUB}" \
-                    || "${_EXECUTE_VFIO_SETUP_UNINSTALL}" ; then
+                    || "${_EXECUTE_VFIO_SETUP_UNINSTALL}"; then
                     return 0
                 fi
 
