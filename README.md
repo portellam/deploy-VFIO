@@ -168,7 +168,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 * **Multi-boot VFIO setup**
     - Create multiple VFIO setups with corresponding GRUB menu entries.     **More flexibility.**
     - Default menu entry is without VFIO setup.
-    - Best for systems with two or more PCI [VGA](#VGA) devices, *without* an integrated VGA device (iGPU).
+    - Best for systems with two or more PCI [VGA](#VGA) devices, *without an integrated VGA device (iGPU)*.
     - Select a GRUB menu entry with a VGA device to boot from (excludes that VGA device's IOMMU group from VFIO).
     - **Disclaimer:** For best results, use *auto-Xorg*.<sup>[5](#5)</sup>
 * **Static VFIO setup**
@@ -176,7 +176,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
     - Specify method of setup:
         - Append output to GRUB; single GRUB menu entry.
         - Append output to system configuration files.
-    - Best for systems with one or more PCI VGA device(s) **and** one integrated VGA device (iGPU).
+    - Best for systems with one or more PCI VGA device(s) *and one integrated VGA device (iGPU)*.
     - Traditional PCI Passthrough/VFIO setup.
 * **Dynamic VFIO setup *(unsupported currently)***
     - Use Libvirt hooks to bind or unbind devices at Guest start or stop.
