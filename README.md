@@ -165,8 +165,8 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
     - **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 
 ### VFIO setup <sub>(vfiolib-setup)</sub>
-* **Multi-boot VFIO setup**                                                 **More flexibility.**
-    - Create multiple VFIO setups with corresponding GRUB menu entries.
+* **Multi-boot VFIO setup**
+    - Create multiple VFIO setups with corresponding GRUB menu entries.     **More flexibility.**
     - Default menu entry is without VFIO setup.
     - Best for systems with two or more PCI [VGA](#VGA) devices, *without* an integrated VGA device (iGPU).
     - Select a GRUB menu entry with a VGA device to boot from (excludes that VGA device's IOMMU group from VFIO).
