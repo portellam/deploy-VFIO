@@ -148,15 +148,13 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 ## Features
 ### Pre-setup  <sub>(vfiolib-pre-setup)</sub>
 * **Allocate CPU**
-    - Reduce Host overhead, and improve both Host and Guest performance.
-    - **Statically** allocate of Host CPU cores (and/or threads).<sup>[2](#2)</sup>
-    - If skipped, setup will install the *Libvirt hook* for **Dynamic** isolation.
+    - **Statically** isolate Host CPU threads before allocating to Guest(s).<sup>[2](#2)</sup>
+    -  Reduces Host overhead, and improves both Host and Guest performance.
+    -  If skipped, setup will install the *Libvirt hook* for **Dynamic** isolation.
 * **Allocate RAM**
-    - Eliminate the need to defragment Host memory (RAM) before allocating Guest memory.
-    - Reduce Host overhead, and improve both Host and Guest performance.
-    - **Statically** allocate Host memory to Guests.
-    - Implementation is known as *Static Hugepages*.<sup>[3](#3)</sup>
-    - If skipped, setup will install the *Libvirt hook* for **Dynamic** allocation (*Transparent* hugepages).
+    - ***Static** Hugepages* eliminate the need to defragment Host memory (RAM) before allocating to Guest(s).<sup>[3](#3)</sup>
+    - Reduces Host overhead, and improves both Host and Guest performance.
+    - If skipped, setup will install the *Libvirt hook* for **Dynamic** allocation (*Transparent hugepages*).
 * **Virtual KVM (Keyboard Video Mouse) switch**
     - Allow a user to swap a group of Input devices (as a whole) between active Guest(s) and Host.
     - Use the pre-defined macro (example: *'L-CTRL' + 'R-CTRL'*).
@@ -167,17 +165,16 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 ### VFIO setup <sub>(vfiolib-setup)</sub>
 * **Multi-boot VFIO setup**
     - Create multiple VFIO setups with corresponding GRUB menu entries.     **More flexibility.**
+    - Select a GRUB menu entry with a VGA device to boot from (excludes that VGA device's IOMMU group from VFIO).
     - Default menu entry is without VFIO setup.
     - Best for systems with two or more PCI [VGA](#VGA) devices, *without an integrated VGA device (iGPU)*.
-    - Select a GRUB menu entry with a VGA device to boot from (excludes that VGA device's IOMMU group from VFIO).
-    - **Disclaimer:** For best results, use *auto-Xorg*.<sup>[5](#5)</sup>
+   - **Disclaimer:** For best results, use *auto-Xorg*.<sup>[5](#5)</sup>
 * **Static VFIO setup**
     - Single VFIO setup.                                                    **Less flexibility.**
     - Specify method of setup:
         - Append output to GRUB; single GRUB menu entry.
         - Append output to system configuration files.
     - Best for systems with one or more PCI VGA device(s) *and one integrated VGA device (iGPU)*.
-    - Traditional PCI Passthrough/VFIO setup.
 * **Dynamic VFIO setup *(unsupported currently)***
     - Use Libvirt hooks to bind or unbind devices at Guest start or stop.
     - Most responsibility; best for more experienced users.
