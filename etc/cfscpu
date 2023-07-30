@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+
+#
+# Filename:         /etc/libvirt/hooks/cfscpu
+# Description:      Set the "nice level" of the Completely Fair Scheduler of vCPU threads.
+# URL(s):           https://github.com/PassthroughPOST/VFIO-Tools
+# Author(s):        Danny Lin <danny@kdrag0n.dev>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <remarks>
+# This hook sets the CFS "nice level" of the vCPU threads to the configured
+# value. This can be useful as a replacement for using the real-time FIFO
+# scheduling policy (SCHED_FIFO) through libvirt since it causes lockups on
+# some systems. It can improve VM responsiveness when CPU load on the host is
+# high by making the CFS scheduler prioritize runnable vCPU threads over other
+# miscellaneous processes which are "nicer".
+#
+# Note that this is primarily intended for setups where QEMU is not running as
+# its own dedicated user as otherwise it is preferred to use udev rules to
+# set the user's default nice level instead. Some setups necessitate running
+# QEMU as another user for PulseAudio or other reasons, which is where this
+# script is useful.
+# </remarks>
+
+HOOK_NAME="cfscpu"
+PREFIX_ERROR="An error occurred:"
+PREFIX_PROMPT="libvirt-qemu ${HOOK_NAME}:"
+DOMAIN_NAME="${1}"
+
+# <remarks>Ranges from 20 (lowest priority) to -20 (highest priority).</remarks>
+TARGET_NICE="-1"
+
+function GetVCPUPath
+{
+    if ls /sys/fs/cgroup/cpu/machine.slice/machine-qemu*${DOMAIN_NAME}.scope/libvirt/vcpu* 1> /dev/null 2>&1; then
+        echo "${PREFIX_PROMPT} Found vCPU paths in Libvirt subdirectory." > /dev/kmsg
+        VCPU_PATH="/sys/fs/cgroup/cpu/machine.slice/machine-qemu*${DOMAIN_NAME}.scope/libvirt/vcpu*"
+    else
+        echo "${PREFIX_PROMPT} Failed to find vCPU paths in Libvirt subdirectory. Found vCPU directory." > /dev/kmsg
+        VCPU_PATH="/sys/fs/cgroup/cpu/machine.slice/machine-qemu*${DOMAIN_NAME}.scope/vcpu*"
+    fi
+
+    return 0
+}
+
+function PrioritizeVCPUForDomain
+{
+    if ! SetNiceLevelForDomain; then
+        echo "${PREFIX_PROMPT} ${PREFIX_ERROR} Failed to prioritize vCPU threads of Libvirt domain '${DOMAIN_NAME}'" > /dev/kmsg
+        return 1
+    fi
+
+    echo "${PREFIX_PROMPT} Prioritized vCPU threads of Libvirt domain '${DOMAIN_NAME}'" > /dev/kmsg
+    return 0
+}
+
+function SetNiceLevelForDomain
+{
+    for VCPU_GROUP in ${VCPU_PATH}; do
+        echo "${PREFIX_PROMPT} Setting nice level of ${TARGET_NICE} to vCPU group '$( basename ${VCPU_GROUP} ).'" > /dev/kmsg
+
+        for PID in $( cat ${VCPU_GROUP}/tasks ); do
+            if ! renice -n "${TARGET_NICE}" -p "${PID}" 2> /dev/null; then
+                echo "${PREFIX_PROMPT} ${PREFIX_ERROR} Failed to set nice level for PID '${PID}'"
+                return 1
+            fi
+        done
+    done
+
+    return 0
+}
+
+if [[ ! -z "${DOMAIN_NAME}" ]]; then
+    GetVCPUPath
+    PrioritizeVCPUForDomain
+fi

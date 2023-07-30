@@ -1,0 +1,377 @@
+#!/bin/false
+
+#
+# Filename:       vfiolib-files
+# Description:    Gets and sets necessary backups of system files.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source vfiolib-common
+# </sources>
+
+# <functions>
+  # <summary>Public</summary>
+    function RestoreDefaultFiles
+    {
+      SetWorkingDirToBackupsFolder || return "${?}"
+      GetFiles || return "${?}"
+      SetFiles || return "${?}"
+      CopyFilesToPaths || return "${?}"
+      _HAS_RESTORED_DEFAULT_FILES=true
+      return 0
+    }
+
+    # <summary>Global setters</summary>
+    function SetParameters
+    {
+      if [[ ! -z "${_ARE_FILES_PARAMS_SET}" ]] \
+        && "${_ARE_FILES_PARAMS_SET}"; then
+        return 0
+      fi
+
+      declare -g _ARE_FILES_PARAMS_SET=true
+
+      # <remarks>Execution Flags</remarks>
+      declare -g _HAS_RESTORED_DEFAULT_FILES=false
+      declare -g _DO_UNDO_CHANGES=false
+
+      # <summary>Files</summary>
+        # <remarks>Main</remarks>
+        declare -g _ETC_PATH="/usr/local/etc"
+        declare -g _BACKUPS_PATH="${_ETC_PATH}/vfiolib.d"
+        declare -g _HOOKS_PATH="/etc/libvirt/hooks"
+        declare -g _SUFFIX_BACKUP=".old"
+
+        # <remarks>Audio loopback service</remarks>
+        declare -g _AUDIO_LOOPBACK_DEST_PATH="/etc/systemd/system/${_AUDIO_LOOPBACK_FILENAME}"
+        declare -g _AUDIO_LOOPBACK_FILENAME="audio-loopback-user.service"
+        declare -g _AUDIO_LOOPBACK_SRC_PATH="${_BACKUPS_PATH}/${_AUDIO_LOOPBACK_FILENAME}"
+
+        # <remarks>Multiboot VFIO setup with GRUB</remarks>
+        declare -g _GRUB_PATH="/etc/grub.d"
+        declare -g _GRUB_CUSTOM_PROXY_FILENAME="_custom_proxy"
+        declare -g _GRUB_CUSTOM_DEST_PATH="${_GRUB_PATH}/proxifiedScripts/custom"
+        declare -g _GRUB_CUSTOM_SRC_PATH="${_BACKUPS_PATH}/custom"
+
+        # <remarks>QEMU files</remarks>
+        declare -g _APPARMOR_QEMU_DEST_PATH="/etc/apparmor.d/local/abstractions/libvirt-qemu"
+        declare -g _APPARMOR_QEMU_SRC_PATH="${_BACKUPS_PATH}/libvirt-qemu"
+
+        declare -g _QEMU_DEST_PATH="/etc/libvirt/qemu.conf"
+        declare -g _QEMU_FILE_URL="https://github.com/libvirt/libvirt/blob/master/src/qemu/qemu.conf.in"
+        declare -g _QEMU_SRC_PATH="${_BACKUPS_PATH}/qemu.conf"
+
+        # <remarks>QEMU hooks</remarks>
+        declare -g _LIBVIRT_HOOK_DEST_PATH="${_HOOKS_PATH}/qemu"
+        declare -g _LIBVIRT_HOOK_SRC_PATH="${_BACKUPS_PATH}/qemu"
+
+        declare -g _LIBVIRT_HOOK_CFSCPU_HOOK_FILENAME="cfscpu"
+        declare -g _LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_CFSCPU_HOOK_FILENAME}"
+        declare -g _LIBVIRT_HOOK_CFSCPU_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_CFSCPU_HOOK_FILENAME}"
+
+        declare -g _LIBVIRT_HOOK_DDCUTIL_HOOK_FILENAME="ddcutil"
+        declare -g _LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_DDCUTIL_HOOK_FILENAME}"
+        declare -g _LIBVIRT_HOOK_DDCUTIL_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_DDCUTIL_HOOK_FILENAME}"
+
+        declare -g _LIBVIRT_HOOK_ISOLCPU_HOOK_FILENAME="isolcpu"
+        declare -g _LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_ISOLCPU_HOOK_FILENAME}"
+        declare -g _LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_ISOLCPU_HOOK_FILENAME}"
+
+        declare -g _LIBVIRT_HOOK_RAMPAGE_HOOK_FILENAME="hugepages"
+        declare -g _LIBVIRT_HOOK_RAMPAGE_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_RAMPAGE_HOOK_FILENAME}"
+        declare -g _LIBVIRT_HOOK_RAMPAGE_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_RAMPAGE_HOOK_FILENAME}"
+
+        declare -g _LIBVIRT_HOOK_NOSLEEP_HOOK_FILENAME="nosleep"
+        declare -g _LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_NOSLEEP_HOOK_FILENAME}"
+        declare -g _LIBVIRT_HOOK_NOSLEEP_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_NOSLEEP_HOOK_FILENAME}"
+
+        declare -g _LIBVIRT_HOOK_NOSLEEP_SERVICE_DEST_PATH="/etc/systemd/system/${_LIBVIRT_HOOK_NOSLEEP_SERVICE_FILENAME}"
+        declare -g _LIBVIRT_HOOK_NOSLEEP_SERVICE_FILENAME="libvirt-nosleep@.service"
+        declare -g _LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_NOSLEEP_SERVICE_FILENAME}"
+
+        declare -g _LIBVIRT_HOOK_UPDATE_HOOK_FILENAME="set-hooks"
+        declare -g _LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH="${_HOOKS_PATH}/${_LIBVIRT_HOOK_UPDATE_HOOK_FILENAME}"
+        declare -g _LIBVIRT_HOOK_UPDATE_HOOK_SRC_PATH="${_BACKUPS_PATH}/${_LIBVIRT_HOOK_UPDATE_HOOK_FILENAME}"
+
+        # <remarks>Static VFIO setup with GRUB</remarks>
+        declare -g _GRUB_SRC_BACKUP_PATH="${_BACKUPS_PATH}/grub.new"
+        declare -g _GRUB_SRC_PATH="${_BACKUPS_PATH}/grub"
+
+        declare -g _GRUB_DEST_PATH_1="/etc/default/grub"
+        declare -g _GRUB_DEST_PATH_2="/usr/share/grub/default/grub"
+
+        # <remarks>Static VFIO setup without GRUB</remarks>
+        declare -g _INITRAMFS_MODULES_DEST_PATH="/etc/initramfs-tools/modules"
+        declare -g _INITRAMFS_MODULES_SRC_PATH="${_BACKUPS_PATH}/initramfs-tools"
+
+        declare -g _MODPROBE_BLACKLISTS_DEST_PATH="/etc/modprobe.d/pci-blacklists.conf"
+        declare -g _MODPROBE_BLACKLISTS_SRC_PATH="${_BACKUPS_PATH}/pci-blacklists.conf"
+        declare -g _MODPROBE_VFIO_DEST_PATH="/etc/modprobe.d/vfio.conf"
+        declare -g _MODPROBE_VFIO_SRC_PATH="${_BACKUPS_PATH}/vfio.conf"
+
+        declare -g _MODULES_DEST_PATH="/etc/modules"
+        declare -g _MODULES_SRC_PATH="${_BACKUPS_PATH}/modules"
+    }
+
+  # <summary>Private</summary>
+    function BackupFile
+    {
+      if [[ -e "${1}" ]] \
+        && cmp -s "${1}" "${1}${_SUFFIX_BACKUP}"; then
+        return 0
+      fi
+
+      if ( [[ -e "${1}" ]] \
+        && ! sudo cp -rv "${1}" "${1}${_SUFFIX_BACKUP}" &> /dev/null ); then
+        echo -e "${_PREFIX_ERROR} Failed to backup file '${1}'."
+        return 1
+      fi
+
+      return 0
+    }
+
+    function BackupAllFiles
+    {
+      function Main
+      {
+        BackupFile "${_APPARMOR_QEMU_DEST_PATH}" || return "${?}"
+        BackupFile "${_GRUB_CUSTOM_DEST_PATH}" || return "${?}"
+        BackupFile "${_GRUB_DEST_PATH_1}" || return "${?}"
+        BackupFile "${_INITRAMFS_MODULES_DEST_PATH}" || return "${?}"
+        BackupFile "${_MODPROBE_BLACKLISTS_DEST_PATH}" || return "${?}"
+        BackupFile "${_MODPROBE_VFIO_DEST_PATH}" || return "${?}"
+        BackupFile "${_MODULES_DEST_PATH}" || return "${?}"
+        BackupFile "${_QEMU_DEST_PATH}" || return "${?}"
+        return 0
+      }
+
+      local OUTPUT="Executing backups...\t"
+      # PrintSuffixWait "${OUTPUT}"
+      Main
+      PrintSuffixPassOrFail "${OUTPUT}"
+      return "${_LAST_EXIT_CODE}"
+    }
+
+    function CopyFilesToPaths
+    {
+      if ! sudo mkdir -p $( dirname "${_APPARMOR_QEMU_DEST_PATH}" ) \
+        || ! sudo mkdir -p $( dirname "${_GRUB_CUSTOM_DEST_PATH}" ) \
+        || ! sudo mkdir -p $( dirname "${_QEMU_DEST_PATH}" ); then
+        echo -e "${_PREFIX_ERROR} Failed to create directories."
+        return 1
+      fi
+
+      if [[ -e "${_APPARMOR_QEMU_DEST_PATH}" ]] \
+        && ! sudo rm "${_APPARMOR_QEMU_DEST_PATH}" &> /dev/null; then
+        echo -e "${_PREFIX_ERROR} Failed to delete file '${_APPARMOR_QEMU_DEST_PATH}'."
+        return 1
+      fi
+
+      if ! sudo touch "${_APPARMOR_QEMU_DEST_PATH}" &> /dev/null; then
+        echo -e "${_PREFIX_ERROR} Failed to create file '${_APPARMOR_QEMU_DEST_PATH}'."
+        return 1
+      fi
+
+      if ! sudo cp -rv "${_GRUB_CUSTOM_SRC_PATH}" "${_GRUB_CUSTOM_DEST_PATH}" &> /dev/null \
+        || ! sudo cp -rv "${_INITRAMFS_MODULES_SRC_PATH}" "${_INITRAMFS_MODULES_DEST_PATH}" &> /dev/null \
+        || ! sudo cp -rv "${_MODPROBE_BLACKLISTS_SRC_PATH}" "${_MODPROBE_BLACKLISTS_DEST_PATH}" &> /dev/null \
+        || ! sudo cp -rv "${_MODPROBE_VFIO_SRC_PATH}" "${_MODPROBE_VFIO_DEST_PATH}" &> /dev/null \
+        || ! sudo cp -rv "${_MODULES_SRC_PATH}" "${_MODULES_DEST_PATH}" &> /dev/null \
+        || ! sudo cp -rv "${_QEMU_SRC_PATH}" "${_QEMU_DEST_PATH}" &> /dev/null; then
+        echo -e "${_PREFIX_ERROR} Failed to copy files."
+        return 1
+      fi
+
+      if ! sudo chown root:root "${_APPARMOR_QEMU_DEST_PATH}" &> /dev/null \
+        || ! sudo chown root:root "${_GRUB_CUSTOM_DEST_PATH}" &> /dev/null \
+        || ! sudo chmod +x "${_GRUB_CUSTOM_DEST_PATH}" &> /dev/null \
+        || ! sudo chown root:root "${_INITRAMFS_MODULES_DEST_PATH}" &> /dev/null \
+        || ! sudo chown root:root "${_MODPROBE_BLACKLISTS_DEST_PATH}" &> /dev/null \
+        || ! sudo chown root:root "${_MODPROBE_VFIO_DEST_PATH}" &> /dev/null \
+        || ! sudo chown root:root "${_MODULES_DEST_PATH}" &> /dev/null \
+        || ! sudo chown root:root "${_QEMU_DEST_PATH}" &> /dev/null; then
+        echo -e "${_PREFIX_ERROR} Failed to set permissions for files."
+        return 1
+      fi
+
+      if ! sudo chmod 644 "${_APPARMOR_QEMU_DEST_PATH}" &> /dev/null; then
+        echo -e "${_PREFIX_ERROR} Failed to set permissions for file '${_APPARMOR_QEMU_DEST_PATH}'."
+        return 1
+      fi
+    }
+
+    function GetFiles
+    {
+      if [[ ! -e "${_AUDIO_LOOPBACK_SRC_PATH}" ]] \
+        || [[ ! -e "${_GRUB_CUSTOM_SRC_PATH}" ]] \
+        || [[ ! -e "${_INITRAMFS_MODULES_SRC_PATH}" ]] \
+        || [[ ! -e "${_LIBVIRT_HOOK_SRC_PATH}" ]] \
+        || [[ ! -e "${_LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH}" ]] \
+        || [[ ! -e "${_MODPROBE_BLACKLISTS_SRC_PATH}" ]] \
+        || [[ ! -e "${_MODPROBE_VFIO_SRC_PATH}" ]] \
+        || [[ ! -e "${_MODULES_SRC_PATH}" ]]; then
+        echo -e "${_PREFIX_ERROR} Failed to find backup files."
+        return 1
+      fi
+
+      if [[ ! -e "${_GRUB_SRC_PATH}" ]]; then
+        GetFilesForGRUB || return 1
+      fi
+
+      return 0
+    }
+
+    function GetFilesForGRUB
+    {
+      if [[ -e "${_GRUB_DEST_PATH_1}" ]]; then
+        return 0
+      fi
+
+      if [[ ! -e "${_GRUB_DEST_PATH_2}" ]] \
+        && [[ ! -e "${_GRUB_SRC_PATH}" ]]; then
+        echo -e "${_PREFIX_ERROR} Failed to find GRUB source file."
+        return 1
+      fi
+
+      if [[ ! -e "${_GRUB_DEST_PATH_BACKUP}" ]]; then
+        if ! sudo cp "${_GRUB_DEST_PATH_2}" "${_GRUB_SRC_PATH}"; then
+          echo -e "${_PREFIX_ERROR} Failed to backup GRUB source file."
+          return 1
+        fi
+      fi
+
+      return 0
+    }
+
+    function RestoreFile
+    {
+      if [[ -e "${1}${_SUFFIX_BACKUP}" ]] \
+        && cmp -s "${1}" "${1}${_SUFFIX_BACKUP}"; then
+        return 0
+      fi
+
+      if ( [[ -e "${1}${_SUFFIX_BACKUP}" ]] \
+        && ! sudo cp -rv "${1}${_SUFFIX_BACKUP}" "${1}" &> /dev/null ); then
+        echo -e "${_PREFIX_ERROR} Failed to restore file '${1}'."
+        return 1
+      fi
+
+      if [[ -e "${1}${_SUFFIX_BACKUP}" ]] \
+        && ! sudo rm -f "${1}${_SUFFIX_BACKUP}" &> /dev/null; then
+        echo -e "${_PREFIX_ERROR} Failed to delete backup '${1}'."
+        return 1
+      fi
+
+      return 0
+    }
+
+    function RestoreAllFiles
+    {
+      function Main
+      {
+        RestoreFile "${_APPARMOR_QEMU_DEST_PATH}" || return "${?}"
+        RestoreFile "${_GRUB_CUSTOM_DEST_PATH}" || return "${?}"
+        RestoreFile "${_GRUB_DEST_PATH_1}" || return "${?}"
+        RestoreFile "${_INITRAMFS_MODULES_DEST_PATH}" || return "${?}"
+        RestoreFile "${_MODPROBE_BLACKLISTS_DEST_PATH}" || return "${?}"
+        RestoreFile "${_MODPROBE_VFIO_DEST_PATH}" || return "${?}"
+        RestoreFile "${_MODULES_DEST_PATH}" || return "${?}"
+        RestoreFile "${_QEMU_DEST_PATH}" || return "${?}"
+        return 0
+      }
+
+      if ! "${_DO_UNDO_CHANGES}"; then
+        return 0
+      fi
+
+      local OUTPUT="Undoing changes...\t"
+      # PrintSuffixWait "${OUTPUT}"
+      Main
+      PrintSuffixPassOrFail "${OUTPUT}"
+      return "${_LAST_EXIT_CODE}"
+    }
+
+    function SetFilesForQEMU
+    {
+      if [[ -e "${_QEMU_DEST_PATH}" ]]; then
+        return 0
+      fi
+
+      if [[ ! -e "${_QEMU_SRC_PATH}" ]]; then
+        echo -e "${_PREFIX_ERROR} Failed to find QEMU source file. Attempting to download."
+
+        if ! command -v curl &> /dev/null; then
+          echo -e "${_PREFIX_ERROR} Required command 'curl' is not installed."
+          return 1
+        fi
+
+        if ! curl -v "${_QEMU_FILE_URL}" -o "${_QEMU_SRC_PATH}" &> /dev/null; then
+          echo -e "${_PREFIX_ERROR} Failed to find backup QEMU source file."
+          return 1
+        fi
+      fi
+
+      if ! sudo cp ${_QEMU_SRC_PATH} ${_QEMU_DEST_PATH} &> /dev/null; then
+        echo -e "${_PREFIX_ERROR} Failed to restore QEMU backup file."
+        return 1
+      fi
+
+      return 0
+    }
+
+    function SetWorkingDirToBackupsFolder
+    {
+      if ! cd "${_BACKUPS_PATH}" &> /dev/null; then
+        echo -e "${_PREFIX_ERROR} Failed to set working directory."
+        return 1
+      fi
+
+      return 0
+    }
+
+    function SetFiles
+    {
+      SetFilesForGRUB || return 1
+      SetFilesForQEMU || return 1
+      return 0
+    }
+
+    function SetFilesForGRUB
+    {
+      if ! sudo cp "${_GRUB_SRC_PATH}" "${_GRUB_SRC_BACKUP_PATH}" &> /dev/null; then
+        echo -e "${_PREFIX_ERROR} Failed to copy GRUB backup file."
+        return 1
+      fi
+
+      # <remarks>Overwrite target lines, lines that need to be set to defaults.</remarks>
+      local LINE_GRUB_DISTRIBUTOR="GRUB_DISTRIBUTOR=\`lsb_release -i -s 2> /dev/null || echo "$( lsb_release -i -s )"\`"
+      local LINE_GRUB_CMDLINE_DEFAULT="GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash\""
+
+      if ! sed -i '/GRUB_DISTRIBUTOR=*/c\'"${LINE_GRUB_DISTRIBUTOR}" "${_GRUB_SRC_BACKUP_PATH}" \
+        || ! sed -i '/GRUB_CMDLINE_LINUX_DEFAULT=*/c\'"${LINE_GRUB_CMDLINE_DEFAULT}" "${_GRUB_SRC_BACKUP_PATH}"; then
+        echo -e "${_PREFIX_ERROR} Failed to clear target lines of GRUB backup file."
+        return 1
+      fi
+
+      if [[ -z $( grep "${LINE_GRUB_DISTRIBUTOR}" "${_GRUB_SRC_BACKUP_PATH}" ) ]] \
+        || [[ -z $( grep "${LINE_GRUB_CMDLINE_DEFAULT}" "${_GRUB_SRC_BACKUP_PATH}" ) ]]; then
+        echo -e "${_PREFIX_ERROR} Failed to overwrite target lines of GRUB backup file."
+        return 1
+      fi
+
+      # <remarks>Note: this must be the second file (that is the overwritten copy)</remarks>
+      if ! sudo cp "${_GRUB_SRC_BACKUP_PATH}" "${_GRUB_DEST_PATH_1}" &> /dev/null; then
+        echo -e "${_PREFIX_ERROR} Failed to restore GRUB backup file."
+        return 1
+      fi
+
+      return 0
+    }
+# </functions>
+
+# <main>
+  SetParameters
+  unset SetParameters
+# </main>

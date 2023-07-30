@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+#
+# Filename:         /etc/libvirt/hooks/hugepages
+# Description:      Reserve memory hugepages at start of Libvirt domain(s).
+# URL(s):           https://github.com/PassthroughPOST/VFIO-Tools
+# Author(s):        Sebastiaan <github.com/SharkWipf>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <remarks>
+# This hook only needs to run on `prepare/begin`, not on stop.
+#
+# This hook will help free and compact memory to ease THP allocation.
+# QEMU VMs will use THP (Transparent HugePages) by default if enough
+# unfragmented memory can be found on startup. If your memory is very
+# fragmented, this may cause a slow VM startup (like a slowly responding
+# VM start button/command), and may cause QEMU to fall back to regular
+# memory pages, slowing down VM performance.
+# If you (suspect you) suffer from this, this hook will help ease THP
+# allocation so you don't need to resort to misexplained placebo scripts.
+# </remarks>
+
+
+# <remarks>Finish writing any outstanding writes to disk.</remarks>
+sync
+
+# <remarks>Drop all filesystem caches to free up more memory.</remarks>
+echo 3 > /proc/sys/vm/drop_caches
+
+# <remarks>Do another run of writing any possible new outstanding writes.</remarks>
+sync
+
+# <remarks>Tell the kernel to "defragment" memory where possible.</remarks>
+echo 1 > /proc/sys/vm/compact_memory

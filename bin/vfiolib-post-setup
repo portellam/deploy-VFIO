@@ -1,0 +1,709 @@
+#!/bin/false
+
+#
+# Filename:         vfiolib-post-setup
+# Description:      Recommended post-installation setups.
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+# <sources>
+	source vfiolib-common
+	source vfiolib-files
+	source vfiolib-pre-setup
+# </sources>
+
+# <functions>
+	# <summary>Public</summary>
+		function ExecutePostSetup
+		{
+			function Main
+			{
+				if ( ! "${_POST_SETUP_ASK_TO_EXECUTE_ALL}" \
+					&& "${_POST_SETUP_DO_SKIP_ALL}" ) \
+						|| ! GetPassExitCode; then
+					return 255
+				fi
+
+				local ANY_PASSED=false
+				LibvirtHooks && ANY_PASSED=true
+				GetPassExitCode && GuestAudioLoopback && ANY_PASSED=true
+				GetPassExitCode && AllocateRAMToSwap && ANY_PASSED=true
+				GetPassExitCode && SetVideoOutput && ANY_PASSED=true
+
+				if "${ANY_PASSED}"; then
+					SetExitCode
+				fi
+
+				GetExitCode
+				return "${?}"
+			}
+
+			local OUTPUT="Executing post-setup...\t"
+			# echo
+			# PrintSuffixWait "${OUTPUT}"
+			Main
+			PrintSuffixPassOrFail "${OUTPUT}"
+			return "${_LAST_EXIT_CODE}"
+		}
+
+		# <summary>Global setters</summary>
+			function SetParameters
+			{
+				if [[ ! -z "${_ARE_POST_SETUP_PARAMS_SET}" ]] \
+					&& "${_ARE_POST_SETUP_PARAMS_SET}"; then
+					return 0
+				fi
+
+				declare -g _ARE_POST_SETUP_PARAMS_SET=true
+
+				# <remarks>Files</remarks>
+				declare -g _GIT_PATH="${HOME}/source/"
+
+				if [[ ! -d "${_GIT_PATH}" ]]; then
+					sudo mkdir -p "${_GIT_PATH}" &> /dev/null
+				fi
+
+				# <remarks>Execution Flags</remarks>
+				declare -g _POST_SETUP_ASK_TO_EXECUTE_ALL=true
+				declare -g _POST_SETUP_DO_EXECUTE_SKIP_ALL=true
+				declare -g _POST_SETUP_DO_EXECUTE_AUDIO_LOOPBACK=false
+				declare -g _POST_SETUP_DO_EXECUTE_AUTO_XORG=false
+				declare -g _POST_SETUP_DO_EXECUTE_LIBVIRT_HOOKS=false
+				declare -g _POST_SETUP_DO_EXECUTE_ZRAM_SWAP=false
+				declare -g _POST_SETUP_DO_SKIP_ALL=false
+				declare -g _POST_SETUP_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=false
+				declare -g _POST_SETUP_HAS_ARG_AUTO_XORG_SORT_ORDER=false
+				declare -g _POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE=false
+				declare -g _POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS=false
+				declare -g _POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION=false
+			}
+
+	# <summary>Private</summary>
+		# <summary>
+		# zramswap: Setup a swap partition in host memory.
+		# Reduce swapiness to existing host swap partition(s)/file(s), and reduce chances of memory exhaustion as host over-allocates memory.
+		# </summary>
+			function AllocateRAMToSwap
+			{
+				function Ask
+				{
+					if "${_POST_SETUP_ASK_TO_EXECUTE_ALL}"; then
+						echo
+						AskToExecuteOrSkip "Install ${_SET_COLOR_YELLOW}zram-swap${_RESET_COLOR}?" && _POST_SETUP_DO_EXECUTE_ZRAM_SWAP=true
+					fi
+
+					return 0
+				}
+
+				function Get
+				{
+					UpdateOrCloneGitRepo "${_GIT_PATH}" "${FULL_REPO}" "${USER_NAME}" "${_POST_SETUP_DO_EXECUTE_ZRAM_SWAP}" || return 1
+					return 0
+				}
+
+				function Install
+				{
+					local SCRIPT_NAME="install.sh"
+
+					if ! cd "${_GIT_PATH}${FULL_REPO}"; then
+							echo -e "${_PREFIX_ERROR} Failed to find build directory."
+							return 1
+					fi
+
+					if [[ ! -e "${SCRIPT_NAME}" ]]; then
+							echo -e "${_PREFIX_ERROR} Failed to find script '${SCRIPT_NAME}'."
+							return 1
+					fi
+
+					if ! echo "i" | sudo bash "${SCRIPT_NAME}" &> /dev/null; then
+							echo -e "${_PREFIX_ERROR} Failed to execute script '${SCRIPT_NAME}'."
+							return 1
+					fi
+
+					return 0
+				}
+
+				function Uninstall
+				{
+					if ! sudo swapon -v | grep zram &> /dev/null; then
+						return 0
+					fi
+
+					if ! sudo swapoff /dev/zram* &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to disable zram-swap device(s)."
+						return 1
+					fi
+
+					if ! sudo systemctl stop zram-swap &> /dev/null; then
+							echo -e "${_PREFIX_ERROR} Failed to stop zram-swap service."
+							return 1
+					fi
+
+					if ! sudo systemctl stop zram-swap &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to stop zram-swap service."
+						return 1
+					fi
+
+					if ! sudo systemctl daemon-reload &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to update systemd."
+						return 1
+					fi
+
+					return 0
+				}
+
+				function Modify
+				{
+					function AskToContinue
+					{
+						local -n REFERENCE="${1}"
+
+						for COUNT in $( seq 0 2 ); do
+							read -r -p "Set fraction of total memory for zram-swap to use (to calculate default, enter 'default'): " ANSWER
+
+							if GetZRAMSwapSize "${ANSWER}"; then
+								REFERENCE="${ANSWER}"
+								return 0
+							fi
+						done
+
+						return 1
+					}
+
+					local FILE="/etc/default/zram-swap"
+					local LINE_TO_MATCH="_zram_fraction="
+					local FRACTION="${_ARGS_FOR_ZRAM_SWAP_FRACTION}"
+
+					if ! "${_POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
+						&& ! "${_POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
+						AskToContinue "FRACTION" || return "${?}"
+					fi
+
+
+					if "${_POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
+						&& ! "${_POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
+						local -i ZRAM_SWAP_AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY / 2 ))
+						local -i DENOMINATOR=$( printf "%.0f" $( echo "scale=2;${_MAX_MEMORY}/${ZRAM_SWAP_AVAILABLE_MEMORY}" | bc ) )
+
+						# <remarks>Round down to nearest even number.</remarks>
+						if [[ $( expr ${DENOMINATOR} % 2 ) -eq 1 ]]; then
+							(( DENOMINATOR-- ))
+						fi
+
+						# <remarks>Is fraction positive non-zero and not equal to one.</remarks>
+						if [[ "${DENOMINATOR}" -le 0 ]]; then
+							echo -e "${_PREFIX_ERROR} Denominator is negative or zero."
+						fi
+
+						FRACTION="1/${DENOMINATOR}"
+					fi
+
+					if ! sed -i '/'${LINE_TO_MATCH}'"*"/c\'${LINE_TO_MATCH}'"'${FRACTION}'"' "${FILE}"; then
+						echo -e "${_PREFIX_ERROR} Failed to write output to zram-swap file."
+						return 1
+					fi
+
+					if ! "${_POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE}" \
+						&& sudo swapon -v | grep zram &> /dev/null \
+						&& sudo swapon -v | grep zram &> /dev/null \
+						&& ! sudo swapon -v | grep zram | grep 0B &> /dev/null; then
+						echo -e "${_PREFIX_NOTE} zram-swap device(s) already in use. Restart system to save changes."
+						return 0
+					fi
+
+					if sudo swapon -v | grep zram &> /dev/null \
+						&& ! sudo swapoff /dev/zram* &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to disable zram-swap device(s)."
+						return 1
+					fi
+
+					if ! sudo systemctl daemon-reload &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to update systemd."
+						return 1
+					fi
+
+					if ! sudo systemctl restart zram-swap &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to restart zram-swap service."
+						return 1
+					fi
+
+					if ! sudo swapon -v | grep zram &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to enable zram-swap device."
+						return 1
+					fi
+
+					return 0
+				}
+
+				function Main
+				{
+					Ask
+
+					if ! "${_POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
+						AskToExecuteOrSkip "Uninstall ${_SET_COLOR_YELLOW}zram-swap${_RESET_COLOR}?" || return 255
+						Uninstall
+						return "${?}"
+					fi
+
+					Get || return "${?}"
+					Install || return "${?}"
+					Modify || return "${?}"
+					return 0
+				}
+
+				local USER_NAME="foundObjects"
+				local REPO_NAME="zram-swap"
+				local FULL_REPO="${USER_NAME}/${REPO_NAME}"
+
+				Main
+				PrintSuffixPassOrFail "Allocating RAM to swap..."
+				return "${_LAST_EXIT_CODE}"
+			}
+
+			function GetZRAMSwapSize
+			{
+				IsHostMemorySufficientForZRAMSwap || return 1
+
+				case "${1}" in
+					*"/"* )
+						local -i NUMERATOR=$( echo ${1} | cut -d '/' -f1 )
+						local -i DENOMINATOR=$( echo ${1} | cut -d '/' -f2 ) ;;
+
+					"default" )
+						_POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS=true
+						return 0 ;;
+
+					* )
+						echo -e "${_PREFIX_ERROR} Not a fraction."
+						return 1 ;;
+				esac
+
+				if ! IsInt "${NUMERATOR}" \
+					|| ! IsInt "${DENOMINATOR}"; then
+					echo -e "${_PREFIX_ERROR} Values are not numbers."
+					return 1
+				fi
+
+				if [[ "${NUMERATOR}" -lt "${DENOMINATOR}" ]] || [[ "${DENOMINATOR}" -gt 1 ]]; then
+					declare -g _ARGS_FOR_ZRAM_SWAP_FRACTION="${1}"
+					_POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION=true
+				return 0
+
+				elif [[ "${DENOMINATOR}" -eq 0 ]]; then
+					return 1
+
+				else
+					echo -e "${_PREFIX_ERROR} Invalid fraction."
+				fi
+
+				return 1
+			}
+
+			function IsHostMemorySufficientForZRAMSwap
+			{
+				if "${_PRE_SETUP_DONE_HUGEPAGES}"; then
+					_AVAILABLE_MEMORY=$(( _AVAILABLE_MEMORY - _HUGEPAGES_ALLOCATED_MEMORY ))
+				fi
+
+				if ! GetFreeMemory; then
+					echo -e "${_PREFIX_ERROR} Insufficient Host memory for zram-swap."
+					return 1
+				fi
+
+				return 0
+			}
+
+		# <summary>
+		# Install necessary depenencies to setup an audio capture from guest emulated audio device to host audio backend.
+		# Installs PulseAudio or ALSA.
+		# </summary>
+		# <remarks>
+		# References:
+		#   https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_through_other_devices
+		# </remarks>
+			# function GuestAudioCapture
+			# {
+			# 	function Main
+			# 	{
+			# 		local DEPENDENCIES=""
+
+			# 		# <remarks>Install JACK and PipeWire.</remarks>
+			# 		case "${_PACKAGE_MANAGER}" in
+			# 			"apt" )
+			# 				DEPENDENCIES+="pipewire pipewire-jack " ;;
+
+			# 			"pacman" )
+			# 				DEPENDENCIES+="pipewire pipewire-jack " ;;
+
+			# 			* )
+			# 				echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
+			# 				return 1 ;;
+			# 		esac
+
+			# 		# <remarks>Include PulseAudio (and QEMU driver if available).</remarks>
+			# 		if IsInstalledCommand "pulseaudio" &> /dev/null; then
+			# 			case "${_PACKAGE_MANAGER}" in
+			# 				"apt" )
+			# 					DEPENDENCIES+="pipewire-pulse " ;;
+
+			# 				"pacman" )
+			# 					DEPENDENCIES+="pipewire-pulse qemu-audio-pa " ;;
+
+			# 				* )
+			# 					echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
+			# 					return 1 ;;
+			# 			esac
+
+			# 		# <remarks>Fallback to factory driver.</remarks>
+			# 		else
+			# 			case "${_PACKAGE_MANAGER}" in
+			# 				"apt" )
+			# 					DEPENDENCIES+="pipewire-alsa " ;;
+
+			# 				"pacman" )
+			# 					DEPENDENCIES+="pipewire-alsa " ;;
+
+			# 				* )
+			# 					echo -e "${_OUTPUT_INVALID_PACKAGE_MANAGER}"
+			# 					return 1 ;;
+			# 			esac
+			# 		fi
+
+			# 		IsInstalledPackage "${DEPENDENCIES}" &> /dev/null || InstallPackage "${DEPENDENCIES}" &> /dev/null
+			# 		return "${?}"
+			# 	}
+
+			# 	Main
+			# 	PrintSuffixPassOrFail "Installing audio drivers..."
+			# 	return "${_LAST_EXIT_CODE}"
+			# }
+
+		# <summary>
+		# Setup an audio loopback service from physical guest audio device (Line-Out) to physical host audio device (Line-In).
+		# Requires physical connection between Line-Out and Line-In, and audio backend with JACK support (requires PulseAudio or ALSA).
+		# </summary>
+			function GuestAudioLoopback
+			{
+				function Ask
+				{
+					if "${_POST_SETUP_ASK_TO_EXECUTE_ALL}"; then
+						echo
+						AskToExecuteOrSkip "Install ${_SET_COLOR_YELLOW}audio loopback${_RESET_COLOR}?" && _POST_SETUP_DO_EXECUTE_AUDIO_LOOPBACK=true
+					fi
+
+					return 0
+				}
+
+				function Main
+				{
+					Ask
+
+					if ! "${_POST_SETUP_DO_EXECUTE_AUDIO_LOOPBACK}"; then
+						AskToExecuteOrSkip "Uninstall ${_SET_COLOR_YELLOW}audio loopback${_RESET_COLOR}?" || return 255
+						Uninstall
+						return "${?}"
+					fi
+
+					if ! command -v "pulseaudio" &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Required audio backend 'PulseAudio' is missing."
+						return 1
+					fi
+
+					if ! sudo cp "${_AUDIO_LOOPBACK_SRC_PATH}" "${_AUDIO_LOOPBACK_DEST_PATH}"; then
+						echo -e "${_PREFIX_ERROR} Failed to copy file."
+						return 1
+					fi
+
+					if ! sudo systemctl daemon-reload &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to update systemd with new daemon/service."
+						return 1
+					fi
+
+					if ! sudo systemctl start "${_AUDIO_LOOPBACK_FILENAME}"; then
+						echo -e "${_PREFIX_ERROR} Failed to start audio loopback service."
+						return 1
+					fi
+
+					if ! sudo systemctl enable "${_AUDIO_LOOPBACK_FILENAME}"; then
+						echo -e "${_PREFIX_ERROR} Failed to enable audio loopback service."
+						return 1
+					fi
+
+					return 0
+				}
+
+				function Uninstall
+				{
+					if ! sudo systemctl stop "${_AUDIO_LOOPBACK_FILENAME}"; then
+						echo -e "${_PREFIX_ERROR} Failed to stop audio loopback service."
+						return 1
+					fi
+
+					if ! sudo systemctl enable "${_AUDIO_LOOPBACK_FILENAME}"; then
+						echo -e "${_PREFIX_ERROR} Failed to disable audio loopback service."
+						return 1
+					fi
+
+					if ! sudo rm -f "${_AUDIO_LOOPBACK_DEST_PATH}"; then
+						echo -e "${_PREFIX_ERROR} Failed to copy file."
+						return 1
+					fi
+
+					if ! sudo systemctl daemon-reload &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to update systemd with new daemon/service."
+						return 1
+					fi
+
+					return 0
+				}
+
+				Main
+				PrintSuffixPassOrFail "Creating audio loopback..."
+				return "${_LAST_EXIT_CODE}"
+			}
+
+		# <summary>
+		# Libvirt hooks: Setup useful Quality-of-life improvements in the form of services and scripts (hooks) for QEMU guest(s).
+		# </summary>
+			function LibvirtHooks
+			{
+				function Ask
+				{
+					if "${_POST_SETUP_ASK_TO_EXECUTE_ALL}"; then
+						echo
+						AskToExecuteOrSkip "Install ${_SET_COLOR_YELLOW}Libvirt hooks${_RESET_COLOR}?" && _POST_SETUP_DO_EXECUTE_LIBVIRT_HOOKS=true
+					fi
+
+					return 0
+				}
+
+				function Main
+				{
+					Ask
+
+					if ! "${_POST_SETUP_DO_EXECUTE_LIBVIRT_HOOKS}"; then
+						AskToExecuteOrSkip "Uninstall ${_SET_COLOR_YELLOW}Libvirt hooks${_RESET_COLOR}?" || return 255
+						Uninstall
+						return "${?}"
+					fi
+
+					# <remarks>Copy hook file from source.</remarks>
+					if ! sudo cp "${_LIBVIRT_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_DEST_PATH}" &> /dev/null \
+						|| ! sudo cp "${_LIBVIRT_HOOK_CFSCPU_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH}" &> /dev/null \
+						|| ! sudo cp "${_LIBVIRT_HOOK_DDCUTIL_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH}" &> /dev/null \
+						|| ( ! "${_PRE_SETUP_DONE_ISOLCPU}" \
+							&& ! sudo cp "${_LIBVIRT_HOOK_ISOLCPU_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null ) \
+						|| ! sudo cp "${_LIBVIRT_HOOK_NOSLEEP_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH}" &> /dev/null \
+						|| ( ! "${_PRE_SETUP_DONE_HUGEPAGES}" \
+							&& ! sudo cp "${_LIBVIRT_HOOK_RAMPAGE_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_RAMPAGE_HOOK_DEST_PATH}" &> /dev/null ) \
+						|| ! sudo cp "${_LIBVIRT_HOOK_NOSLEEP_SERVICE_SRC_PATH}" "${_LIBVIRT_HOOK_NOSLEEP_SERVICE_DEST_PATH}" &> /dev/null \
+						|| ! sudo cp "${_LIBVIRT_HOOK_UPDATE_HOOK_SRC_PATH}" "${_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH}" &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to copy hook(s)."
+						return 1
+					fi
+
+					# <remarks>Delete existing dynamic implementation (hook) of feature if static implementation is installed.</remarks>
+					if "${_PRE_SETUP_DONE_ISOLCPU}" \
+						&& [[ -e "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" ]] \
+						&& ! sudo rm -rf "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to delete unused hook."
+						return 1
+					fi
+
+					if "${_PRE_SETUP_DONE_HUGEPAGES}" \
+						&& [[ -e "${_LIBVIRT_HOOK_RAMPAGE_HOOK_DEST_PATH}" ]] \
+						&& ! sudo rm -rf "${_LIBVIRT_HOOK_RAMPAGE_HOOK_DEST_PATH}" &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to delete unused hook."
+						return 1
+					fi
+
+					# <remarks>Set file permissions.</remarks>
+					if ! sudo chmod +x "${_LIBVIRT_HOOK_DEST_PATH}" &> /dev/null \
+						|| ! sudo chmod +x "${_LIBVIRT_HOOK_CFSCPU_HOOK_DEST_PATH}" &> /dev/null \
+						|| ! sudo chmod +x "${_LIBVIRT_HOOK_DDCUTIL_HOOK_DEST_PATH}" &> /dev/null \
+						|| ( ! "${_PRE_SETUP_DONE_ISOLCPU}" \
+							&& ! sudo chmod +x "${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}" &> /dev/null ) \
+						|| ! sudo chmod +x "${_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH}" &> /dev/null \
+						|| ( ! "${_PRE_SETUP_DONE_HUGEPAGES}" \
+							&& ! sudo chmod +x "${_LIBVIRT_HOOK_RAMPAGE_HOOK_DEST_PATH}"  &> /dev/null ) \
+						|| ! sudo chmod +x "${_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH}" &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to set file permissions for hook(s)."
+						return 1
+					fi
+
+					# <remarks>Add non-domain-specific hooks here.</remarks>
+					# <remarks>Domain-specific hooks will be referenced in "/etc/libvirt/qemu/set-hooks"</remarks>
+					if ! sudo echo -e "\n\n# <sources>" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
+						|| ! sudo echo -e "" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
+						|| ( ! "${_PRE_SETUP_DONE_ISOLCPU}" \
+							&& ! sudo echo -e "source \"${_LIBVIRT_HOOK_ISOLCPU_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" ) \
+						|| ! sudo echo -e "source \"${_LIBVIRT_HOOK_NOSLEEP_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
+						|| ! sudo echo -e "source \"${_LIBVIRT_HOOK_UPDATE_HOOK_DEST_PATH}\"" >> "${_LIBVIRT_HOOK_DEST_PATH}" \
+						|| ! sudo echo -e "# </sources>" >> "${_LIBVIRT_HOOK_DEST_PATH}"; then
+						echo -e "${_PREFIX_ERROR} Failed to append hook(s) filenames as sources to master hook."
+						return 1
+					fi
+
+					if ! sudo systemctl daemon-reload &> /dev/null \
+						|| ! sudo systemctl restart libvirtd &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to update systemd with new daemon/service."
+						return 1
+					fi
+
+					return 0
+				}
+
+				function Uninstall
+				{
+					if ! sudo rm -rf "${_LIBVIRT_HOOK_DEST_PATH}/"* &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to delete hook(s)."
+						return 1
+					fi
+
+					if ! sudo systemctl daemon-reload &> /dev/null \
+						|| ! sudo systemctl restart libvirtd &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to update systemd with daemon/service."
+						return 1
+					fi
+
+					return 0
+				}
+
+				Main
+				PrintSuffixPassOrFail "Installing Libvirt hooks..."
+				return "${_LAST_EXIT_CODE}"
+			}
+
+		# <summary>
+		# auto-Xorg: System service to find and set a valid Host boot VGA device for Xorg.
+		# </summary>
+		# <remarks>
+		# References:
+		#   https://github.com/portellam/auto-Xorg
+		# </remarks>
+			function SetVideoOutput
+			{
+				function Ask
+				{
+					if "${_POST_SETUP_ASK_TO_EXECUTE_ALL}"; then
+						echo
+						AskToExecuteOrSkip "Install ${_SET_COLOR_YELLOW}${REPO_NAME}${_RESET_COLOR}?" && _POST_SETUP_DO_EXECUTE_AUTO_XORG=true
+					fi
+
+					return 0
+				}
+
+				function Get
+				{
+					UpdateOrCloneGitRepo "${_GIT_PATH}" "${FULL_REPO}" "${USER_NAME}" "${_POST_SETUP_DO_EXECUTE_AUTO_XORG}" || return 1
+					return 0
+				}
+
+				function GetArgs
+				{
+					IFS=$'\n'
+
+					local -a OUTPUT=(
+						"ARGUMENTS:"
+						"  first  [vendor]\t\tFind the first valid VGA device."
+						"  last   [vendor]\t\tFind the last valid VGA device."
+						"  [sort] amd\t\t\tPrefer AMD or ATI."
+						"  [sort] intel\t\t\tPrefer Intel."
+						"  [sort] nvidia\t\t\tPrefer NVIDIA."
+						"  [sort] other\t\t\tPrefer any other brand."
+					)
+
+					echo -e "${OUTPUT[*]}"
+					unset IFS
+					return 0
+				}
+
+				function Install
+				{
+					local SCRIPT_NAME="installer.bash"
+
+					if ! cd "${_GIT_PATH}${FULL_REPO}"; then
+						echo -e "${_PREFIX_ERROR} Failed to find build directory."
+						return 1
+					fi
+
+					if [[ ! -e "${SCRIPT_NAME}" ]]; then
+						echo -e "${_PREFIX_ERROR} Failed to find script '${SCRIPT_NAME}'."
+						return 1
+					fi
+
+					if ! sudo bash ${SCRIPT_NAME} ${_ARGS_FOR_AUTO_XORG} &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to execute script '${SCRIPT_NAME}'."
+						return 1
+					fi
+
+					return 0
+				}
+
+				function Main
+				{
+					Ask
+
+					if ! "${_POST_SETUP_DO_EXECUTE_AUTO_XORG}"; then
+						AskToExecuteOrSkip "Uninstall ${_SET_COLOR_YELLOW}${REPO_NAME}${_RESET_COLOR}?" || return 255
+						Uninstall
+						return "${?}"
+					fi
+
+					Get
+
+					if ! "${_POST_SETUP_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR}" \
+						&& ! "${_POST_SETUP_HAS_ARG_AUTO_XORG_SORT_ORDER}" \
+						&& AskToExecuteOrSkip "Add arguments?"; then
+						local -i COUNT_OF_VALID_ARGS=2
+						echo
+						GetArgs
+
+						for COUNT in $( seq 1 "${COUNT_OF_VALID_ARGS}" ); do
+							read -r -p "Enter argument (to skip, leave blank): " ANSWER
+							GetArgsForAutoXorg "${ANSWER}" || return "${?}"
+
+							if [[ -z "${ANSWER}" ]]; then
+								break
+							fi
+						done
+					fi
+
+					Install
+					return "${?}"
+				}
+
+				function Uninstall
+				{
+					if ! sudo systemctl daemon-reload &> /dev/null \
+						|| ! sudo systemctl stop ${REPO_NAME} &> /dev/null \
+						|| ! sudo systemctl disable ${REPO_NAME} &> /dev/null; then
+						echo -e "${_PREFIX_ERROR} Failed to update systemd with daemon/service."
+						return 1
+					fi
+
+					local XORG_FILE="/etc/X11/xorg.conf.d/*${REPO_NAME}*"
+
+					if ! sudo rm -f "${XORG_FILE}"; then
+						echo -e "${_PREFIX_ERROR} Failed to delete Xorg configuration file."
+						return 1
+					fi
+
+					return 0
+				}
+
+				local USER_NAME="portellam"
+				local REPO_NAME="auto-xorg"
+				local FULL_REPO="${USER_NAME}/${REPO_NAME}"
+
+				Main
+				PrintSuffixPassOrFail "Installing ${REPO_NAME}...\t"
+				return "${_LAST_EXIT_CODE}"
+			}
+# </functions>
+
+# <main>
+	SetParameters
+	unset SetParameters
+# </main>

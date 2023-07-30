@@ -1,0 +1,46 @@
+#!/bin/bash/env bash
+
+#
+# Filename:       deploy-vfio
+# Description:    Main executable. See README for details and usage.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source vfiolib-all
+# </sources>
+
+# <functions>
+  function ExecuteSetup
+  {
+    ExecutePreSetup
+    ExecuteMainSetup
+    ExecutePostSetup
+    return "${?}"
+  }
+
+  function Main
+  {
+    IsSudoUser          || return "${?}"
+    ExecuteUsage "${@}" || return "${?}"
+    GetLinuxDistro      || return "${?}"
+    IsSystemSupported   || return "${?}"
+    BackupAllFiles      || return "${?}"
+    RestoreDefaultFiles || return "${?}"
+    ExecuteSetup
+    SetExitCode
+
+    if GetFailExitCode; then
+      RestoreAllFiles
+      return "${?}"
+    fi
+
+    return "${?}"
+  }
+# </functions>
+
+# <main>
+  Main "${@}"
+  exit "${?}"
+# </main>

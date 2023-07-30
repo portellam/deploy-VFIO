@@ -1,0 +1,129 @@
+#!/bin/bash
+
+#
+# Filename:         /etc/libvirt/hooks/set-hooks
+# Description:      Create symlinks of domain-specific hooks.
+# Author(s):        Alex Portell <github.com/portellam>
+# Maintainer(s):    Alex Portell <github.com/portellam>
+#
+
+PREFIX_ERROR="An error occurred:"
+DOMAIN_NAME="${1}"
+HOOKS_BASE_DIR="/etc/libvirt/hooks"
+DOMAIN_NAME_BASE_DIR="${HOOKS_BASE_DIR}/qemu.d/${DOMAIN_NAME}"
+BEGIN_DIR="${DOMAIN_NAME_BASE_DIR}/started/begin/"
+END_DIR="${DOMAIN_NAME_BASE_DIR}/stopped/end/"
+
+# <remarks>Add domain-specific hooks here.</remarks>
+HOOK_NAME_1="cfscpu"
+HOOK_NAME_2="ddcutil"
+HOOK_NAME_3="hugepages"
+
+declare -a START_HOOKS_LIST=(
+    "${HOOK_NAME_1}"
+    "${HOOK_NAME_2}"
+    "${HOOK_NAME_3}"
+)
+
+declare -a STOP_HOOKS_LIST=(
+    "${HOOK_NAME_1}"
+    "${HOOK_NAME_2}"
+    # NOTE: no stop hook for hook #3
+)
+
+function GetPathsForDomain
+{
+    if ( [[ ! -d "${DOMAIN_NAME_BASE_DIR}" ]] && ! mkdir -p "${DOMAIN_NAME_BASE_DIR}" &> /dev/null ) \
+        || ( [[ ! -d "${BEGIN_DIR}" ]] && ! mkdir -p "${BEGIN_DIR}" &> /dev/null ) \
+        || ( [[ ! -d "${END_DIR}" ]] && ! mkdir -p "${END_DIR}" &> /dev/null ); then
+        echo -e "${PREFIX_ERROR} Failed to create directories for domain."
+        return 1
+    fi
+
+    return 0
+}
+
+function GetHooks
+{
+    if [[ ! -e "${HOOKS_BASE_DIR}/${HOOK_NAME_1}" ]]; then
+        echo -e "${PREFIX_ERROR} Failed to find domain hook(s)."
+        return 1
+    fi
+
+    return 0
+}
+
+function SetStartHookForDomain
+{
+    if [[ -z "${1}" ]] \
+        || [[ ! -e "${BEGIN_DIR}/${1}" ]]; then
+        return 0
+    fi
+
+    if ! ln -s "${BEGIN_DIR}/${1}" "${HOOKS_BASE_DIR}/${1}" &> /dev/null; then
+        echo -e "${PREFIX_ERROR} Failed to set symlinks for start hook '${1}'."
+        return 1
+    fi
+
+    if ! chmod +x "${BEGIN_DIR}/${1}" &> /dev/null; then
+        echo -e "${PREFIX_ERROR} Failed to set file permissions for start hook '${1}'."
+        return 1
+    fi
+
+    return 0
+}
+
+function SetStopHookForDomain
+{
+    if [[ -z "${1}" ]] \
+        || [[ ! -e "${END_DIR}/${1}" ]]; then
+        return 0
+    fi
+
+    if ! ln -s "${END_DIR}/${1}" "${HOOKS_BASE_DIR}/${1}" &> /dev/null; then
+        echo -e "${PREFIX_ERROR} Failed to set symlinks for stop hook '${1}'."
+        return 1
+    fi
+
+    if ! chmod +x "${END_DIR}/${1}" &> /dev/null; then
+        echo -e "${PREFIX_ERROR} Failed to set file permissions for stop hook '${1}'."
+        return 1
+    fi
+
+    return 0
+}
+
+function UnsetHookForDomain
+{
+    if [[ -z "${1}" ]]; then
+        return 0
+    fi
+
+    if [[ ! -e "${BEGIN_DIR}/${1}" ]] \
+        && ! rm -rf "${BEGIN_DIR}/${1}" &> /dev/null; then
+        echo -e "${PREFIX_ERROR} Failed to unset symlinks for start hook '${1}'."
+        return 1
+    fi
+
+    if [[ ! -z "${END_DIR}/${1}" ]] \
+        && ! rm -rf "${END_DIR}/${1}" &> /dev/null; then
+        echo -e "${PREFIX_ERROR} Failed to unset symlinks for stop hook '${1}'."
+        return 1
+    fi
+
+    return 0
+}
+
+if [[ ! -z "${DOMAIN_NAME}" ]] \
+    && GetPathsForDomain "${DOMAIN_NAME}" \
+    && GetHooks; then
+
+    # <remarks>Call domain-specific hooks here.</remarks>
+    for HOOK in ${START_HOOKS_LIST[@]}; do
+        SetStartHookForDomain "${HOOK}" || UnsetHookForDomain "${HOOK}"
+    done
+
+    for HOOK in ${STOP_HOOKS_LIST[@]}; do
+        SetStopHookForDomain "${HOOK}" || UnsetHookForDomain "${HOOK}"
+    done
+fi
