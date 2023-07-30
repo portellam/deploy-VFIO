@@ -1,0 +1,175 @@
+<!-- Necessary for qemu commandline (see below). -->
+<domain type='kvm' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+
+    <!-- Motherboard information (your's or a friend's) -->
+    <!--
+        Commands to extract this info from system:
+            dmidecode | grep -Ei "vendor|version|release date"
+            dmidecode | grep -Ei "manufacturer|product name|version|serial"
+            dmidecode | grep -Ei "uuid|sku|family"
+    -->
+
+    <sysinfo type="smbios">
+        <bios>
+            <entry name="vendor">American Megatrends Inc.</entry>
+            <entry name="version">F31o</entry>
+            <entry name="date">12/03/2020</entry>
+        </bios>
+        <system>
+            <entry name="manufacturer">Gigabyte Technology Co., Ltd.</entry>
+            <entry name="product">X570 AORUS ULTRA</entry>
+            <entry name="version">x.x</entry>
+            <entry name="serial">BASEBOARD SERIAL HERE (or "Default string")</entry>
+
+            <!-- Note: NOT necessary. Should you clone your VM, it will cancel as the new generated UUID will conflict with whatever the sysinfo UUID is. -->
+            <!-- <entry name="uuid">BASEBOARD UUID HERE</entry> -->
+
+            <entry name="sku">BASEBOARD SKU HERE (or "Default string")</entry>
+            <entry name="family">X570 MB</entry>
+        </system>
+    </sysinfo>
+
+
+
+    <!-- Specify memory size. -->
+    <memory unit='KiB'>33554432</memory>
+    <currentMemory unit='KiB'>33554432</currentMemory>
+
+    <!-- Necessary for Hugepages. -->
+    <memoryBacking>
+        <hugepages/>
+        <nosharepages/>
+        <allocation mode='immediate'/>
+        <discard/>
+    </memoryBacking>
+
+    <!-- Isolcpu and cpu pinning-->
+    <!-- Note: assume a host has 8c/16t, and reserves 2c/4t to itself (host threads 0-1,8-9). -->
+    <vcpu placement='static'>12</vcpu>
+
+        <!-- Disk I/O threads -->
+        <iothreads>2</iothreads>
+        <iothreadids>
+            <iothread id='1'/>
+            <iothread id='2'/>
+        </iothreadids>
+
+        <!-- Virtual CPU threads (host threads 2-7,10-15) -->
+        <cputune>
+        <vcpupin vcpu='0' cpuset='2'/>
+        <vcpupin vcpu='1' cpuset='10'/>
+        <vcpupin vcpu='2' cpuset='3'/>
+        <vcpupin vcpu='3' cpuset='11'/>
+        <vcpupin vcpu='4' cpuset='4'/>
+        <vcpupin vcpu='5' cpuset='12'/>
+        <vcpupin vcpu='6' cpuset='5'/>
+        <vcpupin vcpu='7' cpuset='13'/>
+        <vcpupin vcpu='8' cpuset='6'/>
+        <vcpupin vcpu='9' cpuset='14'/>
+        <vcpupin vcpu='10' cpuset='7'/>
+        <vcpupin vcpu='11' cpuset='15'/>
+
+        <!-- Disk I/O threads (host threads 1,9) -->
+        <emulatorpin cpuset='1,9'/>
+        <iothreadpin iothread='1' cpuset='1'/>
+        <iothreadpin iothread='2' cpuset='9'/>
+    </cputune>
+
+    <!-- HyperV enlightenments (for Windows guests). -->
+    <features>
+        <acpi/>
+        <apic/>
+        <hyperv mode='passthrough'>
+            <relaxed state='on'/>
+            <vapic state='on'/>
+            <spinlocks state='on' retries='8191'/>
+            <vpindex state='on'/>
+            <runtime state='on'/>
+            <synic state='on'/>
+            <stimer state='on'/>
+            <reset state='on'/>
+            <vendor_id state='on' value='1234567890ab'/>    <!-- Before 2022, this was necessary for NVIDIA GPUs. -->
+            <frequencies state='on'/>
+        </hyperv>
+
+        <!-- (Lazily) hide machine is VM. -->
+        <kvm>
+            <hidden state='on'/>
+        </kvm>
+        <vmport state='off'/>
+        <ioapic driver='kvm'/>
+    </features>
+
+    <!-- In conjunction with isolcpu and cpu pinning, these settings will help with performance of the VM threads. -->
+    <cpu mode='host-passthrough' check='none' migratable='on'>
+        <topology sockets='1' dies='1' cores='6' threads='2'/>
+        <cache mode='passthrough'/>
+    </cpu>
+
+    <!-- Set VM RTC to treat host RTC as UTC (Windows incorrectly assumes host RTC is not UTC, or the other way around). -->
+    <clock offset='utc'>
+        <timer name='rtc' tickpolicy='catchup'/>
+        <timer name='pit' tickpolicy='delay'/>
+        <timer name='hpet' present='no'/>
+        <timer name='kvmclock' present='no'/>
+        <timer name='hypervclock' present='yes'/>
+        <timer name='tsc' present='yes' mode='native'/>
+    </clock>
+
+    <!-- Sleep and hybernation for VM. -->
+    <pm>
+        <suspend-to-mem enabled='yes'/>
+        <suspend-to-disk enabled='yes'/>
+    </pm>
+
+    <devices>
+
+        <!-- Device for LookingGlass video/audio capture client (Windows 7+ only). -->
+        <shmem name='looking-glass'>
+            <model type='ivshmem-plain'/>
+            <size unit='M'>64</size>
+            <address type='pci' domain='0x0000' bus='0x0d' slot='0x01' function='0x0'/>
+        </shmem>
+
+        <!-- Device for Scream audio capture client (Windows 7+ only). -->
+        <shmem name='scream-ivshmem'>
+            <model type='ivshmem-plain'/>
+            <size unit='M'>2</size>
+            <address type='pci' domain='0x0000' bus='0x0d' slot='0x07' function='0x0'/>
+        </shmem>
+    </devices>
+
+    <qemu:commandline>
+        <!-- Necessary to use PCI GPU as primary display. -->
+        <qemu:arg value='-vga'/>
+        <qemu:arg value='none'/>
+        <qemu:arg value='-set'/>
+        <qemu:arg value='device.hostdev0.x-vga=on'/>    <!-- This line is deprecated. Use qemu override instead. -->
+
+        <!-- Power management -->
+        <qemu:arg value='-overcommit'/>
+        <qemu:arg value='cpu-pm=on'/>
+
+        <!-- Evdev -->
+        <!-- Keyboards -->
+        <qemu:arg value='-object'/>
+        <qemu:arg value='input-linux,id=kbd1,evdev=/dev/input/by-id/usb-0d3d_USBPS2-event-if01,grab_all=on,repeat=on'/>
+        <qemu:arg value='-object'/>
+        <qemu:arg value='input-linux,id=kbd2,evdev=/dev/input/by-id/usb-0d3d_USBPS2-event-kbd,grab_all=on,repeat=on'/>
+
+        <!-- Mouse and mouse accessories -->
+        <qemu:arg value='-object'/>
+        <qemu:arg value='input-linux,id=mouse1,evdev=/dev/input/by-id/usb-Logitech_Gaming_Mouse_G402_498521763231-event-mouse'/>
+        <qemu:arg value='-object'/>
+        <qemu:arg value='input-linux,id=kbd3,evdev=/dev/input/by-id/usb-Logitech_Gaming_Mouse_G402_498521763231-if01-event-kbd,grab_all=on,repeat=on'/>
+    </qemu:commandline>
+
+    <qemu:override>
+        <!-- Necessary to use PCI GPU as primary display. -->
+        <qemu:device alias='hostdev0'>
+            <qemu:frontend>
+                <qemu:property name='x-vga' type='bool' value='true'/>
+            </qemu:frontend>
+        </qemu:device>
+    </qemu:override>
+</domain>
