@@ -1,0 +1,182 @@
+#!/bin/false
+
+#
+# Filename:       vfiolib-post-args
+# Description:    Argument logic for post setup.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source vfiolib-post-setup
+# </sources>
+
+# <functions>
+  function DeclareParameters
+  {
+    if "${POST_SETUP_ARE_PARAMS_SET}"; then
+      return 0
+    fi
+
+    declare -g POST_SETUP_ARE_PARAMS_SET=true
+
+    declare -g POST_SETUP_ARGS_FOR_AUTO_XORG=""
+    declare -g POST_SETUP_ASK_TO_EXECUTE_ALL=true
+    declare -g POST_SETUP_DO_EXECUTE_AUDIO_LOOPBACK=false
+    declare -g POST_SETUP_DO_EXECUTE_AUTO_XORG=false
+    declare -g POST_SETUP_DO_EXECUTE_LIBVIRT_HOOKS=false
+    declare -g POST_SETUP_DO_EXECUTE_LOOKING_GLASS=false
+    declare -g POST_SETUP_DO_EXECUTE_SCREAM=false
+    declare -g POST_SETUP_DO_EXECUTE_ZRAM_SWAP=false
+    declare -g POST_SETUP_DO_SKIP_ALL=false
+    declare -g POST_SETUP_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=false1
+    declare -g POST_SETUP_HAS_ARG_AUTO_XORG_SORT_ORDER=false
+    declare -g POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE=false
+  }
+
+  function IsArgumentInstallAudioLoopback
+  {
+    if [[ "${1}" == "--audio-loopback" ]]; then
+      POST_SETUP_ASK_TO_EXECUTE_ALL=false
+      POST_SETUP_DO_EXECUTE_AUDIO_LOOPBACK=true
+    fi
+  }
+
+  function IsArgumentInstallAutoXorg
+  {
+    if [[ "${1}" == "--auto-xorg" ]]; then
+      GetArgumentsForAutoXorg "${1}" "${2}" || return 1
+      ShiftInputIfOptionHasArgument "${1}" "${2}"
+      POST_SETUP_ASK_TO_EXECUTE_ALL=false
+      POST_SETUP_DO_EXECUTE_AUTO_XORG=true
+    fi
+  }
+
+  function GetArgumentsForAutoXorg
+  {
+    if [[ -z "${1}" ]]; then
+      return 0
+    fi
+
+    while [[ ! -z "${1}" ]]; do
+      GetThisArgumentForAutoXorg "$@" || return 1
+    done
+  }
+
+  function GetThisArgumentForAutoXorg
+  {
+    case "${1}" in
+      "first" | "last" )
+        if "${POST_SETUP_HAS_ARG_AUTO_XORG_SORT_ORDER}"; then
+          return 1
+        fi
+
+        POST_SETUP_HAS_ARG_AUTO_XORG_SORT_ORDER=true ;;
+
+      "amd" | "intel" | "nvidia" | "other" )
+        if "${POST_SETUP_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR}"; then
+          return 1
+        fi
+
+        POST_SETUP_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=true ;;
+
+      * )
+        PrintStatementInvalidArgument "${1}"
+        return 1 ;;
+    esac
+
+    POST_SETUP_ARGS_FOR_AUTO_XORG+=" --${1}"
+    shift
+  }
+
+  function IsArgumentInstallLibvirtHooks
+  {
+    if [[ "${1}" == "--libvirt-hooks" ]]; then
+      POST_SETUP_ASK_TO_EXECUTE_ALL=false
+      POST_SETUP_DO_EXECUTE_LIBVIRT_HOOKS=true
+    fi
+  }
+
+  function IsArgumentInstallLookingGlass
+  {
+    if [[ "${1}" == "--looking-glass" ]]; then
+      POST_SETUP_ASK_TO_EXECUTE_ALL=false
+      POST_SETUP_DO_EXECUTE_LOOKING_GLASS=true
+    fi
+  }
+
+  function IsArgumentInstallScream
+  {
+    if [[ "${1}" == "--scream" ]]; then
+      POST_SETUP_ASK_TO_EXECUTE_ALL=false
+      POST_SETUP_DO_EXECUTE_SCREAM=true
+    fi
+  }
+
+  function IsArgumentInstallZramSwap
+  {
+    if [[ "${1}" == "--zram-swap" ]]; then
+      shift
+      GetArgumentsForZramSwap "${1}" "${2}" || return 1
+      IsHostMemorySufficientForZRAMSwap || return 1
+      ShiftInputIfOptionHasArgument "${1}" "${2}"
+      POST_SETUP_ASK_TO_EXECUTE_ALL=false
+      POST_SETUP_DO_EXECUTE_ZRAM_SWAP=true
+    fi
+  }
+
+  function GetArgumentsForZramSwap
+  {
+    if [[ ! -z "${1}" ]]; then
+      GetZRAMSwapSize "${1}" || GetAdditionalArgumentsForZramSwap "${1}" || return 1
+    fi
+
+    if [[ ! -z "${2}" ]]; then
+      GetZRAMSwapSize "${2}" || GetAdditionalArgumentsForZramSwap "${2}" || return 1
+    fi
+  }
+
+  function GetAdditionalArgumentsForZramSwap
+  {
+    case "${1}" in
+      "force" )
+        POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE=true ;;
+
+      * )
+        PrintStatementInvalidArgument "${1}"
+        return 1 ;;
+    esac
+  }
+
+  function IsArgumentOfPostSetup
+  {
+    IsArgumentSkipPostSetup "$@" || return 1
+    IsArgumentUninstallPostSetup "$@" || return 1
+    IsArgumentInstallLibvirtHooks "$@" || return 1
+    IsArgumentInstallZramSwap "$@" || return 1
+    IsArgumentInstallAutoXorg "$@" || return 1
+    IsArgumentInstallLookingGlass "$@" || return 1
+    IsArgumentInstallScream "$@" || return 1
+    IsArgumentInstallAudioLoopback "$@" || return 1
+  }
+
+  function IsArgumentSkipPostSetup
+  {
+    if [[ "${1}" == "--skip-vfio-setup" ]]; then
+      POST_SETUP_DO_SKIP_ALL=true
+      POST_SETUP_ASK_TO_EXECUTE_ALL=true
+    fi
+  }
+
+  function IsArgumentUninstallPostSetup
+  {
+    if [[ "${1}" == "--uninstall-vfio-setup" ]]; then
+      POST_SETUP_ASK_TO_EXECUTE_ALL=false
+    fi
+  }
+# </functions>
+
+# <code>
+  DeclareParameters
+  unset DeclareParameters
+# </code>

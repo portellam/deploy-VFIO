@@ -1,0 +1,88 @@
+#!/bin/false
+
+#
+# Filename:       vfiolib-usage
+# Description:    Print statements related to usage.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source vfiolib-common
+# </sources>
+
+# <functions>
+  function DeclareParameters
+  {
+    if "${SYSTEM_ARE_PARAMS_SET}"; then
+      return 0
+    fi
+
+    declare -g SYSTEM_ARE_PARAMS_SET=true
+
+    declare -gr SYSTEM_ARGUMENT_IGNORE_DISTRO="--ignore-distro"
+    declare -g SYSTEM_IGNORE_DISTRO=false
+  }
+
+  function IsArgumentIgnoreDistro
+  {
+    if [[ "${1}" == "${SYSTEM_ARGUMENT_IGNORE_DISTRO}" ]]; then
+      SYSTEM_IGNORE_DISTRO=true
+    fi
+  }
+
+  function IsSystemSupported
+  {
+    IsVirtualizationEnabled || return 1
+    IsIOMMUEnabled || return 1
+    IsSystemdInstalled || return 1
+    IsSystemDistributionSupported || return 1
+  }
+
+  function IsIOMMUEnabled
+  {
+    if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*" &> /dev/null; then
+      PrintPrefixError "System does not support IOMMU groups."
+      return 1
+    fi
+  }
+
+  function IsSystemdInstalled
+  {
+    if ! command -v systemd &> /dev/null; then
+      PrintPrefixError "'systemd' is not installed."
+      return 1
+    fi
+  }
+
+  function IsSystemDistributionSupported
+  {
+    if "${SYSTEM_IGNORE_DISTRO}"; then
+      return 0
+    fi
+
+    local -r operating_system="$( lsb_release -is )"
+    local -lr operating_system_lowercase="${operating_system}"
+
+    if [[ "${operating_system_lowercase}" != *"debian"* ]] \
+      && [[ "${operating_system_lowercase}" != *"ubuntu"* ]]; then
+      PrintPrefixError "System distribution '${operating_system_lowercase}' is not explicitly supported."
+      PrintPrefixNote "You may override this check by appending argument '${SYSTEM_ARGUMENT_IGNORE_DISTRO}'."
+      return 1
+    fi
+  }
+
+  function IsVirtualizationEnabled
+  {
+    if ! LC_ALL=C lscpu | grep Virtualization &> /dev/null \
+      && ! grep -E -q --color=auto 'vmx|svm|0xc0f' /proc/cpuinfo &> /dev/null; then
+      PrintPrefixError "System does not or cannot support hardware virtualization."
+      return 1
+    fi
+  }
+# </functions>
+
+# <code>
+  DeclareParameters
+  unset DeclareParameters
+# </code

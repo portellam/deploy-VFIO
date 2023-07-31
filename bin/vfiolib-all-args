@@ -1,0 +1,111 @@
+#!/bin/bash
+
+#
+# Filename:       vfiolib-all-args
+# Description:    Get and set arguments and options.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source vfiolib-main-args
+  source vfiolib-pre-args
+  source vfiolib-post-args
+  source vfiolib-usage
+# </sources>
+
+# <functions>
+  function DeclareParameters
+  {
+    if "${USAGE_ARE_PARAMS_SET}"; then
+      return 0
+    fi
+
+    declare -g USAGE_ARE_PARAMS_SET=true
+
+    declare -g USAGE_DO_UNDO_CHANGES=false
+    declare -g USAGE_IS_EXECUTION_QUIET=false
+  }
+
+  function SetArguments
+  {
+    if [[ -z "$@" ]]; then
+      return 0
+    fi
+
+    while [[ "${1}" =~ ^- ]] \
+      || [[ "${1}" =~ ^-- ]]; do
+      ParseValidArgumentList "$@"
+    done
+
+    return 0
+  }
+
+  function ParseValidArgumentList
+  {
+    local -i args_count=0
+
+    if ! ParseThisArgument "$@"; then
+      IsArgumentNotValid "$@"
+    fi
+
+    PopArgumentListByGivenAmount
+  }
+
+  function PopArgumentListByGivenAmount
+  {
+    for count in $( seq 0 "${args_count}" ); do
+      shift
+    done
+  }
+
+  function ParseThisArgument
+  {
+    IsArgumentPrintHelp "$@"
+    IsArgumentBeQuiet "$@"
+    IsArgumentUndoAll "$@"
+    IsArgumentParseDatabase "$@"
+    IsArgumentParseIOMMUGroups "$@"
+    IsArgumentOfPreSetup "$@" || return 1
+    IsArgumentOfMainSetup "$@" || return 1
+    IsArgumentOfPostSetup "$@" || return 1
+    return 0
+  }
+
+  function IsArgumentPrintHelp
+  {
+    if [[ "${1}" == "-h" ]] \
+      || [[ "${1}" == "--help" ]]; then
+      PrintUsage
+      exit 0
+    fi
+  }
+
+  function IsArgumentBeQuiet
+  {
+    if [[ "${1}" == "-q" ]] \
+      || [[ "${1}" == "--quiet" ]]; then
+      USAGE_IS_EXECUTION_QUIET=true
+    fi
+  }
+
+  function IsArgumentNotValid
+  {
+    PrintStatementInvalidOption "${1}"
+    PrintHelp
+    exit 1
+  }
+
+  function IsArgumentUndoAll
+  {
+    if [[ "${1}" == "-u" ]] \
+      || [[ "${1}" == "--undo" ]]; then
+      USAGE_DO_UNDO_CHANGES=true
+    fi
+  }
+# </functions>
+
+# <code>
+  DeclareParameters
+  unset DeclareParameters
+# </code

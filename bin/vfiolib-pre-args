@@ -1,0 +1,106 @@
+#!/bin/false
+
+#
+# Filename:       vfiolib-pre-args
+# Description:    Argument logic for pre setup.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source vfiolib-pre-setup
+# </sources>
+
+# <functions>
+  function DeclareParameters
+  {
+    if "${PRE_SETUP_ARE_PARAMS_SET}"; then
+      return 0
+    fi
+
+    declare -g PRE_SETUP_ARE_PARAMS_SET=true
+
+    declare -g PRE_SETUP_ASK_TO_EXECUTE_ALL=true
+    declare -g PRE_SETUP_DO_EXECUTE_EVDEV=false
+    declare -g PRE_SETUP_DO_EXECUTE_HUGEPAGES=false
+    declare -g PRE_SETUP_DO_EXECUTE_ISOLCPU=false
+    declare -g PRE_SETUP_DO_SKIP_ALL=false
+  }
+
+  function IsArgumentOfPreSetup
+  {
+    IsArgumentSkipPreSetup "$@" || return 1
+    IsArgumentUninstallPreSetup "$@" || return 1
+    IsArgumentSetupIsolcpu "$@" || return 1
+    IsArgumentSetupHugepages "$@" || return 1
+    IsArgumentSetupVirtualKVM "$@" || return 1
+  }
+
+  function IsArgumentSetupHugepages
+  {
+    if [[ "${1}" == "-h" ]] \
+      || [[ "${1}" == "--hugepages" ]]; then
+      shift
+      GetArgumentsForHugepages "${1}" "${2}" || return 1
+      IsHostMemorySufficientForHugepages || return 1
+      ShiftInputIfOptionHasArgument "${1}" "${2}"
+      PRE_SETUP_ASK_TO_EXECUTE_ALL=false
+      PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
+    fi
+  }
+
+  function GetArgumentsForHugepages
+  {
+    if [[ ! -z "${1}" ]] \
+      && ! GetHugepageByteSize "${1}"; then
+      PrintStatementInvalidArgument "${1}"
+      return 1
+    fi
+
+    if [[ ! -z "${2}" ]] \
+      && ! GetHugepageCount "${2}"; then
+      PrintStatementInvalidArgument "${2}"
+      return 1
+    fi
+
+    return 0
+  }
+
+  function IsArgumentSetupIsolcpu
+  {
+    if [[ "${1}" == "-c" ]] \
+      || [[ "${1}" == "--cpu" ]]; then
+      PRE_SETUP_ASK_TO_EXECUTE_ALL=false
+      PRE_SETUP_DO_EXECUTE_ISOLCPU=true
+    fi
+  }
+
+  function IsArgumentSetupVirtualKVM
+  {
+    if [[ "${1}" == "-e" ]] \
+      || [[ "${1}" == "--evdev" ]]; then
+      PRE_SETUP_ASK_TO_EXECUTE_ALL=false
+      PRE_SETUP_DO_EXECUTE_EVDEV=true
+    fi
+  }
+
+  function IsArgumentSkipPreSetup
+  {
+    if [[ "${1}" == "--skip-pre-setup" ]]; then
+      PRE_SETUP_DO_SKIP_ALL=true
+      PRE_SETUP_ASK_TO_EXECUTE_ALL=false
+    fi
+  }
+
+  function IsArgumentUninstallPreSetup
+  {
+    if [[ "${1}" == "--uninstall-pre-setup" ]]; then
+      PRE_SETUP_ASK_TO_EXECUTE_ALL=false
+    fi
+  }
+# </functions>
+
+# <code>
+  DeclareParameters
+  unset DeclareParameters
+# </code
