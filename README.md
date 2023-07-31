@@ -10,7 +10,7 @@
 
 ## About
 ### Description:
-Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines with real hardware, on your Linux computer. Includes many common-sense quality-of-life enhancements.
+Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines with real hardware, on your Debian Linux computer. Includes many common-sense quality-of-life enhancements.
 
 ### What is [VFIO](#VFIO)?
 #### Useful links
@@ -39,11 +39,11 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 ## How-to
 ### To install script:
 
-        sudo bash installer.bash -i
+        sudo bash deploy-vfio.bash -i
 
 ### To uninstall script:
 
-        sudo bash installer.bash -u
+        sudo bash deploy-vfio.bash -u
 
 ### Usage:
 #### * Options that skip *all* user prompts.
@@ -149,7 +149,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 #### * Options that skip *all* user prompts.
 
 ## Features
-### Pre-setup  <sub>(vfiolib-pre-setup)</sub>
+### Pre-setup
 * **Allocate CPU**
     - **Statically** isolate Host CPU threads before allocating to Guest(s).<sup>[2](#2)</sup>
     -  Reduces Host overhead, and improves both Host and Guest performance.
@@ -165,7 +165,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
     - Implementation is known as *Evdev (Event Devices)*.<sup>[4](#4)</sup>
     - **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 
-### VFIO setup <sub>(vfiolib-setup)</sub>
+### Main setup
 * **Multi-boot VFIO setup**
     - Create multiple VFIO setups with corresponding GRUB menu entries.     **More flexibility.**
       - Select a GRUB menu entry with a VGA device excluded from VFIO.
@@ -184,7 +184,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
     - Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
     - For examples, review the referenced guides. Search for *"libvirt hook vfio bind scripts"*. Google is your friend.
 
-### Post-setup  <sub>(vfiolib-post-setup)</sub>
+### Post-setup
 * **auto-Xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.<sup>[5](#5)</sup>
 * **Guest Audio Capture**
     - Create an *Audio loopback* to output on the *Host* Audio device *Line-Out*.
