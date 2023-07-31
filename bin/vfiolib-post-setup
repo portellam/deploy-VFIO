@@ -36,6 +36,7 @@
 
   function DoPostSetup
   {
+    echo "in post setup now"
     return 0
   }
 # </functions>

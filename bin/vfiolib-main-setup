@@ -38,6 +38,7 @@
 
   function DoMainSetup
   {
+    echo "in main setup now"
     return 0
   }
 # </functions>

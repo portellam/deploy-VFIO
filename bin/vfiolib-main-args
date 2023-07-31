@@ -57,7 +57,7 @@
     esac
 
     if [[ ! -z "${1}" ]]; then
-      PrintStatementInvalidArgument "${1}"
+      PrintInvalidArgument "${1}"
     fi
 
     return 1
@@ -91,7 +91,7 @@
         return 0 ;;
     esac
 
-    PrintStatementInvalidArgument "${1}"
+    PrintInvalidArgument "${1}"
     return 1
   }
 

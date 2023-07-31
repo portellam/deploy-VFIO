@@ -41,13 +41,13 @@
   {
     if [[ ! -z "${1}" ]] \
       && ! GetHugepageByteSize "${1}"; then
-      PrintStatementInvalidArgument "${1}"
+      PrintInvalidArgument "${1}"
       return 1
     fi
 
     if [[ ! -z "${2}" ]] \
       && ! GetHugepageCount "${2}"; then
-      PrintStatementInvalidArgument "${2}"
+      PrintInvalidArgument "${2}"
       return 1
     fi
   }

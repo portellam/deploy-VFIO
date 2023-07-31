@@ -59,7 +59,7 @@
         POST_SETUP_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=true ;;
 
       * )
-        PrintStatementInvalidArgument "${1}"
+        PrintInvalidArgument "${1}"
         return 1 ;;
     esac
 
@@ -121,7 +121,7 @@
         POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE=true ;;
 
       * )
-        PrintStatementInvalidArgument "${1}"
+        PrintInvalidArgument "${1}"
         return 1 ;;
     esac
   }

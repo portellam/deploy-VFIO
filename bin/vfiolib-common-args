@@ -35,7 +35,9 @@
 
     while [[ "${1}" =~ ^- ]] \
       || [[ "${1}" =~ ^-- ]]; do
+      echo "arg == ${1}"            # NOTE: debug.
       ParseValidArgumentList "$@"
+      shift                         # NOTE: shift needs to remain in same scope as while loop.
     done
 
     return 0
@@ -43,28 +45,41 @@
 
   function ParseValidArgumentList
   {
-    local -i args_count=0
+    # local -i args_count=1
     local this_argument="${1}"
     ParseThisArgument "$@"
-    PopArgumentListByGivenAmount
+    # echo "args_count == $args_count"
+    # ShiftInputByAmountOfArgumentCount
+    shift
   }
 
-  function PopArgumentListByGivenAmount
+  # TODO: fix here.
+  # function ShiftInputByAmountOfArgumentCount
+  # {
+  #   for count in $( seq 0 "${args_count}" ); do
+  #     shift
+  #   done
+  # }
+
+  function ShiftInputIfOptionHasArgument
   {
-    for count in $( seq 0 "${args_count}" ); do
+    while [[ ! -z "${1}" ]]; do
       shift
+      (( args_count++ ))
     done
+
+    return 0
   }
 
   function ParseThisArgument
   {
     if ! IsArgumentPrintHelp "$@" \
-      || ! IsArgumentIgnoreDistro "$@" \
-      || ! IsArgumentBeQuiet "$@" \
-      || ! IsArgumentUndoAll "$@" \
-      || ! IsArgumentOfPreSetup "$@" \
-      || ! IsArgumentOfMainSetup "$@" \
-      || ! IsArgumentOfPostSetup "$@"; then
+      && ! IsArgumentIgnoreDistro "$@" \
+      && ! IsArgumentBeQuiet "$@" \
+      && ! IsArgumentUndoAll "$@" \
+      && ! IsArgumentOfPreSetup "$@" \
+      && ! IsArgumentOfMainSetup "$@" \
+      && ! IsArgumentOfPostSetup "$@"; then
      IsArgumentNotValid "$@"
     fi
   }
@@ -97,7 +112,7 @@
       return 0
     fi
 
-    PrintStatementInvalidOption "${1}"
+    PrintInvalidOption "${1}"
     PrintHelp
     exit 1
   }

@@ -29,6 +29,7 @@
 
   function DoPreSetup
   {
+    echo "in pre setup now"
     return 0
   }
 # </functions>
