@@ -14,7 +14,7 @@
 # <functions>
   function DeclareParameters
   {
-    if "${MAIN_SETUP_ARE_PARAMS_SET}"; then
+    if [[ "${MAIN_SETUP_ARE_PARAMS_SET}" == true ]]; then
       return 0
     fi
 

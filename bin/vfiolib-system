@@ -14,7 +14,7 @@
 # <functions>
   function DeclareParameters
   {
-    if "${SYSTEM_ARE_PARAMS_SET}"; then
+    if [[ "${SYSTEM_ARE_PARAMS_SET}" == true ]]; then
       return 0
     fi
 
@@ -28,7 +28,10 @@
   {
     if [[ "${1}" == "${SYSTEM_ARGUMENT_IGNORE_DISTRO}" ]]; then
       SYSTEM_IGNORE_DISTRO=true
+      return 0
     fi
+
+    return 1
   }
 
   function IsSystemSupported

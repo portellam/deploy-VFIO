@@ -14,7 +14,7 @@
 # <functions>
   function DeclareParameters
   {
-    if "${POST_SETUP_ARE_PARAMS_SET}"; then
+    if [[ "${POST_SETUP_ARE_PARAMS_SET}" == true ]]; then
       return 0
     fi
 

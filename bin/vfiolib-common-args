@@ -17,7 +17,7 @@
 # <functions>
   function DeclareParameters
   {
-    if "${COMMON_ARGS_ARE_PARAMS_SET}"; then
+    if [[ "${COMMON_ARGS_ARE_PARAMS_SET}" == true ]]; then
       return 0
     fi
 
@@ -44,11 +44,8 @@
   function ParseValidArgumentList
   {
     local -i args_count=0
-
-    if ! ParseThisArgument "$@"; then
-      IsArgumentNotValid "$@"
-    fi
-
+    local this_argument="${1}"
+    ParseThisArgument "$@"
     PopArgumentListByGivenAmount
   }
 
@@ -61,15 +58,15 @@
 
   function ParseThisArgument
   {
-    IsArgumentPrintHelp "$@"
-    IsArgumentBeQuiet "$@"
-    IsArgumentUndoAll "$@"
-    IsArgumentParseDatabase "$@"
-    IsArgumentParseIOMMUGroups "$@"
-    IsArgumentOfPreSetup "$@" || return 1
-    IsArgumentOfMainSetup "$@" || return 1
-    IsArgumentOfPostSetup "$@" || return 1
-    return 0
+    if ! IsArgumentPrintHelp "$@" \
+      || ! IsArgumentIgnoreDistro "$@" \
+      || ! IsArgumentBeQuiet "$@" \
+      || ! IsArgumentUndoAll "$@" \
+      || ! IsArgumentOfPreSetup "$@" \
+      || ! IsArgumentOfMainSetup "$@" \
+      || ! IsArgumentOfPostSetup "$@"; then
+     IsArgumentNotValid "$@"
+    fi
   }
 
   function IsArgumentPrintHelp
@@ -79,6 +76,8 @@
       PrintUsage
       exit 0
     fi
+
+    return 1
   }
 
   function IsArgumentBeQuiet
@@ -86,13 +85,20 @@
     if [[ "${1}" == "-q" ]] \
       || [[ "${1}" == "--quiet" ]]; then
       COMMON_ARGS_IS_EXECUTION_QUIET=true
+      return 0
     fi
+
+    return 1
   }
 
   function IsArgumentNotValid
   {
+    if [[ "${1}" == "" ]]; then
+      return 0
+    fi
+
     PrintStatementInvalidOption "${1}"
-    PrintUsage
+    PrintHelp
     exit 1
   }
 
@@ -101,7 +107,10 @@
     if [[ "${1}" == "-u" ]] \
       || [[ "${1}" == "--undo" ]]; then
       COMMON_ARGS_DO_UNDO_CHANGES=true
+      return 0
     fi
+
+    return 1
   }
 # </functions>
 

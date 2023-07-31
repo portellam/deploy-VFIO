@@ -45,6 +45,7 @@
       "  -h, --help\t\t\tPrint this help and exit."
       "  -q, --quiet\t\t\tReduce verbosity; print only relevant questions and status statements."
       "  -u, --undo\t\t\tUndo changes (restore files) if script has exited early or unexpectedly."
+      "  --ignore-distro\t\tIgnore distribution check for Debian or Ubuntu system."
 
       "\nSpecify the database to reference before parsing IOMMU groups.\nOPTIONS:"
       "  -f, --file [ARGS]\t\tReference file database."

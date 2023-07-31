@@ -10,7 +10,7 @@
 # <functions>
   function DeclareParameters
   {
-    if "${COMMON_ARE_PARAMS_SET}"; then
+    if [[ "${COMMON_ARE_PARAMS_SET}" == true ]]; then
       return 0
     fi
 
@@ -66,11 +66,9 @@
   function IsUserSuperuser
   {
     if [[ $( whoami ) != "root" ]]; then
-      echo -e "${_PREFIX_ERROR} User is not sudo/root."
+      PrintPrefixError "User is not sudo or root."
       exit 1
     fi
-
-    exit 0
   }
 
   # <summary>Interaction</summary>

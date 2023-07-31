@@ -8,8 +8,8 @@
 #
 
 # <sources>
-  source vfiolib-common-args
   source vfiolib-common
+  source vfiolib-common-args
   source vfiolib-main-args
   source vfiolib-post-args
   source vfiolib-pre-args
