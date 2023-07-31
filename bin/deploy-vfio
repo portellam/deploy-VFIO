@@ -1,0 +1,28 @@
+#!/bin/bash/env bash
+
+#
+# Filename:       deploy-vfio
+# Description:    Main executable. See README for details and usage.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source vfiolib-sources
+# </sources>
+
+# <functions>
+  function Main
+  {
+    IsUserSuperuser || exit 1
+    SetArguments "$@" || exit 1
+    IsSystemSupported || exit 1
+    DoPreSetup
+    DoMainSetup
+    DoPostSetup
+  }
+# </functions>
+
+# <code>
+  Main "$@"
+# </code>
