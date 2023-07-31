@@ -2,7 +2,7 @@
 
 #
 # Filename:       vfiolib-usage
-# Description:    Print statements related to usage.
+# Description:    System checks and validation.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
@@ -33,17 +33,17 @@
 
   function IsSystemSupported
   {
-    IsVirtualizationEnabled || return 1
-    IsIOMMUEnabled || return 1
-    IsSystemdInstalled || return 1
-    IsSystemDistributionSupported || return 1
+    IsVirtualizationEnabled
+    IsIOMMUEnabled
+    IsSystemdInstalled
+    IsSystemDistributionSupported
   }
 
   function IsIOMMUEnabled
   {
     if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*" &> /dev/null; then
       PrintPrefixError "System does not support IOMMU groups."
-      return 1
+      exit 1
     fi
   }
 
@@ -51,7 +51,7 @@
   {
     if ! command -v systemd &> /dev/null; then
       PrintPrefixError "'systemd' is not installed."
-      return 1
+      exit 1
     fi
   }
 
@@ -68,7 +68,7 @@
       && [[ "${operating_system_lowercase}" != *"ubuntu"* ]]; then
       PrintPrefixError "System distribution '${operating_system_lowercase}' is not explicitly supported."
       PrintPrefixNote "You may override this check by appending argument '${SYSTEM_ARGUMENT_IGNORE_DISTRO}'."
-      return 1
+      exit 1
     fi
   }
 
@@ -77,7 +77,7 @@
     if ! LC_ALL=C lscpu | grep Virtualization &> /dev/null \
       && ! grep -E -q --color=auto 'vmx|svm|0xc0f' /proc/cpuinfo &> /dev/null; then
       PrintPrefixError "System does not or cannot support hardware virtualization."
-      return 1
+      exit 1
     fi
   }
 # </functions>

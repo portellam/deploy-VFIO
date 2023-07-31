@@ -12,21 +12,6 @@
 # </sources>
 
 # <functions>
-  function DeclareParameters
-  {
-    if "${PRE_SETUP_ARE_PARAMS_SET}"; then
-      return 0
-    fi
-
-    declare -g PRE_SETUP_ARE_PARAMS_SET=true
-
-    declare -g PRE_SETUP_ASK_TO_EXECUTE_ALL=true
-    declare -g PRE_SETUP_DO_EXECUTE_EVDEV=false
-    declare -g PRE_SETUP_DO_EXECUTE_HUGEPAGES=false
-    declare -g PRE_SETUP_DO_EXECUTE_ISOLCPU=false
-    declare -g PRE_SETUP_DO_SKIP_ALL=false
-  }
-
   function IsArgumentOfPreSetup
   {
     IsArgumentSkipPreSetup "$@" || return 1
@@ -99,8 +84,3 @@
     fi
   }
 # </functions>
-
-# <code>
-  DeclareParameters
-  unset DeclareParameters
-# </code

@@ -14,12 +14,12 @@
 # <functions>
   function Main
   {
-    IsUserSuperuser || exit 1
-    SetArguments "$@" || exit 1
-    IsSystemSupported || exit 1
-    DoPreSetup
-    DoMainSetup
-    DoPostSetup
+    IsUserSuperuser
+    SetArguments "$@"
+    IsSystemSupported
+    DoPreSetup || exit 1
+    DoMainSetup || exit 1
+    DoPostSetup || exit 1
   }
 # </functions>
 

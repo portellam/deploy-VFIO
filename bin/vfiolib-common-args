@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Filename:       vfiolib-all-args
+# Filename:       vfiolib-common-args
 # Description:    Get and set arguments and options.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
@@ -17,14 +17,14 @@
 # <functions>
   function DeclareParameters
   {
-    if "${USAGE_ARE_PARAMS_SET}"; then
+    if "${COMMON_ARGS_ARE_PARAMS_SET}"; then
       return 0
     fi
 
-    declare -g USAGE_ARE_PARAMS_SET=true
+    declare -g COMMON_ARGS_ARE_PARAMS_SET=true
 
-    declare -g USAGE_DO_UNDO_CHANGES=false
-    declare -g USAGE_IS_EXECUTION_QUIET=false
+    declare -g COMMON_ARGS_DO_UNDO_CHANGES=false
+    declare -g COMMON_ARGS_IS_EXECUTION_QUIET=false
   }
 
   function SetArguments
@@ -85,14 +85,14 @@
   {
     if [[ "${1}" == "-q" ]] \
       || [[ "${1}" == "--quiet" ]]; then
-      USAGE_IS_EXECUTION_QUIET=true
+      COMMON_ARGS_IS_EXECUTION_QUIET=true
     fi
   }
 
   function IsArgumentNotValid
   {
     PrintStatementInvalidOption "${1}"
-    PrintHelp
+    PrintUsage
     exit 1
   }
 
@@ -100,7 +100,7 @@
   {
     if [[ "${1}" == "-u" ]] \
       || [[ "${1}" == "--undo" ]]; then
-      USAGE_DO_UNDO_CHANGES=true
+      COMMON_ARGS_DO_UNDO_CHANGES=true
     fi
   }
 # </functions>

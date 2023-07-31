@@ -1,0 +1,46 @@
+#!/bin/false
+
+#
+# Filename:       vfiolib-post-setup
+# Description:    Recommended post-installation setups.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source vfiolib-common
+# </sources>
+
+# <functions>
+  function DeclareParameters
+  {
+    if "${POST_SETUP_ARE_PARAMS_SET}"; then
+      return 0
+    fi
+
+    declare -g POST_SETUP_ARE_PARAMS_SET=true
+
+    declare -g POST_SETUP_ARGS_FOR_AUTO_XORG=""
+    declare -g POST_SETUP_ASK_TO_EXECUTE_ALL=true
+    declare -g POST_SETUP_DO_EXECUTE_AUDIO_LOOPBACK=false
+    declare -g POST_SETUP_DO_EXECUTE_AUTO_XORG=false
+    declare -g POST_SETUP_DO_EXECUTE_LIBVIRT_HOOKS=false
+    declare -g POST_SETUP_DO_EXECUTE_LOOKING_GLASS=false
+    declare -g POST_SETUP_DO_EXECUTE_SCREAM=false
+    declare -g POST_SETUP_DO_EXECUTE_ZRAM_SWAP=false
+    declare -g POST_SETUP_DO_SKIP_ALL=false
+    declare -g POST_SETUP_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=false1
+    declare -g POST_SETUP_HAS_ARG_AUTO_XORG_SORT_ORDER=false
+    declare -g POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE=false
+  }
+
+  function DoPostSetup
+  {
+    return 0
+  }
+# </functions>
+
+# <code>
+  DeclareParameters
+  unset DeclareParameters
+# </code
