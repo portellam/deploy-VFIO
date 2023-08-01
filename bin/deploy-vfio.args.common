@@ -1,17 +1,17 @@
 #!/bin/bash
 
 #
-# Filename:       vfiolib-common-args
+# Filename:       deploy-vfio.args.common
 # Description:    Get and set arguments and options.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
 # <sources>
-  source vfiolib-main-args
-  source vfiolib-pre-args
-  source vfiolib-post-args
-  source vfiolib-usage
+  source deploy-vfio.args.main-setup
+  source deploy-vfio.args.pre-setup
+  source deploy-vfio.args.post-setup
+  source deploy-vfio.args.usage
 # </sources>
 
 # <functions>

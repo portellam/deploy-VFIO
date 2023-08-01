@@ -1,0 +1,18 @@
+#!/bin/false
+
+#
+# Filename:       deploy-vfio.sources
+# Description:    Master sources file.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source deploy-vfio.logic.common
+  source deploy-vfio.args.common
+  source deploy-vfio.args.main-setup
+  source deploy-vfio.args.post-setup
+  source deploy-vfio.args.pre-setup
+  source deploy-vfio.logic.system
+  source deploy-vfio.args.usage
+# </sources>

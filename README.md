@@ -231,7 +231,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 
 #### Paths for source binaries and files
 - */usr/local/bin/\**
-- */usr/local/etc/vfiolib.d\**
+- */usr/local/etc/deploy-vfio.d\**
 
 ### VFIO?
 Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.*<sup>[10](#10)</sup>

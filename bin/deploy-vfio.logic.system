@@ -1,14 +1,14 @@
 #!/bin/false
 
 #
-# Filename:       vfiolib-system
+# Filename:       deploy-vfio.logic.system
 # Description:    System checks and validation.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
 # <sources>
-  source vfiolib-common
+  source deploy-vfio.logic.common
 # </sources>
 
 # <functions>

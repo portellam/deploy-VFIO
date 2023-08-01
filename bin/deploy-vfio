@@ -8,7 +8,7 @@
 #
 
 # <sources>
-  source vfiolib-sources
+  source deploy-vfio.sources
 # </sources>
 
 # <functions>
