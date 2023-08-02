@@ -1,4 +1,4 @@
-#!/bin/false
+#!/bin/bash # TODO: change back to bin/false
 
 #
 # Filename:       deploy-vfio.logic.database
@@ -21,6 +21,7 @@
     declare -g DATABASE_ARE_PARAMS_SET=true
 
     declare -g DATABASE_DO_PARSE_DATABASE_FROM_XML=false
+    declare -g DATABASE_XML_FILE_IS_SPECIFIED=false
     declare -g DATABASE_HAS_ARG_PARSE_IOMMU=false
     declare -g DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
     declare -g DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
@@ -40,16 +41,37 @@
 
   function DoParseDatabase
   {
-    echo "in database now"
-    return 0
+    IsUnparsedListValid || return 1
+    ParseFromXMLPrompt && SpecifyXMLFile || return 1
+
+    if ! IsXMLValid; then
+      DoesHostNotHaveExistingVFIOSetup || return 1
+      ExportIOMMUGroupsToXML || return 1
+      SpecifyIOMMUGroupList
+    fi
+
+    if ! DoesHostNotHaveExistingVFIOSetup; then
+      DoesXMLNotHaveExistingVFIOSetup || return 1
+      ImportIOMMUGroupsFromXML
+    fi
+
+    SpecifyIOMMUGroupList
   }
 
-  function AreParametersValid
+  function IsUnparsedListValid
   {
-    IsEnum "IOMMU_GROUP_ID_LIST" || return 1
+    local -r output="Invalid IOMMU groups."
+
+    if ! IsEnum "IOMMU_GROUP_ID_LIST"; then
+      PrintPrefixError "${output}"
+      return 1
+    fi
 
     for value in ${IOMMU_GROUP_ID_LIST[@]}; do
-      IsInt "${value}" || return 1
+      if ! IsInt "${value}"; then
+        PrintPrefixError "${output}"
+        return 1
+      fi
     done
   }
 
@@ -145,8 +167,8 @@
       DOES_XML_HAVE_VFIO=false
     }
 
-  # <summary>IOMMU Group validation</summary>
-    function AddSomeIOMMUGroupsToDoParseList
+  # <summary>IOMMU Groups validation</summary>
+    function AddSomeIOMMUGroupsToParsedList
     {
       local regex_for_range_of_nums='^[0-9]+[-][0-9]+$'
       local -ar iommu_groups_temp_list
@@ -184,7 +206,7 @@
       done
 
       for iommu_group_id in ${IOMMU_GROUP_ID_LIST[@]}; do
-        local IS_IN_VFIO_LIST=false
+        local is_in_vfio_list=false
 
         for this_iommu_group_id in ${IOMMU_GROUPS_FOR_VFIO_LIST[@]}; do
           if [[ "${this_iommu_group_id}" -eq "${iommu_group_id}" ]]; then
@@ -193,7 +215,7 @@
           fi
         done
 
-        if "${IS_IN_VFIO_LIST}"; then
+        if "${is_in_vfio_list}"; then
           continue
         fi
 
@@ -207,25 +229,24 @@
       return 0
     }
 
-    function AddValidIOMMUGroupsToDoParseList
+    function AddValidIOMMUGroupsToParsedList
     {
       for iommu_group_id in ${IOMMU_GROUP_ID_LIST[@]}; do
         local -a device_list=( $( eval "${GET_IOMMU_GROUP_DEVICE_LIST}" ) )
 
         if ! DoesIOMMUGroupHaveExternalDevices "${iommu_group_id}"; then
-          IOMMU_GROUPS_FOR_VFIO_LIST+=( "${iommu_group_id}" )
-
           if DoesIOMMUGroupHaveVGADevice "${iommu_group_id}"; then
-            IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST+=( "${iommu_group_id}" )
+            IOMMU_GROUPS_FOR_HOST_LIST+=( "${iommu_group_id}" )
           fi
 
+          IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${iommu_group_id}" )
           break
         fi
 
+        IOMMU_GROUPS_FOR_VFIO_LIST+=( "${iommu_group_id}" )
+
         if DoesIOMMUGroupHaveVGADevice "${iommu_group_id}"; then
-          IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${iommu_group_id}" )
-        else
-          IOMMU_GROUPS_FOR_HOST_LIST+=( "${iommu_group_id}" )
+          IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST+=( "${iommu_group_id}" )
         fi
       done
     }
@@ -356,9 +377,9 @@
       fi
 
       local device="${1}"
-      local -l CLASS="$( lspci -ms ${DEVICE} | cut -d '"' -f 2 )"
+      local -l class="$( lspci -ms ${device} | cut -d '"' -f 2 )"
 
-      case "${CLASS}" in
+      case "${class}" in
         *"usb"* )
           return 0 ;;
       esac
@@ -422,38 +443,7 @@
       return 1
     }
 
-  # <summary>Prompt selection validation</summary>
-    function IsParsedSelectionValid
-    {
-      if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_FOR_HOST_LIST"; then
-        PrintPrefixError "Invalid selection of devices for Host."
-        return 1
-      fi
-
-      if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_FOR_VFIO_LIST"; then
-        PrintPrefixError "Invalid selection of devices for VFIO."
-        return 1
-      fi
-    }
-
-    function IsParsedSelectionOfVGAValid
-    {
-      if "${VFIO_SETUP_DO_EXECUTE_MULTIBOOT}"; then
-        if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST"; then
-          PrintPrefixError "Invalid selection of VGA devices for VFIO."
-          return 1
-        fi
-
-        return 0
-      fi
-
-      if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST"; then
-        PrintPrefixError "Invalid selection of VGA devices for Host."
-        return 1
-      fi
-    }
-
-  # <summary>IOMMU Groups</summary>
+  # <summary>IOMMU Groups presentation</summary>
     function PrintThisIOMMUGroup
     {
       IsInt "${1}" || return 1
@@ -488,33 +478,33 @@
       done
     }
 
-    function SelectIOMMUGroup
+    function SpecifyIOMMUGroupList
     {
       local -n reference="IOMMU_GROUP_ID_LIST"
       echo
 
       for iommu_group_id in ${reference[@]}; do
-        SelectThisIOMMUGroup "${iommu_group_id}"
+        SpecifyThisIOMMUGroup "${iommu_group_id}"
       done
     }
 
-    function SelectThisIOMMUGroup
+    function SpecifyThisIOMMUGroup
     {
       IsInt "${1}" || return 1
-      local -ir IOMMU_GROUP_ID="${1}"
+      local -ir iommu_group_id="${1}"
 
       if ! DoesIOMMUGroupHaveExternalDevices "${1}"; then
-        IOMMU_GROUPS_FOR_HOST_LIST+=( "${IOMMU_GROUP_ID}" )
+        IOMMU_GROUPS_FOR_HOST_LIST+=( "${iommu_group_id}" )
         return 1
       fi
 
-      if ! SelectThisIOMMUGroupPrompt "${1}" \
+      if ! SpecifyThisIOMMUGroupPrompt "${1}" \
         || ! PrintThisIOMMUGroup "${1}"; then
         return 1
       fi
     }
 
-    function SelectThisIOMMUGroupPrompt
+    function SpecifyThisIOMMUGroupPrompt
     {
       IsInt "${1}" || return 1
       local -ir iommu_group_id="${1}"
@@ -549,10 +539,8 @@
       fi
     }
 
-    function ExportFromXML
+    function ExportIOMMUGroupsToXML
     {
-      DoesXMLNotHaveExistingVFIOSetup || return 1
-
       local -a output=( )
       local -a iommu_output=( )
 
@@ -561,25 +549,26 @@
         local line_iommu_id="id=\"${iommu_group_id}\""
 
         for device in $( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" ); do
-          # local -u device_bus_id=${device:5}
-          # local device_class="$( lspci -ms ${device} | cut -d \" -f 2 )"
           local device_driver=$( lspci -ks ${device} | grep -i "driver" | cut -d " " -f 5 )
+          local line_device_id="dev_id=\"${device}\""
+          local line_device_driver="driver=\"${device_driver}\""
+          local line_device="${line_device_id} ${line_device_driver}"
+
+          # <note>Currently unused XML data. The minimum data necessary is the device ID and device driver.</note>
+          # local device_class="$( lspci -ms ${device} | cut -d \" -f 2 )"
           # local device_hwid=$( lspci -ns ${device} | cut -d " " -f 3 )
           # local device_name="$( lspci -ms ${device} | cut -d \" -f 6 )"
           # local device_vendor="$( lspci -ms ${device} | cut -d \" -f 4 )"
-          # local line_device_id="dev_id=\"${device_bus_id}\""
-          local line_device_id="dev_id=\"${device}\""
           # local line_device_class="class=\"${device_class}\""
-          local line_device_driver="driver=\"${device_driver}\""
           # local line_device_hwid="hw_id=\"${device_hwid}\""
           # local line_device_name="name=\"${device_name}\""
           # local line_device_vendor="vendor=\"${device_vendor}\""
           # local line_device="${line_device_id} ${line_device_hwid} ${line_device_driver} ${line_device_class} ${line_device_vendor} ${line_device_name}"
-          local line_device="${line_device_id} ${line_device_driver}"
-          local line_IOMMU="<iommu ${line_iommu_id} ${line_device}/>"
+
+          local line_iommu="<iommu ${line_iommu_id} ${line_device}/>"
 
           device_output+=(
-            "\t${line_IOMMU}"
+            "\t${line_iommu}"
           )
         done
 
@@ -605,21 +594,55 @@
       unset IFS
     }
 
+    function ImportIOMMUGroupsFromXML
+    {
+      IFS=$'\n'
+      local -a input=( $( eval "${GET_PARSE_FROM_XML}" ) )
+      unset IFS
+
+      for line in "${input[@]}"; do
+        local driver=$( echo "${line}" | cut -d '"' -f 6 )
+        local device=$( echo "${line}" | cut -d '"' -f 4 )
+        DEVICE_DRIVER_XML_LIST["${device}"]="${driver}"
+      done
+
+      if ! IsEnum "DEVICE_DRIVER_XML_LIST"; then
+        PrintPrefixError "XML file is empty."
+        return 1
+      fi
+    }
+
+    function IsXMLValid
+    {
+      if ! xmllint "${XML_FILE}" &> /dev/null; then
+        if ! "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
+          return 1
+        fi
+
+        PrintPrefixError "XML file '${XML_FILE}' is invalid."
+        return 1
+      fi
+    }
+
     function ParseFromXMLPrompt
     {
-      if "${DO_PARSE_DATABASE_FROM_XML}"; then
+      if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
         return 0
       fi
 
       AskToExecuteOrSkip "Cross-reference database with XML file?" || return 1
-      DO_PARSE_DATABASE_FROM_XML=true
+      DATABASE_DO_PARSE_DATABASE_FROM_XML=true
     }
 
-    function SelectXMLFile
+    function SpecifyXMLFile
     {
-      ExportFromXML || return 1
+      if "${DATABASE_XML_FILE_IS_SPECIFIED}"; then
+        return 0
+      fi
 
-      for count in $( seq 0 2 ); do
+      local -r output="Enter XML filename: "
+
+      for counter in $( seq 0 2 ); do
           read -r -p "${output}" answer
 
           if ! "${DO_PARSE_DATABASE_FROM_FILE}" \
@@ -630,13 +653,22 @@
 
           IsFile "${answer}" || continue
           IsFileNotEmpty "${answer}" || continue
-
-          DATABASE_FILE="${answer}"
+          SetXMLFile "${answer}"
           return 0
         done
 
-      ImportParseXML
       return 1
+    }
+
+    function SetXMLFile
+    {
+      XML_FILE="${1}"
+      DATABASE_XML_FILE_IS_SPECIFIED=true
+    }
+
+    function SetXMLFileToDefault
+    {
+      XML_FILE="${DEFAULT_XML_FILE}"
     }
 # </functions>
 
