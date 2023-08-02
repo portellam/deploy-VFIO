@@ -15,7 +15,7 @@
   function Main
   {
     IsUserSuperuser
-    SetArguments "$@"
+    SetOptions "$@"
     IsSystemSupported
     DoPreSetup || exit 1
     DoParseDatabase || exit 1
