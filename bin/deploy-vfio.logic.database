@@ -1,0 +1,646 @@
+#!/bin/false
+
+#
+# Filename:       deploy-vfio.logic.database
+# Description:    Parse and select IOMMU groups.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source deploy-vfio.logic.common
+# </sources>
+
+# <functions>
+  function DeclareParameters
+  {
+    if [[ "${PARSE_ARE_PARAMS_SET}" == true ]]; then
+      return 0
+    fi
+
+    declare -g PARSE_ARE_PARAMS_SET=true
+
+    declare -g PARSE_DO_PARSE_DATABASE_FROM_XML=false
+    declare -g PARSE_HAS_ARG_PARSE_IOMMU=false
+    declare -g PARSE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
+    declare -g PARSE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
+
+    declare -gr GET_DEVICES_FOR_IOMMU_GROUP='ls /sys/kernel/iommu_groups/${iommu_group_id}/devices/'
+
+    declare -gA DEVICE_DRIVER_XML_LIST
+    declare -ga IOMMU_GROUP_ID_LIST=( $( ls /sys/kernel/iommu_groups/ | sort -n ) )
+    declare -ga IOMMU_GROUPS_FOR_HOST_LIST=( )
+    declare -ga IOMMU_GROUPS_FOR_VFIO_LIST=( )
+    declare -ga IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST=( )
+    declare -ga IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST=( )
+
+    declare -gr DEFAULT_XML_FILE="${BACKUPS_PATH}/parse.xml"        # TODO: declare backups path. NOTE: unused param.
+    declare -g XML_FILE="${DEFAULT_XML_FILE}"
+  }
+
+  function DoMainSetup
+  {
+    echo "in main setup now"
+    return 0
+  }
+
+  function AreParametersValid
+  {
+    IsEnum "IOMMU_GROUP_ID_LIST" || return 1
+
+    for value in ${IOMMU_GROUP_ID_LIST[@]}; do
+      IsInt "${value}" || return 1
+    done
+  }
+
+  # <summary>Getters</summary>
+    function GetDeviceClass
+    {
+      if [[ ! -z "${2}" ]] \
+        || [[ ! -z "${1}" ]]; then
+        return 1
+      fi
+
+      local device="${1}"
+      local -n reference="${2}"
+      reference="$( lspci -ms ${device} | cut -d '"' -f 2 )"
+    }
+
+    function GetDeviceDriver
+    {
+      if [[ ! -z "${2}" ]] \
+        || [[ ! -z "${1}" ]]; then
+        return 1
+      fi
+
+      local device="${1}"
+      local -n reference="${2}"
+
+      if "${PARSE_DO_PARSE_DATABASE_FROM_XML}"; then
+        reference="${DEVICE_DRIVER_XML_LIST["${device}"]}"
+      else
+        reference="$( lspci ${PARSE_OPTIONS} -ks "${device}" | grep -i "driver" | cut -d " " -f 5 )"
+      fi
+    }
+
+    function GetDeviceHardwareID
+    {
+      if [[ ! -z "${2}" ]] \
+        || [[ ! -z "${1}" ]]; then
+        return 1
+      fi
+
+      local device="${1}"
+      local -n reference="${2}"
+
+      reference="$( lspci -ns ${device} | cut -d " " -f 3 )"
+    }
+
+    function GetDeviceName
+    {
+      if [[ ! -z "${2}" ]] \
+        || [[ ! -z "${1}" ]]; then
+        return 1
+      fi
+
+      local device="${1}"
+      local -n reference="${2}"
+
+      reference="$( lspci -ms ${device}  | cut -d '"' -f 6 )"
+    }
+
+    function GetDeviceVendor
+    {
+      if [[ ! -z "${2}" ]] \
+        || [[ ! -z "${1}" ]]; then
+        return 1
+      fi
+
+      local device="${1}"
+      local -n reference="${2}"
+
+      reference="$( lspci -ms ${device} | cut -d '"' -f 4 )"
+    }
+
+  # <summary>Host validation</summary>
+    function DoesHostNotHaveExistingVFIOSetup
+    {
+      for iommu_group_id in ${IOMMU_GROUP_ID_LIST[@]}; do
+        if ! IsIOMMUGroupNotBindedToVFIO "${iommu_group_id}"; then
+          PrintPrefixError "Detected existing VFIO setup."
+          return 1
+        fi
+      done
+
+      DOES_HOST_HAVE_VFIO=false
+    }
+
+    function DoesXMLNotHaveExistingVFIOSetup
+    {
+      if eval "${GET_PARSE_FROM_XML}" | grep -E "vfio" &> /dev/null; then
+        PrintPrefixError "Detected VFIO drivers in XML file."
+        return 1
+      fi
+
+      DOES_XML_HAVE_VFIO=false
+    }
+
+  # <summary>IOMMU Group validation</summary>
+    function AddSomeIOMMUGroupsToDoParseList
+    {
+      local regex_for_range_of_nums='^[0-9]+[-][0-9]+$'
+      local -ar iommu_groups_temp_list
+
+      if echo "${1}" | grep -E -q "${regex_for_range_of_nums}"; then
+        local -i range_start=$( echo "${1}" | cut -d '-' -f 1 )
+        local -i range_stop=$( echo "${1}" | cut -d '-' -f 2 )
+        IsIOMMUGroupIDValid "${range_start}" || return 1
+        IsIOMMUGroupIDValid "${range_stop}" || return 1
+        iommu_groups_temp_list+=( $( seq "${range_start}" "${range_stop}" ) )
+
+      elif IsInt "${1}"; then
+        IsIOMMUGroupIDValid "${1}" || return 1
+        iommu_groups_temp_list+=( "${1}" )
+
+      else
+        PrintPrefixError "Invalid IOMMU group ID(s)."
+        return 1
+      fi
+
+      IFS=$'\n'
+      iommu_groups_temp_list=( $( sort -hu <<<"${iommu_groups_temp_list[*]}" ) )
+      unset IFS
+
+      for iommu_group_id in ${iommu_groups_temp_list[@]}; do
+        if DoesIOMMUGroupHaveExternalDevices "${iommu_group_id}"; then
+          IOMMU_GROUPS_FOR_VFIO_LIST+=( "${iommu_group_id}" )
+
+          if DoesIOMMUGroupHaveVGADevice "${iommu_group_id}"; then
+            IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST+=( "${iommu_group_id}" )
+          fi
+
+          break
+        fi
+      done
+
+      for iommu_group_id in ${IOMMU_GROUP_ID_LIST[@]}; do
+        local IS_IN_VFIO_LIST=false
+
+        for this_iommu_group_id in ${IOMMU_GROUPS_FOR_VFIO_LIST[@]}; do
+          if [[ "${this_iommu_group_id}" -eq "${iommu_group_id}" ]]; then
+            IS_IN_VFIO_LIST=true
+            break
+          fi
+        done
+
+        if "${IS_IN_VFIO_LIST}"; then
+          continue
+        fi
+
+        if DoesIOMMUGroupHaveVGADevice "${iommu_group_id}"; then
+          _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${iommu_group_id}" )
+        else
+          _IOMMU_GROUPS_FOR_HOST_LIST+=( "${iommu_group_id}" )
+        fi
+      done
+
+      return 0
+    }
+
+    function AddValidIOMMUGroupsToDoParseList
+    {
+      for iommu_group_id in ${IOMMU_GROUP_ID_LIST[@]}; do
+        local -a device_list=( $( eval "${GET_IOMMU_GROUP_DEVICE_LIST}" ) )
+
+        if ! DoesIOMMUGroupHaveExternalDevices "${iommu_group_id}"; then
+          IOMMU_GROUPS_FOR_VFIO_LIST+=( "${iommu_group_id}" )
+
+          if DoesIOMMUGroupHaveVGADevice "${iommu_group_id}"; then
+            IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST+=( "${iommu_group_id}" )
+          fi
+
+          break
+        fi
+
+        if DoesIOMMUGroupHaveVGADevice "${iommu_group_id}"; then
+          IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${iommu_group_id}" )
+        else
+          IOMMU_GROUPS_FOR_HOST_LIST+=( "${iommu_group_id}" )
+        fi
+      done
+    }
+
+    function DoesIOMMUGroupHaveExternalDevices
+    {
+      IsInt "${1}" || return 1
+      local -ir iommu_group_id="${1}"
+      local -ar device_list="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
+
+      for device in ${device_list[@]}; do
+        IsDeviceExternal "${device}" && return 0
+      done
+
+      return 1
+    }
+
+    function DoesIOMMUGroupHaveVGADevice
+    {
+      IsInt "${1}" || return 1
+      local -ir iommu_group_id="${1}"
+      local -ar device_list="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
+
+      for device in ${device_list[@]}; do
+        IsDeviceVGA "${device}" && return 0
+      done
+
+      PrintPrefixError "Please enter valid IOMMU group ID which contains one or more VGA devices."
+      return 1
+    }
+
+    function DoesListHaveVGADevice
+    {
+      local -n reference="${1}"
+
+      if [[ "${#reference[@]}" -eq 0 ]]; then
+        return 1
+      fi
+
+      for iommu_group_id in ${reference[@]}; do
+        DoesIOMMUGroupHaveVGADevice "${iommu_group_id}" &> /dev/null && return 0
+      done
+
+      return 1
+    }
+
+    function IsIOMMUGroupNotBindedToVFIO
+    {
+      IsInt "${1}" || return 1
+      local -ir iommu_group_id="${1}"
+      local -ar device_list="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
+
+      for device in ${device_list[@]}; do
+        IsDeviceNotBindedToVFIO "${device}" || return 1
+      done
+    }
+
+    function IsIOMMUGroupIDValid
+    {
+      local -ir minimum_iommu_group_id=0
+      local -ir maximum_iommu_group_id="${IOMMU_GROUP_ID_LIST[-1]}"
+
+      if ! IsInt "${1}" \
+        || [[ "${1}" -le "${minimum_iommu_group_id}" ]] \
+        || [[ "${1}" -ge "${maximum_iommu_group_id}" ]] ; then
+        PrintPrefixError "Please enter valid IOMMU group ID(s), between ${minimum_iommu_group_id} and ${maximum_iommu_group_id}."
+        return 1
+      fi
+    }
+
+    function IsValidEnumOfIOMMUGroups
+    {
+      IsEnum "${1}" || return 1
+      local -n reference="${1}"
+
+      for value in ${reference[@]}; do
+        IsInt "${value}" || return 1
+      done
+    }
+
+  # <summary>Device validation</summary>
+    function IsDeviceDriverNotExcluded
+    {
+      if [[ ! -z "${1}" ]]; then
+        return 1
+      fi
+
+      local driver="${1}"
+      local excluded_driver="snd_hda_intel"
+
+      case "${driver}" in
+        *"${excluded_driver}"* )
+          return 1 ;;
+      esac
+    }
+
+    function IsDeviceDriverNotVFIO
+    {
+      if [[ ! -z "${1}" ]]; then
+        return 1
+      fi
+
+      local driver="${1}"
+      local matched_driver="vfio-pci"
+
+      case "${driver}" in
+        *"${matched_driver}"* )
+          return 1 ;;
+      esac
+    }
+
+    function IsDeviceExternal
+    {
+      if [[ ! -z "${1}" ]]; then
+        return 1
+      fi
+
+      local device="${1}"
+      local regex_get_domain_id='^[0-9A-F][1-9A-F]$'
+      local -u domain_id=$( echo "${device}" | cut -d ':' -f 2 )
+      echo "${domain_id}" | grep -E -q "${regex_get_domain_id}"
+    }
+
+    function IsDeviceForPCISTUB
+    {
+      if [[ ! -z "${1}" ]]; then
+        return 1
+      fi
+
+      local device="${1}"
+      local -l CLASS="$( lspci ${_PARSE_OPTIONS} -ms ${DEVICE} | cut -d '"' -f 2 )"
+
+      case "${CLASS}" in
+        *"usb"* )
+          return 0 ;;
+      esac
+
+      return 1
+    }
+
+    function IsDeviceNotBindedToVFIO
+    {
+      if [[ ! -z "${1}" ]]; then
+        return 1
+      fi
+
+      local device="${1}"
+      local driver=""
+      SetDeviceDriver "${device}" "driver"
+      IsDeviceDriverNotVFIO "${driver}"
+      return "${?}"
+    }
+
+    function IsDeviceNotExcluded
+    {
+      if [[ ! -z "${1}" ]]; then
+        return 1
+      fi
+
+      local device="${1}"
+      local driver=""
+      SetDeviceDriver "${device}" "driver"
+      IsDeviceDriverNotExcluded "${driver}"
+      return "${?}"
+    }
+
+    function IsDeviceNotExternal
+    {
+      if [[ ! -z "${1}" ]]; then
+        return 1
+      fi
+
+      local device="${1}"
+      local driver=""
+      SetDeviceDriver "${device}" "driver"
+      IsDeviceExternal "${device}"
+      return "${?}"
+    }
+
+    function IsDeviceVGA
+    {
+      if [[ ! -z "${1}" ]]; then
+        return 1
+      fi
+
+      local device="${1}"
+      local -l class="$( lspci -ms ${device} | cut -d '"' -f 2 )"
+
+      case "${class}" in
+        *"vga"* | *"graphic"* | *"display"* )
+          return 0 ;;
+      esac
+
+      return 1
+    }
+
+  # <summary>Prompt selection validation</summary>
+    function IsParsedSelectionValid
+    {
+      if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_FOR_HOST_LIST"; then
+        PrintPrefixError "Invalid selection of devices for Host."
+        return 1
+      fi
+
+      if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_FOR_VFIO_LIST"; then
+        PrintPrefixError "Invalid selection of devices for VFIO."
+        return 1
+      fi
+    }
+
+    function IsParsedSelectionOfVGAValid
+    {
+      if "${VFIO_SETUP_DO_EXECUTE_MULTIBOOT}"; then
+        if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST"; then
+          PrintPrefixError "Invalid selection of VGA devices for VFIO."
+          return 1
+        fi
+
+        return 0
+      fi
+
+      if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST"; then
+        PrintPrefixError "Invalid selection of VGA devices for Host."
+        return 1
+      fi
+    }
+
+  # <summary>IOMMU Groups</summary>
+    function PrintThisIOMMUGroup
+    {
+      IsInt "${1}" || return 1
+      local -ir iommu_group_id="${1}"
+      local -ar device_list="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
+
+      for device in ${device_list[@]}; do
+        if IsDeviceExternal "${device}"; then
+          local class driver hwid name vendor
+
+          SetDeviceClass "${device}" "class"
+          SetDeviceDriver "${device}" "driver"
+          SetDeviceHardwareID "${device}" "hwid"
+          SetDeviceName "${device}" "name"
+          SetDeviceVendor "${device}" "vendor"
+
+          echo -e "\tSlot ID:\t${device}"
+          echo -e "\tVendor name:\t${vendor}"
+          echo -e "\tDevice name:\t${name}"
+          echo -e "\tClass/Type:\t${class}"
+          echo -e "\tHardware ID:\t${hwid}"
+          local drive_output="\tDriver:\t\t"
+
+          if [[ ! -z "${driver}" ]]; then
+            echo -e "${drive_output}${driver}"
+          else
+            echo -e "${drive_output}N/A"
+          fi
+
+          echo
+        fi
+      done
+    }
+
+    function SelectIOMMUGroup
+    {
+      local -n reference="IOMMU_GROUP_ID_LIST"
+      echo
+
+      for iommu_group_id in ${reference[@]}; do
+        SelectThisIOMMUGroup "${iommu_group_id}"
+      done
+    }
+
+    function SelectThisIOMMUGroup
+    {
+      IsInt "${1}" || return 1
+      local -ir IOMMU_GROUP_ID="${1}"
+
+      if ! DoesIOMMUGroupHaveExternalDevices "${1}"; then
+        _IOMMU_GROUPS_FOR_HOST_LIST+=( "${IOMMU_GROUP_ID}" )
+        return 1
+      fi
+
+      if ! SelectThisIOMMUGroupPrompt "${1}" \
+        || ! PrintThisIOMMUGroup "${1}"; then
+        return 1
+      fi
+    }
+
+    function SelectThisIOMMUGroupPrompt
+    {
+      IsInt "${1}" || return 1
+      local -ir iommu_group_id="${1}"
+
+      if AskToExecuteOrSkip "Select IOMMU group ${SET_COLOR_YELLOW}${iommu_group_id}${RESET_COLOR}?"; then
+        _IOMMU_GROUPS_FOR_VFIO_LIST+=( "${iommu_group_id}" )
+
+        if DoesIOMMUGroupHaveVGADevice "${iommu_group_id}" &> /dev/null; then
+          _IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST+=( "${iommu_group_id}" )
+        fi
+
+        echo
+        return 0
+      fi
+
+      if DoesIOMMUGroupHaveVGADevice "${iommu_group_id}" &> /dev/null; then
+        _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${iommu_group_id}" )
+        echo
+        return 0
+      fi
+
+      _IOMMU_GROUPS_FOR_HOST_LIST+=( "${iommu_group_id}" )
+      echo
+    }
+
+  # <summary>XML</summary>
+    function AreXMLLibrariesInstalled
+    {
+      if ! command -v "xmllint" &> /dev/null; then
+        PrintPrefixError "Required 'XML' libraries are not installed."
+        return 1
+      fi
+    }
+
+    function ExportFromXML
+    {
+      DoesXMLNotHaveExistingVFIOSetup || return 1
+
+      local -a output=( )
+      local -a iommu_output=( )
+
+      for iommu_group_id in $( ls -1v /sys/kernel/iommu_groups/ | sort -h ); do
+        local -a device_output=( )
+        local line_iommu_id="id=\"${iommu_group_id}\""
+
+        for device in $( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" ); do
+          # local -u device_bus_id=${device:5}
+          # local device_class="$( lspci -ms ${device} | cut -d \" -f 2 )"
+          local device_driver=$( lspci -ks ${device} | grep -i "driver" | cut -d " " -f 5 )
+          # local device_hwid=$( lspci -ns ${device} | cut -d " " -f 3 )
+          # local device_name="$( lspci -ms ${device} | cut -d \" -f 6 )"
+          # local device_vendor="$( lspci -ms ${device} | cut -d \" -f 4 )"
+          # local line_device_id="dev_id=\"${device_bus_id}\""
+          local line_device_id="dev_id=\"${device}\""
+          # local line_device_class="class=\"${device_class}\""
+          local line_device_driver="driver=\"${device_driver}\""
+          # local line_device_hwid="hw_id=\"${device_hwid}\""
+          # local line_device_name="name=\"${device_name}\""
+          # local line_device_vendor="vendor=\"${device_vendor}\""
+          # local line_device="${line_device_id} ${line_device_hwid} ${line_device_driver} ${line_device_class} ${line_device_vendor} ${line_device_name}"
+          local line_device="${line_device_id} ${line_device_driver}"
+          local line_IOMMU="<iommu ${line_iommu_id} ${line_device}/>"
+
+          device_output+=(
+            "\t${line_IOMMU}"
+          )
+        done
+
+        iommu_output+=(
+          "${device_output[@]}"
+        )
+      done
+
+      output=(
+        "<xml>"
+        "${iommu_output[@]}"
+        "</xml>"
+      )
+
+      IFS=$'\n'
+
+      if ! sudo echo -e "${output[*]}" > "${XML_FILE}"; then
+        PrintPrefixError "Failed to write to file '${FILE}'."
+        unset IFS
+        return 1
+      fi
+
+      unset IFS
+    }
+
+    function ParseFromXMLPrompt
+    {
+      if "${DO_PARSE_DATABASE_FROM_XML}"; then
+        return 0
+      fi
+
+      AskToExecuteOrSkip "Cross-reference database with XML file?" || return 1
+      _DO_PARSE_DATABASE_FROM_XML=true
+    }
+
+    function SelectXMLFile
+    {
+      ExportFromXML || return 1
+
+      for count in $( seq 0 2 ); do
+          read -r -p "${output}" answer
+
+          if ! "${DO_PARSE_DATABASE_FROM_FILE}" \
+            && [[ -z "${answer}" ]]; then
+            DATABASE_FILE="${DEFAULT_DATABASE_FILE}"
+            break
+          fi
+
+          IsFile "${answer}" || continue
+          IsFileNotEmpty "${answer}" || continue
+
+          DATABASE_FILE="${answer}"
+          return 0
+        done
+
+      ImportParseXML
+      return 1
+    }
+# </functions>
+
+# <code>
+  DeclareParameters
+  unset DeclareParameters
+# </code

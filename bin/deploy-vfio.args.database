@@ -1,0 +1,100 @@
+#!/bin/false
+
+#
+# Filename:       deploy-vfio.args.database
+# Description:    Argument logic for parsing database.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source deploy-vfio.logic.database
+# </sources>
+
+# <functions>
+  function IsArgumentOfParse
+  {
+    IsArgumentParseDatabase "$@" || return 1
+    IsArgumentParseIOMMUGroups "$@" || return 1
+  }
+
+  # TODO: fix here.
+  function IsArgumentParseDatabase
+  {
+    case "${1}" in
+      "-f" | "--file" )
+        shift
+        MAIN_SETUP_DO_PARSE_DATABASE_FROM_FILE=true
+        MAIN_SETUP_DATABASE_FILE="${1}" ;;                      # TODO: validate file input.
+
+      "-i" | "--internal" )
+        MAIN_SETUP_DO_PARSE_DATABASE_FROM_CACHE=true ;;
+
+      "-o" | "--online" )
+        MAIN_SETUP_DO_PARSE_DATABASE_FROM_INTERNET=true ;;
+
+      "-x" | "--xml" )
+        MAIN_SETUP_DO_PARSE_DATABASE_FROM_XML=true ;;
+
+      * )
+        return 0 ;;
+    esac
+
+    MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
+  }
+
+  function IsArgumentParseIOMMUGroups
+  {
+    case "${1}" in
+      "-p" | "--parse" )
+        shift
+        GetArgumentsForParseSelection "$@" || return 1
+        ShiftInputIfOptionHasArgument "${1}"
+        MAIN_SETUP_ASK_TO_EXECUTE_ALL=false ;;
+    esac
+  }
+
+  function GetArgumentsForParseSelection
+  {
+    if [[ -z "${1}" ]]; then
+      IsIOMMUGroupIDValid "${1}"
+      return 1
+    fi
+
+    local -i count_delim=$( echo "${1}" | grep -o "," | wc -l )
+    (( count_delim++ ))
+
+    while [[ "${count_delim}" -gt 0 ]] \
+      && ! "${MAIN_SETUP_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; do
+      GetThisArgumentForParseSelection "$@" || return 1
+      (( count_delim-- ))
+    done
+
+    MAIN_SETUP_HAS_ARG_PARSE_IOMMU=true
+  }
+
+  function GetThisArgumentForParseSelection
+  {
+    local argument=$( echo "${1}" | cut -d ',' -f "${count_delim}" )
+
+    if [[ ! -z "${argument}" ]] \
+      && ( ! "${MAIN_SETUP_DO_PARSE_DATABASE_FROM_FILE}" \
+        || ( "${MAIN_SETUP_DO_PARSE_DATABASE_FROM_FILE}" \
+        && [[ "${argument}" != "${MAIN_SETUP_DATABASE_FILE}" ]] )); then
+      case "${argument}" in
+        "all" )
+          MAIN_SETUP_HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
+          AddValidIOMMUGroupsParseList || return 1 ;;
+
+        "no-vga" )
+          MAIN_SETUP_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true
+          AddValidIOMMUGroupsParseList || return 1
+          MAIN_SETUP_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=false ;;
+
+        * )
+          MAIN_SETUP_HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
+          AddSomeIOMMUGroupsParseList "${argument}" || return 1 ;;
+      esac
+    fi
+  }
+# </functions>
