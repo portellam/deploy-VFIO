@@ -24,23 +24,23 @@
     case "${1}" in
       "-f" | "--file" )
         shift
-        MAIN_SETUP_DO_PARSE_DATABASE_FROM_FILE=true
-        MAIN_SETUP_DATABASE_FILE="${1}" ;;                      # TODO: validate file input.
+        DATABASE_DO_PARSE_DATABASE_FROM_FILE=true
+        DATABASE_DATABASE_FILE="${1}" ;;                      # TODO: validate file input.
 
       "-i" | "--internal" )
-        MAIN_SETUP_DO_PARSE_DATABASE_FROM_CACHE=true ;;
+        DATABASE_DO_PARSE_DATABASE_FROM_CACHE=true ;;
 
       "-o" | "--online" )
-        MAIN_SETUP_DO_PARSE_DATABASE_FROM_INTERNET=true ;;
+        DATABASE_DO_PARSE_DATABASE_FROM_INTERNET=true ;;
 
       "-x" | "--xml" )
-        MAIN_SETUP_DO_PARSE_DATABASE_FROM_XML=true ;;
+        DATABASE_DO_PARSE_DATABASE_FROM_XML=true ;;
 
       * )
         return 0 ;;
     esac
 
-    MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
+    DATABASE_ASK_TO_EXECUTE_ALL=false
   }
 
   function IsArgumentParseIOMMUGroups
@@ -50,7 +50,7 @@
         shift
         GetArgumentsForParseSelection "$@" || return 1
         ShiftInputIfOptionHasArgument "${1}"
-        MAIN_SETUP_ASK_TO_EXECUTE_ALL=false ;;
+        DATABASE_ASK_TO_EXECUTE_ALL=false ;;
     esac
   }
 
@@ -65,12 +65,12 @@
     (( count_delim++ ))
 
     while [[ "${count_delim}" -gt 0 ]] \
-      && ! "${MAIN_SETUP_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; do
+      && ! "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; do
       GetThisArgumentForParseSelection "$@" || return 1
       (( count_delim-- ))
     done
 
-    MAIN_SETUP_HAS_ARG_PARSE_IOMMU=true
+    DATABASE_HAS_ARG_PARSE_IOMMU=true
   }
 
   function GetThisArgumentForParseSelection
@@ -78,21 +78,21 @@
     local argument=$( echo "${1}" | cut -d ',' -f "${count_delim}" )
 
     if [[ ! -z "${argument}" ]] \
-      && ( ! "${MAIN_SETUP_DO_PARSE_DATABASE_FROM_FILE}" \
-        || ( "${MAIN_SETUP_DO_PARSE_DATABASE_FROM_FILE}" \
-        && [[ "${argument}" != "${MAIN_SETUP_DATABASE_FILE}" ]] )); then
+      && ( ! "${DATABASE_DO_PARSE_DATABASE_FROM_FILE}" \
+        || ( "${DATABASE_DO_PARSE_DATABASE_FROM_FILE}" \
+        && [[ "${argument}" != "${DATABASE_DATABASE_FILE}" ]] )); then
       case "${argument}" in
         "all" )
-          MAIN_SETUP_HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
+          DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
           AddValidIOMMUGroupsParseList || return 1 ;;
 
         "no-vga" )
-          MAIN_SETUP_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true
+          DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true
           AddValidIOMMUGroupsParseList || return 1
-          MAIN_SETUP_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=false ;;
+          DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=false ;;
 
         * )
-          MAIN_SETUP_HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
+          DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
           AddSomeIOMMUGroupsParseList "${argument}" || return 1 ;;
       esac
     fi

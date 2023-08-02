@@ -14,16 +14,16 @@
 # <functions>
   function DeclareParameters
   {
-    if [[ "${PARSE_ARE_PARAMS_SET}" == true ]]; then
+    if [[ "${DATABASE_ARE_PARAMS_SET}" == true ]]; then
       return 0
     fi
 
-    declare -g PARSE_ARE_PARAMS_SET=true
+    declare -g DATABASE_ARE_PARAMS_SET=true
 
-    declare -g PARSE_DO_PARSE_DATABASE_FROM_XML=false
-    declare -g PARSE_HAS_ARG_PARSE_IOMMU=false
-    declare -g PARSE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
-    declare -g PARSE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
+    declare -g DATABASE_DO_PARSE_DATABASE_FROM_XML=false
+    declare -g DATABASE_HAS_ARG_PARSE_IOMMU=false
+    declare -g DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
+    declare -g DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
 
     declare -gr GET_DEVICES_FOR_IOMMU_GROUP='ls /sys/kernel/iommu_groups/${iommu_group_id}/devices/'
 
@@ -76,10 +76,10 @@
       local device="${1}"
       local -n reference="${2}"
 
-      if "${PARSE_DO_PARSE_DATABASE_FROM_XML}"; then
+      if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
         reference="${DEVICE_DRIVER_XML_LIST["${device}"]}"
       else
-        reference="$( lspci ${PARSE_OPTIONS} -ks "${device}" | grep -i "driver" | cut -d " " -f 5 )"
+        reference="$( lspci ${DATABASE_OPTIONS} -ks "${device}" | grep -i "driver" | cut -d " " -f 5 )"
       fi
     }
 
@@ -198,9 +198,9 @@
         fi
 
         if DoesIOMMUGroupHaveVGADevice "${iommu_group_id}"; then
-          _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${iommu_group_id}" )
+          IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${iommu_group_id}" )
         else
-          _IOMMU_GROUPS_FOR_HOST_LIST+=( "${iommu_group_id}" )
+          IOMMU_GROUPS_FOR_HOST_LIST+=( "${iommu_group_id}" )
         fi
       done
 
@@ -356,7 +356,7 @@
       fi
 
       local device="${1}"
-      local -l CLASS="$( lspci ${_PARSE_OPTIONS} -ms ${DEVICE} | cut -d '"' -f 2 )"
+      local -l CLASS="$( lspci -ms ${DEVICE} | cut -d '"' -f 2 )"
 
       case "${CLASS}" in
         *"usb"* )
@@ -504,7 +504,7 @@
       local -ir IOMMU_GROUP_ID="${1}"
 
       if ! DoesIOMMUGroupHaveExternalDevices "${1}"; then
-        _IOMMU_GROUPS_FOR_HOST_LIST+=( "${IOMMU_GROUP_ID}" )
+        IOMMU_GROUPS_FOR_HOST_LIST+=( "${IOMMU_GROUP_ID}" )
         return 1
       fi
 
@@ -520,10 +520,10 @@
       local -ir iommu_group_id="${1}"
 
       if AskToExecuteOrSkip "Select IOMMU group ${SET_COLOR_YELLOW}${iommu_group_id}${RESET_COLOR}?"; then
-        _IOMMU_GROUPS_FOR_VFIO_LIST+=( "${iommu_group_id}" )
+        IOMMU_GROUPS_FOR_VFIO_LIST+=( "${iommu_group_id}" )
 
         if DoesIOMMUGroupHaveVGADevice "${iommu_group_id}" &> /dev/null; then
-          _IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST+=( "${iommu_group_id}" )
+          IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST+=( "${iommu_group_id}" )
         fi
 
         echo
@@ -531,12 +531,12 @@
       fi
 
       if DoesIOMMUGroupHaveVGADevice "${iommu_group_id}" &> /dev/null; then
-        _IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${iommu_group_id}" )
+        IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${iommu_group_id}" )
         echo
         return 0
       fi
 
-      _IOMMU_GROUPS_FOR_HOST_LIST+=( "${iommu_group_id}" )
+      IOMMU_GROUPS_FOR_HOST_LIST+=( "${iommu_group_id}" )
       echo
     }
 
@@ -612,7 +612,7 @@
       fi
 
       AskToExecuteOrSkip "Cross-reference database with XML file?" || return 1
-      _DO_PARSE_DATABASE_FROM_XML=true
+      DO_PARSE_DATABASE_FROM_XML=true
     }
 
     function SelectXMLFile
