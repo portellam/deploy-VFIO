@@ -2,7 +2,7 @@
 
 #
 # Filename:       deploy-vfio.logic.main-setup
-# Description:    Parse and select IOMMU groups, and select VFIO setup.
+# Description:    Select VFIO setup.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
