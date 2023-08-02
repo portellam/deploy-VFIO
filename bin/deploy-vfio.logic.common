@@ -140,6 +140,24 @@
       echo -e "${SUFFIX_PASS} ${1}"
     }
 
+    function IsFile
+    {
+      if [[ -z "${1}" ]] \
+        || [[ ! -e "${1}" ]]; then
+        PrintPrefixError "File does not exist."
+        return 1
+      fi
+    }
+
+    function IsFileNotEmpty
+    {
+      if [[ -z "${1}" ]] \
+        || [[ ! -s "${1}" ]]; then
+        PrintPrefixError "File is empty."
+        return 1
+      fi
+    }
+
   # <summary>Variable data-type validation</summary>
     function IsEnum
     {
