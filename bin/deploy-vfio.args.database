@@ -18,26 +18,14 @@
     IsArgumentParseIOMMUGroups "$@" || return 1
   }
 
-  # TODO: fix here.
-  function IsArgumentParseDatabase
+  function IsArgumentParseDatabase                  # TODO: add check to scan specific XML file.
   {
     case "${1}" in
-      "-f" | "--file" )
-        shift
-        DATABASE_DO_PARSE_DATABASE_FROM_FILE=true
-        DATABASE_DATABASE_FILE="${1}" ;;                      # TODO: validate file input.
-
-      "-i" | "--internal" )
-        DATABASE_DO_PARSE_DATABASE_FROM_CACHE=true ;;
-
-      "-o" | "--online" )
-        DATABASE_DO_PARSE_DATABASE_FROM_INTERNET=true ;;
-
       "-x" | "--xml" )
         DATABASE_DO_PARSE_DATABASE_FROM_XML=true ;;
 
       * )
-        return 0 ;;
+        return 1 ;;
     esac
 
     DATABASE_ASK_TO_EXECUTE_ALL=false
@@ -77,10 +65,7 @@
   {
     local argument=$( echo "${1}" | cut -d ',' -f "${count_delim}" )
 
-    if [[ ! -z "${argument}" ]] \
-      && ( ! "${DATABASE_DO_PARSE_DATABASE_FROM_FILE}" \
-        || ( "${DATABASE_DO_PARSE_DATABASE_FROM_FILE}" \
-        && [[ "${argument}" != "${DATABASE_DATABASE_FILE}" ]] )); then
+    if [[ ! -z "${argument}" ]] ; then
       case "${argument}" in
         "all" )
           DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=true

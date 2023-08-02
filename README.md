@@ -60,16 +60,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 
         Specify the database to reference before parsing IOMMU groups.
         OPTIONS:
-          -f, --file [ARGS]             Reference file database.
-          -i, --internal                Reference local database.
-          -o, --online                  Reference online database.
           -x, --xml                     Cross-reference XML file. Execute once to export, prior to import. Import if VFIO setup exists, to grab valid drivers.
-
-        ARGUMENTS: *
-          [filename]                    Reference specific file.
-
-          Example:
-            -f database.txt             Reference file 'database.txt'.
 
         Specify the IOMMU groups to parse.
         OPTIONS:
