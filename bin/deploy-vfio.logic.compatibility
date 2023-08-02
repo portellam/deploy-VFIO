@@ -1,4 +1,4 @@
-#!/bin/false
+#!/bin/bash # TODO: change back to bin/false
 
 #
 # Filename:       deploy-vfio.logic.compatibility
