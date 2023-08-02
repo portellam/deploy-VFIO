@@ -12,99 +12,101 @@
 # </sources>
 
 # <functions>
-  function IsArgumentOfMainSetup
+  function IsOptionOfMainSetup
   {
-    IsArgumentSkipMainSetup "$@" || return 1
-    IsArgumentUninstallMainSetup "$@" || return 1
-    IsArgumentDoMultibootSetup "$@" || return 1
-    IsArgumentDoStaticSetup "$@" || return 1
+    IsOptionSkipMainSetup "$@" || return 1
+    IsOptionUninstallMainSetup "$@" || return 1
+    IsOptionDoMultibootSetup "$@" || return 1
+    IsOptionDoStaticSetup "$@" || return 1
   }
 
-  function IsArgumentDoMultibootSetup
-  {
-    if [[ "${1}" == "-m" ]] \
-      || [[ "${1}" == "--multiboot" ]]; then
-      shift
-      GetArgumentsForMultibootSetup "$@" || return 1
-      PopInputListIfLastOptionContainsArgument "${1}"
-      MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
-      MAIN_SETUP_DO_EXECUTE_MULTIBOOT=true
-    fi
-  }
+  # <summary>Option getters</summary>
+    function IsOptionDoMultibootSetup
+    {
+      if [[ "${1}" == "-m" ]] \
+        || [[ "${1}" == "--multiboot" ]]; then
+        shift
+        GetArgumentsForMultibootSetup "$@" || return 1
+        PopInputListIfLastOptionContainsArgument "${1}"
+        MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
+        MAIN_SETUP_DO_EXECUTE_MULTIBOOT=true
+      fi
+    }
 
-  function GetArgumentsForMultibootSetup
-  {
-    case "${1}" in
-      "default" )
-        MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_DEFAULT=true
-        return 0 ;;
+    function IsOptionDoStaticSetup
+    {
+      if [[ "${1}" == "-s" ]] \
+        || [[ "${1}" == "--static" ]]; then
+        shift
+        GetArgumentsForStaticSetup "$@" || return 1
+        PopInputListIfLastOptionContainsArgument "${1}"
+        MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
+        MAIN_SETUP_DO_EXECUTE_STATIC=true
+      fi
+    }
 
-      "first" )
-        MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_FIRST=true
-        return 0 ;;
+    function IsOptionSkipMainSetup
+    {
+      if [[ "${1}" == "--skip-vfio-setup" ]]; then
+        MAIN_SETUP_DO_SKIP_ALL=true
+        MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
+      fi
+    }
 
-      "last" )
-        MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_LAST=true
-        return 0 ;;
+    function IsOptionUninstallMainSetup
+    {
+      if [[ "${1}" == "--uninstall-vfio-setup" ]]; then
+        MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
+      fi
+    }
 
-      * )
-        if DoesIOMMUGroupHaveVGADevice "${1}" \
-          && SetPreferredIOMMUGroupForMultiboot "${1}"; then
-          return 0
-        fi ;;
-    esac
+  # <summary>Argument getters</summary>
+    function GetArgumentsForMultibootSetup
+    {
+      case "${1}" in
+        "default" )
+          MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_DEFAULT=true
+          return 0 ;;
 
-    if [[ ! -z "${1}" ]]; then
+        "first" )
+          MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_FIRST=true
+          return 0 ;;
+
+        "last" )
+          MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_LAST=true
+          return 0 ;;
+
+        * )
+          if DoesIOMMUGroupHaveVGADevice "${1}" \
+            && SetPreferredIOMMUGroupForMultiboot "${1}"; then
+            return 0
+          fi ;;
+      esac
+
+      if [[ ! -z "${1}" ]]; then
+        PrintInvalidArgument "${1}"
+      fi
+
+      return 1
+    }
+
+    function GetArgumentsForStaticSetup
+    {
+      if [[ -z "${1}" ]]; then
+        return 0
+      fi
+
+      case "${1}" in
+        "grub" )
+          MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB=true
+          return 0 ;;
+
+        "file" )
+          MAIN_SETUP_DO_EXECUTE_STATIC_WITHOUT_GRUB=true
+          return 0 ;;
+      esac
+
       PrintInvalidArgument "${1}"
-    fi
-
-    return 1
-  }
-
-  function IsArgumentDoStaticSetup
-  {
-    if [[ "${1}" == "-s" ]] \
-      || [[ "${1}" == "--static" ]]; then
-      shift
-      GetArgumentsForStaticSetup "$@" || return 1
-      PopInputListIfLastOptionContainsArgument "${1}"
-      MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
-      MAIN_SETUP_DO_EXECUTE_STATIC=true
-    fi
-  }
-
-  function GetArgumentsForStaticSetup
-  {
-    if [[ -z "${1}" ]]; then
-      return 0
-    fi
-
-    case "${1}" in
-      "grub" )
-        MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB=true
-        return 0 ;;
-
-      "file" )
-        MAIN_SETUP_DO_EXECUTE_STATIC_WITHOUT_GRUB=true
-        return 0 ;;
-    esac
-
-    PrintInvalidArgument "${1}"
-    return 1
-  }
-
-  function IsArgumentSkipMainSetup
-  {
-    if [[ "${1}" == "--skip-vfio-setup" ]]; then
-      MAIN_SETUP_DO_SKIP_ALL=true
-      MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
-    fi
-  }
-
-  function IsArgumentUninstallMainSetup
-  {
-    if [[ "${1}" == "--uninstall-vfio-setup" ]]; then
-      MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
-    fi
-  }
+      return 1
+    }
 # </functions>

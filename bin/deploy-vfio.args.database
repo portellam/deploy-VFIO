@@ -18,95 +18,97 @@
     IsOptionParseIOMMUGroups "$@" || return 1
   }
 
-  function IsOptionParseXML
-  {
-    if [[ "${1}" != "-x" ]] \
-      && [[ "${1}" != "--xml" ]]; then
-      return 0
-    fi
+  # <summary>Option getters</summary>
+    function IsOptionParseXML
+    {
+      if [[ "${1}" != "-x" ]] \
+        && [[ "${1}" != "--xml" ]]; then
+        return 0
+      fi
 
-    if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
-      PrintInvalidOption "${1}"
-    fi
+      if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
+        PrintInvalidOption "${1}"
+      fi
 
-    shift
-    IsArgumentParseXMLFile "${1}"
-    PopInputListIfLastOptionContainsArgument "${1}"
-    DATABASE_ASK_TO_EXECUTE_ALL=false
-    DATABASE_DO_PARSE_DATABASE_FROM_XML=true
-  }
+      shift
+      IsArgumentParseXMLFile "${1}"
+      PopInputListIfLastOptionContainsArgument "${1}"
+      DATABASE_ASK_TO_EXECUTE_ALL=false
+      DATABASE_DO_PARSE_DATABASE_FROM_XML=true
+    }
 
-  function IsArgumentParseXMLFile
-  {
-    if [[ -z "${1}" ]]; then
-      SetXMLFileToDefault
-      return 0
-    fi
+    function IsOptionParseIOMMUGroups
+    {
+      if [[ "${1}" != "-p" ]] \
+        && [[ "${1}" != "--parse" ]]; then
+        return 0
+      fi
 
-    IsFile "${1}" || PrintInvalidArgument "${1}"
-    SetXMLFile "${1}"
-  }
+      shift
+      GetArgumentsForParseSelection "$@" || return 1
+      PopInputListIfLastOptionContainsArgument "${1}"
+      DATABASE_ASK_TO_EXECUTE_ALL=false
+    }
 
-  function IsOptionParseIOMMUGroups
-  {
-    if [[ "${1}" != "-p" ]] \
-      && [[ "${1}" != "--parse" ]]; then
-      return 0
-    fi
+  # <summary>Argument getters</summary>
+    function GetArgumentsForParseSelection
+    {
+      if [[ -z "${1}" ]]; then
+        IsIOMMUGroupIDValid "${1}"
+        return 1
+      fi
 
-    shift
-    GetArgumentsForParseSelection "$@" || return 1
-    PopInputListIfLastOptionContainsArgument "${1}"
-    DATABASE_ASK_TO_EXECUTE_ALL=false
-  }
+      local -i delimiter_counter=$( echo "${1}" | grep -o "," | wc -l )
+      (( delimiter_counter++ ))
 
-  function GetArgumentsForParseSelection
-  {
-    if [[ -z "${1}" ]]; then
-      IsIOMMUGroupIDValid "${1}"
-      return 1
-    fi
+      while [[ "${delimiter_counter}" -gt 0 ]] \
+        && ! "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; do
+        GetThisArgumentForParseSelection "$@" || return 1
+        (( delimiter_counter-- ))
+      done
 
-    local -i delimiter_counter=$( echo "${1}" | grep -o "," | wc -l )
-    (( delimiter_counter++ ))
+      DATABASE_HAS_ARG_PARSE_IOMMU=true
+    }
 
-    while [[ "${delimiter_counter}" -gt 0 ]] \
-      && ! "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; do
-      GetThisArgumentForParseSelection "$@" || return 1
-      (( delimiter_counter-- ))
-    done
+    function GetThisArgumentForParseSelection
+    {
+      local argument=$( echo "${1}" | cut -d ',' -f "${delimiter_counter}" )
 
-    DATABASE_HAS_ARG_PARSE_IOMMU=true
-  }
+      if [[ -z "${argument}" ]] ; then
+        return 0
+      fi
 
-  function GetThisArgumentForParseSelection
-  {
-    local argument=$( echo "${1}" | cut -d ',' -f "${delimiter_counter}" )
+      case "${argument}" in
+        "all" )
+          if "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; then
+            PrintDuplicateArgument "${argument}"
+          fi
 
-    if [[ -z "${argument}" ]] ; then
-      return 0
-    fi
+          DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
+          AddValidIOMMUGroupsToParsedList || PrintInvalidArgument "${argument}" ;;
 
-    case "${argument}" in
-      "all" )
-        if "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; then
-          PrintDuplicateArgument "${argument}"
-        fi
+        "no-vga" )
+          if "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA}"; then
+            PrintDuplicateArgument "${argument}"
+          fi
 
-        DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
-        AddValidIOMMUGroupsToParsedList || PrintInvalidArgument "${argument}" ;;
+          DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true
+          AddValidIOMMUGroupsToParsedList || PrintInvalidArgument "${argument}" ;;
 
-      "no-vga" )
-        if "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA}"; then
-          PrintDuplicateArgument "${argument}"
-        fi
+        * )
+          DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
+          AddSomeIOMMUGroupsToParsedList "${argument}" || PrintInvalidArgument "${argument}" ;;
+      esac
+    }
 
-        DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true
-        AddValidIOMMUGroupsToParsedList || PrintInvalidArgument "${argument}" ;;
+    function IsArgumentParseXMLFile
+    {
+      if [[ -z "${1}" ]]; then
+        SetXMLFileToDefault
+        return 0
+      fi
 
-      * )
-        DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
-        AddSomeIOMMUGroupsToParsedList "${argument}" || PrintInvalidArgument "${argument}" ;;
-    esac
-  }
+      IsFile "${1}" || PrintInvalidArgument "${1}"
+      SetXMLFile "${1}"
+    }
 # </functions>

@@ -1,0 +1,28 @@
+#!/bin/false
+
+#
+# Filename:       deploy-vfio.args.compatibility
+# Description:    Argument logic for system compatibility.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source deploy-vfio.logic.compatibility
+# </sources>
+
+# <functions>
+  function IsOptionOfCompatibility
+  {
+    IsOptionIgnoreDistro || return 1
+  }
+
+  function IsOptionIgnoreDistro
+  {
+    if [[ "${1}" != "--ignore-distro" ]]; then
+      return 1
+    fi
+
+    COMPATIBILITY_DO_IGNORE_DISTRO=true
+  }
+# </functions>
