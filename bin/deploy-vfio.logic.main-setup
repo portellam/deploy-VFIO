@@ -9,6 +9,7 @@
 
 # <sources>
   source deploy-vfio.logic.common
+  source delpoy-vfio.logic.database
 # </sources>
 
 # <functions>
@@ -21,21 +22,11 @@
     declare -g MAIN_SETUP_ARE_PARAMS_SET=true
 
     declare -g MAIN_SETUP_ASK_TO_EXECUTE_ALL=true
-    declare -g MAIN_SETUP_DATABASE_FILE=""
     declare -g MAIN_SETUP_DO_EXECUTE_MULTIBOOT=false
     declare -g MAIN_SETUP_DO_EXECUTE_STATIC=false
     declare -g MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB=false
     declare -g MAIN_SETUP_DO_EXECUTE_STATIC_WITHOUT_GRUB=false
-    declare -g MAIN_SETUP_DO_PARSE_DATABASE_FROM_CACHE=false
-    declare -g MAIN_SETUP_DO_PARSE_DATABASE_FROM_FILE=false
-    declare -g MAIN_SETUP_DO_PARSE_DATABASE_FROM_INTERNET=false
-    declare -g MAIN_SETUP_DO_PARSE_DATABASE_FROM_XML=false
-    declare -g MAIN_SETUP_HAS_ARG_PARSE_IOMMU=false
-    declare -g MAIN_SETUP_HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
-    declare -g MAIN_SETUP_HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
     declare -g MAIN_SETUP_DO_SKIP_ALL=false
-
-    declare -gA DEVICE_DRIVER_XML_LIST
   }
 
   function DoMainSetup
@@ -44,187 +35,13 @@
     return 0
   }
 
-  function GetDeviceClass
+  function AreParametersValid
   {
-    if [[ ! -z "${2}" ]] \
-      || [[ ! -z "${1}" ]]; then
-      return 1
-    fi
+    IsEnum "IOMMU_GROUP_ID_LIST" || return 1
 
-    local device="${1}"
-    local -n reference="${2}"
-    reference="$( lspci -ms ${device} | cut -d '"' -f 2 )"
-  }
-
-  function GetDeviceDriver
-  {
-    if [[ ! -z "${2}" ]] \
-      || [[ ! -z "${1}" ]]; then
-      return 1
-    fi
-
-    local device="${1}"
-    local -n reference="${2}"
-
-    if "${MAIN_SETUP_DO_PARSE_DATABASE_FROM_XML}"; then
-      reference="${DEVICE_DRIVER_XML_LIST["${device}"]}"
-    else
-      reference="$( lspci ${PARSE_OPTIONS} -ks "${device}" | grep -i "driver" | cut -d " " -f 5 )"
-    fi
-  }
-
-  function GetDeviceHardwareID
-  {
-    if [[ ! -z "${2}" ]] \
-      || [[ ! -z "${1}" ]]; then
-      return 1
-    fi
-
-    local device="${1}"
-    local -n reference="${2}"
-
-    reference="$( lspci -ns ${device} | cut -d " " -f 3 )"
-  }
-
-  function GetDeviceName
-  {
-    if [[ ! -z "${2}" ]] \
-      || [[ ! -z "${1}" ]]; then
-      return 1
-    fi
-
-    local device="${1}"
-    local -n reference="${2}"
-
-    reference="$( lspci -ms ${device}  | cut -d '"' -f 6 )"
-  }
-
-  function GetDeviceVendor
-  {
-    if [[ ! -z "${2}" ]] \
-      || [[ ! -z "${1}" ]]; then
-      return 1
-    fi
-
-    local device="${1}"
-    local -n reference="${2}"
-
-    reference="$( lspci -ms ${device} | cut -d '"' -f 4 )"
-  }
-
-  function IsDeviceDriverNotExcluded
-  {
-    if [[ ! -z "${1}" ]]; then
-      return 1
-    fi
-
-    local driver="${1}"
-    local excluded_driver="snd_hda_intel"
-
-    case "${driver}" in
-      *"${excluded_driver}"* )
-        return 1 ;;
-    esac
-  }
-
-  function IsDeviceDriverNotVFIO
-  {
-    if [[ ! -z "${1}" ]]; then
-      return 1
-    fi
-
-    local driver="${1}"
-    local matched_driver="vfio-pci"
-
-    case "${driver}" in
-      *"${matched_driver}"* )
-        return 1 ;;
-    esac
-  }
-
-  function IsDeviceExternal
-  {
-    if [[ ! -z "${1}" ]]; then
-      return 1
-    fi
-
-    local device="${1}"
-    local regex_get_domain_id='^[0-9A-F][1-9A-F]$'
-    local -u domain_id=$( echo "${device}" | cut -d ':' -f 2 )
-    echo "${domain_id}" | grep -E -q "${regex_get_domain_id}"
-  }
-
-  function IsDeviceForPCISTUB
-  {
-    if [[ ! -z "${1}" ]]; then
-      return 1
-    fi
-
-    local device="${1}"
-    local -l CLASS="$( lspci ${_PARSE_OPTIONS} -ms ${DEVICE} | cut -d '"' -f 2 )"
-
-    case "${CLASS}" in
-      *"usb"* )
-        return 0 ;;
-    esac
-
-    return 1
-  }
-
-  function IsDeviceNotBindedToVFIO
-  {
-    if [[ ! -z "${1}" ]]; then
-      return 1
-    fi
-
-    local device="${1}"
-    local driver=""
-    SetDeviceDriver "${device}" "driver"
-    IsDeviceDriverNotVFIO "${driver}"
-    return "${?}"
-  }
-
-  function IsDeviceNotExcluded
-  {
-    if [[ ! -z "${1}" ]]; then
-      return 1
-    fi
-
-    local device="${1}"
-    local driver=""
-    SetDeviceDriver "${device}" "driver"
-    IsDeviceDriverNotExcluded "${driver}"
-    return "${?}"
-  }
-
-  function IsDeviceNotExternal
-  {
-    if [[ ! -z "${1}" ]]; then
-      return 1
-    fi
-
-    local device="${1}"
-    local driver=""
-    SetDeviceDriver "${device}" "driver"
-    IsDeviceExternal "${device}"
-    return "${?}"
-  }
-
-  function IsDeviceVGA
-  {
-    if [[ ! -z "${1}" ]]; then
-      return 1
-    fi
-
-    local device="${1}"
-    local -l class="$( lspci -ms ${device} | cut -d '"' -f 2 )"
-
-    case "${class}" in
-      *"vga"* | *"graphic"* | *"display"* )
-        return 0 ;;
-    esac
-
-    return 1
+    for value in ${IOMMU_GROUP_ID_LIST[@]}; do
+      IsInt "${value}" || return 1
+    done
   }
 # </functions>
 
