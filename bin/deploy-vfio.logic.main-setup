@@ -1,4 +1,4 @@
-#!/bin/false
+#!/bin/bash # TODO: change back to bin/false
 
 #
 # Filename:       deploy-vfio.logic.main-setup
@@ -31,18 +31,44 @@
 
   function DoMainSetup
   {
+    if ! IsParsedListValid \
+      || IsParsedListOfVGAValid; then
+      return 1
+    fi
+
     echo "in main setup now"
-    return 0
   }
 
-  function AreParametersValid
-  {
-    IsEnum "IOMMU_GROUP_ID_LIST" || return 1
+  # <summary>Prompt selection validation</summary>
+    function IsParsedListValid
+    {
+      if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_FOR_HOST_LIST"; then
+        PrintPrefixError "Invalid selection of devices for Host."
+        return 1
+      fi
 
-    for value in ${IOMMU_GROUP_ID_LIST[@]}; do
-      IsInt "${value}" || return 1
-    done
-  }
+      if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_FOR_VFIO_LIST"; then
+        PrintPrefixError "Invalid selection of devices for VFIO."
+        return 1
+      fi
+    }
+
+    function IsParsedListOfVGAValid
+    {
+      if "${VFIO_SETUP_DO_EXECUTE_MULTIBOOT}"; then
+        if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST"; then
+          PrintPrefixError "Invalid selection of VGA devices for VFIO."
+          return 1
+        fi
+
+        return 0
+      fi
+
+      if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST"; then
+        PrintPrefixError "Invalid selection of VGA devices for Host."
+        return 1
+      fi
+    }
 # </functions>
 
 # <code>
