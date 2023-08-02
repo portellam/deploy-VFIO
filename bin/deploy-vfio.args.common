@@ -8,6 +8,7 @@
 #
 
 # <sources>
+  source deploy-vfio.args.compatibility
   source deploy-vfio.args.main-setup
   source deploy-vfio.args.database
   source deploy-vfio.args.pre-setup
@@ -28,107 +29,109 @@
     declare -g COMMON_ARGS_IS_EXECUTION_QUIET=false
   }
 
-  function SetOptions
-  {
-    if [[ -z "$@" ]]; then
+  # <summary>Option setters</summary>
+    function SetOptions
+    {
+      if [[ -z "$@" ]]; then
+        return 0
+      fi
+
+      while [[ "${1}" =~ ^- ]] \
+        || [[ "${1}" =~ ^-- ]]; do
+        echo "arg == ${1}"            # NOTE: debug.
+        ParseValidArgumentList "$@"
+        shift                         # <note>'shift' must remain in same scope to work.</note>
+      done
+
       return 0
-    fi
+    }
 
-    while [[ "${1}" =~ ^- ]] \
-      || [[ "${1}" =~ ^-- ]]; do
-      echo "arg == ${1}"            # NOTE: debug.
-      ParseValidArgumentList "$@"
-      shift                         # NOTE: shift needs to remain in same scope as while loop.
-    done
+    function ParseThisOption
+    {
+      if ! IsOptionPrintHelp "$@" \
+        && ! IsOptionOfCompatibility "$@" \
+        && ! IsOptionBeQuiet "$@" \
+        && ! IsOptionUndoAll "$@" \
+        && ! IsOptionOfPreSetup "$@" \
+        && ! IsOptionOfDatabase "$@" \
+        && ! IsOptionOfMainSetup "$@" \
+        && ! IsOptionOfPostSetup "$@"; then
+      IsOptionNotValid "$@"
+      fi
+    }
 
-    return 0
-  }
+    function PopInputListIfLastOptionContainsArgument
+    {
+      while [[ ! -z "${1}" ]]; do
+        shift
+        (( args_counter++ ))
+      done
 
-  function ParseValidArgumentList
-  {
-    # local -i args_counter=1
-    local this_argument="${1}"
-    ParseThisOption "$@"
-    # echo "args_counter == $args_counter"
-    # ShiftInputByAmountOfArgumentCount
-    shift
-  }
+      return 0
+    }
 
-  # TODO: fix here.
-  # function ShiftInputByAmountOfArgumentCount
-  # {
-  #   for counter in $( seq 0 "${args_counter}" ); do
-  #     shift
-  #   done
-  # }
+  # <summary>Option getters</summary>
+    function IsOptionPrintHelp
+    {
+      if [[ "${1}" == "-h" ]] \
+        || [[ "${1}" == "--help" ]]; then
+        PrintUsage
+        exit 0
+      fi
 
-  function ParseThisOption
-  {
-    if ! IsOptionPrintHelp "$@" \
-      && ! IsOptionIgnoreDistro "$@" \
-      && ! IsOptionBeQuiet "$@" \
-      && ! IsOptionUndoAll "$@" \
-      && ! IsOptionOfPreSetup "$@" \
-      && ! IsOptionOfDatabase "$@" \
-      && ! IsOptionOfMainSetup "$@" \
-      && ! IsOptionOfPostSetup "$@"; then
-     IsOptionNotValid "$@"
-    fi
-  }
+      return 1
+    }
 
-  function PopInputListIfLastOptionContainsArgument
-  {
-    while [[ ! -z "${1}" ]]; do
+    function IsOptionBeQuiet
+    {
+      if [[ "${1}" == "-q" ]] \
+        || [[ "${1}" == "--quiet" ]]; then
+        COMMON_ARGS_IS_EXECUTION_QUIET=true
+        return 0
+      fi
+
+      return 1
+    }
+
+    function IsOptionNotValid
+    {
+      if [[ "${1}" == "" ]]; then
+        return 0
+      fi
+
+      PrintInvalidOption "${1}"
+      PrintHelp
+      exit 1
+    }
+
+    function IsOptionUndoAll
+    {
+      if [[ "${1}" == "-u" ]] \
+        || [[ "${1}" == "--undo" ]]; then
+        COMMON_ARGS_DO_UNDO_CHANGES=true
+        return 0
+      fi
+
+      return 1
+    }
+
+  # <summary>Argument setters</summary>
+    function ParseValidArgumentList
+    {
+      # local -i args_counter=1
+      local this_argument="${1}"
+      ParseThisOption "$@"
+      # echo "args_counter == $args_counter"
+      # PopInputListForEachArgument
       shift
-      (( args_counter++ ))
-    done
+    }
 
-    return 0
-  }
-
-  function IsOptionPrintHelp
-  {
-    if [[ "${1}" == "-h" ]] \
-      || [[ "${1}" == "--help" ]]; then
-      PrintUsage
-      exit 0
-    fi
-
-    return 1
-  }
-
-  function IsOptionBeQuiet
-  {
-    if [[ "${1}" == "-q" ]] \
-      || [[ "${1}" == "--quiet" ]]; then
-      COMMON_ARGS_IS_EXECUTION_QUIET=true
-      return 0
-    fi
-
-    return 1
-  }
-
-  function IsOptionNotValid
-  {
-    if [[ "${1}" == "" ]]; then
-      return 0
-    fi
-
-    PrintInvalidOption "${1}"
-    PrintHelp
-    exit 1
-  }
-
-  function IsOptionUndoAll
-  {
-    if [[ "${1}" == "-u" ]] \
-      || [[ "${1}" == "--undo" ]]; then
-      COMMON_ARGS_DO_UNDO_CHANGES=true
-      return 0
-    fi
-
-    return 1
-  }
+    # function PopInputListForEachArgument
+    # {
+    #   for counter in $( seq 0 "${args_counter}" ); do
+    #     shift
+    #   done
+    # }
 # </functions>
 
 # <code>

@@ -1,4 +1,4 @@
-#!/bin/bash # TODO: change back to bin/false
+#!/bin/false
 
 #
 # Filename:       deploy-vfio.logic.compatibility
@@ -14,24 +14,13 @@
 # <functions>
   function DeclareParameters
   {
-    if [[ "${SYSTEM_ARE_PARAMS_SET}" == true ]]; then
+    if [[ "${COMPATIBILITY_ARE_PARAMS_SET}" == true ]]; then
       return 0
     fi
 
-    declare -g SYSTEM_ARE_PARAMS_SET=true
+    declare -g COMPATIBILITY_ARE_PARAMS_SET=true
 
-    declare -gr SYSTEM_ARGUMENT_IGNORE_DISTRO="--ignore-distro"
-    declare -g SYSTEM_IGNORE_DISTRO=false
-  }
-
-  function IsArgumentIgnoreDistro
-  {
-    if [[ "${1}" == "${SYSTEM_ARGUMENT_IGNORE_DISTRO}" ]]; then
-      SYSTEM_IGNORE_DISTRO=true
-      return 0
-    fi
-
-    return 1
+    declare -g COMPATIBILITY_DO_IGNORE_DISTRO=false
   }
 
   function IsSystemSupported
@@ -60,7 +49,7 @@
 
   function IsSystemDistributionSupported
   {
-    if "${SYSTEM_IGNORE_DISTRO}"; then
+    if "${SYSTEM_DO_IGNORE_DISTRO}"; then
       return 0
     fi
 
@@ -70,7 +59,6 @@
     if [[ "${operating_system_lowercase}" != *"debian"* ]] \
       && [[ "${operating_system_lowercase}" != *"ubuntu"* ]]; then
       PrintPrefixError "System distribution '${operating_system_lowercase}' is not explicitly supported."
-      PrintPrefixNote "You may override this check by appending argument '${SYSTEM_ARGUMENT_IGNORE_DISTRO}'."
       exit 1
     fi
   }
