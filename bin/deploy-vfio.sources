@@ -8,11 +8,12 @@
 #
 
 # <sources>
-  source deploy-vfio.logic.common
   source deploy-vfio.args.common
+  source deploy-vfio.args.database
   source deploy-vfio.args.main-setup
   source deploy-vfio.args.post-setup
   source deploy-vfio.args.pre-setup
-  source deploy-vfio.logic.compatibility
   source deploy-vfio.args.usage
+  source deploy-vfio.logic.common
+  source deploy-vfio.logic.compatibility
 # </sources>

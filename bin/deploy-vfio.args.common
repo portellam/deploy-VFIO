@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/false
 
 #
 # Filename:       deploy-vfio.args.common
@@ -9,6 +9,7 @@
 
 # <sources>
   source deploy-vfio.args.main-setup
+  source deploy-vfio.args.database
   source deploy-vfio.args.pre-setup
   source deploy-vfio.args.post-setup
   source deploy-vfio.args.usage
@@ -78,6 +79,7 @@
       && ! IsArgumentBeQuiet "$@" \
       && ! IsArgumentUndoAll "$@" \
       && ! IsArgumentOfPreSetup "$@" \
+      && ! IsArgumentOfParse "$@" \
       && ! IsArgumentOfMainSetup "$@" \
       && ! IsArgumentOfPostSetup "$@"; then
      IsArgumentNotValid "$@"
