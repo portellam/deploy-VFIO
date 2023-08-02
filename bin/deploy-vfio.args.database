@@ -1,4 +1,4 @@
-#!/bin/false
+#!/bin/bash # TODO: change back to bin/false
 
 #
 # Filename:       deploy-vfio.args.database
@@ -12,34 +12,52 @@
 # </sources>
 
 # <functions>
-  function IsArgumentOfParse
+  function IsOptionOfDatabase
   {
-    IsArgumentParseDatabase "$@" || return 1
-    IsArgumentParseIOMMUGroups "$@" || return 1
+    IsOptionParseXML "$@" || return 1
+    IsOptionParseIOMMUGroups "$@" || return 1
   }
 
-  function IsArgumentParseDatabase                  # TODO: add check to scan specific XML file.
+  function IsOptionParseXML
   {
-    case "${1}" in
-      "-x" | "--xml" )
-        DATABASE_DO_PARSE_DATABASE_FROM_XML=true ;;
+    if [[ "${1}" != "-x" ]] \
+      && [[ "${1}" != "--xml" ]]; then
+      return 0
+    fi
 
-      * )
-        return 1 ;;
-    esac
+    if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
+      PrintInvalidOption "${1}"
+    fi
 
+    shift
+    IsArgumentParseXMLFile "${1}"
+    PopInputListIfLastOptionContainsArgument "${1}"
     DATABASE_ASK_TO_EXECUTE_ALL=false
+    DATABASE_DO_PARSE_DATABASE_FROM_XML=true
   }
 
-  function IsArgumentParseIOMMUGroups
+  function IsArgumentParseXMLFile
   {
-    case "${1}" in
-      "-p" | "--parse" )
-        shift
-        GetArgumentsForParseSelection "$@" || return 1
-        ShiftInputIfOptionHasArgument "${1}"
-        DATABASE_ASK_TO_EXECUTE_ALL=false ;;
-    esac
+    if [[ -z "${1}" ]]; then
+      SetXMLFileToDefault
+      return 0
+    fi
+
+    IsFile "${1}" || PrintInvalidArgument "${1}"
+    SetXMLFile "${1}"
+  }
+
+  function IsOptionParseIOMMUGroups
+  {
+    if [[ "${1}" != "-p" ]] \
+      && [[ "${1}" != "--parse" ]]; then
+      return 0
+    fi
+
+    shift
+    GetArgumentsForParseSelection "$@" || return 1
+    PopInputListIfLastOptionContainsArgument "${1}"
+    DATABASE_ASK_TO_EXECUTE_ALL=false
   }
 
   function GetArgumentsForParseSelection
@@ -49,13 +67,13 @@
       return 1
     fi
 
-    local -i count_delim=$( echo "${1}" | grep -o "," | wc -l )
-    (( count_delim++ ))
+    local -i delimiter_counter=$( echo "${1}" | grep -o "," | wc -l )
+    (( delimiter_counter++ ))
 
-    while [[ "${count_delim}" -gt 0 ]] \
+    while [[ "${delimiter_counter}" -gt 0 ]] \
       && ! "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; do
       GetThisArgumentForParseSelection "$@" || return 1
-      (( count_delim-- ))
+      (( delimiter_counter-- ))
     done
 
     DATABASE_HAS_ARG_PARSE_IOMMU=true
@@ -63,23 +81,32 @@
 
   function GetThisArgumentForParseSelection
   {
-    local argument=$( echo "${1}" | cut -d ',' -f "${count_delim}" )
+    local argument=$( echo "${1}" | cut -d ',' -f "${delimiter_counter}" )
 
-    if [[ ! -z "${argument}" ]] ; then
-      case "${argument}" in
-        "all" )
-          DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
-          AddValidIOMMUGroupsParseList || return 1 ;;
-
-        "no-vga" )
-          DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true
-          AddValidIOMMUGroupsParseList || return 1
-          DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=false ;;
-
-        * )
-          DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
-          AddSomeIOMMUGroupsParseList "${argument}" || return 1 ;;
-      esac
+    if [[ -z "${argument}" ]] ; then
+      return 0
     fi
+
+    case "${argument}" in
+      "all" )
+        if "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; then
+          PrintDuplicateArgument "${argument}"
+        fi
+
+        DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
+        AddValidIOMMUGroupsToParsedList || PrintInvalidArgument "${argument}" ;;
+
+      "no-vga" )
+        if "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA}"; then
+          PrintDuplicateArgument "${argument}"
+        fi
+
+        DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true
+        AddValidIOMMUGroupsToParsedList || PrintInvalidArgument "${argument}" ;;
+
+      * )
+        DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
+        AddSomeIOMMUGroupsToParsedList "${argument}" || PrintInvalidArgument "${argument}" ;;
+    esac
   }
 # </functions>
