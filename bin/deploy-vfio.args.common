@@ -1,4 +1,4 @@
-#!/bin/false
+#!/bin/bash # TODO: change back to bin/false
 
 #
 # Filename:       deploy-vfio.args.common
@@ -28,7 +28,7 @@
     declare -g COMMON_ARGS_IS_EXECUTION_QUIET=false
   }
 
-  function SetArguments
+  function SetOptions
   {
     if [[ -z "$@" ]]; then
       return 0
@@ -46,10 +46,10 @@
 
   function ParseValidArgumentList
   {
-    # local -i args_count=1
+    # local -i args_counter=1
     local this_argument="${1}"
-    ParseThisArgument "$@"
-    # echo "args_count == $args_count"
+    ParseThisOption "$@"
+    # echo "args_counter == $args_counter"
     # ShiftInputByAmountOfArgumentCount
     shift
   }
@@ -57,36 +57,36 @@
   # TODO: fix here.
   # function ShiftInputByAmountOfArgumentCount
   # {
-  #   for count in $( seq 0 "${args_count}" ); do
+  #   for counter in $( seq 0 "${args_counter}" ); do
   #     shift
   #   done
   # }
 
-  function ShiftInputIfOptionHasArgument
+  function ParseThisOption
+  {
+    if ! IsOptionPrintHelp "$@" \
+      && ! IsOptionIgnoreDistro "$@" \
+      && ! IsOptionBeQuiet "$@" \
+      && ! IsOptionUndoAll "$@" \
+      && ! IsOptionOfPreSetup "$@" \
+      && ! IsOptionOfDatabase "$@" \
+      && ! IsOptionOfMainSetup "$@" \
+      && ! IsOptionOfPostSetup "$@"; then
+     IsOptionNotValid "$@"
+    fi
+  }
+
+  function PopInputListIfLastOptionContainsArgument
   {
     while [[ ! -z "${1}" ]]; do
       shift
-      (( args_count++ ))
+      (( args_counter++ ))
     done
 
     return 0
   }
 
-  function ParseThisArgument
-  {
-    if ! IsArgumentPrintHelp "$@" \
-      && ! IsArgumentIgnoreDistro "$@" \
-      && ! IsArgumentBeQuiet "$@" \
-      && ! IsArgumentUndoAll "$@" \
-      && ! IsArgumentOfPreSetup "$@" \
-      && ! IsArgumentOfParse "$@" \
-      && ! IsArgumentOfMainSetup "$@" \
-      && ! IsArgumentOfPostSetup "$@"; then
-     IsArgumentNotValid "$@"
-    fi
-  }
-
-  function IsArgumentPrintHelp
+  function IsOptionPrintHelp
   {
     if [[ "${1}" == "-h" ]] \
       || [[ "${1}" == "--help" ]]; then
@@ -97,7 +97,7 @@
     return 1
   }
 
-  function IsArgumentBeQuiet
+  function IsOptionBeQuiet
   {
     if [[ "${1}" == "-q" ]] \
       || [[ "${1}" == "--quiet" ]]; then
@@ -108,7 +108,7 @@
     return 1
   }
 
-  function IsArgumentNotValid
+  function IsOptionNotValid
   {
     if [[ "${1}" == "" ]]; then
       return 0
@@ -119,7 +119,7 @@
     exit 1
   }
 
-  function IsArgumentUndoAll
+  function IsOptionUndoAll
   {
     if [[ "${1}" == "-u" ]] \
       || [[ "${1}" == "--undo" ]]; then
