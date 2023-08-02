@@ -38,9 +38,9 @@
     declare -g XML_FILE="${DEFAULT_XML_FILE}"
   }
 
-  function DoMainSetup
+  function DoParseDatabase
   {
-    echo "in main setup now"
+    echo "in database now"
     return 0
   }
 

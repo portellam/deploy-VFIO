@@ -18,6 +18,7 @@
     SetArguments "$@"
     IsSystemSupported
     DoPreSetup || exit 1
+    DoParseDatabase || exit 1
     DoMainSetup || exit 1
     DoPostSetup || exit 1
   }
