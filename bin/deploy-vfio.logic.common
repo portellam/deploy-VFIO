@@ -1,4 +1,4 @@
-#!/bin/false
+#!/bin/bash # TODO: change back to bin/false
 
 #
 # Filename:       deploy-vfio.logic.common
@@ -80,7 +80,7 @@
         output="${1} "
       fi
 
-      for count in $( seq 0 2 ); do
+      for counter in $( seq 0 2 ); do
         echo -en "${output}[Y/n]: "
         read -r -p "" answer
 
