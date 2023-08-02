@@ -1,4 +1,4 @@
-#!/bin/false
+#!/bin/bash # TODO: change back to bin/false
 
 #
 # Filename:       deploy-vfio.args.post-setup
@@ -24,7 +24,7 @@
   {
     if [[ "${1}" == "--auto-xorg" ]]; then
       GetArgumentsForAutoXorg "${1}" "${2}" || return 1
-      ShiftInputIfOptionHasArgument "${1}" "${2}"
+      PopInputListIfLastOptionContainsArgument "${1}" "${2}"
       POST_SETUP_ASK_TO_EXECUTE_ALL=false
       POST_SETUP_DO_EXECUTE_AUTO_XORG=true
     fi
@@ -97,7 +97,7 @@
       shift
       GetArgumentsForZramSwap "${1}" "${2}" || return 1
       IsHostMemorySufficientForZRAMSwap || return 1
-      ShiftInputIfOptionHasArgument "${1}" "${2}"
+      PopInputListIfLastOptionContainsArgument "${1}" "${2}"
       POST_SETUP_ASK_TO_EXECUTE_ALL=false
       POST_SETUP_DO_EXECUTE_ZRAM_SWAP=true
     fi

@@ -1,4 +1,4 @@
-#!/bin/false
+#!/bin/bash # TODO: change back to bin/false
 
 #
 # Filename:       deploy-vfio.args.main-setup
@@ -26,7 +26,7 @@
       || [[ "${1}" == "--multiboot" ]]; then
       shift
       GetArgumentsForMultibootSetup "$@" || return 1
-      ShiftInputIfOptionHasArgument "${1}"
+      PopInputListIfLastOptionContainsArgument "${1}"
       MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
       MAIN_SETUP_DO_EXECUTE_MULTIBOOT=true
     fi
@@ -67,7 +67,7 @@
       || [[ "${1}" == "--static" ]]; then
       shift
       GetArgumentsForStaticSetup "$@" || return 1
-      ShiftInputIfOptionHasArgument "${1}"
+      PopInputListIfLastOptionContainsArgument "${1}"
       MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
       MAIN_SETUP_DO_EXECUTE_STATIC=true
     fi
