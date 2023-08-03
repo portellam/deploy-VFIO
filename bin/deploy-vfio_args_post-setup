@@ -1,7 +1,7 @@
 #!/bin/false
 
 #
-# Filename:       deploy-vfio.args.post-setup
+# Filename:       deploy-vfio_args_post-setup
 # Description:    Argument logic for post setup.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
@@ -13,7 +13,7 @@
 # </sets>
 
 # <sources>
-  source deploy-vfio.logic.post-setup
+  source deploy-vfio_logic_post-setup
 # </sources>
 
 # <functions>

@@ -13,7 +13,7 @@
 # </sets>
 
 # <sources>
-  source deploy-vfio.sources
+  source deploy-vfio_sources
 # </sources>
 
 # <functions>

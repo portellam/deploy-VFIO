@@ -1,7 +1,7 @@
 #!/bin/false
 
 #
-# Filename:       deploy-vfio.args.database
+# Filename:       deploy-vfio_args_database
 # Description:    Argument logic for parsing database.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
@@ -13,7 +13,7 @@
 # </sets>
 
 # <sources>
-  source deploy-vfio.logic.database
+  source deploy-vfio_logic_database
 # </sources>
 
 # <functions>

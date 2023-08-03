@@ -1,7 +1,7 @@
 #!/bin/false
 
 #
-# Filename:       deploy-vfio.logic.database
+# Filename:       deploy-vfio_logic_database
 # Description:    Parse and select IOMMU groups.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
@@ -13,7 +13,7 @@
 # </sets>
 
 # <sources>
-  source deploy-vfio.logic.common
+  source deploy-vfio_logic_common
 # </sources>
 
 # <functions>
