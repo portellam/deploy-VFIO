@@ -21,7 +21,7 @@
   {
     is_user_superuser
     set_options "$@"
-    Is_system_supported
+    is_system_supported
     do_pre_setup || exit 1
     do_parse_database || exit 1
     do_main_setup || exit 1
