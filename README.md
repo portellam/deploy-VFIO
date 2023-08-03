@@ -39,11 +39,11 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 ## How-to
 ### To install script:
 
-        sudo bash deploy-vfio.bash -i
+        sudo bash install.bash -i
 
 ### To uninstall script:
 
-        sudo bash deploy-vfio.bash -u
+        sudo bash install.bash -u
 
 ### Usage:
 #### * Options that skip *all* user prompts.
@@ -60,7 +60,10 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 
         Specify the database to reference before parsing IOMMU groups.
         OPTIONS:
-          -x, --xml                     Cross-reference XML file. Execute once to export, prior to import. Import if VFIO setup exists, to grab valid drivers.
+          -x, --xml [filename]          Cross-reference XML file. First-time, export if VFIO is not setup. Consecutive-times, imports if VFIO is setup.
+
+        ARGUMENTS:
+          [filename]                    Reference specific file"
 
         Specify the IOMMU groups to parse.
         OPTIONS:
@@ -170,7 +173,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
         - Append output to GRUB; single GRUB menu entry.
         - Append output to system configuration files.
     - Best for systems with one or more PCI VGA device(s) *and one integrated VGA device (iGPU)*.
-* **Dynamic VFIO setup *(unsupported currently)***
+* **Dynamic VFIO setup *(To be added in a future release)***
     - Use Libvirt hooks to bind or unbind devices at Guest(s) start or stop.
     - Most responsibility; best for more experienced users.
     - Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
@@ -193,10 +196,10 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
       - Reduce swapiness to existing Host swap devices.
       - Reduce chances of Host memory exhaustion (given an event of memory over-allocation).
     - Implementation is known as *zram-swap*.<sup>[7](#7)</sup>
-* **Virtual Audio Capture *(unsupported currently)***
+* **Virtual Audio Capture *(To be added in a future release)***
     - Setup a virtual Audio driver for Windows that provides a discrete Audio device.
     - Implementation is known as **Scream**.<sup>[8](#8)</sup>
-* **Virtual Video Capture *(unsupported currently)***
+* **Virtual Video Capture *(To be added in a future release)***
     - Setup direct-memory-access (DMA) of a PCI VGA device output (Video and Audio) from a Guest to Host.
     - Implementation is known as **LookingGlass**.<sup>[9](#9)</sup>
     - **Disclaimer:** Only supported for Windows 7/8/10/11 Guests.

@@ -75,16 +75,10 @@
       "  --ignore-distro\t\tIgnore distribution check for Debian or Ubuntu system."
 
       "\nSpecify the database to reference before parsing IOMMU groups.\nOPTIONS:"
-      "  -f, --file [ARGS]\t\tReference file database."
-      "  -i, --internal\t\tReference local database."
-      "  -o, --online\t\t\tReference online database."
-      "  -x, --xml\t\tCross-reference XML file. Execute once to export, prior to import. Import if VFIO setup exists, to grab valid drivers."
+      "  -x, --xml [filename]\tCross-reference XML file. First-time, export if VFIO is not setup. Consecutive-times, imports if VFIO is setup."
 
       "\nARGUMENTS:"
       "  [filename]\t\t\tReference specific file."
-
-      "\n  Example:"
-      "  -f database.txt\t\tReference file 'database.txt'."
 
       "\nSpecify the IOMMU groups to parse.\nOPTIONS:"
       "  -p, --parse [groups]\t\tParse given IOMMU groups."
