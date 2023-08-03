@@ -17,11 +17,6 @@
 # </sources>
 
 # <functions>
-  function is_option_of_compatibility
-  {
-    is_option_ignore_distro || return 1
-  }
-
   function is_option_ignore_distro
   {
     if [[ "${1}" != "--ignore-distro" ]]; then
@@ -29,5 +24,10 @@
     fi
 
     COMPATIBILITY_DO_IGNORE_DISTRO=true
+  }
+
+  function is_option_of_compatibility
+  {
+    is_option_ignore_distro || return 1
   }
 # </functions>

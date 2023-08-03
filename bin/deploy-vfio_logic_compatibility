@@ -28,15 +28,6 @@
     declare -g COMPATIBILITY_DO_IGNORE_DISTRO=false
   }
 
-  function is_system_supported
-  {
-    is_virtualization_enabled
-    is_IOMMU_enabled
-    is_systemd_installed
-    is_XML_library_installed
-    is_distribution_supported
-  }
-
   function is_distribution_supported
   {
     if "${SYSTEM_DO_IGNORE_DISTRO}"; then
@@ -54,12 +45,21 @@
   }
 
 
-  function is_IOMMU_enabled
+  function is_iommu_enabled
   {
     if ! compgen -G "/sys/kernel/iommu_groups/*/devices/*" &> /dev/null; then
       print_prefix_error "System does not support IOMMU groups."
       exit 1
     fi
+  }
+
+  function is_system_supported
+  {
+    is_virtualization_enabled
+    is_iommu_enabled
+    is_systemd_installed
+    is_xml_library_installed
+    is_distribution_supported
   }
 
   function is_systemd_installed
@@ -79,7 +79,7 @@
     fi
   }
 
-  function is_XML_library_installed
+  function is_xml_library_installed
   {
     if ! command -v "xmllint" &> /dev/null; then
       print_prefix_error "Required 'XML' libraries are not installed."

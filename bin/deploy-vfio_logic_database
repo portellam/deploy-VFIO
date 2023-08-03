@@ -48,21 +48,21 @@
   function do_parse_database
   {
     do_parse_database_prompt || return 0
-    is_unparsed_list_valid || return 1
+    is_unparsed_enum_valid || return 1
     parse_from_xml_prompt && specify_xml_file || return 1
 
-    if ! is_XML_valid; then
-      does_host_not_have_existing_VFIO_setup || return 1
-      export_IOMMU_groups_to_XML || return 1
-      specify_IOMMU_group_list
+    if ! is_xml_valid; then
+      does_host_not_have_existing_vfio_setup || return 1
+      export_iommu_groups_to_xml || return 1
+      specify_iommu_group_enum
     fi
 
-    if ! does_host_not_have_existing_VFIO_setup; then
-      does_XML_not_have_existing_VFIO_setup || return 1
-      import_IOMMU_groups_from_XML
+    if ! does_host_not_have_existing_vfio_setup; then
+      does_xml_not_have_existing_vfio_setup || return 1
+      import_iommu_groups_from_xml
     fi
 
-    specify_IOMMU_group_list
+    specify_iommu_group_enum
   }
 
   function do_parse_database_prompt
@@ -75,7 +75,7 @@
     DATABASE_DO_PARSE_DATABASE=true
   }
 
-  function is_unparsed_list_valid
+  function is_unparsed_enum_valid
   {
     local -r output="Invalid IOMMU groups."
 
@@ -122,7 +122,7 @@
       fi
     }
 
-    function get_device_hardware_ID
+    function get_device_hardware_id
     {
       if [[ ! -z "${2}" ]] \
         || [[ ! -z "${1}" ]]; then
@@ -162,10 +162,10 @@
     }
 
   # <summary>Host validation</summary>
-    function does_host_not_have_existing_VFIO_setup
+    function does_host_not_have_existing_vfio_setup
     {
       for iommu_group_id in ${IOMMU_GROUP_ID_LIST[@]}; do
-        if ! is_IOMMU_group_not_binded_to_VFIO "${iommu_group_id}"; then
+        if ! is_iommu_group_not_binded_to_vfio "${iommu_group_id}"; then
           print_prefix_error "Detected existing VFIO setup."
           return 1
         fi
@@ -174,7 +174,7 @@
       DOES_HOST_HAVE_VFIO=false
     }
 
-    function does_XML_not_have_existing_VFIO_setup
+    function does_xml_not_have_existing_vfio_setup
     {
       if eval "${GET_PARSE_FROM_XML}" | grep -E "vfio" &> /dev/null; then
         print_prefix_error "Detected VFIO drivers in XML file."
@@ -193,12 +193,12 @@
       if echo "${1}" | grep -E -q "${regex_for_range_of_nums}"; then
         local -i range_start=$( echo "${1}" | cut -d '-' -f 1 )
         local -i range_stop=$( echo "${1}" | cut -d '-' -f 2 )
-        is_IOMMU_group_id_valid "${range_start}" || return 1
-        is_IOMMU_group_id_valid "${range_stop}" || return 1
+        is_iommu_group_id_valid "${range_start}" || return 1
+        is_iommu_group_id_valid "${range_stop}" || return 1
         iommu_groups_temp_list+=( $( seq "${range_start}" "${range_stop}" ) )
 
       elif is_int "${1}"; then
-        is_IOMMU_group_id_valid "${1}" || return 1
+        is_iommu_group_id_valid "${1}" || return 1
         iommu_groups_temp_list+=( "${1}" )
 
       else
@@ -206,15 +206,15 @@
         return 1
       fi
 
-      set_IFS_to_newline
+      set_ifs_to_newline
       iommu_groups_temp_list=( $( sort -hu <<<"${iommu_groups_temp_list[*]}" ) )
-      unset_IFS
+      unset_ifs
 
       for iommu_group_id in ${iommu_groups_temp_list[@]}; do
-        if does_IOMMU_group_have_external_devices "${iommu_group_id}"; then
+        if does_iommu_group_have_external_devices "${iommu_group_id}"; then
           IOMMU_GROUPS_FOR_VFIO_LIST+=( "${iommu_group_id}" )
 
-          if does_IOMMU_group_have_VGA_device "${iommu_group_id}"; then
+          if does_iommu_group_have_vga_device "${iommu_group_id}"; then
             IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST+=( "${iommu_group_id}" )
           fi
 
@@ -236,7 +236,7 @@
           continue
         fi
 
-        if does_IOMMU_group_have_VGA_device "${iommu_group_id}"; then
+        if does_iommu_group_have_vga_device "${iommu_group_id}"; then
           IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${iommu_group_id}" )
         else
           IOMMU_GROUPS_FOR_HOST_LIST+=( "${iommu_group_id}" )
@@ -246,13 +246,13 @@
       return 0
     }
 
-    function AddValidIOMMUGroupsToParsedList
+    function add_valid_iommu_groups_to_parsed_list
     {
       for iommu_group_id in ${IOMMU_GROUP_ID_LIST[@]}; do
         local -a device_list=( $( eval "${GET_IOMMU_GROUP_DEVICE_LIST}" ) )
 
-        if ! does_IOMMU_group_have_external_devices "${iommu_group_id}"; then
-          if does_IOMMU_group_have_VGA_device "${iommu_group_id}"; then
+        if ! does_iommu_group_have_external_devices "${iommu_group_id}"; then
+          if does_iommu_group_have_vga_device "${iommu_group_id}"; then
             IOMMU_GROUPS_FOR_HOST_LIST+=( "${iommu_group_id}" )
           fi
 
@@ -262,13 +262,13 @@
 
         IOMMU_GROUPS_FOR_VFIO_LIST+=( "${iommu_group_id}" )
 
-        if does_IOMMU_group_have_VGA_device "${iommu_group_id}"; then
+        if does_iommu_group_have_vga_device "${iommu_group_id}"; then
           IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST+=( "${iommu_group_id}" )
         fi
       done
     }
 
-    function does_IOMMU_group_have_external_devices
+    function does_iommu_group_have_external_devices
     {
       is_int "${1}" || return 1
       local -ir iommu_group_id="${1}"
@@ -281,21 +281,21 @@
       return 1
     }
 
-    function does_IOMMU_group_have_VGA_device
+    function does_iommu_group_have_vga_device
     {
       is_int "${1}" || return 1
       local -ir iommu_group_id="${1}"
       local -ar device_list="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
       for device in ${device_list[@]}; do
-        is_device_VGA "${device}" && return 0
+        is_device_vga "${device}" && return 0
       done
 
       print_prefix_error "Please enter valid IOMMU group ID which contains one or more VGA devices."
       return 1
     }
 
-    function does_list_have_VGA_device
+    function does_enum_have_vga_device
     {
       local -n reference="${1}"
 
@@ -304,24 +304,24 @@
       fi
 
       for iommu_group_id in ${reference[@]}; do
-        does_IOMMU_group_have_VGA_device "${iommu_group_id}" &> /dev/null && return 0
+        does_iommu_group_have_vga_device "${iommu_group_id}" &> /dev/null && return 0
       done
 
       return 1
     }
 
-    function is_IOMMU_group_not_binded_to_VFIO
+    function is_iommu_group_not_binded_to_vfio
     {
       is_int "${1}" || return 1
       local -ir iommu_group_id="${1}"
       local -ar device_list="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
       for device in ${device_list[@]}; do
-        is_device_not_binded_to_VFIO "${device}" || return 1
+        is_device_not_binded_to_vfio "${device}" || return 1
       done
     }
 
-    function is_IOMMU_group_id_valid
+    function is_iommu_group_id_valid
     {
       local -ir minimum_iommu_group_id=0
       local -ir maximum_iommu_group_id="${IOMMU_GROUP_ID_LIST[-1]}"
@@ -334,7 +334,7 @@
       fi
     }
 
-    function is_valid_enum_of_IOMMU_groups
+    function is_valid_enum_of_iommu_groups
     {
       is_enum "${1}" || return 1
       local -n reference="${1}"
@@ -360,7 +360,7 @@
       esac
     }
 
-    function is_device_driver_not_VFIO
+    function is_device_driver_not_vfio
     {
       if [[ ! -z "${1}" ]]; then
         return 1
@@ -387,7 +387,7 @@
       echo "${domain_id}" | grep -E -q "${regex_get_domain_id}"
     }
 
-    function is_device_for_PCI_STUB
+    function is_device_for_pci_stub
     {
       if [[ ! -z "${1}" ]]; then
         return 1
@@ -404,7 +404,7 @@
       return 1
     }
 
-    function is_device_not_binded_to_VFIO
+    function is_device_not_binded_to_vfio
     {
       if [[ ! -z "${1}" ]]; then
         return 1
@@ -413,7 +413,7 @@
       local device="${1}"
       local driver=""
       set_device_driver "${device}" "driver"
-      is_device_driver_not_VFIO "${driver}"
+      is_device_driver_not_vfio "${driver}"
       return "${?}"
     }
 
@@ -443,7 +443,7 @@
       return "${?}"
     }
 
-    function is_device_VGA
+    function is_device_vga
     {
       if [[ ! -z "${1}" ]]; then
         return 1
@@ -461,7 +461,7 @@
     }
 
   # <summary>IOMMU Groups presentation</summary>
-    function print_this_IOMMU_group
+    function print_iommu_group
     {
       is_int "${1}" || return 1
       local -ir iommu_group_id="${1}"
@@ -495,33 +495,34 @@
       done
     }
 
-    function specify_IOMMU_group_list
+    function specify_iommu_group
+    {
+      is_int "${1}" || return 1
+      local -ir iommu_group_id="${1}"
+
+      if ! does_iommu_group_have_external_devices "${1}"; then
+        IOMMU_GROUPS_FOR_HOST_LIST+=( "${iommu_group_id}" )
+        return 1
+      fi
+
+      if ! specify_iommu_group_prompt "${1}" \
+        || ! print_iommu_group "${1}"; then
+        return 1
+      fi
+    }
+
+
+    function specify_iommu_group_enum
     {
       local -n reference="IOMMU_GROUP_ID_LIST"
       echo
 
       for iommu_group_id in ${reference[@]}; do
-        specify_this_IOMMU_group "${iommu_group_id}"
+        specify_iommu_group "${iommu_group_id}"
       done
     }
 
-    function specify_this_IOMMU_group
-    {
-      is_int "${1}" || return 1
-      local -ir iommu_group_id="${1}"
-
-      if ! does_IOMMU_group_have_external_devices "${1}"; then
-        IOMMU_GROUPS_FOR_HOST_LIST+=( "${iommu_group_id}" )
-        return 1
-      fi
-
-      if ! specify_this_IOMMU_group_prompt "${1}" \
-        || ! print_this_IOMMU_group "${1}"; then
-        return 1
-      fi
-    }
-
-    function specify_this_IOMMU_group_prompt
+    function specify_iommu_group_prompt
     {
       is_int "${1}" || return 1
       local -ir iommu_group_id="${1}"
@@ -529,7 +530,7 @@
       if execute_or_skip_prompt "Select IOMMU group ${SET_COLOR_YELLOW}${iommu_group_id}${RESET_COLOR}?"; then
         IOMMU_GROUPS_FOR_VFIO_LIST+=( "${iommu_group_id}" )
 
-        if does_IOMMU_group_have_VGA_device "${iommu_group_id}" &> /dev/null; then
+        if does_iommu_group_have_vga_device "${iommu_group_id}" &> /dev/null; then
           IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST+=( "${iommu_group_id}" )
         fi
 
@@ -537,7 +538,7 @@
         return 0
       fi
 
-      if does_IOMMU_group_have_VGA_device "${iommu_group_id}" &> /dev/null; then
+      if does_iommu_group_have_vga_device "${iommu_group_id}" &> /dev/null; then
         IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST+=( "${iommu_group_id}" )
         echo
         return 0
@@ -548,7 +549,7 @@
     }
 
   # <summary>XML</summary>
-    function export_IOMMU_groups_to_XML
+    function export_iommu_groups_to_xml
     {
       local -a output=( )
       local -a iommu_output=( )
@@ -592,22 +593,22 @@
         "</xml>"
       )
 
-      set_IFS_to_newline
+      set_ifs_to_newline
 
       if ! sudo echo -e "${output[*]}" > "${XML_FILE}"; then
         print_prefix_error "Failed to write to file '${FILE}'."
-        unset_IFS
+        unset_ifs
         return 1
       fi
 
-      unset_IFS
+      unset_ifs
     }
 
-    function import_IOMMU_groups_from_XML
+    function import_iommu_groups_from_xml
     {
-      set_IFS_to_newline
+      set_ifs_to_newline
       local -a input=( $( eval "${GET_PARSE_FROM_XML}" ) )
-      unset_IFS
+      unset_ifs
 
       for line in "${input[@]}"; do
         local driver=$( echo "${line}" | cut -d '"' -f 6 )
@@ -621,7 +622,7 @@
       fi
     }
 
-    function is_XML_valid
+    function is_xml_valid
     {
       if ! xmllint "${XML_FILE}" &> /dev/null; then
         if ! "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
@@ -675,7 +676,7 @@
       DATABASE_XML_FILE_IS_SPECIFIED=true
     }
 
-    function set_XML_to_default
+    function set_xml_to_default
     {
       XML_FILE="${DEFAULT_XML_FILE}"
     }

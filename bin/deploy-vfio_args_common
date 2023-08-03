@@ -35,23 +35,7 @@
   }
 
   # <summary>Option setters</summary>
-    function set_options
-    {
-      if [[ -z "$@" ]]; then
-        return 0
-      fi
-
-      while [[ "${1}" =~ ^- ]] \
-        || [[ "${1}" =~ ^-- ]]; do
-        echo "arg == ${1}"            # NOTE: debug.
-        parse_valid_argument_list "$@"
-        shift                         # <note>'shift' must remain in same scope to work.</note>
-      done
-
-      return 0
-    }
-
-    function parse_this_option
+    function parse_option
     {
       if ! is_option_print_help "$@" \
         && ! is_option_of_compatibility "$@" \
@@ -65,7 +49,7 @@
       fi
     }
 
-    function pop_input_list_if_last_option_contains_argument
+    function pop_input_enum_if_last_option_contains_argument
     {
       while [[ ! -z "${1}" ]]; do
         shift
@@ -75,24 +59,39 @@
       return 0
     }
 
-  # <summary>Option getters</summary>
-    function is_option_print_help
+    function set_options
     {
-      if [[ "${1}" == "-h" ]] \
-        || [[ "${1}" == "--help" ]]; then
-        print_usage
-        exit 0
+      if [[ -z "$@" ]]; then
+        return 0
       fi
 
-      return 1
+      while [[ "${1}" =~ ^- ]] \
+        || [[ "${1}" =~ ^-- ]]; do
+        parse_option "$@"
+        shift                         # <note>'shift' must remain in same scope to work.</note>
+      done
+
+      return 0
     }
 
+  # <summary>Option getters</summary>
     function is_option_be_quiet
     {
       if [[ "${1}" == "-q" ]] \
         || [[ "${1}" == "--quiet" ]]; then
         COMMON_ARGS_IS_EXECUTION_QUIET=true
         return 0
+      fi
+
+      return 1
+    }
+
+    function is_option_print_help
+    {
+      if [[ "${1}" == "-h" ]] \
+        || [[ "${1}" == "--help" ]]; then
+        print_usage
+        exit 0
       fi
 
       return 1
@@ -119,24 +118,6 @@
 
       return 1
     }
-
-  # <summary>Argument setters</summary>
-    function parse_valid_argument_list
-    {
-      # local -i args_counter=1
-      local this_argument="${1}"
-      parse_this_option "$@"
-      # echo "args_counter == $args_counter"
-      # pop_input_list_foreach_argument
-      shift
-    }
-
-    # function pop_input_list_foreach_argument
-    # {
-    #   for counter in $( seq 0 "${args_counter}" ); do
-    #     shift
-    #   done
-    # }
 # </functions>
 
 # <code>

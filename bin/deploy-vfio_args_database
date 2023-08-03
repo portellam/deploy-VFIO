@@ -19,12 +19,26 @@
 # <functions>
   function is_option_of_database
   {
-    is_option_parse_XML "$@" || return 1
-    is_option_parse_IOMMU_groups "$@" || return 1
+    is_option_parse_xml "$@" || return 1
+    is_option_parse_iommu_groups "$@" || return 1
   }
 
   # <summary>Option getters</summary>
-    function is_option_parse_XML
+    function is_option_parse_iommu_groups
+    {
+      if [[ "${1}" != "-p" ]] \
+        && [[ "${1}" != "--parse" ]]; then
+        return 0
+      fi
+
+      shift
+      get_argument_enum_for_parse_selection "$@" || return 1
+      pop_input_enum_if_last_option_contains_argument "${1}"
+      DATABASE_DO_PARSE_DATABASE=true
+      DATABASE_ASK_TO_EXECUTE_ALL=false
+    }
+
+    function is_option_parse_xml
     {
       if [[ "${1}" != "-x" ]] \
         && [[ "${1}" != "--xml" ]]; then
@@ -36,31 +50,17 @@
       fi
 
       shift
-      is_argument_parse_XML_file "${1}"
-      pop_input_list_if_last_option_contains_argument "${1}"
+      is_argument_parse_xml_file "${1}"
+      pop_input_enum_if_last_option_contains_argument "${1}"
       DATABASE_ASK_TO_EXECUTE_ALL=false
       DATABASE_DO_PARSE_DATABASE_FROM_XML=true
     }
 
-    function is_option_parse_IOMMU_groups
-    {
-      if [[ "${1}" != "-p" ]] \
-        && [[ "${1}" != "--parse" ]]; then
-        return 0
-      fi
-
-      shift
-      get_arguments_for_parse_selection "$@" || return 1
-      pop_input_list_if_last_option_contains_argument "${1}"
-      DATABASE_DO_PARSE_DATABASE=true
-      DATABASE_ASK_TO_EXECUTE_ALL=false
-    }
-
   # <summary>Argument getters</summary>
-    function get_arguments_for_parse_selection
+    function get_argument_enum_for_parse_selection
     {
       if [[ -z "${1}" ]]; then
-        is_IOMMU_group_id_valid "${1}"
+        is_iommu_group_id_valid "${1}"
         return 1
       fi
 
@@ -69,14 +69,14 @@
 
       while [[ "${delimiter_counter}" -gt 0 ]] \
         && ! "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; do
-        get_this_argument_for_parse_selection "$@" || return 1
+        get_argument_for_parse_selection "$@" || return 1
         (( delimiter_counter-- ))
       done
 
       DATABASE_HAS_ARG_PARSE_IOMMU=true
     }
 
-    function get_this_argument_for_parse_selection
+    function get_argument_for_parse_selection
     {
       local argument=$( echo "${1}" | cut -d ',' -f "${delimiter_counter}" )
 
@@ -91,7 +91,7 @@
           fi
 
           DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
-          AddValidIOMMUGroupsToParsedList || print_invalid_argument "${argument}" ;;
+          add_valid_iommu_groups_to_parsed_list || print_invalid_argument "${argument}" ;;
 
         "no-vga" )
           if "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA}"; then
@@ -99,7 +99,7 @@
           fi
 
           DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true
-          AddValidIOMMUGroupsToParsedList || print_invalid_argument "${argument}" ;;
+          add_valid_iommu_groups_to_parsed_list || print_invalid_argument "${argument}" ;;
 
         * )
           DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
@@ -107,10 +107,10 @@
       esac
     }
 
-    function is_argument_parse_XML_file
+    function is_argument_parse_xml_file
     {
       if [[ -z "${1}" ]]; then
-        set_XML_to_default
+        set_xml_to_default
         return 0
       fi
 

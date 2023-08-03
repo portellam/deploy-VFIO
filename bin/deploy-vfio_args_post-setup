@@ -22,7 +22,7 @@
     is_option_skip_post_setup "$@" || return 1
     is_option_uninstall_post_setup "$@" || return 1
     is_option_install_libvirt_hooks "$@" || return 1
-    is_option_install_ZRAM_swap "$@" || return 1
+    is_option_install_zram_swap "$@" || return 1
     is_option_install_auto_xorg "$@" || return 1
     is_option_install_looking_glass "$@" || return 1
     is_option_install_scream "$@" || return 1
@@ -41,8 +41,8 @@
     function is_option_install_auto_xorg
     {
       if [[ "${1}" == "--auto-xorg" ]]; then
-        get_arguments_for_auto_xorg "${1}" "${2}" || return 1
-        pop_input_list_if_last_option_contains_argument "${1}" "${2}"
+        get_argument_enum_for_auto_xorg "${1}" "${2}" || return 1
+        pop_input_enum_if_last_option_contains_argument "${1}" "${2}"
         POST_SETUP_ASK_TO_EXECUTE_ALL=false
         POST_SETUP_DO_EXECUTE_AUTO_XORG=true
       fi
@@ -72,13 +72,13 @@
       fi
     }
 
-    function is_option_install_ZRAM_swap
+    function is_option_install_zram_swap
     {
       if [[ "${1}" == "--zram-swap" ]]; then
         shift
-        get_arguments_for_ZRAM_swap "${1}" "${2}" || return 1
+        get_argument_enum_for_zram_swap "${1}" "${2}" || return 1
         IsHostMemorySufficientForZRAMSwap || return 1
-        pop_input_list_if_last_option_contains_argument "${1}" "${2}"
+        pop_input_enum_if_last_option_contains_argument "${1}" "${2}"
         POST_SETUP_ASK_TO_EXECUTE_ALL=false
         POST_SETUP_DO_EXECUTE_ZRAM_SWAP=true
       fi
@@ -100,41 +100,29 @@
     }
 
   # <summary>Argument getters</summary>
-    function get_arguments_for_auto_xorg
+    function get_argument_enum_for_auto_xorg
     {
       if [[ -z "${1}" ]]; then
         return 0
       fi
 
       while [[ ! -z "${1}" ]]; do
-        get_this_argument_for_auto_xorg "$@" || return 1
+        get_argument_for_auto_xorg "$@" || return 1
       done
     }
 
-    function get_arguments_for_ZRAM_swap
+    function get_argument_enum_for_zram_swap
     {
       if [[ ! -z "${1}" ]]; then
-        get_ZRAM_swap_size "${1}" || get_this_argument_for_ZRAM_swap "${1}" || return 1
+        get_zram_swap_size "${1}" || get_argument_for_zram_swap "${1}" || return 1
       fi
 
       if [[ ! -z "${2}" ]]; then
-        get_ZRAM_swap_size "${2}" || get_this_argument_for_ZRAM_swap "${2}" || return 1
+        get_zram_swap_size "${2}" || get_argument_for_zram_swap "${2}" || return 1
       fi
     }
 
-    function get_this_argument_for_ZRAM_swap
-    {
-      case "${1}" in
-        "force" )
-          POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE=true ;;
-
-        * )
-          print_invalid_argument "${1}"
-          return 1 ;;
-      esac
-    }
-
-    function get_this_argument_for_auto_xorg
+    function get_argument_for_auto_xorg
     {
       case "${1}" in
         "first" | "last" )
@@ -158,5 +146,17 @@
 
       POST_SETUP_ARGS_FOR_AUTO_XORG+=" --${1}"
       shift
+    }
+
+    function get_argument_for_zram_swap
+    {
+      case "${1}" in
+        "force" )
+          POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE=true ;;
+
+        * )
+          print_invalid_argument "${1}"
+          return 1 ;;
+      esac
     }
 # </functions>

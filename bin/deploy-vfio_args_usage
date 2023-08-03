@@ -64,7 +64,7 @@
 
   function print_usage
   {
-    set_IFS_to_newline
+    set_ifs_to_newline
 
     local -a output=(
       "Usage:\tbash ${DEPLOY_VFIO_NAME} [OPTION] [ARGUMENTS]"
@@ -150,6 +150,6 @@
     )
 
     echo -e "${output[*]}"
-    unset_IFS
+    unset_ifs
   }
 # </functions>

@@ -37,6 +37,26 @@
     echo "in pre setup now"
     return 0
   }
+
+  function get_kernel_command_hugepages
+  {
+    if [[ -z "${1}" ]]; then
+      return 1
+    fi
+
+    local -n reference="${1}"
+    reference="${GRUB_CMDLINE_HUGEPAGES}"
+  }
+
+  function get_kernel_command_isolcpu
+  {
+    if [[ -z "${1}" ]]; then
+      return 1
+    fi
+
+    local -n reference="${1}"
+    reference="${GRUB_CMDLINE_ISOLCPU}"
+  }
 # </functions>
 
 # <code>
