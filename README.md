@@ -244,11 +244,11 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 ### Linux:
 | Distribution Family | Supported? | Tested Distros             |
 | ------------------- | ---------- | -------------------------- |
-| Arch                | No         | none                       |
-| Debian              | Yes        | Debian 11                  |
-| Gentoo              | No         | none                       |
-| Red Hat             | No         | none                       |
-| SUSE                | No         | none                       |
+| Arch                | No         | untested                   |
+| Debian              | *Yes*      | *Debian 11, 12*            |
+| Gentoo              | No         | untested                   |
+| Red Hat             | No         | untested                   |
+| SUSE                | No         | untested                   |
 
 ### Legacy:
 | OS           | Device type    | Brand and model                         |
