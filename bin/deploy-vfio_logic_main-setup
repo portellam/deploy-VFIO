@@ -36,6 +36,10 @@
 
   function do_main_setup
   {
+    if ! "${DATABASE_DO_PARSE_DATABASE}"; then
+      return 0
+    fi
+
     if ! is_parsed_list_valid \
       || is_parsed_list_of_VGA_valid; then
       return 1

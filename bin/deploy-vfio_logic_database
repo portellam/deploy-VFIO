@@ -25,6 +25,7 @@
 
     declare -g DATABASE_ARE_PARAMS_SET=true
 
+    declare -g DATABASE_DO_PARSE_DATABASE=false
     declare -g DATABASE_DO_PARSE_DATABASE_FROM_XML=false
     declare -g DATABASE_XML_FILE_IS_SPECIFIED=false
     declare -g DATABASE_HAS_ARG_PARSE_IOMMU=false
@@ -46,6 +47,7 @@
 
   function do_parse_database
   {
+    do_parse_database_prompt || return 0
     is_unparsed_list_valid || return 1
     parse_from_xml_prompt && specify_xml_file || return 1
 
@@ -61,6 +63,16 @@
     fi
 
     specify_IOMMU_group_list
+  }
+
+  function do_parse_database_prompt
+  {
+    if "${DATABASE_DO_PARSE_DATABASE}"; then
+      return 0
+    fi
+
+    execute_or_skip_prompt "Parse database for IOMMU groups?" || return 1
+    DATABASE_DO_PARSE_DATABASE=true
   }
 
   function is_unparsed_list_valid
@@ -503,13 +515,13 @@
         return 1
       fi
 
-      if ! specify_this_IOMMU_groupPrompt "${1}" \
+      if ! specify_this_IOMMU_group_prompt "${1}" \
         || ! print_this_IOMMU_group "${1}"; then
         return 1
       fi
     }
 
-    function specify_this_IOMMU_groupPrompt
+    function specify_this_IOMMU_group_prompt
     {
       is_int "${1}" || return 1
       local -ir iommu_group_id="${1}"

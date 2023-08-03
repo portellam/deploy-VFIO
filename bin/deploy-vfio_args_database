@@ -20,7 +20,7 @@
   function is_option_of_database
   {
     is_option_parse_XML "$@" || return 1
-    is_option_parse_IOMMI_groups "$@" || return 1
+    is_option_parse_IOMMU_groups "$@" || return 1
   }
 
   # <summary>Option getters</summary>
@@ -42,7 +42,7 @@
       DATABASE_DO_PARSE_DATABASE_FROM_XML=true
     }
 
-    function is_option_parse_IOMMI_groups
+    function is_option_parse_IOMMU_groups
     {
       if [[ "${1}" != "-p" ]] \
         && [[ "${1}" != "--parse" ]]; then
@@ -52,6 +52,7 @@
       shift
       get_arguments_for_parse_selection "$@" || return 1
       pop_input_list_if_last_option_contains_argument "${1}"
+      DATABASE_DO_PARSE_DATABASE=true
       DATABASE_ASK_TO_EXECUTE_ALL=false
     }
 
