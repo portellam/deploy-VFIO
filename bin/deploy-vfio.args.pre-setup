@@ -1,4 +1,4 @@
-#!/bin/bash # TODO: change back to bin/false
+#!/bin/false
 
 #
 # Filename:       deploy-vfio.args.pre-setup
@@ -7,29 +7,34 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <sets>
+  set -o nounset
+  set -o pipefail
+# </sets>
+
 # <sources>
   source deploy-vfio.logic.pre-setup
 # </sources>
 
 # <functions>
-  function IsOptionOfPreSetup
+  function is_option_of_pre_setup
   {
-    IsOptionSkipPreSetup "$@" || return 1
-    IsOptionUninstallPreSetup "$@" || return 1
-    IsOptionSetupIsolcpu "$@" || return 1
-    IsOptionSetupHugepages "$@" || return 1
-    IsOptionSetupVirtualKVM "$@" || return 1
+    is_option_skip_pre_setup "$@" || return 1
+    is_option_uninstall_pre_setup "$@" || return 1
+    is_option_setup_static_isolcpu "$@" || return 1
+    is_option_setup_static_hugepages "$@" || return 1
+    is_option_setup_virtual_KVM "$@" || return 1
   }
 
   # <summary>Option getters</summary>
-    function IsOptionSetupHugepages
+    function is_option_setup_static_hugepages
     {
       if [[ "${1}" == "-h" ]] \
         || [[ "${1}" == "--hugepages" ]]; then
         shift
-        GetArgumentsForHugepages "${1}" "${2}" || return 1
+        get_arguments_for_hugepages "${1}" "${2}" || return 1
         IsHostMemorySufficientForHugepages || return 1
-        PopInputListIfLastOptionContainsArgument "${1}" "${2}"
+        pop_input_list_if_last_option_contains_argument "${1}" "${2}"
         PRE_SETUP_ASK_TO_EXECUTE_ALL=false
         PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
         return 0
@@ -38,7 +43,7 @@
       return 1
     }
 
-    function IsOptionSetupIsolcpu
+    function is_option_setup_static_isolcpu
     {
       if [[ "${1}" == "-c" ]] \
         || [[ "${1}" == "--cpu" ]]; then
@@ -50,7 +55,7 @@
       return 1
     }
 
-    function IsOptionSetupVirtualKVM
+    function is_option_setup_virtual_KVM
     {
       if [[ "${1}" == "-e" ]] \
         || [[ "${1}" == "--evdev" ]]; then
@@ -62,7 +67,7 @@
       return 1
     }
 
-    function IsOptionSkipPreSetup
+    function is_option_skip_pre_setup
     {
       if [[ "${1}" == "--skip-pre-setup" ]]; then
         PRE_SETUP_DO_SKIP_ALL=true
@@ -73,7 +78,7 @@
       return 1
     }
 
-    function IsOptionUninstallPreSetup
+    function is_option_uninstall_pre_setup
     {
       if [[ "${1}" == "--uninstall-pre-setup" ]]; then
         PRE_SETUP_ASK_TO_EXECUTE_ALL=false
@@ -84,17 +89,17 @@
     }
 
   # <summary>Argument getters</summary>
-    function GetArgumentsForHugepages
+    function get_arguments_for_hugepages
     {
       if [[ ! -z "${1}" ]] \
-        && ! GetHugepageByteSize "${1}"; then
-        PrintInvalidArgument "${1}"
+        && ! get_hugepage_byte_size "${1}"; then
+        print_invalid_argument "${1}"
         return 1
       fi
 
       if [[ ! -z "${2}" ]] \
-        && ! GetHugepageCount "${2}"; then
-        PrintInvalidArgument "${2}"
+        && ! get_hugepage_count "${2}"; then
+        print_invalid_argument "${2}"
         return 1
       fi
     }

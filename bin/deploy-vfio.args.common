@@ -1,4 +1,4 @@
-#!/bin/bash # TODO: change back to bin/false
+#!/bin/false
 
 #
 # Filename:       deploy-vfio.args.common
@@ -6,6 +6,11 @@
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
+
+# <sets>
+  set -o nounset
+  set -o pipefail
+# </sets>
 
 # <sources>
   source deploy-vfio.args.compatibility
@@ -17,7 +22,7 @@
 # </sources>
 
 # <functions>
-  function DeclareParameters
+  function declare_parameters
   {
     if [[ "${COMMON_ARGS_ARE_PARAMS_SET}" == true ]]; then
       return 0
@@ -30,7 +35,7 @@
   }
 
   # <summary>Option setters</summary>
-    function SetOptions
+    function set_options
     {
       if [[ -z "$@" ]]; then
         return 0
@@ -39,28 +44,28 @@
       while [[ "${1}" =~ ^- ]] \
         || [[ "${1}" =~ ^-- ]]; do
         echo "arg == ${1}"            # NOTE: debug.
-        ParseValidArgumentList "$@"
+        parse_valid_argument_list "$@"
         shift                         # <note>'shift' must remain in same scope to work.</note>
       done
 
       return 0
     }
 
-    function ParseThisOption
+    function parse_this_option
     {
-      if ! IsOptionPrintHelp "$@" \
-        && ! IsOptionOfCompatibility "$@" \
-        && ! IsOptionBeQuiet "$@" \
-        && ! IsOptionUndoAll "$@" \
-        && ! IsOptionOfPreSetup "$@" \
-        && ! IsOptionOfDatabase "$@" \
-        && ! IsOptionOfMainSetup "$@" \
-        && ! IsOptionOfPostSetup "$@"; then
-      IsOptionNotValid "$@"
+      if ! is_option_print_help "$@" \
+        && ! is_option_of_compatibility "$@" \
+        && ! is_option_be_quiet "$@" \
+        && ! is_option_undo_all "$@" \
+        && ! is_option_of_pre_setup "$@" \
+        && ! is_option_of_database "$@" \
+        && ! is_option_of_main_setup "$@" \
+        && ! is_option_of_post_setup "$@"; then
+      is_option_valid "$@"
       fi
     }
 
-    function PopInputListIfLastOptionContainsArgument
+    function pop_input_list_if_last_option_contains_argument
     {
       while [[ ! -z "${1}" ]]; do
         shift
@@ -71,18 +76,18 @@
     }
 
   # <summary>Option getters</summary>
-    function IsOptionPrintHelp
+    function is_option_print_help
     {
       if [[ "${1}" == "-h" ]] \
         || [[ "${1}" == "--help" ]]; then
-        PrintUsage
+        print_usage
         exit 0
       fi
 
       return 1
     }
 
-    function IsOptionBeQuiet
+    function is_option_be_quiet
     {
       if [[ "${1}" == "-q" ]] \
         || [[ "${1}" == "--quiet" ]]; then
@@ -93,18 +98,18 @@
       return 1
     }
 
-    function IsOptionNotValid
+    function is_option_valid
     {
       if [[ "${1}" == "" ]]; then
         return 0
       fi
 
-      PrintInvalidOption "${1}"
-      PrintHelp
+      print_invalid_option "${1}"
+      print_help
       exit 1
     }
 
-    function IsOptionUndoAll
+    function is_option_undo_all
     {
       if [[ "${1}" == "-u" ]] \
         || [[ "${1}" == "--undo" ]]; then
@@ -116,17 +121,17 @@
     }
 
   # <summary>Argument setters</summary>
-    function ParseValidArgumentList
+    function parse_valid_argument_list
     {
       # local -i args_counter=1
       local this_argument="${1}"
-      ParseThisOption "$@"
+      parse_this_option "$@"
       # echo "args_counter == $args_counter"
-      # PopInputListForEachArgument
+      # pop_input_list_foreach_argument
       shift
     }
 
-    # function PopInputListForEachArgument
+    # function pop_input_list_foreach_argument
     # {
     #   for counter in $( seq 0 "${args_counter}" ); do
     #     shift
@@ -135,6 +140,6 @@
 # </functions>
 
 # <code>
-  DeclareParameters
-  unset DeclareParameters
+  declare_parameters
+  unset declare_parameters
 # </code

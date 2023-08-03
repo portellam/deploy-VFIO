@@ -1,4 +1,4 @@
-#!/bin/bash # TODO: change back to bin/false
+#!/bin/false
 
 #
 # Filename:       deploy-vfio.args.post-setup
@@ -7,25 +7,30 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <sets>
+  set -o nounset
+  set -o pipefail
+# </sets>
+
 # <sources>
   source deploy-vfio.logic.post-setup
 # </sources>
 
 # <functions>
-  function IsOptionOfPostSetup
+  function is_option_of_post_setup
   {
-    IsOptionSkipPostSetup "$@" || return 1
-    IsOptionUninstallPostSetup "$@" || return 1
-    IsOptionInstallLibvirtHooks "$@" || return 1
-    IsOptionInstallZRAMSwap "$@" || return 1
-    IsOptionInstallAutoXorg "$@" || return 1
-    IsOptionInstallLookingGlass "$@" || return 1
-    IsOptionInstallScream "$@" || return 1
-    IsOptionInstallAudioLoopback "$@" || return 1
+    is_option_skip_post_setup "$@" || return 1
+    is_option_uninstall_post_setup "$@" || return 1
+    is_option_install_libvirt_hooks "$@" || return 1
+    is_option_install_ZRAM_swap "$@" || return 1
+    is_option_install_auto_xorg "$@" || return 1
+    is_option_install_looking_glass "$@" || return 1
+    is_option_install_scream "$@" || return 1
+    is_option_install_audio_loopback "$@" || return 1
   }
 
   # <summary>Option getters</summary>
-    function IsOptionInstallAudioLoopback
+    function is_option_install_audio_loopback
     {
       if [[ "${1}" == "--audio-loopback" ]]; then
         POST_SETUP_ASK_TO_EXECUTE_ALL=false
@@ -33,17 +38,17 @@
       fi
     }
 
-    function IsOptionInstallAutoXorg
+    function is_option_install_auto_xorg
     {
       if [[ "${1}" == "--auto-xorg" ]]; then
-        GetArgumentsForAutoXorg "${1}" "${2}" || return 1
-        PopInputListIfLastOptionContainsArgument "${1}" "${2}"
+        get_arguments_for_auto_xorg "${1}" "${2}" || return 1
+        pop_input_list_if_last_option_contains_argument "${1}" "${2}"
         POST_SETUP_ASK_TO_EXECUTE_ALL=false
         POST_SETUP_DO_EXECUTE_AUTO_XORG=true
       fi
     }
 
-    function IsOptionInstallLibvirtHooks
+    function is_option_install_libvirt_hooks
     {
       if [[ "${1}" == "--libvirt-hooks" ]]; then
         POST_SETUP_ASK_TO_EXECUTE_ALL=false
@@ -51,7 +56,7 @@
       fi
     }
 
-    function IsOptionInstallLookingGlass
+    function is_option_install_looking_glass
     {
       if [[ "${1}" == "--looking-glass" ]]; then
         POST_SETUP_ASK_TO_EXECUTE_ALL=false
@@ -59,7 +64,7 @@
       fi
     }
 
-    function IsOptionInstallScream
+    function is_option_install_scream
     {
       if [[ "${1}" == "--scream" ]]; then
         POST_SETUP_ASK_TO_EXECUTE_ALL=false
@@ -67,19 +72,19 @@
       fi
     }
 
-    function IsOptionInstallZRAMSwap
+    function is_option_install_ZRAM_swap
     {
       if [[ "${1}" == "--zram-swap" ]]; then
         shift
-        GetArgumentsForZRAMSwap "${1}" "${2}" || return 1
+        get_arguments_for_ZRAM_swap "${1}" "${2}" || return 1
         IsHostMemorySufficientForZRAMSwap || return 1
-        PopInputListIfLastOptionContainsArgument "${1}" "${2}"
+        pop_input_list_if_last_option_contains_argument "${1}" "${2}"
         POST_SETUP_ASK_TO_EXECUTE_ALL=false
         POST_SETUP_DO_EXECUTE_ZRAM_SWAP=true
       fi
     }
 
-    function IsOptionSkipPostSetup
+    function is_option_skip_post_setup
     {
       if [[ "${1}" == "--skip-vfio-setup" ]]; then
         POST_SETUP_DO_SKIP_ALL=true
@@ -87,7 +92,7 @@
       fi
     }
 
-    function IsOptionUninstallPostSetup
+    function is_option_uninstall_post_setup
     {
       if [[ "${1}" == "--uninstall-vfio-setup" ]]; then
         POST_SETUP_ASK_TO_EXECUTE_ALL=false
@@ -95,41 +100,41 @@
     }
 
   # <summary>Argument getters</summary>
-    function GetArgumentsForAutoXorg
+    function get_arguments_for_auto_xorg
     {
       if [[ -z "${1}" ]]; then
         return 0
       fi
 
       while [[ ! -z "${1}" ]]; do
-        GetThisArgumentForAutoXorg "$@" || return 1
+        get_this_argument_for_auto_xorg "$@" || return 1
       done
     }
 
-    function GetArgumentsForZRAMSwap
+    function get_arguments_for_ZRAM_swap
     {
       if [[ ! -z "${1}" ]]; then
-        GetZRAMSwapSize "${1}" || GetAdditionalArgumentsForZRAMSwap "${1}" || return 1
+        get_ZRAM_swap_size "${1}" || get_this_argument_for_ZRAM_swap "${1}" || return 1
       fi
 
       if [[ ! -z "${2}" ]]; then
-        GetZRAMSwapSize "${2}" || GetAdditionalArgumentsForZRAMSwap "${2}" || return 1
+        get_ZRAM_swap_size "${2}" || get_this_argument_for_ZRAM_swap "${2}" || return 1
       fi
     }
 
-    function GetAdditionalArgumentsForZRAMSwap
+    function get_this_argument_for_ZRAM_swap
     {
       case "${1}" in
         "force" )
           POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE=true ;;
 
         * )
-          PrintInvalidArgument "${1}"
+          print_invalid_argument "${1}"
           return 1 ;;
       esac
     }
 
-    function GetThisArgumentForAutoXorg
+    function get_this_argument_for_auto_xorg
     {
       case "${1}" in
         "first" | "last" )
@@ -147,7 +152,7 @@
           POST_SETUP_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=true ;;
 
         * )
-          PrintInvalidArgument "${1}"
+          print_invalid_argument "${1}"
           return 1 ;;
       esac
 

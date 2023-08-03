@@ -7,17 +7,22 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <sets>
+  set -o nounset
+  set -o pipefail
+# </sets>
+
 # <sources>
   source deploy-vfio.logic.compatibility
 # </sources>
 
 # <functions>
-  function IsOptionOfCompatibility
+  function is_option_of_compatibility
   {
-    IsOptionIgnoreDistro || return 1
+    is_option_ignore_distro || return 1
   }
 
-  function IsOptionIgnoreDistro
+  function is_option_ignore_distro
   {
     if [[ "${1}" != "--ignore-distro" ]]; then
       return 1

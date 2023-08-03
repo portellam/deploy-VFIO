@@ -1,4 +1,4 @@
-#!/bin/bash # TODO: change back to bin/false
+#!/bin/false
 
 #
 # Filename:       deploy-vfio.logic.post-setup
@@ -7,12 +7,17 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <sets>
+  set -o nounset
+  set -o pipefail
+# </sets>
+
 # <sources>
   source deploy-vfio.logic.common
 # </sources>
 
 # <functions>
-  function DeclareParameters
+  function declare_parameters
   {
     if [[ "${POST_SETUP_ARE_PARAMS_SET}" == true ]]; then
       return 0
@@ -34,7 +39,7 @@
     declare -g POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE=false
   }
 
-  function DoPostSetup
+  function do_post_setup
   {
     echo "in post setup now"
     return 0
@@ -42,6 +47,6 @@
 # </functions>
 
 # <code>
-  DeclareParameters
-  unset DeclareParameters
+  declare_parameters
+  unset declare_parameters
 # </code

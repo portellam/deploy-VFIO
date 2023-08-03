@@ -1,4 +1,4 @@
-#!/bin/bash # TODO: change back to bin/false
+#!/bin/false
 
 #
 # Filename:       deploy-vfio.logic.main-setup
@@ -7,13 +7,18 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <sets>
+  set -o nounset
+  set -o pipefail
+# </sets>
+
 # <sources>
   source deploy-vfio.logic.common
   source delpoy-vfio.logic.database
 # </sources>
 
 # <functions>
-  function DeclareParameters
+  function declare_parameters
   {
     if [[ "${MAIN_SETUP_ARE_PARAMS_SET}" == true ]]; then
       return 0
@@ -29,10 +34,10 @@
     declare -g MAIN_SETUP_DO_SKIP_ALL=false
   }
 
-  function DoMainSetup
+  function do_main_setup
   {
-    if ! IsParsedListValid \
-      || IsParsedListOfVGAValid; then
+    if ! is_parsed_list_valid \
+      || is_parsed_list_of_VGA_valid; then
       return 1
     fi
 
@@ -40,38 +45,87 @@
   }
 
   # <summary>Prompt selection validation</summary>
-    function IsParsedListValid
+    function is_parsed_list_valid
     {
-      if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_FOR_HOST_LIST"; then
-        PrintPrefixError "Invalid selection of devices for Host."
+      if ! is_valid_enum_of_IOMMU_groups "IOMMU_GROUPS_FOR_HOST_LIST"; then
+        print_prefix_error "Invalid selection of devices for Host."
         return 1
       fi
 
-      if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_FOR_VFIO_LIST"; then
-        PrintPrefixError "Invalid selection of devices for VFIO."
+      if ! is_valid_enum_of_IOMMU_groups "IOMMU_GROUPS_FOR_VFIO_LIST"; then
+        print_prefix_error "Invalid selection of devices for VFIO."
         return 1
       fi
     }
 
-    function IsParsedListOfVGAValid
+    function is_parsed_list_of_VGA_valid
     {
       if "${VFIO_SETUP_DO_EXECUTE_MULTIBOOT}"; then
-        if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST"; then
-          PrintPrefixError "Invalid selection of VGA devices for VFIO."
+        if ! is_valid_enum_of_IOMMU_groups "IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST"; then
+          print_prefix_error "Invalid selection of VGA devices for VFIO."
           return 1
         fi
 
         return 0
       fi
 
-      if ! IsValidEnumOfIOMMUGroups "IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST"; then
-        PrintPrefixError "Invalid selection of VGA devices for Host."
+      if ! is_valid_enum_of_IOMMU_groups "IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST"; then
+        print_prefix_error "Invalid selection of VGA devices for Host."
         return 1
       fi
     }
+
+  # <summary>Update functions</summary>
+    function unset_entries_for_custom_GRUB
+    {
+      if ! sed -i "s/+'/-'/g" "${1}" &> /dev/null; then
+        print_prefix_error "Failed to disable entries for GRUB proxy file."
+        return 1
+      fi
+    }
+
+    function set_entries_for_custom_GRUB
+    {
+      if ! sed -i "s/+'/-'/g" "${1}" &> /dev/null; then
+        print_prefix_error "Failed to enable entries for GRUB proxy file."
+        return 1
+      fi
+    }
+
+    function update_GRUB
+    {
+      echo "Updating GRUB..."
+      sudo update-grub
+    }
+
+    function update_INITRAMFS
+    {
+      echo "Updating Initramfs..."
+      sudo update-initramfs -u -k all
+    }
+
+  function set_entries_for_GRUB
+  {
+    echo "Updating entries..."
+
+    local grub_custom_proxy_file=$( find "${GRUB_PATH}" -name *"${GRUB_CUSTOM_PROXY_FILENAME}" )
+
+    if ! is_file "${grub_custom_proxy_file}"; then
+      print_prefix_error "Failed to find GRUB proxy file in directory '/etc/grub.d/'."
+      return 1
+    fi
+
+    if "${VFIO_SETUP_DO_EXECUTE_MULTIBOOT}"; then
+      set_entries_for_custom_GRUB "${grub_custom_proxy_file}" || return 1
+    else
+      unset_entries_for_custom_GRUB "${grub_custom_proxy_file}" || return 1
+    fi
+
+    update_GRUB &> /dev/null
+  }
 # </functions>
 
 # <code>
-  DeclareParameters
-  unset DeclareParameters
+  declare_parameters
+  unset declare_parameters
 # </code

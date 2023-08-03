@@ -1,4 +1,4 @@
-#!/bin/bash # TODO: change back to bin/false
+#!/bin/false
 
 #
 # Filename:       deploy-vfio.args.main-setup
@@ -7,45 +7,50 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <sets>
+  set -o nounset
+  set -o pipefail
+# </sets>
+
 # <sources>
   source deploy-vfio.logic.main-setup
 # </sources>
 
 # <functions>
-  function IsOptionOfMainSetup
+  function is_option_of_main_setup
   {
-    IsOptionSkipMainSetup "$@" || return 1
-    IsOptionUninstallMainSetup "$@" || return 1
-    IsOptionDoMultibootSetup "$@" || return 1
-    IsOptionDoStaticSetup "$@" || return 1
+    is_option_skip_main_setup "$@" || return 1
+    is_option_uninstall_main_setup "$@" || return 1
+    is_option_do_multiboot_setup "$@" || return 1
+    is_option_do_static_setup "$@" || return 1
   }
 
   # <summary>Option getters</summary>
-    function IsOptionDoMultibootSetup
+    function is_option_do_multiboot_setup
     {
       if [[ "${1}" == "-m" ]] \
         || [[ "${1}" == "--multiboot" ]]; then
         shift
-        GetArgumentsForMultibootSetup "$@" || return 1
-        PopInputListIfLastOptionContainsArgument "${1}"
+        get_arguments_for_multiboot_setup "$@" || return 1
+        pop_input_list_if_last_option_contains_argument "${1}"
         MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
         MAIN_SETUP_DO_EXECUTE_MULTIBOOT=true
       fi
     }
 
-    function IsOptionDoStaticSetup
+    function is_option_do_static_setup
     {
       if [[ "${1}" == "-s" ]] \
         || [[ "${1}" == "--static" ]]; then
         shift
-        GetArgumentsForStaticSetup "$@" || return 1
-        PopInputListIfLastOptionContainsArgument "${1}"
+        get_arguments_for_static_setup "$@" || return 1
+        pop_input_list_if_last_option_contains_argument "${1}"
         MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
         MAIN_SETUP_DO_EXECUTE_STATIC=true
       fi
     }
 
-    function IsOptionSkipMainSetup
+    function is_option_skip_main_setup
     {
       if [[ "${1}" == "--skip-vfio-setup" ]]; then
         MAIN_SETUP_DO_SKIP_ALL=true
@@ -53,7 +58,7 @@
       fi
     }
 
-    function IsOptionUninstallMainSetup
+    function is_option_uninstall_main_setup
     {
       if [[ "${1}" == "--uninstall-vfio-setup" ]]; then
         MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
@@ -61,7 +66,7 @@
     }
 
   # <summary>Argument getters</summary>
-    function GetArgumentsForMultibootSetup
+    function get_arguments_for_multiboot_setup
     {
       case "${1}" in
         "default" )
@@ -77,20 +82,20 @@
           return 0 ;;
 
         * )
-          if DoesIOMMUGroupHaveVGADevice "${1}" \
-            && SetPreferredIOMMUGroupForMultiboot "${1}"; then
+          if does_IOMMU_group_have_VGA_device "${1}" \
+            && set_preferred_IOMMU_group_for_multiboot "${1}"; then
             return 0
           fi ;;
       esac
 
       if [[ ! -z "${1}" ]]; then
-        PrintInvalidArgument "${1}"
+        print_invalid_argument "${1}"
       fi
 
       return 1
     }
 
-    function GetArgumentsForStaticSetup
+    function get_arguments_for_static_setup
     {
       if [[ -z "${1}" ]]; then
         return 0
@@ -106,7 +111,7 @@
           return 0 ;;
       esac
 
-      PrintInvalidArgument "${1}"
+      print_invalid_argument "${1}"
       return 1
     }
 # </functions>

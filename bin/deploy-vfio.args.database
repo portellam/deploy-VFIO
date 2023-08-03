@@ -1,4 +1,4 @@
-#!/bin/bash # TODO: change back to bin/false
+#!/bin/false
 
 #
 # Filename:       deploy-vfio.args.database
@@ -7,19 +7,24 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <sets>
+  set -o nounset
+  set -o pipefail
+# </sets>
+
 # <sources>
   source deploy-vfio.logic.database
 # </sources>
 
 # <functions>
-  function IsOptionOfDatabase
+  function is_option_of_database
   {
-    IsOptionParseXML "$@" || return 1
-    IsOptionParseIOMMUGroups "$@" || return 1
+    is_option_parse_XML "$@" || return 1
+    is_option_parse_IOMMI_groups "$@" || return 1
   }
 
   # <summary>Option getters</summary>
-    function IsOptionParseXML
+    function is_option_parse_XML
     {
       if [[ "${1}" != "-x" ]] \
         && [[ "${1}" != "--xml" ]]; then
@@ -27,17 +32,17 @@
       fi
 
       if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
-        PrintInvalidOption "${1}"
+        print_invalid_option "${1}"
       fi
 
       shift
-      IsArgumentParseXMLFile "${1}"
-      PopInputListIfLastOptionContainsArgument "${1}"
+      is_argument_parse_XML_file "${1}"
+      pop_input_list_if_last_option_contains_argument "${1}"
       DATABASE_ASK_TO_EXECUTE_ALL=false
       DATABASE_DO_PARSE_DATABASE_FROM_XML=true
     }
 
-    function IsOptionParseIOMMUGroups
+    function is_option_parse_IOMMI_groups
     {
       if [[ "${1}" != "-p" ]] \
         && [[ "${1}" != "--parse" ]]; then
@@ -45,16 +50,16 @@
       fi
 
       shift
-      GetArgumentsForParseSelection "$@" || return 1
-      PopInputListIfLastOptionContainsArgument "${1}"
+      get_arguments_for_parse_selection "$@" || return 1
+      pop_input_list_if_last_option_contains_argument "${1}"
       DATABASE_ASK_TO_EXECUTE_ALL=false
     }
 
   # <summary>Argument getters</summary>
-    function GetArgumentsForParseSelection
+    function get_arguments_for_parse_selection
     {
       if [[ -z "${1}" ]]; then
-        IsIOMMUGroupIDValid "${1}"
+        is_IOMMU_group_id_valid "${1}"
         return 1
       fi
 
@@ -63,14 +68,14 @@
 
       while [[ "${delimiter_counter}" -gt 0 ]] \
         && ! "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; do
-        GetThisArgumentForParseSelection "$@" || return 1
+        get_this_argument_for_parse_selection "$@" || return 1
         (( delimiter_counter-- ))
       done
 
       DATABASE_HAS_ARG_PARSE_IOMMU=true
     }
 
-    function GetThisArgumentForParseSelection
+    function get_this_argument_for_parse_selection
     {
       local argument=$( echo "${1}" | cut -d ',' -f "${delimiter_counter}" )
 
@@ -81,34 +86,34 @@
       case "${argument}" in
         "all" )
           if "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; then
-            PrintDuplicateArgument "${argument}"
+            print_duplicate_argument "${argument}"
           fi
 
           DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
-          AddValidIOMMUGroupsToParsedList || PrintInvalidArgument "${argument}" ;;
+          AddValidIOMMUGroupsToParsedList || print_invalid_argument "${argument}" ;;
 
         "no-vga" )
           if "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA}"; then
-            PrintDuplicateArgument "${argument}"
+            print_duplicate_argument "${argument}"
           fi
 
           DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true
-          AddValidIOMMUGroupsToParsedList || PrintInvalidArgument "${argument}" ;;
+          AddValidIOMMUGroupsToParsedList || print_invalid_argument "${argument}" ;;
 
         * )
           DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
-          AddSomeIOMMUGroupsToParsedList "${argument}" || PrintInvalidArgument "${argument}" ;;
+          add_some_iommu_groups_to_parsed_list "${argument}" || print_invalid_argument "${argument}" ;;
       esac
     }
 
-    function IsArgumentParseXMLFile
+    function is_argument_parse_XML_file
     {
       if [[ -z "${1}" ]]; then
-        SetXMLFileToDefault
+        set_XML_to_default
         return 0
       fi
 
-      IsFile "${1}" || PrintInvalidArgument "${1}"
-      SetXMLFile "${1}"
+      is_file "${1}" || print_invalid_argument "${1}"
+      set_xml_file "${1}"
     }
 # </functions>

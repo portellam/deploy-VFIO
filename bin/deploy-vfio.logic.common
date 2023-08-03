@@ -1,4 +1,4 @@
-#!/bin/bash # TODO: change back to bin/false
+#!/bin/false
 
 #
 # Filename:       deploy-vfio.logic.common
@@ -8,7 +8,7 @@
 #
 
 # <functions>
-  function DeclareParameters
+  function declare_parameters
   {
     if [[ "${COMMON_ARE_PARAMS_SET}" == true ]]; then
       return 0
@@ -60,19 +60,19 @@
     declare -gir TWO_MIB_IN_KIB=2048
     declare -gir MAX_MEMORY=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | awk 'END {print $1}' )
     declare -gir MIN_MEMORY=$(( 8 * ${ONE_GIB_IN_KIB} ))
-    SetFreeMemory
+    set_free_memory
   }
 
-  function IsUserSuperuser
+  function is_user_superuser
   {
     if [[ $( whoami ) != "root" ]]; then
-      PrintPrefixError "User is not sudo or root."
+      print_prefix_error "User is not sudo or root."
       exit 1
     fi
   }
 
   # <summary>Interaction</summary>
-    function AskToExecuteOrSkip
+    function execute_or_skip_prompt
     {
       local output=""
 
@@ -100,66 +100,66 @@
     }
 
   # <summary>Presentation/summary>
-    function PrintPrefixError
+    function print_prefix_error
     {
        echo -e "${PREFIX_ERROR} ${1}"
     }
 
-    function PrintPrefixFail
+    function print_prefix_fail
     {
       echo -e "${PREFIX_FAIL} ${1}"
     }
 
-    function PrintPrefixNote
+    function print_prefix_note
     {
       echo -e "${PREFIX_NOTE} ${1}"
     }
 
-    function PrintPrefixPass
+    function print_prefix_pass
     {
       echo -e "${PREFIX_PASS} ${1}"
     }
 
-    function PrintSuffixError
+    function print_suffix_error
     {
       echo -e "${SUFFIX_ERROR} ${1}"
     }
 
-    function PrintSuffixFail
+    function print_suffix_fail
     {
       echo -e "${SUFFIX_FAIL} ${1}"
     }
 
-    function PrintSuffixNote
+    function print_suffix_note
     {
       echo -e "${SUFFIX_NOTE} ${1}"
     }
 
-    function PrintSuffixPass
+    function print_suffix_pass
     {
       echo -e "${SUFFIX_PASS} ${1}"
     }
 
-    function IsFile
+    function is_file
     {
       if [[ -z "${1}" ]] \
         || [[ ! -e "${1}" ]]; then
-        PrintPrefixError "File does not exist."
+        print_prefix_error "File does not exist."
         return 1
       fi
     }
 
-    function IsFileNotEmpty
+    function is_file_not_empty
     {
       if [[ -z "${1}" ]] \
         || [[ ! -s "${1}" ]]; then
-        PrintPrefixError "File is empty."
+        print_prefix_error "File is empty."
         return 1
       fi
     }
 
   # <summary>Variable data-type validation</summary>
-    function IsEnum
+    function is_enum
     {
       local -n reference="${1}"
 
@@ -168,9 +168,9 @@
       fi
     }
 
-    function IsEmptyEnum
+    function is_enum_empty
     {
-      IsEnum "${1}" || return 1
+      is_enum "${1}" || return 1
       local -n reference="${1}"
 
       for value in "${reference[@]}"; do
@@ -180,7 +180,7 @@
       done
     }
 
-    function IsInt
+    function is_int
     {
       if ! [[ "${1}" =~ ^[0-9]+$ ]] \
         && ! [[ "${1}" =~ ^[-][0-9]+$ ]]; then
@@ -188,7 +188,7 @@
       fi
     }
 
-    function SetCommaDelimitedStringFromEnum
+    function get_comma_delimited_string_from_enum
     {
       local -n enum_reference="${1}"
       local -n delim_reference="${2}"
@@ -203,7 +203,7 @@
     }
 
   # <summary>System validation</summary>
-    function GetFreeMemory
+    function get_free_memory
     {
       if [[ "${AVAILABLE_MEMORY}" -le 0 ]]; then
         return 1
@@ -212,7 +212,7 @@
       return 0
     }
 
-    function SetFreeMemory
+    function set_free_memory
     {
       AVAILABLE_MEMORY=$(( MAX_MEMORY - MIN_MEMORY ))
     }
@@ -220,6 +220,6 @@
 # </functions>
 
 # <code>
-  DeclareParameters
-  unset DeclareParameters
+  declare_parameters
+  unset declare_parameters
 # </code

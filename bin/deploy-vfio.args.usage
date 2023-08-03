@@ -1,4 +1,4 @@
-#!/bin/bash # TODO: change back to bin/false
+#!/bin/false
 
 #
 # Filename:       deploy-vfio.args.usage
@@ -7,57 +7,62 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <sets>
+  set -o nounset
+  set -o pipefail
+# </sets>
+
 # <sources>
   source deploy-vfio.logic.common
 # </sources>
 
 # <functions>
-  function PrintHelp
+  function print_help
   {
     echo -e "Try 'sudo bash ${DEPLOY_VFIO_NAME} --help' for usage."
   }
 
-  function PrintDuplicateArgument
+  function print_duplicate_argument
   {
     if [[ -z "${1}" ]]; then
-      PrintPrefixError "Duplicate argument."
+      print_prefix_error "Duplicate argument."
     fi
 
-    PrintPrefixError "Duplicate argument '${1}'."
+    print_prefix_error "Duplicate argument '${1}'."
     exit 1
   }
 
-  function PrintDuplicateOption
+  function print_duplicate_option
   {
     if [[ -z "${1}" ]]; then
-      PrintPrefixError "Duplicate option."
+      print_prefix_error "Duplicate option."
     fi
 
-    PrintPrefixError "Duplicate option '${1}'."
+    print_prefix_error "Duplicate option '${1}'."
     exit 1
   }
 
-  function PrintInvalidArgument
+  function print_invalid_argument
   {
     if [[ -z "${1}" ]]; then
-      PrintPrefixError "Invalid argument."
+      print_prefix_error "Invalid argument."
     fi
 
-    PrintPrefixError "Invalid argument '${1}'."
+    print_prefix_error "Invalid argument '${1}'."
     exit 1
   }
 
-  function PrintInvalidOption
+  function print_invalid_option
   {
     if [[ -z "${1}" ]]; then
-      PrintPrefixError "Invalid option."
+      print_prefix_error "Invalid option."
     fi
 
-    PrintPrefixError "Invalid option '${1}'."
+    print_prefix_error "Invalid option '${1}'."
     exit 1
   }
 
-  function PrintUsage
+  function print_usage
   {
     IFS=$'\n'
 
