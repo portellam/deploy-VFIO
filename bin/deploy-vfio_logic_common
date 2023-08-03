@@ -71,6 +71,23 @@
     fi
   }
 
+  function set_IFS_to_newline
+  {
+    IFS=$'\n'
+  }
+
+  function unset_IFS
+  {
+    unset IFS
+  }
+
+  function reverse_array
+  {
+    is_enum "${1}" || return 1
+    local -n reference="${1}"
+    reference="$( printf '%s\n' "${reference[@]}" | tac | tr '\n' ' '; echo )"
+  }
+
   # <summary>Interaction</summary>
     function execute_or_skip_prompt
     {

@@ -206,9 +206,9 @@
         return 1
       fi
 
-      IFS=$'\n'
+      set_IFS_to_newline
       iommu_groups_temp_list=( $( sort -hu <<<"${iommu_groups_temp_list[*]}" ) )
-      unset IFS
+      unset_IFS
 
       for iommu_group_id in ${iommu_groups_temp_list[@]}; do
         if does_IOMMU_group_have_external_devices "${iommu_group_id}"; then
@@ -592,22 +592,22 @@
         "</xml>"
       )
 
-      IFS=$'\n'
+      set_IFS_to_newline
 
       if ! sudo echo -e "${output[*]}" > "${XML_FILE}"; then
         print_prefix_error "Failed to write to file '${FILE}'."
-        unset IFS
+        unset_IFS
         return 1
       fi
 
-      unset IFS
+      unset_IFS
     }
 
     function import_IOMMU_groups_from_XML
     {
-      IFS=$'\n'
+      set_IFS_to_newline
       local -a input=( $( eval "${GET_PARSE_FROM_XML}" ) )
-      unset IFS
+      unset_IFS
 
       for line in "${input[@]}"; do
         local driver=$( echo "${line}" | cut -d '"' -f 6 )
