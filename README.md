@@ -63,7 +63,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
           -x, --xml [filename]          Cross-reference XML file. First-time, export if VFIO is not setup. Consecutive-times, imports if VFIO is setup.
 
         ARGUMENTS:
-          [filename]                    Reference specific file"
+          [filename]                    Reference specific file
 
         Specify the IOMMU groups to parse.
         OPTIONS:
