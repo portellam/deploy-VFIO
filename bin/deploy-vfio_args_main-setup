@@ -83,7 +83,7 @@
 
         * )
           if does_IOMMU_group_have_VGA_device "${1}" \
-            && set_preferred_IOMMU_group_for_multiboot "${1}"; then
+            && set_preferred_IOMMU_group_for_multiboot_setup "${1}"; then
             return 0
           fi ;;
       esac

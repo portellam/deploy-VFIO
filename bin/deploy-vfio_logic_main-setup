@@ -28,10 +28,57 @@
 
     declare -g MAIN_SETUP_ASK_TO_EXECUTE_ALL=true
     declare -g MAIN_SETUP_DO_EXECUTE_MULTIBOOT=false
+    declare -g MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_DEFAULT=false
+    declare -g MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_FIRST=false
+    declare -g MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_LAST=false
+    declare -g MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_VALUE=false
     declare -g MAIN_SETUP_DO_EXECUTE_STATIC=false
     declare -g MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB=false
     declare -g MAIN_SETUP_DO_EXECUTE_STATIC_WITHOUT_GRUB=false
     declare -g MAIN_SETUP_DO_SKIP_ALL=false
+
+    # <summary>Kernel commands for VFIO setup</summary>
+      declare -g DRIVER_DELIM=""
+      declare -g HWID_DELIM=""
+
+    # <summary>Kernel commands for drivers</summary>
+      declare -gr SUBSTRING_GRUB_CMDLINE_AMD_IOMMU_DRIVER="amd_iommu=on"
+      declare -gr SUBSTRING_GRUB_CMDLINE_INTEL_IOMMU_DRIVER="intel_iommu=on"
+
+    # <summary>Kernel commands</summary>
+      declare -gr SUBSTRING_GRUB_CMDLINE_DEFAULTS="quiet splash"
+      declare -gr SUBSTRING_GRUB_CMDLINE_PRIVACY="rfkill.default_state=1 systemd.restore_state=0"
+      declare -gr SUBSTRING_GRUB_CMDLINE_POWER_MANAGEMENT="acpi=force apm=power_off pcie_aspm=off"
+      declare -gr SUBSTRING_GRUB_CMDLINE_EARLY_LOAD_MODULES="rd.driver.pre=vfio-pci rd.modules-load=vfio-pci"
+      declare -gr SUBSTRING_GRUB_CMDLINE_UNSET_FRAMEBUFFER="video=efifb:off,vesafb:off"
+      declare -gr SUBSTRING_GRUB_CMDLINE_RECOMMENDED_FOR_WINDOWS10="kvm.ignore_msrs=1"
+
+      declare -g PREFIX_GRUB_CMDLINE+="${SUBSTRING_GRUB_CMDLINE_DEFAULTS}"
+      declare -g PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_PRIVACY}"
+      declare -g PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_POWER_MANAGEMENT}"
+      declare -g PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_EARLY_LOAD_MODULES}"
+      declare -g PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_UNSET_FRAMEBUFFER}"
+      declare -g PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_RECOMMENDED_FOR_WINDOWS10}"
+
+    # <summary>File output: Static VFIO with GRUB</summary>
+      declare -g GRUB_CMDLINE_DEFAULT=""
+
+    # <summary>File output: Static VFIO without GRUB</summary>
+      declare -ga BLACKLISTS_LIST=( )
+      declare -ga INITRAMFS_LIST=( )
+      declare -ga MODULES_LIST=( )
+
+    # <summary>File output: Multiboot VFIO with GRUB</summary>
+      declare -g PREFERRED_MENU_ENTRY_TITLE=""
+      declare -ga GRUB_CUSTOM_FILE_CONTENTS=( )
+      declare -ga MENU_ENTRY_TITLE_LIST=( "" )
+
+    # <summary>File output: GRUB</summary>
+      declare -g DEFAULT_MENU_ENTRY_TITLE="0"
+
+    # <summary>Unsorted</summary>
+      declare -glr CPU_VENDOR_ID="$( lscpu | grep -Ei Vendor | awk 'END {print $3}' )"
+      declare -gi MULTIBOOT_PREFERRED_IOMMU_GROUP_ID=0
   }
 
   function do_main_setup
@@ -47,6 +94,152 @@
 
     echo "in main setup now"
   }
+
+  function set_kernel_cmdline_iommu_driver
+  {
+    case "${CPU_VENDOR_ID}" in
+      *"amd"* )
+        PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_AMD_IOMMU_DRIVER}" ;;
+
+      *"intel"* )
+        PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_INTEL_IOMMU_DRIVER}" ;;
+
+      * )
+        print_prefix_error "Unknown CPU vendor '${CPU_VENDOR_ID}'."
+        return 1 ;;
+    esac
+  }
+
+  function set_preferred_IOMMU_group_for_multiboot_setup
+  {
+    declare -gi MULTIBOOT_PREFERRED_IOMMU_GROUP_ID="${1}"
+    MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_VALUE=true
+  }
+
+  # <summary>Interaction</summary>
+    function specify_GRUB_menu_entry_for_multiboot_setup
+    {
+      if "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_DEFAULT}" \
+        || "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_FIRST}" \
+        || "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_LAST}" \
+        || "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_VALUE}"; then
+        return 0
+      fi
+
+      local -i last_index=$(( ${#_MENU_ENTRY_TITLE_LIST[@]} - 1 ))
+
+      for COUNT in $( seq 0 2 ); do
+        echo -e "\nList of valid GRUB menu entries:"
+        print_list_of_GRUB_menu_entry
+        echo
+        read -r -p "Enter preferred GRUB menu entry [0-${last_index}]: " answer
+
+        if [[ -z "${answer}" ]] \
+          || [[ "${answer}" -eq 0 ]]; then
+          MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_DEFAULT=true
+          return 0
+        fi
+
+        if [[ "${answer}" -gt 0 ]] \
+          && [[ "${answer}" -le "${last_index}" ]]; then
+          MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_DEFAULT=false
+          _PREFERRED_MENU_ENTRY_TITLE="${_MENU_ENTRY_TITLE_LIST[${answer}]}"
+          return 0
+        fi
+
+        echo -e "Please answer between 0 and ${LAST_INDEX}."
+      done
+
+      print_prefix_error "Failed to answer."
+      return 1
+    }
+
+    function specify_static_setup_prompt
+    {
+      if "${MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB}" \
+        || "${MAIN_SETUP_DO_EXECUTE_STATIC_WITHOUT_GRUB}"; then
+        return 0
+      fi
+
+      for counter in $( seq 0 2 ); do
+        read -r -p "Write output to GRUB only? [Y/n]: " answer
+
+        case "${answer}" in
+          [Yy]* )
+            MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB=true
+            return 0 ;;
+
+          [Nn]* )
+            MAIN_SETUP_DO_EXECUTE_STATIC_WITHOUT_GRUB=true
+            return 0 ;;
+
+          * )
+            echo "Please answer 'Y' or 'N'." ;;
+        esac
+      done
+
+      print_prefix_error "Failed to answer."
+      return 1
+    }
+
+    function specify_VFIO_setup_prompt
+    {
+      if "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT}" \
+        || "${MAIN_SETUP_DO_EXECUTE_STATIC}" \
+        || ! "${MAIN_SETUP_ASK_TO_EXECUTE_ALL}"; then
+        return 0
+      fi
+
+      local answer=""
+
+      for counter in $( seq 0 2 ); do
+        echo -en "Execute ${SET_COLOR_YELLOW}VFIO setup${RESET_COLOR}? "
+        read -r -p "[(M)ultiboot/(S)tatic/(U)ninstall/(N)o]: " answer
+
+        case "${answer}" in
+          [Mm]* )
+            MAIN_SETUP_DO_EXECUTE_MULTIBOOT=true
+            break ;;
+
+          [Ss]* )
+            MAIN_SETUP_DO_EXECUTE_STATIC=true
+            break ;;
+
+          [Uu]* )
+            MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
+            break ;;
+
+          [Nn]* )
+            return 255 ;;
+
+          * )
+            echo "Please answer 'M', 'S', 'U', or 'N'." ;;
+        esac
+      done
+
+      if ! [[ "${answer}" =~ [MmSsUuNn] ]]; then
+        print_prefix_error "Failed to answer."
+        return 1
+      fi
+    }
+
+  # <summary>Presentation</summary>
+    function print_list_of_GRUB_menu_entry
+    {
+      for key in "${!MENU_ENTRY_TITLE_LIST[@]}"; do
+        local value="${MENU_ENTRY_TITLE_LIST[${key}]}"
+        echo -en "${key}:\t"
+
+        if [[ "${key}" -gt 0 ]] \
+          || [[ ! -z "${value}" ]]; then
+          echo -e "\"${value}\""
+          continue
+        fi
+
+        value="Default: no VFIO setup"
+        echo -e "${value}"
+      done
+    }
 
   # <summary>Prompt selection validation</summary>
     function is_parsed_list_valid
@@ -76,6 +269,44 @@
       if ! is_valid_enum_of_IOMMU_groups "IOMMU_GROUPS_WITH_VGA_FOR_HOST_LIST"; then
         print_prefix_error "Invalid selection of VGA devices for Host."
         return 1
+      fi
+    }
+
+  # <summary>Main setups</summary>
+    function execute_multiboot_setup
+    {
+      if ! "${HAS_RESTORED_DEFAULT_FILES}" \
+        || ! set_output_for_multiboot_setup \
+        || ! specify_GRUB_menu_entry_for_multiboot_setup \
+        || ! write_output_for_multiboot_setup \
+        || ! execute_update_after_setup; then
+        return 1
+      fi
+    }
+
+    function execute_static_setup
+    {
+      if ! "${HAS_RESTORED_DEFAULT_FILES}" \
+        || ! specify_static_setup_prompt \
+        || ! set_output_for_static_setup \
+        || ! write_output_for_static_setup \
+        || ! execute_update_after_setup; then
+        return 1
+      fi
+    }
+
+    function execute_update_after_setup
+    {
+      update_GRUB || return 1
+      set_entries_for_custom_GRUB || return 1
+      update_INITRAMFS || return 1
+    }
+
+    function uninstall_VFIO_setup
+    {
+      if ! "${HAS_RESTORED_DEFAULT_FILES}" \
+        || ! execute_update_after_setup; then
+        print_prefix_error "Uninstall has failed."
       fi
     }
 
@@ -126,6 +357,296 @@
     {
       echo "Updating Initramfs..."
       sudo update-initramfs -u -k all
+    }
+
+  # <summary>Setters</summary>
+    function set_output_for_static_setup
+    {
+      local -a driver_list=( )
+      local -a STUB_HWID_list=( )
+      local -a VFIO_HWID_list=( )
+      local driver_delim=""
+      local STUB_HWID_delim=""
+      local VFIO_HWID_delim=""
+      local PREFIX_GRUB_CMDLINE="${PREFIX_GRUB_CMDLINE} "
+
+      if [[ ! -z "${GRUB_CMDLINE_ISOLCPU}" ]]; then
+        PREFIX_GRUB_CMDLINE+="${GRUB_CMDLINE_ISOLCPU} "
+      fi
+
+      if [[ ! -z "${GRUB_CMDLINE_HUGEPAGES}" ]]; then
+        PREFIX_GRUB_CMDLINE+="${GRUB_CMDLINE_HUGEPAGES} "
+      fi
+
+      GetListsForSelection "IOMMU_GROUPS_FOR_VFIO_LIST" "driver_list" "STUB_HWID_list" "VFIO_HWID_list"
+      SetCommaDelimitedStringFromEnum "driver_list" "driver_delim"
+      SetCommaDelimitedStringFromEnum "STUB_HWID_list" "STUB_HWID_delim"
+      SetCommaDelimitedStringFromEnum "VFIO_HWID_list" "VFIO_HWID_delim"
+
+      if ! IsEnum "driver_list" \
+        && ! IsEnum "STUB_HWID_list" \
+        && ! IsEnum "VFIO_HWID_list"; then
+        print_prefix_error "Static setup output is empty."
+        return 1
+      fi
+
+      if ! "${MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB}" \
+        && ! "${MAIN_SETUP_DO_EXECUTE_STATIC_WITHOUT_GRUB}"; then
+        return 1
+      fi
+
+      if "${MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB}"; then
+        local GRUB_CMDLINE_TEMP="modprobe.blacklist=${driver_delim} "
+        GRUB_CMDLINE_TEMP+="pci_stub.ids=${STUB_HWID_delim} "
+        GRUB_CMDLINE_TEMP+="vfio_pci.ids=${VFIO_HWID_delim} "
+        GRUB_CMDLINE_DEFAULT="${PREFIX_GRUB_CMDLINE}${GRUB_CMDLINE_TEMP::-1}"
+
+      elif "${MAIN_SETUP_DO_EXECUTE_STATIC_WITHOUT_GRUB}"; then
+        for driver in ${driver_list[@]}; do
+          BLACKLISTS_LIST+=(
+            "blacklist ${driver}"
+          )
+          INITRAMFS_LIST+=(
+            "softdep ${driver} pre: vfio-pci"
+            "${driver}"
+          )
+          MODULES_LIST+=(
+            "softdep ${driver} pre: vfio-pci"
+          )
+        done
+
+        if [[ ! -z "${STUB_HWID_delim}" ]]; then
+          HWID_DELIM="${STUB_HWID_DELIM},"
+        fi
+
+        if [[ ! -z "${VFIO_HWID_delim}" ]]; then
+          HWID_DELIM+="${VFIO_HWID_DELIM}"
+        else
+          HWID_DELIM="${HWID_DELIM::-1}"
+        fi
+
+        GRUB_CMDLINE_DEFAULT="${PREFIX_GRUB_CMDLINE}"
+      fi
+    }
+
+    function set_output_for_multiboot_setup
+    {
+      local -i max_parsed_kernels=3
+      local -a kernels_list=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | cut -c 2- | sort -r | head -n ${max_parsed_kernels} ) )
+      local system_disk=$( df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1 )
+      local system_distro=$( lsb_release -i -s )
+      local system_fstype=$( blkid -s TYPE | grep ${system_disk} | cut -d '"' -f2 )
+      local system_kernel=$( uname -o )
+      local system_os=$( uname )
+      local system_uuid=$( blkid -s UUID | grep ${system_disk} | cut -d '"' -f2 )
+      local prefix_grub_cmdline_temp=""
+      prefix_grub_cmdline_temp+="${prefix_grub_cmdline} "
+
+      if [[ ! -z "${GRUB_CMDLINE_ISOLCPU}" ]]; then
+        prefix_grub_cmdline_temp+="${GRUB_CMDLINE_ISOLCPU} "
+      fi
+
+      if [[ ! -z "${GRUB_CMDLINE_HUGEPAGES}" ]]; then
+        prefix_grub_cmdline_temp+="${GRUB_CMDLINE_HUGEPAGES} "
+      fi
+
+      set_grub_menu_entry_list_for_multiboot_setup
+
+      if ! is_enum "GRUB_CUSTOM_FILE_CONTENTS"; then
+        print_prefix_error "Multiboot setup output is empty."
+        return 1
+      fi
+    }
+
+    function set_grub_menu_entry_list_for_multiboot_setup
+    {
+      for this_iommu_group_id in ${IOMMU_GROUPS_FOR_VFIO_LIST[@]}; do
+        does_IOMMU_group_have_VGA_device "${this_iommu_group_id}" &> /dev/null || continue
+        local -a driver_list=( )
+        local -a selection_without_this_group_list=( )
+        local -a stub_hwid_list=( )
+        local -a vfio_hwid_list=( )
+        local grub_cmdline_temp=""
+        local this_driver_delim=""
+        local this_iommu_group_vga_name=""
+        local this_stub_hwid_delim=""
+        local this_vfio_hwid_delim=""
+
+        for iommu_group_id in ${IOMMU_GROUPS_FOR_VFIO_LIST[@]}; do
+          if [[ "${iommu_group_id}" != "${this_iommu_group_id}" ]]; then
+            selection_without_this_group_list+=( "${iommu_group_id}" )
+          fi
+        done
+
+        get_name_for_first_vga_in_group "${this_iommu_group_id}" "this_iommu_group_vga_name" &> /dev/null
+        get_lists_for_parsed_selection "selection_without_this_group_list" "driver_list" "stub_hwid_list" "vfio_hwid_list" "driver_list" "this_driver_delim"
+        get_comma_delimited_string_from_enum "stub_hwid_list" "this_stub_hwid_delim"
+        get_comma_delimited_string_from_enum "vfio_hwid_list" "this_vfio_hwid_delim"
+        grub_cmdline_temp+="modprobe.blacklist=${this_driver_delim} "
+        grub_cmdline_temp+="pci_stub.ids=${this_stub_hwid_delim} "
+        grub_cmdline_temp+="vfio_pci.ids=${this_vfio_hwid_delim} "
+        grub_cmdline_temp="${prefix_grub_cmdline_temp}${grub_cmdline_temp::-1}"
+        set_this_GRUB_menu_entry_for_multiboot_setup "kernels_list" "${this_iommu_group_id}"
+      done
+    }
+
+    function set_preferred_IOMMU_group_for_multiboot_setup
+    {
+      local MENU_ENTRY_TITLE="${1}"
+      local IOMMU_GROUP_ID="${2}"
+
+      if [[ ! -z "${_PREFERRED_MENU_ENTRY_TITLE}" ]]; then
+        return 0
+      fi
+
+      if ( "${_VFIO_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_FIRST}" \
+          && [[ "${IOMMU_GROUP_ID}" -eq "${_IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST[0]}" ]] ) \
+        || ( "${_VFIO_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_VALUE}" \
+          && [[ "${IOMMU_GROUP_ID}" -eq "${_MULTIBOOT_PREFERRED_IOMMU_GROUP_ID}" ]] ) \
+        || ( "${_VFIO_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_LAST}" \
+          && [[ "${IOMMU_GROUP_ID}" -eq "${_IOMMU_GROUPS_WITH_VGA_FOR_VFIO_LIST[-1]}" ]] ); then
+        _PREFERRED_MENU_ENTRY_TITLE="${MENU_ENTRY_TITLE}"
+      fi
+
+      return 0
+    }
+
+    function set_this_GRUB_menu_entry_for_multiboot_setup
+    {
+      local -n REFERENCE="${1}"
+      local IOMMU_GROUP_ID="${2}"
+
+      # <remarks>Organize menu entry for excluded VGA group and given system kernel.</remarks>
+      for KEY in ${!REFERENCE[@]}; do
+        local KERNEL="${REFERENCE[$KEY]}"
+        local MENU_ENTRY_TITLE="${SYSTEM_DISTRO}, with ${SYSTEM_OS} ${KERNEL} (VFIO, w/o IOMMU ${IOMMU_GROUP_ID} w/ ${THIS_IOMMU_GROUP_VGA_NAME})"
+        _MENU_ENTRY_TITLE_LIST+=( "${MENU_ENTRY_TITLE}" )
+
+        if [[ "${KEY}" -eq 0 ]]; then
+          SetPreferredGRUBMenuEntryForMultibootSetup "${IOMMU_GROUP_ID}" "${MENU_ENTRY_TITLE}"
+        fi
+
+        _GRUB_CUSTOM_FILE_CONTENTS+=(
+          "menuentry \"${MENU_ENTRY_TITLE}\"{"
+          # "\tload_video"
+          # "insmod gzio"
+          # "if [ x\$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi"
+          # "insmod part_gpt"
+          "\tinsmod ${SYSTEM_FSTYPE}"
+          "\tset root='/dev/disk/by-uuid/${SYSTEM_UUID}'"
+          "\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"${SYSTEM_UUID}\n\t"'fi'
+          "\techo  'Loading ${SYSTEM_OS} ${KERNEL} ...'"
+          "\tlinux   /boot/vmlinuz-${KERNEL} root=UUID=${SYSTEM_UUID} ${LINE_GRUB_CMDLINE_TEMP}"
+          "\tinitrd  /boot/initrd.img-${KERNEL}"
+          "\techo  \"VFIO, w/o IOMMU '${IOMMU_GROUP_ID}' w/ '${THIS_IOMMU_GROUP_VGA_NAME}'\""
+          "}"
+          ""
+        )
+      done
+
+      return 0
+    }
+
+  # <summary>Write output</summary>
+    function write_output_for_multiboot_setup
+    {
+      "${HAS_RESTORED_DEFAULT_FILES}" || return 1
+      local -r line_to_match="GRUB_DEFAULT="
+
+      if "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_DEFAULT}"; then
+        local line_grub_default="${line_to_match}${DEFAULT_MENU_ENTRY_TITLE}"
+      else
+        local line_grub_default="${line_to_match}\"${PREFERRED_MENU_ENTRY_TITLE}\""
+      fi
+
+      if [[ -d $( dirname "${GRUB_CUSTOM_DEST_PATH}" ) ]] \
+        && ! sudo mkdir -p $( dirname "${GRUB_CUSTOM_DEST_PATH}" ); then
+        print_prefix_error "Failed to create directory '"$( dirname "${GRUB_CUSTOM_DEST_PATH}" )"'."
+        return 1
+      fi
+
+      write_output_to_GRUB_for_multiboot_setup || return 1
+    }
+
+    function write_output_to_GRUB_for_multiboot_setup
+    {
+      if ! sed -i '/'"${line_to_match}"'/c\'"${line_grub_default}" "${GRUB_DEST_PATH}" \
+        || ! echo -e "\n${GRUB_CUSTOM_FILE_CONTENTS[*]}" >> "${GRUB_CUSTOM_DEST_PATH}" ; then
+        print_prefix_error "Failed to overwrite target lines of files."
+        return 1
+      fi
+    }
+
+    function write_output_for_static_setup
+    {
+      "${HAS_RESTORED_DEFAULT_FILES}" || return 1
+
+      if ! write_output_to_GRUB_for_static_setup \
+        || ! write_output_to_INITRAMFS_for_static_setup \
+        || ! write_output_to_modules_for_static_setup; then
+        return 1
+      fi
+
+      if "${MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB}"; then
+        return 0
+      fi
+
+      write_output_to_remaining_files_for_static_setup || return 1
+    }
+
+    function write_output_to_GRUB_for_static_setup
+    {
+      local line_to_match="GRUB_CMDLINE_LINUX_DEFAULT="
+      local line_to_replace="${line_to_match}\"${GRUB_CMDLINE_DEFAULT}\""
+
+      if ! sed -i '/'"${line_to_match}"'/c\'"${line_to_replace}" "${GRUB_DEST_PATH}" &> /dev/null; then
+        print_prefix_error "Failed to overwrite target lines of files."
+        return 1
+      fi
+    }
+
+    function write_output_to_INITRAMFS_for_static_setup
+    {
+      set_IFS_to_newline
+      local -a output=( "${INITRAMFS_MODULES[@]}" )
+      reverse_array "output"
+
+      for line in "${output[@]}"; do
+        if ! sed -i "23i ${line}" "${INITRAMFS_MODULES_DEST_PATH}"; then
+          unset_IFS
+          print_prefix_error "Failed to overwrite target lines of files."
+          return 1
+        fi
+      done
+    }
+
+    function write_output_to_modules_for_static_setup
+    {
+      set_IFS_to_newline
+      local -a output=( "${MODULES_LIST[@]}" )
+      reverse_array "output"
+
+      for line in "${output[@]}"; do
+        if ! sed -i "7i ${line}" "${MODPROBE_VFIO_DEST_PATH}"; then
+          unset_IFS
+          print_prefix_error "Failed to overwrite target lines of files."
+          return 1
+        fi
+      done
+
+      unset_IFS
+    }
+
+    function write_output_to_remaining_files_for_static_setup
+    {
+      if ! sed -i "/# options vfio_pci ids=*/c\options vfio_pci_ids=\"${HWID_DELIM}\"" "${INITRAMFS_MODULES_DEST_PATH}" &> /dev/null \
+        || ! sed -i "/# vfio_pci ids=*/c\vfio_pci_ids=\"${HWID_DELIM}\"" "${INITRAMFS_MODULES_DEST_PATH}" &> /dev/null \
+        || ! echo -e "\n${BLACKLISTS_LIST[*]}" >> "${MODPROBE_BLACKLISTS_DEST_PATH}" &> /dev/null \
+        || ! sed -i "/# options vfio_pci ids=*/c\options vfio_pci ids=\"${HWID_DELIM}\"" "${MODPROBE_VFIO_DEST_PATH}" &> /dev/null \
+        || ! sed -i "/# vfio_pci ids=*/c\vfio_pci_ids=\"${HWID_DELIM}\"" "${MODULES_DEST_PATH}" &> /dev/null; then
+        print_prefix_error "Failed to overwrite target lines of files."
+        return 1
+      fi
     }
 # </functions>
 
