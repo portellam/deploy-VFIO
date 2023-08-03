@@ -92,6 +92,26 @@
       fi
     }
 
+    function update_custom_GRUB
+    {
+      echo "Updating entries..."
+
+      local grub_custom_proxy_file=$( find "${GRUB_PATH}" -name *"${GRUB_CUSTOM_PROXY_FILENAME}" )
+
+      if ! is_file "${grub_custom_proxy_file}"; then
+        print_prefix_error "Failed to find GRUB proxy file in directory '/etc/grub.d/'."
+        return 1
+      fi
+
+      if "${VFIO_SETUP_DO_EXECUTE_MULTIBOOT}"; then
+        set_entries_for_custom_GRUB "${grub_custom_proxy_file}" || return 1
+      else
+        unset_entries_for_custom_GRUB "${grub_custom_proxy_file}" || return 1
+      fi
+
+      update_GRUB &> /dev/null
+    }
+
     function update_GRUB
     {
       echo "Updating GRUB..."
@@ -103,26 +123,6 @@
       echo "Updating Initramfs..."
       sudo update-initramfs -u -k all
     }
-
-  function set_entries_for_GRUB
-  {
-    echo "Updating entries..."
-
-    local grub_custom_proxy_file=$( find "${GRUB_PATH}" -name *"${GRUB_CUSTOM_PROXY_FILENAME}" )
-
-    if ! is_file "${grub_custom_proxy_file}"; then
-      print_prefix_error "Failed to find GRUB proxy file in directory '/etc/grub.d/'."
-      return 1
-    fi
-
-    if "${VFIO_SETUP_DO_EXECUTE_MULTIBOOT}"; then
-      set_entries_for_custom_GRUB "${grub_custom_proxy_file}" || return 1
-    else
-      unset_entries_for_custom_GRUB "${grub_custom_proxy_file}" || return 1
-    fi
-
-    update_GRUB &> /dev/null
-  }
 # </functions>
 
 # <code>
