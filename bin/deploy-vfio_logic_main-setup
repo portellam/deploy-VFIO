@@ -2,12 +2,10 @@
 
 #
 # Filename:       deploy-vfio_logic_main-setup
-# Description:    Select VFIO setup.
+# Description:    Select and execute VFIO setup.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
-
-# TODO: add logic to backup existing files and restore, or write to temp files before finish and only overwrite on success.
 
 # <sets>
   set -o nounset
@@ -500,7 +498,7 @@
         local grub_menu_entry_title="${system_distro}, with ${system_os} ${kernel} (VFIO, w/o IOMMU ${iommu_group_id} w/ ${this_iommu_group_vga_name})"
         GRUB_MENU_ENTRY_TITLE_ENUM+=( "${grub_menu_entry_title}" )
 
-        if [[ "${KEY}" -eq 0 ]]; then
+        if [[ "${key}" -eq 0 ]]; then
           set_preferred_grub_menu_entry_for_multiboot_setup "${iommu_group_id}" "${grub_menu_entry_title}"
         fi
 
