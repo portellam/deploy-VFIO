@@ -95,27 +95,6 @@
     echo "in main setup now"
   }
 
-  function set_kernel_cmdline_iommu_driver
-  {
-    case "${CPU_VENDOR_ID}" in
-      *"amd"* )
-        PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_AMD_IOMMU_DRIVER}" ;;
-
-      *"intel"* )
-        PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_INTEL_IOMMU_DRIVER}" ;;
-
-      * )
-        print_prefix_error "Unknown CPU vendor '${CPU_VENDOR_ID}'."
-        return 1 ;;
-    esac
-  }
-
-  function set_preferred_iommu_group_for_multiboot_setup
-  {
-    declare -gi MULTIBOOT_PREFERRED_IOMMU_GROUP_ID="${1}"
-    MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_VALUE=true
-  }
-
   # <summary>Interaction</summary>
     function specify_grub_menu_entry_for_multiboot_setup
     {
@@ -319,6 +298,14 @@
       fi
     }
 
+    function unset_entries_for_custom_grub
+    {
+      if ! sed -i "s/+'/-'/g" "${1}" &> /dev/null; then
+        print_prefix_error "Failed to disable entries for GRUB proxy file."
+        return 1
+      fi
+    }
+
     function update_custom_grub
     {
       echo "Updating entries..."
@@ -348,14 +335,6 @@
     {
       echo "Updating GRUB..."
       sudo update-grub
-    }
-
-    function unset_entries_for_custom_grub
-    {
-      if ! sed -i "s/+'/-'/g" "${1}" &> /dev/null; then
-        print_prefix_error "Failed to disable entries for GRUB proxy file."
-        return 1
-      fi
     }
 
     function update_initramfs
@@ -409,7 +388,7 @@
         GRUB_MENU_ENTRY_TITLE_ENUM+=( "${grub_menu_entry_title}" )
 
         if [[ "${KEY}" -eq 0 ]]; then
-          set_preferred_iommu_group_for_multiboot_setup "${iommu_group_id}" "${grub_menu_entry_title}"
+          set_preferred_grub_menu_entry_for_multiboot_setup "${iommu_group_id}" "${grub_menu_entry_title}"
         fi
 
         GRUB_CUSTOM_FILE_CONTENTS+=(
@@ -429,6 +408,57 @@
           ""
         )
       done
+    }
+
+    function set_kernel_cmdline_iommu_driver
+    {
+      case "${CPU_VENDOR_ID}" in
+        *"amd"* )
+          PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_AMD_IOMMU_DRIVER}" ;;
+
+        *"intel"* )
+          PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_INTEL_IOMMU_DRIVER}" ;;
+
+        * )
+          print_prefix_error "Unknown CPU vendor '${CPU_VENDOR_ID}'."
+          return 1 ;;
+      esac
+    }
+
+    function set_output_for_multiboot_setup
+    {
+      local -ir max_parsed_kernels=3
+      local -a kernel_enum=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | cut -c 2- | sort -r | head -n ${max_parsed_kernels} ) )
+      local -r system_disk=$( df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1 )
+      local -r system_distro=$( lsb_release -i -s )
+      local -r system_fstype=$( blkid -s TYPE | grep ${system_disk} | cut -d '"' -f2 )
+      local -r system_kernel=$( uname -o )
+      local -r system_os=$( uname )
+      local -r system_uuid=$( blkid -s UUID | grep ${system_disk} | cut -d '"' -f2 )
+      local prefix_grub_cmdline_temp=""
+      prefix_grub_cmdline_temp+="${prefix_grub_cmdline} "
+
+      local grub_cmdline_hugepages=""
+      get_kernel_command_hugepages "grub_cmdline_hugepages"
+
+      if [[ ! -z "${grub_cmdline_hugepages}" ]]; then
+        prefix_grub_cmdline_temp+="${grub_cmdline_hugepages} "
+      fi
+
+      local grub_cmdline_isolcpu=""
+      get_kernel_command_isolcpu "grub_cmdline_isolcpu"
+
+      if [[ ! -z "${get_kernel_command_isolcpu}" ]]; then
+        prefix_grub_cmdline_temp+="${get_kernel_command_isolcpu} "
+      fi
+
+      readonly prefix_grub_cmdline_temp
+      set_grub_menu_entry_enum_for_multiboot_setup
+
+      if ! is_enum "GRUB_CUSTOM_FILE_CONTENTS"; then
+        print_prefix_error "Multiboot setup output is empty."
+        return 1
+      fi
     }
 
     function set_output_for_static_setup
@@ -506,43 +536,7 @@
       fi
     }
 
-    function set_output_for_multiboot_setup
-    {
-      local -ir max_parsed_kernels=3
-      local -a kernel_enum=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | cut -c 2- | sort -r | head -n ${max_parsed_kernels} ) )
-      local -r system_disk=$( df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1 )
-      local -r system_distro=$( lsb_release -i -s )
-      local -r system_fstype=$( blkid -s TYPE | grep ${system_disk} | cut -d '"' -f2 )
-      local -r system_kernel=$( uname -o )
-      local -r system_os=$( uname )
-      local -r system_uuid=$( blkid -s UUID | grep ${system_disk} | cut -d '"' -f2 )
-      local prefix_grub_cmdline_temp=""
-      prefix_grub_cmdline_temp+="${prefix_grub_cmdline} "
-
-      local grub_cmdline_hugepages=""
-      get_kernel_command_hugepages "grub_cmdline_hugepages"
-
-      if [[ ! -z "${grub_cmdline_hugepages}" ]]; then
-        prefix_grub_cmdline_temp+="${grub_cmdline_hugepages} "
-      fi
-
-      local grub_cmdline_isolcpu=""
-      get_kernel_command_isolcpu "grub_cmdline_isolcpu"
-
-      if [[ ! -z "${get_kernel_command_isolcpu}" ]]; then
-        prefix_grub_cmdline_temp+="${get_kernel_command_isolcpu} "
-      fi
-
-      readonly prefix_grub_cmdline_temp
-      set_grub_menu_entry_enum_for_multiboot_setup
-
-      if ! is_enum "GRUB_CUSTOM_FILE_CONTENTS"; then
-        print_prefix_error "Multiboot setup output is empty."
-        return 1
-      fi
-    }
-
-    function set_preferred_iommu_group_for_multiboot_setup
+    function set_preferred_grub_menu_entry_for_multiboot_setup
     {
       local grub_menu_entry_title="${1}"
       local iommu_group_id="${2}"
@@ -556,6 +550,12 @@
         || ( "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_LAST}" && [[ "${iommu_group_id}" -eq "${IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM[-1]}" ]] ); then
         PREGERRED_GRUB_MENU_ENTRY_TITLE="${grub_menu_entry_title}"
       fi
+    }
+
+    function set_preferred_iommu_group_for_multiboot_setup
+    {
+      declare -gi MULTIBOOT_PREFERRED_IOMMU_GROUP_ID="${1}"
+      MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_VALUE=true
     }
 
   # <summary>Write output</summary>
@@ -579,15 +579,6 @@
       write_output_to_grub_for_multiboot_setup || return 1
     }
 
-    function write_output_to_grub_for_multiboot_setup
-    {
-      if ! sed -i '/'"${line_to_match}"'/c\'"${line_grub_default}" "${GRUB_DEST_PATH}" \
-        || ! echo -e "\n${GRUB_CUSTOM_FILE_CONTENTS[*]}" >> "${GRUB_CUSTOM_DEST_PATH}" ; then
-        print_prefix_error "Failed to overwrite target lines of files."
-        return 1
-      fi
-    }
-
     function write_output_for_static_setup
     {
       "${HAS_RESTORED_DEFAULT_FILES}" || return 1
@@ -603,6 +594,15 @@
       fi
 
       write_output_to_remaining_files_for_static_setup || return 1
+    }
+
+    function write_output_to_grub_for_multiboot_setup
+    {
+      if ! sed -i '/'"${line_to_match}"'/c\'"${line_grub_default}" "${GRUB_DEST_PATH}" \
+        || ! echo -e "\n${GRUB_CUSTOM_FILE_CONTENTS[*]}" >> "${GRUB_CUSTOM_DEST_PATH}" ; then
+        print_prefix_error "Failed to overwrite target lines of files."
+        return 1
+      fi
     }
 
     function write_output_to_grub_for_static_setup
