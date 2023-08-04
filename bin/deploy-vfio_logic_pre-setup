@@ -46,10 +46,10 @@
       declare -gu HUGEPAGES_BYTE_SUFFIX=""
       declare -g IS_HUGEPAGES_COUNT_SET=false
       declare -g IS_HUGEPAGES_SIZE_SET=false
-      declare -g LINE_GRUB_CMDLINE_HUGEPAGES=""
+      declare -g GRUB_CMDLINE_HUGEPAGES=""
 
     # <summary>Isolcpus</summary>
-      declare -g _LINE_GRUB_CMDLINE_ISOLCPU=""
+      declare -g GRUB_CMDLINE_ISOLCPU=""
   }
 
   function do_pre_setup
