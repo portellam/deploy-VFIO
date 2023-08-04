@@ -477,7 +477,7 @@
           fi
         done
 
-        get_name_for_first_vga_in_group "${this_iommu_group_id}" "this_iommu_group_vga_name" &> /dev/null
+        get_name_for_first_vga_device_in_iommu_group "${this_iommu_group_id}" "this_iommu_group_vga_name" &> /dev/null
         get_enums_for_parsed_selection "selection_without_this_group_enum" "driver_enum" "stub_hwid_enum" "vfio_hwid_enum" "driver_enum" "this_driver_delim"
         get_comma_delimited_string_from_enum "stub_hwid_enum" "this_stub_hwid_delim"
         get_comma_delimited_string_from_enum "vfio_hwid_enum" "this_vfio_hwid_delim"
@@ -595,14 +595,14 @@
       local grub_cmdline_isolcpu=""
       get_kernel_command_isolcpu "grub_cmdline_isolcpu"
 
-      GetListsForSelection "IOMMU_GROUPS_FOR_VFIO_ENUM" "driver_enum" "stub_hwid_enum" "vfio_hwid_enum"
+      get_enums_for_selection "IOMMU_GROUPS_FOR_VFIO_ENUM" "driver_enum" "stub_hwid_enum" "vfio_hwid_enum"
       get_comma_delimited_string_from_enum "driver_enum" "driver_delim"
       get_comma_delimited_string_from_enum "stub_hwid_enum" "stub_hwid_delim"
       get_comma_delimited_string_from_enum "vfio_hwid_enum" "vfio_hwid_delim"
 
-      if ! IsEnum "driver_enum" \
-        && ! IsEnum "stub_hwid_enum" \
-        && ! IsEnum "vfio_hwid_enum"; then
+      if ! is_enum "driver_enum" \
+        && ! is_enum "stub_hwid_enum" \
+        && ! is_enum "vfio_hwid_enum"; then
         print_prefix_error "Static setup output is empty."
         return 1
       fi
