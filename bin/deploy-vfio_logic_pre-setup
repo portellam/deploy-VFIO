@@ -67,18 +67,13 @@
   }
 
   # <summary>Execution</summary>
-    # <summary>
-    # Add user to necessary user groups.
-    # </summary>
       function add_user_to_groups_for_pre_setup
       {
-        if ! sudo adduser "${_USER}" "input" &> /dev/null \
-          || ! sudo adduser "${_USER}" "libvirt" &> /dev/null; then
-          echo -e "${_PREFIX_ERROR} Failed to add user '${_USER}' to groups."
+        if ! sudo adduser "${USER}" "input" &> /dev/null \
+          || ! sudo adduser "${USER}" "libvirt" &> /dev/null; then
+          print_prefix_error "Failed to add user '${USER}' to groups."
           return 1
         fi
-
-        return 0
       }
 
     # <summary>
@@ -86,157 +81,47 @@
     # </summary
       function execute_static_isolcpu_setup
       {
-        function set_thread_pair_enums
-        {
-          for smt_factor in ${smt_factor_enum[@]}; do
-            local -a host_threads_delimited_enum=( )
-            local -a guest_threads_delimited_enum=( )
-            local -i thread
+        execute_static_isolcpu_setup_prompt || return 0
+        local -r output="Allocating CPU threads..."
 
-            # <remarks>Find thread sets for host.</remarks>
-            for core in ${host_cores_enum[@]}; do
-              set_thread_by_core_and_smt_factor "thread" "core" "smt_factor" "total_cores_count"
-              host_threads_enum+=( "${THREAD}" )
-              host_threads_delimited_enum+=( "${THREAD}" )
-            done
-
-            # <remarks>Find thread sets for guest(s).</remarks>
-            for CORE in ${GUEST_CORES_ENUM[@]}; do
-              set_thread_by_core_and_smt_factor "THREAD"
-              GUEST_THREADS_ENUM+=( "${THREAD}" )
-              guest_threads_delimited_enum+=( "${THREAD}" )
-            done
-
-            # <remarks>Save thread sets to delimited list.</remarks>
-            local -i FIRST_THREAD_SET="${host_threads_delimited_enum[0]}"
-            local -i LAST_THREAD_SET="${host_threads_delimited_enum[-1]}"
-            local THREAD_SET="${FIRST_THREAD_SET}"
-
-            if [[ "${FIRST_THREAD_SET}" -ne "${LAST_THREAD_SET}" ]]; then
-              local THREAD_SET="${FIRST_THREAD_SET}-${LAST_THREAD_SET}"
-            fi
-
-            HOST_THREADS_DELIM+="${THREAD_SET},"
-
-            local -i FIRST_THREAD_SET="${guest_threads_delimited_enum[0]}"
-            local -i LAST_THREAD_SET="${guest_threads_delimited_enum[-1]}"
-            local THREAD_SET="${FIRST_THREAD_SET}"
-
-            if [[ "${FIRST_THREAD_SET}" -ne "${LAST_THREAD_SET}" ]]; then
-              local THREAD_SET="${FIRST_THREAD_SET}-${LAST_THREAD_SET}"
-            fi
-
-            GUEST_THREADS_DELIM+="${THREAD_SET},"
-          done
-
+        if ! "${PRE_SETUP_DO_EXECUTE_ISOLCPU}"; then
           return 0
-        }
-
-        function Main
-        {
-          Ask
-
-          if ! "${PRE_SETUP_DO_EXECUTE_ISOLCPU}"; then
-            return 0
-          fi
-
-          local -i cores_allocated_to_host=1
-          local -i total_cores_count=$( cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+" )
-          local -i total_threads_count=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+" )
-
-          # <remarks>Set maximum number of cores allocated to host.</remarks>
-          if [[ "${total_cores_count}" -ge 4 ]]; then
-            cores_allocated_to_host=2
-
-          elif [[ "${total_cores_count}" -le 3 ]] \
-            && [[ "${total_cores_count}" -ge 2 ]]; then
-            cores_allocated_to_host=1
-
-          else
-            print_prefix_error "Insufficient CPU cores."
-            return 1
-          fi
-
-          # <remarks>Get thread sets, for host and guest(s).</remarks>
-          local -a host_cores_enum=( $( seq 0 $(( "${CORES_ALLOCATED_TO_HOST}" - 1 )) ) )
-          local -a host_threads_enum=( )
-          local -a GUEST_CORES_ENUM=( $( seq "${CORES_ALLOCATED_TO_HOST}" $(( "${TOTAL_CORES_COUNT}" - 1 )) ) )
-          local -a GUEST_THREADS_ENUM=( )
-          local -i SMT_FACTOR=$(( "${TOTAL_THREADS_COUNT}" / "${TOTAL_CORES_COUNT}" ))
-          local -a SMT_FACTOR_ENUM=( $( seq 0 $(( "${SMT_FACTOR}" - 1 )) ) )
-          GetThreadSetsForHostAndGuest
-
-          # <remarks>Truncate last delimiter.</remarks>
-          if [[ ${HOST_THREADS_DELIM: -1} == "," ]]; then
-            HOST_THREADS_DELIM="${HOST_THREADS_DELIM::-1}"
-          fi
-
-          if [[ ${GUEST_THREADS_DELIM: -1} == "," ]]; then
-            GUEST_THREADS_DELIM="${GUEST_THREADS_DELIM::-1}"
-          fi
-
-          # <remarks>
-          # save output to string for cpuset and cpumask
-          # example:
-          #   host 0-1,8-9
-          #   virt 2-7,10-15
-          #
-          # information
-          # cores   bit masks     mask
-          # 0-7     0b11111111    FF    # total cores
-          # 0,4     0b00010001    11    # host cores
-          #
-          # 0-11    0b111111111111  FFF   # total cores
-          # 0-1,6-7   0b000011000011  C3    # host cores
-          #
-          # </remarks>
-
-          # <remarks>Find CPU mask.</remarks>
-          # local GET_HEX_MASK='echo "obase=16; ${THREAD}_DECIMAL" | bc'
-          # local -i HOST_THREADS_HEX_MASK=0
-          # local -i TOTAL_THREADS_HEX_MASK=0
-
-          # <remarks>Add each decimal mask to sum.</remarks>
-          # for THREAD in ${HOST_THREADS_ENUM[@]}; do
-          #   local -i THREAD_DECIMAL=$(( 2 ** ${THREAD} ))
-          #   local -i THREAD_HEX_MASK=$( eval "${GET_HEX_MASK}" )
-          #   HOST_THREADS_HEX_MASK+="${THREAD_HEX_MASK}"
-          # done
-
-          # <remarks>Convert hexadecimal mask into hexadecimal.</remarks>
-          # local HOST_THREADS_HEX=$( printf '%x\n' "${HOST_THREADS_HEX_MASK}" )
-          # local -i TOTAL_THREADS_HEX_MASK=$(( ( 2 ** ${TOTAL_THREADS_COUNT} ) - 1 ))
-          # local GUEST_THREADS_HEX=$( printf '%x\n' "${TOTAL_THREADS_HEX_MASK}" )
-
-          # <remarks>Save changes.</remarks>
-          _LINE_GRUB_CMDLINE_ISOLCPU="isolcpus=${GUEST_THREADS_DELIM} nohz_full=${GUEST_THREADS_DELIM} rcu_nocbs=${GUEST_THREADS_DELIM}"
-          _PRE_SETUP_DONE_ISOLCPU=true
-          return 0
-        }
-
-        local HOST_THREADS_DELIM=""
-        local GUEST_THREADS_DELIM=""
-
-        Main
-        SetExitCode
-
-        if GetPassExitCode \
-          && "${_PRE_SETUP_DO_EXECUTE_ISOLCPU}"; then
-          echo -e "Allocated to Host:\t${HOST_THREADS_DELIM}"
-          echo -e "Allocated to Guest:\t${GUEST_THREADS_DELIM}"
         fi
 
-        execute_static_isolcpu_setup_prompt || return 1
-        set_input_devices
-        local -r output= "Allocating CPU threads..."
         print_suffix_work "${output}"
 
-        if is_input_device_enum_valid; then
+        if execute_static_isolcpu_setup_main; then
           PRE_SETUP_DO_EXECUTE_ISOLCPU=true
           print_suffix_pass "${output}"
         else
           print_suffix_fail "${output}"
         fi
+      }
+
+      function execute_static_isolcpu_setup_main
+      {
+        local -i cores_allocated_to_host=1
+        local -i total_cores_count=$( cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+" )
+        local -i total_threads_count=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+" )
+
+        set_maximum_count_of_cores_allocated_to_host "cores_allocated_to_host" "${total_cores_count}" || return 1
+
+        local -a host_cores_enum=( $( seq 0 $(( "${cores_allocated_to_host}" - 1 )) ) )
+        local -a host_threads_enum=( )
+        local -a guest_cores_enum=( $( seq "${cores_allocated_to_host}" $(( "${total_cores_count}" - 1 )) ) )
+        local -a guest_threads_enum=( )
+        local -ir smt_factor=$(( "${total_threads_count}" / "${total_cores_count}" ))
+        local -ar smt_factor_enum=( $( seq 0 $(( "${smt_factor}" - 1 )) ) )
+        local host_threads_delim=""
+        local guest_threads_delim=""
+
+        set_thread_pair_enums_and_delims
+
+        GRUB_CMDLINE_ISOLCPU="isolcpus=${guest_threads_delim} nohz_full=${guest_threads_delim} rcu_nocbs=${guest_threads_delim}"
+        PRE_SETUP_DO_EXECUTE_ISOLCPU=true
+
+        echo -e "Host CPU thread(s):\t${host_threads_delim}"
+        echo -e "Guest CPU thread(s):\t${guest_threads_delim}"
       }
 
       function execute_static_isolcpu_setup_prompt
@@ -404,7 +289,7 @@
     # </summary>
       function execute_virtual_kvm_setup
       {
-        execute_virtual_kvm_setup_prompt || return 1
+        execute_virtual_kvm_setup_prompt || return 0
         set_input_devices
         local -r output="Executing Evdev setup..."
         print_suffix_work "${output}"
@@ -469,13 +354,92 @@
       reference="${GRUB_CMDLINE_ISOLCPU}"
     }
 
-    function set_thread_by_core_and_smt_factor
+    function set_maximum_count_of_cores_allocated_to_host
     {
       local -n reference="${1}"
-      local -ir core="${2}"
-      local -ir smt_factor="${3}"
-      local -ir total_cores_count="${3}"
-      reference=$(( core + ( smt_factor * total_cores_count ) ))       # NOTE: VS Code reports a syntax error here. There is none.
+      local total_cores_count="${2}"
+
+      if [[ "${total_cores_count}" -ge 4 ]]; then
+        reference=2
+
+      elif [[ "${total_cores_count}" -le 3 ]] \
+        && [[ "${total_cores_count}" -ge 2 ]]; then
+        reference=1
+
+      else
+        print_prefix_error "Insufficient CPU cores."
+        return 1
+      fi
+    }
+
+    function set_thread_pair_delim_for_guest
+    {
+      local -i first_thread="${guest_threads_delimited_enum[0]}"
+      local -i first_thread="${guest_threads_delimited_enum[-1]}"
+      local thread_set="${first_thread}"
+
+      if [[ "${first_thread}" -ne "${last_thread}" ]]; then
+        local thread_set="${first_thread}-${last_thread}"
+      fi
+
+      guest_threads_delim+="${thread_set},"
+    }
+
+    function set_thread_pair_delim_for_host
+    {
+      local -i first_thread="${host_threads_delimited_enum[0]}"
+      local -i last_thread="${host_threads_delimited_enum[-1]}"
+      local thread_set="${first_thread_set}"
+
+      if [[ "${first_thread}" -ne "${last_thread}" ]]; then
+        thread_set="${first_thread}-${last_thread}"
+      fi
+
+      host_threads_delim+="${thread_set},"
+    }
+
+    function set_thread_pair_enums_for_guest
+    {
+      local -n thread="${1}"
+
+      for core in ${guest_cores_enum[@]}; do
+        reference=$(( core + ( smt_factor * total_cores_count ) ))       # NOTE: VS Code reports a syntax error here. There is none.
+        guest_threads_enum+=( "${thread}" )
+        guest_threads_delimited_enum+=( "${thread}" )
+      done
+    }
+
+    function set_thread_pair_enums_for_host
+    {
+      local -n thread="${1}"
+
+      for core in ${host_cores_enum[@]}; do
+        reference=$(( core + ( smt_factor * total_cores_count ) ))       # NOTE: VS Code reports a syntax error here. There is none.
+        host_threads_enum+=( "${thread}" )
+        host_threads_delimited_enum+=( "${thread}" )
+      done
+    }
+
+    function set_thread_pair_enums_and_delims
+    {
+      for smt_factor in ${smt_factor_enum[@]}; do
+        local -a host_threads_delimited_enum=( )
+        local -a guest_threads_delimited_enum=( )
+        local -i thread
+
+        set_thread_pair_enums_for_host "thread"
+        set_thread_pair_enums_for_guest "thread"
+        set_thread_pair_delim_for_host
+        set_thread_pair_delim_for_guest
+      done
+
+      if [[ ${host_threads_delim: -1} == "," ]]; then
+        host_threads_delim="${host_threads_delim::-1}"
+      fi
+
+      if [[ ${guest_threads_delim: -1} == "," ]]; then
+        guest_threads_delim="${guest_threads_delim::-1}"
+      fi
     }
 # </functions>
 
