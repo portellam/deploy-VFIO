@@ -179,6 +179,84 @@
       reference="$( lspci -ms ${device} | cut -d '"' -f 4 )"
     }
 
+    function get_enums_for_selection
+    {
+      local -n reference="${1}"
+      local -n driver_reference="${2}"
+      local -n stud_hwid_reference="${3}"
+      local -n vfio_hwid_reference="${4}"
+
+      for iommu_group_id in ${reference[@]}; do
+        local -a device_list="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
+
+        for device in ${device_list[@]}; do
+          local driver=""
+          local hwid=""
+          SetDeviceDriver "${device}" "driver"
+          SetDeviceHardwareID "${device}" "hwid"
+
+          if [[ ! -z "${driver}" ]] \
+            && is_device_not_excluded "${device}"; then
+            driver_reference+=( "${driver}" )
+          fi
+
+          if [[ ! -z "${hwid}" ]]; then
+            if is_device_for_pci_stub "${device}"; then
+              stud_hwid_reference+=( "${hwid}" )
+            else
+              vfio_hwid_reference+=( "${hwid}" )
+            fi
+          fi
+        done
+      done
+
+      set_ifs_to_newline
+      driver_reference=( $( sort -u <<<"${driver_reference[*]}" ) )
+      stud_hwid_reference=( $( sort -u <<<"${stud_hwid_reference[*]}" ) )
+      vfio_hwid_reference=( $( sort -u <<<"${vfio_hwid_reference[*]}" ) )
+      unset_ifs
+
+      if ! is_enum_empty "driver_reference"; then
+        return 0
+      fi
+
+      if is_enum_empty "stud_hwid_reference" \
+        && is_enum_empty "vfio_hwid_reference"; then
+        return 0
+      fi
+
+      print_prefix_error "No drivers or hardware IDs found for selection."
+      return 1
+    }
+
+    function get_name_for_first_vga_device_in_iommu_group
+    {
+      if [[ -z "${2}" ]] \
+        || ! is_int "${1}"; then
+        return 1
+      fi
+
+      local -ir iommu_group_id="${1}"
+      local -n device_name="${2}"
+      local -ar device_list="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
+      local name=""
+
+      for device in ${device_list[@]}; do
+        if ! is_device_vga "${device}"; then
+          continue
+        fi
+
+        set_device_name "${device}" "name" && break
+      done
+
+      if [[ -z "${NAME}" ]]; then
+        print_prefix_error "Failed to find device name of any VGA device in IOMMU group ${IOMMU_GROUP_ID}."
+        return 1
+      fi
+
+      device_name="${NAME}"
+    }
+
   # <summary>Host validation</summary>
     function does_host_not_have_existing_vfio_setup
     {
