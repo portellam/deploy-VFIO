@@ -56,7 +56,7 @@
       declare -gr APPARMOR_QEMU_SRC_PATH="${ETC_BACKUPS_PATH}/libvirt-qemu"
       declare -gr QEMU_DEST_PATH="/etc/libvirt/qemu.conf"
       declare -gr QEMU_SRC_PATH="${ETC_BACKUPS_PATH}/qemu.conf"
-}
+  }
 
   function do_pre_setup
   {
@@ -122,7 +122,6 @@
       print_suffix_work "${output}"
 
       if execute_hugepages_setup_main; then
-        PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
         print_suffix_pass "${output}"
       else
         print_suffix_fail "${output}"
@@ -183,7 +182,6 @@
       print_suffix_work "${output}"
 
       if execute_static_isolcpu_setup_main; then
-        PRE_SETUP_DO_EXECUTE_ISOLCPU=true
         print_suffix_pass "${output}"
       else
         print_suffix_fail "${output}"
@@ -291,7 +289,6 @@
         )
       fi
 
-
       local -a file1_evdev_cgroups_output=( )
 
       if "${PRE_SETUP_DO_EXECUTE_EVDEV}"; then
@@ -372,7 +369,6 @@
       print_suffix_work "${output}"
 
       if is_input_device_enum_valid; then
-        PRE_SETUP_DO_EXECUTE_EVDEV=true
         print_suffix_pass "${output}"
       else
         print_suffix_fail "${output}"
@@ -533,6 +529,8 @@
         print_prefix_error "Cannot parse input devices."
         return 1
       fi
+
+      PRE_SETUP_DO_EXECUTE_EVDEV=true
     }
 
     function set_input_devices
