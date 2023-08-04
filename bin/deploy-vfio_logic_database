@@ -41,11 +41,30 @@
     declare -ga IOMMU_GROUPS_WITH_VGA_FOR_HOST_ENUM=( )
     declare -ga IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM=( )
 
-    declare -gr DEFAULT_XML_FILE="${BACKUPS_PATH}/parse.xml"        # TODO: declare backups path. NOTE: unused param.
+    declare -gr DEFAULT_XML_FILE="${ETC_BACKUPS_PATH}/parse.xml"
     declare -g XML_FILE="${DEFAULT_XML_FILE}"
   }
 
   function do_parse_database
+  {
+    if ! create_temp_files_for_database \
+      || ! do_try_parse_database; then
+      do_cleanup_database
+      return 1
+    fi
+
+    do_cleanup_database
+  }
+
+  function do_cleanup_database
+  {
+    if ! restore_temp_files_for_database \
+      || ! delete_temp_files_for_database; then
+      print_prefix_error "Database: Cleanup failed."
+    fi
+  }
+
+  function do_try_parse_database
   {
     do_parse_database_prompt || return 0
     is_unparsed_enum_valid || return 1
@@ -75,22 +94,21 @@
     DATABASE_DO_PARSE_DATABASE=true
   }
 
-  function is_unparsed_enum_valid
-  {
-    local -r output="Invalid IOMMU groups."
+  # <summary>Files</summary>
+    function create_temp_files_for_database
+    {
+      create_temp_file_of_file "${XML_FILE}" || return 1
+    }
 
-    if ! is_enum "IOMMU_GROUP_ID_ENUM"; then
-      print_prefix_error "${output}"
-      return 1
-    fi
+    function restore_temp_files_for_database
+    {
+      copy_temp_file_to_file "${XML_FILE}" || return 1
+    }
 
-    for value in ${IOMMU_GROUP_ID_ENUM[@]}; do
-      if ! is_int "${value}"; then
-        print_prefix_error "${output}"
-        return 1
-      fi
-    done
-  }
+    function delete_temp_files_for_database
+    {
+      delete_temp_file_of_file "${XML_FILE}" || return 1
+    }
 
   # <summary>Getters</summary>
     function get_device_class
@@ -337,6 +355,23 @@
 
       for device in ${device_enum[@]}; do
         is_device_not_binded_to_vfio "${device}" || return 1
+      done
+    }
+
+    function is_unparsed_enum_valid
+    {
+      local -r output="Invalid IOMMU groups."
+
+      if ! is_enum "IOMMU_GROUP_ID_ENUM"; then
+        print_prefix_error "${output}"
+        return 1
+      fi
+
+      for value in ${IOMMU_GROUP_ID_ENUM[@]}; do
+        if ! is_int "${value}"; then
+          print_prefix_error "${output}"
+          return 1
+        fi
       done
     }
 
