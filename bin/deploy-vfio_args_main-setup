@@ -33,7 +33,6 @@
         shift
         get_argument_enum_for_multiboot_setup "$@" || return 1
         pop_input_enum_if_last_option_contains_argument "${1}"
-        MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
         MAIN_SETUP_DO_EXECUTE_MULTIBOOT=true
       fi
     }
@@ -45,7 +44,6 @@
         shift
         get_argument_enum_for_static_setup "$@" || return 1
         pop_input_enum_if_last_option_contains_argument "${1}"
-        MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
         MAIN_SETUP_DO_EXECUTE_STATIC=true
       fi
     }
@@ -54,14 +52,13 @@
     {
       if [[ "${1}" == "--skip-vfio-setup" ]]; then
         MAIN_SETUP_DO_SKIP_ALL=true
-        MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
       fi
     }
 
     function is_option_uninstall_main_setup
     {
       if [[ "${1}" == "--uninstall-vfio-setup" ]]; then
-        MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
+        MAIN_SETUP_DO_EXECUTE_UNINSTALL=true
       fi
     }
 

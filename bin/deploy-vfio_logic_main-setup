@@ -7,6 +7,8 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# TODO: add logic to backup existing files and restore, or write to temp files before finish and only overwrite on success.
+
 # <sets>
   set -o nounset
   set -o pipefail
@@ -26,7 +28,7 @@
 
     declare -g MAIN_SETUP_ARE_PARAMS_SET=true
 
-    declare -g MAIN_SETUP_ASK_TO_EXECUTE_ALL=true
+    declare -g MAIN_SETUP_DO_EXECUTE_UNINSTALL=true
     declare -g MAIN_SETUP_DO_EXECUTE_MULTIBOOT=false
     declare -g MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_DEFAULT=false
     declare -g MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_FIRST=false
@@ -38,7 +40,6 @@
     declare -g MAIN_SETUP_DO_SKIP_ALL=false
 
     # <summary>Kernel commands for VFIO setup</summary>
-      declare -g DRIVER_DELIM=""
       declare -g HWID_DELIM=""
 
     # <summary>Kernel commands for drivers</summary>
@@ -83,16 +84,24 @@
 
   function do_main_setup
   {
-    if ! "${DATABASE_DO_PARSE_DATABASE}"; then
-      return 0
-    fi
+    do_skip_main_setup && return 0
 
-    if ! is_parsed_enum_valid \
-      || is_parsed_enum_of_vga_valid; then
+    if ! specify_vfio_setup_prompt \
+      || ! is_parsed_enum_valid \
+      || ! is_parsed_enum_of_vga_valid; then
       return 1
     fi
 
-    echo "in main setup now"
+    execute_given_setup || return 1
+  }
+
+  function do_skip_main_setup
+  {
+    if "${DATABASE_DO_PARSE_DATABASE}" \
+      && ! "${MAIN_SETUP_DO_SKIP_ALL}"; then
+      print_prefix_note "Skipping VFIO setup."
+      return 1
+    fi
   }
 
   # <summary>Interaction</summary>
@@ -165,7 +174,7 @@
     {
       if "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT}" \
         || "${MAIN_SETUP_DO_EXECUTE_STATIC}" \
-        || ! "${MAIN_SETUP_ASK_TO_EXECUTE_ALL}"; then
+        || "${MAIN_SETUP_DO_EXECUTE_UNINSTALL}"; then
         return 0
       fi
 
@@ -185,7 +194,7 @@
             break ;;
 
           [Uu]* )
-            MAIN_SETUP_ASK_TO_EXECUTE_ALL=false
+            MAIN_SETUP_DO_EXECUTE_UNINSTALL=true
             break ;;
 
           [Nn]* )
@@ -252,6 +261,23 @@
     }
 
   # <summary>Main setups</summary>
+    function execute_given_setup
+    {
+      case true in
+        "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT}" )
+          execute_multiboot_setup || return 1 ;;
+
+        "${MAIN_SETUP_DO_EXECUTE_STATIC}" )
+          execute_multiboot_setup || return 1 ;;
+
+        "${MAIN_SETUP_DO_EXECUTE_UNINSTALL}" )
+          execute_uninstall_vfio_setup || return 1 ;;
+
+        * )
+          return 1
+      esac
+    }
+
     function execute_multiboot_setup
     {
       if ! "${HAS_RESTORED_DEFAULT_FILES}" \
@@ -259,6 +285,7 @@
         || ! specify_grub_menu_entry_for_multiboot_setup \
         || ! write_output_for_multiboot_setup \
         || ! execute_update_after_setup; then
+        print_prefix_error "Multiboot VFIO setup has failed."
         return 1
       fi
     }
@@ -270,6 +297,7 @@
         || ! set_output_for_static_setup \
         || ! write_output_for_static_setup \
         || ! execute_update_after_setup; then
+        print_prefix_error "Static VFIO setup has failed."
         return 1
       fi
     }
@@ -281,7 +309,7 @@
       update_initramfs || return 1
     }
 
-    function uninstall_vfio_setup
+    function execute_uninstall_vfio_setup
     {
       if ! "${HAS_RESTORED_DEFAULT_FILES}" \
         || ! execute_update_after_setup; then
