@@ -93,10 +93,8 @@
 
     # <summary>Static VFIO setup with GRUB</summary>
       # <summary>Filenames</summary>
-        declare -gr GRUB_SRC_BACKUP_PATH="${ETC_BACKUPS_PATH}/grub.new"
-        declare -gr GRUB_SRC_PATH="${ETC_BACKUPS_PATH}/grub"
-        declare -gr GRUB_DEST_PATH_1="/etc/default/grub"
-        declare -gr GRUB_DEST_PATH_2="/usr/share/grub/default/grub"
+        declare -gr GRUB_SRC_PATH="/usr/share/grub/default/grub"
+        declare -gr GRUB_DEST_PATH="/etc/default/grub"
 
       # <summary>File output</summary>
         declare -g GRUB_CMDLINE_DEFAULT=""
@@ -150,35 +148,102 @@
     fi
   }
 
+  # <summary>Execution</summary>
+    function execute_given_setup
+    {
+      case true in
+        "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT}" )
+          execute_multiboot_setup || return 1 ;;
+
+        "${MAIN_SETUP_DO_EXECUTE_STATIC}" )
+          execute_multiboot_setup || return 1 ;;
+
+        "${MAIN_SETUP_DO_EXECUTE_UNINSTALL}" )
+          execute_uninstall_vfio_setup || return 1 ;;
+
+        * )
+          return 1
+      esac
+    }
+
+    function execute_multiboot_setup
+    {
+      if ! "${HAS_RESTORED_DEFAULT_FILES}" \
+        || ! set_output_for_multiboot_setup \
+        || ! specify_grub_menu_entry_for_multiboot_setup \
+        || ! write_output_for_multiboot_setup \
+        || ! execute_update_after_main_setup; then
+        print_prefix_fail "Multiboot VFIO setup has failed."
+        return 1
+      fi
+    }
+
+    function execute_static_setup
+    {
+      if ! "${HAS_RESTORED_DEFAULT_FILES}" \
+        || ! specify_static_setup_prompt \
+        || ! set_output_for_static_setup \
+        || ! write_output_for_static_setup \
+        || ! execute_update_after_main_setup; then
+        print_prefix_fail "Static VFIO setup has failed."
+        return 1
+      fi
+    }
+
+    function execute_update_after_main_setup
+    {
+      update_grub || return 1
+      set_entries_for_custom_grub || return 1
+      update_initramfs || return 1
+    }
+
+    function execute_uninstall_vfio_setup
+    {
+      if ! restore_source_files_for_main_setup \
+        || ! execute_update_after_main_setup; then
+        print_prefix_fail "Uninstall has failed."
+      fi
+    }
+
   # <summary>Files</summary>
     function create_temp_files_for_main_setup
     {
       create_temp_file_of_file "${GRUB_CUSTOM_DEST_PATH}" || return 1
-      create_temp_file_of_file "${GRUB_DEST_PATH_1}" || return 1
+      create_temp_file_of_file "${GRUB_DEST_PATH}" || return 1
       create_temp_file_of_file "${INITRAMFS_MODULES_DEST_PATH}" || return 1
       create_temp_file_of_file "${MODPROBE_BLACKLISTS_DEST_PATH}" || return 1
       create_temp_file_of_file "${MODPROBE_VFIO_DEST_PATH}" || return 1
       create_temp_file_of_file "${MODULES_DEST_PATH}" || return 1
     }
 
+    function delete_temp_files_for_main_setup
+    {
+      delete_temp_file_of_file "${GRUB_CUSTOM_DEST_PATH}" || return 1
+      delete_temp_file_of_file "${GRUB_DEST_PATH}" || return 1
+      delete_temp_file_of_file "${INITRAMFS_MODULES_DEST_PATH}" || return 1
+      delete_temp_file_of_file "${MODPROBE_BLACKLISTS_DEST_PATH}" || return 1
+      delete_temp_file_of_file "${MODPROBE_VFIO_DEST_PATH}" || return 1
+      delete_temp_file_of_file "${MODULES_DEST_PATH}" || return 1
+    }
+
     function restore_temp_files_for_main_setup
     {
       copy_temp_file_to_file "${GRUB_CUSTOM_DEST_PATH}" || return 1
-      copy_temp_file_to_file "${GRUB_DEST_PATH_1}" || return 1
+      copy_temp_file_to_file "${GRUB_DEST_PATH}" || return 1
       copy_temp_file_to_file "${INITRAMFS_MODULES_DEST_PATH}" || return 1
       copy_temp_file_to_file "${MODPROBE_BLACKLISTS_DEST_PATH}" || return 1
       copy_temp_file_to_file "${MODPROBE_VFIO_DEST_PATH}" || return 1
       copy_temp_file_to_file "${MODULES_DEST_PATH}" || return 1
     }
 
-    function delete_temp_files_for_main_setup
+    function restore_source_files_for_main_setup
     {
-      delete_temp_file_of_file "${GRUB_CUSTOM_DEST_PATH}" || return 1
-      delete_temp_file_of_file "${GRUB_DEST_PATH_1}" || return 1
-      delete_temp_file_of_file "${INITRAMFS_MODULES_DEST_PATH}" || return 1
-      delete_temp_file_of_file "${MODPROBE_BLACKLISTS_DEST_PATH}" || return 1
-      delete_temp_file_of_file "${MODPROBE_VFIO_DEST_PATH}" || return 1
-      delete_temp_file_of_file "${MODULES_DEST_PATH}" || return 1
+      copy_this_file_to_other_file "${GRUB_CUSTOM_SRC_PATH}" "${GRUB_CUSTOM_DEST_PATH}" || return 1
+      copy_this_file_to_other_file "${INITRAMFS_MODULES_SRC_PATH}" "${INITRAMFS_MODULES_DEST_PATH}" || return 1
+      copy_this_file_to_other_file "${MODPROBE_BLACKLISTS_SRC_PATH}" "${MODPROBE_BLACKLISTS_DEST_PATH}" || return 1
+      copy_this_file_to_other_file "${MODPROBE_VFIO_SRC_PATH}" "${MODPROBE_VFIO_DEST_PATH}" || return 1
+      copy_this_file_to_other_file "${MODULES_SRC_PATH}" "${MODULES_DEST_PATH}" || return 1
+      copy_this_file_to_other_file "${GRUB_SRC_PATH}" "${GRUB_DEST_PATH}" || return 1
     }
 
   # <summary>Interaction</summary>
@@ -334,63 +399,6 @@
       if ! is_valid_enum_of_iommu_groups "IOMMU_GROUPS_FOR_VFIO_ENUM"; then
         print_prefix_error "Invalid selection of devices for VFIO."
         return 1
-      fi
-    }
-
-  # <summary>Main setups</summary>
-    function execute_given_setup
-    {
-      case true in
-        "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT}" )
-          execute_multiboot_setup || return 1 ;;
-
-        "${MAIN_SETUP_DO_EXECUTE_STATIC}" )
-          execute_multiboot_setup || return 1 ;;
-
-        "${MAIN_SETUP_DO_EXECUTE_UNINSTALL}" )
-          execute_uninstall_vfio_setup || return 1 ;;
-
-        * )
-          return 1
-      esac
-    }
-
-    function execute_multiboot_setup
-    {
-      if ! "${HAS_RESTORED_DEFAULT_FILES}" \
-        || ! set_output_for_multiboot_setup \
-        || ! specify_grub_menu_entry_for_multiboot_setup \
-        || ! write_output_for_multiboot_setup \
-        || ! execute_update_after_setup; then
-        print_prefix_fail "Multiboot VFIO setup has failed."
-        return 1
-      fi
-    }
-
-    function execute_static_setup
-    {
-      if ! "${HAS_RESTORED_DEFAULT_FILES}" \
-        || ! specify_static_setup_prompt \
-        || ! set_output_for_static_setup \
-        || ! write_output_for_static_setup \
-        || ! execute_update_after_setup; then
-        print_prefix_fail "Static VFIO setup has failed."
-        return 1
-      fi
-    }
-
-    function execute_update_after_setup
-    {
-      update_grub || return 1
-      set_entries_for_custom_grub || return 1
-      update_initramfs || return 1
-    }
-
-    function execute_uninstall_vfio_setup
-    {
-      if ! "${HAS_RESTORED_DEFAULT_FILES}" \
-        || ! execute_update_after_setup; then
-        print_prefix_fail "Uninstall has failed."
       fi
     }
 
