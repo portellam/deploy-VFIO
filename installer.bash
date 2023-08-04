@@ -1,5 +1,7 @@
 #!/bin/bash/env bash
 
+exit 1    # TODO: need to update this.
+
 #
 # Filename:       installer.bash
 # Description:    Manages deploy-VFIO binaries and files.
