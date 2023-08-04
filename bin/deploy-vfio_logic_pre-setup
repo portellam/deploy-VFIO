@@ -41,7 +41,7 @@
       declare -gi HUGEPAGES_MAX_COUNT=0
       declare -gi HUGEPAGES_MAX_SIZE_IN_KIB=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | awk 'END {print $1}' )
       declare -gi HUGEPAGES_MIN_COUNT=0
-      declare -gi HUGEPAGES_MIN_SIZE_IN_KIB=$(( 4 * ${_1_GIB_IN_KIB} ))
+      declare -gi HUGEPAGES_MIN_SIZE_IN_KIB=$(( 4 * ${ONE_GIB_IN_KIB} ))
       declare -gi HUGEPAGES_SIZE_IN_KIB=$( cat /proc/meminfo | grep -i hugepages_total | cut -d ':' -f 2 | awk 'END {print $1}' )
       declare -gu HUGEPAGES_BYTE_SUFFIX=""
       declare -g IS_HUGEPAGES_COUNT_SET=false
@@ -225,10 +225,10 @@
       echo
 
       if ! "${COMMON_ARGS_IS_EXECUTION_QUIET}"; then
-        echo -e "${_SET_COLOR_YELLOW}Isolcpu${_RESET_COLOR} is a feature which isolates CPU threads from the Host machine.\nGuest(s) can use Isolcpu to a peformance benefit. Guest(s) can use isolated CPU threads, increasing responsiveness and stability, without interferrence from the Host.\n${_SET_COLOR_YELLOW}NOTE:${_RESET_COLOR} If this is skipped, the equivalent Libvirt hook for dynamic isolation will be installed.\n"
+        echo -e "${SET_COLOR_YELLOW}Isolcpu${RESET_COLOR} is a feature which isolates CPU threads from the Host machine.\nGuest(s) can use Isolcpu to a peformance benefit. Guest(s) can use isolated CPU threads, increasing responsiveness and stability, without interferrence from the Host.\n${SET_COLOR_YELLOW}NOTE:${RESET_COLOR} If this is skipped, the equivalent Libvirt hook for dynamic isolation will be installed.\n"
       fi
 
-      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Evdev${RESET_COLOR}?" || return 1
+      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Evdev${RESET_COLOR}?"
     }
 
     function execute_qemu_configuration
@@ -257,7 +257,7 @@
       if "${PRE_SETUP_DO_EXECUTE_EVDEV}"; then
         file1_contents+=(
           "${file1_permissions_output[@]}"
-          "user = \"${_USER}\""
+          "user = \"${USER}\""
           "group = \"user\""
         )
       else
@@ -353,13 +353,13 @@
 
       if ! sudo echo -e "${file1_contents[*]}" >> "${QEMU_DEST_PATH}"; then
         unset_ifs
-        print_prefix_error "Failed to write to file '${_QEMU_DEST_PATH}'."
+        print_prefix_error "Failed to write to file '${QEMU_DEST_PATH}'."
         return 1
       fi
 
       if ! sudo echo -e "${file2_contents[*]}" >> "${APPARMOR_QEMU_DEST_PATH}"; then
         unset_ifs
-        print_prefix_error "Failed to write to file '${_APPARMOR_QEMU_DEST_PATH}'."
+        print_prefix_error "Failed to write to file '${APPARMOR_QEMU_DEST_PATH}'."
         return 1
       fi
     }
@@ -388,10 +388,10 @@
       echo
 
       if ! "${COMMON_ARGS_IS_EXECUTION_QUIET}"; then
-        echo -e "${SET_COLOR_YELLOW}Evdev${_RESET_COLOR} (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between Host and Guest(s).\nGuest(s) may reference any of each (currently) listed input device.\n${SET_COLOR_YELLOW}HOW-TO:${RESET_COLOR} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
+        echo -e "${SET_COLOR_YELLOW}Evdev${RESET_COLOR} (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between Host and Guest(s).\nGuest(s) may reference any of each (currently) listed input device.\n${SET_COLOR_YELLOW}HOW-TO:${RESET_COLOR} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
       fi
 
-      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Evdev${RESET_COLOR}?" || return 1
+      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Evdev${RESET_COLOR}?"
     }
 
   # <summary>Files</summary>
@@ -464,8 +464,8 @@
       set_hugepages_min_and_max_sizes || return 1
 
       if ! is_int "${1}" \
-        || [[ "${1}" -lt "${_HUGEPAGES_MIN_COUNT}" ]] \
-        || [[ "${1}" -gt "${_HUGEPAGES_MAX_COUNT}" ]]; then
+        || [[ "${1}" -lt "${HUGEPAGES_MIN_COUNT}" ]] \
+        || [[ "${1}" -gt "${HUGEPAGES_MAX_COUNT}" ]]; then
         print_prefix_error "Please enter a valid Hugepages amount, between ${HUGEPAGES_MIN_COUNT} or ${HUGEPAGES_MAX_COUNT}."
         return 1
       fi
@@ -490,7 +490,7 @@
 
     function set_hugepages_min_and_max_sizes
     {
-      case "${_HUGEPAGES_BYTE_SUFFIX}" in
+      case "${HUGEPAGES_BYTE_SUFFIX}" in
         "2M" )
           HUGEPAGES_SIZE_IN_KIB="${TWO_MIB_IN_KIB}"
           HUGEPAGES_MIN_COUNT=2 ;;
@@ -520,7 +520,7 @@
     {
       if [[ "${HUGEPAGES_SIZE_IN_KIB}" -ge 1 ]] \
         && ( [[ "${HUGEPAGES_COUNT}" -eq "${TWO_MIB_IN_KIB}" ]] \
-          || [[ "${_HUGEPAGES_COUNT}" -eq "${_1_GIB_IN_KIB}" ]] ); then
+          || [[ "${HUGEPAGES_COUNT}" -eq "${ONE_GIB_IN_KIB}" ]] ); then
         PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
       fi
     }
