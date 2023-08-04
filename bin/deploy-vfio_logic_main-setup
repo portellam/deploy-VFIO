@@ -61,20 +61,47 @@
       declare -g PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_UNSET_FRAMEBUFFER}"
       declare -g PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_RECOMMENDED_FOR_WINDOWS10}"
 
-    # <summary>File output: Static VFIO with GRUB</summary>
-      declare -g GRUB_CMDLINE_DEFAULT=""
+    # <summary>Multiboot VFIO setup without GRUB</summary>
+      # <summary>Filenames</summary>
+        declare -gr GRUB_PATH="/etc/grub.d"
+        declare -gr GRUB_CUSTOM_PROXY_FILENAME="_custom_proxy"
+        declare -gr GRUB_CUSTOM_DEST_PATH="${GRUB_PATH}/proxifiedScripts/custom"
+        declare -gr GRUB_CUSTOM_SRC_PATH="${ETC_BACKUPS_PATH}/custom"
 
-    # <summary>File output: Static VFIO without GRUB</summary>
-      declare -ga BLACKLISTS_ENUM=( )
-      declare -ga INITRAMFS_ENUM=( )
-      declare -ga MODULES_ENUM=( )
+      # <summary>File output</summary>
+        declare -g PREFERRED_MENU_ENTRY_TITLE=""
+        declare -ga GRUB_CUSTOM_FILE_CONTENTS=( )
+        declare -ga GRUB_MENU_ENTRY_TITLE_ENUM=( "" )
 
-    # <summary>File output: Multiboot VFIO with GRUB</summary>
-      declare -g PREFERRED_MENU_ENTRY_TITLE=""
-      declare -ga GRUB_CUSTOM_FILE_CONTENTS=( )
-      declare -ga GRUB_MENU_ENTRY_TITLE_ENUM=( "" )
+    # <summary>Static VFIO setup without GRUB</summary>
+      # <summary>Filenames</summary>
+        declare -gr INITRAMFS_MODULES_DEST_PATH="/etc/initramfs-tools/modules"
+        declare -gr INITRAMFS_MODULES_SRC_PATH="${ETC_BACKUPS_PATH}/initramfs-tools"
 
-    # <summary>File output: GRUB</summary>
+        declare -gr MODPROBE_BLACKLISTS_DEST_PATH="/etc/modprobe.d/pci-blacklists.conf"
+        declare -gr MODPROBE_BLACKLISTS_SRC_PATH="${ETC_BACKUPS_PATH}/pci-blacklists.conf"
+        declare -gr MODPROBE_VFIO_DEST_PATH="/etc/modprobe.d/vfio.conf"
+        declare -gr MODPROBE_VFIO_SRC_PATH="${ETC_BACKUPS_PATH}/vfio.conf"
+
+        declare -gr MODULES_DEST_PATH="/etc/modules"
+        declare -gr MODULES_SRC_PATH="${ETC_BACKUPS_PATH}/modules"
+
+      # <summary>File output</summary>
+        declare -ga BLACKLISTS_ENUM=( )
+        declare -ga INITRAMFS_ENUM=( )
+        declare -ga MODULES_ENUM=( )
+
+    # <summary>Static VFIO setup with GRUB</summary>
+      # <summary>Filenames</summary>
+        declare -gr GRUB_SRC_BACKUP_PATH="${ETC_BACKUPS_PATH}/grub.new"
+        declare -gr GRUB_SRC_PATH="${ETC_BACKUPS_PATH}/grub"
+        declare -gr GRUB_DEST_PATH_1="/etc/default/grub"
+        declare -gr GRUB_DEST_PATH_2="/usr/share/grub/default/grub"
+
+      # <summary>File output</summary>
+        declare -g GRUB_CMDLINE_DEFAULT=""
+
+    # <summary>GRUB file output</summary>
       declare -g DEFAULT_MENU_ENTRY_TITLE="0"
 
     # <summary>Unsorted</summary>
