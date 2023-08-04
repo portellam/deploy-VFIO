@@ -1,0 +1,58 @@
+#!/bin/false
+
+#
+# Filename:       deploy-vfio_logic_post-setup
+# Description:    Recommended post-installation setups.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sets>
+  set -o nounset
+  set -o pipefail
+# </sets>
+
+# <sources>
+  source deploy-vfio_logic_common
+# </sources>
+
+# <functions>
+  function declare_parameters
+  {
+    if [[ "${POST_SETUP_ARE_PARAMS_SET}" == true ]]; then
+      return 0
+    fi
+
+    declare -g POST_SETUP_ARE_PARAMS_SET=true
+
+    declare -g POST_SETUP_ARGS_FOR_AUTO_XORG=""
+    declare -g POST_SETUP_ASK_TO_EXECUTE_ALL=true
+    declare -g POST_SETUP_DO_EXECUTE_AUDIO_LOOPBACK=false
+    declare -g POST_SETUP_DO_EXECUTE_AUTO_XORG=false
+    declare -g POST_SETUP_DO_EXECUTE_LIBVIRT_HOOKS=false
+    declare -g POST_SETUP_DO_EXECUTE_LOOKING_GLASS=false
+    declare -g POST_SETUP_DO_EXECUTE_SCREAM=false
+    declare -g POST_SETUP_DO_EXECUTE_ZRAM_SWAP=false
+    declare -g POST_SETUP_DO_SKIP_ALL=false
+    declare -g POST_SETUP_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=false1
+    declare -g POST_SETUP_HAS_ARG_AUTO_XORG_SORT_ORDER=false
+    declare -g POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE=false
+  }
+
+  function do_post_setup
+  {
+    do_skip_post_setup || return 0
+    echo "in post setup now"
+    return 0
+  }
+
+  function do_skip_post_setup
+  {
+    execute_or_skip_prompt "Skip post-setup?"
+  }
+# </functions>
+
+# <code>
+  declare_parameters
+  unset declare_parameters
+# </code

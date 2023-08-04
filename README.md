@@ -10,7 +10,7 @@
 
 ## About
 ### Description:
-Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines with real hardware, on your Linux computer. Includes many common-sense quality-of-life enhancements.
+Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines with real hardware, on your Debian Linux computer. Includes many common-sense quality-of-life enhancements.
 
 ### What is [VFIO](#VFIO)?
 #### Useful links
@@ -39,11 +39,11 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 ## How-to
 ### To install script:
 
-        sudo bash installer.bash -i
+        sudo bash install.bash -i
 
 ### To uninstall script:
 
-        sudo bash installer.bash -u
+        sudo bash install.bash -u
 
 ### Usage:
 #### * Options that skip *all* user prompts.
@@ -54,21 +54,16 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
           -h, --help        Print this help and exit.
           -q, --quiet       Reduce verbosity; print only relevant questions and status statements.
           -u, --undo        Undo changes (restore files) if script has exited early or unexpectedly.
+          --ignore-distro   Ignore distribution check for Debian or Ubuntu system.
 
 #### Parse IOMMU groups
 
         Specify the database to reference before parsing IOMMU groups.
         OPTIONS:
-          -f, --file [ARGS]             Reference file database.
-          -i, --internal                Reference local database.
-          -o, --online                  Reference online database.
-          -x, --xml                     Cross-reference XML file. Execute once to export, prior to import. Import if VFIO setup exists, to grab valid drivers.
+          -x, --xml [filename]          Cross-reference XML file. First-time, export if VFIO is not setup. Consecutive-times, imports if VFIO is setup.
 
-        ARGUMENTS: *
+        ARGUMENTS:
           [filename]                    Reference specific file.
-
-          Example:
-            -f database.txt             Reference file 'database.txt'.
 
         Specify the IOMMU groups to parse.
         OPTIONS:
@@ -149,7 +144,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 #### * Options that skip *all* user prompts.
 
 ## Features
-### Pre-setup  <sub>(vfiolib-pre-setup)</sub>
+### Pre-setup
 * **Allocate CPU**
     - **Statically** isolate Host CPU threads before allocating to Guest(s).<sup>[2](#2)</sup>
     -  Reduces Host overhead, and improves both Host and Guest performance.
@@ -165,7 +160,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
     - Implementation is known as *Evdev (Event Devices)*.<sup>[4](#4)</sup>
     - **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 
-### VFIO setup <sub>(vfiolib-setup)</sub>
+### Main setup
 * **Multi-boot VFIO setup**
     - Create multiple VFIO setups with corresponding GRUB menu entries.     **More flexibility.**
       - Select a GRUB menu entry with a VGA device excluded from VFIO.
@@ -178,13 +173,13 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
         - Append output to GRUB; single GRUB menu entry.
         - Append output to system configuration files.
     - Best for systems with one or more PCI VGA device(s) *and one integrated VGA device (iGPU)*.
-* **Dynamic VFIO setup *(unsupported currently)***
+* **Dynamic VFIO setup *(To be added in a future release)***
     - Use Libvirt hooks to bind or unbind devices at Guest(s) start or stop.
     - Most responsibility; best for more experienced users.
     - Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
     - For examples, review the referenced guides. Search for *"libvirt hook vfio bind scripts"*. Google is your friend.
 
-### Post-setup  <sub>(vfiolib-post-setup)</sub>
+### Post-setup
 * **auto-Xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.<sup>[5](#5)</sup>
 * **Guest Audio Capture**
     - Create an *Audio loopback* to output on the *Host* Audio device *Line-Out*.
@@ -201,10 +196,10 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
       - Reduce swapiness to existing Host swap devices.
       - Reduce chances of Host memory exhaustion (given an event of memory over-allocation).
     - Implementation is known as *zram-swap*.<sup>[7](#7)</sup>
-* **Virtual Audio Capture *(unsupported currently)***
+* **Virtual Audio Capture *(To be added in a future release)***
     - Setup a virtual Audio driver for Windows that provides a discrete Audio device.
     - Implementation is known as **Scream**.<sup>[8](#8)</sup>
-* **Virtual Video Capture *(unsupported currently)***
+* **Virtual Video Capture *(To be added in a future release)***
     - Setup direct-memory-access (DMA) of a PCI VGA device output (Video and Audio) from a Guest to Host.
     - Implementation is known as **LookingGlass**.<sup>[9](#9)</sup>
     - **Disclaimer:** Only supported for Windows 7/8/10/11 Guests.
@@ -230,7 +225,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 
 #### Paths for source binaries and files
 - */usr/local/bin/\**
-- */usr/local/etc/vfiolib.d\**
+- */usr/local/etc/deploy-vfio.d\**
 
 ### VFIO?
 Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.*<sup>[10](#10)</sup>
@@ -249,11 +244,11 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 ### Linux:
 | Distribution Family | Supported? | Tested Distros             |
 | ------------------- | ---------- | -------------------------- |
-| Arch                | No         | none                       |
-| Debian              | Yes        | Debian 11                  |
-| Gentoo              | No         | none                       |
-| Red Hat             | No         | none                       |
-| SUSE                | No         | none                       |
+| Arch                | No         | untested                   |
+| Debian              | *Yes*      | *Debian 11, 12*            |
+| Gentoo              | No         | untested                   |
+| Red Hat             | No         | untested                   |
+| SUSE                | No         | untested                   |
 
 ### Legacy:
 | OS           | Device type    | Brand and model                         |

@@ -1,0 +1,162 @@
+#!/bin/false
+
+#
+# Filename:       deploy-vfio_args_post-setup
+# Description:    Argument logic for post setup.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sets>
+  set -o nounset
+  set -o pipefail
+# </sets>
+
+# <sources>
+  source deploy-vfio_logic_post-setup
+# </sources>
+
+# <functions>
+  function is_option_of_post_setup
+  {
+    is_option_skip_post_setup "$@" || return 1
+    is_option_uninstall_post_setup "$@" || return 1
+    is_option_install_libvirt_hooks "$@" || return 1
+    is_option_install_zram_swap "$@" || return 1
+    is_option_install_auto_xorg "$@" || return 1
+    is_option_install_looking_glass "$@" || return 1
+    is_option_install_scream "$@" || return 1
+    is_option_install_audio_loopback "$@" || return 1
+  }
+
+  # <summary>Option getters</summary>
+    function is_option_install_audio_loopback
+    {
+      if [[ "${1}" == "--audio-loopback" ]]; then
+        POST_SETUP_ASK_TO_EXECUTE_ALL=false
+        POST_SETUP_DO_EXECUTE_AUDIO_LOOPBACK=true
+      fi
+    }
+
+    function is_option_install_auto_xorg
+    {
+      if [[ "${1}" == "--auto-xorg" ]]; then
+        get_argument_enum_for_auto_xorg "${1}" "${2}" || return 1
+        pop_input_enum_if_last_option_contains_argument "${1}" "${2}"
+        POST_SETUP_ASK_TO_EXECUTE_ALL=false
+        POST_SETUP_DO_EXECUTE_AUTO_XORG=true
+      fi
+    }
+
+    function is_option_install_libvirt_hooks
+    {
+      if [[ "${1}" == "--libvirt-hooks" ]]; then
+        POST_SETUP_ASK_TO_EXECUTE_ALL=false
+        POST_SETUP_DO_EXECUTE_LIBVIRT_HOOKS=true
+      fi
+    }
+
+    function is_option_install_looking_glass
+    {
+      if [[ "${1}" == "--looking-glass" ]]; then
+        POST_SETUP_ASK_TO_EXECUTE_ALL=false
+        POST_SETUP_DO_EXECUTE_LOOKING_GLASS=true
+      fi
+    }
+
+    function is_option_install_scream
+    {
+      if [[ "${1}" == "--scream" ]]; then
+        POST_SETUP_ASK_TO_EXECUTE_ALL=false
+        POST_SETUP_DO_EXECUTE_SCREAM=true
+      fi
+    }
+
+    function is_option_install_zram_swap
+    {
+      if [[ "${1}" == "--zram-swap" ]]; then
+        shift
+        get_argument_enum_for_zram_swap "${1}" "${2}" || return 1
+        IsHostMemorySufficientForZRAMSwap || return 1
+        pop_input_enum_if_last_option_contains_argument "${1}" "${2}"
+        POST_SETUP_ASK_TO_EXECUTE_ALL=false
+        POST_SETUP_DO_EXECUTE_ZRAM_SWAP=true
+      fi
+    }
+
+    function is_option_skip_post_setup
+    {
+      if [[ "${1}" == "--skip-vfio-setup" ]]; then
+        POST_SETUP_DO_SKIP_ALL=true
+        POST_SETUP_ASK_TO_EXECUTE_ALL=true
+      fi
+    }
+
+    function is_option_uninstall_post_setup
+    {
+      if [[ "${1}" == "--uninstall-vfio-setup" ]]; then
+        POST_SETUP_ASK_TO_EXECUTE_ALL=false
+      fi
+    }
+
+  # <summary>Argument getters</summary>
+    function get_argument_enum_for_auto_xorg
+    {
+      if [[ -z "${1}" ]]; then
+        return 0
+      fi
+
+      while [[ ! -z "${1}" ]]; do
+        get_argument_for_auto_xorg "$@" || return 1
+      done
+    }
+
+    function get_argument_enum_for_zram_swap
+    {
+      if [[ ! -z "${1}" ]]; then
+        get_zram_swap_size "${1}" || get_argument_for_zram_swap "${1}" || return 1
+      fi
+
+      if [[ ! -z "${2}" ]]; then
+        get_zram_swap_size "${2}" || get_argument_for_zram_swap "${2}" || return 1
+      fi
+    }
+
+    function get_argument_for_auto_xorg
+    {
+      case "${1}" in
+        "first" | "last" )
+          if "${POST_SETUP_HAS_ARG_AUTO_XORG_SORT_ORDER}"; then
+            return 1
+          fi
+
+          POST_SETUP_HAS_ARG_AUTO_XORG_SORT_ORDER=true ;;
+
+        "amd" | "intel" | "nvidia" | "other" )
+          if "${POST_SETUP_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR}"; then
+            return 1
+          fi
+
+          POST_SETUP_HAS_ARG_AUTO_XORG_PREFERRED_VENDOR=true ;;
+
+        * )
+          print_invalid_argument "${1}"
+          return 1 ;;
+      esac
+
+      POST_SETUP_ARGS_FOR_AUTO_XORG+=" --${1}"
+      shift
+    }
+
+    function get_argument_for_zram_swap
+    {
+      case "${1}" in
+        "force" )
+          POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE=true ;;
+
+        * )
+          print_invalid_argument "${1}"
+          return 1 ;;
+      esac
+    }
+# </functions>

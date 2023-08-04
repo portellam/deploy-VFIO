@@ -1,0 +1,106 @@
+#!/bin/false
+
+#
+# Filename:       deploy-vfio_args_pre-setup
+# Description:    Argument logic for pre setup.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sets>
+  set -o nounset
+  set -o pipefail
+# </sets>
+
+# <sources>
+  source deploy-vfio_logic_pre-setup
+# </sources>
+
+# <functions>
+  function is_option_of_pre_setup
+  {
+    is_option_skip_pre_setup "$@" || return 1
+    is_option_uninstall_pre_setup "$@" || return 1
+    is_option_setup_static_isolcpu "$@" || return 1
+    is_option_setup_static_hugepages "$@" || return 1
+    is_option_setup_virtual_kvm "$@" || return 1
+  }
+
+  # <summary>Option getters</summary>
+    function is_option_setup_static_hugepages
+    {
+      if [[ "${1}" == "-h" ]] \
+        || [[ "${1}" == "--hugepages" ]]; then
+        shift
+        get_argument_enum_for_hugepages "${1}" "${2}" || return 1
+        IsHostMemorySufficientForHugepages || return 1
+        pop_input_enum_if_last_option_contains_argument "${1}" "${2}"
+        PRE_SETUP_ASK_TO_EXECUTE_ALL=false
+        PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
+        return 0
+      fi
+
+      return 1
+    }
+
+    function is_option_setup_static_isolcpu
+    {
+      if [[ "${1}" == "-c" ]] \
+        || [[ "${1}" == "--cpu" ]]; then
+        PRE_SETUP_ASK_TO_EXECUTE_ALL=false
+        PRE_SETUP_DO_EXECUTE_ISOLCPU=true
+        return 0
+      fi
+
+      return 1
+    }
+
+    function is_option_setup_virtual_kvm
+    {
+      if [[ "${1}" == "-e" ]] \
+        || [[ "${1}" == "--evdev" ]]; then
+        PRE_SETUP_ASK_TO_EXECUTE_ALL=false
+        PRE_SETUP_DO_EXECUTE_EVDEV=true
+        return 0
+      fi
+
+      return 1
+    }
+
+    function is_option_skip_pre_setup
+    {
+      if [[ "${1}" == "--skip-pre-setup" ]]; then
+        PRE_SETUP_DO_SKIP_ALL=true
+        PRE_SETUP_ASK_TO_EXECUTE_ALL=false
+        return 0
+      fi
+
+      return 1
+    }
+
+    function is_option_uninstall_pre_setup
+    {
+      if [[ "${1}" == "--uninstall-pre-setup" ]]; then
+        PRE_SETUP_ASK_TO_EXECUTE_ALL=false
+        return 0
+      fi
+
+      return 1
+    }
+
+  # <summary>Argument getters</summary>
+    function get_argument_enum_for_hugepages
+    {
+      if [[ ! -z "${1}" ]] \
+        && ! get_hugepage_byte_size "${1}"; then
+        print_invalid_argument "${1}"
+        return 1
+      fi
+
+      if [[ ! -z "${2}" ]] \
+        && ! get_hugepage_count "${2}"; then
+        print_invalid_argument "${2}"
+        return 1
+      fi
+    }
+# </functions>

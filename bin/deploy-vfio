@@ -7,40 +7,28 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <sets>
+  set -o nounset
+  set -o pipefail
+# </sets>
+
 # <sources>
-  source vfiolib-all
+  source deploy-vfio_sources
 # </sources>
 
 # <functions>
-  function ExecuteSetup
+  function main
   {
-    ExecutePreSetup
-    ExecuteMainSetup
-    ExecutePostSetup
-    return "${?}"
-  }
-
-  function Main
-  {
-    IsSudoUser          || return "${?}"
-    ExecuteUsage "${@}" || return "${?}"
-    GetLinuxDistro      || return "${?}"
-    IsSystemSupported   || return "${?}"
-    BackupAllFiles      || return "${?}"
-    RestoreDefaultFiles || return "${?}"
-    ExecuteSetup
-    SetExitCode
-
-    if GetFailExitCode; then
-      RestoreAllFiles
-      return "${?}"
-    fi
-
-    return "${?}"
+    is_user_superuser
+    set_options "$@"
+    is_system_supported
+    do_pre_setup || exit 1
+    do_parse_database || exit 1
+    do_main_setup || exit 1
+    do_post_setup || exit 1
   }
 # </functions>
 
-# <main>
-  Main "${@}"
-  exit "${?}"
-# </main>
+# <code>
+  main "$@"
+# </code>
