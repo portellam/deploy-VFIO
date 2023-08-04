@@ -50,17 +50,23 @@
 
     # <summary>Isolcpus</summary>
       declare -g GRUB_CMDLINE_ISOLCPU=""
-  }
+
+    # <remarks>Filenames</remarks>
+      declare -gr APPARMOR_QEMU_DEST_PATH="/etc/apparmor.d/local/abstractions/libvirt-qemu"
+      declare -gr APPARMOR_QEMU_SRC_PATH="${ETC_BACKUPS_PATH}/libvirt-qemu"
+      declare -gr QEMU_DEST_PATH="/etc/libvirt/qemu.conf"
+      declare -gr QEMU_SRC_PATH="${ETC_BACKUPS_PATH}/qemu.conf"
+}
 
   function do_pre_setup
   {
     if ! create_temp_files_for_pre_setup \
       || ! do_try_pre_setup; then
-      do_cleanup_pre_setup
+      do_cleanup_pre_setup || restore_source_files_for_pre_setup
       return 1
     fi
 
-    do_cleanup_pre_setup
+    do_cleanup_pre_setup || restore_source_files_for_pre_setup
   }
 
   function do_cleanup_pre_setup
@@ -381,8 +387,8 @@
 
       echo
 
-      if ! "${_COMMON_ARGS_IS_EXECUTION_QUIET}"; then
-        echo -e "${_SET_COLOR_YELLOW}Evdev${_RESET_COLOR} (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between Host and Guest(s).\nGuest(s) may reference any of each (currently) listed input device.\n${_SET_COLOR_YELLOW}HOW-TO:${_RESET_COLOR} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
+      if ! "${COMMON_ARGS_IS_EXECUTION_QUIET}"; then
+        echo -e "${SET_COLOR_YELLOW}Evdev${_RESET_COLOR} (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between Host and Guest(s).\nGuest(s) may reference any of each (currently) listed input device.\n${SET_COLOR_YELLOW}HOW-TO:${RESET_COLOR} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
       fi
 
       execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Evdev${RESET_COLOR}?" || return 1
@@ -405,6 +411,12 @@
     {
       copy_temp_file_to_file "${APPARMOR_QEMU_DEST_PATH}" || return 1
       copy_temp_file_to_file "${QEMU_DEST_PATH}" || return 1
+    }
+
+    function restore_source_files_for_pre_setup
+    {
+      copy_this_file_to_other_file "${APPARMOR_QEMU_SRC_PATH}" "${APPARMOR_QEMU_DEST_PATH}" || return 1
+      copy_this_file_to_other_file "${QEMU_SRC_PATH}" "${QEMU_DEST_PATH}" || return 1
     }
 
   # <summary>Setters</summary>
