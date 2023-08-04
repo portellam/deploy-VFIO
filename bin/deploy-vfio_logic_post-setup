@@ -41,8 +41,14 @@
 
   function do_post_setup
   {
+    do_skip_post_setup || return 0
     echo "in post setup now"
     return 0
+  }
+
+  function do_skip_post_setup
+  {
+    execute_or_skip_prompt "Skip post-setup?"
   }
 # </functions>
 
