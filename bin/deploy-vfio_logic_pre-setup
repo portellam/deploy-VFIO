@@ -57,6 +57,7 @@
     do_skip_pre_setup || return 0
     execute_static_isolcpu_setup || return 1
     execute_virtual_kvm_setup || return 1
+    add_user_to_groups_for_pre_setup || return 1
     execute_hugepages_setup || return 1
     execute_qemu_configuration || return 1
   }
@@ -67,13 +68,196 @@
   }
 
   # <summary>Execution</summary>
-      function add_user_to_groups_for_pre_setup
+    function add_user_to_groups_for_pre_setup
+    {
+      sudo adduser "${USER}" "libvirt" || return 1
+
+      if "${PRE_SETUP_DO_EXECUTE_EVDEV}" \
+        && ! sudo adduser "${USER}" "input"; then
+        return 1
+      fi
+    }
+
+    # <summary>
+    # Hugepages: Allocate host memory (RAM) to 'hugepages'.
+    # Eliminate the need to defragement memory, reduce host overhead, and improve both host and guest performance.
+    # </summary
+      function execute_hugepages_setup
       {
-        if ! sudo adduser "${USER}" "input" &> /dev/null \
-          || ! sudo adduser "${USER}" "libvirt" &> /dev/null; then
-          print_prefix_error "Failed to add user '${USER}' to groups."
+        function Ask
+        {
+          if "${_PRE_SETUP_ASK_TO_EXECUTE_ALL}"; then
+            echo
+
+            if ! "${_IS_EXECUTION_QUIET}"; then
+              echo -e "${_SET_COLOR_YELLOW}Hugepages${_RESET_COLOR} is a feature which statically allocates system memory to pagefiles.\nGuest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${_SET_COLOR_YELLOW}NOTE:${_RESET_COLOR} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${_SET_COLOR_YELLOW}Example:${_RESET_COLOR} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n${_SET_COLOR_YELLOW}NOTE:${_RESET_COLOR} If this is skipped, the equivalent Libvirt hook for dynamic allocation will be installed.\n"
+            fi
+
+            AskToExecuteOrSkip "Setup ${_SET_COLOR_YELLOW}Static Hugepages${_RESET_COLOR}?" && _PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
+          fi
+
+          return 0
+        }
+
+        function AskForHugepageByteSize
+        {
+          if "${_IS_HUGEPAGES_SIZE_SET}"; then
+            return 0
+          fi
+
+          for COUNT in $( seq 0 2 ); do
+            read -r -p "Enter size of Hugepages [2M/1G]: " _HUGEPAGES_BYTE_SUFFIX
+            GetHugepageByteSize "${_HUGEPAGES_BYTE_SUFFIX}" && return 0
+          done
+
+          echo -e "${_OUTPUT_INVALID_ANSWER}"
+          return 1
+        }
+
+        function AskForHugepageCount
+        {
+
+          if "${_IS_HUGEPAGES_COUNT_SET}"; then
+            return 0
+          fi
+
+          for COUNT in $( seq 0 2 ); do
+            read -r -p "Enter count of Hugepages [${_HUGEPAGES_MIN_COUNT}-${_HUGEPAGES_MAX_COUNT}]: " _HUGEPAGES_COUNT
+            GetHugepageCount "${_HUGEPAGES_COUNT}" && return 0
+          done
+
+          echo -e "${_OUTPUT_INVALID_ANSWER}"
+          return 1
+        }
+
+        function Main
+        {
+          Ask
+
+          if ! "${_PRE_SETUP_DO_EXECUTE_HUGEPAGES}"; then
+            return 255
+          fi
+
+          if ! IsInt "${_MAX_MEMORY}"; then
+            echo -e "${_PREFIX_ERROR} Could not parse system memory."
+            return 1
+          fi
+
+          if ! "${_IS_HUGEPAGES_SIZE_SET}"; then
+            AskForHugepageByteSize || return 1
+          fi
+
+          GetHugepageMinAndMaxSizes || return 1
+
+          if ! "${_IS_HUGEPAGES_COUNT_SET}"; then
+            AskForHugepageCount || return 1
+          fi
+
+          GetMemoryAllocatedToHugepages || return 1
+          IsHostMemorySufficientForHugepages || return 1
+          _LINE_GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=${_HUGEPAGES_BYTE_SUFFIX} hugepagesz=${_HUGEPAGES_BYTE_SUFFIX} hugepages=${_HUGEPAGES_COUNT}"
+          _PRE_SETUP_DONE_HUGEPAGES=true
+          return 0
+        }
+
+        Main
+        SetExitCode
+
+        if GetPassExitCode \
+          && "${_IS_HUGEPAGES_COUNT_SET}" \
+          && "${_IS_HUGEPAGES_SIZE_SET}"; then
+          echo -e "Allocated RAM (bytes):\t${_HUGEPAGES_ALLOCATED_MEMORY}"
+          echo -e "Total RAM (bytes):\t${_MAX_MEMORY}"
+        fi
+
+        GetExitCode
+        PrintSuffixPassOrFail "Allocating RAM to pages..."
+        return "${_LAST_EXIT_CODE}"
+      }
+
+      function GetMemoryAllocatedToHugepages
+      {
+        _HUGEPAGES_ALLOCATED_MEMORY=$(( ${_HUGEPAGES_COUNT} * ${_HUGEPAGES_SIZE_IN_KIB} ))
+        return 0
+      }
+
+      function GetHugepageByteSize
+      {
+        local -u ANSWER="${1}"
+
+        case "${ANSWER}" in
+          "1G" | "2M" )
+            _HUGEPAGES_BYTE_SUFFIX="${ANSWER}"
+            _IS_HUGEPAGES_SIZE_SET=true
+            return 0 ;;
+
+          * )
+            echo -e "Please a enter valid Hugepages size, '2M' or '1G'."
+            return 1 ;;
+        esac
+      }
+
+      function GetHugepageCount
+      {
+        if [[ -z "${1}" ]]; then
+          echo -e "${_PREFIX_ERROR} Hugepage count is empty."
           return 1
         fi
+
+        GetHugepageMinAndMaxSizes || return 1
+
+        if ! IsInt "${1}" \
+          || [[ "${1}" -lt "${_HUGEPAGES_MIN_COUNT}" ]] \
+          || [[ "${1}" -gt "${_HUGEPAGES_MAX_COUNT}" ]]; then
+          echo -e "${_PREFIX_ERROR} Please enter a valid Hugepages amount, between ${_HUGEPAGES_MIN_COUNT} or ${_HUGEPAGES_MAX_COUNT}."
+          return 1
+        fi
+
+        _IS_HUGEPAGES_COUNT_SET=true
+        _HUGEPAGES_COUNT="${1}"
+        return 0
+      }
+
+      function GetHugepageMinAndMaxSizes
+      {
+        case "${_HUGEPAGES_BYTE_SUFFIX}" in
+          "2M" )
+            _HUGEPAGES_SIZE_IN_KIB="${_2_MIB_IN_KIB}"
+            _HUGEPAGES_MIN_COUNT=2 ;;
+
+          "1G" )
+            _HUGEPAGES_SIZE_IN_KIB="${_1_GIB_IN_KIB}"
+            _HUGEPAGES_MIN_COUNT=1 ;;
+
+          * )
+            echo -e "${_PREFIX_ERROR} Failed to calculate minimum or maximum values for Hugepages."
+            return 1 ;;
+        esac
+
+        _HUGEPAGES_MAX_COUNT=$(( "${_HUGEPAGES_MAX_SIZE_IN_KIB}" - "${_HUGEPAGES_MIN_SIZE_IN_KIB}" ))
+        _HUGEPAGES_MAX_COUNT=$(( "${_HUGEPAGES_MAX_COUNT}" / "${_HUGEPAGES_SIZE_IN_KIB}" ))
+        return 0
+      }
+
+      function IsHostMemorySufficientForHugepages
+      {
+        if ! GetFreeMemory; then
+          echo -e "${_PREFIX_ERROR} Insufficient Host memory for Hugepages."
+          return 1
+        fi
+
+        return 0
+      }
+
+      function IsHugepagesSetup
+      {
+        if [[ "${_HUGEPAGES_SIZE_IN_KIB}" -ge 1 ]] \
+          && ( [[ "${_HUGEPAGES_COUNT}" -eq "${_2_MIB_IN_KIB}" ]] \
+            || [[ "${_HUGEPAGES_COUNT}" -eq "${_1_GIB_IN_KIB}" ]] ); then
+          _PRE_SETUP_DONE_HUGEPAGES=true
+        fi
+
+        return 0
       }
 
     # <summary>
