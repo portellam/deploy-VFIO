@@ -84,6 +84,25 @@
 
   function do_main_setup
   {
+    if ! create_temp_files_for_main_setup \
+      || ! do_try_main_setup; then
+      do_cleanup_main_setup
+      return 1
+    fi
+
+    do_cleanup_main_setup
+  }
+
+  function do_cleanup_main_setup
+  {
+    if ! restore_temp_files_for_main_setup \
+      || ! delete_temp_files_for_main_setup; then
+      print_prefix_error "Main setup: Cleanup failed."
+    fi
+  }
+
+  function do_try_main_setup
+  {
     do_skip_main_setup && return 0
 
     if ! specify_vfio_setup_prompt \
@@ -103,6 +122,37 @@
       return 1
     fi
   }
+
+  # <summary>Files</summary>
+    function create_temp_files_for_main_setup
+    {
+      create_temp_file_of_file "${GRUB_CUSTOM_DEST_PATH}" || return 1
+      create_temp_file_of_file "${GRUB_DEST_PATH_1}" || return 1
+      create_temp_file_of_file "${INITRAMFS_MODULES_DEST_PATH}" || return 1
+      create_temp_file_of_file "${MODPROBE_BLACKLISTS_DEST_PATH}" || return 1
+      create_temp_file_of_file "${MODPROBE_VFIO_DEST_PATH}" || return 1
+      create_temp_file_of_file "${MODULES_DEST_PATH}" || return 1
+    }
+
+    function restore_temp_files_for_main_setup
+    {
+      copy_temp_file_to_file "${GRUB_CUSTOM_DEST_PATH}" || return 1
+      copy_temp_file_to_file "${GRUB_DEST_PATH_1}" || return 1
+      copy_temp_file_to_file "${INITRAMFS_MODULES_DEST_PATH}" || return 1
+      copy_temp_file_to_file "${MODPROBE_BLACKLISTS_DEST_PATH}" || return 1
+      copy_temp_file_to_file "${MODPROBE_VFIO_DEST_PATH}" || return 1
+      copy_temp_file_to_file "${MODULES_DEST_PATH}" || return 1
+    }
+
+    function delete_temp_files_for_main_setup
+    {
+      delete_temp_file_of_file "${GRUB_CUSTOM_DEST_PATH}" || return 1
+      delete_temp_file_of_file "${GRUB_DEST_PATH_1}" || return 1
+      delete_temp_file_of_file "${INITRAMFS_MODULES_DEST_PATH}" || return 1
+      delete_temp_file_of_file "${MODPROBE_BLACKLISTS_DEST_PATH}" || return 1
+      delete_temp_file_of_file "${MODPROBE_VFIO_DEST_PATH}" || return 1
+      delete_temp_file_of_file "${MODULES_DEST_PATH}" || return 1
+    }
 
   # <summary>Interaction</summary>
     function specify_grub_menu_entry_for_multiboot_setup
@@ -285,7 +335,7 @@
         || ! specify_grub_menu_entry_for_multiboot_setup \
         || ! write_output_for_multiboot_setup \
         || ! execute_update_after_setup; then
-        print_prefix_error "Multiboot VFIO setup has failed."
+        print_prefix_fail "Multiboot VFIO setup has failed."
         return 1
       fi
     }
@@ -297,7 +347,7 @@
         || ! set_output_for_static_setup \
         || ! write_output_for_static_setup \
         || ! execute_update_after_setup; then
-        print_prefix_error "Static VFIO setup has failed."
+        print_prefix_fail "Static VFIO setup has failed."
         return 1
       fi
     }
@@ -313,7 +363,7 @@
     {
       if ! "${HAS_RESTORED_DEFAULT_FILES}" \
         || ! execute_update_after_setup; then
-        print_prefix_error "Uninstall has failed."
+        print_prefix_fail "Uninstall has failed."
       fi
     }
 
