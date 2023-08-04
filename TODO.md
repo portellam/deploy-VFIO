@@ -2,6 +2,7 @@
 
 ### To Do:
 * Important
+  * properly name getters and setters!!!
   * Test options and args.
   * Test across distros.
   * Post-setup:
