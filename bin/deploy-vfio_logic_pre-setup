@@ -153,7 +153,7 @@
       set_hugepages_memory_allocated || return 1
       is_host_memory_sufficient_for_hugepages || return 1
       GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=${HUGEPAGES_BYTE_SUFFIX} hugepagesz=${HUGEPAGES_BYTE_SUFFIX} hugepages=${HUGEPAGES_COUNT}"
-      PRE_SETUP_DONE_HUGEPAGES=true
+      PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
     }
 
     function execute_hugepages_setup_prompt
@@ -273,7 +273,7 @@
         "### Hugepages ###"
       )
 
-      if "${PRE_SETUP_DONE_HUGEPAGES}"; then
+      if "${PRE_SETUP_DO_EXECUTE_HUGEPAGES}"; then
         file1_contents+=(
           "${file1_hugepages_output[@]}"
           "hugetlbfs_mount = \"/dev/hugepages\""
