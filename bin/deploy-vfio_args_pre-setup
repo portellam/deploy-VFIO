@@ -33,7 +33,7 @@
         || [[ "${1}" == "--hugepages" ]]; then
         shift
         get_argument_enum_for_hugepages "${1}" "${2}" || return 1
-        IsHostMemorySufficientForHugepages || return 1
+        is_host_memory_sufficient_for_hugepages || return 1
         pop_input_enum_if_last_option_contains_argument "${1}" "${2}"
         PRE_SETUP_ASK_TO_EXECUTE_ALL=false
         PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
