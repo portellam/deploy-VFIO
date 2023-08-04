@@ -17,15 +17,15 @@ exit 1    # TODO: need to update this.
   # Color coding
   # Reference URL: 'https://www.shellhacks.com/bash-colors'
   # </summary>
-    declare -g _SET_COLOR_GREEN='\033[0;32m'
-    declare -g _SET_COLOR_RED='\033[0;31m'
-    declare -g _SET_COLOR_YELLOW='\033[0;33m'
-    declare -g _RESET_COLOR='\033[0m'
+    declare -g SET_COLOR_GREEN='\033[0;32m'
+    declare -g SET_COLOR_RED='\033[0;31m'
+    declare -g SET_COLOR_YELLOW='\033[0;33m'
+    declare -g RESET_COLOR='\033[0m'
 
   # <summary>Append output</summary>
-    declare -g _PREFIX_ERROR="${_SET_COLOR_YELLOW}An error occurred:${_RESET_COLOR}"
-    declare -g _PREFIX_FAIL="${_SET_COLOR_RED}Failure:${_RESET_COLOR}"
-    declare -g _PREFIX_PASS="${_SET_COLOR_GREEN}Success:${_RESET_COLOR}"
+    declare -g PREFIX_ERROR="${SET_COLOR_YELLOW}An error occurred:${RESET_COLOR}"
+    declare -g PREFIX_FAIL="${SET_COLOR_RED}Failure:${RESET_COLOR}"
+    declare -g PREFIX_PASS="${SET_COLOR_GREEN}Success:${RESET_COLOR}"
 # </params>
 
 # <functions>
@@ -50,7 +50,7 @@ exit 1    # TODO: need to update this.
     function Main
     {
       if [[ $( whoami ) != "root" ]]; then
-        echo -e "${_PREFIX_ERROR} User is not sudo/root."
+        echo -e "${PREFIX_ERROR} User is not sudo/root."
         return 1
       fi
 
@@ -63,17 +63,17 @@ exit 1    # TODO: need to update this.
 
       if "${DO_INSTALL}"; then
         if ! Install; then
-          echo -e "${_PREFIX_FAIL} Could not install deploy-VFIO."
+          echo -e "${PREFIX_FAIL} Could not install deploy-VFIO."
           return 1
         else
-          echo -e "${_PREFIX_PASS} Installed deploy-VFIO."
+          echo -e "${PREFIX_PASS} Installed deploy-VFIO."
         fi
       else
         if ! Uninstall; then
-          echo -e "${_PREFIX_FAIL} Could not uninstall deploy-VFIO."
+          echo -e "${PREFIX_FAIL} Could not uninstall deploy-VFIO."
           return 1
         else
-          echo -e "${_PREFIX_PASS} Uninstalled deploy-VFIO."
+          echo -e "${PREFIX_PASS} Uninstalled deploy-VFIO."
         fi
 
       fi
@@ -95,7 +95,7 @@ exit 1    # TODO: need to update this.
         || [[ ! -e "vfiolib-parse" ]] \
         || [[ ! -e "vfiolib-setup" ]] \
         || [[ ! -e "vfiolib-usage" ]]; then
-        echo -e "${_PREFIX_ERROR} Missing project binaries."
+        echo -e "${PREFIX_ERROR} Missing project binaries."
         return 1
       fi
 
@@ -116,7 +116,7 @@ exit 1    # TODO: need to update this.
         || [[ ! -e "pci-blacklists.conf" ]] \
         || [[ ! -e "qemu.conf" ]] \
         || [[ ! -e "vfio.conf" ]]; then
-        echo -e "${_PREFIX_ERROR} Missing project files."
+        echo -e "${PREFIX_ERROR} Missing project files."
         return 1
       fi
 
@@ -126,13 +126,13 @@ exit 1    # TODO: need to update this.
     function DoesDestinationPathExist
     {
       if [[ ! -d "${BIN_DEST_PATH}" ]]; then
-        echo -e "${_PREFIX_ERROR} Could not find directory '${BIN_DEST_PATH}'."
+        echo -e "${PREFIX_ERROR} Could not find directory '${BIN_DEST_PATH}'."
         return 1
       fi
 
       if [[ ! -d "${ETC_DEST_PATH}" ]] \
         && ! sudo mkdir -p "${ETC_DEST_PATH}"; then
-        echo -e "${_PREFIX_ERROR} Could not create directory '${ETC_DEST_PATH}'."
+        echo -e "${PREFIX_ERROR} Could not create directory '${ETC_DEST_PATH}'."
         return 1
       fi
 
@@ -145,7 +145,7 @@ exit 1    # TODO: need to update this.
       cd "${BIN_SOURCE_PATH}" || return 1
 
       if ! sudo cp -rf * "${BIN_DEST_PATH}" &> /dev/null; then
-        echo -e "${_PREFIX_ERROR} Failed to copy project binaries."
+        echo -e "${PREFIX_ERROR} Failed to copy project binaries."
         return 1
       fi
 
@@ -153,7 +153,7 @@ exit 1    # TODO: need to update this.
       cd "${ETC_SOURCE_PATH}" || return 1
 
       if ! sudo cp -rf * "${ETC_DEST_PATH}" &> /dev/null; then
-        echo -e "${_PREFIX_ERROR} Failed to copy project file(s)."
+        echo -e "${PREFIX_ERROR} Failed to copy project file(s)."
         return 1
       fi
 
@@ -191,7 +191,7 @@ exit 1    # TODO: need to update this.
       if ! sudo chown -R root:root "${BIN_DEST_PATH}" &> /dev/null \
         || ! sudo chmod -R +x "${BIN_DEST_PATH}" &> /dev/null \
         || ! sudo chown -R root:root "${ETC_DEST_PATH}" &> /dev/null; then
-        echo -e "${_PREFIX_ERROR} Failed to set file permissions."
+        echo -e "${PREFIX_ERROR} Failed to set file permissions."
         return 1
       fi
 
@@ -209,13 +209,13 @@ exit 1    # TODO: need to update this.
           && ! rm -rf "./${EXECUTABLE}" &> /dev/null ) \
         || ( ls "./${SOURCES}-"* &> /dev/null \
           && ! rm -rf "./${SOURCES}-"* &> /dev/null ); then
-        echo -e "${_PREFIX_ERROR} Failed to delete project binarie(s)."
+        echo -e "${PREFIX_ERROR} Failed to delete project binarie(s)."
         return 1
       fi
 
       if [[ -d "${ETC_DEST_PATH}" ]] \
         && ! rm -rf "${ETC_DEST_PATH}" &> /dev/null; then
-        echo -e "${_PREFIX_ERROR} Failed to delete project file(s)."
+        echo -e "${PREFIX_ERROR} Failed to delete project file(s)."
         return 1
       fi
 
