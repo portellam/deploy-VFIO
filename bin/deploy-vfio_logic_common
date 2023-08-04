@@ -49,13 +49,6 @@
       "${PREFIX_COMMENT}"
     )
 
-    declare -gar VFIO_DISCLAIMER_FILE_CONTENTS=(
-      "${DISCLAIMER_FILE_CONTENTS[@]}"
-      "${PREFIX_COMMENT} Run lspci to view hardware information."
-      "${PREFIX_COMMENT} You must run update-initramfs(8) to effect this change."
-      "${PREFIX_COMMENT}"
-    )
-
     # <remarks>Memory</remarks>
     declare -gi AVAILABLE_MEMORY=0
     declare -gir ONE_GIB_IN_KIB=1048576
@@ -117,6 +110,13 @@
         print_prefix_error "Failed to overwrite file '${file}'."
         return 1
       fi
+    }
+
+    function copy_this_file_to_other_file
+    {
+      is_file "${2}" || return 1
+      is_file "${1}" || return 1
+      cp --force "${1}" "${2}" || return 1
     }
 
     function delete_temp_file_of_file
