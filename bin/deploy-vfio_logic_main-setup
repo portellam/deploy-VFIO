@@ -141,8 +141,8 @@
 
   function do_skip_main_setup
   {
-    if "${DATABASE_DO_PARSE_DATABASE}" \
-      && ! "${MAIN_SETUP_DO_SKIP_ALL}"; then
+    if ! "${DATABASE_DO_PARSE_DATABASE}" \
+      && "${MAIN_SETUP_DO_SKIP_ALL}"; then
       print_prefix_note "Skipping VFIO setup."
       return 1
     fi
