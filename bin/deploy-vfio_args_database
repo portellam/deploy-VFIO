@@ -91,7 +91,7 @@
           fi
 
           DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
-          add_valid_iommu_groups_to_parsed_list || print_invalid_argument "${argument}" ;;
+          add_valid_iommu_groups_to_parsed_enum || print_invalid_argument "${argument}" ;;
 
         "no-vga" )
           if "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA}"; then
@@ -99,11 +99,11 @@
           fi
 
           DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true
-          add_valid_iommu_groups_to_parsed_list || print_invalid_argument "${argument}" ;;
+          add_valid_iommu_groups_to_parsed_enum || print_invalid_argument "${argument}" ;;
 
         * )
           DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
-          add_some_iommu_groups_to_parsed_list "${argument}" || print_invalid_argument "${argument}" ;;
+          add_some_iommu_groups_to_parsed_enum "${argument}" || print_invalid_argument "${argument}" ;;
       esac
     }
 

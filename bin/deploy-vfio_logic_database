@@ -185,18 +185,18 @@
     }
 
   # <summary>IOMMU Groups validation</summary>
-    function add_iommu_group_to_list
+    function add_iommu_group_to_enum
     {
       local -ir iommu_group_id="${1}"
 
       if does_iommu_group_have_external_devices "${iommu_group_id}"; then
-        add_iommu_group_to_vfio_list "${iommu_group_id}"
+        add_iommu_group_to_vfio_enum "${iommu_group_id}"
       else
-        add_iommu_group_to_host_list "${iommu_group_id}"
+        add_iommu_group_to_host_enum "${iommu_group_id}"
       fi
     }
 
-    function add_iommu_group_to_host_list
+    function add_iommu_group_to_host_enum
     {
       local -ir iommu_group_id="${1}"
 
@@ -207,7 +207,7 @@
       IOMMU_GROUPS_FOR_VFIO_ENUM+=( "${iommu_group_id}" )
     }
 
-    function add_iommu_group_to_vfio_list
+    function add_iommu_group_to_vfio_enum
     {
       local -ir iommu_group_id="${1}"
 
@@ -218,40 +218,40 @@
       IOMMU_GROUPS_FOR_VFIO_ENUM+=( "${iommu_group_id}" )
     }
 
-    function add_iommu_group_to_list_if_not_specified
+    function add_iommu_group_to_enum_if_not_specified
     {
       local -ir iommu_group_id="${1}"
 
       for this_iommu_group_id in ${IOMMU_GROUP_ID_ENUM[@]}; do
         if [[ "${this_iommu_group_id}" -eq "${iommu_group_id}" ]]; then
-          add_iommu_group_to_vfio_list "${iommu_group_id}"
+          add_iommu_group_to_vfio_enum "${iommu_group_id}"
         else
-          add_iommu_group_to_host_list "${iommu_group_id}"
+          add_iommu_group_to_host_enum "${iommu_group_id}"
         fi
       done
     }
 
-    function add_some_iommu_groups_to_parsed_list
+    function add_some_iommu_groups_to_parsed_enum
     {
       local regex_for_range_of_nums='^[0-9]+[-][0-9]+$'
-      local -ar iommu_groups_temp_list
+      local -ar iommu_groups_temp_enum
       local -ir iommu_group_id="${1}"
 
-      is_iommu_group_id_parsable "${iommu_group_id}" "iommu_groups_temp_list" || return 1
+      is_iommu_group_id_parsable "${iommu_group_id}" "iommu_groups_temp_enum" || return 1
 
       set_ifs_to_newline
-      iommu_groups_temp_list=( $( sort -hu <<<"${iommu_groups_temp_list[*]}" ) )
+      iommu_groups_temp_enum=( $( sort -hu <<<"${iommu_groups_temp_enum[*]}" ) )
       unset_ifs
 
-      for iommu_group_id in ${iommu_groups_temp_list[@]}; do
-        add_iommu_group_to_list_if_not_specified "${iommu_group_id}"
+      for iommu_group_id in ${iommu_groups_temp_enum[@]}; do
+        add_iommu_group_to_enum_if_not_specified "${iommu_group_id}"
       done
     }
 
-    function add_valid_iommu_groups_to_parsed_list
+    function add_valid_iommu_groups_to_parsed_enum
     {
       for iommu_group_id in ${IOMMU_GROUP_ID_ENUM[@]}; do
-        add_iommu_group_to_list "${iommu_group_id}"
+        add_iommu_group_to_enum "${iommu_group_id}"
       done
     }
 
@@ -273,9 +273,9 @@
     function does_iommu_group_have_external_devices
     {
       local -ir iommu_group_id="${1}"
-      local -ar device_list="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
+      local -ar device_enum="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
-      for device in ${device_list[@]}; do
+      for device in ${device_enum[@]}; do
         is_device_external "${device}" && return 0
       done
 
@@ -285,9 +285,9 @@
     function does_iommu_group_have_vga_device
     {
       local -ir iommu_group_id="${1}"
-      local -ar device_list="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
+      local -ar device_enum="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
-      for device in ${device_list[@]}; do
+      for device in ${device_enum[@]}; do
         is_device_vga "${device}" && return 0
       done
 
@@ -333,9 +333,9 @@
     function is_iommu_group_not_binded_to_vfio
     {
       local -ir iommu_group_id="${1}"
-      local -ar device_list="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
+      local -ar device_enum="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
-      for device in ${device_list[@]}; do
+      for device in ${device_enum[@]}; do
         is_device_not_binded_to_vfio "${device}" || return 1
       done
     }
@@ -515,9 +515,9 @@
     function print_iommu_group_enum
     {
       local -ir iommu_group_id="${1}"
-      local -ar device_list="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
+      local -ar device_enum="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
-      for device in ${device_list[@]}; do
+      for device in ${device_enum[@]}; do
         is_device_external "${device}" && print_iommu_group
       done
     }
