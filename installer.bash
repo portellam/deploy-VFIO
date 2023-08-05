@@ -1,7 +1,5 @@
 #!/bin/bash/env bash
 
-exit 1    # TODO: need to update this.
-
 #
 # Filename:       installer.bash
 # Description:    Manages deploy-VFIO binaries and files.
@@ -29,8 +27,39 @@ exit 1    # TODO: need to update this.
 # </params>
 
 # <functions>
-  # <summary>Public functions</summary>
-    function GetOption
+  function main
+  {
+    if [[ $( whoami ) != "root" ]]; then
+      echo -e "${PREFIX_ERROR} User is not sudo or root."
+      return 1
+    fi
+
+    get_option "${1}" || return 1
+
+    local -r bin_target_path="/usr/local/bin/"
+    local -r bin_source_path="bin"
+    local -r etc_target_path="/usr/local/etc/vfiolib.d/"
+    local -r etc_source_path="etc"
+
+    if "${DO_INSTALL}"; then
+      if ! install; then
+        echo -e "${PREFIX_FAIL} Could not install deploy-VFIO."
+        return 1
+      else
+        echo -e "${PREFIX_PASS} Installed deploy-VFIO."
+      fi
+    else
+      if ! uninstall; then
+        echo -e "${PREFIX_FAIL} Could not uninstall deploy-VFIO."
+        return 1
+      else
+        echo -e "${PREFIX_PASS} Uninstalled deploy-VFIO."
+      fi
+    fi
+  }
+
+  # <summary>Usage</summary>
+    function get_option
     {
       case "${1}" in
         "-u" | "--uninstall" )
@@ -40,51 +69,31 @@ exit 1    # TODO: need to update this.
           DO_INSTALL=true ;;
 
         "-h" | "--help" | * )
-          PrintUsage
+          print_usage
           return 1 ;;
       esac
-
-      return 0
     }
 
-    function Main
+    function print_usage
     {
-      if [[ $( whoami ) != "root" ]]; then
-        echo -e "${PREFIX_ERROR} User is not sudo/root."
-        return 1
-      fi
+      IFS=$'\n'
 
-      GetOption "${1}" || return 1
+      local -ar output=(
+        "Usage:\tbash installer.bash [OPTION]"
+        "Manages deploy-VFIO binaries and files.\n"
+        "  -h, --help\t\tPrint this help and exit."
+        "  -i, --install\t\tInstall deploy-VFIO to system."
+        "  -u, --uninstall\tUninstall deploy-VFIO from system."
+      )
 
-      local BIN_DEST_PATH="/usr/local/bin/"
-      local BIN_SOURCE_PATH="bin"
-      local ETC_DEST_PATH="/usr/local/etc/vfiolib.d/"
-      local ETC_SOURCE_PATH="etc"
-
-      if "${DO_INSTALL}"; then
-        if ! Install; then
-          echo -e "${PREFIX_FAIL} Could not install deploy-VFIO."
-          return 1
-        else
-          echo -e "${PREFIX_PASS} Installed deploy-VFIO."
-        fi
-      else
-        if ! Uninstall; then
-          echo -e "${PREFIX_FAIL} Could not uninstall deploy-VFIO."
-          return 1
-        else
-          echo -e "${PREFIX_PASS} Uninstalled deploy-VFIO."
-        fi
-
-      fi
-
-      return 0
+      echo -e "${output[*]}"
+      unset IFS
     }
 
-  # <summary>Private functions</summary>
-    function DoBinariesExist
+  # <summary>Checks</summary>
+    function do_binaries_exist
     {
-      cd "${BIN_SOURCE_PATH}" || return 1
+      cd "${bin_source_path}" || return 1
 
       if  [[ ! -e "deploy-vfio" ]] \
         || [[ ! -e "vfiolib-all" ]] \
@@ -98,14 +107,12 @@ exit 1    # TODO: need to update this.
         echo -e "${PREFIX_ERROR} Missing project binaries."
         return 1
       fi
-
-      return 0
     }
 
-    function DoFilesExist
+    function do_files_exist
     {
       cd .. || return 1
-      cd "${ETC_SOURCE_PATH}" || return 1
+      cd "${etc_source_path}" || return 1
 
       if [[ ! -e "audio-loopback-user.service" ]] \
         || [[ ! -e "custom" ]] \
@@ -119,111 +126,82 @@ exit 1    # TODO: need to update this.
         echo -e "${PREFIX_ERROR} Missing project files."
         return 1
       fi
-
-      return 0
     }
 
-    function DoesDestinationPathExist
+    function does_target_path_exist
     {
-      if [[ ! -d "${BIN_DEST_PATH}" ]]; then
-        echo -e "${PREFIX_ERROR} Could not find directory '${BIN_DEST_PATH}'."
+      if [[ ! -d "${bin_target_path}" ]]; then
+        echo -e "${PREFIX_ERROR} Could not find directory '${bin_target_path}'."
         return 1
       fi
 
-      if [[ ! -d "${ETC_DEST_PATH}" ]] \
-        && ! sudo mkdir --parents "${ETC_DEST_PATH}"; then
-        echo -e "${PREFIX_ERROR} Could not create directory '${ETC_DEST_PATH}'."
+      if [[ ! -d "${etc_target_path}" ]] \
+        && ! sudo mkdir --parents "${etc_target_path}"; then
+        echo -e "${PREFIX_ERROR} Could not create directory '${etc_target_path}'."
         return 1
       fi
-
-      return 0
     }
 
-    function CopyFilesToDesination
+  # <summary>Execution</summary>
+    function copy_sources_to_targets
     {
       cd ..
-      cd "${BIN_SOURCE_PATH}" || return 1
+      cd "${bin_source_path}" || return 1
 
-      if ! sudo cp -rf * "${BIN_DEST_PATH}" &> /dev/null; then
+      if ! sudo cp -rf * "${bin_target_path}" &> /dev/null; then
         echo -e "${PREFIX_ERROR} Failed to copy project binaries."
         return 1
       fi
 
       cd .. || return 1
-      cd "${ETC_SOURCE_PATH}" || return 1
+      cd "${etc_source_path}" || return 1
 
-      if ! sudo cp -rf * "${ETC_DEST_PATH}" &> /dev/null; then
+      if ! sudo cp -rf * "${etc_target_path}" &> /dev/null; then
         echo -e "${PREFIX_ERROR} Failed to copy project file(s)."
         return 1
       fi
-
-      return 0
     }
 
-    function Install
+    function install
     {
-      DoBinariesExist || return 1
-      DoFilesExist || return 1
-      DoesDestinationPathExist || return 1
-      CopyFilesToDesination || return 1
-      SetFilePermissions || return 1
+      do_binaries_exist || return 1
+      do_files_exist || return 1
+      does_target_path_exist || return 1
+      copy_sources_to_targets || return 1
+      set_target_file_permissions || return 1
     }
 
-    function PrintUsage
+    function set_target_file_permissions
     {
-      IFS=$'\n'
-
-      local -a OUTPUT=(
-        "Usage:\tbash installer [OPTION]"
-        "Manages deploy-VFIO binaries and files.\n"
-        "  -h, --help\t\tPrint this help and exit."
-        "  -i, --install\t\tInstall project to system."
-        "  -u, --uninstall\tUninstall project from system."
-      )
-
-      echo -e "${OUTPUT[*]}"
-      unset IFS
-      return 0
-    }
-
-    function SetFilePermissions
-    {
-      if ! sudo chown -R root:root "${BIN_DEST_PATH}" &> /dev/null \
-        || ! sudo chmod -R +x "${BIN_DEST_PATH}" &> /dev/null \
-        || ! sudo chown -R root:root "${ETC_DEST_PATH}" &> /dev/null; then
+      if ! sudo chown -R root:root "${bin_target_path}" &> /dev/null \
+        || ! sudo chmod -R +x "${bin_target_path}" &> /dev/null \
+        || ! sudo chown -R root:root "${etc_target_path}" &> /dev/null; then
         echo -e "${PREFIX_ERROR} Failed to set file permissions."
         return 1
       fi
-
-      return 0
     }
 
-    function Uninstall
+    function uninstall
     {
-      local EXECUTABLE="deploy-vfio"
-      local SOURCES="vfiolib"
+      local -r executable="deploy-vfio"
+      local -r sources="${executable}_"
 
-      cd "${BIN_DEST_PATH}" || return 1
+      cd "${bin_target_path}" || return 1
 
-      if ( [[ -e "${EXECUTABLE}" ]] \
-          && ! rm -rf "./${EXECUTABLE}" &> /dev/null ) \
-        || ( ls "./${SOURCES}-"* &> /dev/null \
-          && ! rm -rf "./${SOURCES}-"* &> /dev/null ); then
-        echo -e "${PREFIX_ERROR} Failed to delete project binarie(s)."
+      if ( [[ -e "${executable}" ]] && ! rm -rf "./${executable}" &> /dev/null ) \
+        || ( ls "./${sources}-"* &> /dev/null && ! rm -rf "./${sources}"* &> /dev/null ); then
+        echo -e "${PREFIX_ERROR} Failed to delete project binaries."
         return 1
       fi
 
-      if [[ -d "${ETC_DEST_PATH}" ]] \
-        && ! rm -rf "${ETC_DEST_PATH}" &> /dev/null; then
+      if [[ -d "${etc_target_path}" ]] && ! rm -rf "${etc_target_path}" &> /dev/null; then
         echo -e "${PREFIX_ERROR} Failed to delete project file(s)."
         return 1
       fi
-
-      return 0
     }
 # </functions>
 
-# <main>
-  Main "${1}"
+# <code>
+  main "${1}"
   exit "${?}"
-# </main>
+# </code>
