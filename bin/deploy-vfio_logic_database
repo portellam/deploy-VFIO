@@ -36,7 +36,7 @@
     declare -ga IOMMU_GROUPS_WITH_VGA_FOR_HOST_ENUM=( )
     declare -ga IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM=( )
 
-    declare -gr DEFAULT_XML_FILE="${ETC_BACKUPS_PATH}/parse.xml"
+    declare -gr DEFAULT_XML_FILE="${ETC_BACKUPS_PATH}parse.xml"
     declare -g XML_FILE="${DEFAULT_XML_FILE}"
   }
 
@@ -65,9 +65,9 @@
     is_unparsed_enum_valid || return 1
     parse_from_xml_prompt
     specify_xml_file || return 1
+    is_xml_file_created || return 1
 
-    if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}" \
-      && ! is_xml_valid; then
+    if ! is_xml_valid; then
       does_host_not_have_existing_vfio_setup || return 1
       export_iommu_groups_to_xml || return 1
       specify_iommu_group_enum
@@ -107,14 +107,18 @@
       delete_temp_file_of_file "${XML_FILE}" || return 1
     }
 
+    function is_xml_file_created
+    {
+      if ! is_file "${XML_FILE}" &> /dev/null \
+        && ! sudo touch "${XML_FILE}"; then
+        print_prefix_error "Failed to created '${XML_FILE}'".
+        return 1
+      fi
+    }
+
   # <summary>Getters</summary>
     function get_device_class
     {
-      if [[ ! -z "${2}" ]] \
-        || [[ ! -z "${1}" ]]; then
-        return 1
-      fi
-
       local device="${1}"
       local -n reference="${2}"
       reference="$( lspci -ms ${device} | cut -d '"' -f 2 )"
@@ -122,11 +126,6 @@
 
     function get_device_driver
     {
-      if [[ ! -z "${2}" ]] \
-        || [[ ! -z "${1}" ]]; then
-        return 1
-      fi
-
       local device="${1}"
       local -n reference="${2}"
 
@@ -139,11 +138,6 @@
 
     function get_device_hardware_id
     {
-      if [[ ! -z "${2}" ]] \
-        || [[ ! -z "${1}" ]]; then
-        return 1
-      fi
-
       local device="${1}"
       local -n reference="${2}"
 
@@ -152,11 +146,6 @@
 
     function get_device_name
     {
-      if [[ ! -z "${2}" ]] \
-        || [[ ! -z "${1}" ]]; then
-        return 1
-      fi
-
       local device="${1}"
       local -n reference="${2}"
 
@@ -165,11 +154,6 @@
 
     function get_device_vendor
     {
-      if [[ ! -z "${2}" ]] \
-        || [[ ! -z "${1}" ]]; then
-        return 1
-      fi
-
       local device="${1}"
       local -n reference="${2}"
 
@@ -464,10 +448,6 @@
   # <summary>Device validation</summary>
     function is_device_driver_not_excluded
     {
-      if [[ ! -z "${1}" ]]; then
-        return 1
-      fi
-
       local driver="${1}"
       local excluded_driver="snd_hda_intel"
 
@@ -479,10 +459,6 @@
 
     function is_device_driver_not_vfio
     {
-      if [[ ! -z "${1}" ]]; then
-        return 1
-      fi
-
       local driver="${1}"
       local matched_driver="vfio-pci"
 
@@ -494,10 +470,6 @@
 
     function is_device_external
     {
-      if [[ ! -z "${1}" ]]; then
-        return 1
-      fi
-
       local device="${1}"
       local regex_get_domain_id='^[0-9A-F][1-9A-F]$'
       local -u domain_id=$( echo "${device}" | cut -d ':' -f 2 )
@@ -506,10 +478,6 @@
 
     function is_device_for_pci_stub
     {
-      if [[ ! -z "${1}" ]]; then
-        return 1
-      fi
-
       local device="${1}"
       local -l class="$( lspci -ms ${device} | cut -d '"' -f 2 )"
 
@@ -523,8 +491,8 @@
 
     function is_device_not_binded_to_vfio
     {
-      if [[ ! -z "${1}" ]]; then
-        return 1
+      if [[ -z "${1}" ]]; then
+        return 0
       fi
 
       local device="${1}"
@@ -535,10 +503,6 @@
 
     function is_device_not_excluded
     {
-      if [[ ! -z "${1}" ]]; then
-        return 1
-      fi
-
       local device="${1}"
       local driver=""
       get_device_driver "${device}" "driver"
@@ -547,10 +511,6 @@
 
     function is_device_not_external
     {
-      if [[ ! -z "${1}" ]]; then
-        return 1
-      fi
-
       local device="${1}"
       local driver=""
       get_device_driver "${device}" "driver"
@@ -559,10 +519,6 @@
 
     function is_device_vga
     {
-      if [[ ! -z "${1}" ]]; then
-        return 1
-      fi
-
       local device="${1}"
       local -l class="$( lspci -ms ${device} | cut -d '"' -f 2 )"
 
@@ -598,11 +554,12 @@
 
     function print_iommu_group
     {
+      local -r device="${1}"
       local class driver hwid name vendor
 
       get_device_class "${device}" "class"
       get_device_driver "${device}" "driver"
-      get_device_hardware_ID "${device}" "hwid"
+      get_device_hardware_id "${device}" "hwid"
       get_device_name "${device}" "name"
       get_device_vendor "${device}" "vendor"
 
@@ -611,14 +568,15 @@
       echo -e "\tDevice name:\t${name}"
       echo -e "\tClass/Type:\t${class}"
       echo -e "\tHardware ID:\t${hwid}"
-      local drive_output="\tDriver:\t\t"
+      local driver_output="\tDriver:\t\t"
 
       if [[ ! -z "${driver}" ]]; then
-        echo -e "${drive_output}${driver}"
+        driver_output+="${driver}"
       else
-        echo -e "${drive_output}N/A"
+        driver_output+="N/A"
       fi
 
+      echo -e "${driver_output}"
       echo
     }
 
@@ -628,7 +586,7 @@
       local -ar device_enum="$( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" )"
 
       for device in ${device_enum[@]}; do
-        is_device_external "${device}" && print_iommu_group
+        is_device_external "${device}" && print_iommu_group "${device}"
       done
     }
 
@@ -641,8 +599,8 @@
         return 1
       fi
 
-      if ! specify_iommu_group_prompt "${iommu_group_id}" \
-        || ! print_iommu_group_enum "${iommu_group_id}"; then
+      if ! print_iommu_group_enum "${iommu_group_id}" \
+        || ! specify_iommu_group_prompt "${iommu_group_id}"; then
         return 1
       fi
     }
@@ -746,6 +704,11 @@
 
     function is_xml_valid
     {
+      if ! is_file_not_empty "${XML_FILE}" &> /dev/null; then
+        print_prefix_note "XML file '${XML_FILE}' is empty."
+        return 1
+      fi
+
       if ! xmllint "${XML_FILE}" &> /dev/null; then
         print_prefix_error "XML file '${XML_FILE}' is invalid."
         return 1
@@ -763,8 +726,6 @@
 
     function specify_xml_file
     {
-      echo "DATABASE_DO_PARSE_DATABASE_FROM_XML == $DATABASE_DO_PARSE_DATABASE_FROM_XML"
-
       if "${DATABASE_XML_FILE_IS_SPECIFIED}" \
         && ! "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
         return 0
