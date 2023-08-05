@@ -7,10 +7,6 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
-# <sets>
-  set -o pipefail
-# </sets>
-
 # <sources>
   source deploy-vfio_logic_common
 # </sources>
@@ -54,23 +50,21 @@
   function do_skip_post_setup
   {
     if ! "${POST_SETUP_DO_SKIP_ALL}"; then
-      execute_or_skip_prompt "Skip post-setup?" && POST_SETUP_DO_SKIP_ALL=true
+      execute_or_skip_prompt "Skip post setup?" && POST_SETUP_DO_SKIP_ALL=true
     fi
 
     if "${POST_SETUP_DO_SKIP_ALL}"; then
-      print_prefix_note "Skipping VFIO setup."
+      print_prefix_note "Skipping post setup."
       return 1
     fi
+
+    return 0
   }
 
   # <summary>Execution</summary>
     # <summary>Audio loopback</summary>
       function execute_audio_loopback_setup
       {
-        if ! "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
-          return 0
-        fi
-
         local -r user_name="portellam"
         local -r repo_name="audio-loopback"
 
@@ -138,10 +132,6 @@
     # <summary>auto-xorg</summary>
       function execute_auto_xorg_setup
       {
-        if ! "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
-          return 0
-        fi
-
         local -r user_name="portellam"
         local -r repo_name="auto-xorg"
 
@@ -230,10 +220,6 @@
     # <summary>libvirt-hooks</summary>
       function execute_libvirt_hooks_setup
       {
-        if ! "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
-          return 0
-        fi
-
         local -r user_name="portellam"
         local -r repo_name="libvirt-hooks"
 
@@ -303,211 +289,207 @@
     # <summary>Scream</summary>   <note>To be added in a future release.</note>
 
     # <summary>zram-swap</summary>
-    function execute_zram_swap_setup
-    {
-      if ! "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
-        return 0
-      fi
+      function execute_zram_swap_setup
+      {
+        execute_zram_swap_setup_main
+        execute_zram_swap_undo
+      }
 
-      execute_zram_swap_setup_main
-      execute_zram_swap_undo
-    }
-
-    function execute_zram_swap_undo
-    {
-      if "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
-        return 0
-      fi
-
-      execute_or_skip_prompt "Uninstall ${SET_COLOR_YELLOW}${repo_name}${RESET_COLOR}?" || return 255
-      execute_zram_swap_setup_uninstall
-    }
-
-    function execute_zram_swap_setup_install
-    {
-      if ! cd "${BIN_PATH}${full_repo}"; then
-          print_prefix_error "Failed to find build directory."
-          return 1
-      fi
-
-      if [[ ! -e "${script_name}" ]]; then
-          print_prefix_error "Failed to find script '${script_name}'."
-          return 1
-      fi
-
-      if ! sudo bash "${script_name}" --install &> /dev/null; then
-          print_prefix_error "Failed to execute script '${script_name}'."
-          return 1
-      fi
-    }
-
-    function execute_zram_swap_setup_main
-    {
-      local -r user_name="foundObjects"
-      local -r repo_name="zram-swap"
-
-      execute_zram_swap_setup_prompt || return 1
-
-      local -r full_repo="${user_name}/${repo_name}"
-      local -r script_name="install.sh"
-
-      if "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
-        update_or_clone_git_repo "${full_repo}" "${user_name}"
-      fi
-
-      if ! execute_zram_swap_setup_install \
-        || ! execute_zram_swap_undo; then
-        return 1
-      fi
-
-      if "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
-        execute_zram_swap_setup_modify
-      fi
-    }
-
-    function execute_zram_swap_setup_modify
-    {
-      local -r file="/etc/default/zram-swap"
-      local line_to_match="_zram_fraction="
-      local fraction="${POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION}"
-
-      if ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
-        && ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
-        get_zram_swap_value_prompt "fraction" || return 1
-      fi
-
-      if "${POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
-        && ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
-        local -ir zram_swap_available_memory=$(( AVAILABLE_MEMORY / 2 ))
-        local -i denominator=$( printf "%.0f" $( echo "scale=2;${MAX_MEMORY}/${zram_swap_available_memory}" | bc ) )
-
-        if [[ $( expr ${denominator} % 2 ) -eq 1 ]]; then
-          (( denominator-- ))
-        fi
-
-        if [[ "${denominator}" -le 0 ]]; then
-          print_prefix_error "Denominator is negative or zero."
-        fi
-
-        fraction="1/${denominator}"
-      fi
-
-      if ! sed -i '/'${line_to_match}'"*"/c\'${line_to_match}'"'${fraction}'"' "${file}"; then
-        print_prefix_error "Failed to write output to zram-swap file."
-        return 1
-      fi
-
-      if ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE}" \
-        && sudo swapon -v | grep zram &> /dev/null \
-        && sudo swapon -v | grep zram &> /dev/null \
-        && ! sudo swapon -v | grep zram | grep 0B &> /dev/null; then
-        print_prefix_error "zram-swap device(s) already in use. Restart system to save changes."
-        return 0
-      fi
-
-      if sudo swapon -v | grep zram &> /dev/null \
-        && ! sudo swapoff /dev/zram* &> /dev/null; then
-        print_prefix_error "Failed to disable zram-swap device(s)."
-        return 1
-      fi
-
-      if ! sudo systemctl daemon-reload &> /dev/null; then
-        print_prefix_error "Failed to update systemd."
-        return 1
-      fi
-
-      if ! sudo systemctl restart zram-swap &> /dev/null; then
-        print_prefix_error "Failed to restart zram-swap service."
-        return 1
-      fi
-
-      if ! sudo swapon -v | grep zram &> /dev/null; then
-        print_prefix_error "Failed to enable zram-swap device."
-        return 1
-      fi
-    }
-
-    function execute_zram_swap_setup_prompt
-    {
-      if "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
-        return 0
-      fi
-
-      echo
-      execute_or_skip_prompt "Install ${SET_COLOR_YELLOW}${repo_name}${RESET_COLOR}?"
-    }
-
-    function execute_zram_swap_setup_uninstall
-    {
-      if ! sudo bash "${script_name}" --uninstall &> /dev/null; then
-          print_prefix_error "Failed to execute script '${script_name}'."
-          return 1
-      fi
-    }
-
-    function get_zram_swap_value_prompt
-    {
-      local -n reference="${1}"
-
-      for counter in $( seq 0 2 ); do
-        read -r -p "Set fraction of total memory for zram-swap to use (to calculate default, enter 'default'): " answer
-
-        if get_zram_swap_size "${answer}"; then
-          reference="${answer}"
+      function execute_zram_swap_undo
+      {
+        if "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
           return 0
         fi
-      done
 
-      return 1
-    }
+        execute_or_skip_prompt "Uninstall ${SET_COLOR_YELLOW}${repo_name}${RESET_COLOR}?" || return 255
+        execute_zram_swap_setup_uninstall
+      }
 
-    function get_zram_swap_size
-    {
-      is_host_memory_sufficient_for_hugepages || return 1
+      function execute_zram_swap_setup_install
+      {
+        if ! cd "${BIN_PATH}${full_repo}"; then
+            print_prefix_error "Failed to find build directory."
+            return 1
+        fi
 
-      case "${1}" in
-        *"/"* )
-          local -i numerator=$( echo ${1} | cut -d '/' -f1 )
-          local -i denominator=$( echo ${1} | cut -d '/' -f2 ) ;;
+        if [[ ! -e "${script_name}" ]]; then
+            print_prefix_error "Failed to find script '${script_name}'."
+            return 1
+        fi
 
-        "default" )
-          POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS=true
-          return 0 ;;
+        if ! sudo bash "${script_name}" --install &> /dev/null; then
+            print_prefix_error "Failed to execute script '${script_name}'."
+            return 1
+        fi
+      }
 
-        * )
-          print_prefix_error "Not a fraction."
-          return 1 ;;
-      esac
+      function execute_zram_swap_setup_main
+      {
+        local -r user_name="foundObjects"
+        local -r repo_name="zram-swap"
 
-      if ! is_int "${numerator}" \
-        || ! is_int "${DENOMINATOR}"; then
-        print_prefix_error "Values are not numbers."
+        execute_zram_swap_setup_prompt || return 1
+
+        local -r full_repo="${user_name}/${repo_name}"
+        local -r script_name="install.sh"
+
+        if "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
+          update_or_clone_git_repo "${full_repo}" "${user_name}"
+        fi
+
+        if ! execute_zram_swap_setup_install \
+          || ! execute_zram_swap_undo; then
+          return 1
+        fi
+
+        if "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
+          execute_zram_swap_setup_modify
+        fi
+      }
+
+      function execute_zram_swap_setup_modify
+      {
+        local -r file="/etc/default/zram-swap"
+        local line_to_match="_zram_fraction="
+        local fraction="${POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION}"
+
+        if ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
+          && ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
+          get_zram_swap_value_prompt "fraction" || return 1
+        fi
+
+        if "${POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS}" \
+          && ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION}"; then
+          local -ir zram_swap_available_memory=$(( AVAILABLE_MEMORY / 2 ))
+          local -i denominator=$( printf "%.0f" $( echo "scale=2;${MAX_MEMORY}/${zram_swap_available_memory}" | bc ) )
+
+          if [[ $( expr ${denominator} % 2 ) -eq 1 ]]; then
+            (( denominator-- ))
+          fi
+
+          if [[ "${denominator}" -le 0 ]]; then
+            print_prefix_error "Denominator is negative or zero."
+          fi
+
+          fraction="1/${denominator}"
+        fi
+
+        if ! sed -i '/'${line_to_match}'"*"/c\'${line_to_match}'"'${fraction}'"' "${file}"; then
+          print_prefix_error "Failed to write output to zram-swap file."
+          return 1
+        fi
+
+        if ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE}" \
+          && sudo swapon -v | grep zram &> /dev/null \
+          && sudo swapon -v | grep zram &> /dev/null \
+          && ! sudo swapon -v | grep zram | grep 0B &> /dev/null; then
+          print_prefix_error "zram-swap device(s) already in use. Restart system to save changes."
+          return 0
+        fi
+
+        if sudo swapon -v | grep zram &> /dev/null \
+          && ! sudo swapoff /dev/zram* &> /dev/null; then
+          print_prefix_error "Failed to disable zram-swap device(s)."
+          return 1
+        fi
+
+        if ! sudo systemctl daemon-reload &> /dev/null; then
+          print_prefix_error "Failed to update systemd."
+          return 1
+        fi
+
+        if ! sudo systemctl restart zram-swap &> /dev/null; then
+          print_prefix_error "Failed to restart zram-swap service."
+          return 1
+        fi
+
+        if ! sudo swapon -v | grep zram &> /dev/null; then
+          print_prefix_error "Failed to enable zram-swap device."
+          return 1
+        fi
+      }
+
+      function execute_zram_swap_setup_prompt
+      {
+        if "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
+          return 0
+        fi
+
+        echo
+        execute_or_skip_prompt "Install ${SET_COLOR_YELLOW}${repo_name}${RESET_COLOR}?"
+      }
+
+      function execute_zram_swap_setup_uninstall
+      {
+        if ! sudo bash "${script_name}" --uninstall &> /dev/null; then
+            print_prefix_error "Failed to execute script '${script_name}'."
+            return 1
+        fi
+      }
+
+      function get_zram_swap_value_prompt
+      {
+        local -n reference="${1}"
+
+        for counter in $( seq 0 2 ); do
+          read -r -p "Set fraction of total memory for zram-swap to use (to calculate default, enter 'default'): " answer
+
+          if get_zram_swap_size "${answer}"; then
+            reference="${answer}"
+            return 0
+          fi
+        done
+
         return 1
-      fi
+      }
 
-      if [[ "${numerator}" -lt "${denominator}" ]] \
-        || [[ "${denominator}" -gt 1 ]]; then
-        declare -g POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION="${1}"
-        POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION=true
-      return 0
+      function get_zram_swap_size
+      {
+        is_host_memory_sufficient_for_hugepages || return 1
 
-      elif [[ "${denominator}" -eq 0 ]]; then
+        case "${1}" in
+          *"/"* )
+            local -i numerator=$( echo ${1} | cut -d '/' -f1 )
+            local -i denominator=$( echo ${1} | cut -d '/' -f2 ) ;;
+
+          "default" )
+            POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS=true
+            return 0 ;;
+
+          * )
+            print_prefix_error "Not a fraction."
+            return 1 ;;
+        esac
+
+        if ! is_int "${numerator}" \
+          || ! is_int "${DENOMINATOR}"; then
+          print_prefix_error "Values are not numbers."
+          return 1
+        fi
+
+        if [[ "${numerator}" -lt "${denominator}" ]] \
+          || [[ "${denominator}" -gt 1 ]]; then
+          declare -g POST_SETUP_ARGS_FOR_ZRAM_SWAP_FRACTION="${1}"
+          POST_SETUP_HAS_ARG_ZRAM_SWAP_SET_FRACTION=true
+        return 0
+
+        elif [[ "${denominator}" -eq 0 ]]; then
+          return 1
+
+        else
+          echo -e "${PREFIX_ERROR} Invalid fraction."
+        fi
+
         return 1
+      }
 
-      else
-        echo -e "${PREFIX_ERROR} Invalid fraction."
-      fi
-
-      return 1
-    }
-
-    function is_host_memory_sufficient_for_zram_swap
-    {
-    	if ! get_free_memory; then
-    		print_prefix_error "Insufficient Host memory for zram-swap."
-    		return 1
-    	fi
-    }
+      function is_host_memory_sufficient_for_zram_swap
+      {
+        if ! get_free_memory; then
+          print_prefix_error "Insufficient Host memory for zram-swap."
+          return 1
+        fi
+      }
 # </functions>
 
 # <code>
