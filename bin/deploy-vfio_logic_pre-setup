@@ -80,6 +80,7 @@
     add_user_to_groups_for_pre_setup || return 1
     execute_hugepages_setup || return 1
     execute_qemu_configuration || return 1
+    echo
   }
 
   function do_skip_pre_setup
@@ -90,6 +91,7 @@
 
     if "${PRE_SETUP_DO_SKIP_ALL}"; then
       print_prefix_note "Skipping preliminary setup."
+      echo
       return 1
     fi
   }
@@ -114,13 +116,7 @@
         return 0
       fi
 
-      echo -e  "${output}"
-
-      if execute_hugepages_setup_main; then
-        print_suffix_pass "${output}"
-      else
-        print_suffix_fail "${output}"
-      fi
+      execute_hugepages_setup_main
     }
 
     function execute_hugepages_setup_main
@@ -168,19 +164,12 @@
     function execute_static_isolcpu_setup
     {
       execute_static_isolcpu_setup_prompt || return 0
-      local -r output="Allocating CPU threads..."
 
       if ! "${PRE_SETUP_DO_EXECUTE_ISOLCPU}"; then
         return 0
       fi
 
-      echo -e  "${output}"
-
-      if execute_static_isolcpu_setup_main; then
-        print_suffix_pass "${output}"
-      else
-        print_suffix_fail "${output}"
-      fi
+      execute_static_isolcpu_setup_main
     }
 
     function execute_static_isolcpu_setup_main
@@ -226,8 +215,8 @@
 
     function execute_qemu_configuration
     {
+      echo
       local -r output="Appending Libvirt file(s)..."
-      echo -e  "${output}"
 
       if execute_qemu_configuration_main; then
         print_suffix_pass "${output}"
@@ -360,14 +349,7 @@
     {
       execute_virtual_kvm_setup_prompt || return 0
       get_input_devices
-      local -r output="Executing Evdev setup..."
-      echo -e  "${output}"
-
-      if is_input_device_enum_valid; then
-        print_suffix_pass "${output}"
-      else
-        print_suffix_fail "${output}"
-      fi
+      is_input_device_enum_valid
     }
 
     function execute_virtual_kvm_setup_prompt

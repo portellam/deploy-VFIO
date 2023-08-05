@@ -40,8 +40,8 @@
 
     declare -g PREFIX_COMMENT="#" # <note>Added this var, to prevent IDE from showing visual errors when a string contains a comment variable.</note>
 
-    declare -gr BIN_PATH="/usr/local/bin/${DEPLOY_VFIO_NAME}/"
-    declare -gr ETC_BACKUPS_PATH="/usr/local/etc/${DEPLOY_VFIO_NAME}/"
+    declare -gr BIN_PATH="/usr/local/bin/${DEPLOY_VFIO_NAME}.d/"
+    declare -gr ETC_BACKUPS_PATH="/usr/local/etc/${DEPLOY_VFIO_NAME}.d/"
 
     # <remarks>File templates.</remarks>
     declare -gar DISCLAIMER_FILE_CONTENTS=(
@@ -249,22 +249,22 @@
 
     function print_suffix_error
     {
-      echo -e "${SUFFIX_ERROR} ${1}"
+      echo -e "${1} ${SUFFIX_ERROR}"
     }
 
     function print_suffix_fail
     {
-      echo -e "${SUFFIX_FAIL} ${1}"
+      echo -e "${1} ${SUFFIX_FAIL}"
     }
 
     function print_suffix_note
     {
-      echo -e "${SUFFIX_NOTE} ${1}"
+      echo -e "${1} ${SUFFIX_NOTE}"
     }
 
     function print_suffix_pass
     {
-      echo -e "${SUFFIX_PASS} ${1}"
+      echo -e "${1} ${SUFFIX_PASS}"
     }
 
   # <summary>Variable data-type validation</summary>
