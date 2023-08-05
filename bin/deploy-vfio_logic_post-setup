@@ -66,6 +66,77 @@
     fi
   }
 
+  # <summary>libvirt-hooks</summary>
+    function execute_libvirt_hooks_setup
+    {
+      if ! "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
+        return 0
+      fi
+
+      local -r user_name="portellam"
+      local -r repo_name="libvirt-hooks"
+
+      execute_libvirt_hooks_setup_prompt || return 1
+
+      local -r full_repo="${user_name}/${repo_name}"
+      local -r script_name="libvirt-hooks.sh"
+
+      if ! execute_libvirt_hooks_setup_install \
+        || ! execute_libvirt_hooks_setup_undo; then
+        return 1
+      fi
+
+      if "${POST_SETUP_DO_EXECUTE_LIBVIRT_HOOKS}"; then
+        update_or_clone_git_repo "${full_repo}" "${user_name}"
+      fi
+    }
+
+    function execute_libvirt_hooks_setup_install
+    {
+      if ! cd "${BIN_PATH}${full_repo}"; then
+          print_prefix_error "Failed to find build directory."
+          return 1
+      fi
+
+      if [[ ! -e "${script_name}" ]]; then
+          print_prefix_error "Failed to find script '${script_name}'."
+          return 1
+      fi
+
+      if ! echo "i" | sudo bash "${script_name}" --install &> /dev/null; then
+          print_prefix_error "Failed to execute script '${script_name}'."
+          return 1
+      fi
+    }
+
+    function execute_libvirt_hooks_setup_prompt
+    {
+      if "${POST_SETUP_DO_EXECUTE_LIBVIRT_HOOKS}"; then
+        return 0
+      fi
+
+      echo
+      execute_or_skip_prompt "Install ${SET_COLOR_YELLOW}${repo_name}${RESET_COLOR}?"
+    }
+
+    function execute_libvirt_hooks_setup_undo
+    {
+      if "${POST_SETUP_DO_EXECUTE_LIBVIRT_HOOKS}"; then
+        return 0
+      fi
+
+      execute_or_skip_prompt "Uninstall ${SET_COLOR_YELLOW}${repo_name}${RESET_COLOR}?" || return 255
+      execute_zram_swap_setup_uninstall
+    }
+
+    function execute_libvirt_hooks_setup_uninstall
+    {
+      if ! echo "i" | sudo bash "${script_name}" --uninstall &> /dev/null; then
+          print_prefix_error "Failed to execute script '${script_name}'."
+          return 1
+      fi
+    }
+
   # <summary>zram-swap</summary>
     function execute_zram_swap_setup
     {
@@ -89,8 +160,6 @@
 
     function execute_zram_swap_setup_install
     {
-      local -r script_name="install.sh"
-
       if ! cd "${BIN_PATH}${full_repo}"; then
           print_prefix_error "Failed to find build directory."
           return 1
@@ -101,7 +170,7 @@
           return 1
       fi
 
-      if ! echo "i" | sudo bash "${script_name}" &> /dev/null; then
+      if ! echo "i" | sudo bash "${script_name}" --install &> /dev/null; then
           print_prefix_error "Failed to execute script '${script_name}'."
           return 1
       fi
@@ -109,12 +178,13 @@
 
     function execute_zram_swap_setup_main
     {
-      execute_zram_swap_setup_prompt || return 1
-
       local -r user_name="foundObjects"
       local -r repo_name="zram-swap"
-      local -r full_repo="${user_name}/${repo_name}"
 
+      execute_zram_swap_setup_prompt || return 1
+
+      local -r full_repo="${user_name}/${repo_name}"
+      local -r script_name="install.sh"
 
       if ! execute_zram_swap_setup_install \
         || ! execute_zram_swap_undo; then
@@ -196,33 +266,14 @@
       fi
 
       echo
-      execute_or_skip_prompt "Install ${SET_COLOR_YELLOW}zram-swap${RESET_COLOR}?"
+      execute_or_skip_prompt "Install ${SET_COLOR_YELLOW}${repo_name}${RESET_COLOR}?"
     }
 
     function execute_zram_swap_setup_uninstall
     {
-      if ! sudo swapon -v | grep zram &> /dev/null; then
-        return 0
-      fi
-
-      if ! sudo swapoff /dev/zram* &> /dev/null; then
-        print_prefix_error "Failed to disable zram-swap device(s)."
-        return 1
-      fi
-
-      if ! sudo systemctl stop zram-swap &> /dev/null; then
-          print_prefix_error "Failed to stop zram-swap service."
+      if ! echo "i" | sudo bash "${script_name}" --uninstall &> /dev/null; then
+          print_prefix_error "Failed to execute script '${script_name}'."
           return 1
-      fi
-
-      if ! sudo systemctl stop zram-swap &> /dev/null; then
-        print_prefix_error "Failed to stop zram-swap service."
-        return 1
-      fi
-
-      if ! sudo systemctl daemon-reload &> /dev/null; then
-        print_prefix_error "Failed to update systemd."
-        return 1
       fi
     }
 
