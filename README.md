@@ -119,7 +119,9 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
         Post-setup OPTIONS:
           --audio-loopback              Install the audio loopback service...           Loopback audio from Guest to Host (over Line-out to Line-in). *
           --auto-xorg [ARGS]            Install auto-Xorg...                            System service to find and set a valid boot [VGA](#VGA) device for Xorg.
-          --hooks                       Install recommended Libvirt hooks.
+          --libvirt-hooks               Install recommended Libvirt hooks.
+          --looking-glass               Install Looking Glass...                        Video (and audio) capture over memory device from Windows guest.
+          --scream                      Install Scream...                               Audio capture over virtual network from Windows guest.
           --zram-swap [ARGS]            Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
           --skip-post-setup             Skip execution.
           --uninstall-post-setup        Undo all changes made by post-setup. *
@@ -283,7 +285,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 <sub> auto-Xorg | **[source (GitHub)](https://github.com/portellam/auto-Xorg)**</sub>
 
 #### 6.
-<sub>Libvirt hooks | **[VFIO-Tools source (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)** |
+<sub>Libvirt hooks | **[source (GitHub)](https://github.com/portellam/libvirt-hooks)** | **[VFIO-Tools source (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)** |
 **[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub>
 
 #### 7.
