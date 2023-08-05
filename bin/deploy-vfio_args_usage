@@ -127,7 +127,7 @@
       "\nPost-setup OPTIONS:"
       "  --audio-loopback\t\tInstall the audio loopback service...\t\tLoopback audio from Guest to Host (over Line-out to Line-in)."
       "  --auto-xorg [ARGS]\t\tInstall auto-Xorg...\t\t\t\tSystem service to find and set a valid boot VGA device for Xorg."
-      "  --hooks\t\t\tInstall recommended Libvirt hooks."
+      "  --libvirt-hooks\t\t\tInstall recommended Libvirt hooks."
       "  --zram-swap [ARGS]\t\tCreate compressed swap in RAM (about 2:1)...\tReduce chances of memory exhaustion for Host."
       "  --skip-post-setup\t\tSkip execution."
       "  --uninstall-post-setup\tUndo all changes made by post-setup."
