@@ -96,14 +96,20 @@
       cd "${bin_source_path}" || return 1
 
       if  [[ ! -e "deploy-vfio" ]] \
-        || [[ ! -e "vfiolib-all" ]] \
-        || [[ ! -e "vfiolib-checks" ]] \
-        || [[ ! -e "vfiolib-common" ]] \
-        || [[ ! -e "vfiolib-pre-setup" ]] \
-        || [[ ! -e "vfiolib-files" ]] \
-        || [[ ! -e "vfiolib-parse" ]] \
-        || [[ ! -e "vfiolib-setup" ]] \
-        || [[ ! -e "vfiolib-usage" ]]; then
+        || [[ ! -e "deploy-vfio_args_common" ]] \
+        || [[ ! -e "deploy-vfio_args_compatibility" ]] \
+        || [[ ! -e "deploy-vfio_args_database" ]] \
+        || [[ ! -e "deploy-vfio_args_main-setup" ]] \
+        || [[ ! -e "deploy-vfio_args_post-setup" ]] \
+        || [[ ! -e "deploy-vfio_args_pre-setup" ]] \
+        || [[ ! -e "deploy-vfio_args_usage" ]] \
+        || [[ ! -e "deploy-vfio_logic_common" ]] \
+        || [[ ! -e "deploy-vfio_logic_compatibility" ]] \
+        || [[ ! -e "deploy-vfio_logic_database" ]] \
+        || [[ ! -e "deploy-vfio_logic_main-setup" ]] \
+        || [[ ! -e "deploy-vfio_logic_post-setup" ]] \
+        || [[ ! -e "deploy-vfio_logic_pre-setup" ]] \
+        || [[ ! -e "deploy-vfio_sources" ]]; then
         echo -e "${PREFIX_ERROR} Missing project binaries."
         return 1
       fi
@@ -114,11 +120,9 @@
       cd .. || return 1
       cd "${etc_source_path}" || return 1
 
-      if [[ ! -e "audio-loopback-user.service" ]] \
-        || [[ ! -e "custom" ]] \
+      if [[ ! -e "custom" ]] \
         || [[ ! -e "grub" ]] \
         || [[ ! -e "initramfs-tools" ]] \
-        || [[ ! -e "libvirt-nosleep@.service" ]] \
         || [[ ! -e "modules" ]] \
         || [[ ! -e "pci-blacklists.conf" ]] \
         || [[ ! -e "qemu.conf" ]] \
