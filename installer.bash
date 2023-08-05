@@ -36,10 +36,11 @@
 
     get_option "${1}" || return 1
 
+    local -r source_path=$( pwd )
     local -r bin_target_path="/usr/local/bin/"
-    local -r bin_source_path="bin"
-    local -r etc_target_path="/usr/local/etc/vfiolib.d/"
-    local -r etc_source_path="etc"
+    local -r bin_source_path="${source_path}/bin/"
+    local -r etc_target_path="/usr/local/etc/deploy-vfio.d/"
+    local -r etc_source_path="${source_path}/etc/"
 
     if "${DO_INSTALL}"; then
       if ! install; then
@@ -117,7 +118,6 @@
 
     function do_files_exist
     {
-      cd .. || return 1
       cd "${etc_source_path}" || return 1
 
       if [[ ! -e "custom" ]] \
@@ -149,18 +149,12 @@
   # <summary>Execution</summary>
     function copy_sources_to_targets
     {
-      cd ..
-      cd "${bin_source_path}" || return 1
-
-      if ! sudo cp -rf * "${bin_target_path}" &> /dev/null; then
+      if ! sudo cp --force --recursive "${bin_source_path}"* "${bin_target_path}" &> /dev/null; then
         echo -e "${PREFIX_ERROR} Failed to copy project binaries."
         return 1
       fi
 
-      cd .. || return 1
-      cd "${etc_source_path}" || return 1
-
-      if ! sudo cp -rf * "${etc_target_path}" &> /dev/null; then
+      if ! sudo cp --force --recursive "${etc_source_path}"* "${etc_target_path}" &> /dev/null; then
         echo -e "${PREFIX_ERROR} Failed to copy project file(s)."
         return 1
       fi
@@ -177,9 +171,9 @@
 
     function set_target_file_permissions
     {
-      if ! sudo chown -R root:root "${bin_target_path}" &> /dev/null \
-        || ! sudo chmod -R +x "${bin_target_path}" &> /dev/null \
-        || ! sudo chown -R root:root "${etc_target_path}" &> /dev/null; then
+      if ! sudo chown --recursive root:root "${bin_target_path}" &> /dev/null \
+        || ! sudo chmod --recursive +x "${bin_target_path}" &> /dev/null \
+        || ! sudo chown --recursive root:root "${etc_target_path}" &> /dev/null; then
         echo -e "${PREFIX_ERROR} Failed to set file permissions."
         return 1
       fi
@@ -187,18 +181,16 @@
 
     function uninstall
     {
-      local -r executable="deploy-vfio"
-      local -r sources="${executable}_"
+      local -r executable="${bin_target_path}deploy-vfio"
+      local -r targets="${executable}_"
 
-      cd "${bin_target_path}" || return 1
-
-      if ( [[ -e "${executable}" ]] && ! rm -rf "./${executable}" &> /dev/null ) \
-        || ( ls "./${sources}-"* &> /dev/null && ! rm -rf "./${sources}"* &> /dev/null ); then
+      if ( [[ -e "${executable}" ]] && ! rm --force --recursive "${executable}" &> /dev/null ) \
+        || ! rm --force --recursive "${targets}"* &> /dev/null; then
         echo -e "${PREFIX_ERROR} Failed to delete project binaries."
         return 1
       fi
 
-      if [[ -d "${etc_target_path}" ]] && ! rm -rf "${etc_target_path}" &> /dev/null; then
+      if [[ -d "${etc_target_path}" ]] && ! rm --force --recursive "${etc_target_path}" &> /dev/null; then
         echo -e "${PREFIX_ERROR} Failed to delete project file(s)."
         return 1
       fi
