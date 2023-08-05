@@ -91,7 +91,7 @@
     {
       local -r script_name="install.sh"
 
-      if ! cd "${GIT_PATH}${full_repo}"; then
+      if ! cd "${BIN_PATH}${full_repo}"; then
           print_prefix_error "Failed to find build directory."
           return 1
       fi
@@ -121,10 +121,8 @@
         return 1
       fi
 
-      exit 1
-
       if "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
-        # update_or_clone_git_repo "${full_repo}" "${user_name}" "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}" || return 1
+        update_or_clone_git_repo "${full_repo}" "${user_name}" || return 1
         execute_zram_swap_setup_modify
       fi
     }
