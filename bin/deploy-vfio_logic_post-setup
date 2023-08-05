@@ -25,7 +25,6 @@
 
     declare -g POST_SETUP_ARE_PARAMS_SET=true
 
-    declare -g POST_SETUP_ASK_TO_EXECUTE_ALL=true
     declare -g POST_SETUP_DO_EXECUTE_AUDIO_LOOPBACK=false
     declare -g POST_SETUP_DO_EXECUTE_AUTO_XORG=false
     declare -g POST_SETUP_DO_EXECUTE_LIBVIRT_HOOKS=false
@@ -48,8 +47,8 @@
     execute_libvirt_hooks_setup || return 1
     execute_zram_swap_setup || return 1
     execute_auto_xorg_setup || return 1
-    execute_looking_glass_setup || return 1
-    execute_scream_setup || return 1
+    # execute_looking_glass_setup || return 1   <note>To be added in a future release.</note>
+    # execute_scream_setup || return 1          <note>To be added in a future release.</note>
     execute_audio_loopback_setup || return 1
   }
 
@@ -299,6 +298,10 @@
             return 1
         fi
       }
+
+    # <summary>Looking Glass</summary>   <note>To be added in a future release.</note>
+
+    # <summary>Scream</summary>   <note>To be added in a future release.</note>
 
     # <summary>zram-swap</summary>
     function execute_zram_swap_setup
