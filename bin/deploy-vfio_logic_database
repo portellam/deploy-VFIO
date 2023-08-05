@@ -63,9 +63,11 @@
   {
     do_parse_database_prompt || return 0
     is_unparsed_enum_valid || return 1
-    parse_from_xml_prompt && specify_xml_file || return 1
+    parse_from_xml_prompt
+    specify_xml_file || return 1
 
-    if ! is_xml_valid; then
+    if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}" \
+      && ! is_xml_valid; then
       does_host_not_have_existing_vfio_setup || return 1
       export_iommu_groups_to_xml || return 1
       specify_iommu_group_enum
@@ -745,10 +747,6 @@
     function is_xml_valid
     {
       if ! xmllint "${XML_FILE}" &> /dev/null; then
-        if ! "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
-          return 1
-        fi
-
         print_prefix_error "XML file '${XML_FILE}' is invalid."
         return 1
       fi
@@ -760,30 +758,42 @@
         return 0
       fi
 
-      execute_or_skip_prompt "Cross-reference database with XML file?" || return 1
-      DATABASE_DO_PARSE_DATABASE_FROM_XML=true
+      execute_or_skip_prompt "Cross-reference database with XML file?" && DATABASE_DO_PARSE_DATABASE_FROM_XML=true
     }
 
     function specify_xml_file
     {
-      if "${DATABASE_XML_FILE_IS_SPECIFIED}"; then
+      echo "DATABASE_DO_PARSE_DATABASE_FROM_XML == $DATABASE_DO_PARSE_DATABASE_FROM_XML"
+
+      if "${DATABASE_XML_FILE_IS_SPECIFIED}" \
+        && ! "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
         return 0
       fi
 
-      local -r output="Enter XML filename: "
+      if ! "${DATABASE_XML_FILE_IS_SPECIFIED}" \
+        && ! "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
+        set_xml_file "${DEFAULT_XML_FILE}"
+        return 0
+      fi
+
+      specify_xml_file_prompt || return 1
+    }
+
+    function specify_xml_file_prompt
+    {
+      local -r output="Enter XML filename (leave blank for default): "
 
       for counter in $( seq 0 2 ); do
           read -r -p "${output}" answer
 
-          if ! "${DO_PARSE_DATABASE_FROM_FILE}" \
-            && [[ -z "${answer}" ]]; then
-            DATABASE_FILE="${DEFAULT_DATABASE_FILE}"
-            break
+          if [[ ! -z "${answer}" ]]; then
+            is_file "${answer}" || continue
+            is_file_not_empty "${answer}" || continue
+            set_xml_file "${answer}"
+            return 0
           fi
 
-          is_file "${answer}" || continue
-          is_file_not_empty "${answer}" || continue
-          set_xml_file "${answer}"
+          set_xml_file "${DEFAULT_XML_FILE}"
           return 0
         done
 
