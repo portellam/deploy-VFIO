@@ -131,7 +131,7 @@ exit 1    # TODO: need to update this.
       fi
 
       if [[ ! -d "${ETC_DEST_PATH}" ]] \
-        && ! sudo mkdir -p "${ETC_DEST_PATH}"; then
+        && ! sudo mkdir --parents "${ETC_DEST_PATH}"; then
         echo -e "${PREFIX_ERROR} Could not create directory '${ETC_DEST_PATH}'."
         return 1
       fi

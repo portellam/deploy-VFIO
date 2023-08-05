@@ -682,7 +682,7 @@
       fi
 
       if [[ -d $( dirname "${GRUB_CUSTOM_DEST_PATH}" ) ]] \
-        && ! sudo mkdir -p $( dirname "${GRUB_CUSTOM_DEST_PATH}" ); then
+        && ! sudo mkdir --parents $( dirname "${GRUB_CUSTOM_DEST_PATH}" ); then
         print_prefix_error "Failed to create directory '"$( dirname "${GRUB_CUSTOM_DEST_PATH}" )"'."
         return 1
       fi
