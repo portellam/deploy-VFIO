@@ -132,7 +132,7 @@
   # <summary>File manipulation</summary>
     function create_temp_file_of_file
     {
-      is_file "${1}" || return 1
+      is_file "${1}" &> /dev/null || return 0
 
       local -r file="${1}"
       local -r temp_file="${file}.tmp"
@@ -145,7 +145,7 @@
 
     function copy_temp_file_to_file
     {
-      is_file "${1}" || return 1
+      is_file "${1}" &> /dev/null || return 0
 
       local -r file="${1}"
       local -r temp_file="${file}.tmp"

@@ -7,10 +7,6 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
-# <sets>
-  set -o pipefail
-# </sets>
-
 # <sources>
   source deploy-vfio_sources
 # </sources>
