@@ -7,10 +7,6 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
-# <sets>
-  set -o pipefail
-# </sets>
-
 # <sources>
   source deploy-vfio_logic_common
 # </sources>
@@ -93,7 +89,7 @@
     fi
 
     if "${PRE_SETUP_DO_SKIP_ALL}"; then
-      print_prefix_note "Skipping VFIO setup."
+      print_prefix_note "Skipping preliminary setup."
       return 1
     fi
   }
