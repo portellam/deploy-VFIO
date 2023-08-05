@@ -182,12 +182,12 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 ### Post-setup
 * **auto-Xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.<sup>[5](#5)</sup>
 * **Guest Audio Capture**
-    - Create an *Audio loopback* to output on the *Host* Audio device *Line-Out*.
+    - Create an *Audio loopback* to output on the *Host* Audio device *Line-Out*.<sup>[6](#6)</sup>
       - Listen on *Host* Audio device *Line-In* (from *Guest* PCI Audio device *Line-Out*).
       - Useful for systems with multiple Audio devices.
     - For virtual implementation, see *Virtual Audio Capture*.
 * **Libvirt Hooks**
-    - Invoke **"hooks"** (scripts) for all or individual Guests.<sup>[6](#6)</sup>
+    - Invoke **"hooks"** (scripts) for all or individual Guests.<sup>[7](#7)</sup>
     - Switch display input (video output) at Guest start.
     - **Dynamically** allocate CPU cores and CPU scheduler.
     - **Libvirt-nosleep** system service(s) per Guest to prevent Host sleep while Guest is active.
@@ -195,13 +195,13 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
     - Create a compressed Swap device in Host memory, using the *lz4* algorithm *(compression ratio of about 2:1)*.
       - Reduce swapiness to existing Host swap devices.
       - Reduce chances of Host memory exhaustion (given an event of memory over-allocation).
-    - Implementation is known as *zram-swap*.<sup>[7](#7)</sup>
+    - Implementation is known as *zram-swap*.<sup>[8](#8)</sup>
 * **Virtual Audio Capture *(To be added in a future release)***
     - Setup a virtual Audio driver for Windows that provides a discrete Audio device.
-    - Implementation is known as **Scream**.<sup>[8](#8)</sup>
+    - Implementation is known as **Scream**.<sup>[9](#9)</sup>
 * **Virtual Video Capture *(To be added in a future release)***
     - Setup direct-memory-access (DMA) of a PCI VGA device output (Video and Audio) from a Guest to Host.
-    - Implementation is known as **LookingGlass**.<sup>[9](#9)</sup>
+    - Implementation is known as **LookingGlass**.<sup>[10](#10)</sup>
     - **Disclaimer:** Only supported for Windows 7/8/10/11 Guests.
 
 ## Information
@@ -228,12 +228,12 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 - */usr/local/etc/deploy-vfio.d\**
 
 ### VFIO?
-Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.*<sup>[10](#10)</sup>
+Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.*<sup>[11](#11)</sup>
 
 ### VGA?
 Throughout the script source code and documentation, the acronym *VGA* is used.
 
-In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VGA may *refer to the computer display standard, the 15-pin D-subminiature VGA connector, or the 640×480 resolution characteristic of the VGA hardware.*<sup>[11](#11)</sup>
+In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VGA may *refer to the computer display standard, the 15-pin D-subminiature VGA connector, or the 640×480 resolution characteristic of the VGA hardware.*<sup>[12](#12)</sup>
 
 #### Example:
 
@@ -283,26 +283,29 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 <sub> auto-Xorg | **[source (GitHub)](https://github.com/portellam/auto-Xorg)**</sub>
 
 #### 6.
+<sub>Audio-loopback | **[source (GitHub)](https://github.com/portellam/audio-loopback)**</sub>
+
+#### 7.
 <sub>Libvirt hooks | **[source (GitHub)](https://github.com/portellam/libvirt-hooks)** | **[VFIO-Tools source (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)** |
 **[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub>
 
-#### 7.
+#### 8.
 <sub> zram-swap | **[source (GitHub)](https://github.com/foundObjects/zram-swap)** |
 **[lz4 source (GitHub)](https://github.com/lz4/lz4)** |
 **[package (Debian)](https://wiki.debian.org/ZRam)** |
 **[package (Arch)](https://aur.archlinux.org/packages/zramswap)** |
 **[benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
 
-#### 8.
+#### 9.
 <sub>Scream | **[source (GitHub)](https://github.com/duncanthrax/scream)** | **[guide (LookingGlass wiki)](https://looking-glass.io/wiki/Using_Scream_over_LAN)**</sub>
 
-#### 9.
+#### 10.
 <sub>Looking Glass | **[Website](https://looking-glass.io/)** </sub>
 
-#### 10.
+#### 11.
 <sub> VFIO | **[documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub>
 
-#### 11.
+#### 12.
 <sub> VGA | **[Wikipedia](https://en.wikipedia.org/wiki/Video_Graphics_Array)**</sub>
 
 ## Disclaimer:
