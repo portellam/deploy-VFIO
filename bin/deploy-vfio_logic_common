@@ -40,6 +40,7 @@
 
     declare -g PREFIX_COMMENT="#" # <note>Added this var, to prevent IDE from showing visual errors when a string contains a comment variable.</note>
 
+    declare -gr BIN_PATH="/usr/local/bin/${DEPLOY_VFIO_NAME}/"
     declare -gr ETC_BACKUPS_PATH="/usr/local/etc/${DEPLOY_VFIO_NAME}/"
 
     # <remarks>File templates.</remarks>
@@ -82,6 +83,51 @@
   {
     unset IFS
   }
+
+  # <summary>GitHub</summary>
+    function clone_git_repo
+    {
+      local -r full_repo="${1}"
+
+      if ! git clone "https://github.com/${full_repo}" &> /dev/null; then
+        print_prefix_error "Failed to download repository."
+        return 1
+      fi
+    }
+
+    function update_git_repo
+    {
+      if ! git pull &> /dev/null; then
+        print_prefix_error "Failed to update repository."
+        return 1
+      fi
+    }
+
+    function update_or_clone_git_repo
+    {
+      local -r full_repo="${1}"
+      local -r user_name="${2}"
+      local -r full_path="${BIN_PATH}${full_repo}"
+      local -r user_path="${BIN_PATH}${user_name}"
+
+      if [[ ! -d "${user_path}" ]] \
+        && ! sudo mkdir --parents "${user_path}" &> /dev/null; then
+        print_prefix_error "Failed to create directory '${user_path}'."
+        return 1
+      fi
+
+      if [[ ! -d "${full_path}" ]]; then
+        cd "${full_path}"
+        update_git_repo
+        return "${?}"
+
+      elif [[ -d "${user_path}" ]]; then
+        clone_git_repo "${full_repo}"
+        return "${?}"
+      else
+        return 1
+      fi
+    }
 
   # <summary>File manipulation</summary>
     function create_temp_file_of_file
