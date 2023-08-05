@@ -120,8 +120,8 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
           --audio-loopback              Install the audio loopback service...           Loopback audio from Guest to Host (over Line-out to Line-in). *
           --auto-xorg [ARGS]            Install auto-Xorg...                            System service to find and set a valid boot [VGA](#VGA) device for Xorg.
           --libvirt-hooks               Install recommended Libvirt hooks.
-          --looking-glass               Install Looking Glass...                        Video (and audio) capture over memory device from Windows guest.
-          --scream                      Install Scream...                               Audio capture over virtual network from Windows guest.
+          ~~--looking-glass               Install Looking Glass...                        Video (and audio) capture over memory device from Windows guest.~~
+          ~~--scream                      Install Scream...                               Audio capture over virtual network from Windows guest.~~
           --zram-swap [ARGS]            Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
           --skip-post-setup             Skip execution.
           --uninstall-post-setup        Undo all changes made by post-setup. *

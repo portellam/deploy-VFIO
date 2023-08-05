@@ -24,8 +24,8 @@
     is_option_install_libvirt_hooks "$@" || return 1
     is_option_install_zram_swap "$@" || return 1
     is_option_install_auto_xorg "$@" || return 1
-    is_option_install_looking_glass "$@" || return 1
-    is_option_install_scream "$@" || return 1
+    # is_option_install_looking_glass "$@" || return 1    <note>To be added in a future release.</note>
+    # is_option_install_scream "$@" || return 1           <note>To be added in a future release.</note>
     is_option_install_audio_loopback "$@" || return 1
   }
 
@@ -57,21 +57,21 @@
         fi
       }
 
-      function is_option_install_looking_glass
-      {
-        if [[ "${1}" == "--looking-glass" ]]; then
-          POST_SETUP_ASK_TO_EXECUTE_ALL=false
-          POST_SETUP_DO_EXECUTE_LOOKING_GLASS=true
-        fi
-      }
+      # function is_option_install_looking_glass        # <note>To be added in a future release.</note>
+      # {
+      #   if [[ "${1}" == "--looking-glass" ]]; then
+      #     POST_SETUP_ASK_TO_EXECUTE_ALL=false
+      #     POST_SETUP_DO_EXECUTE_LOOKING_GLASS=true
+      #   fi
+      # }
 
-      function is_option_install_scream
-      {
-        if [[ "${1}" == "--scream" ]]; then
-          POST_SETUP_ASK_TO_EXECUTE_ALL=false
-          POST_SETUP_DO_EXECUTE_SCREAM=true
-        fi
-      }
+      # function is_option_install_scream               # <note>To be added in a future release.</note>
+      # {
+      #   if [[ "${1}" == "--scream" ]]; then
+      #     POST_SETUP_ASK_TO_EXECUTE_ALL=false
+      #     POST_SETUP_DO_EXECUTE_SCREAM=true
+      #   fi
+      # }
 
       function is_option_install_zram_swap
       {
