@@ -114,7 +114,7 @@
         return 0
       fi
 
-      print_suffix_work "${output}"
+      echo -e  "${output}"
 
       if execute_hugepages_setup_main; then
         print_suffix_pass "${output}"
@@ -174,7 +174,7 @@
         return 0
       fi
 
-      print_suffix_work "${output}"
+      echo -e  "${output}"
 
       if execute_static_isolcpu_setup_main; then
         print_suffix_pass "${output}"
@@ -221,13 +221,13 @@
         echo -e "${SET_COLOR_YELLOW}Isolcpu${RESET_COLOR} is a feature which isolates CPU threads from the Host machine.\nGuest(s) can use Isolcpu to a peformance benefit. Guest(s) can use isolated CPU threads, increasing responsiveness and stability, without interferrence from the Host.\n${SET_COLOR_YELLOW}NOTE:${RESET_COLOR} If this is skipped, the equivalent Libvirt hook for dynamic isolation will be installed.\n"
       fi
 
-      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Evdev${RESET_COLOR}?"
+      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Isolcpu${RESET_COLOR}?"
     }
 
     function execute_qemu_configuration
     {
       local -r output="Appending Libvirt file(s)..."
-      print_suffix_work "${output}"
+      echo -e  "${output}"
 
       if execute_qemu_configuration_main; then
         print_suffix_pass "${output}"
@@ -359,9 +359,9 @@
     function execute_virtual_kvm_setup
     {
       execute_virtual_kvm_setup_prompt || return 0
-      set_input_devices
+      get_input_devices
       local -r output="Executing Evdev setup..."
-      print_suffix_work "${output}"
+      echo -e  "${output}"
 
       if is_input_device_enum_valid; then
         print_suffix_pass "${output}"
