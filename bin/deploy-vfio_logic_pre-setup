@@ -140,16 +140,16 @@
       fi
 
       if ! "${IS_HUGEPAGES_SIZE_SET}"; then
-        set_hugepages_byte_size_prompt || return 1
+        get_hugepages_byte_size_prompt || return 1
       fi
 
-      set_hugepages_min_and_max_sizes || return 1
+      get_hugepages_min_and_max_sizes || return 1
 
       if ! "${IS_HUGEPAGES_COUNT_SET}"; then
-        set_hugepages_count_prompt || return 1
+        get_hugepages_count_prompt || return 1
       fi
 
-      set_hugepages_memory_allocated || return 1
+      get_hugepages_memory_allocated || return 1
       is_host_memory_sufficient_for_hugepages || return 1
       GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=${HUGEPAGES_BYTE_SUFFIX} hugepagesz=${HUGEPAGES_BYTE_SUFFIX} hugepages=${HUGEPAGES_COUNT}"
       PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
@@ -194,7 +194,7 @@
       local -i total_cores_count=$( cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+" )
       local -i total_threads_count=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+" )
 
-      set_maximum_count_of_cores_allocated_to_host "cores_allocated_to_host" "${total_cores_count}" || return 1
+      get_maximum_count_of_cores_allocated_to_host "cores_allocated_to_host" "${total_cores_count}" || return 1
 
       local -a host_cores_enum=( $( seq 0 $(( "${cores_allocated_to_host}" - 1 )) ) )
       local -a host_threads_enum=( )
@@ -205,7 +205,7 @@
       local host_threads_delim=""
       local guest_threads_delim=""
 
-      set_thread_pair_enums_and_delims
+      get_thread_pair_enums_and_delims
 
       GRUB_CMDLINE_ISOLCPU="isolcpus=${guest_threads_delim} nohz_full=${guest_threads_delim} rcu_nocbs=${guest_threads_delim}"
       PRE_SETUP_DO_EXECUTE_ISOLCPU=true
@@ -415,13 +415,13 @@
       copy_this_file_to_other_file "${QEMU_SRC_PATH}" "${QEMU_DEST_PATH}" || return 1
     }
 
-  # <summary>Setters</summary>
-    function set_hugepages_memory_allocated
+  # <summary>Getters</summary>
+    function get_hugepages_memory_allocated
     {
       HUGEPAGES_ALLOCATED_MEMORY=$(( ${HUGEPAGES_COUNT} * ${HUGEPAGES_SIZE_IN_KIB} ))
     }
 
-    function set_hugepages_byte_size
+    function get_hugepages_byte_size
     {
       local -u answer="${1}"
 
@@ -436,7 +436,7 @@
       esac
     }
 
-    function set_hugepages_byte_size_prompt
+    function get_hugepages_byte_size_prompt
     {
       if "${IS_HUGEPAGES_SIZE_SET}"; then
         return 0
@@ -444,20 +444,20 @@
 
       for counter in $( seq 0 2 ); do
         read -r -p "Enter size of Hugepages [2M/1G]: " HUGEPAGES_BYTE_SUFFIX
-        set_hugepages_byte_size "${HUGEPAGES_BYTE_SUFFIX}" && return 0
+        get_hugepages_byte_size "${HUGEPAGES_BYTE_SUFFIX}" && return 0
       done
 
       return 1
     }
 
-    function set_hugepages_count
+    function get_hugepages_count
     {
       if [[ -z "${1}" ]]; then
         print_prefix_error "Hugepages count is empty."
         return 1
       fi
 
-      set_hugepages_min_and_max_sizes || return 1
+      get_hugepages_min_and_max_sizes || return 1
 
       if ! is_int "${1}" \
         || [[ "${1}" -lt "${HUGEPAGES_MIN_COUNT}" ]] \
@@ -470,7 +470,7 @@
       HUGEPAGES_COUNT="${1}"
     }
 
-    function set_hugepages_count_prompt
+    function get_hugepages_count_prompt
     {
       if "${IS_HUGEPAGES_COUNT_SET}"; then
         return 0
@@ -478,13 +478,13 @@
 
       for counter in $( seq 0 2 ); do
         read -r -p "Enter count of Hugepages [${HUGEPAGES_MIN_COUNT}-${HUGEPAGES_MAX_COUNT}]: " HUGEPAGES_COUNT
-        set_hugepages_count "${HUGEPAGES_COUNT}" && return 0
+        get_hugepages_count "${HUGEPAGES_COUNT}" && return 0
       done
 
       return 1
     }
 
-    function set_hugepages_min_and_max_sizes
+    function get_hugepages_min_and_max_sizes
     {
       case "${HUGEPAGES_BYTE_SUFFIX}" in
         "2M" )
@@ -533,13 +533,13 @@
       PRE_SETUP_DO_EXECUTE_EVDEV=true
     }
 
-    function set_input_devices
+    function get_input_devices
     {
       EVENT_DEVICES_ENUM=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )
       INPUT_DEVICES_ENUM=( $( ls /dev/input/by-id ) )
     }
 
-    function set_kernel_command_hugepages
+    function get_kernel_command_hugepages
     {
       if [[ -z "${1}" ]]; then
         return 1
@@ -549,7 +549,7 @@
       reference="${GRUB_CMDLINE_HUGEPAGES}"
     }
 
-    function set_kernel_command_isolcpu
+    function get_kernel_command_isolcpu
     {
       if [[ -z "${1}" ]]; then
         return 1
@@ -559,7 +559,7 @@
       reference="${GRUB_CMDLINE_ISOLCPU}"
     }
 
-    function set_maximum_count_of_cores_allocated_to_host
+    function get_maximum_count_of_cores_allocated_to_host
     {
       local -n reference="${1}"
       local total_cores_count="${2}"
@@ -577,7 +577,7 @@
       fi
     }
 
-    function set_thread_pair_delim_for_guest
+    function get_thread_pair_delim_for_guest
     {
       local -i first_thread="${guest_threads_delimited_enum[0]}"
       local -i first_thread="${guest_threads_delimited_enum[-1]}"
@@ -590,7 +590,7 @@
       guest_threads_delim+="${thread_set},"
     }
 
-    function set_thread_pair_delim_for_host
+    function get_thread_pair_delim_for_host
     {
       local -i first_thread="${host_threads_delimited_enum[0]}"
       local -i last_thread="${host_threads_delimited_enum[-1]}"
@@ -603,7 +603,7 @@
       host_threads_delim+="${thread_set},"
     }
 
-    function set_thread_pair_enums_for_guest
+    function get_thread_pair_enums_for_guest
     {
       local -n thread="${1}"
 
@@ -614,7 +614,7 @@
       done
     }
 
-    function set_thread_pair_enums_for_host
+    function get_thread_pair_enums_for_host
     {
       local -n thread="${1}"
 
@@ -625,17 +625,17 @@
       done
     }
 
-    function set_thread_pair_enums_and_delims
+    function get_thread_pair_enums_and_delims
     {
       for smt_factor in ${smt_factor_enum[@]}; do
         local -a host_threads_delimited_enum=( )
         local -a guest_threads_delimited_enum=( )
         local -i thread
 
-        set_thread_pair_enums_for_host "thread"
-        set_thread_pair_enums_for_guest "thread"
-        set_thread_pair_delim_for_host
-        set_thread_pair_delim_for_guest
+        get_thread_pair_enums_for_host "thread"
+        get_thread_pair_enums_for_guest "thread"
+        get_thread_pair_delim_for_host
+        get_thread_pair_delim_for_guest
       done
 
       if [[ ${host_threads_delim: -1} == "," ]]; then

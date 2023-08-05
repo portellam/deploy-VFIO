@@ -167,7 +167,7 @@
     function execute_multiboot_setup
     {
       if ! "${HAS_RESTORED_DEFAULT_FILES}" \
-        || ! set_output_for_multiboot_setup \
+        || ! get_output_for_multiboot_setup \
         || ! specify_grub_menu_entry_for_multiboot_setup \
         || ! write_output_for_multiboot_setup \
         || ! execute_update_after_main_setup; then
@@ -180,7 +180,7 @@
     {
       if ! "${HAS_RESTORED_DEFAULT_FILES}" \
         || ! specify_static_setup_prompt \
-        || ! set_output_for_static_setup \
+        || ! get_output_for_static_setup \
         || ! write_output_for_static_setup \
         || ! execute_update_after_main_setup; then
         print_prefix_fail "Static VFIO setup has failed."
@@ -242,6 +242,221 @@
       copy_this_file_to_other_file "${MODPROBE_VFIO_SRC_PATH}" "${MODPROBE_VFIO_DEST_PATH}" || return 1
       copy_this_file_to_other_file "${MODULES_SRC_PATH}" "${MODULES_DEST_PATH}" || return 1
       copy_this_file_to_other_file "${GRUB_SRC_PATH}" "${GRUB_DEST_PATH}" || return 1
+    }
+
+  # <summary>Getters</summary>
+    function get_grub_menu_entry_enum_for_multiboot_setup
+    {
+      for this_iommu_group_id in ${IOMMU_GROUPS_FOR_VFIO_ENUM[@]}; do
+        does_iommu_group_have_vga_device "${this_iommu_group_id}" &> /dev/null || continue
+        local -a driver_enum=( )
+        local -a selection_without_this_group_enum=( )
+        local -a stub_hwid_enum=( )
+        local -a vfio_hwid_enum=( )
+        local grub_cmdline_temp=""
+        local this_driver_delim=""
+        local this_iommu_group_vga_name=""
+        local this_stub_hwid_delim=""
+        local this_vfio_hwid_delim=""
+
+        for iommu_group_id in ${IOMMU_GROUPS_FOR_VFIO_ENUM[@]}; do
+          if [[ "${iommu_group_id}" != "${this_iommu_group_id}" ]]; then
+            selection_without_this_group_enum+=( "${iommu_group_id}" )
+          fi
+        done
+
+        get_name_for_first_vga_device_in_iommu_group "${this_iommu_group_id}" "this_iommu_group_vga_name" &> /dev/null
+        get_enums_for_parsed_selection "selection_without_this_group_enum" "driver_enum" "stub_hwid_enum" "vfio_hwid_enum" "driver_enum" "this_driver_delim"
+        get_comma_delimited_string_from_enum "stub_hwid_enum" "this_stub_hwid_delim"
+        get_comma_delimited_string_from_enum "vfio_hwid_enum" "this_vfio_hwid_delim"
+        grub_cmdline_temp+="modprobe.blacklist=${this_driver_delim} "
+        grub_cmdline_temp+="pci_stub.ids=${this_stub_hwid_delim} "
+        grub_cmdline_temp+="vfio_pci.ids=${this_vfio_hwid_delim} "
+        grub_cmdline_temp="${prefix_grub_cmdline_temp}${grub_cmdline_temp::-1}"
+        get_grub_menu_entry_for_multiboot_setup "kernel_enum" "${this_iommu_group_id}"
+      done
+    }
+
+    function get_grub_menu_entry_for_multiboot_setup
+    {
+      local -n reference="${1}"
+      local iommu_group_id="${2}"
+
+      # <remarks>Organize menu entry for excluded VGA group and given system kernel.</remarks>
+      for key in ${!reference[@]}; do
+        local kernel="${reference[$key]}"
+        local grub_menu_entry_title="${system_distro}, with ${system_os} ${kernel} (VFIO, w/o IOMMU ${iommu_group_id} w/ ${this_iommu_group_vga_name})"
+        GRUB_MENU_ENTRY_TITLE_ENUM+=( "${grub_menu_entry_title}" )
+
+        if [[ "${key}" -eq 0 ]]; then
+          get_preferred_grub_menu_entry_for_multiboot_setup "${iommu_group_id}" "${grub_menu_entry_title}"
+        fi
+
+        GRUB_CUSTOM_FILE_CONTENTS+=(
+          "menuentry \"${grub_menu_entry_title}\"{"
+          # "\tload_video"
+          # "insmod gzio"
+          # "if [ x\$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi"
+          # "insmod part_gpt"
+          "\tinsmod ${system_fstype}"
+          "\tset root='/dev/disk/by-uuid/${system_uuid}'"
+          "\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"${system_uuid}\n\t"'fi'
+          "\techo  'Loading ${system_os} ${kernel} ...'"
+          "\tlinux   /boot/vmlinuz-${kernel} root=UUID=${system_uuid} ${prefix_grub_cmdline_temp}"
+          "\tinitrd  /boot/initrd.img-${kernel}"
+          "\techo  \"VFIO, w/o IOMMU '${iommu_group_id}' w/ '${this_iommu_group_vga_name}'\""
+          "}"
+          ""
+        )
+      done
+    }
+
+    function get_kernel_cmdline_iommu_driver
+    {
+      case "${CPU_VENDOR_ID}" in
+        *"amd"* )
+          PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_AMD_IOMMU_DRIVER}" ;;
+
+        *"intel"* )
+          PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_INTEL_IOMMU_DRIVER}" ;;
+
+        * )
+          print_prefix_error "Unknown CPU vendor '${CPU_VENDOR_ID}'."
+          return 1 ;;
+      esac
+    }
+
+    function get_output_for_multiboot_setup
+    {
+      local -ir max_parsed_kernels=3
+      local -a kernel_enum=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | cut -c 2- | sort -r | head -n ${max_parsed_kernels} ) )
+      local -r system_disk=$( df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1 )
+      local -r system_distro=$( lsb_release -i -s )
+      local -r system_fstype=$( blkid -s TYPE | grep ${system_disk} | cut -d '"' -f2 )
+      local -r system_kernel=$( uname -o )
+      local -r system_os=$( uname )
+      local -r system_uuid=$( blkid -s UUID | grep ${system_disk} | cut -d '"' -f2 )
+      local prefix_grub_cmdline_temp=""
+      prefix_grub_cmdline_temp+="${prefix_grub_cmdline} "
+
+      local grub_cmdline_hugepages=""
+      get_kernel_command_hugepages "grub_cmdline_hugepages"
+
+      if [[ ! -z "${grub_cmdline_hugepages}" ]]; then
+        prefix_grub_cmdline_temp+="${grub_cmdline_hugepages} "
+      fi
+
+      local grub_cmdline_isolcpu=""
+      get_kernel_command_isolcpu "grub_cmdline_isolcpu"
+
+      if [[ ! -z "${get_kernel_command_isolcpu}" ]]; then
+        prefix_grub_cmdline_temp+="${get_kernel_command_isolcpu} "
+      fi
+
+      readonly prefix_grub_cmdline_temp
+      get_grub_menu_entry_enum_for_multiboot_setup
+
+      if ! is_enum "GRUB_CUSTOM_FILE_CONTENTS"; then
+        print_prefix_error "Multiboot setup output is empty."
+        return 1
+      fi
+    }
+
+    function get_output_for_static_setup
+    {
+      local -a driver_enum=( )
+      local -a stub_hwid_enum=( )
+      local -a vfio_hwid_enum=( )
+      local driver_delim=""
+      local stub_hwid_delim=""
+      local vfio_hwid_delim=""
+      local prefix_grub_cmdline_temp=""
+      prefix_grub_cmdline_temp+="${prefix_grub_cmdline} "
+
+      local grub_cmdline_hugepages=""
+      get_kernel_command_hugepages "grub_cmdline_hugepages"
+
+      if [[ ! -z "${grub_cmdline_hugepages}" ]]; then
+        prefix_grub_cmdline_temp+="${grub_cmdline_hugepages} "
+      fi
+
+      local grub_cmdline_isolcpu=""
+      get_kernel_command_isolcpu "grub_cmdline_isolcpu"
+
+      get_enums_for_selection "IOMMU_GROUPS_FOR_VFIO_ENUM" "driver_enum" "stub_hwid_enum" "vfio_hwid_enum"
+      get_comma_delimited_string_from_enum "driver_enum" "driver_delim"
+      get_comma_delimited_string_from_enum "stub_hwid_enum" "stub_hwid_delim"
+      get_comma_delimited_string_from_enum "vfio_hwid_enum" "vfio_hwid_delim"
+
+      if ! is_enum "driver_enum" \
+        && ! is_enum "stub_hwid_enum" \
+        && ! is_enum "vfio_hwid_enum"; then
+        print_prefix_error "Static setup output is empty."
+        return 1
+      fi
+
+      if ! "${MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB}" \
+        && ! "${MAIN_SETUP_DO_EXECUTE_STATIC_WITHOUT_GRUB}"; then
+        unset driver_enum stub_hwid_enum vfio_hwid_enum driver_delim stub_hwid_delim vfio_hwid_delim prefix_grub_cmdline_temp grub_cmdline_hugepages grub_cmdline_hugepages
+        return 1
+      fi
+
+      if "${MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB}"; then
+        local grub_cmdline_temp="modprobe.blacklist=${driver_delim} "
+        grub_cmdline_temp+="pci_stub.ids=${stub_hwid_delim} "
+        grub_cmdline_temp+="vfio_pci.ids=${vfio_hwid_delim} "
+        GRUB_CMDLINE_DEFAULT="${prefix_grub_cmdline_temp}${grub_cmdline_temp::-1}"
+
+      elif "${MAIN_SETUP_DO_EXECUTE_STATIC_WITHOUT_GRUB}"; then
+        for driver in ${driver_enum[@]}; do
+          BLACKLISTS_ENUM+=(
+            "blacklist ${driver}"
+          )
+
+          INITRAMFS_ENUM+=(
+            "softdep ${driver} pre: vfio-pci"
+            "${driver}"
+          )
+
+          MODULES_ENUM+=(
+            "softdep ${driver} pre: vfio-pci"
+          )
+        done
+
+        if [[ ! -z "${stub_hwid_delim}" ]]; then
+          HWID_DELIM="${stub_hwid_delim},"
+        fi
+
+        if [[ ! -z "${vfio_hwid_delim}" ]]; then
+          HWID_DELIM+="${vfio_hwid_delim}"
+        else
+          HWID_DELIM="${HWID_DELIM::-1}"
+        fi
+
+        GRUB_CMDLINE_DEFAULT="${prefix_grub_cmdline_temp}"
+      fi
+    }
+
+    function get_preferred_grub_menu_entry_for_multiboot_setup
+    {
+      local grub_menu_entry_title="${1}"
+      local iommu_group_id="${2}"
+
+      if [[ ! -z "${PREGERRED_GRUB_MENU_ENTRY_TITLE}" ]]; then
+        return 0
+      fi
+
+      if ( "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_FIRST}" && [[ "${iommu_group_id}" -eq "${IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM[0]}" ]] ) \
+        || ( "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_VALUE}" && [[ "${iommu_group_id}" -eq "${MULTIBOOT_PREFERRED_IOMMU_GROUP_ID}" ]] ) \
+        || ( "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_LAST}" && [[ "${iommu_group_id}" -eq "${IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM[-1]}" ]] ); then
+        PREGERRED_GRUB_MENU_ENTRY_TITLE="${grub_menu_entry_title}"
+      fi
+    }
+
+    function get_preferred_iommu_group_for_multiboot_setup
+    {
+      declare -gi MULTIBOOT_PREFERRED_IOMMU_GROUP_ID="${1}"
+      MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_VALUE=true
     }
 
   # <summary>Interaction</summary>
@@ -452,221 +667,6 @@
     {
       echo "Updating Initramfs..."
       sudo update-initramfs -u -k all
-    }
-
-  # <summary>Setters</summary>
-    function set_grub_menu_entry_enum_for_multiboot_setup
-    {
-      for this_iommu_group_id in ${IOMMU_GROUPS_FOR_VFIO_ENUM[@]}; do
-        does_iommu_group_have_vga_device "${this_iommu_group_id}" &> /dev/null || continue
-        local -a driver_enum=( )
-        local -a selection_without_this_group_enum=( )
-        local -a stub_hwid_enum=( )
-        local -a vfio_hwid_enum=( )
-        local grub_cmdline_temp=""
-        local this_driver_delim=""
-        local this_iommu_group_vga_name=""
-        local this_stub_hwid_delim=""
-        local this_vfio_hwid_delim=""
-
-        for iommu_group_id in ${IOMMU_GROUPS_FOR_VFIO_ENUM[@]}; do
-          if [[ "${iommu_group_id}" != "${this_iommu_group_id}" ]]; then
-            selection_without_this_group_enum+=( "${iommu_group_id}" )
-          fi
-        done
-
-        get_name_for_first_vga_device_in_iommu_group "${this_iommu_group_id}" "this_iommu_group_vga_name" &> /dev/null
-        get_enums_for_parsed_selection "selection_without_this_group_enum" "driver_enum" "stub_hwid_enum" "vfio_hwid_enum" "driver_enum" "this_driver_delim"
-        get_comma_delimited_string_from_enum "stub_hwid_enum" "this_stub_hwid_delim"
-        get_comma_delimited_string_from_enum "vfio_hwid_enum" "this_vfio_hwid_delim"
-        grub_cmdline_temp+="modprobe.blacklist=${this_driver_delim} "
-        grub_cmdline_temp+="pci_stub.ids=${this_stub_hwid_delim} "
-        grub_cmdline_temp+="vfio_pci.ids=${this_vfio_hwid_delim} "
-        grub_cmdline_temp="${prefix_grub_cmdline_temp}${grub_cmdline_temp::-1}"
-        set_grub_menu_entry_for_multiboot_setup "kernel_enum" "${this_iommu_group_id}"
-      done
-    }
-
-    function set_grub_menu_entry_for_multiboot_setup
-    {
-      local -n reference="${1}"
-      local iommu_group_id="${2}"
-
-      # <remarks>Organize menu entry for excluded VGA group and given system kernel.</remarks>
-      for key in ${!reference[@]}; do
-        local kernel="${reference[$key]}"
-        local grub_menu_entry_title="${system_distro}, with ${system_os} ${kernel} (VFIO, w/o IOMMU ${iommu_group_id} w/ ${this_iommu_group_vga_name})"
-        GRUB_MENU_ENTRY_TITLE_ENUM+=( "${grub_menu_entry_title}" )
-
-        if [[ "${key}" -eq 0 ]]; then
-          set_preferred_grub_menu_entry_for_multiboot_setup "${iommu_group_id}" "${grub_menu_entry_title}"
-        fi
-
-        GRUB_CUSTOM_FILE_CONTENTS+=(
-          "menuentry \"${grub_menu_entry_title}\"{"
-          # "\tload_video"
-          # "insmod gzio"
-          # "if [ x\$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi"
-          # "insmod part_gpt"
-          "\tinsmod ${system_fstype}"
-          "\tset root='/dev/disk/by-uuid/${system_uuid}'"
-          "\t"'if [ x$feature_platform_search_hint = xy ]; then'"\n\t\t"'search --no-floppy --fs-uuid --set=root '"${system_uuid}\n\t"'fi'
-          "\techo  'Loading ${system_os} ${kernel} ...'"
-          "\tlinux   /boot/vmlinuz-${kernel} root=UUID=${system_uuid} ${prefix_grub_cmdline_temp}"
-          "\tinitrd  /boot/initrd.img-${kernel}"
-          "\techo  \"VFIO, w/o IOMMU '${iommu_group_id}' w/ '${this_iommu_group_vga_name}'\""
-          "}"
-          ""
-        )
-      done
-    }
-
-    function set_kernel_cmdline_iommu_driver
-    {
-      case "${CPU_VENDOR_ID}" in
-        *"amd"* )
-          PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_AMD_IOMMU_DRIVER}" ;;
-
-        *"intel"* )
-          PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_INTEL_IOMMU_DRIVER}" ;;
-
-        * )
-          print_prefix_error "Unknown CPU vendor '${CPU_VENDOR_ID}'."
-          return 1 ;;
-      esac
-    }
-
-    function set_output_for_multiboot_setup
-    {
-      local -ir max_parsed_kernels=3
-      local -a kernel_enum=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | cut -c 2- | sort -r | head -n ${max_parsed_kernels} ) )
-      local -r system_disk=$( df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1 )
-      local -r system_distro=$( lsb_release -i -s )
-      local -r system_fstype=$( blkid -s TYPE | grep ${system_disk} | cut -d '"' -f2 )
-      local -r system_kernel=$( uname -o )
-      local -r system_os=$( uname )
-      local -r system_uuid=$( blkid -s UUID | grep ${system_disk} | cut -d '"' -f2 )
-      local prefix_grub_cmdline_temp=""
-      prefix_grub_cmdline_temp+="${prefix_grub_cmdline} "
-
-      local grub_cmdline_hugepages=""
-      get_kernel_command_hugepages "grub_cmdline_hugepages"
-
-      if [[ ! -z "${grub_cmdline_hugepages}" ]]; then
-        prefix_grub_cmdline_temp+="${grub_cmdline_hugepages} "
-      fi
-
-      local grub_cmdline_isolcpu=""
-      get_kernel_command_isolcpu "grub_cmdline_isolcpu"
-
-      if [[ ! -z "${get_kernel_command_isolcpu}" ]]; then
-        prefix_grub_cmdline_temp+="${get_kernel_command_isolcpu} "
-      fi
-
-      readonly prefix_grub_cmdline_temp
-      set_grub_menu_entry_enum_for_multiboot_setup
-
-      if ! is_enum "GRUB_CUSTOM_FILE_CONTENTS"; then
-        print_prefix_error "Multiboot setup output is empty."
-        return 1
-      fi
-    }
-
-    function set_output_for_static_setup
-    {
-      local -a driver_enum=( )
-      local -a stub_hwid_enum=( )
-      local -a vfio_hwid_enum=( )
-      local driver_delim=""
-      local stub_hwid_delim=""
-      local vfio_hwid_delim=""
-      local prefix_grub_cmdline_temp=""
-      prefix_grub_cmdline_temp+="${prefix_grub_cmdline} "
-
-      local grub_cmdline_hugepages=""
-      get_kernel_command_hugepages "grub_cmdline_hugepages"
-
-      if [[ ! -z "${grub_cmdline_hugepages}" ]]; then
-        prefix_grub_cmdline_temp+="${grub_cmdline_hugepages} "
-      fi
-
-      local grub_cmdline_isolcpu=""
-      get_kernel_command_isolcpu "grub_cmdline_isolcpu"
-
-      get_enums_for_selection "IOMMU_GROUPS_FOR_VFIO_ENUM" "driver_enum" "stub_hwid_enum" "vfio_hwid_enum"
-      get_comma_delimited_string_from_enum "driver_enum" "driver_delim"
-      get_comma_delimited_string_from_enum "stub_hwid_enum" "stub_hwid_delim"
-      get_comma_delimited_string_from_enum "vfio_hwid_enum" "vfio_hwid_delim"
-
-      if ! is_enum "driver_enum" \
-        && ! is_enum "stub_hwid_enum" \
-        && ! is_enum "vfio_hwid_enum"; then
-        print_prefix_error "Static setup output is empty."
-        return 1
-      fi
-
-      if ! "${MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB}" \
-        && ! "${MAIN_SETUP_DO_EXECUTE_STATIC_WITHOUT_GRUB}"; then
-        unset driver_enum stub_hwid_enum vfio_hwid_enum driver_delim stub_hwid_delim vfio_hwid_delim prefix_grub_cmdline_temp grub_cmdline_hugepages grub_cmdline_hugepages
-        return 1
-      fi
-
-      if "${MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB}"; then
-        local grub_cmdline_temp="modprobe.blacklist=${driver_delim} "
-        grub_cmdline_temp+="pci_stub.ids=${stub_hwid_delim} "
-        grub_cmdline_temp+="vfio_pci.ids=${vfio_hwid_delim} "
-        GRUB_CMDLINE_DEFAULT="${prefix_grub_cmdline_temp}${grub_cmdline_temp::-1}"
-
-      elif "${MAIN_SETUP_DO_EXECUTE_STATIC_WITHOUT_GRUB}"; then
-        for driver in ${driver_enum[@]}; do
-          BLACKLISTS_ENUM+=(
-            "blacklist ${driver}"
-          )
-
-          INITRAMFS_ENUM+=(
-            "softdep ${driver} pre: vfio-pci"
-            "${driver}"
-          )
-
-          MODULES_ENUM+=(
-            "softdep ${driver} pre: vfio-pci"
-          )
-        done
-
-        if [[ ! -z "${stub_hwid_delim}" ]]; then
-          HWID_DELIM="${stub_hwid_delim},"
-        fi
-
-        if [[ ! -z "${vfio_hwid_delim}" ]]; then
-          HWID_DELIM+="${vfio_hwid_delim}"
-        else
-          HWID_DELIM="${HWID_DELIM::-1}"
-        fi
-
-        GRUB_CMDLINE_DEFAULT="${prefix_grub_cmdline_temp}"
-      fi
-    }
-
-    function set_preferred_grub_menu_entry_for_multiboot_setup
-    {
-      local grub_menu_entry_title="${1}"
-      local iommu_group_id="${2}"
-
-      if [[ ! -z "${PREGERRED_GRUB_MENU_ENTRY_TITLE}" ]]; then
-        return 0
-      fi
-
-      if ( "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_FIRST}" && [[ "${iommu_group_id}" -eq "${IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM[0]}" ]] ) \
-        || ( "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_VALUE}" && [[ "${iommu_group_id}" -eq "${MULTIBOOT_PREFERRED_IOMMU_GROUP_ID}" ]] ) \
-        || ( "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_LAST}" && [[ "${iommu_group_id}" -eq "${IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM[-1]}" ]] ); then
-        PREGERRED_GRUB_MENU_ENTRY_TITLE="${grub_menu_entry_title}"
-      fi
-    }
-
-    function set_preferred_iommu_group_for_multiboot_setup
-    {
-      declare -gi MULTIBOOT_PREFERRED_IOMMU_GROUP_ID="${1}"
-      MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_VALUE=true
     }
 
   # <summary>Write output</summary>

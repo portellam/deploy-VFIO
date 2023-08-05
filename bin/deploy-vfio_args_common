@@ -48,17 +48,6 @@
     fi
   }
 
-  # <summary>Setters</summary>
-    function pop_input_enum_if_last_option_contains_argument
-    {
-      while [[ ! -z "${1}" ]]; do
-        shift
-        (( args_counter++ ))
-      done
-
-      return 0
-    }
-
   # <summary>Getters</summary>
     function is_option_be_quiet
     {
@@ -114,6 +103,17 @@
         || [[ "${1}" =~ ^-- ]]; do
         parse_option "$@"
         shift                         # <note>'shift' must remain in same scope to work.</note>
+      done
+
+      return 0
+    }
+
+  # <summary>Setters</summary>
+    function pop_input_enum_if_last_option_contains_argument
+    {
+      while [[ ! -z "${1}" ]]; do
+        shift
+        (( args_counter++ ))
       done
 
       return 0
