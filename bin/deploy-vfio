@@ -20,7 +20,7 @@
   function main
   {
     is_user_superuser
-    set_options "$@"
+    get_options "$@"
     is_system_supported
     do_pre_setup || exit 1
     do_parse_database || exit 1

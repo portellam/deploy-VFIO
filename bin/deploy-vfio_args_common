@@ -34,21 +34,21 @@
     declare -g COMMON_ARGS_IS_EXECUTION_QUIET=false
   }
 
-  # <summary>Option setters</summary>
-    function parse_option
-    {
-      if ! is_option_print_help "$@" \
-        && ! is_option_of_compatibility "$@" \
-        && ! is_option_be_quiet "$@" \
-        && ! is_option_undo_all "$@" \
-        && ! is_option_of_pre_setup "$@" \
-        && ! is_option_of_database "$@" \
-        && ! is_option_of_main_setup "$@" \
-        && ! is_option_of_post_setup "$@"; then
-      is_option_valid "$@"
-      fi
-    }
+  function parse_option
+  {
+    if ! is_option_print_help "$@" \
+      && ! is_option_of_compatibility "$@" \
+      && ! is_option_be_quiet "$@" \
+      && ! is_option_undo_all "$@" \
+      && ! is_option_of_pre_setup "$@" \
+      && ! is_option_of_database "$@" \
+      && ! is_option_of_main_setup "$@" \
+      && ! is_option_of_post_setup "$@"; then
+    is_option_valid "$@"
+    fi
+  }
 
+  # <summary>Setters</summary>
     function pop_input_enum_if_last_option_contains_argument
     {
       while [[ ! -z "${1}" ]]; do
@@ -59,22 +59,7 @@
       return 0
     }
 
-    function set_options
-    {
-      if [[ -z "$@" ]]; then
-        return 0
-      fi
-
-      while [[ "${1}" =~ ^- ]] \
-        || [[ "${1}" =~ ^-- ]]; do
-        parse_option "$@"
-        shift                         # <note>'shift' must remain in same scope to work.</note>
-      done
-
-      return 0
-    }
-
-  # <summary>Option getters</summary>
+  # <summary>Getters</summary>
     function is_option_be_quiet
     {
       if [[ "${1}" == "-q" ]] \
@@ -117,6 +102,21 @@
       fi
 
       return 1
+    }
+
+    function get_options
+    {
+      if [[ -z "$@" ]]; then
+        return 0
+      fi
+
+      while [[ "${1}" =~ ^- ]] \
+        || [[ "${1}" =~ ^-- ]]; do
+        parse_option "$@"
+        shift                         # <note>'shift' must remain in same scope to work.</note>
+      done
+
+      return 0
     }
 # </functions>
 
