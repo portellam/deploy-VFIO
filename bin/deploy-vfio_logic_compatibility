@@ -8,7 +8,6 @@
 #
 
 # <sets>
-  set -o nounset
   set -o pipefail
 # </sets>
 
@@ -30,7 +29,7 @@
 
   function is_distribution_supported
   {
-    if "${SYSTEM_DO_IGNORE_DISTRO}"; then
+    if "${COMPATIBILITY_DO_IGNORE_DISTRO}"; then
       return 0
     fi
 
