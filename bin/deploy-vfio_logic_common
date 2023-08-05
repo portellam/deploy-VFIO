@@ -271,8 +271,6 @@
       if [[ "${AVAILABLE_MEMORY}" -le 0 ]]; then
         return 1
       fi
-
-      return 0
     }
 
     function set_free_memory
