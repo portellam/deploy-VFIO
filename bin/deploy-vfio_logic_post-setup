@@ -44,7 +44,6 @@
 
   function do_post_setup
   {
-    exit 1
     do_skip_post_setup || return 0
     execute_libvirt_hooks_setup || return 1
     execute_zram_swap_setup || return 1
@@ -57,7 +56,7 @@
   function do_skip_post_setup
   {
     if ! "${POST_SETUP_DO_SKIP_ALL}"; then
-      execute_or_skip_prompt "Skip post-setup?" && PRE_SETUP_DO_SKIP_ALL=true
+      execute_or_skip_prompt "Skip post-setup?" && POST_SETUP_DO_SKIP_ALL=true
     fi
 
     if "${POST_SETUP_DO_SKIP_ALL}"; then
@@ -65,6 +64,77 @@
       return 1
     fi
   }
+
+  # <summary>Audio loopback</summary>
+    function execute_audio_loopback_setup
+    {
+      if ! "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
+        return 0
+      fi
+
+      local -r user_name="portellam"
+      local -r repo_name="audio-loopback"
+
+      execute_audio_loopback_setup_prompt || return 1
+
+      local -r full_repo="${user_name}/${repo_name}"
+      local -r script_name="installer.sh"
+
+      if ! execute_audio_loopback_setup_install \
+        || ! execute_audio_loopback_setup_undo; then
+        return 1
+      fi
+
+      if "${POST_SETUP_DO_EXECUTE_AUDIO_LOOPBACK}"; then
+        update_or_clone_git_repo "${full_repo}" "${user_name}"
+      fi
+    }
+
+    function execute_audio_loopback_setup_install
+    {
+      if ! cd "${BIN_PATH}${full_repo}"; then
+          print_prefix_error "Failed to find build directory."
+          return 1
+      fi
+
+      if [[ ! -e "${script_name}" ]]; then
+          print_prefix_error "Failed to find script '${script_name}'."
+          return 1
+      fi
+
+      if ! echo "i" | sudo bash "${script_name}" --install &> /dev/null; then
+          print_prefix_error "Failed to execute script '${script_name}'."
+          return 1
+      fi
+    }
+
+    function execute_audio_loopback_setup_prompt
+    {
+      if "${POST_SETUP_DO_EXECUTE_AUDIO_LOOPBACK}"; then
+        return 0
+      fi
+
+      echo
+      execute_or_skip_prompt "Install ${SET_COLOR_YELLOW}${repo_name}${RESET_COLOR}?"
+    }
+
+    function execute_audio_loopback_setup_undo
+    {
+      if "${POST_SETUP_DO_EXECUTE_AUDIO_LOOPBACK}"; then
+        return 0
+      fi
+
+      execute_or_skip_prompt "Uninstall ${SET_COLOR_YELLOW}${repo_name}${RESET_COLOR}?" || return 255
+      execute_zram_swap_setup_uninstall
+    }
+
+    function execute_audio_loopback_setup_uninstall
+    {
+      if ! echo "i" | sudo bash "${script_name}" --uninstall &> /dev/null; then
+          print_prefix_error "Failed to execute script '${script_name}'."
+          return 1
+      fi
+    }
 
   # <summary>libvirt-hooks</summary>
     function execute_libvirt_hooks_setup
