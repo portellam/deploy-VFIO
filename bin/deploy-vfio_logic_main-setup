@@ -122,14 +122,13 @@
   function do_try_main_setup
   {
     do_skip_main_setup || return 0
+    specify_vfio_setup_prompt || return 0
 
-    if ! specify_vfio_setup_prompt \
-      || ! is_parsed_enum_valid \
-      || ! is_parsed_enum_of_vga_valid; then
+    if ! is_parsed_enum_valid \
+      || ! is_parsed_enum_of_vga_valid \
+      || ! execute_given_setup; then
       return 1
     fi
-
-    execute_given_setup || return 1
   }
 
   function do_skip_main_setup
