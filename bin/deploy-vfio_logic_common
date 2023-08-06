@@ -119,11 +119,10 @@
       if [[ ! -d "${full_path}" ]]; then
         cd "${full_path}"
         update_git_repo
-        return "${?}"
 
       elif [[ -d "${user_path}" ]]; then
         clone_git_repo "${full_repo}"
-        return "${?}"
+
       else
         return 1
       fi
