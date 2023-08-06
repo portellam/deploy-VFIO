@@ -9,6 +9,7 @@
 
 # <sources>
   source deploy-vfio_logic_common
+  source deploy-vfio_logic_database
   source deploy-vfio_logic_pre-setup
 # </sources>
 
@@ -21,7 +22,7 @@
 
     declare -g MAIN_SETUP_ARE_PARAMS_SET=true
 
-    declare -g MAIN_SETUP_DO_EXECUTE_UNINSTALL=true
+    declare -g MAIN_SETUP_DO_EXECUTE_UNINSTALL=false
     declare -g MAIN_SETUP_DO_EXECUTE_MULTIBOOT=false
     declare -g MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_DEFAULT=false
     declare -g MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_FIRST=false
@@ -58,7 +59,8 @@
       # <summary>Filenames</summary>
         declare -gr GRUB_PATH="/etc/grub.d"
         declare -gr GRUB_CUSTOM_PROXY_FILENAME="_custom_proxy"
-        declare -gr GRUB_CUSTOM_DEST_PATH="${GRUB_PATH}/proxifiedScripts/custom"
+        # declare -gr GRUB_CUSTOM_DEST_PATH="${GRUB_PATH}/proxifiedScripts/custom"    # <note> Debian 11/bullseye
+        declare -gr GRUB_CUSTOM_DEST_PATH="${GRUB_PATH}/40_custom"                    # <note> Debian 12/bookworm
         declare -gr GRUB_CUSTOM_SRC_PATH="${ETC_BACKUPS_PATH}/custom"
 
       # <summary>File output</summary>
@@ -124,8 +126,11 @@
     do_skip_main_setup || return 0
     specify_vfio_setup_prompt || return 0
 
+    if "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT}"; then
+      is_parsed_enum_of_vga_valid || return 1
+    fi
+
     if ! is_parsed_enum_valid \
-      || ! is_parsed_enum_of_vga_valid \
       || ! execute_given_setup; then
       return 1
     fi
@@ -160,8 +165,7 @@
 
     function execute_multiboot_setup
     {
-      if ! "${HAS_RESTORED_DEFAULT_FILES}" \
-        || ! get_output_for_multiboot_setup \
+      if ! get_output_for_multiboot_setup \
         || ! specify_grub_menu_entry_for_multiboot_setup \
         || ! write_output_for_multiboot_setup \
         || ! execute_update_after_main_setup; then
@@ -172,8 +176,7 @@
 
     function execute_static_setup
     {
-      if ! "${HAS_RESTORED_DEFAULT_FILES}" \
-        || ! specify_static_setup_prompt \
+      if ! specify_static_setup_prompt \
         || ! get_output_for_static_setup \
         || ! write_output_for_static_setup \
         || ! execute_update_after_main_setup; then
@@ -260,7 +263,7 @@
         done
 
         get_name_for_first_vga_device_in_iommu_group "${this_iommu_group_id}" "this_iommu_group_vga_name" &> /dev/null
-        get_enums_for_parsed_selection "selection_without_this_group_enum" "driver_enum" "stub_hwid_enum" "vfio_hwid_enum" "driver_enum" "this_driver_delim"
+        get_enums_for_selection "selection_without_this_group_enum" "driver_enum" "stub_hwid_enum" "vfio_hwid_enum" "driver_enum" "this_driver_delim"
         get_comma_delimited_string_from_enum "stub_hwid_enum" "this_stub_hwid_delim"
         get_comma_delimited_string_from_enum "vfio_hwid_enum" "this_vfio_hwid_delim"
         grub_cmdline_temp+="modprobe.blacklist=${this_driver_delim} "
@@ -563,8 +566,8 @@
   # <summary>Presentation</summary>
     function print_enum_of_grub_menu_entry
     {
-      for key in "${!MENU_ENTRY_TITLE_ENUM[@]}"; do
-        local value="${MENU_ENTRY_TITLE_ENUM[${key}]}"
+      for key in "${!GRUB_MENU_ENTRY_TITLE_ENUM[@]}"; do
+        local value="${GRUB_MENU_ENTRY_TITLE_ENUM[${key}]}"
         echo -en "${key}:\t"
 
         if [[ "${key}" -gt 0 ]] \
@@ -666,7 +669,6 @@
   # <summary>Write output</summary>
     function write_output_for_multiboot_setup
     {
-      "${HAS_RESTORED_DEFAULT_FILES}" || return 1
       local -r line_to_match="GRUB_DEFAULT="
 
       if "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_DEFAULT}"; then
@@ -686,8 +688,6 @@
 
     function write_output_for_static_setup
     {
-      "${HAS_RESTORED_DEFAULT_FILES}" || return 1
-
       if ! write_output_to_grub_for_static_setup \
         || ! write_output_to_initramfs_for_static_setup \
         || ! write_output_to_modules_for_static_setup; then
