@@ -178,8 +178,8 @@
         for device in ${device_list[@]}; do
           local driver=""
           local hwid=""
-          SetDeviceDriver "${device}" "driver"
-          SetDeviceHardwareID "${device}" "hwid"
+          get_device_driver "${device}" "driver"
+          get_device_hardware_id "${device}" "hwid"
 
           if [[ ! -z "${driver}" ]] \
             && is_device_not_excluded "${device}"; then
@@ -232,7 +232,7 @@
           continue
         fi
 
-        get_device_name "${device}" "name" && break
+        get_device_name "${device}" "device_name" && break
       done
 
       if [[ -z "${NAME}" ]]; then
