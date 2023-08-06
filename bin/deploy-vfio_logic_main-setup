@@ -58,13 +58,13 @@
     # <summary>Multiboot VFIO setup without GRUB</summary>
       # <summary>Filenames</summary>
         declare -gr GRUB_PATH="/etc/grub.d"
-        declare -gr GRUB_CUSTOM_PROXY_FILENAME="_custom_proxy"
+        # declare -gr GRUB_CUSTOM_PROXY_FILENAME="_custom_proxy"
         # declare -gr GRUB_CUSTOM_DEST_PATH="${GRUB_PATH}/proxifiedScripts/custom"    # <note> Debian 11/bullseye
         declare -gr GRUB_CUSTOM_DEST_PATH="${GRUB_PATH}/40_custom"                    # <note> Debian 12/bookworm
         declare -gr GRUB_CUSTOM_SRC_PATH="${ETC_BACKUPS_PATH}/custom"
 
       # <summary>File output</summary>
-        declare -g PREFERRED_MENU_ENTRY_TITLE=""
+        declare -g PREGERRED_GRUB_MENU_ENTRY_TITLE=""
         declare -ga GRUB_CUSTOM_FILE_CONTENTS=( )
         declare -ga GRUB_MENU_ENTRY_TITLE_ENUM=( "" )
 
@@ -109,8 +109,6 @@
       do_cleanup_main_setup
       return 1
     fi
-
-    do_cleanup_main_setup
   }
 
   function do_cleanup_main_setup
@@ -153,7 +151,7 @@
           execute_multiboot_setup || return 1 ;;
 
         "${MAIN_SETUP_DO_EXECUTE_STATIC}" )
-          execute_multiboot_setup || return 1 ;;
+          execute_static_setup || return 1 ;;
 
         "${MAIN_SETUP_DO_EXECUTE_UNINSTALL}" )
           execute_uninstall_vfio_setup || return 1 ;;
@@ -615,7 +613,7 @@
   # <summary>Update functions</summary>
     function set_entries_for_custom_grub
     {
-      if ! sed -i "s/+'/-'/g" "${1}" &> /dev/null; then
+      if ! sed -i "s/+'/-'/g" "${GRUB_CUSTOM_DEST_PATH}" &> /dev/null; then
         print_prefix_error "Failed to enable entries for GRUB proxy file."
         return 1
       fi
@@ -623,36 +621,36 @@
 
     function unset_entries_for_custom_grub
     {
-      if ! sed -i "s/+'/-'/g" "${1}" &> /dev/null; then
+      if ! sed -i "s/+'/-'/g" "${GRUB_CUSTOM_DEST_PATH}" &> /dev/null; then
         print_prefix_error "Failed to disable entries for GRUB proxy file."
         return 1
       fi
     }
 
-    function update_custom_grub
-    {
-      echo "Updating entries..."
+    # function update_custom_grub
+    # {
+    #   echo "Updating entries..."
 
-      local grub_custom_proxy_file=$( find "${GRUB_PATH}" -name *"${GRUB_CUSTOM_PROXY_FILENAME}" )
+    #   # local grub_custom_proxy_file=$( find "${GRUB_PATH}" -name *"${GRUB_CUSTOM_PROXY_FILENAME}" )
 
-      if ! is_file "${grub_custom_proxy_file}"; then
-        print_prefix_error "Failed to find GRUB proxy file in directory '/etc/grub.d/'."
-        return 1
-      fi
+    #   # if ! is_file "${grub_custom_proxy_file}"; then
+    #   #   print_prefix_error "Failed to find GRUB proxy file in directory '/etc/grub.d/'."
+    #   #   return 1
+    #   # fi
 
-      if "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT}"; then
-        if ! set_entries_for_custom_grub "${grub_custom_proxy_file}"; then
-          return 1
-        fi
-      else
-        if ! unset_entries_for_custom_grub "${grub_custom_proxy_file}"; then
-          unset grub_custom_proxy_file
-          return 1
-        fi
-      fi
+    #   if "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT}"; then
+    #     if ! set_entries_for_custom_grub "${grub_custom_proxy_file}"; then
+    #       return 1
+    #     fi
+    #   else
+    #     if ! unset_entries_for_custom_grub "${grub_custom_proxy_file}"; then
+    #       # unset grub_custom_proxy_file
+    #       return 1
+    #     fi
+    #   fi
 
-      update_grub &> /dev/null
-    }
+    #   update_grub &> /dev/null
+    # }
 
     function update_grub
     {
@@ -674,10 +672,10 @@
       if "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_DEFAULT}"; then
         local line_grub_default="${line_to_match}${DEFAULT_MENU_ENTRY_TITLE}"
       else
-        local line_grub_default="${line_to_match}\"${PREFERRED_MENU_ENTRY_TITLE}\""
+        local line_grub_default="${line_to_match}\"${PREGERRED_GRUB_MENU_ENTRY_TITLE}\""
       fi
 
-      if [[ -d $( dirname "${GRUB_CUSTOM_DEST_PATH}" ) ]] \
+      if [[ ! -d $( dirname "${GRUB_CUSTOM_DEST_PATH}" ) ]] \
         && ! sudo mkdir --parents $( dirname "${GRUB_CUSTOM_DEST_PATH}" ); then
         print_prefix_error "Failed to create directory '"$( dirname "${GRUB_CUSTOM_DEST_PATH}" )"'."
         return 1
@@ -703,11 +701,16 @@
 
     function write_output_to_grub_for_multiboot_setup
     {
+      set_ifs_to_newline
+
       if ! sed -i '/'"${line_to_match}"'/c\'"${line_grub_default}" "${GRUB_DEST_PATH}" \
         || ! echo -e "\n${GRUB_CUSTOM_FILE_CONTENTS[*]}" >> "${GRUB_CUSTOM_DEST_PATH}" ; then
         print_prefix_error "Failed to overwrite target lines of files."
+        unset_ifs
         return 1
       fi
+
+      unset_ifs
     }
 
     function write_output_to_grub_for_static_setup
