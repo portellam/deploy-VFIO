@@ -124,11 +124,8 @@
     do_skip_main_setup || return 0
     specify_vfio_setup_prompt || return 0
 
-    if "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT}"; then
-      is_parsed_enum_of_vga_valid || return 1
-    fi
-
-    if ! is_parsed_enum_valid \
+    if ! is_parsed_enum_of_vga_valid \
+      || ! is_parsed_enum_valid \
       || ! execute_given_setup; then
       return 1
     fi
@@ -163,9 +160,9 @@
 
     function execute_multiboot_setup
     {
-      if ! get_output_for_multiboot_setup \
+      if ! restore_source_files_for_main_setup \
+        || ! get_output_for_multiboot_setup \
         || ! specify_grub_menu_entry_for_multiboot_setup \
-        || ! restore_source_files_for_main_setup \
         || ! write_output_for_multiboot_setup \
         || ! execute_update_after_main_setup; then
         print_prefix_fail "Multiboot VFIO setup has failed."
@@ -175,9 +172,9 @@
 
     function execute_static_setup
     {
-      if ! specify_static_setup_prompt \
+      if ! restore_source_files_for_main_setup \
+        || ! specify_static_setup_prompt \
         || ! get_output_for_static_setup \
-        || ! restore_source_files_for_main_setup \
         || ! write_output_for_static_setup \
         || ! execute_update_after_main_setup; then
         print_prefix_fail "Static VFIO setup has failed."
@@ -348,7 +345,7 @@
       local -r system_os=$( uname )
       local -r system_uuid=$( blkid -s UUID | grep ${system_disk} | cut -d '"' -f2 )
       local prefix_grub_cmdline_temp=""
-      prefix_grub_cmdline_temp+="${prefix_grub_cmdline} "
+      prefix_grub_cmdline_temp+="${PREFIX_GRUB_CMDLINE} "
 
       local grub_cmdline_hugepages=""
       get_kernel_command_hugepages "grub_cmdline_hugepages"
@@ -381,8 +378,7 @@
       local driver_delim=""
       local stub_hwid_delim=""
       local vfio_hwid_delim=""
-      local prefix_grub_cmdline_temp=""
-      prefix_grub_cmdline_temp+="${prefix_grub_cmdline} "
+      local prefix_grub_cmdline_temp="${PREFIX_GRUB_CMDLINE} "
 
       local grub_cmdline_hugepages=""
       get_kernel_command_hugepages "grub_cmdline_hugepages"
@@ -408,7 +404,6 @@
 
       if ! "${MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB}" \
         && ! "${MAIN_SETUP_DO_EXECUTE_STATIC_WITHOUT_GRUB}"; then
-        unset driver_enum stub_hwid_enum vfio_hwid_enum driver_delim stub_hwid_delim vfio_hwid_delim prefix_grub_cmdline_temp grub_cmdline_hugepages grub_cmdline_hugepages
         return 1
       fi
 
