@@ -159,7 +159,10 @@
 
     function copy_this_file_to_other_file
     {
-      is_file "${2}" || return 1
+      if [[ -z "${2}" ]]; then
+        return 1
+      fi
+
       is_file "${1}" || return 1
       cp --force "${1}" "${2}" || return 1
     }
