@@ -227,13 +227,13 @@
       if "${PRE_SETUP_DO_EXECUTE_EVDEV}"; then
         file1_contents+=(
           "${file1_permissions_output[@]}"
-          "user = \"${LOGIN_USER}\""
+          "user = \"${USER}\""
           "group = \"user\""
         )
       else
         file1_contents+=(
           "${file1_permissions_output[@]}"
-          "#user = \"root\""
+          "user = \"${LOGIN_USER}\""
           "#group = \"user\""
         )
       fi
