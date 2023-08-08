@@ -159,7 +159,7 @@
 
     function copy_this_file_to_other_file
     {
-      if [[ -z "${2}" ]]; then
+      if [[ "${2}" == "" ]]; then
         return 1
       fi
 
