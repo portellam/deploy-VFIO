@@ -178,6 +178,7 @@
         for device in ${device_list[@]}; do
           local driver=""
           local hwid=""
+
           get_device_driver "${device}" "driver"
           get_device_hardware_id "${device}" "hwid"
 
@@ -691,11 +692,7 @@
 
     function import_iommu_groups_from_xml
     {
-      set_ifs_to_newline
-      local -ar input=( $( eval "${GET_PARSE_FROM_XML}" ) )
-      unset_ifs
-
-      for line in "${input[@]}"; do
+      for line in $( eval "${GET_PARSE_FROM_XML}" ); do
         local driver=$( echo "${line}" | cut -d '"' -f 6 )
         local device=$( echo "${line}" | cut -d '"' -f 4 )
         DEVICE_DRIVER_XML_ENUM+=( [${device}]="${driver}" )
