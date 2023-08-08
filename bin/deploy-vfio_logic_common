@@ -182,6 +182,24 @@
       fi
     }
 
+    function append_to_file_correctly
+    {
+      if ! is_file "${2}" \
+        || [[ -z "${1}" ]]; then
+        return 1
+      fi
+
+      local -nr reference="${1}"
+      local -r file="${2}"
+
+      for line in ${reference[*]}; do
+        if ! sudo echo -e "${line}" >> "${file}"; then
+          print_prefix_error "Could not append to file."
+          return 1
+        fi
+      done
+    }
+
   # <summary>Interaction</summary>
     function execute_or_skip_prompt
     {
