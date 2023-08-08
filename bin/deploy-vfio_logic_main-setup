@@ -293,7 +293,7 @@
       # <remarks>Organize menu entry for excluded VGA group and given system kernel.</remarks>
       for key in ${!reference[@]}; do
         local kernel="${reference[$key]}"
-        local grub_menu_entry_title="${system_distro}, with ${system_os} ${kernel} (VFIO, w/o IOMMU ${iommu_group_id} w/ ${this_iommu_group_vga_name})"
+        local grub_menu_entry_title="${system_distro}, with ${system_os} ${kernel} (VFIO w/o IOMMU ${iommu_group_id}, Video w/ ${this_iommu_group_vga_name})"
         GRUB_MENU_ENTRY_TITLE_ENUM+=( "${grub_menu_entry_title}" )
 
         if [[ "${key}" -eq 0 ]]; then
@@ -312,7 +312,7 @@
           "\techo  'Loading ${system_os} ${kernel} ...'"
           "\tlinux   /boot/vmlinuz-${kernel} root=UUID=${system_uuid} ${grub_cmdline_temp}"
           "\tinitrd  /boot/initrd.img-${kernel}"
-          "\techo  \"VFIO, w/o IOMMU '${iommu_group_id}' w/ '${this_iommu_group_vga_name}'\""
+          "\techo  \"VFIO w/o IOMMU '${iommu_group_id}', Video w/ '${this_iommu_group_vga_name}'\""
           "}"
           ""
         )
