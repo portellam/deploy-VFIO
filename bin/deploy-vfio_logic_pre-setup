@@ -48,20 +48,19 @@
 
     # <remarks>Filenames</remarks>
       declare -gr APPARMOR_QEMU_DEST_PATH="/etc/apparmor.d/local/abstractions/libvirt-qemu"
-      declare -gr APPARMOR_QEMU_SRC_PATH="${ETC_BACKUPS_PATH}/libvirt-qemu"
       declare -gr QEMU_DEST_PATH="/etc/libvirt/qemu.conf"
       declare -gr QEMU_SRC_PATH="${ETC_BACKUPS_PATH}/qemu.conf"
   }
 
   function do_pre_setup
   {
-    if ! create_temp_files_for_pre_setup \
+    create_temp_files_for_pre_setup &> /dev/null
+
+    if ! restore_source_files_for_pre_setup \
       || ! do_try_pre_setup; then
       do_cleanup_pre_setup || restore_source_files_for_pre_setup
       return 1
     fi
-
-    do_cleanup_pre_setup || restore_source_files_for_pre_setup
   }
 
   function do_cleanup_pre_setup
@@ -75,7 +74,7 @@
   function do_try_pre_setup
   {
     do_skip_pre_setup || return 0
-    execute_static_isolcpu_setup || return 1
+    # execute_static_isolcpu_setup || return 1      # <note>Not working as expected.</note>
     execute_virtual_kvm_setup || return 1
     add_user_to_groups_for_pre_setup || return 1
     execute_hugepages_setup || return 1
@@ -110,12 +109,6 @@
     function execute_hugepages_setup
     {
       execute_hugepages_setup_prompt || return 0
-      local -r output="Allocating RAM to pages..."
-
-      if ! "${PRE_SETUP_DO_EXECUTE_HUGEPAGES}"; then
-        return 0
-      fi
-
       execute_hugepages_setup_main
     }
 
@@ -158,17 +151,12 @@
         echo -e "${SET_COLOR_YELLOW}Hugepages${RESET_COLOR} is a feature which statically allocates system memory to pagefiles.\nGuest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${SET_COLOR_YELLOW}NOTE:${RESET_COLOR} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${SET_COLOR_YELLOW}Example:${RESET_COLOR} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n${SET_COLOR_YELLOW}NOTE:${RESET_COLOR} If this is skipped, the equivalent Libvirt hook for dynamic allocation will be installed.\n"
       fi
 
-      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Static Hugepages${RESET_COLOR}?"
+      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Static Hugepages${RESET_COLOR}?" && PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
     }
 
     function execute_static_isolcpu_setup
     {
       execute_static_isolcpu_setup_prompt || return 0
-
-      if ! "${PRE_SETUP_DO_EXECUTE_ISOLCPU}"; then
-        return 0
-      fi
-
       execute_static_isolcpu_setup_main
     }
 
@@ -184,8 +172,8 @@
       local -a host_threads_enum=( )
       local -a guest_cores_enum=( $( seq "${cores_allocated_to_host}" $(( "${total_cores_count}" - 1 )) ) )
       local -a guest_threads_enum=( )
-      local -ir smt_factor=$(( "${total_threads_count}" / "${total_cores_count}" ))
-      local -ar smt_factor_enum=( $( seq 0 $(( "${smt_factor}" - 1 )) ) )
+      local -ir host_smt_factor=$(( "${total_threads_count}" / "${total_cores_count}" ))
+      local -ar smt_factor_enum=( $( seq 0 $(( "${host_smt_factor}" - 1 )) ) )
       local host_threads_delim=""
       local guest_threads_delim=""
 
@@ -332,17 +320,13 @@
 
       file1_contents+=( "${nvram_output[*]}" )
 
-      if ! sudo echo -e "${file1_contents[*]}" >> "${QEMU_DEST_PATH}"; then
+      if ! append_to_file_correctly "file1_contents" "${QEMU_DEST_PATH}" \
+        || ! append_to_file_correctly "file2_contents" "${APPARMOR_QEMU_DEST_PATH}"; then
         unset_ifs
-        print_prefix_error "Failed to write to file '${QEMU_DEST_PATH}'."
         return 1
       fi
 
-      if ! sudo echo -e "${file2_contents[*]}" >> "${APPARMOR_QEMU_DEST_PATH}"; then
-        unset_ifs
-        print_prefix_error "Failed to write to file '${APPARMOR_QEMU_DEST_PATH}'."
-        return 1
-      fi
+      unset_ifs
     }
 
     function execute_virtual_kvm_setup
@@ -388,7 +372,12 @@
 
     function restore_source_files_for_pre_setup
     {
-      copy_this_file_to_other_file "${APPARMOR_QEMU_SRC_PATH}" "${APPARMOR_QEMU_DEST_PATH}" || return 1
+      if ! rm --force "${APPARMOR_QEMU_DEST_PATH}" &> /dev/null \
+        || ! touch "${APPARMOR_QEMU_DEST_PATH}" &> /dev/null; then
+        print_prefix_error "Failed to clear file '${APPARMOR_QEMU_DEST_PATH}'."
+        return 1
+      fi
+
       copy_this_file_to_other_file "${QEMU_SRC_PATH}" "${QEMU_DEST_PATH}" || return 1
     }
 
@@ -582,10 +571,8 @@
 
     function get_thread_pair_enums_for_guest
     {
-      local -n thread="${1}"
-
       for core in ${guest_cores_enum[@]}; do
-        reference=$(( core + ( smt_factor * total_cores_count ) ))       # NOTE: VS Code reports a syntax error here. There is none.
+        thread=$(( core + ( smt_factor * total_cores_count ) ))       # <note>VS Code reports a syntax error here. There is none.</note>
         guest_threads_enum+=( "${thread}" )
         guest_threads_delimited_enum+=( "${thread}" )
       done
@@ -593,10 +580,8 @@
 
     function get_thread_pair_enums_for_host
     {
-      local -n thread="${1}"
-
       for core in ${host_cores_enum[@]}; do
-        reference=$(( core + ( smt_factor * total_cores_count ) ))       # NOTE: VS Code reports a syntax error here. There is none.
+        thread=$(( core + ( smt_factor * total_cores_count ) ))       # <note>VS Code reports a syntax error here. There is none.</note>
         host_threads_enum+=( "${thread}" )
         host_threads_delimited_enum+=( "${thread}" )
       done
