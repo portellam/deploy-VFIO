@@ -338,21 +338,6 @@
       done
     }
 
-    function does_enum_have_vga_device
-    {
-      local -n reference="${1}"
-
-      if [[ "${#reference[@]}" -eq 0 ]]; then
-        return 1
-      fi
-
-      for iommu_group_id in ${reference[@]}; do
-        does_iommu_group_have_vga_device "${iommu_group_id}" &> /dev/null && return 0
-      done
-
-      return 1
-    }
-
     function does_iommu_group_have_external_devices
     {
       local -ir iommu_group_id="${1}"
