@@ -198,9 +198,9 @@
       done
 
       set_ifs_to_newline
-      driver_reference=( $( sort -u <<<"${driver_reference[*]}" ) )
-      stud_hwid_reference=( $( sort -u <<<"${stud_hwid_reference[*]}" ) )
-      vfio_hwid_reference=( $( sort -u <<<"${vfio_hwid_reference[*]}" ) )
+      driver_reference=( $( sort --unique <<<"${driver_reference[*]}" ) )
+      stud_hwid_reference=( $( sort --unique <<<"${stud_hwid_reference[*]}" ) )
+      vfio_hwid_reference=( $( sort --unique <<<"${vfio_hwid_reference[*]}" ) )
       unset_ifs
 
       if ! is_enum_empty "driver_reference"; then
@@ -323,7 +323,7 @@
       is_iommu_group_id_parsable "${iommu_group_id}" "iommu_groups_temp_enum" || return 1
 
       set_ifs_to_newline
-      iommu_groups_temp_enum=( $( sort -hu <<<"${iommu_groups_temp_enum[*]}" ) )
+      iommu_groups_temp_enum=( $( sort --human-numeric-sort --unique <<<"${iommu_groups_temp_enum[*]}" ) )
       unset_ifs
 
       for iommu_group_id in ${iommu_groups_temp_enum[@]}; do
