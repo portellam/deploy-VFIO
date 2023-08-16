@@ -43,6 +43,8 @@
 
   function do_parse_database
   {
+    do_parse_database_prompt || return 0
+
     if ! create_temp_files_for_database \
       || ! do_try_parse_database; then
       do_cleanup_database
@@ -64,7 +66,6 @@
 
   function do_try_parse_database
   {
-    do_parse_database_prompt || return 0
     is_unparsed_enum_valid || return 1
     parse_from_xml_prompt
     specify_xml_file || return 1
@@ -199,11 +200,9 @@
         done
       done
 
-      set_ifs_to_newline
       driver_reference=( $( sort --unique <<<"${driver_reference[*]}" ) )
       stud_hwid_reference=( $( sort --unique <<<"${stud_hwid_reference[*]}" ) )
       vfio_hwid_reference=( $( sort --unique <<<"${vfio_hwid_reference[*]}" ) )
-      unset_ifs
 
       if ! is_enum_empty "driver_reference"; then
         return 0
@@ -255,8 +254,6 @@
           return 1
         fi
       done
-
-      DOES_HOST_HAVE_VFIO=false
     }
 
     function does_xml_not_have_existing_vfio_setup
@@ -265,8 +262,6 @@
         print_error_to_log "Detected VFIO drivers in XML file."
         return 1
       fi
-
-      DOES_XML_HAVE_VFIO=false
     }
 
   # <summary>IOMMU Groups validation</summary>
@@ -321,12 +316,8 @@
       local regex_for_range_of_nums='^[0-9]+[-][0-9]+$'
       local -ar iommu_groups_temp_enum
       local -ir iommu_group_id="${1}"
-
       is_iommu_group_id_parsable "${iommu_group_id}" "iommu_groups_temp_enum" || return 1
-
-      set_ifs_to_newline
       iommu_groups_temp_enum=( $( sort --human-numeric-sort --unique <<<"${iommu_groups_temp_enum[*]}" ) )
-      unset_ifs
 
       for iommu_group_id in ${iommu_groups_temp_enum[@]}; do
         add_iommu_group_to_enum_if_not_specified "${iommu_group_id}"
@@ -666,22 +657,15 @@
         "</xml>"
       )
 
-      set_ifs_to_newline
-
       if ! sudo echo -e "${output[*]}" > "${XML_FILE}"; then
         print_error_to_log "Failed to write to file '${FILE}'."
-        unset_ifs
         return 1
       fi
-
-      unset_ifs
     }
 
     function import_iommu_groups_from_xml
     {
-      set_ifs_to_newline
       local -ar input=( $( eval "${GET_PARSE_FROM_XML}" ) )
-      unset_ifs
 
       for line in "${input[@]}"; do
         local driver=$( echo "${line}" | cut -d '"' -f 6 )
