@@ -338,7 +338,7 @@
         return 1
       fi
 
-      print_output_to_log "Setup complete."
+      print_pass_to_log "Setup complete."
     }
 
     function print_pass_to_log
