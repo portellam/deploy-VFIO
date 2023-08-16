@@ -54,6 +54,7 @@
   function do_pre_setup
   {
     create_temp_files_for_pre_setup &> /dev/null
+    do_skip_pre_setup || return 0
 
     if ! restore_source_files_for_pre_setup \
       || ! do_try_pre_setup; then
@@ -75,24 +76,21 @@
 
   function do_try_pre_setup
   {
-    do_skip_pre_setup || return 0
     # execute_static_isolcpu_setup || return 1      # <note>Not working as expected.</note>
     execute_virtual_kvm_setup || return 1
     add_user_to_groups_for_pre_setup || return 1
     execute_hugepages_setup || return 1
     execute_qemu_configuration || return 1
-    echo
   }
 
   function do_skip_pre_setup
   {
     if ! "${PRE_SETUP_DO_SKIP_ALL}"; then
-      execute_or_skip_prompt "Skip pre-setup?" && PRE_SETUP_DO_SKIP_ALL=true
+      execute_or_skip_prompt "Execute pre-setup?" || PRE_SETUP_DO_SKIP_ALL=true
     fi
 
     if "${PRE_SETUP_DO_SKIP_ALL}"; then
       print_note "Skipping pre-setup."
-      echo
       return 1
     fi
   }
@@ -100,18 +98,23 @@
   # <summary>Execution</summary>
     function add_user_to_groups_for_pre_setup
     {
-      sudo adduser "${USER}" "libvirt" || return 1
-
-      if "${PRE_SETUP_DO_EXECUTE_EVDEV}" \
-        && ! sudo adduser "${USER}" "input"; then
+      if ! sudo adduser "${USER}" "libvirt" &> /dev/null \
+        || ( "${PRE_SETUP_DO_EXECUTE_EVDEV}" && ! sudo adduser "${USER}" "input" &> /dev/null ); then
+        print_error_to_log "Failed to add users to groups."
         return 1
       fi
+
+      print_output_to_log "Added users to groups."
     }
 
     function execute_hugepages_setup
     {
       execute_hugepages_setup_prompt || return 0
-      execute_hugepages_setup_main
+
+      if ! execute_hugepages_setup_main; then
+        print_error_to_log "Failed Hugepages setup."
+        return 1
+      fi
     }
 
     function execute_hugepages_setup_main
@@ -159,7 +162,11 @@
     function execute_static_isolcpu_setup
     {
       execute_static_isolcpu_setup_prompt || return 0
-      execute_static_isolcpu_setup_main
+
+      if ! execute_static_isolcpu_setup_main; then
+        print_error_to_log "Failed Static Isolcpu setup."
+        return 1
+      fi
     }
 
     function execute_static_isolcpu_setup_main
@@ -200,24 +207,21 @@
         echo -e "${SET_COLOR_YELLOW}Isolcpu${RESET_COLOR} is a feature which isolates CPU threads from the Host machine.\nGuest(s) can use Isolcpu to a peformance benefit. Guest(s) can use isolated CPU threads, increasing responsiveness and stability, without interferrence from the Host.\n${SET_COLOR_YELLOW}NOTE:${RESET_COLOR} If this is skipped, the equivalent Libvirt hook for dynamic isolation will be installed.\n"
       fi
 
-      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Isolcpu${RESET_COLOR}?"
+      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Static Isolcpu${RESET_COLOR}?"
     }
 
     function execute_qemu_configuration
     {
-      echo
-      local -r output="Appending Libvirt file(s)..."
-
-      if execute_qemu_configuration_main; then
-        print_suffix_pass "${output}"
-      else
-        print_suffix_fail "${output}"
+      if ! execute_qemu_configuration_main; then
+        print_error_to_log "Failed to update QEMU configuration."
+        return 1
       fi
+
+      print_output_to_log "Updated QEMU configuration."
     }
 
     function execute_qemu_configuration_main
     {
-      set_ifs_to_newline
       local -a file1_contents=( "${DISCLAIMER_FILE_CONTENTS[@]}" )
       local -a file2_contents=( "${DISCLAIMER_FILE_CONTENTS[@]}" )
 
@@ -325,18 +329,19 @@
       if ! append_to_file_correctly "file1_contents" "${QEMU_DEST_PATH}" \
         || ! append_to_file_correctly "file2_contents" "${APPARMOR_QEMU_DEST_PATH}" \
         || ! systemctl restart libvirtd &> /dev/null ; then
-        unset_ifs
         return 1
       fi
-
-      unset_ifs
     }
 
     function execute_virtual_kvm_setup
     {
       execute_virtual_kvm_setup_prompt || return 0
       get_input_devices
-      is_input_device_enum_valid
+
+      if ! is_input_device_enum_valid; then
+        print_error_to_log "Failed Evdev setup."
+        return 1
+      fi
     }
 
     function execute_virtual_kvm_setup_prompt
