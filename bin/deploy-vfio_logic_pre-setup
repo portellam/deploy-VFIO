@@ -55,15 +55,16 @@
   {
     create_temp_files_for_pre_setup &> /dev/null
     do_skip_pre_setup || return 0
+    local -r output="Pre-setup"
 
     if ! restore_source_files_for_pre_setup \
       || ! do_try_pre_setup; then
       do_cleanup_pre_setup || restore_source_files_for_pre_setup
-      print_error_to_log "Pre-setup incomplete."
+      print_fail_to_log "${output}"
       exit 1
     fi
 
-    print_pass_to_log "Pre-setup complete."
+    print_pass_to_log "${output}"
   }
 
   function do_cleanup_pre_setup
@@ -110,11 +111,14 @@
     function execute_hugepages_setup
     {
       execute_hugepages_setup_prompt || return 0
+      local -r output="Hugepages setup"
 
       if ! execute_hugepages_setup_main; then
-        print_error_to_log "Failed Hugepages setup."
+        pprint_fail_to_log "${output}"
         return 1
       fi
+
+      print_pass_to_log "${output}"
     }
 
     function execute_hugepages_setup_main
@@ -162,11 +166,14 @@
     function execute_static_isolcpu_setup
     {
       execute_static_isolcpu_setup_prompt || return 0
+      local -r output="Static Isolcpu setup"
 
       if ! execute_static_isolcpu_setup_main; then
-        print_error_to_log "Failed Static Isolcpu setup."
+        print_fail_to_log "${output}"
         return 1
       fi
+
+      print_pass_to_log "${output}"
     }
 
     function execute_static_isolcpu_setup_main
@@ -212,12 +219,14 @@
 
     function execute_qemu_configuration
     {
+      local -r output="Update QEMU configuration"
+
       if ! execute_qemu_configuration_main; then
-        print_error_to_log "Failed to update QEMU configuration."
+        print_fail_to_log "${output}"
         return 1
       fi
 
-      print_output_to_log "Updated QEMU configuration."
+      print_pass_to_log "${output}"
     }
 
     function execute_qemu_configuration_main
@@ -337,11 +346,14 @@
     {
       execute_virtual_kvm_setup_prompt || return 0
       get_input_devices
+      local -r output="Evdev setup"
 
       if ! is_input_device_enum_valid; then
-        print_error_to_log "Failed Evdev setup."
+        print_fail_to_log "${output}"
         return 1
       fi
+
+      print_pass_to_log "${output}"
     }
 
     function execute_virtual_kvm_setup_prompt

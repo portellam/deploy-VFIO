@@ -105,22 +105,23 @@
   function do_main_setup
   {
     do_skip_main_setup || return 0
+    local -r output="Main setup"
 
     if ! create_temp_files_for_main_setup \
       || ! do_try_main_setup; then
       restore_temp_files_for_main_setup
-      print_error_to_log "Main setup incomplete."
+      print_fail_to_log "${output}"
       exit 1
     fi
 
-    print_pass_to_log "Main setup complete."
+    print_pass_to_log "${output}"
   }
 
   # function do_cleanup_main_setup
   # {
   #   if ! restore_temp_files_for_main_setup \
   #     || ! delete_temp_files_for_main_setup; then
-  #     print_error_to_log "Main setup: Cleanup failed."
+  #     print_error_to_log "Cleanup failed."
   #   fi
   # }
 
@@ -164,26 +165,34 @@
 
     function execute_multiboot_setup
     {
+      local -r output="Multiboot VFIO setup"
+
       if ! restore_source_files_for_main_setup \
         || ! get_output_for_multiboot_setup \
         || ! specify_grub_menu_entry_for_multiboot_setup \
         || ! write_output_for_multiboot_setup \
         || ! execute_update_after_main_setup; then
-        print_fail_to_log "Multiboot VFIO setup has failed."
+        print_error_to_log "${output}"
         return 1
       fi
+
+      print_pass_to_log "${output}"
     }
 
     function execute_static_setup
     {
+      local -r output="Static VFIO setup"
+
       if ! restore_source_files_for_main_setup \
         || ! specify_static_setup_prompt \
         || ! get_output_for_static_setup \
         || ! write_output_for_static_setup \
         || ! execute_update_after_main_setup; then
-        print_fail_to_log "Static VFIO setup has failed."
+        print_fail_to_log "${output}"
         return 1
       fi
+
+      print_pass_to_log "${output}"
     }
 
     function execute_update_after_main_setup

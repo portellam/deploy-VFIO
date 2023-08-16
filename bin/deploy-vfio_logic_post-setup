@@ -39,6 +39,7 @@
   function do_post_setup
   {
     do_skip_post_setup || return 0
+    local -r output="Post-setup"
 
     # if ! execute_libvirt_hooks_setup \
     #   || ! execute_zram_swap_setup \
@@ -54,11 +55,11 @@
       || ! execute_zram_swap_setup \
       || ! execute_auto_xorg_setup \
       || ! execute_audio_loopback_setup; then
-      print_error_to_log "Post-setup incomplete."
+      print_fail_to_log "${output}"
       exit 1
     fi
 
-    print_pass_to_log "Post-setup complete."
+    print_pass_to_log "${output}"
   }
 
   function do_skip_post_setup
@@ -71,8 +72,6 @@
       print_note "Skipping post setup."
       return 1
     fi
-
-    return 0
   }
 
   # <summary>Execution</summary>
