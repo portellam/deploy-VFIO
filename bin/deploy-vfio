@@ -11,15 +11,6 @@
   source deploy-vfio_sources
 # </sources>
 
-# <params>
-  readonly SCRIPT_NAME="$( basename "${0}" )"
-  readonly PREFIX_PROMPT="${SCRIPT_NAME}: "
-
-  # <summary>Preserve internal field separator</summary>
-    readonly SAVEIFS="${IFS}"
-    IFS=$'\n'
-
-
 # <functions>
   function main
   {
