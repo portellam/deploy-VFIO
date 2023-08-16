@@ -39,12 +39,26 @@
   function do_post_setup
   {
     do_skip_post_setup || return 0
-    execute_libvirt_hooks_setup || return 1
-    execute_zram_swap_setup || return 1
-    execute_auto_xorg_setup || return 1
-    # execute_looking_glass_setup || return 1   <note>To be added in a future release.</note>
-    # execute_scream_setup || return 1          <note>To be added in a future release.</note>
-    execute_audio_loopback_setup || return 1
+
+    # if ! execute_libvirt_hooks_setup \
+    #   || ! execute_zram_swap_setup \
+    #   || ! execute_auto_xorg_setup \
+    #   || ! execute_looking_glass_setup \   # <note>To be added in a future release.</note>
+    #   || ! execute_scream_setup \          # <note>To be added in a future release.</note>
+    #   || ! execute_audio_loopback_setup; then
+    #   print_error_to_log "Post-setup incomplete."
+    #   exit 1
+    # fi
+
+    if ! execute_libvirt_hooks_setup \
+      || ! execute_zram_swap_setup \
+      || ! execute_auto_xorg_setup \
+      || ! execute_audio_loopback_setup; then
+      print_error_to_log "Post-setup incomplete."
+      exit 1
+    fi
+
+    print_pass_to_log "Post-setup complete."
   }
 
   function do_skip_post_setup
@@ -54,7 +68,7 @@
     fi
 
     if "${POST_SETUP_DO_SKIP_ALL}"; then
-      print_prefix_note "Skipping post setup."
+      print_note "Skipping post setup."
       return 1
     fi
 
@@ -86,17 +100,17 @@
       function execute_audio_loopback_setup_install
       {
         if ! cd "${BIN_PATH}${full_repo}"; then
-            print_prefix_error "Failed to find build directory."
+            print_error_to_log "Failed to find build directory."
             return 1
         fi
 
         if [[ ! -e "${script_name}" ]]; then
-            print_prefix_error "Failed to find script '${script_name}'."
+            print_error_to_log "Failed to find script '${script_name}'."
             return 1
         fi
 
         if ! sudo bash "${script_name}" --install &> /dev/null; then
-            print_prefix_error "Failed to execute script '${script_name}'."
+            print_error_to_log "Failed to execute script '${script_name}'."
             return 1
         fi
       }
@@ -124,7 +138,7 @@
       function execute_audio_loopback_setup_uninstall
       {
         if ! sudo bash "${script_name}" --uninstall &> /dev/null; then
-            print_prefix_error "Failed to execute script '${script_name}'."
+            print_error_to_log "Failed to execute script '${script_name}'."
             return 1
         fi
       }
@@ -154,17 +168,17 @@
       function execute_auto_xorg_setup_install
       {
         if ! cd "${BIN_PATH}${full_repo}"; then
-            print_prefix_error "Failed to find build directory."
+            print_error_to_log "Failed to find build directory."
             return 1
         fi
 
         if [[ ! -e "${script_name}" ]]; then
-            print_prefix_error "Failed to find script '${script_name}'."
+            print_error_to_log "Failed to find script '${script_name}'."
             return 1
         fi
 
         if ! sudo bash "${script_name}" --install "${POST_SETUP_ARGS_FOR_AUTO_XORG}" &> /dev/null; then
-            print_prefix_error "Failed to execute script '${script_name}'."
+            print_error_to_log "Failed to execute script '${script_name}'."
             return 1
         fi
       }
@@ -184,7 +198,7 @@
         execute_or_skip_prompt "Set arguments for ${SET_COLOR_YELLOW}${repo_name}${RESET_COLOR}?" || return 0
 
         if ! sudo bash "${script_name}" --help &> /dev/null; then
-            print_prefix_error "Failed to execute script '${script_name}'."
+            print_error_to_log "Failed to execute script '${script_name}'."
             return 1
         fi
 
@@ -212,7 +226,7 @@
       function execute_auto_xorg_setup_uninstall
       {
         if ! sudo bash "${script_name}" --uninstall &> /dev/null; then
-            print_prefix_error "Failed to execute script '${script_name}'."
+            print_error_to_log "Failed to execute script '${script_name}'."
             return 1
         fi
       }
@@ -241,17 +255,17 @@
       function execute_libvirt_hooks_setup_install
       {
         if ! cd "${BIN_PATH}${full_repo}"; then
-            print_prefix_error "Failed to find build directory."
+            print_error_to_log "Failed to find build directory."
             return 1
         fi
 
         if [[ ! -e "${script_name}" ]]; then
-            print_prefix_error "Failed to find script '${script_name}'."
+            print_error_to_log "Failed to find script '${script_name}'."
             return 1
         fi
 
         if ! sudo bash "${script_name}" --install &> /dev/null; then
-            print_prefix_error "Failed to execute script '${script_name}'."
+            print_error_to_log "Failed to execute script '${script_name}'."
             return 1
         fi
       }
@@ -279,7 +293,7 @@
       function execute_libvirt_hooks_setup_uninstall
       {
         if ! sudo bash "${script_name}" --uninstall &> /dev/null; then
-            print_prefix_error "Failed to execute script '${script_name}'."
+            print_error_to_log "Failed to execute script '${script_name}'."
             return 1
         fi
       }
@@ -308,17 +322,17 @@
       function execute_zram_swap_setup_install
       {
         if ! cd "${BIN_PATH}${full_repo}"; then
-            print_prefix_error "Failed to find build directory."
+            print_error_to_log "Failed to find build directory."
             return 1
         fi
 
         if [[ ! -e "${script_name}" ]]; then
-            print_prefix_error "Failed to find script '${script_name}'."
+            print_error_to_log "Failed to find script '${script_name}'."
             return 1
         fi
 
         if ! sudo bash "${script_name}" --install &> /dev/null; then
-            print_prefix_error "Failed to execute script '${script_name}'."
+            print_error_to_log "Failed to execute script '${script_name}'."
             return 1
         fi
       }
@@ -368,14 +382,14 @@
           fi
 
           if [[ "${denominator}" -le 0 ]]; then
-            print_prefix_error "Denominator is negative or zero."
+            print_error_to_log "Denominator is negative or zero."
           fi
 
           fraction="1/${denominator}"
         fi
 
         if ! sed -i '/'${line_to_match}'"*"/c\'${line_to_match}'"'${fraction}'"' "${file}"; then
-          print_prefix_error "Failed to write output to zram-swap file."
+          print_error_to_log "Failed to write output to zram-swap file."
           return 1
         fi
 
@@ -383,28 +397,28 @@
           && sudo swapon -v | grep zram &> /dev/null \
           && sudo swapon -v | grep zram &> /dev/null \
           && ! sudo swapon -v | grep zram | grep 0B &> /dev/null; then
-          print_prefix_error "zram-swap device(s) already in use. Restart system to save changes."
+          print_error_to_log "zram-swap device(s) already in use. Restart system to save changes."
           return 0
         fi
 
         if sudo swapon -v | grep zram &> /dev/null \
           && ! sudo swapoff /dev/zram* &> /dev/null; then
-          print_prefix_error "Failed to disable zram-swap device(s)."
+          print_error_to_log "Failed to disable zram-swap device(s)."
           return 1
         fi
 
         if ! sudo systemctl daemon-reload &> /dev/null; then
-          print_prefix_error "Failed to update systemd."
+          print_error_to_log "Failed to update systemd."
           return 1
         fi
 
         if ! sudo systemctl restart zram-swap &> /dev/null; then
-          print_prefix_error "Failed to restart zram-swap service."
+          print_error_to_log "Failed to restart zram-swap service."
           return 1
         fi
 
         if ! sudo swapon -v | grep zram &> /dev/null; then
-          print_prefix_error "Failed to enable zram-swap device."
+          print_error_to_log "Failed to enable zram-swap device."
           return 1
         fi
       }
@@ -422,7 +436,7 @@
       function execute_zram_swap_setup_uninstall
       {
         if ! sudo bash "${script_name}" --uninstall &> /dev/null; then
-            print_prefix_error "Failed to execute script '${script_name}'."
+            print_error_to_log "Failed to execute script '${script_name}'."
             return 1
         fi
       }
@@ -457,13 +471,13 @@
             return 0 ;;
 
           * )
-            print_prefix_error "Not a fraction."
+            print_error_to_log "Not a fraction."
             return 1 ;;
         esac
 
-        if ! is_int "${numerator}" \
-          || ! is_int "${DENOMINATOR}"; then
-          print_prefix_error "Values are not numbers."
+        if ! is_int "${numerator}" &> /dev/null \
+          || ! is_int "${DENOMINATOR}" &> /dev/null; then
+          print_error_to_log "Values are not numbers."
           return 1
         fi
 
@@ -486,7 +500,7 @@
       function is_host_memory_sufficient_for_zram_swap
       {
         if ! get_free_memory; then
-          print_prefix_error "Insufficient Host memory for zram-swap."
+          print_error_to_log "Insufficient Host memory for zram-swap."
           return 1
         fi
       }

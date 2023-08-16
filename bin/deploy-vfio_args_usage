@@ -14,55 +14,61 @@
 # <functions>
   function print_help
   {
-    echo -e "Try 'sudo bash ${DEPLOY_VFIO_NAME} --help' for usage."
+    echo -e "Try 'sudo bash ${SCRIPT_NAME} --help' for usage."
   }
 
   function print_duplicate_argument
   {
-    if [[ -z "${1}" ]]; then
-      print_prefix_error "Duplicate argument."
+    local -r output="Duplicate argument"
+
+    if ! is_string "${1}" &> /dev/null; then
+      print_error_to_log "${output}."
     fi
 
-    print_prefix_error "Duplicate argument '${1}'."
-    exit 1
+    print_error_to_log "${output}'${1}'."
+    return 1
   }
 
   function print_duplicate_option
   {
-    if [[ -z "${1}" ]]; then
-      print_prefix_error "Duplicate option."
+    local -r output="Duplicate option"
+
+    if ! is_string "${1}" &> /dev/null; then
+      print_error_to_log "${output}."
     fi
 
-    print_prefix_error "Duplicate option '${1}'."
-    exit 1
+    print_error_to_log "${output}'${1}'."
+    return 1
   }
 
   function print_invalid_argument
   {
-    if [[ -z "${1}" ]]; then
-      print_prefix_error "Invalid argument."
+    local -r output="Invalid argument"
+
+    if ! is_string "${1}" &> /dev/null; then
+      print_error_to_log "${output}."
     fi
 
-    print_prefix_error "Invalid argument '${1}'."
-    exit 1
+    print_error_to_log "Invalid argument '${1}'."
+    return 1
   }
 
   function print_invalid_option
   {
-    if [[ -z "${1}" ]]; then
-      print_prefix_error "Invalid option."
+    local -r output="Invalid option"
+
+    if ! is_string "${1}" &> /dev/null; then
+      print_error_to_log "${output}."
     fi
 
-    print_prefix_error "Invalid option '${1}'."
-    exit 1
+    print_error_to_log "${output}'${1}'."
+    return 1
   }
 
   function print_usage
   {
-    set_ifs_to_newline
-
-    local -a output=(
-      "Usage:\tbash ${DEPLOY_VFIO_NAME} [OPTION] [ARGUMENTS]"
+    local -ar output=(
+      "Usage:\tbash ${SCRIPT_NAME} [OPTION] [ARGUMENTS]"
       "Deploy a VFIO setup to a Linux host machine that supports Para-virtualization and hardware passthrough.\n"
       "  -h, --help\t\t\tPrint this help and exit."
       "  -q, --quiet\t\t\tReduce verbosity; print only relevant questions and status statements."
@@ -147,6 +153,5 @@
     )
 
     echo -e "${output[*]}"
-    unset_ifs
   }
 # </functions>

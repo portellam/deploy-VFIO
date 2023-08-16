@@ -39,7 +39,7 @@
       && ! is_option_of_database "$@" \
       && ! is_option_of_main_setup "$@" \
       && ! is_option_of_post_setup "$@"; then
-    is_option_valid "$@"
+    is_option_valid "$@" || return 1
     fi
   }
 
@@ -74,7 +74,7 @@
 
       print_invalid_option "${1}"
       print_help
-      exit 1
+      return 1
     }
 
     function is_option_undo_all
@@ -96,7 +96,7 @@
 
       while [[ "${1}" =~ ^- ]] \
         || [[ "${1}" =~ ^-- ]]; do
-        parse_option "$@"
+        parse_option "$@" || exit 1
         shift                         # <note>'shift' must remain in same scope to work.</note>
       done
 

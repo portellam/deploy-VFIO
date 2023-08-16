@@ -31,7 +31,6 @@
           get_argument_enum_for_hugepages "${1}" "${2}" || return 1
           is_host_memory_sufficient_for_hugepages || return 1
           pop_input_enum_if_last_option_contains_argument "${1}" "${2}"
-          PRE_SETUP_ASK_TO_EXECUTE_ALL=false
           PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
           return 0
         fi
@@ -43,7 +42,6 @@
       {
         if [[ "${1}" == "-c" ]] \
           || [[ "${1}" == "--cpu" ]]; then
-          PRE_SETUP_ASK_TO_EXECUTE_ALL=false
           PRE_SETUP_DO_EXECUTE_ISOLCPU=true
           return 0
         fi
@@ -55,7 +53,6 @@
       {
         if [[ "${1}" == "-e" ]] \
           || [[ "${1}" == "--evdev" ]]; then
-          PRE_SETUP_ASK_TO_EXECUTE_ALL=false
           PRE_SETUP_DO_EXECUTE_EVDEV=true
           return 0
         fi
@@ -67,7 +64,6 @@
       {
         if [[ "${1}" == "--skip-pre-setup" ]]; then
           PRE_SETUP_DO_SKIP_ALL=true
-          PRE_SETUP_ASK_TO_EXECUTE_ALL=false
           return 0
         fi
 
@@ -77,7 +73,6 @@
       function is_option_uninstall_pre_setup
       {
         if [[ "${1}" == "--uninstall-pre-setup" ]]; then
-          PRE_SETUP_ASK_TO_EXECUTE_ALL=false
           return 0
         fi
 

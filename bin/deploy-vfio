@@ -11,16 +11,25 @@
   source deploy-vfio_sources
 # </sources>
 
+# <params>
+  readonly SCRIPT_NAME="$( basename "${0}" )"
+  readonly PREFIX_PROMPT="${SCRIPT_NAME}: "
+
+  # <summary>Preserve internal field separator</summary>
+    readonly SAVEIFS="${IFS}"
+    IFS=$'\n'
+
+
 # <functions>
   function main
   {
     is_user_superuser
     get_options "$@"
     is_system_supported
-    do_pre_setup || exit 1
-    do_parse_database || exit 1
-    do_main_setup || exit 1
-    do_post_setup || exit 1
+    do_pre_setup
+    do_parse_database
+    do_main_setup
+    do_post_setup
   }
 # </functions>
 

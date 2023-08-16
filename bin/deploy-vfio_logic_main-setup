@@ -107,15 +107,18 @@
     if ! create_temp_files_for_main_setup \
       || ! do_try_main_setup; then
       restore_temp_files_for_main_setup
-      return 1
+      print_error_to_log "Main setup incomplete."
+      exit 1
     fi
+
+    print_pass_to_log "Main setup complete."
   }
 
   # function do_cleanup_main_setup
   # {
   #   if ! restore_temp_files_for_main_setup \
   #     || ! delete_temp_files_for_main_setup; then
-  #     print_prefix_error "Main setup: Cleanup failed."
+  #     print_error_to_log "Main setup: Cleanup failed."
   #   fi
   # }
 
@@ -135,7 +138,7 @@
   {
     if ! "${DATABASE_DO_PARSE_DATABASE}" \
       || "${MAIN_SETUP_DO_SKIP_ALL}"; then
-      print_prefix_note "Skipping VFIO setup."
+      print_note "Skipping VFIO setup."
       return 1
     fi
   }
@@ -165,7 +168,7 @@
         || ! specify_grub_menu_entry_for_multiboot_setup \
         || ! write_output_for_multiboot_setup \
         || ! execute_update_after_main_setup; then
-        print_prefix_fail "Multiboot VFIO setup has failed."
+        print_fail_to_log "Multiboot VFIO setup has failed."
         return 1
       fi
     }
@@ -177,7 +180,7 @@
         || ! get_output_for_static_setup \
         || ! write_output_for_static_setup \
         || ! execute_update_after_main_setup; then
-        print_prefix_fail "Static VFIO setup has failed."
+        print_fail_to_log "Static VFIO setup has failed."
         return 1
       fi
     }
@@ -193,7 +196,7 @@
     {
       if ! restore_source_files_for_main_setup \
         || ! execute_update_after_main_setup; then
-        print_prefix_fail "Uninstall has failed."
+        print_fail_to_log "Uninstall has failed."
       fi
     }
 
@@ -329,7 +332,7 @@
           PREFIX_GRUB_CMDLINE+=" ${SUBSTRING_GRUB_CMDLINE_INTEL_IOMMU_DRIVER}" ;;
 
         * )
-          print_prefix_error "Unknown CPU vendor '${CPU_VENDOR_ID}'."
+          print_error_to_log "Unknown CPU vendor '${CPU_VENDOR_ID}'."
           return 1 ;;
       esac
     }
@@ -365,7 +368,7 @@
       get_grub_menu_entry_enum_for_multiboot_setup "${prefix_grub_cmdline_temp}"
 
       if ! is_enum "GRUB_CUSTOM_FILE_CONTENTS"; then
-        print_prefix_error "Multiboot setup output is empty."
+        print_error_to_log "Multiboot setup output is empty."
         return 1
       fi
     }
@@ -398,7 +401,7 @@
       if ! is_enum "driver_enum" \
         && ! is_enum "stub_hwid_enum" \
         && ! is_enum "vfio_hwid_enum"; then
-        print_prefix_error "Static setup output is empty."
+        print_error_to_log "Static setup output is empty."
         return 1
       fi
 
@@ -499,7 +502,7 @@
         echo -e "Please answer between 0 and ${LAST_INDEX}."
       done
 
-      print_prefix_error "Failed to answer."
+      print_error_to_log "Failed to answer."
       return 1
     }
 
@@ -527,7 +530,7 @@
         esac
       done
 
-      print_prefix_error "Failed to answer."
+      print_error_to_log "Failed to answer."
       return 1
     }
 
@@ -567,7 +570,7 @@
       done
 
       if ! [[ "${answer}" =~ [MmSsUuNn] ]]; then
-        print_prefix_error "Failed to answer."
+        print_error_to_log "Failed to answer."
         return 1
       fi
     }
@@ -595,7 +598,7 @@
     {
       if "${MAIN_SETUP_DO_EXECUTE_MULTIBOOT}"; then
         if ! is_valid_enum_of_iommu_groups "IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM"; then
-          print_prefix_error "Invalid selection of VGA devices for VFIO."
+          print_error_to_log "Invalid selection of VGA devices for VFIO."
           return 1
         fi
 
@@ -603,7 +606,7 @@
       fi
 
       if ! is_valid_enum_of_iommu_groups "IOMMU_GROUPS_WITH_VGA_FOR_HOST_ENUM"; then
-        print_prefix_error "Invalid selection of VGA devices for Host."
+        print_error_to_log "Invalid selection of VGA devices for Host."
         return 1
       fi
     }
@@ -611,12 +614,12 @@
     function is_parsed_enum_valid
     {
       if ! is_valid_enum_of_iommu_groups "IOMMU_GROUPS_FOR_HOST_ENUM"; then
-        print_prefix_error "Invalid selection of devices for Host."
+        print_error_to_log "Invalid selection of devices for Host."
         return 1
       fi
 
       if ! is_valid_enum_of_iommu_groups "IOMMU_GROUPS_FOR_VFIO_ENUM"; then
-        print_prefix_error "Invalid selection of devices for VFIO."
+        print_error_to_log "Invalid selection of devices for VFIO."
         return 1
       fi
     }
@@ -625,7 +628,7 @@
     function set_entries_for_custom_grub
     {
       if ! sed -i "s/+'/-'/g" "${GRUB_CUSTOM_DEST_PATH}" &> /dev/null; then
-        print_prefix_error "Failed to enable entries for GRUB proxy file."
+        print_error_to_log "Failed to enable entries for GRUB proxy file."
         return 1
       fi
     }
@@ -633,7 +636,7 @@
     function unset_entries_for_custom_grub
     {
       if ! sed -i "s/+'/-'/g" "${GRUB_CUSTOM_DEST_PATH}" &> /dev/null; then
-        print_prefix_error "Failed to disable entries for GRUB proxy file."
+        print_error_to_log "Failed to disable entries for GRUB proxy file."
         return 1
       fi
     }
@@ -645,7 +648,7 @@
     #   # local grub_custom_proxy_file=$( find "${GRUB_PATH}" -name *"${GRUB_CUSTOM_PROXY_FILENAME}" )
 
     #   # if ! is_file "${grub_custom_proxy_file}"; then
-    #   #   print_prefix_error "Failed to find GRUB proxy file in directory '/etc/grub.d/'."
+    #   #   print_error_to_log "Failed to find GRUB proxy file in directory '/etc/grub.d/'."
     #   #   return 1
     #   # fi
 
@@ -688,7 +691,7 @@
 
       if [[ ! -d $( dirname "${GRUB_CUSTOM_DEST_PATH}" ) ]] \
         && ! sudo mkdir --parents $( dirname "${GRUB_CUSTOM_DEST_PATH}" ); then
-        print_prefix_error "Failed to create directory '"$( dirname "${GRUB_CUSTOM_DEST_PATH}" )"'."
+        print_error_to_log "Failed to create directory '"$( dirname "${GRUB_CUSTOM_DEST_PATH}" )"'."
         return 1
       fi
 
@@ -716,7 +719,7 @@
 
       if ! sed -i '/'"${line_to_match}"'/c\'"${line_grub_default}" "${GRUB_DEST_PATH}" \
         || ! echo -e "\n${GRUB_CUSTOM_FILE_CONTENTS[*]}" >> "${GRUB_CUSTOM_DEST_PATH}" ; then
-        print_prefix_error "Failed to overwrite target lines of files."
+        print_error_to_log "Failed to overwrite target lines of files."
         unset_ifs
         return 1
       fi
@@ -730,7 +733,7 @@
       local line_to_replace="${line_to_match}\"${GRUB_CMDLINE_DEFAULT}\""
 
       if ! sed -i '/'"${line_to_match}"'/c\'"${line_to_replace}" "${GRUB_DEST_PATH}" &> /dev/null; then
-        print_prefix_error "Failed to overwrite target lines of files."
+        print_error_to_log "Failed to overwrite target lines of files."
         return 1
       fi
     }
@@ -744,7 +747,7 @@
       for line in "${output[@]}"; do
         if ! sed -i "23i ${line}" "${INITRAMFS_MODULES_DEST_PATH}"; then
           unset_ifs
-          print_prefix_error "Failed to overwrite target lines of files."
+          print_error_to_log "Failed to overwrite target lines of files."
           return 1
         fi
       done
@@ -761,7 +764,7 @@
       for line in "${output[@]}"; do
         if ! sed -i "7i ${line}" "${MODPROBE_VFIO_DEST_PATH}"; then
           unset_ifs
-          print_prefix_error "Failed to overwrite target lines of files."
+          print_error_to_log "Failed to overwrite target lines of files."
           return 1
         fi
       done
@@ -776,7 +779,7 @@
         || ! echo -e "\n${BLACKLISTS_ENUM[*]}" >> "${MODPROBE_BLACKLISTS_DEST_PATH}" &> /dev/null \
         || ! sed -i "/# options vfio_pci ids=*/c\options vfio_pci ids=\"${HWID_DELIM}\"" "${MODPROBE_VFIO_DEST_PATH}" &> /dev/null \
         || ! sed -i "/# vfio_pci ids=*/c\vfio_pci_ids=\"${HWID_DELIM}\"" "${MODULES_DEST_PATH}" &> /dev/null; then
-        print_prefix_error "Failed to overwrite target lines of files."
+        print_error_to_log "Failed to overwrite target lines of files."
         return 1
       fi
     }

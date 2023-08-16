@@ -46,17 +46,19 @@
     if ! create_temp_files_for_database \
       || ! do_try_parse_database; then
       do_cleanup_database
-      return 1
+      print_error_to_log "Database parse incomplete."
+      exit 1
     fi
 
     do_cleanup_database
+    print_pass_to_log "Database parse complete."
   }
 
   function do_cleanup_database
   {
     if ! restore_temp_files_for_database \
       || ! delete_temp_files_for_database; then
-      print_prefix_error "Database: Cleanup failed."
+      print_error_to_log "Database: Cleanup failed."
     fi
   }
 
@@ -116,7 +118,7 @@
     {
       if ! is_file "${XML_FILE}" &> /dev/null \
         && ! sudo touch "${XML_FILE}"; then
-        print_prefix_error "Failed to created '${XML_FILE}'".
+        print_error_to_log "Failed to created '${XML_FILE}'".
         return 1
       fi
     }
@@ -212,14 +214,14 @@
         return 0
       fi
 
-      print_prefix_error "No drivers or hardware IDs found for selection."
+      print_error_to_log "No drivers or hardware IDs found for selection."
       return 1
     }
 
     function get_name_for_first_vga_device_in_iommu_group
     {
       if [[ -z "${2}" ]] \
-        || ! is_int "${1}"; then
+        || ! is_int "${1}" &> /dev/null; then
         return 1
       fi
 
@@ -237,7 +239,7 @@
       done
 
       if [[ -z "${NAME}" ]]; then
-        print_prefix_error "Failed to find device name of any VGA device in IOMMU group ${IOMMU_GROUP_ID}."
+        print_error_to_log "Failed to find device name of any VGA device in IOMMU group ${IOMMU_GROUP_ID}."
         return 1
       fi
 
@@ -249,7 +251,7 @@
     {
       for iommu_group_id in ${IOMMU_GROUP_ID_ENUM[@]}; do
         if ! is_iommu_group_not_binded_to_vfio "${iommu_group_id}"; then
-          print_prefix_error "Detected existing VFIO setup."
+          print_error_to_log "Detected existing VFIO setup."
           return 1
         fi
       done
@@ -260,7 +262,7 @@
     function does_xml_not_have_existing_vfio_setup
     {
       if eval "${GET_PARSE_FROM_XML}" | grep -E "vfio" &> /dev/null; then
-        print_prefix_error "Detected VFIO drivers in XML file."
+        print_error_to_log "Detected VFIO drivers in XML file."
         return 1
       fi
 
@@ -359,7 +361,7 @@
         is_device_vga "${device}" && return 0
       done
 
-      print_prefix_error "Please enter valid IOMMU group ID which contains one or more VGA devices."
+      print_error_to_log "Please enter valid IOMMU group ID which contains one or more VGA devices."
       return 1
     }
 
@@ -375,12 +377,12 @@
         is_iommu_group_id_valid "${range_stop}" || return 1
         reference+=( $( seq "${range_start}" "${range_stop}" ) )
 
-      elif is_int "${1}"; then
+      elif is_int "${1}" &> /dev/null; then
         is_iommu_group_id_valid "${1}" || return 1
         reference+=( "${1}" )
 
       else
-        print_prefix_error "Invalid IOMMU group ID(s)."
+        print_error_to_log "Invalid IOMMU group ID(s)."
         return 1
       fi
     }
@@ -390,10 +392,10 @@
       local -ir minimum_iommu_group_id=0
       local -ir maximum_iommu_group_id="${IOMMU_GROUP_ID_ENUM[-1]}"
 
-      if ! is_int "${1}" \
+      if ! is_int "${1}" &> /dev/null \
         || [[ "${1}" -le "${minimum_iommu_group_id}" ]] \
         || [[ "${1}" -ge "${maximum_iommu_group_id}" ]] ; then
-        print_prefix_error "Please enter valid IOMMU group ID(s), between ${minimum_iommu_group_id} and ${maximum_iommu_group_id}."
+        print_error_to_log "Please enter valid IOMMU group ID(s), between ${minimum_iommu_group_id} and ${maximum_iommu_group_id}."
         return 1
       fi
     }
@@ -413,13 +415,13 @@
       local -r output="Invalid IOMMU groups."
 
       if ! is_enum "IOMMU_GROUP_ID_ENUM"; then
-        print_prefix_error "${output}"
+        print_error_to_log "${output}"
         return 1
       fi
 
       for value in ${IOMMU_GROUP_ID_ENUM[@]}; do
-        if ! is_int "${value}"; then
-          print_prefix_error "${output}"
+        if ! is_int "${value}" &> /dev/null; then
+          print_error_to_log "${output}"
           return 1
         fi
       done
@@ -431,7 +433,7 @@
       local -n reference="${1}"
 
       for value in ${reference[@]}; do
-        is_int "${value}" || return 1
+        is_int "${value}" &> /dev/null || return 1
       done
     }
 
@@ -667,7 +669,7 @@
       set_ifs_to_newline
 
       if ! sudo echo -e "${output[*]}" > "${XML_FILE}"; then
-        print_prefix_error "Failed to write to file '${FILE}'."
+        print_error_to_log "Failed to write to file '${FILE}'."
         unset_ifs
         return 1
       fi
@@ -688,7 +690,7 @@
       done
 
       if ! is_enum "DEVICE_DRIVER_XML_ENUM"; then
-        print_prefix_error "XML file is empty."
+        print_error_to_log "XML file is empty."
         return 1
       fi
     }
@@ -696,12 +698,12 @@
     function is_xml_valid
     {
       if ! is_file_not_empty "${XML_FILE}" &> /dev/null; then
-        print_prefix_note "XML file '${XML_FILE}' is empty."
+        print_note "XML file '${XML_FILE}' is empty."
         return 1
       fi
 
       if ! xmllint "${XML_FILE}" &> /dev/null; then
-        print_prefix_error "XML file '${XML_FILE}' is invalid."
+        print_error_to_log "XML file '${XML_FILE}' is invalid."
         return 1
       fi
     }

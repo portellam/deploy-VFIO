@@ -15,7 +15,7 @@
   function is_option_of_database
   {
     is_option_parse_xml "$@" || return 1
-    is_option_parse_iommu_groups "$@" || return 1
+    is_option_parse_iommu_groups "$@"
   }
 
   # <summary>Getters</summary>
@@ -43,6 +43,7 @@
 
         if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
           print_invalid_option "${1}"
+          return 1
         fi
 
         shift

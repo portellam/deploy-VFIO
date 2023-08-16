@@ -20,7 +20,6 @@
 
     declare -g PRE_SETUP_ARE_PARAMS_SET=true
 
-    declare -g PRE_SETUP_ASK_TO_EXECUTE_ALL=true
     declare -g PRE_SETUP_DO_EXECUTE_EVDEV=false
     declare -g PRE_SETUP_DO_EXECUTE_HUGEPAGES=false
     declare -g PRE_SETUP_DO_EXECUTE_ISOLCPU=false
@@ -59,15 +58,18 @@
     if ! restore_source_files_for_pre_setup \
       || ! do_try_pre_setup; then
       do_cleanup_pre_setup || restore_source_files_for_pre_setup
-      return 1
+      print_error_to_log "Pre-setup incomplete."
+      exit 1
     fi
+
+    print_pass_to_log "Pre-setup complete."
   }
 
   function do_cleanup_pre_setup
   {
     if ! restore_temp_files_for_pre_setup \
       || ! delete_temp_files_for_pre_setup; then
-      print_prefix_error "Main setup: Cleanup failed."
+      print_error_to_log "Main setup: Cleanup failed."
     fi
   }
 
@@ -85,11 +87,11 @@
   function do_skip_pre_setup
   {
     if ! "${PRE_SETUP_DO_SKIP_ALL}"; then
-      execute_or_skip_prompt "Skip preliminary setup?" && PRE_SETUP_DO_SKIP_ALL=true
+      execute_or_skip_prompt "Skip pre-setup?" && PRE_SETUP_DO_SKIP_ALL=true
     fi
 
     if "${PRE_SETUP_DO_SKIP_ALL}"; then
-      print_prefix_note "Skipping preliminary setup."
+      print_note "Skipping pre-setup."
       echo
       return 1
     fi
@@ -118,8 +120,8 @@
         return 0
       fi
 
-      if ! is_int "${MAX_MEMORY}"; then
-        print_prefix_error "Could not parse system memory."
+      if ! is_int "${MAX_MEMORY}" &> /dev/null; then
+        print_error_to_log "Could not parse system memory."
         return 1
       fi
 
@@ -375,7 +377,7 @@
     {
       if ! rm --force "${APPARMOR_QEMU_DEST_PATH}" &> /dev/null \
         || ! touch "${APPARMOR_QEMU_DEST_PATH}" &> /dev/null; then
-        print_prefix_error "Failed to clear file '${APPARMOR_QEMU_DEST_PATH}'."
+        print_error_to_log "Failed to clear file '${APPARMOR_QEMU_DEST_PATH}'."
         return 1
       fi
 
@@ -398,7 +400,7 @@
           IS_HUGEPAGES_SIZE_SET=true ;;
 
         * )
-          print_prefix_error "Please a enter valid Hugepages size, '2M' or '1G'."
+          print_error_to_log "Please a enter valid Hugepages size, '2M' or '1G'."
           return 1 ;;
       esac
     }
@@ -420,16 +422,16 @@
     function get_hugepages_count
     {
       if [[ -z "${1}" ]]; then
-        print_prefix_error "Hugepages count is empty."
+        print_error_to_log "Hugepages count is empty."
         return 1
       fi
 
       get_hugepages_min_and_max_sizes || return 1
 
-      if ! is_int "${1}" \
+      if ! is_int "${1}" &> /dev/null \
         || [[ "${1}" -lt "${HUGEPAGES_MIN_COUNT}" ]] \
         || [[ "${1}" -gt "${HUGEPAGES_MAX_COUNT}" ]]; then
-        print_prefix_error "Please enter a valid Hugepages amount, between ${HUGEPAGES_MIN_COUNT} or ${HUGEPAGES_MAX_COUNT}."
+        print_error_to_log "Please enter a valid Hugepages amount, between ${HUGEPAGES_MIN_COUNT} or ${HUGEPAGES_MAX_COUNT}."
         return 1
       fi
 
@@ -463,7 +465,7 @@
           HUGEPAGES_MIN_COUNT=1 ;;
 
         * )
-          print_prefix_error "Failed to calculate minimum or maximum values for Hugepages."
+          print_error_to_log "Failed to calculate minimum or maximum values for Hugepages."
           return 1 ;;
       esac
 
@@ -474,7 +476,7 @@
     function is_host_memory_sufficient_for_hugepages
     {
       if ! get_free_memory; then
-        print_prefix_error "Insufficient Host memory for Hugepages."
+        print_error_to_log "Insufficient Host memory for Hugepages."
         return 1
       fi
     }
@@ -493,7 +495,7 @@
       if ! is_enum_empty "EVENT_DEVICES_ENUM" \
        || ! is_enum_empty "INPUT_DEVICES_ENUM"; then
         PRE_SETUP_DO_EXECUTE_EVDEV=false
-        print_prefix_error "Cannot parse input devices."
+        print_error_to_log "Cannot parse input devices."
         return 1
       fi
 
@@ -539,7 +541,7 @@
         reference=1
 
       else
-        print_prefix_error "Insufficient CPU cores."
+        print_error_to_log "Insufficient CPU cores."
         return 1
       fi
     }
