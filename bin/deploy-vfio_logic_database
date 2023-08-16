@@ -28,7 +28,7 @@
     declare -g DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
 
     declare -gr GET_DEVICES_FOR_IOMMU_GROUP='ls /sys/kernel/iommu_groups/"${iommu_group_id}"/devices/'
-    declare -gr GET_PARSE_FROM_XML='echo "cat /*" | xmllint  --shell "${XML_FILE}" | grep --invert-match "^/ >" | grep --extended-regexp --invert-match xml'
+    declare -gr GET_PARSE_FROM_XML='xmllint "${XML_FILE}" | grep --invert-match "xml"'
 
     declare -gA DEVICE_DRIVER_XML_ENUM
     declare -ga IOMMU_GROUP_ID_ENUM=( $( ls /sys/kernel/iommu_groups/ | sort --numeric-sort ) )
@@ -653,16 +653,12 @@
 
     function import_iommu_groups_from_xml
     {
-      for line in "$( eval "${GET_PARSE_FROM_XML}" )"; do
+      for line in "$( xmllint "${XML_FILE}" | grep --invert-match 'xml' )"; do
         echo "line == $line"
-
-        local driver=$( echo "${line}" | cut --delimiter '"' --fields 6 )
-        local device=$( echo "${line}" | cut --delimiter '"' --fields 4 )
+        local device=$( echo "${line}" | awk 'END {print $3}' | cut --delimiter '"' --fields 2 )
+        local driver=$( echo "${line}" | awk 'END {print $4}' | cut --delimiter '"' --fields 2 )
         echo "driver == $driver"
         echo "device == $device"
-
-        
-
         DEVICE_DRIVER_XML_ENUM+=( ["${device}"]="${driver}" )
       done
 
