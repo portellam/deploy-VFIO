@@ -497,8 +497,8 @@
 
     function is_input_device_enum_valid
     {
-      if ! is_enum_empty "EVENT_DEVICES_ENUM" \
-       || ! is_enum_empty "INPUT_DEVICES_ENUM"; then
+      if is_enum_not_empty "EVENT_DEVICES_ENUM" \
+       || is_enum_not_empty "INPUT_DEVICES_ENUM"; then
         PRE_SETUP_DO_EXECUTE_EVDEV=false
         print_error_to_log "Cannot parse input devices."
         return 1

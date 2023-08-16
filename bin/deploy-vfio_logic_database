@@ -204,12 +204,12 @@
       stud_hwid_reference=( $( sort --unique <<<"${stud_hwid_reference[*]}" ) )
       vfio_hwid_reference=( $( sort --unique <<<"${vfio_hwid_reference[*]}" ) )
 
-      if ! is_enum_empty "driver_reference"; then
+      if is_enum_not_empty "driver_reference"; then
         return 0
       fi
 
-      if is_enum_empty "stud_hwid_reference" \
-        && is_enum_empty "vfio_hwid_reference"; then
+      if ! is_enum_not_empty "stud_hwid_reference" \
+        && ! is_enum_not_empty "vfio_hwid_reference"; then
         return 0
       fi
 
