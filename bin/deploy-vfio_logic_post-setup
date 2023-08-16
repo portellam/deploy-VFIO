@@ -491,7 +491,7 @@
           return 1
 
         else
-          echo -e "${PREFIX_ERROR} Invalid fraction."
+          print_error_to_log "Invalid fraction."
         fi
 
         return 1
