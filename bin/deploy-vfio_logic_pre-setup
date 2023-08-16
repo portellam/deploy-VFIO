@@ -31,12 +31,12 @@
 
     # <summary>Hugepages</summary>
       declare -gi HUGEPAGES_ALLOCATED_MEMORY=0
-      declare -gi HUGEPAGES_COUNT=$( cat /proc/meminfo | grep -i hugepagesize | cut -d ':' -f 2 | awk 'END {print $1}' )
+      declare -gi HUGEPAGES_COUNT=$( cat /proc/meminfo | grep -i hugepagesize | cut --delimiter ':' --fields 2 | awk 'END {print $1}' )
       declare -gi HUGEPAGES_MAX_COUNT=0
-      declare -gi HUGEPAGES_MAX_SIZE_IN_KIB=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | awk 'END {print $1}' )
+      declare -gi HUGEPAGES_MAX_SIZE_IN_KIB=$( cat /proc/meminfo | grep MemTotal | cut --delimiter ":" --fields 2 | awk 'END {print $1}' )
       declare -gi HUGEPAGES_MIN_COUNT=0
       declare -gi HUGEPAGES_MIN_SIZE_IN_KIB=$(( 4 * ${ONE_GIB_IN_KIB} ))
-      declare -gi HUGEPAGES_SIZE_IN_KIB=$( cat /proc/meminfo | grep -i hugepages_total | cut -d ':' -f 2 | awk 'END {print $1}' )
+      declare -gi HUGEPAGES_SIZE_IN_KIB=$( cat /proc/meminfo | grep -i hugepages_total | cut --delimiter ':' --fields 2 | awk 'END {print $1}' )
       declare -gu HUGEPAGES_BYTE_SUFFIX=""
       declare -g IS_HUGEPAGES_COUNT_SET=false
       declare -g IS_HUGEPAGES_SIZE_SET=false
@@ -181,8 +181,8 @@
     function execute_static_isolcpu_setup_main
     {
       local -i cores_allocated_to_host=1
-      local -i total_cores_count=$( cat /proc/cpuinfo | grep "cpu cores" | uniq | grep -o "[0-9]\+" )
-      local -i total_threads_count=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep -o "[0-9]\+" )
+      local -i total_cores_count=$( cat /proc/cpuinfo | grep "cpu cores" | uniq | grep --only-matching "[0-9]\+" )
+      local -i total_threads_count=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep --only-matching "[0-9]\+" )
 
       get_maximum_count_of_cores_allocated_to_host "cores_allocated_to_host" "${total_cores_count}" || return 1
 
@@ -523,7 +523,7 @@
 
     function get_input_devices
     {
-      EVENT_DEVICES_ENUM=( $( ls -l /dev/input/by-id | cut -d "/" -f2 | grep -v "total 0" ) )
+      EVENT_DEVICES_ENUM=( $( ls -l /dev/input/by-id | cut --delimiter "/" --fields 2 | grep --invert-match "total 0" ) )
       INPUT_DEVICES_ENUM=( $( ls /dev/input/by-id ) )
     }
 

@@ -61,7 +61,7 @@
           return 1
         fi
 
-        local -i delimiter_counter=$( echo "${1}" | grep -o "," | wc -l )
+        local -i delimiter_counter=$( echo "${1}" | grep --only-matching "," | wc -l )
         (( delimiter_counter++ ))
 
         while [[ "${delimiter_counter}" -gt 0 ]] \
@@ -75,7 +75,7 @@
 
       function get_argument_for_parse_selection
       {
-        local argument=$( echo "${1}" | cut -d ',' -f "${delimiter_counter}" )
+        local argument=$( echo "${1}" | cut --delimiter ',' --fields "${delimiter_counter}" )
 
         if [[ -z "${argument}" ]] ; then
           return 0

@@ -462,8 +462,8 @@
 
         case "${1}" in
           *"/"* )
-            local -i numerator=$( echo ${1} | cut -d '/' -f1 )
-            local -i denominator=$( echo ${1} | cut -d '/' -f2 ) ;;
+            local -i numerator=$( echo ${1} | cut --delimiter '/' --fields 1 )
+            local -i denominator=$( echo ${1} | cut --delimiter '/' --fields 2 ) ;;
 
           "default" )
             POST_SETUP_HAS_ARG_ZRAM_SWAP_DEFAULTS=true

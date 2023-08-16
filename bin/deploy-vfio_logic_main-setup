@@ -98,7 +98,7 @@
       declare -g DEFAULT_MENU_ENTRY_TITLE="0"
 
     # <summary>Unsorted</summary>
-      declare -glr CPU_VENDOR_ID="$( lscpu | grep -Ei Vendor | awk 'END {print $3}' )"
+      declare -glr CPU_VENDOR_ID="$( lscpu | grep --extended-regexp --ignore-case Vendor | awk 'END {print $3}' )"
       declare -gi MULTIBOOT_PREFERRED_IOMMU_GROUP_ID=0
   }
 
@@ -350,13 +350,13 @@
     function get_output_for_multiboot_setup
     {
       local -ir max_parsed_kernels=3
-      local -a kernel_enum=( $( ls -1 /boot/vmli* | cut -d 'z' -f 2 | cut -c 2- | sort -n | head -n ${max_parsed_kernels} ) )
-      local -r system_disk=$( df / | grep -iv 'filesystem' | cut -d '/' -f3 | cut -d ' ' -f1 )
-      local -r system_distro=$( lsb_release -i -s )
-      local -r system_fstype=$( blkid -s TYPE | grep ${system_disk} | cut -d '"' -f2 )
+      local -a kernel_enum=( $( ls -1 /boot/vmli* | cut --delimiter 'z' --fields 2 | cut --characters 2- | sort --numeric-sort | head --lines ${max_parsed_kernels} ) )
+      local -r system_disk=$( df / | grep --ignore-case --invert-match 'filesystem' | cut --delimiter '/' --fields 3 | cut --delimiter ' ' --fields 1 )
+      local -r system_distro=$( lsb_release --id --short )
+      local -r system_fstype=$( blkid -s TYPE | grep ${system_disk} | cut --delimiter '"' --fields 2 )
       local -r system_kernel=$( uname -o )
       local -r system_os=$( uname )
-      local -r system_uuid=$( blkid -s UUID | grep ${system_disk} | cut -d '"' -f2 )
+      local -r system_uuid=$( blkid -s UUID | grep ${system_disk} | cut --delimiter '"' --fields 2 )
       local prefix_grub_cmdline_temp=""
       prefix_grub_cmdline_temp+="${PREFIX_GRUB_CMDLINE} "
 

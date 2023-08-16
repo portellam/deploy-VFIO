@@ -56,7 +56,7 @@
       declare -gi AVAILABLE_MEMORY=0
       declare -gir ONE_GIB_IN_KIB=1048576
       declare -gir TWO_MIB_IN_KIB=2048
-      declare -gir MAX_MEMORY=$( cat /proc/meminfo | grep MemTotal | cut -d ":" -f 2 | awk 'END {print $1}' )
+      declare -gir MAX_MEMORY=$( cat /proc/meminfo | grep MemTotal | cut --delimiter ":" --fields 2 | awk 'END {print $1}' )
       declare -gir MIN_MEMORY=$(( 8 * ${ONE_GIB_IN_KIB} ))
       set_free_memory
 

@@ -29,7 +29,7 @@
       return 0
     fi
 
-    local -r operating_system="$( lsb_release -is )"
+    local -r operating_system="$( lsb_release --id --short )"
     local -lr operating_system_lowercase="${operating_system}"
 
     if [[ "${operating_system_lowercase}" != *"debian"* ]] \
@@ -72,7 +72,7 @@
   function is_virtualization_enabled
   {
     if ! LC_ALL=C lscpu | grep Virtualization &> /dev/null \
-      && ! grep -E -q --color=auto 'vmx|svm|0xc0f' /proc/cpuinfo &> /dev/null; then
+      && ! grep --extended-regexp --quiet --color=auto 'vmx|svm|0xc0f' /proc/cpuinfo &> /dev/null; then
       print_error_to_log "System does not or cannot support hardware virtualization."
       return 1
     fi

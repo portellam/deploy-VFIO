@@ -237,7 +237,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 
 #### Example:
 
-    $ lspci -nnk | grep -Ei "vga|graphics"
+    $ lspci -nnk | grep --extended-regexp --ignore-case "vga|graphics"
     01:00.0 VGA compatible controller [0300]: NVIDIA Corporation GA104 [GeForce RTX 3070] [10de:2484] (rev a1)
     04:00.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Cayman PRO [Radeon HD 6950] [1002:6719]
 
