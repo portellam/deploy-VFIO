@@ -27,11 +27,11 @@
     declare -g DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
     declare -g DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=false
 
-    declare -gr GET_DEVICES_FOR_IOMMU_GROUP='ls /sys/kernel/iommu_groups/${iommu_group_id}/devices/'
-    declare -gr GET_PARSE_FROM_XML='echo "cat /*" | xmllint  --shell ${XML_FILE} | grep -v "^/ >" | grep -Ev xml'
+    declare -gr GET_DEVICES_FOR_IOMMU_GROUP='ls /sys/kernel/iommu_groups/"${iommu_group_id}"/devices/'
+    declare -gr GET_PARSE_FROM_XML='echo "cat /*" | xmllint  --shell "${XML_FILE}" | grep --invert-match "^/ >" | grep --extended-regexp --invert-match xml'
 
     declare -gA DEVICE_DRIVER_XML_ENUM
-    declare -ga IOMMU_GROUP_ID_ENUM=( $( ls /sys/kernel/iommu_groups/ | sort -n ) )
+    declare -ga IOMMU_GROUP_ID_ENUM=( $( ls /sys/kernel/iommu_groups/ | sort --numeric-sort ) )
     declare -ga IOMMU_GROUPS_FOR_HOST_ENUM=( )
     declare -ga IOMMU_GROUPS_FOR_VFIO_ENUM=( )
     declare -ga IOMMU_GROUPS_WITH_VGA_FOR_HOST_ENUM=( )
@@ -129,7 +129,7 @@
     {
       local device="${1}"
       local -n reference="${2}"
-      reference="$( lspci -ms ${device} | cut -d '"' -f 2 )"
+      reference="$( lspci -ms ${device} | cut --delimiter '"' --fields 2 )"
     }
 
     function get_device_driver
@@ -140,7 +140,7 @@
       if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
         reference="${DEVICE_DRIVER_XML_ENUM["${device}"]}"
       else
-        reference="$( lspci -ks "${device}" | grep -i "driver" | cut -d " " -f 5 )"
+        reference="$( lspci -ks "${device}" | grep -i "driver" | cut --delimiter ' ' --fields 5 )"
       fi
     }
 
@@ -149,7 +149,7 @@
       local device="${1}"
       local -n reference="${2}"
 
-      reference="$( lspci -ns ${device} | cut -d " " -f 3 )"
+      reference="$( lspci -ns ${device} | cut --delimiter ' ' --fields 3 )"
     }
 
     function get_device_name
@@ -157,7 +157,7 @@
       local device="${1}"
       local -n reference="${2}"
 
-      reference="$( lspci -ms ${device}  | cut -d '"' -f 6 )"
+      reference="$( lspci -ms ${device}  | cut --delimiter '"' --fields 6 )"
     }
 
     function get_device_vendor
@@ -165,7 +165,7 @@
       local device="${1}"
       local -n reference="${2}"
 
-      reference="$( lspci -ms ${device} | cut -d '"' -f 4 )"
+      reference="$( lspci -ms ${device} | cut --delimiter '"' --fields 4 )"
     }
 
     function get_enums_for_selection
@@ -258,7 +258,7 @@
 
     function does_xml_not_have_existing_vfio_setup
     {
-      if eval "${GET_PARSE_FROM_XML}" | grep -E "vfio" &> /dev/null; then
+      if eval "${GET_PARSE_FROM_XML}" | grep --extended-regexp "vfio" &> /dev/null; then
         print_error_to_log "Detected VFIO drivers in XML file."
         return 1
       fi
@@ -361,9 +361,9 @@
       local -ir iommu_group_id="${1}"
       local -n reference="${2}"
 
-      if echo "${1}" | grep -E -q "${regex_for_range_of_nums}"; then
-        local -i range_start=$( echo "${1}" | cut -d '-' -f 1 )
-        local -i range_stop=$( echo "${1}" | cut -d '-' -f 2 )
+      if echo "${1}" | grep --extended-regexp --quiet "${regex_for_range_of_nums}"; then
+        local -i range_start=$( echo "${1}" | cut --delimiter '-' --fields 1 )
+        local -i range_stop=$( echo "${1}" | cut --delimiter '-' --fields 2 )
         is_iommu_group_id_valid "${range_start}" || return 1
         is_iommu_group_id_valid "${range_stop}" || return 1
         reference+=( $( seq "${range_start}" "${range_stop}" ) )
@@ -456,14 +456,14 @@
     {
       local device="${1}"
       local regex_get_domain_id='^[0-9A-F][1-9A-F]$'
-      local -u domain_id=$( echo "${device}" | cut -d ':' -f 2 )
-      echo "${domain_id}" | grep -E -q "${regex_get_domain_id}"
+      local -u domain_id=$( echo "${device}" | cut --delimiter ':' --fields 2 )
+      echo "${domain_id}" | grep --extended-regexp --quiet "${regex_get_domain_id}"
     }
 
     function is_device_for_pci_stub
     {
       local device="${1}"
-      local -l class="$( lspci -ms ${device} | cut -d '"' -f 2 )"
+      local -l class="$( lspci -ms ${device} | cut --delimiter '"' --fields 2 )"
 
       case "${class}" in
         *"usb"* )
@@ -504,7 +504,7 @@
     function is_device_vga
     {
       local device="${1}"
-      local -l class="$( lspci -ms ${device} | cut -d '"' -f 2 )"
+      local -l class="$( lspci -ms ${device} | cut --delimiter '"' --fields 2 )"
 
       case "${class}" in
         *"vga"* | *"graphic"* | *"display"* )
@@ -618,27 +618,15 @@
       local -a output=( )
       local -a iommu_output=( )
 
-      for iommu_group_id in $( ls -1v /sys/kernel/iommu_groups/ | sort -h ); do
+      for iommu_group_id in $( ls -1v /sys/kernel/iommu_groups/ | sort --human-numeric-sort ); do
         local -a device_output=( )
         local line_iommu_id="id=\"${iommu_group_id}\""
 
         for device in $( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" ); do
-          local device_driver=$( lspci -ks ${device} | grep -i "driver" | cut -d " " -f 5 )
+          local device_driver=$( lspci -ks ${device} | grep -i "driver" | cut --delimiter ' ' --fields 5 )
           local line_device_id="dev_id=\"${device}\""
           local line_device_driver="driver=\"${device_driver}\""
           local line_device="${line_device_id} ${line_device_driver}"
-
-          # <note>Currently unused XML data. The minimum data necessary is the device ID and device driver.</note>
-          # local device_class="$( lspci -ms ${device} | cut -d \" -f 2 )"
-          # local device_hwid=$( lspci -ns ${device} | cut -d " " -f 3 )
-          # local device_name="$( lspci -ms ${device} | cut -d \" -f 6 )"
-          # local device_vendor="$( lspci -ms ${device} | cut -d \" -f 4 )"
-          # local line_device_class="class=\"${device_class}\""
-          # local line_device_hwid="hw_id=\"${device_hwid}\""
-          # local line_device_name="name=\"${device_name}\""
-          # local line_device_vendor="vendor=\"${device_vendor}\""
-          # local line_device="${line_device_id} ${line_device_hwid} ${line_device_driver} ${line_device_class} ${line_device_vendor} ${line_device_name}"
-
           local line_iommu="<iommu ${line_iommu_id} ${line_device}/>"
 
           device_output+=(
@@ -665,11 +653,16 @@
 
     function import_iommu_groups_from_xml
     {
-      local -ar input=( $( eval "${GET_PARSE_FROM_XML}" ) )
+      for line in "$( eval "${GET_PARSE_FROM_XML}" )"; do
+        echo "line == $line"
 
-      for line in "${input[@]}"; do
-        local driver=$( echo "${line}" | cut -d '"' -f 6 )
-        local device=$( echo "${line}" | cut -d '"' -f 4 )
+        local driver=$( echo "${line}" | cut --delimiter '"' --fields 6 )
+        local device=$( echo "${line}" | cut --delimiter '"' --fields 4 )
+        echo "driver == $driver"
+        echo "device == $device"
+
+        
+
         DEVICE_DRIVER_XML_ENUM+=( ["${device}"]="${driver}" )
       done
 
