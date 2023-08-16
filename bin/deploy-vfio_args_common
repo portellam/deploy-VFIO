@@ -99,8 +99,6 @@
         parse_option "$@" || exit 1
         shift                         # <note>'shift' must remain in same scope to work.</note>
       done
-
-      return 0
     }
 
   # <summary>Setters</summary>
@@ -110,8 +108,6 @@
         shift
         (( args_counter++ ))
       done
-
-      return 0
     }
 # </functions>
 
