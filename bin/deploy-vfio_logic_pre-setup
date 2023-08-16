@@ -79,9 +79,9 @@
   {
     # execute_static_isolcpu_setup || return 1      # <note>Not working as expected.</note>
     execute_virtual_kvm_setup || return 1
-    add_user_to_groups_for_pre_setup || return 1
     execute_hugepages_setup || return 1
-    execute_qemu_configuration || return 1
+    add_user_to_groups_for_pre_setup || return 1
+    execute_qemu_configuration
   }
 
   function do_skip_pre_setup
@@ -99,13 +99,15 @@
   # <summary>Execution</summary>
     function add_user_to_groups_for_pre_setup
     {
+      local -r output="Add users to groups"
+
       if ! sudo adduser "${USER}" "libvirt" &> /dev/null \
         || ( "${PRE_SETUP_DO_EXECUTE_EVDEV}" && ! sudo adduser "${USER}" "input" &> /dev/null ); then
-        print_error_to_log "Failed to add users to groups."
+        pprint_fail_to_log "${output}"
         return 1
       fi
 
-      print_output_to_log "Added users to groups."
+      print_pass_to_log "${output}"
     }
 
     function execute_hugepages_setup
