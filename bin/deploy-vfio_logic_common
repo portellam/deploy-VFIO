@@ -333,9 +333,16 @@
 
     function print_pass_or_fail_to_log
     {
-      if [[ "${?}" -ne 0 ]]; then
+      local -ir exit_code="${?}"
+
+      if [[ "${exit_code}" -ne 0 ]]; then
         print_fail_to_log "Setup incomplete."
-        return 1
+        return "${exit_code}"
+      fi
+
+      if [[ "${exit_code}" -eq 255 ]]; then
+        print_output_to_log "VFIO setup skipped."
+        return "${exit_code}"
       fi
 
       print_pass_to_log "Setup complete."
