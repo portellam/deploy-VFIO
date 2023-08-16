@@ -39,10 +39,6 @@
       declare -gr PREFIX_ERROR="${PREFIX_PROMPT}${SET_COLOR_YELLOW}An error occurred:${RESET_COLOR} "
       declare -gr PREFIX_FAIL="${PREFIX_PROMPT}${SET_COLOR_RED}Failure:${RESET_COLOR} "
       declare -gr PREFIX_PASS="${PREFIX_PROMPT}${SET_COLOR_GREEN}Success:${RESET_COLOR} "
-      declare -gr SUFFIX_FAIL="${SET_COLOR_RED}[Failure]${RESET_COLOR}"
-      declare -gr SUFFIX_PASS="${SET_COLOR_GREEN}[Success]${RESET_COLOR}"
-      # declare -gr SUFFIX_SKIP="${SET_COLOR_YELLOW}[Skipped]${RESET_COLOR}"
-      # declare -gr SUFFIX_WORK="${SET_COLOR_YELLOW}[Working]${RESET_COLOR}"
 
     declare -g PREFIX_COMMENT="#" # <note>Added this var, to prevent IDE from showing visual errors when a string contains a comment variable.</note>
 
@@ -354,26 +350,6 @@
     function print_note
     {
       echo -e "${PREFIX_NOTE}${1}"
-    }
-
-    function print_suffix_error
-    {
-      echo -e "${1} ${SUFFIX_ERROR}"
-    }
-
-    function print_suffix_fail
-    {
-      echo -e "${1} ${SUFFIX_FAIL}"
-    }
-
-    function print_suffix_note
-    {
-      echo -e "${1} ${SUFFIX_NOTE}"
-    }
-
-    function print_suffix_pass
-    {
-      echo -e "${1} ${SUFFIX_PASS}"
     }
 
   # <summary>System validation</summary>
