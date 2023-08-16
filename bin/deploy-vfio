@@ -14,13 +14,19 @@
 # <functions>
   function main
   {
+    local has_skipped_main_setup=false
+
     is_user_superuser
     get_options "$@"
     is_system_supported
     do_pre_setup
     do_parse_database
-    do_main_setup
+    do_main_setup || has_skipped_main_setup=true
     do_post_setup
+
+    if "${has_skipped_main_setup}"; then
+      exit 255
+    fi
   }
 # </functions>
 
