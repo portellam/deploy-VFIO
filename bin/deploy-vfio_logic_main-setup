@@ -353,10 +353,10 @@
       local -a kernel_enum=( $( ls -1 /boot/vmli* | cut --delimiter 'z' --fields 2 | cut --characters 2- | sort --numeric-sort | head --lines ${max_parsed_kernels} ) )
       local -r system_disk=$( df / | grep --ignore-case --invert-match 'filesystem' | cut --delimiter '/' --fields 3 | cut --delimiter ' ' --fields 1 )
       local -r system_distro=$( lsb_release --id --short )
-      local -r system_fstype=$( blkid -s TYPE | grep ${system_disk} | cut --delimiter '"' --fields 2 )
-      local -r system_kernel=$( uname -o )
+      local -r system_fstype=$( blkid --match-tag TYPE | grep ${system_disk} | cut --delimiter '"' --fields 2 )
+      local -r system_kernel=$( uname --operating-system )
       local -r system_os=$( uname )
-      local -r system_uuid=$( blkid -s UUID | grep ${system_disk} | cut --delimiter '"' --fields 2 )
+      local -r system_uuid=$( blkid --match-tag UUID | grep ${system_disk} | cut --delimiter '"' --fields 2 )
       local prefix_grub_cmdline_temp=""
       prefix_grub_cmdline_temp+="${PREFIX_GRUB_CMDLINE} "
 

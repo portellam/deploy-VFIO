@@ -393,14 +393,14 @@
         fi
 
         if ! "${POST_SETUP_HAS_ARG_ZRAM_SWAP_FORCE}" \
-          && sudo swapon -v | grep zram &> /dev/null \
-          && sudo swapon -v | grep zram &> /dev/null \
-          && ! sudo swapon -v | grep zram | grep 0B &> /dev/null; then
+          && sudo swapon --verbose | grep zram &> /dev/null \
+          && sudo swapon --verbose | grep zram &> /dev/null \
+          && ! sudo swapon --verbose | grep zram | grep 0B &> /dev/null; then
           print_error_to_log "zram-swap device(s) already in use. Restart system to save changes."
           return 0
         fi
 
-        if sudo swapon -v | grep zram &> /dev/null \
+        if sudo swapon --verbose | grep zram &> /dev/null \
           && ! sudo swapoff /dev/zram* &> /dev/null; then
           print_error_to_log "Failed to disable zram-swap device(s)."
           return 1
@@ -416,7 +416,7 @@
           return 1
         fi
 
-        if ! sudo swapon -v | grep zram &> /dev/null; then
+        if ! sudo swapon --verbose | grep zram &> /dev/null; then
           print_error_to_log "Failed to enable zram-swap device."
           return 1
         fi
