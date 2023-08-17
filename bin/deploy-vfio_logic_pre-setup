@@ -77,7 +77,7 @@
 
   function do_try_pre_setup
   {
-    # execute_static_isolcpu_setup || return 1      # <note>Not working as expected.</note>
+    # execute_static_isolcpu_setup || return 1      # <note>Static Isolcpu is not complete at the moment. Saving for future release</note>
     execute_virtual_kvm_setup || return 1
     execute_hugepages_setup || return 1
     add_user_to_groups_for_pre_setup || return 1
