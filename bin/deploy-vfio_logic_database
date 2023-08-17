@@ -139,7 +139,7 @@
       if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
         reference="${DEVICE_DRIVER_XML_ENUM["${device}"]}"
       else
-        reference="$( lspci -ks "${device}" | grep --ignore-case "driver" | cut --delimiter ' ' --fields 5 )"
+        reference="$( lspci -ks "${device}" | grep --ignore-case "driver" | awk 'END {print $5}' )"
       fi
     }
 
@@ -556,7 +556,7 @@
       echo -e "\tHardware ID:\t${hwid}"
       local driver_output="\tDriver:\t\t"
 
-      if [[ ! -z "${driver}" ]]; then
+      if is_string "${driver}" &> /dev/null; then
         driver_output+="${driver}"
       else
         driver_output+="N/A"
@@ -658,8 +658,8 @@
       local -i counter=1
 
       while true; do
-        local device_id=$( xmlstarlet sel --template -m "//xml/device[${counter}]/device_id" -v . -n "${XML_FILE}" )
-        local driver=$( xmlstarlet sel --template -m "//xml/device[${counter}]/driver" -v . -n "${XML_FILE}" )
+        local device_id=$( xmlstarlet sel --template -m "//xml/device[${counter}]/device_id" -v . -n "${XML_FILE}" | awk 'END {print $1}' )
+        local driver=$( xmlstarlet sel --template -m "//xml/device[${counter}]/driver" -v . -n "${XML_FILE}" | awk 'END {print $1}' )
 
         if [[ "${driver}" == "vfio-pci" ]]; then
           print_error_to_log "Detected VFIO drivers in XML file."
@@ -671,11 +671,11 @@
           break
         fi
 
-        DEVICE_DRIVER_XML_ENUM["${device}"]="${driver}"
+        DEVICE_DRIVER_XML_ENUM+=( ["${device_id}"]="${driver}" )
         (( counter++ ))
       done
 
-      if ! is_enum "DEVICE_DRIVER_XML_ENUM"; then
+      if ! is_enum_not_empty "DEVICE_DRIVER_XML_ENUM"; then
         print_error_to_log "XML file is empty."
         return 1
       fi
