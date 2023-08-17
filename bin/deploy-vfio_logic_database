@@ -419,7 +419,6 @@
       done
     }
 
-
   # <summary>Device validation</summary>
     function is_device_driver_not_excluded
     {
