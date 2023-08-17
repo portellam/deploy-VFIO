@@ -77,8 +77,7 @@
       specify_iommu_group_enum
     fi
 
-    if ! does_host_not_have_existing_vfio_setup \
-      || ! does_xml_not_have_existing_vfio_setup; then
+    if ! does_host_not_have_existing_vfio_setup; then
       return 1
     fi
 
@@ -127,26 +126,26 @@
   # <summary>Getters</summary>
     function get_device_class
     {
-      local device="${1}"
+      local -r device="${1}"
       local -n reference="${2}"
       reference="$( lspci -ms ${device} | cut --delimiter '"' --fields 2 )"
     }
 
     function get_device_driver
     {
-      local device="${1}"
+      local -r device="${1}"
       local -n reference="${2}"
 
       if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
         reference="${DEVICE_DRIVER_XML_ENUM["${device}"]}"
       else
-        reference="$( lspci -ks "${device}" | grep -i "driver" | cut --delimiter ' ' --fields 5 )"
+        reference="$( lspci -ks "${device}" | grep --ignore-case "driver" | cut --delimiter ' ' --fields 5 )"
       fi
     }
 
     function get_device_hardware_id
     {
-      local device="${1}"
+      local -r device="${1}"
       local -n reference="${2}"
 
       reference="$( lspci -ns ${device} | cut --delimiter ' ' --fields 3 )"
@@ -154,7 +153,7 @@
 
     function get_device_name
     {
-      local device="${1}"
+      local -r device="${1}"
       local -n reference="${2}"
 
       reference="$( lspci -ms ${device}  | cut --delimiter '"' --fields 6 )"
@@ -162,7 +161,7 @@
 
     function get_device_vendor
     {
-      local device="${1}"
+      local -r device="${1}"
       local -n reference="${2}"
 
       reference="$( lspci -ms ${device} | cut --delimiter '"' --fields 4 )"
@@ -254,14 +253,6 @@
           return 1
         fi
       done
-    }
-
-    function does_xml_not_have_existing_vfio_setup
-    {
-      if eval "${GET_PARSE_FROM_XML}" | grep --extended-regexp "vfio" &> /dev/null; then
-        print_error_to_log "Detected VFIO drivers in XML file."
-        return 1
-      fi
     }
 
   # <summary>IOMMU Groups validation</summary>
@@ -432,8 +423,8 @@
   # <summary>Device validation</summary>
     function is_device_driver_not_excluded
     {
-      local driver="${1}"
-      local excluded_driver="snd_hda_intel"
+      local -r driver="${1}"
+      local -r excluded_driver="snd_hda_intel"
 
       case "${driver}" in
         *"${excluded_driver}"* )
@@ -443,8 +434,8 @@
 
     function is_device_driver_not_vfio
     {
-      local driver="${1}"
-      local matched_driver="vfio-pci"
+      local -r driver="${1}"
+      local -r matched_driver="vfio-pci"
 
       case "${driver}" in
         *"${matched_driver}"* )
@@ -454,16 +445,16 @@
 
     function is_device_external
     {
-      local device="${1}"
-      local regex_get_domain_id='^[0-9A-F][1-9A-F]$'
-      local -u domain_id=$( echo "${device}" | cut --delimiter ':' --fields 2 )
+      local -r device="${1}"
+      local -r regex_get_domain_id='^[0-9A-F][1-9A-F]$'
+      local -ru domain_id=$( echo "${device}" | cut --delimiter ':' --fields 2 )
       echo "${domain_id}" | grep --extended-regexp --quiet "${regex_get_domain_id}"
     }
 
     function is_device_for_pci_stub
     {
-      local device="${1}"
-      local -l class="$( lspci -ms ${device} | cut --delimiter '"' --fields 2 )"
+      local -r device="${1}"
+      local -lr class="$( lspci -ms ${device} | cut --delimiter '"' --fields 2 )"
 
       case "${class}" in
         *"usb"* )
@@ -473,13 +464,24 @@
       return 1
     }
 
+    function is_device_id_valid
+    {
+      local -r device="${1}"
+      local -r output="$( lspci -s "${device}" )"
+
+      if ! is_string "${output}" &> /dev/null; then
+        print_error_to_log "Device id is not valid."
+        return 1
+      fi
+    }
+
     function is_device_not_binded_to_vfio
     {
       if [[ -z "${1}" ]]; then
         return 0
       fi
 
-      local device="${1}"
+      local -r device="${1}"
       local driver=""
       get_device_driver "${device}" "driver"
       is_device_driver_not_vfio "${driver}"
@@ -487,7 +489,7 @@
 
     function is_device_not_excluded
     {
-      local device="${1}"
+      local -r device="${1}"
       local driver=""
       get_device_driver "${device}" "driver"
       is_device_driver_not_excluded "${driver}"
@@ -495,7 +497,7 @@
 
     function is_device_not_external
     {
-      local device="${1}"
+      local -r device="${1}"
       local driver=""
       get_device_driver "${device}" "driver"
       is_device_external "${device}"
@@ -503,8 +505,8 @@
 
     function is_device_vga
     {
-      local device="${1}"
-      local -l class="$( lspci -ms ${device} | cut --delimiter '"' --fields 2 )"
+      local -r device="${1}"
+      local -lr class="$( lspci -ms ${device} | cut --delimiter '"' --fields 2 )"
 
       case "${class}" in
         *"vga"* | *"graphic"* | *"display"* )
@@ -615,51 +617,59 @@
   # <summary>XML</summary>
     function export_iommu_groups_to_xml
     {
-      local -a output=( )
-      local -a iommu_output=( )
+      local -a xml_output=( )
+      local -a devices_output=( )
+
 
       for iommu_group_id in $( ls -1v /sys/kernel/iommu_groups/ | sort --human-numeric-sort ); do
-        local -a device_output=( )
-        local line_iommu_id="id=\"${iommu_group_id}\""
+        local -a this_device_output=( )
+        local line_iommu_id="<iommu_id>${iommu_group_id}</iommu_id>"
 
         for device in $( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" ); do
-          local device_driver=$( lspci -ks ${device} | grep -i "driver" | cut --delimiter ' ' --fields 5 )
-          local line_device_id="dev_id=\"${device}\""
-          local line_device_driver="driver=\"${device_driver}\""
-          local line_device="${line_device_id} ${line_device_driver}"
-          local line_iommu="<iommu ${line_iommu_id} ${line_device}/>"
+          local device_driver="$( lspci -ks ${device} | grep --ignore-case "driver" | cut --delimiter ' ' --fields 5 )"
+          local line_device_id="<device_id>${device}</device_id>"
+          local line_device_driver="<driver>${device_driver}</driver>"
 
-          device_output+=(
-            "\t${line_iommu}"
+          this_device_output+=(
+            "\t<device>"
+            "\t\t${line_iommu_id}"
+            "\t\t${line_device_id}"
+            "\t\t${line_device_driver}"
+            "\t</device>"
           )
         done
 
-        iommu_output+=(
-          "${device_output[@]}"
-        )
+        devices_output+=( "${this_device_output[@]}" )
       done
 
-      output=(
+      xml_output=(
         "<xml>"
-        "${iommu_output[@]}"
+        "${devices_output[@]}"
         "</xml>"
       )
 
-      if ! sudo echo -e "${output[*]}" > "${XML_FILE}"; then
-        print_error_to_log "Failed to write to file '${FILE}'."
+      if ! sudo echo -e "${xml_output[*]}" > "${XML_FILE}"; then
+        print_error_to_log "Failed to write to file '${XML_FILE}'."
         return 1
       fi
     }
 
     function import_iommu_groups_from_xml
     {
-      for line in "$( xmllint "${XML_FILE}" | grep --invert-match 'xml' )"; do
-        echo "line == $line"
-        local device=$( echo "${line}" | awk 'END {print $3}' | cut --delimiter '"' --fields 2 )
-        local driver=$( echo "${line}" | awk 'END {print $4}' | cut --delimiter '"' --fields 2 )
-        echo "driver == $driver"
-        echo "device == $device"
+      local -i counter=1
+
+      while true; do
+        local device_id=$( xmlstarlet sel --template -m '//xml/device[2]/device_id' -v . -n "${XML_FILE}" )
+        local driver=$( xmlstarlet sel --template -m '//xml/device[2]/driver' -v . -n "${XML_FILE}" )
+
+        if [[ "${driver}" == "vfio-pci" ]]; then
+          print_error_to_log "Detected VFIO drivers in XML file."
+          return 1
+        fi
+
+        is_device_id_valid "${device_id}" &> /dev/null || break
         DEVICE_DRIVER_XML_ENUM+=( ["${device}"]="${driver}" )
+        (( counter++ ))
       done
 
       if ! is_enum "DEVICE_DRIVER_XML_ENUM"; then
@@ -671,7 +681,7 @@
     function is_xml_valid
     {
       if ! is_file_not_empty "${XML_FILE}" &> /dev/null; then
-        print_note "XML file '${XML_FILE}' is empty."
+        print_error_to_log "XML file '${XML_FILE}' is empty."
         return 1
       fi
 
