@@ -1,0 +1,124 @@
+#!/bin/false
+
+#
+# Filename:       deploy-vfio_args_common
+# Description:    Get and set arguments and options.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source deploy-vfio_args_compatibility
+  source deploy-vfio_args_main-setup
+  source deploy-vfio_args_database
+  source deploy-vfio_args_pre-setup
+  source deploy-vfio_args_post-setup
+  source deploy-vfio_args_usage
+# </sources>
+
+# <functions>
+  function declare_parameters
+  {
+    if [[ "${COMMON_ARGS_ARE_PARAMS_SET}" == true ]]; then
+      return 0
+    fi
+
+    declare -g COMMON_ARGS_ARE_PARAMS_SET=true
+
+    declare -g COMMON_ARGS_DO_UNDO_CHANGES=false
+    declare -g COMMON_ARGS_IS_EXECUTION_QUIET=false
+  }
+
+  # function parse_option                       # <note>Usage is not complete at the moment. Saving for future release</note>
+  # {
+  #   if ! is_option_print_help "$@" \
+  #     && ! is_option_of_compatibility "$@" \
+  #     && ! is_option_be_quiet "$@" \
+  #     && ! is_option_undo_all "$@" \
+  #     && ! is_option_of_pre_setup "$@" \
+  #     && ! is_option_of_database "$@" \
+  #     && ! is_option_of_main_setup "$@" \
+  #     && ! is_option_of_post_setup "$@"; then
+  #   is_option_valid "$@" || return 1
+  #   fi
+  # }
+
+  function parse_option
+  {
+    if ! is_option_print_help "$@"; then
+      is_option_valid "$@" || return 1
+    fi
+  }
+
+  # <summary>Getters</summary>
+    function is_option_be_quiet
+    {
+      if [[ "${1}" == "-q" ]] \
+        || [[ "${1}" == "--quiet" ]]; then
+        COMMON_ARGS_IS_EXECUTION_QUIET=true
+        return 0
+      fi
+
+      return 1
+    }
+
+    function is_option_print_help
+    {
+      if [[ "${1}" == "-h" ]] \
+        || [[ "${1}" == "--help" ]]; then
+        print_usage
+        exit 0
+      fi
+
+      return 1
+    }
+
+    function is_option_valid
+    {
+      if [[ "${1}" == "" ]]; then
+        return 0
+      fi
+
+      print_invalid_option "${1}"
+      print_help
+      return 1
+    }
+
+    function is_option_undo_all
+    {
+      if [[ "${1}" == "-u" ]] \
+        || [[ "${1}" == "--undo" ]]; then
+        COMMON_ARGS_DO_UNDO_CHANGES=true
+        return 0
+      fi
+
+      return 1
+    }
+
+    function get_options
+    {
+      if [[ -z "$@" ]]; then
+        return 0
+      fi
+
+      while [[ "${1}" =~ ^- ]] \
+        || [[ "${1}" =~ ^-- ]]; do
+        parse_option "$@" || exit 1
+        shift                         # <note>'shift' must remain in same scope to work.</note>
+      done
+    }
+
+  # <summary>Setters</summary>
+    function pop_input_enum_if_last_option_contains_argument
+    {
+      while [[ ! -z "${1}" ]]; do
+        shift
+        (( args_counter++ ))
+      done
+    }
+# </functions>
+
+# <code>
+  declare_parameters
+  unset declare_parameters
+# </code

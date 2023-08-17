@@ -1,0 +1,35 @@
+#!/bin/bash/env bash
+
+#
+# Filename:       deploy-vfio
+# Description:    Main executable. See README for details and usage.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source deploy-vfio_sources
+# </sources>
+
+# <functions>
+  function main
+  {
+    local has_skipped_main_setup=false
+    set_ifs_to_newline
+    is_user_superuser
+    get_options "$@"
+    is_system_supported
+    do_pre_setup
+    do_parse_database
+    do_main_setup || has_skipped_main_setup=true
+    # do_post_setup   # <note>Post setup is not complete at the moment. Saving for future release</note>
+
+    if "${has_skipped_main_setup}"; then
+      exit 255
+    fi
+  }
+# </functions>
+
+# <code>
+  main "$@"
+# </code>
