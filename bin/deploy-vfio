@@ -15,7 +15,7 @@
   function main
   {
     local has_skipped_main_setup=false
-
+    set_ifs_to_newline
     is_user_superuser
     get_options "$@"
     is_system_supported

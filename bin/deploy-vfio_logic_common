@@ -64,6 +64,11 @@
   }
 
   # <summary>Clean-up</summary>
+    function set_ifs_to_newline
+    {
+      IFS=$'\n'
+    }
+
     function reset_ifs
     {
       IFS="${SAVEIFS}"
