@@ -620,7 +620,6 @@
       local -a xml_output=( )
       local -a devices_output=( )
 
-
       for iommu_group_id in $( ls -1v /sys/kernel/iommu_groups/ | sort --human-numeric-sort ); do
         local -a this_device_output=( )
         local line_iommu_id="<iommu_id>${iommu_group_id}</iommu_id>"
@@ -659,16 +658,20 @@
       local -i counter=1
 
       while true; do
-        local device_id=$( xmlstarlet sel --template -m '//xml/device[2]/device_id' -v . -n "${XML_FILE}" )
-        local driver=$( xmlstarlet sel --template -m '//xml/device[2]/driver' -v . -n "${XML_FILE}" )
+        local device_id=$( xmlstarlet sel --template -m "//xml/device[${counter}]/device_id" -v . -n "${XML_FILE}" )
+        local driver=$( xmlstarlet sel --template -m "//xml/device[${counter}]/driver" -v . -n "${XML_FILE}" )
 
         if [[ "${driver}" == "vfio-pci" ]]; then
           print_error_to_log "Detected VFIO drivers in XML file."
           return 1
         fi
 
-        is_device_id_valid "${device_id}" &> /dev/null || break
-        DEVICE_DRIVER_XML_ENUM+=( ["${device}"]="${driver}" )
+        if ! is_device_id_valid "${device_id}" &> /dev/null \
+          || ! is_string "${device_id}" &> /dev/null; then
+          break
+        fi
+
+        DEVICE_DRIVER_XML_ENUM["${device}"]="${driver}"
         (( counter++ ))
       done
 
