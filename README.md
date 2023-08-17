@@ -1,5 +1,7 @@
 # deploy-VFIO
-### Status: [Developing](https://github.com/portellam/deploy-vfio/tree/develop) (see [TODO.md](https://github.com/portellam/deploy-vfio/tree/develop/TODO.md)).
+
+### Want to know what is ahead? Checkout the [develop](https://github.com/portellam/deploy-vfio/tree/develop) branch.
+
 ## Contents
 * [About](#About)
 * [How-to](#How-to)
@@ -56,7 +58,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
           -u, --undo        Undo changes (restore files) if script has exited early or unexpectedly.
           --ignore-distro   Ignore distribution check for Debian or Ubuntu system.
 
-#### Parse IOMMU groups
+#### Parse IOMMU groups *(To be added in a future release)*
 
         Specify the database to reference before parsing IOMMU groups.
         OPTIONS:
@@ -79,7 +81,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
             no-vga,14                   Select group 14 and all non-VGA groups.
             1,14-16                     Select groups 1, 14, 15, and 16.
 
-#### Pre-setup
+#### Pre-setup *(To be added in a future release)*
 
         Pre-setup OPTIONS: *
           -c, --cpu                     Allocate CPU.
@@ -96,7 +98,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
             1G 16                       1 GiB hugepage * 16     == 16 GiB allocated to hugepages.
             2M 8192                     2 MiB hugepage * 8912   == 16 GiB allocated to hugepages.
 
-#### VFIO setup
+#### VFIO setup *(To be added in a future release)*
 
         VFIO setup OPTIONS: *
           -m, --multiboot [ARGS]        Create multiple VFIO setups with corresponding GRUB menu entries. Specify default GRUB menu entry by [VGA](#VGA) IOMMU group ID (see ARGUMENTS).
@@ -114,7 +116,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
           file                          Append output to system configuration files.
           grub                          Append output to GRUB; single GRUB menu entry.
 
-#### Post-setup
+#### Post-setup *(To be added in a future release)*
 
         Post-setup OPTIONS:
           --audio-loopback              Install the audio loopback service...           Loopback audio from Guest to Host (over Line-out to Line-in). *
@@ -179,7 +181,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
     - Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
     - For examples, review the referenced guides. Search for *"libvirt hook vfio bind scripts"*. Google is your friend.
 
-### Post-setup
+### Post-setup *(To be added in a future release)*
 * **auto-Xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.<sup>[5](#5)</sup>
 * **Guest Audio Capture**
     - Create an *Audio loopback* to output on the *Host* Audio device *Line-Out*.<sup>[6](#6)</sup>

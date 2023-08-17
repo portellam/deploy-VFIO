@@ -29,17 +29,24 @@
     declare -g COMMON_ARGS_IS_EXECUTION_QUIET=false
   }
 
+  # function parse_option                       # <note>Usage is not complete at the moment. Saving for future release</note>
+  # {
+  #   if ! is_option_print_help "$@" \
+  #     && ! is_option_of_compatibility "$@" \
+  #     && ! is_option_be_quiet "$@" \
+  #     && ! is_option_undo_all "$@" \
+  #     && ! is_option_of_pre_setup "$@" \
+  #     && ! is_option_of_database "$@" \
+  #     && ! is_option_of_main_setup "$@" \
+  #     && ! is_option_of_post_setup "$@"; then
+  #   is_option_valid "$@" || return 1
+  #   fi
+  # }
+
   function parse_option
   {
-    if ! is_option_print_help "$@" \
-      && ! is_option_of_compatibility "$@" \
-      && ! is_option_be_quiet "$@" \
-      && ! is_option_undo_all "$@" \
-      && ! is_option_of_pre_setup "$@" \
-      && ! is_option_of_database "$@" \
-      && ! is_option_of_main_setup "$@" \
-      && ! is_option_of_post_setup "$@"; then
-    is_option_valid "$@" || return 1
+    if ! is_option_print_help "$@"; then
+      is_option_valid "$@" || return 1
     fi
   }
 
