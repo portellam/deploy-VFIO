@@ -1,0 +1,110 @@
+#!/bin/false
+
+#
+# Filename:       deploy-vfio_args_main-setup
+# Description:    Argument logic for main setup.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source deploy-vfio_logic_main-setup
+# </sources>
+
+# <functions>
+  function is_option_of_main_setup
+  {
+    is_option_skip_main_setup "$@" || return 1
+    is_option_uninstall_main_setup "$@" || return 1
+    is_option_do_multiboot_setup "$@" || return 1
+    is_option_do_static_setup "$@" || return 1
+  }
+
+  # <summary>Getters</summary>
+    # <summary>Option</summary>
+      function is_option_do_multiboot_setup
+      {
+        if [[ "${1}" == "-m" ]] \
+          || [[ "${1}" == "--multiboot" ]]; then
+          shift
+          get_argument_enum_for_multiboot_setup "$@" || return 1
+          pop_input_enum_if_last_option_contains_argument "${1}"
+          MAIN_SETUP_DO_EXECUTE_MULTIBOOT=true
+        fi
+      }
+
+      function is_option_do_static_setup
+      {
+        if [[ "${1}" == "-s" ]] \
+          || [[ "${1}" == "--static" ]]; then
+          shift
+          get_argument_enum_for_static_setup "$@" || return 1
+          pop_input_enum_if_last_option_contains_argument "${1}"
+          MAIN_SETUP_DO_EXECUTE_STATIC=true
+        fi
+      }
+
+      function is_option_skip_main_setup
+      {
+        if [[ "${1}" == "--skip-vfio-setup" ]]; then
+          MAIN_SETUP_DO_SKIP_ALL=true
+        fi
+      }
+
+      function is_option_uninstall_main_setup
+      {
+        if [[ "${1}" == "--uninstall-vfio-setup" ]]; then
+          MAIN_SETUP_DO_EXECUTE_UNINSTALL=true
+        fi
+      }
+
+    # <summary>Arguments</summary>
+      function get_argument_enum_for_multiboot_setup
+      {
+        case "${1}" in
+          "default" )
+            MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_DEFAULT=true
+            return 0 ;;
+
+          "first" )
+            MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_FIRST=true
+            return 0 ;;
+
+          "last" )
+            MAIN_SETUP_DO_EXECUTE_MULTIBOOT_PREFER_LAST=true
+            return 0 ;;
+
+          * )
+            if does_iommu_group_have_vga_device "${1}" \
+              && set_preferred_iommu_group_for_multiboot_setup "${1}"; then
+              return 0
+            fi ;;
+        esac
+
+        if [[ ! -z "${1}" ]]; then
+          print_invalid_argument "${1}"
+        fi
+
+        return 1
+      }
+
+      function get_argument_enum_for_static_setup
+      {
+        if [[ -z "${1}" ]]; then
+          return 0
+        fi
+
+        case "${1}" in
+          "grub" )
+            MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB=true
+            return 0 ;;
+
+          "file" )
+            MAIN_SETUP_DO_EXECUTE_STATIC_WITHOUT_GRUB=true
+            return 0 ;;
+        esac
+
+        print_invalid_argument "${1}"
+        return 1
+      }
+# </functions>

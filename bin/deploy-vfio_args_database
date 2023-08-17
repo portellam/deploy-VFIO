@@ -1,0 +1,117 @@
+#!/bin/false
+
+#
+# Filename:       deploy-vfio_args_database
+# Description:    Argument logic for parsing database.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source deploy-vfio_logic_database
+# </sources>
+
+# <functions>
+  function is_option_of_database
+  {
+    is_option_parse_xml "$@" || return 1
+    is_option_parse_iommu_groups "$@"
+  }
+
+  # <summary>Getters</summary>
+    # <summary>Options</summary>
+      function is_option_parse_iommu_groups
+      {
+        if [[ "${1}" != "-p" ]] \
+          && [[ "${1}" != "--parse" ]]; then
+          return 0
+        fi
+
+        shift
+        get_argument_enum_for_parse_selection "$@" || return 1
+        pop_input_enum_if_last_option_contains_argument "${1}"
+        DATABASE_DO_PARSE_DATABASE=true
+        DATABASE_ASK_TO_EXECUTE_ALL=false
+      }
+
+      function is_option_parse_xml
+      {
+        if [[ "${1}" != "-x" ]] \
+          && [[ "${1}" != "--xml" ]]; then
+          return 0
+        fi
+
+        if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
+          print_invalid_option "${1}"
+          return 1
+        fi
+
+        shift
+        is_argument_parse_xml_file "${1}"
+        pop_input_enum_if_last_option_contains_argument "${1}"
+        DATABASE_ASK_TO_EXECUTE_ALL=false
+        DATABASE_DO_PARSE_DATABASE_FROM_XML=true
+      }
+
+    # <summary>Arguments</summary>
+      function get_argument_enum_for_parse_selection
+      {
+        if [[ -z "${1}" ]]; then
+          is_iommu_group_id_valid "${1}"
+          return 1
+        fi
+
+        local -i delimiter_counter=$( echo "${1}" | grep --only-matching "," | wc -l )
+        (( delimiter_counter++ ))
+
+        while [[ "${delimiter_counter}" -gt 0 ]] \
+          && ! "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; do
+          get_argument_for_parse_selection "$@" || return 1
+          (( delimiter_counter-- ))
+        done
+
+        DATABASE_HAS_ARG_PARSE_IOMMU=true
+      }
+
+      function get_argument_for_parse_selection
+      {
+        local argument=$( echo "${1}" | cut --delimiter ',' --fields "${delimiter_counter}" )
+
+        if [[ -z "${argument}" ]] ; then
+          return 0
+        fi
+
+        case "${argument}" in
+          "all" )
+            if "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; then
+              print_duplicate_argument "${argument}"
+            fi
+
+            DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
+            add_valid_iommu_groups_to_parsed_enum || print_invalid_argument "${argument}" ;;
+
+          "no-vga" )
+            if "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA}"; then
+              print_duplicate_argument "${argument}"
+            fi
+
+            DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true
+            add_valid_iommu_groups_to_parsed_enum || print_invalid_argument "${argument}" ;;
+
+          * )
+            DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=true
+            add_some_iommu_groups_to_parsed_enum "${argument}" || print_invalid_argument "${argument}" ;;
+        esac
+      }
+
+      function is_argument_parse_xml_file
+      {
+        if [[ -z "${1}" ]]; then
+          set_xml_to_default
+          return 0
+        fi
+
+        is_file "${1}" || print_invalid_argument "${1}"
+        set_xml_file "${1}"
+      }
+# </functions>

@@ -1,0 +1,638 @@
+#!/bin/false
+
+#
+# Filename:       deploy-vfio_logic_pre-setup
+# Description:    Recommended pre-installation setups.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source deploy-vfio_logic_common
+# </sources>
+
+# <functions>
+  function declare_parameters
+  {
+    if [[ "${PRE_SETUP_ARE_PARAMS_SET}" == true ]]; then
+      return 0
+    fi
+
+    declare -g PRE_SETUP_ARE_PARAMS_SET=true
+
+    declare -g PRE_SETUP_DO_EXECUTE_EVDEV=false
+    declare -g PRE_SETUP_DO_EXECUTE_HUGEPAGES=false
+    declare -g PRE_SETUP_DO_EXECUTE_ISOLCPU=false
+    declare -g PRE_SETUP_DO_SKIP_ALL=false
+
+    # <summary>Evdev</summary>
+      declare -ga EVENT_DEVICES_ENUM=( )
+      declare -ga INPUT_DEVICES_ENUM=( )
+
+    # <summary>Hugepages</summary>
+      declare -gi HUGEPAGES_ALLOCATED_MEMORY=0
+      declare -gi HUGEPAGES_COUNT=$( cat /proc/meminfo | grep --ignore-case hugepagesize | cut --delimiter ':' --fields 2 | awk 'END {print $1}' )
+      declare -gi HUGEPAGES_MAX_COUNT=0
+      declare -gi HUGEPAGES_MAX_SIZE_IN_KIB=$( cat /proc/meminfo | grep MemTotal | cut --delimiter ":" --fields 2 | awk 'END {print $1}' )
+      declare -gi HUGEPAGES_MIN_COUNT=0
+      declare -gi HUGEPAGES_MIN_SIZE_IN_KIB=$(( 4 * ${ONE_GIB_IN_KIB} ))
+      declare -gi HUGEPAGES_SIZE_IN_KIB=$( cat /proc/meminfo | grep --ignore-case hugepages_total | cut --delimiter ':' --fields 2 | awk 'END {print $1}' )
+      declare -gu HUGEPAGES_BYTE_SUFFIX=""
+      declare -g IS_HUGEPAGES_COUNT_SET=false
+      declare -g IS_HUGEPAGES_SIZE_SET=false
+      declare -g GRUB_CMDLINE_HUGEPAGES=""
+
+    # <summary>Isolcpus</summary>
+      declare -g GRUB_CMDLINE_ISOLCPU=""
+
+    # <remarks>Filenames</remarks>
+      declare -gr APPARMOR_QEMU_DEST_PATH="/etc/apparmor.d/local/abstractions/libvirt-qemu"
+      declare -gr QEMU_DEST_PATH="/etc/libvirt/qemu.conf"
+      declare -gr QEMU_SRC_PATH="${ETC_BACKUPS_PATH}/qemu.conf"
+  }
+
+  function do_pre_setup
+  {
+    create_temp_files_for_pre_setup &> /dev/null
+    do_skip_pre_setup || return 0
+    local -r output="Pre-setup"
+
+    if ! restore_source_files_for_pre_setup \
+      || ! do_try_pre_setup; then
+      do_cleanup_pre_setup || restore_source_files_for_pre_setup
+      print_fail_to_log "${output}"
+      exit 1
+    fi
+
+    print_pass_to_log "${output}"
+  }
+
+  function do_cleanup_pre_setup
+  {
+    if ! restore_temp_files_for_pre_setup \
+      || ! delete_temp_files_for_pre_setup; then
+      print_error_to_log "Main setup: Cleanup failed."
+    fi
+  }
+
+  function do_try_pre_setup
+  {
+    # execute_static_isolcpu_setup || return 1      # <note>Static Isolcpu is not complete at the moment. Saving for future release</note>
+    execute_virtual_kvm_setup || return 1
+    execute_hugepages_setup || return 1
+    add_user_to_groups_for_pre_setup || return 1
+    execute_qemu_configuration
+  }
+
+  function do_skip_pre_setup
+  {
+    if ! "${PRE_SETUP_DO_SKIP_ALL}"; then
+      execute_or_skip_prompt "Execute pre-setup?" || PRE_SETUP_DO_SKIP_ALL=true
+    fi
+
+    if "${PRE_SETUP_DO_SKIP_ALL}"; then
+      print_note "Skipping pre-setup."
+      return 1
+    fi
+  }
+
+  # <summary>Execution</summary>
+    function add_user_to_groups_for_pre_setup
+    {
+      local -r output="Add users to groups"
+
+      if ! sudo adduser "${USER}" "libvirt" &> /dev/null \
+        || ( "${PRE_SETUP_DO_EXECUTE_EVDEV}" && ! sudo adduser "${USER}" "input" &> /dev/null ); then
+        pprint_fail_to_log "${output}"
+        return 1
+      fi
+
+      print_pass_to_log "${output}"
+    }
+
+    function execute_hugepages_setup
+    {
+      execute_hugepages_setup_prompt || return 0
+      local -r output="Static Hugepages setup"
+
+      if ! execute_hugepages_setup_main; then
+        pprint_fail_to_log "${output}"
+        return 1
+      fi
+
+      print_pass_to_log "${output}"
+    }
+
+    function execute_hugepages_setup_main
+    {
+      if ! "${PRE_SETUP_DO_EXECUTE_HUGEPAGES}"; then
+        return 0
+      fi
+
+      if ! is_int "${MAX_MEMORY}" &> /dev/null; then
+        print_error_to_log "Could not parse system memory."
+        return 1
+      fi
+
+      if ! "${IS_HUGEPAGES_SIZE_SET}"; then
+        get_hugepages_byte_size_prompt || return 1
+      fi
+
+      get_hugepages_min_and_max_sizes || return 1
+
+      if ! "${IS_HUGEPAGES_COUNT_SET}"; then
+        get_hugepages_count_prompt || return 1
+      fi
+
+      get_hugepages_memory_allocated || return 1
+      is_host_memory_sufficient_for_hugepages || return 1
+      GRUB_CMDLINE_HUGEPAGES="default_hugepagesz=${HUGEPAGES_BYTE_SUFFIX} hugepagesz=${HUGEPAGES_BYTE_SUFFIX} hugepages=${HUGEPAGES_COUNT}"
+      PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
+    }
+
+    function execute_hugepages_setup_prompt
+    {
+      if "${PRE_SETUP_DO_EXECUTE_HUGEPAGES}"; then
+        return 0
+      fi
+
+      echo
+
+      if ! "${COMMON_ARGS_IS_EXECUTION_QUIET}"; then
+        echo -e "${SET_COLOR_YELLOW}Hugepages${RESET_COLOR} is a feature which statically allocates system memory to pagefiles.\nGuest(s) can use Hugepages to a peformance benefit.\nThe greater the Hugepage size, the less fragmentation of memory, and the less latency/overhead of system memory-access.\n${SET_COLOR_YELLOW}NOTE:${RESET_COLOR} It is recommended to use a size which is a multiple of an individual memory channel/stick.\n${SET_COLOR_YELLOW}Example:${RESET_COLOR} Four (4) channels of 8 GB each, use 1x, 2x, or 3x (8 GB, 16 GB, or 24 GB).\n${SET_COLOR_YELLOW}NOTE:${RESET_COLOR} If this is skipped, the equivalent Libvirt hook for dynamic allocation will be installed.\n"
+      fi
+
+      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Static Hugepages${RESET_COLOR}?" && PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
+    }
+
+    function execute_static_isolcpu_setup
+    {
+      execute_static_isolcpu_setup_prompt || return 0
+      local -r output="Static Isolcpu setup"
+
+      if ! execute_static_isolcpu_setup_main; then
+        print_fail_to_log "${output}"
+        return 1
+      fi
+
+      print_pass_to_log "${output}"
+    }
+
+    function execute_static_isolcpu_setup_main
+    {
+      local -i cores_allocated_to_host=1
+      local -i total_cores_count=$( cat /proc/cpuinfo | grep "cpu cores" | uniq | grep --only-matching "[0-9]\+" )
+      local -i total_threads_count=$( cat /proc/cpuinfo | grep "siblings" | uniq | grep --only-matching "[0-9]\+" )
+
+      get_maximum_count_of_cores_allocated_to_host "cores_allocated_to_host" "${total_cores_count}" || return 1
+
+      local -a host_cores_enum=( $( seq 0 $(( "${cores_allocated_to_host}" - 1 )) ) )
+      local -a host_threads_enum=( )
+      local -a guest_cores_enum=( $( seq "${cores_allocated_to_host}" $(( "${total_cores_count}" - 1 )) ) )
+      local -a guest_threads_enum=( )
+      local -ir host_smt_factor=$(( "${total_threads_count}" / "${total_cores_count}" ))
+      local -ar smt_factor_enum=( $( seq 0 $(( "${host_smt_factor}" - 1 )) ) )
+      local host_threads_delim=""
+      local guest_threads_delim=""
+
+      get_thread_pair_enums_and_delims
+
+      GRUB_CMDLINE_ISOLCPU="isolcpus=${guest_threads_delim} nohz_full=${guest_threads_delim} rcu_nocbs=${guest_threads_delim}"
+      PRE_SETUP_DO_EXECUTE_ISOLCPU=true
+
+      echo -e "Host CPU thread(s):\t${host_threads_delim}"
+      echo -e "Guest CPU thread(s):\t${guest_threads_delim}"
+    }
+
+    function execute_static_isolcpu_setup_prompt
+    {
+      if "${PRE_SETUP_DO_EXECUTE_ISOLCPU}"; then
+        return 0
+      fi
+
+      echo
+
+      if ! "${COMMON_ARGS_IS_EXECUTION_QUIET}"; then
+        echo -e "${SET_COLOR_YELLOW}Isolcpu${RESET_COLOR} is a feature which isolates CPU threads from the Host machine.\nGuest(s) can use Isolcpu to a peformance benefit. Guest(s) can use isolated CPU threads, increasing responsiveness and stability, without interferrence from the Host.\n${SET_COLOR_YELLOW}NOTE:${RESET_COLOR} If this is skipped, the equivalent Libvirt hook for dynamic isolation will be installed.\n"
+      fi
+
+      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Static Isolcpu${RESET_COLOR}?"
+    }
+
+    function execute_qemu_configuration
+    {
+      local -r output="Update QEMU configuration"
+
+      if ! execute_qemu_configuration_main; then
+        print_fail_to_log "${output}"
+        return 1
+      fi
+
+      print_pass_to_log "${output}"
+    }
+
+    function execute_qemu_configuration_main
+    {
+      local -a file1_contents=( "${DISCLAIMER_FILE_CONTENTS[@]}" )
+      local -a file2_contents=( "${DISCLAIMER_FILE_CONTENTS[@]}" )
+
+      local -ar file1_permissions_output=(
+        ""
+        "### User permissions ###"
+      )
+
+      if "${PRE_SETUP_DO_EXECUTE_EVDEV}"; then
+        file1_contents+=(
+          "${file1_permissions_output[@]}"
+          "user = \"${USER}\""
+          "group = \"user\""
+        )
+      else
+        file1_contents+=(
+          "${file1_permissions_output[@]}"
+          "user = \"${LOGIN_USER}\""
+          "#group = \"user\""
+        )
+      fi
+
+      local -ar file1_hugepages_output=(
+        ""
+        "### Hugepages ###"
+      )
+
+      if "${PRE_SETUP_DO_EXECUTE_HUGEPAGES}"; then
+        file1_contents+=(
+          "${file1_hugepages_output[@]}"
+          "hugetlbfs_mount = \"/dev/hugepages\""
+        )
+
+        file2_contents+=(
+          ""
+          "# Hugepages"
+          "/dev/hugepages rw,"
+        )
+      else
+        file1_contents+=(
+          "${file1_hugepages_output[@]}"
+          "#hugetlbfs_mount = \"/dev/hugepages\""
+        )
+      fi
+
+      local -a file1_evdev_cgroups_output=( )
+
+      if "${PRE_SETUP_DO_EXECUTE_EVDEV}"; then
+        for device in ${EVENT_DEVICES_ENUM[@]}; do
+          file1_evdev_cgroups_output+=( "    \"/dev/input/by-id/${device}\"," )
+        done
+
+        for device in ${INPUT_DEVICES_ENUM[@]}; do
+          file1_evdev_cgroups_output+=( "    \"/dev/input/by-id/${device}\"," )
+        done
+      fi
+
+      local -ar file1_cgroups_output=(
+        ""
+        "### Devices ###"
+        "cgroup_device_acl = ["
+      )
+
+      local -a file1_default_cgroups_output=(
+        "    \"/dev/null\", \"/dev/full\", \"/dev/zero\","
+        "    \"/dev/random\", \"/dev/urandom\","
+        "    \"/dev/ptmx\", \"/dev/kvm\","
+        "    \"/dev/rtc\", \"/dev/hpet\""
+      )
+
+      if ${PRE_SETUP_DO_EXECUTE_EVDEV}; then
+        file1_contents+=(
+          "${file1_cgroups_output[@]}"
+          "${file1_evdev_cgroups_output[@]}"
+          "${file1_default_cgroups_output[@]}"
+          "]"
+        )
+
+        file2_contents+=(
+          ""
+          "# Evdev"
+          "/dev/input/* rw,"
+          "/dev/input/by-id/* rw,"
+        )
+      else
+        file1_contents+=(
+          "${file1_cgroups_output[@]}"
+          "${file1_default_cgroups_output[@]}"
+          "]"
+        )
+      fi
+
+      local -ar nvram_output=(
+        ""
+        "nvram = ["
+        "    \"/usr/share/OVMF/OVMF_CODE.fd:/usr/share/OVMF/OVMF_VARS.fd\","
+        "    \"/usr/share/OVMF/OVMF_CODE.secboot.fd:/usr/share/OVMF/OVMF_VARS.fd\","
+        "    \"/usr/share/AAVMF/AAVMF_CODE.fd:/usr/share/AAVMF/AAVMF_VARS.fd\","
+        "    \"/usr/share/AAVMF/AAVMF32_CODE.fd:/usr/share/AAVMF/AAVMF32_VARS.fd\""
+        "]"
+      )
+
+      file1_contents+=( "${nvram_output[*]}" )
+
+      if ! append_to_file_correctly "file1_contents" "${QEMU_DEST_PATH}" \
+        || ! append_to_file_correctly "file2_contents" "${APPARMOR_QEMU_DEST_PATH}" \
+        || ! systemctl restart libvirtd &> /dev/null ; then
+        return 1
+      fi
+    }
+
+    function execute_virtual_kvm_setup
+    {
+      execute_virtual_kvm_setup_prompt || return 0
+      get_input_devices
+      local -r output="Evdev setup"
+
+      if ! is_input_device_enum_valid; then
+        print_fail_to_log "${output}"
+        return 1
+      fi
+
+      print_pass_to_log "${output}"
+    }
+
+    function execute_virtual_kvm_setup_prompt
+    {
+      if "${PRE_SETUP_DO_EXECUTE_EVDEV}"; then
+        return 0
+      fi
+
+      echo
+
+      if ! "${COMMON_ARGS_IS_EXECUTION_QUIET}"; then
+        echo -e "${SET_COLOR_YELLOW}Evdev${RESET_COLOR} (Event Devices) is a method of creating a virtual KVM (Keyboard-Video-Mouse) switch between Host and Guest(s).\nGuest(s) may reference any of each (currently) listed input device.\n${SET_COLOR_YELLOW}HOW-TO:${RESET_COLOR} Press 'L-CTRL' and 'R-CTRL' simultaneously.\n"
+      fi
+
+      execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Evdev${RESET_COLOR}?"
+    }
+
+  # <summary>Files</summary>
+    function create_temp_files_for_pre_setup
+    {
+      create_temp_file_of_file "${APPARMOR_QEMU_DEST_PATH}" || return 1
+      create_temp_file_of_file "${QEMU_DEST_PATH}" || return 1
+    }
+
+    function delete_temp_files_for_pre_setup
+    {
+      delete_temp_file_of_file "${APPARMOR_QEMU_DEST_PATH}" || return 1
+      delete_temp_file_of_file "${QEMU_DEST_PATH}" || return 1
+    }
+
+    function restore_temp_files_for_pre_setup
+    {
+      copy_temp_file_to_file "${APPARMOR_QEMU_DEST_PATH}" || return 1
+      copy_temp_file_to_file "${QEMU_DEST_PATH}" || return 1
+    }
+
+    function restore_source_files_for_pre_setup
+    {
+      if ! rm --force "${APPARMOR_QEMU_DEST_PATH}" &> /dev/null \
+        || ! touch "${APPARMOR_QEMU_DEST_PATH}" &> /dev/null; then
+        print_error_to_log "Failed to clear file '${APPARMOR_QEMU_DEST_PATH}'."
+        return 1
+      fi
+
+      copy_this_file_to_other_file "${QEMU_SRC_PATH}" "${QEMU_DEST_PATH}" || return 1
+    }
+
+  # <summary>Getters</summary>
+    function get_hugepages_memory_allocated
+    {
+      HUGEPAGES_ALLOCATED_MEMORY=$(( ${HUGEPAGES_COUNT} * ${HUGEPAGES_SIZE_IN_KIB} ))
+    }
+
+    function get_hugepages_byte_size
+    {
+      local -u answer="${1}"
+
+      case "${answer}" in
+        "1G" | "2M" )
+          HUGEPAGES_BYTE_SUFFIX="${answer}"
+          IS_HUGEPAGES_SIZE_SET=true ;;
+
+        * )
+          print_error_to_log "Please a enter valid Hugepages size, '2M' or '1G'."
+          return 1 ;;
+      esac
+    }
+
+    function get_hugepages_byte_size_prompt
+    {
+      if "${IS_HUGEPAGES_SIZE_SET}"; then
+        return 0
+      fi
+
+      for counter in $( seq 0 2 ); do
+        read -r -p "Enter size of Hugepages [2M/1G]: " HUGEPAGES_BYTE_SUFFIX
+        get_hugepages_byte_size "${HUGEPAGES_BYTE_SUFFIX}" && return 0
+      done
+
+      return 1
+    }
+
+    function get_hugepages_count
+    {
+      if [[ -z "${1}" ]]; then
+        print_error_to_log "Hugepages count is empty."
+        return 1
+      fi
+
+      get_hugepages_min_and_max_sizes || return 1
+
+      if ! is_int "${1}" &> /dev/null \
+        || [[ "${1}" -lt "${HUGEPAGES_MIN_COUNT}" ]] \
+        || [[ "${1}" -gt "${HUGEPAGES_MAX_COUNT}" ]]; then
+        print_error_to_log "Please enter a valid Hugepages amount, between ${HUGEPAGES_MIN_COUNT} or ${HUGEPAGES_MAX_COUNT}."
+        return 1
+      fi
+
+      IS_HUGEPAGES_COUNT_SET=true
+      HUGEPAGES_COUNT="${1}"
+    }
+
+    function get_hugepages_count_prompt
+    {
+      if "${IS_HUGEPAGES_COUNT_SET}"; then
+        return 0
+      fi
+
+      for counter in $( seq 0 2 ); do
+        read -r -p "Enter count of Hugepages [${HUGEPAGES_MIN_COUNT}-${HUGEPAGES_MAX_COUNT}]: " HUGEPAGES_COUNT
+        get_hugepages_count "${HUGEPAGES_COUNT}" && return 0
+      done
+
+      return 1
+    }
+
+    function get_hugepages_min_and_max_sizes
+    {
+      case "${HUGEPAGES_BYTE_SUFFIX}" in
+        "2M" )
+          HUGEPAGES_SIZE_IN_KIB="${TWO_MIB_IN_KIB}"
+          HUGEPAGES_MIN_COUNT=2 ;;
+
+        "1G" )
+          HUGEPAGES_SIZE_IN_KIB="${ONE_GIB_IN_KIB}"
+          HUGEPAGES_MIN_COUNT=1 ;;
+
+        * )
+          print_error_to_log "Failed to calculate minimum or maximum values for Hugepages."
+          return 1 ;;
+      esac
+
+      HUGEPAGES_MAX_COUNT=$(( "${HUGEPAGES_MAX_SIZE_IN_KIB}" - "${HUGEPAGES_MIN_SIZE_IN_KIB}" ))
+      HUGEPAGES_MAX_COUNT=$(( "${HUGEPAGES_MAX_COUNT}" / "${HUGEPAGES_SIZE_IN_KIB}" ))
+    }
+
+    function is_host_memory_sufficient_for_hugepages
+    {
+      if ! get_free_memory; then
+        print_error_to_log "Insufficient Host memory for Hugepages."
+        return 1
+      fi
+    }
+
+    function is_hugepages_setup
+    {
+      if [[ "${HUGEPAGES_SIZE_IN_KIB}" -ge 1 ]] \
+        && ( [[ "${HUGEPAGES_COUNT}" -eq "${TWO_MIB_IN_KIB}" ]] \
+          || [[ "${HUGEPAGES_COUNT}" -eq "${ONE_GIB_IN_KIB}" ]] ); then
+        PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
+      fi
+    }
+
+    function is_input_device_enum_valid
+    {
+      if ! is_enum_not_empty "EVENT_DEVICES_ENUM" \
+       || ! is_enum_not_empty "INPUT_DEVICES_ENUM"; then
+        PRE_SETUP_DO_EXECUTE_EVDEV=false
+        print_error_to_log "Cannot parse input devices."
+        return 1
+      fi
+
+      PRE_SETUP_DO_EXECUTE_EVDEV=true
+    }
+
+    function get_input_devices
+    {
+      EVENT_DEVICES_ENUM=( $( ls -l /dev/input/by-id | cut --delimiter "/" --fields 2 | grep --invert-match "total 0" ) )
+      INPUT_DEVICES_ENUM=( $( ls /dev/input/by-id ) )
+    }
+
+    function get_kernel_command_hugepages
+    {
+      if [[ -z "${1}" ]]; then
+        return 1
+      fi
+
+      local -n reference="${1}"
+      reference="${GRUB_CMDLINE_HUGEPAGES}"
+    }
+
+    function get_kernel_command_isolcpu
+    {
+      if [[ -z "${1}" ]]; then
+        return 1
+      fi
+
+      local -n reference="${1}"
+      reference="${GRUB_CMDLINE_ISOLCPU}"
+    }
+
+    function get_maximum_count_of_cores_allocated_to_host
+    {
+      local -n reference="${1}"
+      local total_cores_count="${2}"
+
+      if [[ "${total_cores_count}" -ge 4 ]]; then
+        reference=2
+
+      elif [[ "${total_cores_count}" -le 3 ]] \
+        && [[ "${total_cores_count}" -ge 2 ]]; then
+        reference=1
+
+      else
+        print_error_to_log "Insufficient CPU cores."
+        return 1
+      fi
+    }
+
+    function get_thread_pair_delim_for_guest
+    {
+      local -i first_thread="${guest_threads_delimited_enum[0]}"
+      local -i first_thread="${guest_threads_delimited_enum[-1]}"
+      local thread_set="${first_thread}"
+
+      if [[ "${first_thread}" -ne "${last_thread}" ]]; then
+        local thread_set="${first_thread}-${last_thread}"
+      fi
+
+      guest_threads_delim+="${thread_set},"
+    }
+
+    function get_thread_pair_delim_for_host
+    {
+      local -i first_thread="${host_threads_delimited_enum[0]}"
+      local -i last_thread="${host_threads_delimited_enum[-1]}"
+      local thread_set="${first_thread_set}"
+
+      if [[ "${first_thread}" -ne "${last_thread}" ]]; then
+        thread_set="${first_thread}-${last_thread}"
+      fi
+
+      host_threads_delim+="${thread_set},"
+    }
+
+    function get_thread_pair_enums_for_guest
+    {
+      for core in ${guest_cores_enum[@]}; do
+        thread=$(( core + ( smt_factor * total_cores_count ) ))       # <note>VS Code reports a syntax error here. There is none.</note>
+        guest_threads_enum+=( "${thread}" )
+        guest_threads_delimited_enum+=( "${thread}" )
+      done
+    }
+
+    function get_thread_pair_enums_for_host
+    {
+      for core in ${host_cores_enum[@]}; do
+        thread=$(( core + ( smt_factor * total_cores_count ) ))       # <note>VS Code reports a syntax error here. There is none.</note>
+        host_threads_enum+=( "${thread}" )
+        host_threads_delimited_enum+=( "${thread}" )
+      done
+    }
+
+    function get_thread_pair_enums_and_delims
+    {
+      for smt_factor in ${smt_factor_enum[@]}; do
+        local -a host_threads_delimited_enum=( )
+        local -a guest_threads_delimited_enum=( )
+        local -i thread
+
+        get_thread_pair_enums_for_host "thread"
+        get_thread_pair_enums_for_guest "thread"
+        get_thread_pair_delim_for_host
+        get_thread_pair_delim_for_guest
+      done
+
+      if [[ ${host_threads_delim: -1} == "," ]]; then
+        host_threads_delim="${host_threads_delim::-1}"
+      fi
+
+      if [[ ${guest_threads_delim: -1} == "," ]]; then
+        guest_threads_delim="${guest_threads_delim::-1}"
+      fi
+    }
+# </functions>
+
+# <code>
+  declare_parameters
+  unset declare_parameters
+# </code

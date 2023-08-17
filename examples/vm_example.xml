@@ -4,9 +4,9 @@
     <!-- Motherboard information (your's or a friend's) -->
     <!--
         Commands to extract this info from system:
-            dmidecode | grep -Ei "vendor|version|release date"
-            dmidecode | grep -Ei "manufacturer|product name|version|serial"
-            dmidecode | grep -Ei "uuid|sku|family"
+            dmidecode | grep --extended-regexp --ignore-case "vendor|version|release date"
+            dmidecode | grep --extended-regexp --ignore-case "manufacturer|product name|version|serial"
+            dmidecode | grep --extended-regexp --ignore-case "uuid|sku|family"
     -->
 
     <sysinfo type="smbios">

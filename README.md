@@ -1,5 +1,7 @@
 # deploy-VFIO
-### Status: [Developing](https://github.com/portellam/deploy-vfio/tree/develop) (see [TODO.md](https://github.com/portellam/deploy-vfio/tree/develop/TODO.md)).
+
+### Want to know what is ahead? Checkout the [develop](https://github.com/portellam/deploy-vfio/tree/develop) branch.
+
 ## Contents
 * [About](#About)
 * [How-to](#How-to)
@@ -10,7 +12,7 @@
 
 ## About
 ### Description:
-Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines with real hardware, on your Linux computer. Includes many common-sense quality-of-life enhancements.
+Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines with real hardware, on your Debian Linux computer. Includes many common-sense quality-of-life enhancements.
 
 ### What is [VFIO](#VFIO)?
 #### Useful links
@@ -54,21 +56,16 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
           -h, --help        Print this help and exit.
           -q, --quiet       Reduce verbosity; print only relevant questions and status statements.
           -u, --undo        Undo changes (restore files) if script has exited early or unexpectedly.
+          --ignore-distro   Ignore distribution check for Debian or Ubuntu system.
 
-#### Parse IOMMU groups
+#### Parse IOMMU groups *(To be added in a future release)*
 
         Specify the database to reference before parsing IOMMU groups.
         OPTIONS:
-          -f, --file [ARGS]             Reference file database.
-          -i, --internal                Reference local database.
-          -o, --online                  Reference online database.
-          -x, --xml                     Cross-reference XML file. Execute once to export, prior to import. Import if VFIO setup exists, to grab valid drivers.
+          -x, --xml [filename]          Cross-reference XML file. First-time, export if VFIO is not setup. Consecutive-times, imports if VFIO is setup.
 
-        ARGUMENTS: *
+        ARGUMENTS:
           [filename]                    Reference specific file.
-
-          Example:
-            -f database.txt             Reference file 'database.txt'.
 
         Specify the IOMMU groups to parse.
         OPTIONS:
@@ -84,7 +81,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
             no-vga,14                   Select group 14 and all non-VGA groups.
             1,14-16                     Select groups 1, 14, 15, and 16.
 
-#### Pre-setup
+#### Pre-setup *(To be added in a future release)*
 
         Pre-setup OPTIONS: *
           -c, --cpu                     Allocate CPU.
@@ -101,7 +98,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
             1G 16                       1 GiB hugepage * 16     == 16 GiB allocated to hugepages.
             2M 8192                     2 MiB hugepage * 8912   == 16 GiB allocated to hugepages.
 
-#### VFIO setup
+#### VFIO setup *(To be added in a future release)*
 
         VFIO setup OPTIONS: *
           -m, --multiboot [ARGS]        Create multiple VFIO setups with corresponding GRUB menu entries. Specify default GRUB menu entry by [VGA](#VGA) IOMMU group ID (see ARGUMENTS).
@@ -119,12 +116,12 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
           file                          Append output to system configuration files.
           grub                          Append output to GRUB; single GRUB menu entry.
 
-#### Post-setup
+#### Post-setup *(To be added in a future release)*
 
         Post-setup OPTIONS:
           --audio-loopback              Install the audio loopback service...           Loopback audio from Guest to Host (over Line-out to Line-in). *
-          --auto-xorg [ARGS]            Install auto-Xorg...                            System service to find and set a valid boot [VGA](#VGA) device for Xorg.
-          --hooks                       Install recommended Libvirt hooks.
+          --auto-xorg [ARGS]            Install auto-Xorg...                            System service to find and set a valid boot VGA device for Xorg.
+          --libvirt-hooks               Install recommended Libvirt hooks.
           --zram-swap [ARGS]            Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
           --skip-post-setup             Skip execution.
           --uninstall-post-setup        Undo all changes made by post-setup. *
@@ -149,8 +146,8 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 #### * Options that skip *all* user prompts.
 
 ## Features
-### Pre-setup  <sub>(vfiolib-pre-setup)</sub>
-* **Allocate CPU**
+### Pre-setup
+* **Allocate CPU** *(To be added in a future release)*
     - **Statically** isolate Host CPU threads before allocating to Guest(s).<sup>[2](#2)</sup>
     -  Reduces Host overhead, and improves both Host and Guest performance.
     -  If skipped, setup will install the *Libvirt hook* for **Dynamic** isolation.
@@ -165,7 +162,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
     - Implementation is known as *Evdev (Event Devices)*.<sup>[4](#4)</sup>
     - **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 
-### VFIO setup <sub>(vfiolib-setup)</sub>
+### Main setup
 * **Multi-boot VFIO setup**
     - Create multiple VFIO setups with corresponding GRUB menu entries.     **More flexibility.**
       - Select a GRUB menu entry with a VGA device excluded from VFIO.
@@ -178,21 +175,21 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
         - Append output to GRUB; single GRUB menu entry.
         - Append output to system configuration files.
     - Best for systems with one or more PCI VGA device(s) *and one integrated VGA device (iGPU)*.
-* **Dynamic VFIO setup *(unsupported currently)***
+* **Dynamic VFIO setup *(To be added in a future release)***
     - Use Libvirt hooks to bind or unbind devices at Guest(s) start or stop.
     - Most responsibility; best for more experienced users.
     - Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
     - For examples, review the referenced guides. Search for *"libvirt hook vfio bind scripts"*. Google is your friend.
 
-### Post-setup  <sub>(vfiolib-post-setup)</sub>
+### Post-setup *(To be added in a future release)*
 * **auto-Xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.<sup>[5](#5)</sup>
 * **Guest Audio Capture**
-    - Create an *Audio loopback* to output on the *Host* Audio device *Line-Out*.
+    - Create an *Audio loopback* to output on the *Host* Audio device *Line-Out*.<sup>[6](#6)</sup>
       - Listen on *Host* Audio device *Line-In* (from *Guest* PCI Audio device *Line-Out*).
       - Useful for systems with multiple Audio devices.
     - For virtual implementation, see *Virtual Audio Capture*.
 * **Libvirt Hooks**
-    - Invoke **"hooks"** (scripts) for all or individual Guests.<sup>[6](#6)</sup>
+    - Invoke **"hooks"** (scripts) for all or individual Guests.<sup>[7](#7)</sup>
     - Switch display input (video output) at Guest start.
     - **Dynamically** allocate CPU cores and CPU scheduler.
     - **Libvirt-nosleep** system service(s) per Guest to prevent Host sleep while Guest is active.
@@ -200,13 +197,13 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
     - Create a compressed Swap device in Host memory, using the *lz4* algorithm *(compression ratio of about 2:1)*.
       - Reduce swapiness to existing Host swap devices.
       - Reduce chances of Host memory exhaustion (given an event of memory over-allocation).
-    - Implementation is known as *zram-swap*.<sup>[7](#7)</sup>
-* **Virtual Audio Capture *(unsupported currently)***
+    - Implementation is known as *zram-swap*.<sup>[8](#8)</sup>
+* **Virtual Audio Capture *(To be added in a future release)***
     - Setup a virtual Audio driver for Windows that provides a discrete Audio device.
-    - Implementation is known as **Scream**.<sup>[8](#8)</sup>
-* **Virtual Video Capture *(unsupported currently)***
+    - Implementation is known as **Scream**.<sup>[9](#9)</sup>
+* **Virtual Video Capture *(To be added in a future release)***
     - Setup direct-memory-access (DMA) of a PCI VGA device output (Video and Audio) from a Guest to Host.
-    - Implementation is known as **LookingGlass**.<sup>[9](#9)</sup>
+    - Implementation is known as **LookingGlass**.<sup>[10](#10)</sup>
     - **Disclaimer:** Only supported for Windows 7/8/10/11 Guests.
 
 ## Information
@@ -230,30 +227,30 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 
 #### Paths for source binaries and files
 - */usr/local/bin/\**
-- */usr/local/etc/vfiolib.d\**
+- */usr/local/etc/deploy-vfio.d\**
 
 ### VFIO?
-Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.*<sup>[10](#10)</sup>
+Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.*<sup>[11](#11)</sup>
 
 ### VGA?
 Throughout the script source code and documentation, the acronym *VGA* is used.
 
-In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VGA may *refer to the computer display standard, the 15-pin D-subminiature VGA connector, or the 640×480 resolution characteristic of the VGA hardware.*<sup>[11](#11)</sup>
+In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VGA may *refer to the computer display standard, the 15-pin D-subminiature VGA connector, or the 640×480 resolution characteristic of the VGA hardware.*<sup>[12](#12)</sup>
 
 #### Example:
 
-    $ lspci -nnk | grep -Ei "vga|graphics"
+    $ lspci -nnk | grep --extended-regexp --ignore-case "vga|graphics"
     01:00.0 VGA compatible controller [0300]: NVIDIA Corporation GA104 [GeForce RTX 3070] [10de:2484] (rev a1)
     04:00.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Cayman PRO [Radeon HD 6950] [1002:6719]
 
 ### Linux:
 | Distribution Family | Supported? | Tested Distros             |
 | ------------------- | ---------- | -------------------------- |
-| Arch                | No         | none                       |
-| Debian              | Yes        | Debian 11                  |
-| Gentoo              | No         | none                       |
-| Red Hat             | No         | none                       |
-| SUSE                | No         | none                       |
+| Arch                | No         | untested                   |
+| Debian              | *Yes*      | *Debian 11, 12*            |
+| Gentoo              | No         | untested                   |
+| Red Hat             | No         | untested                   |
+| SUSE                | No         | untested                   |
 
 ### Legacy:
 | OS           | Device type    | Brand and model                         |
@@ -288,26 +285,29 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 <sub> auto-Xorg | **[source (GitHub)](https://github.com/portellam/auto-Xorg)**</sub>
 
 #### 6.
-<sub>Libvirt hooks | **[VFIO-Tools source (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)** |
-**[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub>
+<sub>Audio-loopback | **[source (GitHub)](https://github.com/portellam/audio-loopback)**</sub>
 
 #### 7.
+<sub>Libvirt hooks | **[source (GitHub)](https://github.com/portellam/libvirt-hooks)** | **[VFIO-Tools source (GitHub)](https://github.com/PassthroughPOST/VFIO-Tools)** |
+**[libvirt-nosleep (Arch wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Host_lockup_if_Guest_is_left_running_during_sleep)**</sub>
+
+#### 8.
 <sub> zram-swap | **[source (GitHub)](https://github.com/foundObjects/zram-swap)** |
 **[lz4 source (GitHub)](https://github.com/lz4/lz4)** |
 **[package (Debian)](https://wiki.debian.org/ZRam)** |
 **[package (Arch)](https://aur.archlinux.org/packages/zramswap)** |
 **[benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
 
-#### 8.
+#### 9.
 <sub>Scream | **[source (GitHub)](https://github.com/duncanthrax/scream)** | **[guide (LookingGlass wiki)](https://looking-glass.io/wiki/Using_Scream_over_LAN)**</sub>
 
-#### 9.
+#### 10.
 <sub>Looking Glass | **[Website](https://looking-glass.io/)** </sub>
 
-#### 10.
+#### 11.
 <sub> VFIO | **[documentation (OpenSUSE)](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)**</sub>
 
-#### 11.
+#### 12.
 <sub> VGA | **[Wikipedia](https://en.wikipedia.org/wiki/Video_Graphics_Array)**</sub>
 
 ## Disclaimer:
