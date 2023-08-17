@@ -31,12 +31,12 @@
 
     # <summary>Hugepages</summary>
       declare -gi HUGEPAGES_ALLOCATED_MEMORY=0
-      declare -gi HUGEPAGES_COUNT=$( cat /proc/meminfo | grep -i hugepagesize | cut --delimiter ':' --fields 2 | awk 'END {print $1}' )
+      declare -gi HUGEPAGES_COUNT=$( cat /proc/meminfo | grep --ignore-case hugepagesize | cut --delimiter ':' --fields 2 | awk 'END {print $1}' )
       declare -gi HUGEPAGES_MAX_COUNT=0
       declare -gi HUGEPAGES_MAX_SIZE_IN_KIB=$( cat /proc/meminfo | grep MemTotal | cut --delimiter ":" --fields 2 | awk 'END {print $1}' )
       declare -gi HUGEPAGES_MIN_COUNT=0
       declare -gi HUGEPAGES_MIN_SIZE_IN_KIB=$(( 4 * ${ONE_GIB_IN_KIB} ))
-      declare -gi HUGEPAGES_SIZE_IN_KIB=$( cat /proc/meminfo | grep -i hugepages_total | cut --delimiter ':' --fields 2 | awk 'END {print $1}' )
+      declare -gi HUGEPAGES_SIZE_IN_KIB=$( cat /proc/meminfo | grep --ignore-case hugepages_total | cut --delimiter ':' --fields 2 | awk 'END {print $1}' )
       declare -gu HUGEPAGES_BYTE_SUFFIX=""
       declare -g IS_HUGEPAGES_COUNT_SET=false
       declare -g IS_HUGEPAGES_SIZE_SET=false
