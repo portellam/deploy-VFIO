@@ -58,7 +58,7 @@
       exit 1
     fi
 
-    print_output_to_log "System is supported."
+    print_pass_to_log "System is supported."
   }
 
   function is_systemd_installed
@@ -80,7 +80,7 @@
 
   function is_xml_library_installed
   {
-    if ! command -v "xmllint" &> /dev/null; then
+    if ! command -v "xmlstarlet" &> /dev/null; then
       print_error_to_log "Required 'XML' libraries are not installed."
       return 1
     fi
