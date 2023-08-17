@@ -107,8 +107,10 @@
     do_skip_main_setup || return 255
     local -r output="Main setup"
 
-    if ! create_temp_files_for_main_setup \
-      || ! do_try_main_setup; then
+    create_temp_files_for_main_setup || return 1
+    specify_vfio_setup_prompt || return 255
+
+    if ! do_try_main_setup; then
       restore_temp_files_for_main_setup
       print_fail_to_log "${output}"
       exit 1
@@ -127,8 +129,6 @@
 
   function do_try_main_setup
   {
-    specify_vfio_setup_prompt || return 0
-
     if ! is_parsed_enum_of_vga_valid \
       || ! is_parsed_enum_valid \
       || ! execute_given_setup; then
@@ -350,7 +350,7 @@
     function get_output_for_multiboot_setup
     {
       local -ir max_parsed_kernels=3
-      local -a kernel_enum=( $( ls -1 /boot/vmli* | cut --delimiter 'z' --fields 2 | cut --characters 2- | sort --numeric-sort | head --lines ${max_parsed_kernels} ) )
+      local -a kernel_enum=( $( ls -1 /boot/vmli* | cut --delimiter 'z' --fields 2 | cut --characters 2- | sort --numeric-sort --reverse | head --lines ${max_parsed_kernels} ) )
       local -r system_disk=$( df / | grep --ignore-case --invert-match 'filesystem' | cut --delimiter '/' --fields 3 | cut --delimiter ' ' --fields 1 )
       local -r system_distro=$( lsb_release --id --short )
       local -r system_fstype=$( blkid --match-tag TYPE | grep ${system_disk} | cut --delimiter '"' --fields 2 )
@@ -678,14 +678,28 @@
 
     function update_grub
     {
-      echo "Updating GRUB..."
-      sudo update-grub
+      local -r output="Updating GRUB"
+      print_output_to_log "${output}"
+
+      if ! sudo update-grub; then
+        print_fail_to_log "${output}"
+        return 1
+      fi
+
+      print_pass_to_log "${output}"
     }
 
     function update_initramfs
     {
-      echo "Updating Initramfs..."
-      sudo update-initramfs -u -k all
+      local -r output="Updating Initramfs"
+      print_output_to_log "${output}"
+
+      if ! sudo update-initramfs -u -k all; then
+        print_fail_to_log "${output}"
+        return 1
+      fi
+
+      print_pass_to_log "${output}"
     }
 
   # <summary>Write output</summary>
@@ -710,17 +724,17 @@
 
     function write_output_for_static_setup
     {
+      if "${MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB}"; then
+        write_output_to_grub_for_static_setup
+        return "${?}"
+      fi
+
       if ! write_output_to_grub_for_static_setup \
         || ! write_output_to_initramfs_for_static_setup \
-        || ! write_output_to_modules_for_static_setup; then
+        || ! write_output_to_modules_for_static_setup \
+        || ! write_output_to_remaining_files_for_static_setup; then
         return 1
       fi
-
-      if "${MAIN_SETUP_DO_EXECUTE_STATIC_WITH_GRUB}"; then
-        return 0
-      fi
-
-      write_output_to_remaining_files_for_static_setup || return 1
     }
 
     function write_output_to_grub_for_multiboot_setup
@@ -745,8 +759,8 @@
 
     function write_output_to_initramfs_for_static_setup
     {
-      local -a output=( "${INITRAMFS_MODULES[@]}" )
-      reverse_array "output"
+      local -a output=( "${INITRAMFS_ENUM[@]}" )
+      reverse_array "output" &> /dev/null || return 1
 
       for line in "${output[@]}"; do
         if ! sed -i "23i ${line}" "${INITRAMFS_MODULES_DEST_PATH}"; then
@@ -759,7 +773,7 @@
     function write_output_to_modules_for_static_setup
     {
       local -a output=( "${MODULES_ENUM[@]}" )
-      reverse_array "output"
+      reverse_array "output" &> /dev/null || return 1
 
       for line in "${output[@]}"; do
         if ! sed -i "7i ${line}" "${MODPROBE_VFIO_DEST_PATH}"; then
