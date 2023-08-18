@@ -49,8 +49,8 @@
       print_error_to_log "${output}."
     fi
 
-    print_error_to_log "Invalid argument '${1}'."
-    return 1
+    print_error_to_log "${output} '${1}'."
+    exit 1
   }
 
   function print_invalid_option
@@ -61,8 +61,7 @@
       print_error_to_log "${output}."
     fi
 
-    print_error_to_log "${output}'${1}'."
-    return 1
+    print_error_to_log "${output} '${1}'."
   }
 
   function print_usage
