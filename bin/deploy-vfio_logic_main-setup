@@ -763,10 +763,7 @@
 
     function write_output_to_initramfs_for_static_setup
     {
-      local -a output=( "${INITRAMFS_ENUM[@]}" )
-      reverse_array "output" &> /dev/null || return 1
-
-      for line in "${output[@]}"; do
+      for line in "${INITRAMFS_ENUM[@]}"; do
         if ! sed -i "23i ${line}" "${INITRAMFS_MODULES_DEST_PATH}"; then
           print_error_to_log "Failed to overwrite target lines of files."
           return 1
@@ -776,10 +773,7 @@
 
     function write_output_to_modules_for_static_setup
     {
-      local -a output=( "${MODULES_ENUM[@]}" )
-      reverse_array "output" &> /dev/null || return 1
-
-      for line in "${output[@]}"; do
+      for line in "${MODULES_ENUM[@]}"; do
         if ! sed -i "7i ${line}" "${MODPROBE_VFIO_DEST_PATH}"; then
           print_error_to_log "Failed to overwrite target lines of files."
           return 1
@@ -791,7 +785,7 @@
     {
       if ! sed -i "/# options vfio_pci ids=*/c\options vfio_pci_ids=\"${HWID_DELIM}\"" "${INITRAMFS_MODULES_DEST_PATH}" &> /dev/null \
         || ! sed -i "/# vfio_pci ids=*/c\vfio_pci_ids=\"${HWID_DELIM}\"" "${INITRAMFS_MODULES_DEST_PATH}" &> /dev/null \
-        || ! echo -e "\n${BLACKLISTS_ENUM[*]}" >> "${MODPROBE_BLACKLISTS_DEST_PATH}" &> /dev/null \
+        || ! echo -e "\n${BLACKLISTS_ENUM[*]}" >> "${MODPROBE_BLACKLISTS_DEST_PATH}" \
         || ! sed -i "/# options vfio_pci ids=*/c\options vfio_pci ids=\"${HWID_DELIM}\"" "${MODPROBE_VFIO_DEST_PATH}" &> /dev/null \
         || ! sed -i "/# vfio_pci ids=*/c\vfio_pci_ids=\"${HWID_DELIM}\"" "${MODULES_DEST_PATH}" &> /dev/null; then
         print_error_to_log "Failed to overwrite target lines of files."
