@@ -47,10 +47,12 @@
 
     if ! is_string "${1}" &> /dev/null; then
       print_error_to_log "${output}."
+    else
+      print_error_to_log "${output} '${1}'."
     fi
 
-    print_error_to_log "Invalid argument '${1}'."
-    return 1
+    print_help
+    exit 1
   }
 
   function print_invalid_option
@@ -59,10 +61,12 @@
 
     if ! is_string "${1}" &> /dev/null; then
       print_error_to_log "${output}."
+    else
+      print_error_to_log "${output} '${1}'."
     fi
 
-    print_error_to_log "${output}'${1}'."
-    return 1
+    print_help
+    exit 1
   }
 
   function print_usage

@@ -14,7 +14,7 @@
 # <functions>
   function is_option_of_database
   {
-    is_option_parse_xml "$@" || return 1
+    is_option_parse_xml "$@"
     is_option_parse_iommu_groups "$@"
   }
 
@@ -28,10 +28,9 @@
         fi
 
         shift
-        get_argument_enum_for_parse_selection "$@" || return 1
+        get_argument_enum_for_parse_selection "$@"
         pop_input_enum_if_last_option_contains_argument "${1}"
         DATABASE_DO_PARSE_DATABASE=true
-        DATABASE_ASK_TO_EXECUTE_ALL=false
       }
 
       function is_option_parse_xml
@@ -41,16 +40,11 @@
           return 0
         fi
 
-        if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
-          print_invalid_option "${1}"
-          return 1
-        fi
-
         shift
         is_argument_parse_xml_file "${1}"
         pop_input_enum_if_last_option_contains_argument "${1}"
-        DATABASE_ASK_TO_EXECUTE_ALL=false
         DATABASE_DO_PARSE_DATABASE_FROM_XML=true
+        DATABASE_ASK_TO_EXECUTE_ALL=false
       }
 
     # <summary>Arguments</summary>
@@ -58,7 +52,7 @@
       {
         if [[ -z "${1}" ]]; then
           is_iommu_group_id_valid "${1}"
-          return 1
+          exit 1
         fi
 
         local -i delimiter_counter=$( echo "${1}" | grep --only-matching "," | wc -l )
@@ -66,7 +60,7 @@
 
         while [[ "${delimiter_counter}" -gt 0 ]] \
           && ! "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL}"; do
-          get_argument_for_parse_selection "$@" || return 1
+          get_argument_for_parse_selection "$@"
           (( delimiter_counter-- ))
         done
 
@@ -88,7 +82,7 @@
             fi
 
             DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=true
-            add_valid_iommu_groups_to_parsed_enum || print_invalid_argument "${argument}" ;;
+            add_all_valid_iommu_groups_to_parsed_enum || print_invalid_argument "${argument}" ;;
 
           "no-vga" )
             if "${DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA}"; then
@@ -96,7 +90,7 @@
             fi
 
             DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL_NON_VGA=true
-            add_valid_iommu_groups_to_parsed_enum || print_invalid_argument "${argument}" ;;
+            add_all_valid_iommu_groups_without_vga_to_parsed_enum || print_invalid_argument "${argument}" ;;
 
           * )
             DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_SOME=true

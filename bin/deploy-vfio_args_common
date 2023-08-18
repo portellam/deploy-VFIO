@@ -29,25 +29,23 @@
     declare -g COMMON_ARGS_IS_EXECUTION_QUIET=false
   }
 
-  # function parse_option                       # <note>Usage is not complete at the moment. Saving for future release</note>
-  # {
-  #   if ! is_option_print_help "$@" \
-  #     && ! is_option_of_compatibility "$@" \
-  #     && ! is_option_be_quiet "$@" \
-  #     && ! is_option_undo_all "$@" \
-  #     && ! is_option_of_pre_setup "$@" \
-  #     && ! is_option_of_database "$@" \
-  #     && ! is_option_of_main_setup "$@" \
-  #     && ! is_option_of_post_setup "$@"; then
-  #   is_option_valid "$@" || return 1
-  #   fi
-  # }
-
   function parse_option
   {
-    if ! is_option_print_help "$@"; then
-      is_option_valid "$@" || return 1
+    if ! parse_this_option "$@"; then
+      print_invalid_option "${1}"
     fi
+  }
+
+  function parse_this_option
+  {
+    is_option_print_help "$@" || return 1
+    # is_option_of_compatibility "$@" || return 1
+    # is_option_be_quiet "$@" || return 1
+    # is_option_undo_all "$@" || return 1
+    is_option_of_pre_setup "$@" || return 1
+    is_option_of_database "$@" || return 1
+    is_option_of_main_setup "$@" || return 1
+    # is_option_of_post_setup "$@" || return 1
   }
 
   # <summary>Getters</summary>
@@ -67,21 +65,8 @@
       if [[ "${1}" == "-h" ]] \
         || [[ "${1}" == "--help" ]]; then
         print_usage
-        exit 0
+        exit 1
       fi
-
-      return 1
-    }
-
-    function is_option_valid
-    {
-      if [[ "${1}" == "" ]]; then
-        return 0
-      fi
-
-      print_invalid_option "${1}"
-      print_help
-      return 1
     }
 
     function is_option_undo_all
@@ -89,10 +74,7 @@
       if [[ "${1}" == "-u" ]] \
         || [[ "${1}" == "--undo" ]]; then
         COMMON_ARGS_DO_UNDO_CHANGES=true
-        return 0
       fi
-
-      return 1
     }
 
     function get_options
@@ -101,8 +83,8 @@
         return 0
       fi
 
-      while [[ "${1}" =~ ^- ]] \
-        || [[ "${1}" =~ ^-- ]]; do
+      while [[ "${1}" != "" ]]; do
+        echo "{1} == '${1}'"          # <note>debug</note>
         parse_option "$@" || exit 1
         shift                         # <note>'shift' must remain in same scope to work.</note>
       done
