@@ -40,10 +40,6 @@
           return 0
         fi
 
-        # if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
-        #   print_invalid_option "${1}"
-        # fi
-
         shift
         is_argument_parse_xml_file "${1}"
         pop_input_enum_if_last_option_contains_argument "${1}"
