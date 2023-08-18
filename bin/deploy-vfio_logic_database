@@ -315,10 +315,19 @@
       done
     }
 
-    function add_valid_iommu_groups_to_parsed_enum
+    function add_all_valid_iommu_groups_to_parsed_enum
     {
       for iommu_group_id in ${IOMMU_GROUP_ID_ENUM[@]}; do
-        add_iommu_group_to_enum "${iommu_group_id}"
+        add_iommu_group_to_enum "${iommu_group_id}" &> /dev/null
+      done
+    }
+
+    function add_all_valid_iommu_groups_without_vga_to_parsed_enum
+    {
+      for iommu_group_id in ${IOMMU_GROUP_ID_ENUM[@]}; do
+        if ! does_iommu_group_have_vga_device "${iommu_group_id}" &> /dev/null; then
+            add_iommu_group_to_enum "${iommu_group_id}" &> /dev/null
+        fi
       done
     }
 
@@ -343,7 +352,7 @@
         is_device_vga "${device}" && return 0
       done
 
-      print_error_to_log "Please enter valid IOMMU group ID which contains one or more VGA devices."
+      print_error_to_log "Please enter a valid IOMMU group ID which contains one or more VGA devices."
       return 1
     }
 
