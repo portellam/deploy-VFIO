@@ -403,6 +403,10 @@
       local grub_cmdline_isolcpu=""
       get_kernel_command_isolcpu "grub_cmdline_isolcpu"
 
+      if [[ ! -z "${get_kernel_command_isolcpu}" ]]; then
+        prefix_grub_cmdline_temp+="${get_kernel_command_isolcpu} "
+      fi
+
       get_enums_for_selection "IOMMU_GROUPS_FOR_VFIO_ENUM" "driver_enum" "stub_hwid_enum" "vfio_hwid_enum"
       get_comma_delimited_string_from_enum "driver_enum" "driver_delim"
       get_comma_delimited_string_from_enum "stub_hwid_enum" "stub_hwid_delim"
