@@ -322,7 +322,7 @@
     function add_all_valid_iommu_groups_without_vga_to_parsed_enum
     {
       for iommu_group_id in ${IOMMU_GROUP_ID_ENUM[@]}; do
-        if does_iommu_group_have_vga_device "${iommu_group_id}"; then
+        if does_iommu_group_have_vga_device "${iommu_group_id}" &> /dev/null; then
           add_iommu_group_to_host_enum "${iommu_group_id}"
         else
           add_iommu_group_to_vfio_enum "${iommu_group_id}"
@@ -419,7 +419,7 @@
 
     function is_valid_enum_of_iommu_groups
     {
-      is_enum "${1}" || return 1
+      is_enum "${1}" &> /dev/null || return 1
       local -n reference="${1}"
 
       for value in ${reference[@]}; do

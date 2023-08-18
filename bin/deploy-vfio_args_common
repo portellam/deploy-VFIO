@@ -44,7 +44,7 @@
     # is_option_undo_all "$@" || return 1
     is_option_of_pre_setup "$@" || return 1
     is_option_of_database "$@" || return 1
-    # is_option_of_main_setup "$@" || return 1
+    is_option_of_main_setup "$@" || return 1
     # is_option_of_post_setup "$@" || return 1
   }
 

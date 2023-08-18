@@ -310,7 +310,7 @@
         GRUB_MENU_ENTRY_TITLE_ENUM+=( "${grub_menu_entry_title}" )
 
         if [[ "${key}" -eq 0 ]]; then
-          get_preferred_grub_menu_entry_for_multiboot_setup "${iommu_group_id}" "${grub_menu_entry_title}"
+          get_preferred_grub_menu_entry_for_multiboot_setup "${grub_menu_entry_title}" "${iommu_group_id}"
         fi
 
         GRUB_CUSTOM_FILE_CONTENTS+=(
