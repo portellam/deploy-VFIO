@@ -163,7 +163,7 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
     - **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 
 ### Main setup
-* **[Multi-boot VFIO setup](https://github.com/portellam/deploy-vfio/examples/multiboot_grub_customizer.png)**
+* **Multi-boot VFIO setup**
     - Create multiple VFIO setups with corresponding GRUB menu entries.     **More flexibility.**
       - Select a GRUB menu entry with a VGA device excluded from VFIO.
       - Default menu entry is without VFIO setup.
