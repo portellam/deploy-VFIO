@@ -147,10 +147,10 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 
 ## Features
 ### Pre-setup
-* **Allocate CPU** *(To be added in a future release)*
+* **Allocate CPU**
     - **Statically** isolate Host CPU threads before allocating to Guest(s).<sup>[2](#2)</sup>
     -  Reduces Host overhead, and improves both Host and Guest performance.
-    -  If skipped, setup will install the *Libvirt hook* for **Dynamic** isolation.
+    -  If installed, the **Dynamic** *Libvirt hook* (see source) will skip its execution, to preserve the Static isolation.<sup>[7](#7)</sup>
 * **Allocate RAM**
     - ***Static** Hugepages* eliminate the need to defragment Host memory (RAM) before allocating to Guest(s).<sup>[3](#3)</sup>
     - Reduces Host overhead, and improves both Host and Guest performance.
