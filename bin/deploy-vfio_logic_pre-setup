@@ -77,7 +77,7 @@
 
   function do_try_pre_setup
   {
-    # execute_static_isolcpu_setup || return 1      # <note>Not working as expected.</note>
+    execute_static_isolcpu_setup || return 1
     execute_virtual_kvm_setup || return 1
     execute_hugepages_setup || return 1
     add_user_to_groups_for_pre_setup || return 1
@@ -568,11 +568,11 @@
     function get_thread_pair_delim_for_guest
     {
       local -i first_thread="${guest_threads_delimited_enum[0]}"
-      local -i first_thread="${guest_threads_delimited_enum[-1]}"
-      local thread_set="${first_thread}"
+      local -i last_thread="${guest_threads_delimited_enum[-1]}"
+      local thread_set="${first_thread_set}"
 
       if [[ "${first_thread}" -ne "${last_thread}" ]]; then
-        local thread_set="${first_thread}-${last_thread}"
+        thread_set="${first_thread}-${last_thread}"
       fi
 
       guest_threads_delim+="${thread_set},"
