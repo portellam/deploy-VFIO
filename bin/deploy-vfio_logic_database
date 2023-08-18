@@ -32,10 +32,7 @@
 
     declare -gA DEVICE_DRIVER_XML_ENUM
     declare -ga IOMMU_GROUP_ID_ENUM=( $( ls /sys/kernel/iommu_groups/ | sort --numeric-sort ) )
-    declare -ga IOMMU_GROUPS_FOR_HOST_ENUM=( )
-    declare -ga IOMMU_GROUPS_FOR_VFIO_ENUM=( )
-    declare -ga IOMMU_GROUPS_WITH_VGA_FOR_HOST_ENUM=( )
-    declare -ga IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM=( )
+    declare -ga IOMMU_GROUPS_FOR_HOST_ENUM IOMMU_GROUPS_FOR_VFIO_ENUM  IOMMU_GROUPS_WITH_VGA_FOR_HOST_ENUM IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM
 
     declare -gr DEFAULT_XML_FILE="${ETC_BACKUPS_PATH}parse.xml"
     declare -g XML_FILE="${DEFAULT_XML_FILE}"
@@ -271,18 +268,18 @@
     {
       local -ir iommu_group_id="${1}"
 
-      if does_iommu_group_have_vga_device "${iommu_group_id}"; then
-          IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM+=( "${iommu_group_id}" )
+      if does_iommu_group_have_vga_device "${iommu_group_id}" &> /dev/null; then
+        IOMMU_GROUPS_WITH_VGA_FOR_HOST_ENUM+=( "${iommu_group_id}" )
       fi
 
-      IOMMU_GROUPS_FOR_VFIO_ENUM+=( "${iommu_group_id}" )
+      IOMMU_GROUPS_FOR_HOST_ENUM+=( "${iommu_group_id}" )
     }
 
     function add_iommu_group_to_vfio_enum
     {
       local -ir iommu_group_id="${1}"
 
-      if does_iommu_group_have_vga_device "${iommu_group_id}"; then
+      if does_iommu_group_have_vga_device "${iommu_group_id}" &> /dev/null; then
         IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM+=( "${iommu_group_id}" )
       fi
 
@@ -318,15 +315,17 @@
     function add_all_valid_iommu_groups_to_parsed_enum
     {
       for iommu_group_id in ${IOMMU_GROUP_ID_ENUM[@]}; do
-        add_iommu_group_to_enum "${iommu_group_id}" &> /dev/null
+        add_iommu_group_to_enum "${iommu_group_id}"
       done
     }
 
     function add_all_valid_iommu_groups_without_vga_to_parsed_enum
     {
       for iommu_group_id in ${IOMMU_GROUP_ID_ENUM[@]}; do
-        if ! does_iommu_group_have_vga_device "${iommu_group_id}" &> /dev/null; then
-            add_iommu_group_to_enum "${iommu_group_id}" &> /dev/null
+        if does_iommu_group_have_vga_device "${iommu_group_id}"; then
+          add_iommu_group_to_host_enum "${iommu_group_id}"
+        else
+          add_iommu_group_to_vfio_enum "${iommu_group_id}"
         fi
       done
     }
@@ -584,6 +583,19 @@
       done
     }
 
+    function has_prespecified_iommu_group_enum
+    {
+      if ! is_enum "IOMMU_GROUPS_FOR_HOST_ENUM" \
+        && ! is_enum "IOMMU_GROUPS_WITH_VGA_FOR_HOST_ENUM"; then
+        return 1
+      fi
+
+      if ! is_enum "IOMMU_GROUPS_FOR_VFIO_ENUM" \
+        && ! is_enum "IOMMU_GROUPS_WITH_VGA_FOR_VFIO_ENUM"; then
+        return 1
+      fi
+    }
+
     function specify_iommu_group
     {
       local -ir iommu_group_id="${1}"
@@ -601,6 +613,8 @@
 
     function specify_iommu_group_enum
     {
+      has_prespecified_iommu_group_enum && return 0
+
       local -n reference="IOMMU_GROUP_ID_ENUM"
       echo
 
