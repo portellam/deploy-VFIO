@@ -14,16 +14,21 @@
 # <functions>
   function is_option_of_pre_setup
   {
-    is_option_skip_pre_setup "$@" || return 1
+    is_option_skip_pre_setup "$@"
+    # is_option_uninstall_pre_setup "$@"
+    is_option_setup_static_isolcpu "$@"
+    is_option_setup_static_hugepages "$@"
+    is_option_setup_virtual_kvm "$@"
+    has_not_selected_skip_and_one_or_more_option "$@"
+  }
 
-    if "${PRE_SETUP_DO_SKIP_ALL}"; then
-      return 0
+  function has_not_selected_skip_and_one_or_more_option
+  {
+    if "${PRE_SETUP_DO_SKIP_ALL}" \
+      && ( "${PRE_SETUP_DO_EXECUTE_EVDEV}" || "${PRE_SETUP_DO_EXECUTE_HUGEPAGES}" || "${PRE_SETUP_DO_EXECUTE_ISOLCPU}" ); then
+      print_error_to_log "Invalid combination of pre-setup options."
+      print_invalid_option "${1}"
     fi
-
-    # is_option_uninstall_pre_setup "$@" || return 1
-    is_option_setup_static_isolcpu "$@" || return 1
-    is_option_setup_static_hugepages "$@" || return 1
-    is_option_setup_virtual_kvm "$@" || return 1
   }
 
   # <summary>Getters</summary>
@@ -33,8 +38,8 @@
         if [[ "${1}" == "-h" ]] \
           || [[ "${1}" == "--hugepages" ]]; then
           shift
-          get_argument_enum_for_hugepages "${1}" "${2}" || return 1
-          is_host_memory_sufficient_for_hugepages || return 1
+          get_argument_enum_for_hugepages "${1}" "${2}"
+          is_host_memory_sufficient_for_hugepages
           pop_input_enum_if_last_option_contains_argument "${1}" "${2}"
           PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
         fi
@@ -71,18 +76,16 @@
       # }
 
     # <summary>Arguments</summary>
-    function get_argument_enum_for_hugepages
-    {
-      if [[ ! -z "${1}" ]] \
-        && ! get_hugepages_byte_size "${1}"; then
-        print_invalid_argument "${1}"
-        return 1
-      fi
+      function get_argument_enum_for_hugepages
+      {
+        if [[ ! -z "${1}" ]] \
+          && ! get_hugepages_byte_size "${1}"; then
+          print_invalid_argument "${1}"
+        fi
 
-      if [[ ! -z "${2}" ]] \
-        && ! get_hugepages_count "${2}"; then
-        print_invalid_argument "${2}"
-        return 1
-      fi
-    }
+        if [[ ! -z "${2}" ]] \
+          && ! get_hugepages_count "${2}"; then
+          print_invalid_argument "${2}"
+        fi
+      }
 # </functions>
