@@ -86,7 +86,8 @@
 
   function do_skip_pre_setup
   {
-    if ( ! "${PRE_SETUP_DO_EXECUTE_EVDEV}"  && ! "${PRE_SETUP_DO_EXECUTE_HUGEPAGES}" && ! "${PRE_SETUP_DO_EXECUTE_ISOLCPU}" ); then
+    if ! "${PRE_SETUP_DO_SKIP_ALL}" \
+      && ( ! "${PRE_SETUP_DO_EXECUTE_EVDEV}"  && ! "${PRE_SETUP_DO_EXECUTE_HUGEPAGES}" && ! "${PRE_SETUP_DO_EXECUTE_ISOLCPU}" ); then
       execute_or_skip_prompt "Execute pre-setup?" || PRE_SETUP_DO_SKIP_ALL=true
     fi
 
