@@ -714,7 +714,7 @@
     function specify_xml_file
     {
       if "${DATABASE_XML_FILE_IS_SPECIFIED}" \
-        && ! "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
+        && "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
         return 0
       fi
 
