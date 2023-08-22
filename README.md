@@ -38,6 +38,15 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 * **If it's greater control of your privacy you want...**
     - Use *me_cleaner*.<sup>[1](#1)</sup>
 
+## Requirements
+* Operating system: Debian Linux, or derivative.
+* Software packages:
+
+        xmlstarlet
+### To install packages
+
+        sudo apt install -y xmlstarlet
+
 ## How-to
 ### To install script:
 

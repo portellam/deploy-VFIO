@@ -82,6 +82,7 @@
   {
     if ! command -v "xmlstarlet" &> /dev/null; then
       print_error_to_log "Required 'XML' libraries are not installed."
+      echo -e "To install, enter 'sudo apt install -y xmlstarlet'."
       return 1
     fi
   }
