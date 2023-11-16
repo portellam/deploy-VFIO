@@ -1,14 +1,14 @@
 #!/bin/false
 
 #
-# Filename:       deploy-vfio_args_usage
+# Filename:       args_usage
 # Description:    Print statements related to usage.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
 # <sources>
-  source deploy-vfio_logic_common
+  source logic_common
 # </sources>
 
 # <functions>

@@ -1,14 +1,14 @@
 #!/bin/false
 
 #
-# Filename:       deploy-vfio_args_compatibility
+# Filename:       args_compatibility
 # Description:    Argument logic for system compatibility.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
 # <sources>
-  source deploy-vfio_logic_compatibility
+  source logic_compatibility
 # </sources>
 
 # <functions>

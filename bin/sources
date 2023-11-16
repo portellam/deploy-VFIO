@@ -1,0 +1,19 @@
+#!/bin/false
+
+#
+# Filename:       sources
+# Description:    Master sources file.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <sources>
+  source args_common
+  source args_database
+  source args_main-setup
+  source args_post-setup
+  source args_pre-setup
+  source args_usage
+  source logic_common
+  source logic_compatibility
+# </sources>

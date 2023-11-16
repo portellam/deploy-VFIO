@@ -1,16 +1,16 @@
 #!/bin/false
 
 #
-# Filename:       deploy-vfio_logic_main-setup
+# Filename:       logic_main-setup
 # Description:    Select and execute VFIO setup.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
 # <sources>
-  source deploy-vfio_logic_common
-  source deploy-vfio_logic_database
-  source deploy-vfio_logic_pre-setup
+  source logic_common
+  source logic_database
+  source logic_pre-setup
 # </sources>
 
 # <functions>

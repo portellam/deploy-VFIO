@@ -97,20 +97,20 @@
       cd "${bin_source_path}" || return 1
 
       if  [[ ! -e "deploy-vfio" ]] \
-        || [[ ! -e "deploy-vfio_args_common" ]] \
-        || [[ ! -e "deploy-vfio_args_compatibility" ]] \
-        || [[ ! -e "deploy-vfio_args_database" ]] \
-        || [[ ! -e "deploy-vfio_args_main-setup" ]] \
-        || [[ ! -e "deploy-vfio_args_post-setup" ]] \
-        || [[ ! -e "deploy-vfio_args_pre-setup" ]] \
-        || [[ ! -e "deploy-vfio_args_usage" ]] \
-        || [[ ! -e "deploy-vfio_logic_common" ]] \
-        || [[ ! -e "deploy-vfio_logic_compatibility" ]] \
-        || [[ ! -e "deploy-vfio_logic_database" ]] \
-        || [[ ! -e "deploy-vfio_logic_main-setup" ]] \
-        || [[ ! -e "deploy-vfio_logic_post-setup" ]] \
-        || [[ ! -e "deploy-vfio_logic_pre-setup" ]] \
-        || [[ ! -e "deploy-vfio_sources" ]]; then
+        || [[ ! -e "args_common" ]] \
+        || [[ ! -e "args_compatibility" ]] \
+        || [[ ! -e "args_database" ]] \
+        || [[ ! -e "args_main-setup" ]] \
+        || [[ ! -e "args_post-setup" ]] \
+        || [[ ! -e "args_pre-setup" ]] \
+        || [[ ! -e "args_usage" ]] \
+        || [[ ! -e "logic_common" ]] \
+        || [[ ! -e "logic_compatibility" ]] \
+        || [[ ! -e "logic_database" ]] \
+        || [[ ! -e "logic_main-setup" ]] \
+        || [[ ! -e "logic_post-setup" ]] \
+        || [[ ! -e "logic_pre-setup" ]] \
+        || [[ ! -e "sources" ]]; then
         echo -e "${PREFIX_ERROR} Missing project binaries."
         return 1
       fi

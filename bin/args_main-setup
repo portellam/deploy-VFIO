@@ -1,14 +1,14 @@
 #!/bin/false
 
 #
-# Filename:       deploy-vfio_args_main-setup
+# Filename:       args_main-setup
 # Description:    Argument logic for main setup.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
 # <sources>
-  source deploy-vfio_logic_main-setup
+  source logic_main-setup
 # </sources>
 
 # <functions>

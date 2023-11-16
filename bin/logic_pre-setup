@@ -1,14 +1,14 @@
 #!/bin/false
 
 #
-# Filename:       deploy-vfio_logic_pre-setup
+# Filename:       logic_pre-setup
 # Description:    Recommended pre-installation setups.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
 # <sources>
-  source deploy-vfio_logic_common
+  source logic_common
 # </sources>
 
 # <functions>

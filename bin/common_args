@@ -1,19 +1,19 @@
 #!/bin/false
 
 #
-# Filename:       deploy-vfio_args_common
+# Filename:       args_common
 # Description:    Get and set arguments and options.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
 # <sources>
-  source deploy-vfio_args_compatibility
-  source deploy-vfio_args_main-setup
-  source deploy-vfio_args_database
-  source deploy-vfio_args_pre-setup
-  source deploy-vfio_args_post-setup
-  source deploy-vfio_args_usage
+  source args_compatibility
+  source args_main-setup
+  source args_database
+  source args_pre-setup
+  source args_post-setup
+  source args_usage
 # </sources>
 
 # <functions>
