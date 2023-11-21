@@ -8,6 +8,9 @@
 #
 
 # <params>
+  declare -gr SCRIPT_NAME=$( basename "${0}" )
+  declare -gr MAIN_EXECUTABLE="deploy-vfio"
+
   # <summary>Execution Flags</summary>
     declare -g DO_INSTALL=true
 
@@ -21,9 +24,10 @@
     declare -g RESET_COLOR='\033[0m'
 
   # <summary>Append output</summary>
-    declare -g PREFIX_ERROR="${SET_COLOR_YELLOW}An error occurred:${RESET_COLOR}"
-    declare -g PREFIX_FAIL="${SET_COLOR_RED}Failure:${RESET_COLOR}"
-    declare -g PREFIX_PASS="${SET_COLOR_GREEN}Success:${RESET_COLOR}"
+    declare -gr PREFIX_PROMPT="${SCRIPT_NAME}: "
+    declare -gr PREFIX_ERROR="${PREFIX_PROMPT}${SET_COLOR_YELLOW}An error occurred:${RESET_COLOR} "
+    declare -gr PREFIX_FAIL="${PREFIX_PROMPT}${SET_COLOR_RED}Failure:${RESET_COLOR} "
+    declare -gr PREFIX_PASS="${PREFIX_PROMPT}${SET_COLOR_GREEN}Success:${RESET_COLOR} "
 # </params>
 
 # <functions>
@@ -36,10 +40,12 @@
 
     get_option "${1}" || return 1
 
-    local -r source_path=$( pwd )
-    local -r bin_target_path="/usr/local/bin/"
+    local -r source_subfolder="deploy-vfio.d"
+    local -r source_path=$( pwd )"/${source_subfolder}/"
+    local -r bin_path="/usr/local/bin/"
+    local -r bin_target_path="${bin_path}${source_subfolder}/"
     local -r bin_source_path="${source_path}/bin/"
-    local -r etc_target_path="/usr/local/etc/deploy-vfio.d/"
+    local -r etc_target_path="/usr/local/etc/${source_subfolder}/"
     local -r etc_source_path="${source_path}/etc/"
 
     if "${DO_INSTALL}"; then
@@ -62,10 +68,15 @@
   # <summary>Checks</summary>
     function do_binaries_exist
     {
+      if [[ ! -e "${MAIN_EXECUTABLE}" ]]; then
+        print_error_to_log "Missing main executable."
+        return 1
+      fi
+
+      local -r lwd=$( pwd )
       cd "${bin_source_path}" || return 1
 
-      if  [[ ! -e "deploy-vfio" ]] \
-        || [[ ! -e "args_common" ]] \
+      if [[ ! -e "args_common" ]] \
         || [[ ! -e "args_compatibility" ]] \
         || [[ ! -e "args_database" ]] \
         || [[ ! -e "args_main-setup" ]] \
@@ -82,10 +93,16 @@
         print_error_to_log "Missing project binaries."
         return 1
       fi
+
+      if ! cd "${lwd}"; then
+        print_error_to_log "Failed to return to last working directory."
+        return 1
+      fi
     }
 
     function do_files_exist
     {
+      local -r lwd=$( pwd )
       cd "${etc_source_path}" || return 1
 
       if [[ ! -e "custom" ]] \
@@ -97,12 +114,18 @@
         print_error_to_log "Missing project files."
         return 1
       fi
+
+      if ! cd "${lwd}"; then
+        print_error_to_log "Failed to return to last working directory."
+        return 1
+      fi
     }
 
     function does_target_path_exist
     {
-      if [[ ! -d "${bin_target_path}" ]]; then
-        print_error_to_log "Could not find directory '${bin_target_path}'."
+      if [[ ! -d "${bin_target_path}" ]] \
+        && ! sudo mkdir --parents "${bin_target_path}"; then
+        print_error_to_log "Could not create directory '${bin_target_path}'."
         return 1
       fi
 
@@ -116,6 +139,11 @@
   # <summary>Execution</summary>
     function copy_sources_to_targets
     {
+      if ! sudo cp --force "${MAIN_EXECUTABLE}" "${bin_path}${MAIN_EXECUTABLE}" &> /dev/null; then
+        print_error_to_log "Failed to copy main executable."
+        return 1
+      fi
+
       if ! sudo cp --force --recursive "${bin_source_path}"* "${bin_target_path}" &> /dev/null; then
         print_error_to_log "Failed to copy project binaries."
         return 1
@@ -148,11 +176,7 @@
 
     function uninstall
     {
-      local -r executable="${bin_target_path}deploy-vfio"
-      local -r targets="${executable}_"
-
-      if ( [[ -e "${executable}" ]] && ! rm --force --recursive "${executable}" &> /dev/null ) \
-        || ! rm --force --recursive "${targets}"* &> /dev/null; then
+      if ( [[ -d "${bin_target_path}" ]] && ! rm --force --recursive "${bin_target_path}" &> /dev/null ); then
         print_error_to_log "Failed to delete project binaries."
         return 1
       fi
