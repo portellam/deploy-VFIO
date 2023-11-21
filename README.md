@@ -24,8 +24,8 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 * **Separation of Concerns**
     - Segregate your Workstation, Gaming, or School PC, as Virtual machines under one Host machine.
 * **No Need for a Server**
-    - Turns your Desktop PC into a Type 2 Hypervisor; enable yourself to keep a Desktop experience on your Host machine.
-    - Server operating systems like Microsoft Hyper-V, Oracle VM (enterprise) and Proxmox Linux (community) are considered Type 1 or bare-metal Hypervisors.
+    - Keep your Linux Desktop experience intact and run Virtual machines as like any other program; turns your Desktop PC into a Type 2 Hypervisor.
+    - Server operating systems like Microsoft Hyper-V, Oracle VM (enterprise) and Proxmox Linux (community) are considered Type 1 or "bare-metal" Hypervisors.
 * **Securely run a modern OS**
     - Reduce or eliminate the negative influences an untrusted operating system (OS) may have, by reducing its access or control of real hardware.
     - Regain privacy and/or security from spyware OSes (example: *Windows 10, 11, Macintosh*).
@@ -51,7 +51,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
         sudo apt install -y xmlstarlet
 
 ## How-to
-#### Installer Usage:
+### Installer Usage:
 
         -h, --help        Print this help and exit.
         -i, --install     Install deploy-VFIO to system.
