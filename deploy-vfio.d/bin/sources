@@ -7,16 +7,18 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
-pwd
-echo HELLO
+# <params>
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+# <params>
 
 # <sources>
-  source args_common
-  source args_database
-  source args_main-setup
-  source args_post-setup
-  source args_pre-setup
-  source args_usage
-  source logic_common
-  source logic_compatibility
+  source "${SCRIPT_BIN_DIR}args_common"
+  source "${SCRIPT_BIN_DIR}args_database"
+  source "${SCRIPT_BIN_DIR}args_main-setup"
+  source "${SCRIPT_BIN_DIR}args_post-setup"
+  source "${SCRIPT_BIN_DIR}args_pre-setup"
+  source "${SCRIPT_BIN_DIR}args_usage"
+  source "${SCRIPT_BIN_DIR}logic_common"
+  source "${SCRIPT_BIN_DIR}logic_compatibility"
 # </sources>

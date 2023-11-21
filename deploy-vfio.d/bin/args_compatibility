@@ -7,8 +7,13 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <params>
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+# <params>
+
 # <sources>
-  source logic_compatibility
+  source "${SCRIPT_BIN_DIR}logic_compatibility"
 # </sources>
 
 # <functions>

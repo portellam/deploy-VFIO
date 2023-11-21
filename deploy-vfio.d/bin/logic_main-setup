@@ -7,10 +7,15 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <params>
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+# <params>
+
 # <sources>
-  source logic_common
-  source logic_database
-  source logic_pre-setup
+  source "${SCRIPT_BIN_DIR}logic_common"
+  source "${SCRIPT_BIN_DIR}logic_database"
+  source "${SCRIPT_BIN_DIR}logic_pre-setup"
 # </sources>
 
 # <functions>
