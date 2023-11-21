@@ -78,7 +78,7 @@
   {
     local -ar output=(
       "Usage:\tbash ${SCRIPT_NAME} [OPTION] [ARGUMENTS]"
-      "Deploy a VFIO setup to a Linux host machine that supports Para-virtualization and hardware passthrough.\n"
+      "Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO) setup, and important quality-of-life enhancements for a seamless VFIO setup on a Debian Linux computer; run Virtual machines with ease and real hardware, under your Linux desktop machine.\n"
       "  -h, --help\t\t\tPrint this help and exit."
       "  -q, --quiet\t\t\tReduce verbosity; print only relevant questions and status statements."
       "  -u, --undo\t\t\tUndo changes (restore files) if script has exited early or unexpectedly."
@@ -115,7 +115,7 @@
       "  [x]\t\t\t\tAmount of Hugepages (maximum amount is total memory subtracted by 4 GiB)."
 
       "\n  Example:"
-      "  1G 16\t\t\t1 GiB hugepage 16\t== 16 GiB allocated to hugepages."
+      "  1G 16\t\t\t\t1 GiB hugepage 16\t== 16 GiB allocated to hugepages."
       "  2M 8192\t\t\t2 MiB hugepage 8912\t== 16 GiB allocated to hugepages."
 
       "\nVFIO setup OPTIONS:"

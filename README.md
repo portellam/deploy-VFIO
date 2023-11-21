@@ -12,7 +12,7 @@
 
 ## About
 ### Description:
-Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines with real hardware, on your Debian Linux computer. Includes many common-sense quality-of-life enhancements.
+Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO) setup, and important quality-of-life enhancements for a seamless VFIO setup on a Debian Linux computer; run Virtual machines with ease and real hardware, under your Linux desktop machine.
 
 ### What is [VFIO](#VFIO)?
 #### Useful links
@@ -23,6 +23,9 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
 ### Why?
 * **Separation of Concerns**
     - Segregate your Workstation, Gaming, or School PC, as Virtual machines under one Host machine.
+* **No Need for a Server**
+    - Turns your Desktop PC into a Type 2 Hypervisor; enable yourself to keep a Desktop experience on your Host machine.
+    - Server operating systems like Microsoft Hyper-V, Oracle VM (enterprise) and Proxmox Linux (community) are considered Type 1 or bare-metal Hypervisors.
 * **Securely run a modern OS**
     - Reduce or eliminate the negative influences an untrusted operating system (OS) may have, by reducing its access or control of real hardware.
     - Regain privacy and/or security from spyware OSes (example: *Windows 10, 11, Macintosh*).
@@ -48,24 +51,19 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup, to run Virtual machines
         sudo apt install -y xmlstarlet
 
 ## How-to
-### To install script:
+#### Installer Usage:
 
-        sudo bash installer.bash -i
+        -h, --help        Print this help and exit.
+        -i, --install     Install deploy-VFIO to system.
+        -u, --uninstall   Uninstall deploy-VFIO from system.
 
-### To uninstall script:
-
-        sudo bash installer.bash -u
-
-### Usage:
+### Script Usage:
 #### * Options that skip *all* user prompts.
 
-        Usage:        bash deploy-vfio [OPTION] [ARGUMENTS]
-        Deploy a VFIO setup to a Linux Host machine that supports Para-virtualization and hardware passthrough.
-
-          -h, --help        Print this help and exit.
-          -q, --quiet       Reduce verbosity; print only relevant questions and status statements.
-          -u, --undo        Undo changes (restore files) if script has exited early or unexpectedly.
-          --ignore-distro   Ignore distribution check for Debian or Ubuntu system.
+        -h, --help        Print this help and exit.
+        -q, --quiet       Reduce verbosity; print only relevant questions and status statements.
+        -u, --undo        Undo changes (restore files) if script has exited early or unexpectedly.
+        --ignore-distro   Ignore distribution check for Debian or Ubuntu system.
 
 #### Parse IOMMU groups
 
@@ -288,7 +286,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 <sub>Hugepages | **[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
 
 #### 4.
-<sub>Evdev | **[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
+<sub>Evdev | **[source (GitHub)](https://github.com/portellam/generate-evdev)** | **[Arch wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
 
 #### 5.
 <sub> auto-Xorg | **[source (GitHub)](https://github.com/portellam/auto-Xorg)**</sub>

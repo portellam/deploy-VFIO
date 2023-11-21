@@ -40,7 +40,7 @@
 
     get_option "${1}" || return 1
 
-    local -r source_subfolder="deploy-vfio.d"
+    local -r source_subfolder="${MAIN_EXECUTABLE}.d"
     local -r source_path=$( pwd )"/${source_subfolder}/"
     local -r bin_path="/usr/local/bin/"
     local -r bin_target_path="${bin_path}${source_subfolder}/"
@@ -225,10 +225,10 @@
 
       local -ar output=(
         "Usage:\tbash installer.bash [OPTION]"
-        "Manages deploy-VFIO binaries and files.\n"
+        "Manages ${MAIN_EXECUTABLE} binaries and files.\n"
         "  -h, --help\t\tPrint this help and exit."
-        "  -i, --install\t\tInstall deploy-VFIO to system."
-        "  -u, --uninstall\tUninstall deploy-VFIO from system."
+        "  -i, --install\t\tInstall ${MAIN_EXECUTABLE} to system."
+        "  -u, --uninstall\tUninstall ${MAIN_EXECUTABLE} from system."
       )
 
       echo -e "${output[*]}"
