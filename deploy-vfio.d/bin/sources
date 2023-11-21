@@ -7,6 +7,9 @@
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+pwd
+echo HELLO
+
 # <sources>
   source args_common
   source args_database
