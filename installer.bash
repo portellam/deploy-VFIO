@@ -59,54 +59,6 @@
     fi
   }
 
-  # <summary>Loggers/summary>
-    function print_error_to_log
-    {
-      echo -e "${PREFIX_ERROR}${1}" >&2
-    }
-
-    function print_fail_to_log
-    {
-      echo -e "${PREFIX_FAIL}${1}" >&2
-    }
-
-    function print_pass_to_log
-    {
-      echo -e "${PREFIX_PASS}${1}" >&1
-    }
-
-  # <summary>Usage</summary>
-    function get_option
-    {
-      case "${1}" in
-        "-u" | "--uninstall" )
-          DO_INSTALL=false ;;
-
-        "-i" | "--install" )
-          DO_INSTALL=true ;;
-
-        "-h" | "--help" | * )
-          print_usage
-          return 1 ;;
-      esac
-    }
-
-    function print_usage
-    {
-      IFS=$'\n'
-
-      local -ar output=(
-        "Usage:\tbash installer.bash [OPTION]"
-        "Manages deploy-VFIO binaries and files.\n"
-        "  -h, --help\t\tPrint this help and exit."
-        "  -i, --install\t\tInstall deploy-VFIO to system."
-        "  -u, --uninstall\tUninstall deploy-VFIO from system."
-      )
-
-      echo -e "${output[*]}"
-      unset IFS
-    }
-
   # <summary>Checks</summary>
     function do_binaries_exist
     {
@@ -209,6 +161,54 @@
         print_error_to_log "Failed to delete project file(s)."
         return 1
       fi
+    }
+
+  # <summary>Loggers/summary>
+    function print_error_to_log
+    {
+      echo -e "${PREFIX_ERROR}${1}" >&2
+    }
+
+    function print_fail_to_log
+    {
+      echo -e "${PREFIX_FAIL}${1}" >&2
+    }
+
+    function print_pass_to_log
+    {
+      echo -e "${PREFIX_PASS}${1}" >&1
+    }
+
+  # <summary>Usage</summary>
+    function get_option
+    {
+      case "${1}" in
+        "-u" | "--uninstall" )
+          DO_INSTALL=false ;;
+
+        "-i" | "--install" )
+          DO_INSTALL=true ;;
+
+        "-h" | "--help" | * )
+          print_usage
+          return 1 ;;
+      esac
+    }
+
+    function print_usage
+    {
+      IFS=$'\n'
+
+      local -ar output=(
+        "Usage:\tbash installer.bash [OPTION]"
+        "Manages deploy-VFIO binaries and files.\n"
+        "  -h, --help\t\tPrint this help and exit."
+        "  -i, --install\t\tInstall deploy-VFIO to system."
+        "  -u, --uninstall\tUninstall deploy-VFIO from system."
+      )
+
+      echo -e "${output[*]}"
+      unset IFS
     }
 # </functions>
 
