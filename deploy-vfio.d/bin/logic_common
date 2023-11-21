@@ -59,8 +59,6 @@
       declare -gir MAX_MEMORY=$( cat /proc/meminfo | grep MemTotal | cut --delimiter ":" --fields 2 | awk 'END {print $1}' )
       declare -gir MIN_MEMORY=$(( 8 * ${ONE_GIB_IN_KIB} ))
       set_free_memory
-
-    declare -gr LOGIN_USER=$( who am i | awk '{print $1}' )
   }
 
   # <summary>Clean-up</summary>
