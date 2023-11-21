@@ -30,7 +30,7 @@
   function main
   {
     if [[ $( whoami ) != "root" ]]; then
-      echo -e "${PREFIX_ERROR} User is not sudo or root."
+      print_error_to_log "User is not sudo or root."
       return 1
     fi
 
@@ -44,20 +44,36 @@
 
     if "${DO_INSTALL}"; then
       if ! install; then
-        echo -e "${PREFIX_FAIL} Could not install deploy-VFIO."
+        print_fail_to_log "Could not install deploy-VFIO."
         return 1
       else
-        echo -e "${PREFIX_PASS} Installed deploy-VFIO."
+        print_pass_to_log "Installed deploy-VFIO."
       fi
     else
       if ! uninstall; then
-        echo -e "${PREFIX_FAIL} Could not uninstall deploy-VFIO."
+        print_fail_to_log "Could not uninstall deploy-VFIO."
         return 1
       else
-        echo -e "${PREFIX_PASS} Uninstalled deploy-VFIO."
+        print_pass_to_log "Uninstalled deploy-VFIO."
       fi
     fi
   }
+
+  # <summary>Loggers/summary>
+    function print_error_to_log
+    {
+      echo -e "${PREFIX_ERROR}${1}" >&2
+    }
+
+    function print_fail_to_log
+    {
+      echo -e "${PREFIX_FAIL}${1}" >&2
+    }
+
+    function print_pass_to_log
+    {
+      echo -e "${PREFIX_PASS}${1}" >&1
+    }
 
   # <summary>Usage</summary>
     function get_option
@@ -111,7 +127,7 @@
         || [[ ! -e "logic_post-setup" ]] \
         || [[ ! -e "logic_pre-setup" ]] \
         || [[ ! -e "sources" ]]; then
-        echo -e "${PREFIX_ERROR} Missing project binaries."
+        print_error_to_log "Missing project binaries."
         return 1
       fi
     }
@@ -126,7 +142,7 @@
         || [[ ! -e "modules" ]] \
         || [[ ! -e "pci-blacklists.conf" ]] \
         || [[ ! -e "vfio.conf" ]]; then
-        echo -e "${PREFIX_ERROR} Missing project files."
+        print_error_to_log "Missing project files."
         return 1
       fi
     }
@@ -134,13 +150,13 @@
     function does_target_path_exist
     {
       if [[ ! -d "${bin_target_path}" ]]; then
-        echo -e "${PREFIX_ERROR} Could not find directory '${bin_target_path}'."
+        print_error_to_log "Could not find directory '${bin_target_path}'."
         return 1
       fi
 
       if [[ ! -d "${etc_target_path}" ]] \
         && ! sudo mkdir --parents "${etc_target_path}"; then
-        echo -e "${PREFIX_ERROR} Could not create directory '${etc_target_path}'."
+        print_error_to_log "Could not create directory '${etc_target_path}'."
         return 1
       fi
     }
@@ -149,12 +165,12 @@
     function copy_sources_to_targets
     {
       if ! sudo cp --force --recursive "${bin_source_path}"* "${bin_target_path}" &> /dev/null; then
-        echo -e "${PREFIX_ERROR} Failed to copy project binaries."
+        print_error_to_log "Failed to copy project binaries."
         return 1
       fi
 
       if ! sudo cp --force --recursive "${etc_source_path}"* "${etc_target_path}" &> /dev/null; then
-        echo -e "${PREFIX_ERROR} Failed to copy project file(s)."
+        print_error_to_log "Failed to copy project file(s)."
         return 1
       fi
     }
@@ -173,7 +189,7 @@
       if ! sudo chown --recursive root:root "${bin_target_path}" &> /dev/null \
         || ! sudo chmod --recursive +x "${bin_target_path}" &> /dev/null \
         || ! sudo chown --recursive root:root "${etc_target_path}" &> /dev/null; then
-        echo -e "${PREFIX_ERROR} Failed to set file permissions."
+        print_error_to_log "Failed to set file permissions."
         return 1
       fi
     }
@@ -185,12 +201,12 @@
 
       if ( [[ -e "${executable}" ]] && ! rm --force --recursive "${executable}" &> /dev/null ) \
         || ! rm --force --recursive "${targets}"* &> /dev/null; then
-        echo -e "${PREFIX_ERROR} Failed to delete project binaries."
+        print_error_to_log "Failed to delete project binaries."
         return 1
       fi
 
       if [[ -d "${etc_target_path}" ]] && ! rm --force --recursive "${etc_target_path}" &> /dev/null; then
-        echo -e "${PREFIX_ERROR} Failed to delete project file(s)."
+        print_error_to_log "Failed to delete project file(s)."
         return 1
       fi
     }
