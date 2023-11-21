@@ -12,7 +12,7 @@
 
 ## About
 ### Description:
-Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO) setup, and important quality-of-life enhancements for a seamless VFIO setup on a Debian Linux computer; run Virtual machines with ease and real hardware, under your Linux desktop machine.
+Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and important quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine; run Virtual machines with ease and real hardware, on your Linux desktop.
 
 ### What is [VFIO](#VFIO)?
 #### Useful links
@@ -25,15 +25,15 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
     - Segregate your Workstation, Gaming, or School PC, as Virtual machines under one Host machine.
 * **No Need for a Server**
     - Keep your Linux Desktop experience intact and run Virtual machines as like any other program; turns your Desktop PC into a Type 2 Hypervisor.
-    - Server operating systems like Microsoft Hyper-V, Oracle VM (enterprise) and Proxmox Linux (community) are considered Type 1 or "bare-metal" Hypervisors.
+    - Server operating systems (OS) like Microsoft Hyper-V, Oracle VM (enterprise) and Proxmox Linux (community) are considered Type 1 or "bare-metal" Hypervisors.
 * **Securely run a modern OS**
-    - Reduce or eliminate the negative influences an untrusted operating system (OS) may have, by reducing its access or control of real hardware.
+    - Reduce or eliminate the negative influences an untrusted OS may have, by reducing its access or control of real hardware.
     - Regain privacy and/or security from spyware OSes (example: *Windows 10, 11, Macintosh*).
 * **Ease of use**
     - What is tedious becomes trivial; reduce the number of manual steps a user has to make.
     - Specify answers ahead of time or answer prompts step-by-step (see [Usage](#Usage)).
 * **Hardware passthrough, not Hardware emulation**
-    - Preserve the performance of a virtualized OS (Gaming), through use of real hardware (Video device).
+    - Preserve the performance of a virtualized OS (example: Gaming), through use of real hardware (ex: Video/graphics device).
 * **Quality of Life**
     - Choose multiple common-sense features that are known to experienced users (see [Features](#Features)).
 * **Your desktop OS is [Supported](#Linux).**
