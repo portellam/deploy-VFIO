@@ -125,7 +125,6 @@
         || [[ ! -e "initramfs-tools" ]] \
         || [[ ! -e "modules" ]] \
         || [[ ! -e "pci-blacklists.conf" ]] \
-        || [[ ! -e "qemu.conf" ]] \
         || [[ ! -e "vfio.conf" ]]; then
         echo -e "${PREFIX_ERROR} Missing project files."
         return 1
