@@ -84,7 +84,6 @@
       fi
 
       while [[ "${1}" != "" ]]; do
-        # echo "{1} == '${1}'"          # <note>debug</note>
         parse_option "$@" || exit 1
         shift                         # <note>'shift' must remain in same scope to work.</note>
       done
