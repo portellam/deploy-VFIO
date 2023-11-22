@@ -27,6 +27,7 @@
 
     declare -g DATABASE_DO_PARSE_DATABASE=false
     declare -g DATABASE_DO_PARSE_DATABASE_FROM_XML=false
+    declare -g DATABASE_DO_NOT_PARSE_DATABASE_FROM_XML=false
     declare -g DATABASE_XML_FILE_IS_SPECIFIED=false
     declare -g DATABASE_HAS_ARG_PARSE_IOMMU=false
     declare -g DATABASE_HAS_ARG_PARSE_IOMMU_SELECT_ALL=false
@@ -73,7 +74,7 @@
     specify_xml_file || return 1
     is_xml_file_created || return 1
 
-    if ! is_xml_valid; then
+    if ! is_xml_valid &> /dev/null; then
       does_host_not_have_existing_vfio_setup || return 1
       export_iommu_groups_to_xml || return 1
       specify_iommu_group_enum
@@ -723,7 +724,8 @@
 
     function parse_from_xml_prompt
     {
-      if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}"; then
+      if "${DATABASE_DO_PARSE_DATABASE_FROM_XML}" \
+        || "${DATABASE_DO_NOT_PARSE_DATABASE_FROM_XML}"; then
         return 0
       fi
 

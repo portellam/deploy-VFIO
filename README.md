@@ -63,8 +63,9 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
             --ignore-distro          Ignore distribution check for Debian or Ubuntu system.
 
       Specify the database to reference before parsing IOMMU groups:
-        -x, --xml [filename]         Cross-reference XML file. First-time, export if VFIO is not setup. Consecutive-times, imports if VFIO is setup.
+            --xml [filename]         Cross-reference XML file. First-time, export if VFIO is not setup. Consecutive-times, imports if VFIO is setup.
             [filename]               Reference specific file.
+            --no-xml                 Skips prompt.
 
       Specify the IOMMU groups to parse:
         -p, --parse [groups]         Parse given IOMMU groups (delimited by comma).

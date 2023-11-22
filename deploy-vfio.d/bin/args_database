@@ -20,6 +20,7 @@
   function is_option_of_database
   {
     is_option_parse_xml "$@"
+    is_option_parse_no_xml "$@"
     is_option_parse_iommu_groups "$@"
   }
 
@@ -40,15 +41,35 @@
 
       function is_option_parse_xml
       {
-        if [[ "${1}" != "-x" ]] \
-          && [[ "${1}" != "--xml" ]]; then
+        if [[ "${1}" != "--xml" ]]; then
           return 0
+        fi
+
+        if [[ "${DATABASE_DO_NOT_PARSE_DATABASE_FROM_XML}" == true ]]; then
+          print_conflicting_options
+          exit 1
         fi
 
         shift
         is_argument_parse_xml_file "${1}"
         pop_input_enum_if_last_option_contains_argument "${1}"
         DATABASE_DO_PARSE_DATABASE_FROM_XML=true
+        DATABASE_ASK_TO_EXECUTE_ALL=false
+      }
+
+      function is_option_parse_no_xml
+      {
+        if [[ "${1}" != "--no-xml" ]]; then
+          return 0
+        fi
+
+        if [[ "${DATABASE_DO_PARSE_DATABASE_FROM_XML}" == true ]]; then
+          print_conflicting_options
+          exit 1
+        fi
+
+        shift
+        DATABASE_DO_NOT_PARSE_DATABASE_FROM_XML=true
         DATABASE_ASK_TO_EXECUTE_ALL=false
       }
 

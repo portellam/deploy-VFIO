@@ -211,13 +211,13 @@
         return 1
       fi
 
-      local -r options="--dump-xml"
+      local options="--dump-xml"
 
       if "${PRE_SETUP_DO_EXECUTE_HUGEPAGES}"; then
-        options+=" hugepages"
+        options+=" --hugepages"
       fi
 
-      if ! sudo bash generate-evdev ${options}; then
+      if ! sudo bash generate-evdev "${options}"; then        # TODO: fix occurrence where first run after first clone yields an error with 'cd'. Consecutive runs do not have this issue.
         return 1
       fi
     }
