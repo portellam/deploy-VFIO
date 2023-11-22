@@ -12,7 +12,7 @@
 
 ## About
 ### Description:
-Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and important quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine; run Virtual machines<sup>[1](#1)</sup> with ease and real hardware, on your Linux desktop.
+Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and important quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine; run Virtual machines on your Linux desktop.
 
 ### What is [VFIO](#VFIO)?
 #### Useful links
@@ -22,9 +22,9 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 ### Why?
 * **Separation of Concerns**
-    - Segregate your Workstation, Gaming, or School PC, as Virtual machines under one Host machine.
+    - Segregate your Workstation, Gaming, or School PC, as Virtual machines<sup>[1](#1)</sup> under one Host machine.
 * **No Need for a Server**
-    - Keep your Linux Desktop experience intact and run Virtual machines as like any other program; turns your Desktop PC into a Type 2 Hypervisor <sup>[2](#2)</sup>.
+    - Keep your Linux Desktop experience intact and run Virtual machines as like any other program; turns your Desktop PC into a Type 2 Hypervisor.<sup>[2](#2)</sup>
     - Server operating systems (OS) like Microsoft Hyper-V, Oracle VM (enterprise) and Proxmox Linux (community) are considered Type 1 or "bare-metal" Hypervisors.
 * **Securely run a modern OS**
     - Reduce or eliminate the negative influences an untrusted OS may have, by reducing its access or control of real hardware.
