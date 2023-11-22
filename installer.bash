@@ -176,12 +176,17 @@
 
     function uninstall
     {
-      if ( [[ -d "${bin_target_path}" ]] && ! rm --force --recursive "${bin_target_path}" &> /dev/null ); then
+      if ! rm --force "${bin_path}${MAIN_EXECUTABLE}" &> /dev/null; then
+        print_error_to_log "Failed to delete main executable."
+        return 1
+      fi
+
+      if ! rm --force --recursive "${bin_target_path}" &> /dev/null; then
         print_error_to_log "Failed to delete project binaries."
         return 1
       fi
 
-      if [[ -d "${etc_target_path}" ]] && ! rm --force --recursive "${etc_target_path}" &> /dev/null; then
+      if ! rm --force --recursive "${etc_target_path}" &> /dev/null; then
         print_error_to_log "Failed to delete project file(s)."
         return 1
       fi
