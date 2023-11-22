@@ -53,102 +53,87 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ## How-to
 ### Installer Usage:
 
-        -h, --help        Print this help and exit.
-        -i, --install     Install deploy-VFIO to system.
-        -u, --uninstall   Uninstall deploy-VFIO from system.
+        -h,  --help        Print this help and exit.
+        -i,  --install     Install deploy-VFIO to system.
+        -u,  --uninstall   Uninstall deploy-VFIO from system.
 
 ### Script Usage:
-#### * Options that skip *all* user prompts.
 
-        -h, --help        Print this help and exit.
-        -q, --quiet       Reduce verbosity; print only relevant questions and status statements.
-        -u, --undo        Undo changes (restore files) if script has exited early or unexpectedly.
-        --ignore-distro   Ignore distribution check for Debian or Ubuntu system.
+          -h,  --help                   Print this help and exit.
+          -q,  --quiet                  Reduce verbosity; print only relevant questions and status statements.
+          -u,  --undo                   Undo changes (restore files) if script has exited early or unexpectedly.
+          --ignore-distro          Ignore distribution check for Debian or Ubuntu system.
 
-#### Parse IOMMU groups
+        Specify the database to reference before parsing IOMMU groups:
+          -x,  --xml [filename]         Cross-reference XML file. First-time, export if VFIO is not setup. Consecutive-times, imports if VFIO is setup.
+        [filename]               Reference specific file.
 
-        Specify the database to reference before parsing IOMMU groups.
-        OPTIONS:
-          -x, --xml [filename]          Cross-reference XML file. First-time, export if VFIO is not setup. Consecutive-times, imports if VFIO is setup.
+        Specify the IOMMU groups to parse:
+          -p,  --parse [groups]         Parse given IOMMU groups.
+            (delimited by comma)
+              all                      Select all IOMMU groups.
+              no-vga                   Select all IOMMU groups without VGA devices.
+              [x]                      Select IOMMU group.
+              [x-y]                    Select IOMMU groups.
 
-        ARGUMENTS:
-          [filename]                    Reference specific file.
+        Example:
+              --parse no-vga,14        Select IOMMU group 14 and all non-VGA groups.
+              --parse 1,14-16          Select IOMMU groups 1, 14, 15, and 16.
 
-        Specify the IOMMU groups to parse.
-        OPTIONS:
-          -p, --parse [groups]          Parse given IOMMU groups.
+        Pre-setup:
+          -c,  --cpu                    Allocate CPU.
+          -e,  --evdev                  Setup a virtual KVM switch.
+          -h,  --hugepages [ARGS]       Create static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s).
+              --skip-pre-setup         Skip execution.
+              --uninstall-pre-setup    Undo all changes made by pre-setup.
 
-        ARGUMENTS (delimited by comma): *
-          all                           Select all IOMMU groups.
-          no-vga                        Select all IOMMU groups without [VGA](#VGA) devices.
-          [x]                           Select IOMMU group.
-          [0-?]                         Select IOMMU groups.
+        Hugepages:
+              2M, 1G                   Hugepage size (2 MiB or 1 GiB).
+              [x]                      Amount of Hugepages (maximum amount is total memory subtracted by 4 GiB).
 
-          Example:
-            no-vga,14                   Select group 14 and all non-VGA groups.
-            1,14-16                     Select groups 1, 14, 15, and 16.
+        Example:
+              --hugepages 1G 16        1 GiB hugepage 16   == 16 GiB allocated to hugepages.
+              --hugepages 2M 8192      2 MiB hugepage 8912 == 16 GiB allocated to hugepages.
 
-#### Pre-setup
+        VFIO setup:
+          -m,  --multiboot [ARGS]       Create multiple VFIO setups with corresponding GRUB menu entries. Specify default GRUB menu entry by VGA IOMMU group ID.
+          -s,  --static [ARGS]          Single VFIO setup. Specify method of setup.
+              --skip-vfio-setup        Skip execution.
+              --uninstall-vfio-setup   Undo an existing VFIO setup.
 
-        Pre-setup OPTIONS: *
-          -c, --cpu                     Allocate CPU.
-          -e, --evdev                   Setup a virtual KVM switch.
-          -H, --hugepages [ARGS]        Create static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s).
-          --skip-pre-setup              Skip execution.
-          --uninstall-pre-setup         Undo changes made by preliminary setup.
+        Multiboot VFIO:
+              [x]                      The ID of the valid excluded VGA IOMMU group.
+              default                  Default menu entry excludes VFIO setup.
+              first                    Prefer the first valid excluded VGA IOMMU group.
+              last                     Prefer the last valid excluded VGA IOMMU group.
 
-        Hugepages ARGUMENTS: *
-          2M, 1G                        Hugepage size (2 MiB or 1 GiB).
-          [x]                           Amount of Hugepages (maximum amount is total memory subtracted by 4 GiB).
+        Static VFIO:
+              file                     Append output to system configuration files.
+              grub                     Append output to GRUB; single GRUB menu entry.
 
-          Example:
-            1G 16                       1 GiB hugepage * 16     == 16 GiB allocated to hugepages.
-            2M 8192                     2 MiB hugepage * 8912   == 16 GiB allocated to hugepages.
+        Post-setup:
+              --audio-loopback         Install the audio loopback service...           Loopback audio from Guest to Host (over Line-out to Line-in).
+              --auto-xorg [ARGS]       Install auto-Xorg...                            System service to find and set a valid boot VGA device for Xorg.
+              --libvirt-hooks          Install recommended Libvirt hooks.
+              --zram-swap [ARGS]       Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
+              --skip-post-setup        Skip execution.
+              --uninstall-post-setup   Undo all changes made by post-setup.
 
-#### VFIO setup
+        auto-xorg:
+              first  [vendor]          Find the first valid VGA device.
+              last   [vendor]          Find the last valid VGA device.
+              [sort] amd               Prefer AMD or ATI.
+              [sort] intel             Prefer Intel.
+              [sort] nvidia            Prefer NVIDIA.
+              [sort] other             Prefer any other brand.
 
-        VFIO setup OPTIONS: *
-          -m, --multiboot [ARGS]        Create multiple VFIO setups with corresponding GRUB menu entries. Specify default GRUB menu entry by [VGA](#VGA) IOMMU group ID (see ARGUMENTS).
-          -s, --static [ARGS]           Single VFIO setup. Specify method of setup (see ARGUMENTS).
-          --skip-vfio-setup             Skip execution.
-          --uninstall-vfio-setup        Undo an existing VFIO setup.
+        zram-swap:
+              [fraction]               Set the fraction of total available memory.
+              default                  Automatically calculate the fraction of total available memory.
+              force                    Force changes, even if zram-swap is allocated and in use.
 
-        Multiboot ARGUMENTS:"
-          [x]                           The ID of the valid excluded VGA IOMMU group.
-          default                       Default menu entry excludes VFIO setup.
-          first                         Prefer the first valid excluded VGA IOMMU group.
-          last                          Prefer the last valid excluded VGA IOMMU group.
-
-        Static VFIO setup ARGUMENTS:
-          file                          Append output to system configuration files.
-          grub                          Append output to GRUB; single GRUB menu entry.
-
-#### Post-setup *(To be added in a future release)*
-
-        Post-setup OPTIONS:
-          --audio-loopback              Install the audio loopback service...           Loopback audio from Guest to Host (over Line-out to Line-in). *
-          --auto-xorg [ARGS]            Install auto-Xorg...                            System service to find and set a valid boot VGA device for Xorg.
-          --libvirt-hooks               Install recommended Libvirt hooks.
-          --zram-swap [ARGS]            Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
-          --skip-post-setup             Skip execution.
-          --uninstall-post-setup        Undo all changes made by post-setup. *
-
-        auto-xorg ARGUMENTS:
-          first  [vendor]               Find the first valid VGA device.
-          last   [vendor]               Find the last valid VGA device.
-          [sort] amd                    Prefer AMD or ATI.
-          [sort] intel                  Prefer Intel.
-          [sort] nvidia                 Prefer NVIDIA.
-          [sort] other                  Prefer any other brand.
-
-        zram-swap ARGUMENTS:
-          [fraction]                    Set the fraction of total available memory.
-          default                       Automatically calculate the fraction of total available memory.
-          force                         Force changes, even if zram-swap is allocated and in use. *
-
-          Example (assume a Host with 32 GiB of RAM):
-            1/4 force                   Force changes and compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
-            1/8                         Compress 4 GiB of RAM, to create 8 GiB of swap, with 28 GiB free.
+        Example: (assume a Host with 32 GiB of RAM)
+              --zram-swap force 1/4    Compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
 
 #### * Options that skip *all* user prompts.
 
