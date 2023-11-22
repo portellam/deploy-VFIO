@@ -53,23 +53,23 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ## How-to
 ### Installer Usage:
 
-        -h,  --help        Print this help and exit.
-        -i,  --install     Install deploy-VFIO to system.
-        -u,  --uninstall   Uninstall deploy-VFIO from system.
+        -h, --help        Print this help and exit.
+        -i, --install     Install deploy-VFIO to system.
+        -u, --uninstall   Uninstall deploy-VFIO from system.
 
 ### Script Usage:
 
-        -h,  --help                  Print this help and exit.
-        -q,  --quiet                 Reduce verbosity; print only relevant questions and status statements.
-        -u,  --undo                  Undo changes (restore files) if script has exited early or unexpectedly.
+        -h, --help                  Print this help and exit.
+        -q, --quiet                 Reduce verbosity; print only relevant questions and status statements.
+        -u, --undo                  Undo changes (restore files) if script has exited early or unexpectedly.
         --ignore-distro              Ignore distribution check for Debian or Ubuntu system.
 
       Specify the database to reference before parsing IOMMU groups:
-        -x,  --xml [filename]        Cross-reference XML file. First-time, export if VFIO is not setup. Consecutive-times, imports if VFIO is setup.
+        -x, --xml [filename]        Cross-reference XML file. First-time, export if VFIO is not setup. Consecutive-times, imports if VFIO is setup.
       [filename]                     Reference specific file.
 
       Specify the IOMMU groups to parse:
-        -p,  --parse [groups]        Parse given IOMMU groups.
+        -p, --parse [groups]        Parse given IOMMU groups.
           (delimited by comma)
             all                      Select all IOMMU groups.
             no-vga                   Select all IOMMU groups without VGA devices.
@@ -81,9 +81,9 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
             --parse 1,14-16          Select IOMMU groups 1, 14, 15, and 16.
 
       Pre-setup:
-        -c,  --cpu                   Allocate CPU.
-        -e,  --evdev                 Setup a virtual KVM switch.
-        -h,  --hugepages [ARGS]      Create static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s).
+        -c, --cpu                   Allocate CPU.
+        -e, --evdev                 Setup a virtual KVM switch.
+        -h, --hugepages [ARGS]      Create static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s).
             --skip-pre-setup         Skip execution.
             --uninstall-pre-setup    Undo all changes made by pre-setup.
 
@@ -96,8 +96,8 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
             --hugepages 2M 8192      2 MiB hugepage 8912 == 16 GiB allocated to hugepages.
 
       VFIO setup:
-        -m,  --multiboot [ARGS]      Create multiple VFIO setups with corresponding GRUB menu entries. Specify default GRUB menu entry by VGA IOMMU group ID.
-        -s,  --static [ARGS]         Single VFIO setup. Specify method of setup.
+        -m, --multiboot [ARGS]      Create multiple VFIO setups with corresponding GRUB menu entries. Specify default GRUB menu entry by VGA IOMMU group ID.
+        -s, --static [ARGS]         Single VFIO setup. Specify method of setup.
             --skip-vfio-setup        Skip execution.
             --uninstall-vfio-setup   Undo an existing VFIO setup.
 
