@@ -652,7 +652,7 @@
         local line_iommu_id="<iommu_id>${iommu_group_id}</iommu_id>"
 
         for device in $( eval "${GET_DEVICES_FOR_IOMMU_GROUP}" ); do
-          local device_driver="$( args_common -ks ${device} | grep --ignore-case "driver" | cut --delimiter ' ' --fields 5 )"
+          local device_driver="$( lspci -ks ${device} | grep --ignore-case "driver" | cut --delimiter ' ' --fields 5 )"
           local line_device_id="<device_id>${device}</device_id>"
           local line_device_driver="<driver>${device_driver}</driver>"
 
@@ -702,7 +702,7 @@
         (( counter++ ))
       done
 
-      if ! is_enum_not_empty "DEVICE_DRIVER_XML_ENUM"; then
+      if ! is_enum_not_empty "DEVICE_DRIVER_XML_ENUM" &> /dev/null; then
         print_error_to_log "XML file is empty."
         return 1
       fi
