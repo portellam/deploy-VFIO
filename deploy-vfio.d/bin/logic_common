@@ -10,6 +10,7 @@
 # <traps>
   trap 'catch_error' SIGINT SIGTERM ERR
   trap 'catch_exit' EXIT
+  trap 'uncatch_exit' EXIT 3
 # </traps>
 
 # <functions>
@@ -32,6 +33,11 @@
       declare -gr SET_COLOR_RED='\033[0;31m'
       declare -gr SET_COLOR_YELLOW='\033[0;33m'
       declare -gr RESET_COLOR='\033[0m'
+
+      declare -gr SET_BOLD='\e[1m'
+      declare -gr SET_ITALIC='\e[3m'
+      declare -gr SET_UNDERLINE='\e[4m'
+      declare -gr RESET_TEXT='\e[0m'
 
     # <summary>Append output</summary>
       declare -gr PREFIX_PROMPT="${SCRIPT_NAME}: "
@@ -272,6 +278,10 @@
 
     function catch_exit {
       print_pass_or_fail_to_log
+      reset_ifs
+    }
+
+    function uncatch_exit {
       reset_ifs
     }
 
