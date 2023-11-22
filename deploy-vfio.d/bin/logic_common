@@ -231,7 +231,7 @@
     {
       local -r full_repo="${1}"
 
-      if ! git clone "https://github.com/${full_repo}" &> /dev/null; then
+      if ! git clone "https://github.com/${full_repo}"; then
         print_error_to_log "Failed to download repository."
         return 1
       fi
@@ -247,26 +247,24 @@
 
     function update_or_clone_git_repo
     {
-      local -r full_repo="${1}"
-      local -r user_name="${2}"
-      local -r full_path="${BIN_PATH}${full_repo}"
-      local -r user_path="${BIN_PATH}${user_name}"
+      local -r user_name="${1}"
+      local -r repo_name="${2}"
+      local -r full_path="${BIN_PATH}${repo_name}"
+      local -r full_repo="${user_name}/${repo_name}"
 
-      if [[ ! -d "${user_path}" ]] \
-        && ! sudo mkdir --parents "${user_path}" &> /dev/null; then
-        print_error_to_log "Failed to create directory '${user_path}'."
-        return 1
+      if [[ -d "${full_path}" ]] \
+        && [[ -z "$( ls -A "${full_path}" )" ]] \
+        && ! rm --recursive --force "${full_path}" &> /dev/null; then
+        print_error_to_log "Failed to delete empty directory '${full_path}'."
       fi
 
       if [[ ! -d "${full_path}" ]]; then
-        cd "${full_path}"
-        update_git_repo
-
-      elif [[ -d "${user_path}" ]]; then
+        cd "${BIN_PATH}"
         clone_git_repo "${full_repo}"
 
       else
-        return 1
+        cd "${full_path}"
+        update_git_repo "${full_path}"
       fi
     }
 

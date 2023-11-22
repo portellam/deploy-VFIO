@@ -88,11 +88,10 @@
 
         execute_audio_loopback_setup_prompt || return 1
 
-        local -r full_repo="${user_name}/${repo_name}"
         local -r script_name="installer.sh"
 
         if "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
-          update_or_clone_git_repo "${full_repo}" "${user_name}"
+          update_or_clone_git_repo "${user_name}" "${repo_name}"
         fi
 
         if ! execute_audio_loopback_setup_install \
@@ -155,11 +154,10 @@
 
         execute_auto_xorg_setup_prompt || return 1
 
-        local -r full_repo="${user_name}/${repo_name}"
         local -r script_name="installer.sh"
 
         if "${POST_SETUP_DO_EXECUTE_AUTO_XORG}"; then
-          update_or_clone_git_repo "${full_repo}" "${user_name}"
+          update_or_clone_git_repo "${user_name}" "${repo_name}"
         fi
 
         if ! get_usage_auto_xorg_prompt \
@@ -243,11 +241,10 @@
 
         execute_libvirt_hooks_setup_prompt || return 1
 
-        local -r full_repo="${user_name}/${repo_name}"
         local -r script_name="libvirt-hooks.sh"
 
         if "${POST_SETUP_DO_EXECUTE_LIBVIRT_HOOKS}"; then
-          update_or_clone_git_repo "${full_repo}" "${user_name}" || return 1
+          update_or_clone_git_repo "${user_name}" "${repo_name}" || return 1
         fi
 
         if ! execute_libvirt_hooks_setup_install \
@@ -352,7 +349,7 @@
         local -r script_name="install.sh"
 
         if "${POST_SETUP_DO_EXECUTE_ZRAM_SWAP}"; then
-          update_or_clone_git_repo "${full_repo}" "${user_name}"
+          update_or_clone_git_repo "${user_name}" "${repo_name}"
         fi
 
         if ! execute_zram_swap_setup_install \

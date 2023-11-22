@@ -51,6 +51,7 @@
   function do_pre_setup
   {
     do_skip_pre_setup || return 0
+    do_try_pre_setup
     print_pass_to_log "Pre-setup"
   }
 
@@ -60,7 +61,6 @@
     execute_virtual_kvm_setup || return 1
     execute_hugepages_setup || return 1
     add_user_to_groups_for_pre_setup || return 1
-    execute_qemu_configuration
   }
 
   function do_skip_pre_setup
@@ -199,38 +199,25 @@
       execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Static Isolcpu${RESET_COLOR}?"
     }
 
-    function execute_qemu_configuration
-    {
-      local -r output="Update QEMU configuration"
-
-      if ! execute_qemu_configuration_main; then
-        print_fail_to_log "${output}"
-        return 1
-      fi
-
-      print_pass_to_log "${output}"
-    }
-
     function execute_virtual_kvm_setup_main
     {
       local -r user_name="portellam"
       local -r repo_name="generate-evdev"
-      local -r full_repo="${user_name}/${repo_name}"
       local -r script_name="installer.bash"
 
       if ! command -v "${repo_name}" &> /dev/null \
-        || ! update_or_clone_git_repo "${full_repo}" "${repo_name}" \
-        || ! sudo bash "${repo_name}/${script_name}"; then
+        || ! update_or_clone_git_repo "${user_name}" "${repo_name}" \
+        || ! sudo bash "${BIN_PATH}${repo_name}/${script_name}"; then
         return 1
       fi
 
-      local -r options="--dump-xml --restart-service"
+      local -r options="--dump-xml"
 
       if "${PRE_SETUP_DO_EXECUTE_HUGEPAGES}"; then
         options+=" hugepages"
       fi
 
-      if ! sudo bash generate-evdev "${options}"; then
+      if ! sudo bash generate-evdev ${options}; then
         return 1
       fi
     }
