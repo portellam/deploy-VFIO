@@ -77,7 +77,7 @@
   function print_usage
   {
     local -ar output=(
-      "deploy-VFIO, effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and important quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine."
+      "deploy-VFIO, effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine."
       "Usage:\tbash ${SCRIPT_NAME} [OPTION] [ARGUMENTS]"
 
       "  -h,  --help\t\t\tPrint this help and exit."
@@ -90,8 +90,7 @@
       "       [filename]\t\tReference specific file."
 
       "\nSpecify the IOMMU groups to parse:"
-      "  -p,  --parse [groups]\t\tParse given IOMMU groups."
-      "\t(delimited by comma)"
+      "  -p,  --parse [groups]\t\tParse given IOMMU groups (delimited by comma)."
       "       all\t\t\tSelect all IOMMU groups."
       "       no-vga\t\t\tSelect all IOMMU groups without VGA devices."
       "       [x]\t\t\tSelect IOMMU group."

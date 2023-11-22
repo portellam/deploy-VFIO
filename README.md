@@ -12,7 +12,7 @@
 
 ## About
 ### Description:
-Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and important quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine; run Virtual machines on your Linux desktop.
+Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine.
 
 ### What is [VFIO](#VFIO)?
 #### Useful links
@@ -66,11 +66,10 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
       Specify the database to reference before parsing IOMMU groups:
         -x, --xml [filename]         Cross-reference XML file. First-time, export if VFIO is not setup. Consecutive-times, imports if VFIO is setup.
-      [filename]                     Reference specific file.
+            [filename]               Reference specific file.
 
       Specify the IOMMU groups to parse:
-        -p, --parse [groups]         Parse given IOMMU groups.
-          (delimited by comma)
+        -p, --parse [groups]         Parse given IOMMU groups (delimited by comma).
             all                      Select all IOMMU groups.
             no-vga                   Select all IOMMU groups without VGA devices.
             [x]                      Select IOMMU group.
