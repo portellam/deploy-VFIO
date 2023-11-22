@@ -231,9 +231,9 @@
       local -ar output=(
         "Usage:\tbash installer.bash [OPTION]"
         "Manages ${MAIN_EXECUTABLE} binaries and files.\n"
-        "  -h, --help\t\tPrint this help and exit."
-        "  -i, --install\t\tInstall ${MAIN_EXECUTABLE} to system."
-        "  -u, --uninstall\tUninstall ${MAIN_EXECUTABLE} from system."
+        "  -h,  --help\t\tPrint this help and exit."
+        "  -i,  --install\t\tInstall ${MAIN_EXECUTABLE} to system."
+        "  -u,  --uninstall\tUninstall ${MAIN_EXECUTABLE} from system."
       )
 
       echo -e "${output[*]}"
