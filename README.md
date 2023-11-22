@@ -1,7 +1,5 @@
 # deploy-VFIO
 
-### Want to know what is ahead? Checkout the [develop](https://github.com/portellam/deploy-vfio/tree/develop) branch.
-
 ## Contents
 * [About](#About)
 * [How-to](#How-to)
