@@ -1,14 +1,19 @@
 #!/bin/false
 
 #
-# Filename:       deploy-vfio_logic_pre-setup
+# Filename:       logic_pre-setup
 # Description:    Recommended pre-installation setups.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <params>
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+# <params>
+
 # <sources>
-  source deploy-vfio_logic_common
+  source "${SCRIPT_BIN_DIR}logic_common"
 # </sources>
 
 # <functions>
@@ -24,10 +29,6 @@
     declare -g PRE_SETUP_DO_EXECUTE_HUGEPAGES=false
     declare -g PRE_SETUP_DO_EXECUTE_ISOLCPU=false
     declare -g PRE_SETUP_DO_SKIP_ALL=false
-
-    # <summary>Evdev</summary>
-      declare -ga EVENT_DEVICES_ENUM=( )
-      declare -ga INPUT_DEVICES_ENUM=( )
 
     # <summary>Hugepages</summary>
       declare -gi HUGEPAGES_ALLOCATED_MEMORY=0
@@ -45,34 +46,13 @@
     # <summary>Isolcpus</summary>
       declare -g GRUB_CMDLINE_ISOLCPU=""
 
-    # <remarks>Filenames</remarks>
-      declare -gr APPARMOR_QEMU_DEST_PATH="/etc/apparmor.d/local/abstractions/libvirt-qemu"
-      declare -gr QEMU_DEST_PATH="/etc/libvirt/qemu.conf"
-      declare -gr QEMU_SRC_PATH="${ETC_BACKUPS_PATH}/qemu.conf"
   }
 
   function do_pre_setup
   {
-    create_temp_files_for_pre_setup &> /dev/null
     do_skip_pre_setup || return 0
-    local -r output="Pre-setup"
-
-    if ! restore_source_files_for_pre_setup \
-      || ! do_try_pre_setup; then
-      do_cleanup_pre_setup || restore_source_files_for_pre_setup
-      print_fail_to_log "${output}"
-      exit 1
-    fi
-
-    print_pass_to_log "${output}"
-  }
-
-  function do_cleanup_pre_setup
-  {
-    if ! restore_temp_files_for_pre_setup \
-      || ! delete_temp_files_for_pre_setup; then
-      print_error_to_log "Main setup: Cleanup failed."
-    fi
+    do_try_pre_setup
+    print_pass_to_log "Pre-setup"
   }
 
   function do_try_pre_setup
@@ -81,7 +61,6 @@
     execute_virtual_kvm_setup || return 1
     execute_hugepages_setup || return 1
     add_user_to_groups_for_pre_setup || return 1
-    execute_qemu_configuration
   }
 
   function do_skip_pre_setup
@@ -220,127 +199,25 @@
       execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Static Isolcpu${RESET_COLOR}?"
     }
 
-    function execute_qemu_configuration
+    function execute_virtual_kvm_setup_main
     {
-      local -r output="Update QEMU configuration"
+      local -r user_name="portellam"
+      local -r repo_name="generate-evdev"
+      local -r script_name="installer.bash"
 
-      if ! execute_qemu_configuration_main; then
-        print_fail_to_log "${output}"
+      if ! command -v "${repo_name}" &> /dev/null \
+        || ! update_or_clone_git_repo "${user_name}" "${repo_name}" \
+        || ! sudo bash "${BIN_PATH}${repo_name}/${script_name}"; then
         return 1
       fi
 
-      print_pass_to_log "${output}"
-    }
-
-    function execute_qemu_configuration_main
-    {
-      local -a file1_contents=( "${DISCLAIMER_FILE_CONTENTS[@]}" )
-      local -a file2_contents=( "${DISCLAIMER_FILE_CONTENTS[@]}" )
-
-      local -ar file1_permissions_output=(
-        ""
-        "### User permissions ###"
-      )
-
-      if "${PRE_SETUP_DO_EXECUTE_EVDEV}"; then
-        file1_contents+=(
-          "${file1_permissions_output[@]}"
-          "user = \"${USER}\""
-          "group = \"user\""
-        )
-      else
-        file1_contents+=(
-          "${file1_permissions_output[@]}"
-          "user = \"${LOGIN_USER}\""
-          "#group = \"user\""
-        )
-      fi
-
-      local -ar file1_hugepages_output=(
-        ""
-        "### Hugepages ###"
-      )
+      local options="--dump-xml"
 
       if "${PRE_SETUP_DO_EXECUTE_HUGEPAGES}"; then
-        file1_contents+=(
-          "${file1_hugepages_output[@]}"
-          "hugetlbfs_mount = \"/dev/hugepages\""
-        )
-
-        file2_contents+=(
-          ""
-          "# Hugepages"
-          "/dev/hugepages rw,"
-        )
-      else
-        file1_contents+=(
-          "${file1_hugepages_output[@]}"
-          "#hugetlbfs_mount = \"/dev/hugepages\""
-        )
+        options+=" --hugepages"
       fi
 
-      local -a file1_evdev_cgroups_output=( )
-
-      if "${PRE_SETUP_DO_EXECUTE_EVDEV}"; then
-        for device in ${EVENT_DEVICES_ENUM[@]}; do
-          file1_evdev_cgroups_output+=( "    \"/dev/input/by-id/${device}\"," )
-        done
-
-        for device in ${INPUT_DEVICES_ENUM[@]}; do
-          file1_evdev_cgroups_output+=( "    \"/dev/input/by-id/${device}\"," )
-        done
-      fi
-
-      local -ar file1_cgroups_output=(
-        ""
-        "### Devices ###"
-        "cgroup_device_acl = ["
-      )
-
-      local -a file1_default_cgroups_output=(
-        "    \"/dev/null\", \"/dev/full\", \"/dev/zero\","
-        "    \"/dev/random\", \"/dev/urandom\","
-        "    \"/dev/ptmx\", \"/dev/kvm\","
-        "    \"/dev/rtc\", \"/dev/hpet\""
-      )
-
-      if ${PRE_SETUP_DO_EXECUTE_EVDEV}; then
-        file1_contents+=(
-          "${file1_cgroups_output[@]}"
-          "${file1_evdev_cgroups_output[@]}"
-          "${file1_default_cgroups_output[@]}"
-          "]"
-        )
-
-        file2_contents+=(
-          ""
-          "# Evdev"
-          "/dev/input/* rw,"
-          "/dev/input/by-id/* rw,"
-        )
-      else
-        file1_contents+=(
-          "${file1_cgroups_output[@]}"
-          "${file1_default_cgroups_output[@]}"
-          "]"
-        )
-      fi
-
-      local -ar nvram_output=(
-        ""
-        "nvram = ["
-        "    \"/usr/share/OVMF/OVMF_CODE.fd:/usr/share/OVMF/OVMF_VARS.fd\","
-        "    \"/usr/share/OVMF/OVMF_CODE.secboot.fd:/usr/share/OVMF/OVMF_VARS.fd\","
-        "    \"/usr/share/AAVMF/AAVMF_CODE.fd:/usr/share/AAVMF/AAVMF_VARS.fd\","
-        "    \"/usr/share/AAVMF/AAVMF32_CODE.fd:/usr/share/AAVMF/AAVMF32_VARS.fd\""
-        "]"
-      )
-
-      file1_contents+=( "${nvram_output[*]}" )
-
-      if ! append_to_file_correctly "file1_contents" "${QEMU_DEST_PATH}" \
-        || ! append_to_file_correctly "file2_contents" "${APPARMOR_QEMU_DEST_PATH}" \
-        || ! systemctl restart libvirtd &> /dev/null ; then
+      if ! sudo bash generate-evdev "${options}"; then        # TODO: fix occurrence where first run after first clone yields an error with 'cd'. Consecutive runs do not have this issue.
         return 1
       fi
     }
@@ -348,10 +225,9 @@
     function execute_virtual_kvm_setup
     {
       execute_virtual_kvm_setup_prompt || return 0
-      get_input_devices
       local -r output="Evdev setup"
 
-      if ! is_input_device_enum_valid; then
+      if ! execute_virtual_kvm_setup_main; then
         print_fail_to_log "${output}"
         return 1
       fi
@@ -372,36 +248,6 @@
       fi
 
       execute_or_skip_prompt "Setup ${SET_COLOR_YELLOW}Evdev${RESET_COLOR}?"
-    }
-
-  # <summary>Files</summary>
-    function create_temp_files_for_pre_setup
-    {
-      create_temp_file_of_file "${APPARMOR_QEMU_DEST_PATH}" || return 1
-      create_temp_file_of_file "${QEMU_DEST_PATH}" || return 1
-    }
-
-    function delete_temp_files_for_pre_setup
-    {
-      delete_temp_file_of_file "${APPARMOR_QEMU_DEST_PATH}" || return 1
-      delete_temp_file_of_file "${QEMU_DEST_PATH}" || return 1
-    }
-
-    function restore_temp_files_for_pre_setup
-    {
-      copy_temp_file_to_file "${APPARMOR_QEMU_DEST_PATH}" || return 1
-      copy_temp_file_to_file "${QEMU_DEST_PATH}" || return 1
-    }
-
-    function restore_source_files_for_pre_setup
-    {
-      if ! rm --force "${APPARMOR_QEMU_DEST_PATH}" &> /dev/null \
-        || ! touch "${APPARMOR_QEMU_DEST_PATH}" &> /dev/null; then
-        print_error_to_log "Failed to clear file '${APPARMOR_QEMU_DEST_PATH}'."
-        return 1
-      fi
-
-      copy_this_file_to_other_file "${QEMU_SRC_PATH}" "${QEMU_DEST_PATH}" || return 1
     }
 
   # <summary>Getters</summary>
@@ -508,24 +354,6 @@
           || [[ "${HUGEPAGES_COUNT}" -eq "${ONE_GIB_IN_KIB}" ]] ); then
         PRE_SETUP_DO_EXECUTE_HUGEPAGES=true
       fi
-    }
-
-    function is_input_device_enum_valid
-    {
-      if ! is_enum_not_empty "EVENT_DEVICES_ENUM" \
-       || ! is_enum_not_empty "INPUT_DEVICES_ENUM"; then
-        PRE_SETUP_DO_EXECUTE_EVDEV=false
-        print_error_to_log "Cannot parse input devices."
-        return 1
-      fi
-
-      PRE_SETUP_DO_EXECUTE_EVDEV=true
-    }
-
-    function get_input_devices
-    {
-      EVENT_DEVICES_ENUM=( $( ls -l /dev/input/by-id | cut --delimiter "/" --fields 2 | grep --invert-match "total 0" ) )
-      INPUT_DEVICES_ENUM=( $( ls /dev/input/by-id ) )
     }
 
     function get_kernel_command_hugepages

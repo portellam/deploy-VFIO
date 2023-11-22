@@ -1,0 +1,24 @@
+#!/bin/false
+
+#
+# Filename:       sources
+# Description:    Master sources file.
+# Author(s):      Alex Portell <github.com/portellam>
+# Maintainer(s):  Alex Portell <github.com/portellam>
+#
+
+# <params>
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+# <params>
+
+# <sources>
+  source "${SCRIPT_BIN_DIR}args_common"
+  source "${SCRIPT_BIN_DIR}args_database"
+  source "${SCRIPT_BIN_DIR}args_main-setup"
+  source "${SCRIPT_BIN_DIR}args_post-setup"
+  source "${SCRIPT_BIN_DIR}args_pre-setup"
+  source "${SCRIPT_BIN_DIR}args_usage"
+  source "${SCRIPT_BIN_DIR}logic_common"
+  source "${SCRIPT_BIN_DIR}logic_compatibility"
+# </sources>

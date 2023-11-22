@@ -1,14 +1,19 @@
 #!/bin/false
 
 #
-# Filename:       deploy-vfio_logic_compatibility
+# Filename:       logic_compatibility
 # Description:    System checks and validation.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <params>
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+# <params>
+
 # <sources>
-  source deploy-vfio_logic_common
+  source "${SCRIPT_BIN_DIR}logic_common"
 # </sources>
 
 # <functions>
@@ -82,6 +87,7 @@
   {
     if ! command -v "xmlstarlet" &> /dev/null; then
       print_error_to_log "Required 'XML' libraries are not installed."
+      echo -e "To install, enter 'sudo apt install -y xmlstarlet'."
       return 1
     fi
   }

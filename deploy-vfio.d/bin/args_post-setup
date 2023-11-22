@@ -1,14 +1,19 @@
 #!/bin/false
 
 #
-# Filename:       deploy-vfio_args_post-setup
+# Filename:       args_post-setup
 # Description:    Argument logic for post setup.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <params>
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+# <params>
+
 # <sources>
-  source deploy-vfio_logic_post-setup
+  source "${SCRIPT_BIN_DIR}logic_post-setup"
 # </sources>
 
 # <functions>

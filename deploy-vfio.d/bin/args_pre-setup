@@ -1,14 +1,19 @@
 #!/bin/false
 
 #
-# Filename:       deploy-vfio_args_pre-setup
+# Filename:       args_pre-setup
 # Description:    Argument logic for pre setup.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <params>
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+# <params>
+
 # <sources>
-  source deploy-vfio_logic_pre-setup
+  source "${SCRIPT_BIN_DIR}logic_pre-setup"
 # </sources>
 
 # <functions>

@@ -1,19 +1,24 @@
 #!/bin/false
 
 #
-# Filename:       deploy-vfio_args_common
+# Filename:       args_common
 # Description:    Get and set arguments and options.
 # Author(s):      Alex Portell <github.com/portellam>
 # Maintainer(s):  Alex Portell <github.com/portellam>
 #
 
+# <params>
+  declare -g SCRIPT_DIR="/usr/local/bin/"
+  declare -g SCRIPT_BIN_DIR="${SCRIPT_DIR}deploy-vfio.d/"
+# <params>
+
 # <sources>
-  source deploy-vfio_args_compatibility
-  source deploy-vfio_args_main-setup
-  source deploy-vfio_args_database
-  source deploy-vfio_args_pre-setup
-  source deploy-vfio_args_post-setup
-  source deploy-vfio_args_usage
+  source "${SCRIPT_BIN_DIR}args_compatibility"
+  source "${SCRIPT_BIN_DIR}args_main-setup"
+  source "${SCRIPT_BIN_DIR}args_database"
+  source "${SCRIPT_BIN_DIR}args_pre-setup"
+  source "${SCRIPT_BIN_DIR}args_post-setup"
+  source "${SCRIPT_BIN_DIR}args_usage"
 # </sources>
 
 # <functions>
@@ -65,7 +70,7 @@
       if [[ "${1}" == "-h" ]] \
         || [[ "${1}" == "--help" ]]; then
         print_usage
-        exit 1
+        exit 3
       fi
     }
 
@@ -84,7 +89,6 @@
       fi
 
       while [[ "${1}" != "" ]]; do
-        # echo "{1} == '${1}'"          # <note>debug</note>
         parse_option "$@" || exit 1
         shift                         # <note>'shift' must remain in same scope to work.</note>
       done
