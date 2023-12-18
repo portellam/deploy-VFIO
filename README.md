@@ -67,6 +67,9 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
             [filename]               Reference specific file.
             --no-xml                 Skips prompt.
 
+      Example:"
+            --xml /usr/local/etc/deploy-vfio.d/parse.xml
+
       Specify the IOMMU groups to parse:
         -p, --parse [groups]         Parse given IOMMU groups (delimited by comma).
             all                      Select all IOMMU groups.
