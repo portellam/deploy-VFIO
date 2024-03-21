@@ -67,7 +67,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
     2. Change your directory to your home folder or anywhere safe: `cd ~`
     3. Clone the repository: `git clone https://www.github.com/portellam/deploy-vfio`
   - Download the ZIP file:
-    1. Viewing from the top of the repository's (current) webpage, click the green `<>&nbsp;Code&nbsp;` drop-down icon.
+    1. Viewing from the top of the repository's (current) webpage, click the green `<> Code ` drop-down icon.
     2. Click `Download ZIP`. Save this file.
     3. Open the `.zip` file, then extract its contents.
 - To make this script executable, you must:
