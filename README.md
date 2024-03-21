@@ -229,7 +229,7 @@ Example: (assume a Host with 32 GiB of RAM)
 6. **Virtual Video Capture**
   - Setup direct-memory-access (DMA) of a PCI VGA device output (video and audio) from a Guest to Host.
   - Implementation is known as [LookingGlass](https://looking-glass.io/).
-  - **Disclaimer:** Only supported for Guests running Windows NT 6+ or Windows 7 and later.
+  - **Disclaimer:** Only supported for Guests running Windows 7 and later (Windows NT 6.1+).
 
 ## Information
 ### BIOS v. UEFI
@@ -279,19 +279,19 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 
 ### Latest graphics hardware for various Guest Operating Systems
 #### Microsoft
-| Windows              | Device | Brand and model                        |
-| -------------------- | ------ | -------------------------------------- |
-| 7 and above or NT 6+ | VGA    | NVIDIA RTX 3000-series** or before     |
-| XP or NT 4           | VGA    | NVIDIA GTX 900-series* or before**     |
-|                      |        | AMD Radeon HD 7000-series* or before** |
-| 9x                   | VGA    | NVIDIA 7000-series GTX* or before      |
-|                      |        | any ATI model** (before AMD)           |
+| Windows                | Device | Brand and model                        |
+| --------------------   | ------ | -------------------------------------- |
+| 7 and above or NT 6.1+ | VGA    | NVIDIA RTX 3000-series** or before     |
+| XP or NT 4             | VGA    | NVIDIA GTX 900-series* or before**     |
+|                        |        | AMD Radeon HD 7000-series* or before** |
+| 9x                     | VGA    | NVIDIA 7000-series GTX* or before      |
+|                        |        | any ATI model** (before AMD)           |
 
 *\*UEFI and BIOS compatible.*
 
 *\*\*BIOS-only.*
 
-**Note:** For emulating video devices on Windows 9x and older legacy Operating Systems, try the project [SoftGPU](https://github.com/JHRobotics/softgpu). Modern CPUs likely more than powerful to emulate such hardware.
+**Note:** For emulating video devices on Windows 9x and older legacy Operating Systems, try the project [SoftGPU](https://github.com/JHRobotics/softgpu). Modern CPUs are more than powerful enough to emulate such hardware.
 
 #### Apple Macintosh
 ##### [AMD and NVIDIA GPU compatibility list (Apple Support article)](https://support.apple.com/en-us/102734)
