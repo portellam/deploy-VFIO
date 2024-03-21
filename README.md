@@ -73,7 +73,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   - `systemd` for system services.
   - IOMMU is supported (by the CPU) and enabled in the motherboard firmware (BIOS or UEFI).
     - For AMD machines:&nbsp;`AMD-Vi`
-    - For Intel machines:&nbsp;`VT-d`
+    - For Intel machines:&ensp;`VT-d`
     - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this script.
 
 ## Usage
