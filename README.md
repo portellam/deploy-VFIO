@@ -2,6 +2,7 @@
 ## Table of Contents
 - [Guest Machine Setup Guide](GUEST_MACHINE_SETUP_GUIDE)
 - [About](#about)
+- [Why?](#why)
 - [Host Requirements](#host-requirements)
 - [Get](#get)
 - [Usage](#usage)
