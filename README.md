@@ -21,17 +21,17 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ##### [PCI Passthrough guide (ArchLinux Wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)
 
 ### Why?
-1. **Separation of Concerns:** Independently operate your Workstation, Gaming, or School Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
+1. **Separation of Concerns:** Independently operate your workstation, gaming, and school Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
 2. **No Need for a Server**
   - Keep your Host OS desktop experience intact; turns your Host into a Type 2 [Hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor).
-  - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered Type 1 hypervisors or "bare-metal" Hypervisors.
+  - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered Type 1 or "bare-metal" Hypervisors.
 
 3. **Securely run a modern OS:** limited access to real hardware means greater security.
 4. **Ease of use:** support for automation by use of the [Command Line Interface](#usage) (CLI).
 5. **PCI Passthrough:** prioritize real hardware over emulation.
 6. **Quality of Life**: utilize multiple common-sense [features](#features) that are known to experienced users.
-7. **Your Host OS is [Supported](#supported-operating-systems).**
-8. **Securely run a [Legacy OS](#legacy).**
+7. **Your Host OS is [supported](#supported-operating-systems).**
+8. **Securely run a [legacy OS](#legacy).**
   - For even greater security, use the project [me_cleaner](#me_cleaner).
 
 ## Get
@@ -166,15 +166,15 @@ Example: (assume a Host with 32 GiB of RAM)
   -  If installed, the **Dynamic** [Libvirt hook](https://github.com/portellam/libvirt-hooks) (see source) will skip its execution, to preserve the Static isolation.
 
   2. **Allocate RAM**
-  - ***Static** Hugepages* eliminate the need to defragment Host memory (RAM) before allocating to Guest(s).
+  - **Static** huge memory pages eliminate the need to defragment Host memory (RAM) before allocating to Guest(s).
   - Reduces Host overhead, and improves both Host and Guest performance.
-  - If skipped, setup will install the *Libvirt hook* for **Dynamic** allocation (*Transparent hugepages*).
+  - If skipped, setup will install the Libvirt hook for **Dynamic** allocation (transparent hugepages).
 
 3. **Virtual Keyboard Video Mouse (KVM) switch**
   - Create a virtual KVM switch.
     - Allow a user to swap a group of Input devices (as a whole) between active Guest(s) and Host.
-    - Use the pre-defined macro (example: *'L-CTRL' + 'R-CTRL'*).
-  - Implementation is known as [Evdev](#evdev) (Event Devices)*.
+    - Use the pre-defined macro: `L-CTRL` + `R-CTRL`
+  - Implementation is known as [Evdev](#evdev) (Event Devices).
   - **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
 
 ### Main setup
@@ -193,25 +193,25 @@ Example: (assume a Host with 32 GiB of RAM)
     - Append output to system configuration files.
   - Best for systems with one or more PCI VGA device(s) and one integrated VGA device (iGPU).
 
-- **Dynamic VFIO setup *(To be implemented in a future release)***
+- **Dynamic VFIO setup** (To be implemented in a future release)
   - Use Libvirt hooks to bind or unbind devices at Guest(s) start or stop.
   - Most responsibility; best for more experienced users.
   - Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
-  - For an existing script, you may try this [project](https://github.com/PassthroughPOST/VFIO-Tools).
+  - For an existing script of similar scope, you may try this [project](https://github.com/PassthroughPOST/VFIO-Tools).
 
-### Post-setup *(To be implemented in a future release)*
+### Post-setup (To be implemented in a future release)
 1. **auto-xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
 2. **Guest Audio Capture**
-  - Create an [Audio loopback](https://github.com/portellam/audio-loopback) to output on the *Host* Audio device *Line-Out*.
-    - Listen on *Host* Audio device *Line-In* (from Guest PCI Audio device Line-Out).
-    - Useful for systems with multiple Audio devices.
+  - Create an [audio loopback](https://github.com/portellam/audio-loopback) to output on the Host audio device Line-Out.
+    - Listen on Host audio device Line-In (from Guest PCI Audio device Line-Out).
+    - Useful for systems with multiple audio devices.
   - For virtual implementation, see *Virtual Audio Capture*.
 
 3. **Libvirt Hooks**
 - Invoke [hooks](#libvirt-hooks) (scripts) for all or individual Guests.
 - Switch display input (video output) at Guest start.
-- **Dynamically** allocate CPU cores and CPU scheduler.
-- **Libvirt-nosleep** system service(s) per Guest to prevent Host sleep while Guest is active.
+- **Dynamically** allocate CPU cores and prioritize CPU scheduler.
+- **Libvirt-nosleep**: per Guest system service, to prevent Host sleep while Guest is active.
 
 4. **RAM as Compressed Swapfile/partition**
   - Create a compressed Swap device in Host memory, using the *lz4* algorithm (compression ratio of about 2:1).
@@ -219,18 +219,18 @@ Example: (assume a Host with 32 GiB of RAM)
     - Reduce chances of Host memory exhaustion (given an event of memory over-allocation).
   - Implementation is known as [zram-swap](#zram-swap).
 
-5. **Virtual Audio Capture *(To be implemented in a future release)***
-  - Setup a virtual Audio driver for Windows that provides a discrete Audio device.
+5. **Virtual Audio Capture**
+  - Setup a virtual audio driver for Windows that provides a discrete aAudio device.
   - Implementation is known as [Scream](#scream).
 
-6. **Virtual Video Capture *(To be implemented in a future release)***
-  - Setup direct-memory-access (DMA) of a PCI VGA device output (Video and Audio) from a Guest to Host.
+6. **Virtual Video Capture**
+  - Setup direct-memory-access (DMA) of a PCI VGA device output (video and audio) from a Guest to Host.
   - Implementation is known as [LookingGlass](https://looking-glass.io/).
   - **Disclaimer:** Only supported for Guests running Windows NT 6+ or Windows 7 and later.
 
 ## Information
 ### BIOS v. UEFI
-- Some VGA devices, such as NVIDIA, may not be recognizable in a VM, as the Video BIOS or VBIOS is *tainted* at Host OS start-up. This is usually the case if a given VGA device is used for the Host BIOS/UEFI booting process. To remedy this, you must obtain a clean copy of the VBIOS. You may reference this [project](https://github.com/Matoking/NVIDIA-vBIOS-VFIO-Patcher) for assistance, or review the [Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_the_boot_GPU_to_the_guest).
+- Some VGA devices, such as NVIDIA, may not be recognizable in a VM, as the video BIOS or VBIOS is *tainted* at Host OS start-up. This is usually the case if a given VGA device is used for the Host BIOS/UEFI booting process. To remedy this, you must obtain a clean copy of the VBIOS. You may reference this [project](https://github.com/Matoking/NVIDIA-vBIOS-VFIO-Patcher) for assistance, or review the [Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_the_boot_GPU_to_the_guest).
 
 - If your Host machine supports UEFI only and/or if UEFI is enabled (and CSM/BIOS is disabled),
 BIOS-only VGA devices may not be available as Host video output. BIOS-only VGA devices may only be available explicitly for hardware passthrough.
