@@ -38,16 +38,16 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 **Disclaimer:** See [below](#latest-graphics-hardware-for-various-guest-operating-systems) for supported [VGA](#VGA) devices.
 
 ## Host Requirements
-- Currently supported operating systems
+- Currently supported operating systems:
   | Linux Distributions | Supported? | Tested |
   | ------------------- | ---------- | ------ |
   | Arch                | No         | none   |
-  | Debian[*](#debian-derivatives-include-linux-mint-pop-os-and-ubuntu)           | Yes        | 11+    |
+  | Debian[<sup>1</sup>](#1-debian-derivatives-include-linux-mint-pop-os-and-ubuntu)           | Yes        | 11,12  |
   | Gentoo              | No         | none   |
   | Red Hat Enterprise  | No         | none   |
   | SUSE                | No         | none   |
 
-##### * Debian derivatives include Linux Mint, Pop! OS, and Ubuntu.
+##### 1. Debian derivatives include Linux Mint, Pop! OS, and Ubuntu.
 
 - Required software packages (for this script):
   `xmlstarlet`
