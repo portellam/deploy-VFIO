@@ -1,8 +1,8 @@
 # deploy-VFIO
 ## Table of Contents
 - [About](#about)
+- [Host Requirements](#host-requirements)
 - [Get](#get)
-- [Requirements](#requirements)
 - [Usage](#usage)
 - [Features](#features)
 - [Information](#information)
@@ -23,8 +23,8 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ### Why?
 1. **Separation of Concerns:** Independently operate your workstation, gaming, and school Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
 2. **No Need for a Server**
-  - Keep your Host OS desktop experience intact; turns your Host into a Type 2 [Hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor).
-  - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered Type 1 or "bare-metal" Hypervisors.
+  - Keep your Host OS desktop experience intact; turns your Host into a *Type-2* [Hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor).
+  - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered *Type-1* or bare-metal Hypervisors.
 
 3. **Securely run a modern OS:** limited access to real hardware means greater security.
 4. **Ease of use:** support for automation by use of the [Command Line Interface](#usage) (CLI).
@@ -37,13 +37,28 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 **Disclaimer:** See [below](#latest-graphics-hardware-for-various-guest-operating-systems) for supported [VGA](#VGA) devices.
 
+## Host Requirements
+- Currently supported operating systems:
+  - Debian Linux, or derivative (Linux Mint, Ubuntu, etc.)
+- Required software packages (for this script):
+  `xmlstarlet`
+  - To install packages:
+    - Debian Linux: `sudo apt install -y xmlstarlet`
+- Other requirements:
+  - `GRUB` to execute command lines at boot (if chosen).
+  - `systemd` for system services.
+  - IOMMU is supported (by the CPU) and enabled in the motherboard firmware (BIOS or UEFI).
+    - For AMD machines:&nbsp;`AMD-Vi`
+    - For Intel machines:&ensp;&nbsp;`VT-d`
+    - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this script.
+
 ## Get
 - To download this script, you may:
   - Clone the repository:
     1. Open a Command Line Interface (CLI).
       - Open a console emulator (for Debian systems: Konsole).
-      - Open a existing console: press `CTRL` + `ALT` +... `F2`, `F3`, `F4`, `F5`, or `F6`.
-        - **To return to the desktop,** press `CTRL + ALT + F7`.
+      - Open a existing console: press `CTRL` + `ALT` + `F2`, `F3`, `F4`, `F5`, or `F6`.
+        - **To return to the desktop,** press `CTRL` + `ALT` + `F7`.
         - `F1` is reserved for debug output of the Linux kernel.
         - `F7` is reserved for video output of the desktop environment.
         - `F8` and above are unused.
@@ -60,20 +75,6 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   3. Make the installer script file executable: `chmod +x installer.bash`
     - Do **not** make any other script files executable. The installer will perform this action.
     - Do **not** make any non-script file executable. This is not necessary and potentially dangerous.
-
-## Host Requirements
-- Currently supported operating systems:
-  - Debian Linux, or derivative (Linux Mint, Ubuntu, etc.)
-- Required software packages (for this script):
-  `xmlstarlet`
-  - To install packages:
-    - Debian Linux: `sudo apt install -y xmlstarlet`
-- Other requirements:
-  - `systemd` for system services.
-  - IOMMU is supported (by the CPU) and enabled in the motherboard firmware (BIOS or UEFI).
-    - For AMD machines:&nbsp;`AMD-Vi`
-    - For Intel machines:&nbsp;`VT-d`
-    - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this script.
 
 ## Usage
 **`installer.bash`**
@@ -206,10 +207,10 @@ Example: (assume a Host with 32 GiB of RAM)
   - Use Libvirt hooks to bind or unbind devices at Guest(s) start or stop.
   - Most responsibility; best for more experienced users.
   - Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
-  - For an existing script of similar scope, you may try this [project](https://github.com/PassthroughPOST/VFIO-Tools).
+  - For an existing script of similar scope, you may try the project [VFIO-Tools](https://github.com/PassthroughPOST/VFIO-Tools).
 
 ### Post-setup (To be implemented in a future release)
-1. **auto-xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
+1. **auto-Xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
 2. **Guest Audio Capture**
   - Create an [audio loopback](https://github.com/portellam/audio-loopback) to output on the Host audio device Line-Out.
     - Listen on Host audio device Line-In (from Guest PCI Audio device Line-Out).
@@ -217,7 +218,7 @@ Example: (assume a Host with 32 GiB of RAM)
   - For virtual implementation, see *Virtual Audio Capture*.
 
 3. **Libvirt Hooks**
-- Invoke [hooks](#libvirt-hooks) (scripts) for all or individual Guests.
+- Invoke [hooks](#libvirt-hooks) or scripts for all or individual Guests.
 - Switch display input (video output) at Guest start.
 - **Dynamically** allocate CPU cores and prioritize CPU scheduler.
 - **Libvirt-nosleep**: per Guest system service, to prevent Host sleep while Guest is active.
@@ -284,25 +285,27 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 ```
 
 ### Latest graphics hardware for various Guest Operating Systems
-#### Microsoft
-| Windows                | Device | Brand and model                        |
-| --------------------   | ------ | -------------------------------------- |
-| 7 and above or NT 6.1+ | VGA    | NVIDIA RTX 3000-series** or before     |
-| XP or NT 4             | VGA    | NVIDIA GTX 900-series* or before**     |
-|                        |        | AMD Radeon HD 7000-series* or before** |
-| 9x                     | VGA    | NVIDIA 7000-series GTX* or before      |
-|                        |        | any ATI model** (before AMD)           |
+#### Apple Macintosh
+##### [AMD and NVIDIA GPU compatibility list (Apple Support article)](https://support.apple.com/en-us/102734)
+##### [More detailed NVIDIA GPU compatibility list (archive of TonyMacX86 forum thread)](https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/)
 
-*\*UEFI and BIOS compatible.*
+#### Microsoft Windows
+| Windows version        | Device type | Brand and model                           |
+| --------------------   | ----------- | ----------------------------------------- |
+| 10 and above or NT 10+ | VGA         | NVIDIA RTX 4000-series[<sup>2</sup>](#2-uefi-only) or before       |
+| 7 and above or NT 6.1+ | VGA         | NVIDIA RTX 1000-series[<sup>2</sup>](#2-uefi-only) or before       |
+| XP or NT 4             | VGA         | NVIDIA GTX 900-series[<sup>3</sup>](#3-uefi-or-bios-compatible) or before[<sup>3</sup>](#3-uefi-or-bios-compatible)          |
+|                        |             | AMD Radeon HD 7000-series[<sup>3</sup>](#3-uefi-and-or-compatible) or before[<sup>3</sup>](#3-uefi-or-bios-compatible) |
+| 9x                     | VGA         | NVIDIA 7000-series GTX[<sup>1</sup>](#1-bios-only) or before       |
+|                        |             | any ATI model[<sup>1</sup>](#1-bios-only) (before AMD)             |
 
-*\*\*BIOS-only.*
+##### 1. *BIOS only.*
+##### 2. *UEFI only.*
+##### 3. *UEFI or BIOS compatible.*
 
 **Note:** For emulating video devices on Windows 9x and older legacy operating systems, try the project [SoftGPU](https://github.com/JHRobotics/softgpu). Modern CPUs are more than powerful enough to emulate such hardware.
 
-#### Apple Macintosh
-##### [AMD and NVIDIA GPU compatibility list (Apple Support article)](https://support.apple.com/en-us/102734)
 
-##### [More detailed NVIDIA GPU compatibility list (archive of TonyMacX86 forum thread)](https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/)
 
 ### Supported Host Operating Systems
 | Linux Distributions | Supported? | Tested |
@@ -349,6 +352,6 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 Use at your own risk. Please review your system's specifications and resources.
 
 ## Contact
-Did you encounter a bug? Do you need help? Notice any dead links? Please contact by [raising an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/creating-an-issue) with the project itself. The project is still in active development and the Author monitors this repository occasionally.
+Did you encounter a bug? Do you need help? Notice any dead links? Please contact by [raising an issue](https://github.com/portellam/deploy-VFIO/issues) with the project itself. The project is still in active development and the [Author](https://github.com/portellam) monitors this repository occasionally.
 
 Thanks!
