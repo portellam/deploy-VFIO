@@ -288,6 +288,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 |                      |        | any ATI model** (before AMD)           |
 
 *\*UEFI and BIOS compatible.*
+
 *\*\*BIOS-only.*
 
 #### Apple Macintosh
