@@ -38,8 +38,17 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 **Disclaimer:** See [below](#latest-graphics-hardware-for-various-guest-operating-systems) for supported [VGA](#VGA) devices.
 
 ## Host Requirements
-- Currently supported operating systems:
-  - Debian Linux, or derivative (Linux Mint, Ubuntu, etc.)
+- Currently supported operating systems
+  | Linux Distributions | Supported? | Tested |
+  | ------------------- | ---------- | ------ |
+  | Arch                | No         | none   |
+  | Debian[*](#debian-derivatives-include-linux-mint-pop-os-and-ubuntu)           | Yes        | 11+    |
+  | Gentoo              | No         | none   |
+  | Red Hat Enterprise  | No         | none   |
+  | SUSE                | No         | none   |
+
+##### * Debian derivatives include Linux Mint, Pop! OS, and Ubuntu.
+
 - Required software packages (for this script):
   `xmlstarlet`
   - To install packages:
@@ -304,17 +313,6 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 ##### 3. *UEFI or BIOS compatible.*
 
 **Note:** For emulating video devices on Windows 9x and older legacy operating systems, try the project [SoftGPU](https://github.com/JHRobotics/softgpu). Modern CPUs are more than powerful enough to emulate such hardware.
-
-
-
-### Supported Host Operating Systems
-| Linux Distributions | Supported? | Tested |
-| ------------------- | ---------- | ------ |
-| Arch                | No         | none   |
-| Debian              | Yes        | 11+    |
-| Gentoo              | No         | none   |
-| Red Hat Enterprise  | No         | none   |
-| SUSE                | No         | none   |
 
 ## References
 #### Hugepages
