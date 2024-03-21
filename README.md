@@ -266,21 +266,23 @@ Throughout the script source code and documentation, the acronym *VGA* is used.
 In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VGA may *refer to the computer display standard, the 15-pin D-subminiature VGA connector, or the 640×480 resolution characteristic of the VGA hardware.*<sup>[Wikipedia article](https://en.wikipedia.org/wiki/Video_Graphics_Array)</sup>
 
 #### Example
+`lspci -nnk | grep --extended-regexp --ignore-case "vga|graphics"`
+
+##### Output:
 ```
-$ lspci -nnk | grep --extended-regexp --ignore-case "vga|graphics"
 01:00.0 VGA compatible controller [0300]: NVIDIA Corporation GA104 [GeForce RTX 3070] [10de:2484] (rev a1)
 04:00.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Cayman PRO [Radeon HD 6950] [1002:6719]
 ```
 
 ### Latest graphics hardware for various Guest Operating Systems
 #### Microsoft
-| Windows              | Device type    | Brand and model                         |
-| -------------------- | -------------- | --------------------------------------- |
-| NT 6+ or 7 and above | Video/graphics | NVIDIA RTX 3000-series** or before      |
-| NT 5 or XP           | Video/graphics | NVIDIA GTX 900-series* or before**      |
-|                      |                | AMD Radeon HD 7000-series* or before**  |
-| 9x                   | Video/graphics | NVIDIA 7000-series GTX* or before       |
-|                      |                | any ATI model** (before AMD)            |
+| Windows              | Device type    | Brand and model                        |
+| -------------------- | -------------- | -------------------------------------- |
+| 7 and above or NT 6+ | Video/graphics | NVIDIA RTX 3000-series** or before     |
+| XP or NT 4           | Video/graphics | NVIDIA GTX 900-series* or before**     |
+|                      |                | AMD Radeon HD 7000-series* or before** |
+| 9x                   | Video/graphics | NVIDIA 7000-series GTX* or before      |
+|                      |                | any ATI model** (before AMD)           |
 
 *\*UEFI and BIOS compatible.*
 *\*\*BIOS-only.*
