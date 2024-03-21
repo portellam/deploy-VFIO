@@ -1,6 +1,5 @@
 # deploy-VFIO
 ## Table of Contents
-  - [Guest Machine Setup Guide](GUESTS_GUIDE.md)
   - [About](#about)
   - [Get](#get)
   - [Requirements](#requirements)
@@ -198,7 +197,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
     - Use Libvirt hooks to bind or unbind devices at Guest(s) start or stop.
     - Most responsibility; best for more experienced users.
     - Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
-    - For an existing script, you may try this [project](#vfio-tools).
+    - For an existing script, you may try this [project](https://github.com/PassthroughPOST/VFIO-Tools).
 
 ### Post-setup *(To be implemented in a future release)*
   1. **auto-xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
