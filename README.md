@@ -70,6 +70,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   - To install packages:
     - Debian Linux: `sudo apt install -y xmlstarlet`
 - Other requirements:
+  - `GRUB` to execute command lines at boot (if chosen).
   - `systemd` for system services.
   - IOMMU is supported (by the CPU) and enabled in the motherboard firmware (BIOS or UEFI).
     - For AMD machines:&nbsp;`AMD-Vi`
@@ -350,6 +351,6 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 Use at your own risk. Please review your system's specifications and resources.
 
 ## Contact
-Did you encounter a bug? Do you need help? Notice any dead links? Please contact by [raising an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/creating-an-issue) with the project itself. The project is still in active development and the Author monitors this repository occasionally.
+Did you encounter a bug? Do you need help? Notice any dead links? Please contact by [raising an issue](https://github.com/portellam/deploy-VFIO/issues) with the project itself. The project is still in active development and the [Author](https://github.com/portellam) monitors this repository occasionally.
 
 Thanks!
