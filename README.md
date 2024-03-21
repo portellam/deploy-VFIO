@@ -39,13 +39,13 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 ## Host Requirements
 - Currently supported operating systems:
-  | Linux Distributions | Supported? | Tested |
-  | ------------------- | ---------- | ------ |
-  | Arch                | No         | none   |
-  | Debian[<sup>1</sup>](#1-debian-derivatives-include-linux-mint-pop-os-and-ubuntu)           | Yes        | 11,12  |
-  | Gentoo              | No         | none   |
-  | Red Hat Enterprise  | No         | none   |
-  | SUSE                | No         | none   |
+  | Linux Distributions | Supported? | Tested  |
+  | ------------------- | ---------- | ------- |
+  | Arch                | No         | none    |
+  | Debian[<sup>1</sup>](#1-debian-derivatives-include-linux-mint-pop-os-and-ubuntu)           | Yes        | 11, 12  |
+  | Gentoo              | No         | none    |
+  | Red Hat Enterprise  | No         | none    |
+  | SUSE                | No         | none    |
 
 ##### 1. Debian derivatives include Linux Mint, Pop! OS, and Ubuntu.
 
