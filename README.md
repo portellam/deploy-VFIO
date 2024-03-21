@@ -297,13 +297,13 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 ##### [More detailed NVIDIA GPU compatibility list (archive of TonyMacX86 forum thread)](https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/)
 
 ### Supported Host Operating Systems
-| Distribution Family | Supported? | Tested Distros             |
-| ------------------- | ---------- | -------------------------- |
-| Arch                | No         | untested                   |
-| Debian              | Yes        | *Debian 11, 12*            |
-| Gentoo              | No         | untested                   |
-| Red Hat             | No         | untested                   |
-| SUSE                | No         | untested                   |
+| Linux Distributions | Supported? | Tested |
+| ------------------- | ---------- | ------ |
+| Arch                | No         | none   |
+| Debian              | Yes        | 11+    |
+| Gentoo              | No         | none   |
+| Red Hat Enterprise  | No         | none   |
+| SUSE                | No         | none   |
 
 ## References
 #### Hugepages
