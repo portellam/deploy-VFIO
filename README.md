@@ -64,16 +64,16 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 ## Host Requirements
 - Currently supported operating systems:
-  - Debian Linux, or derivative.
+  - Debian Linux, or derivative (Linux Mint, Ubuntu, etc.)
 - Required software packages (for this script):
   `xmlstarlet`
+  - To install packages:
+    - Debian Linux: `sudo apt install -y xmlstarlet`
 - Other requirements:
   - `systemd` for system services.
   - **IOMMU** is supported (by the CPU) and enabled in the motherboard firmware (BIOS or UEFI).
     - For **AMD** machines:&ensp;&nbsp;`AMD-Vi`
     - For **Intel** machines:&nbsp;`VT-d`
-  To install packages:
-    - Debian Linux: `sudo apt install -y xmlstarlet`
 
 ## Usage
 **`installer.bash`**
