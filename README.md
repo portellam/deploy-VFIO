@@ -1,6 +1,5 @@
 # deploy-VFIO
 ## Table of Contents
-  - [Guest Machine Setup Guide](GUESTS_GUIDE.md)
   - [About](#about)
   - [Get](#get)
   - [Requirements](#requirements)
