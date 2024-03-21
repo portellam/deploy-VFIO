@@ -21,9 +21,9 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ##### [PCI Passthrough guide (ArchLinux Wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)
 
 ### Why?
-  1. **Separation of Concerns:** Independently operate your Workstation, Gaming, or School Operating Systems (OS), as <sup>[Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine)</sup> (VMs), under one Host machine.
+  1. **Separation of Concerns:** Independently operate your Workstation, Gaming, or School Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
   2. **No Need for a Server**
-    - Keep your Host OS desktop experience intact; turns your Host into a Type 2 <sup>[hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor)</sup>.
+    - Keep your Host OS desktop experience intact; turns your Host into a Type 2 [Hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor).
     - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered Type 1 hypervisors or "bare-metal" Hypervisors.
 
   3. **Securely run a modern OS:** limited access to real hardware means greater security.
@@ -202,33 +202,28 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ### Post-setup *(To be implemented in a future release)*
   1. **auto-xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
   2. **Guest Audio Capture**
-
     - Create an [Audio loopback](https://github.com/portellam/audio-loopback) to output on the *Host* Audio device *Line-Out*.
       - Listen on *Host* Audio device *Line-In* (from Guest PCI Audio device Line-Out).
       - Useful for systems with multiple Audio devices.
     - For virtual implementation, see *Virtual Audio Capture*.
 
   3. **Libvirt Hooks**
-
   - Invoke [hooks](#libvirt-hooks) (scripts) for all or individual Guests.
   - Switch display input (video output) at Guest start.
   - **Dynamically** allocate CPU cores and CPU scheduler.
   - **Libvirt-nosleep** system service(s) per Guest to prevent Host sleep while Guest is active.
 
   4. **RAM as Compressed Swapfile/partition**
-
     - Create a compressed Swap device in Host memory, using the *lz4* algorithm (compression ratio of about 2:1).
       - Reduce swapiness to existing Host swap devices.
       - Reduce chances of Host memory exhaustion (given an event of memory over-allocation).
     - Implementation is known as [zram-swap](#zram-swap).
 
   5. **Virtual Audio Capture *(To be implemented in a future release)***
-
     - Setup a virtual Audio driver for Windows that provides a discrete Audio device.
     - Implementation is known as [Scream](#scream).
 
   6. **Virtual Video Capture *(To be implemented in a future release)***
-
     - Setup direct-memory-access (DMA) of a PCI VGA device output (Video and Audio) from a Guest to Host.
     - Implementation is known as [LookingGlass](https://looking-glass.io/).
     - **Disclaimer:** Only supported for Guests running Windows NT 6+ or Windows 7 and later.
