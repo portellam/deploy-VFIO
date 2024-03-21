@@ -32,7 +32,8 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 6. **Quality of Life**: utilize multiple common-sense [features](#features) that are known to experienced users.
 7. **Your Host OS is [supported](#supported-operating-systems).**
 8. **Securely run a [legacy OS](#legacy).**
-  - For even greater security, use the project [me_cleaner](#me_cleaner).
+
+For even greater security, combine a VFIO setup with the use of [me_cleaner](#me_cleaner).
 
 ## Get
 - To download this script, you may:
