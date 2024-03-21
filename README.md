@@ -286,8 +286,12 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 ```
 
 ### Latest graphics hardware for various Guest Operating Systems
-#### Microsoft
-| Windows                | Device type | Brand and model                           |
+#### Apple Macintosh
+##### [AMD and NVIDIA GPU compatibility list (Apple Support article)](https://support.apple.com/en-us/102734)
+##### [More detailed NVIDIA GPU compatibility list (archive of TonyMacX86 forum thread)](https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/)
+
+#### Microsoft Windows
+| Windows version        | Device type | Brand and model                           |
 | --------------------   | ----------- | ----------------------------------------- |
 | 10 and above or NT 10+ | VGA         | NVIDIA RTX 4000-series[<sup>2</sup>](#2-uefi-only) or before       |
 | 7 and above or NT 6.1+ | VGA         | NVIDIA RTX 1000-series[<sup>2</sup>](#2-uefi-only) or before       |
@@ -302,10 +306,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 
 **Note:** For emulating video devices on Windows 9x and older legacy operating systems, try the project [SoftGPU](https://github.com/JHRobotics/softgpu). Modern CPUs are more than powerful enough to emulate such hardware.
 
-#### Apple Macintosh
-##### [AMD and NVIDIA GPU compatibility list (Apple Support article)](https://support.apple.com/en-us/102734)
 
-##### [More detailed NVIDIA GPU compatibility list (archive of TonyMacX86 forum thread)](https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/)
 
 ### Supported Host Operating Systems
 | Linux Distributions | Supported? | Tested |
