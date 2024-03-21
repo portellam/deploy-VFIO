@@ -1,6 +1,7 @@
 # deploy-VFIO
 ## Table of Contents
 - [About](#about)
+- [Why?](#why)
 - [Host Requirements](#host-requirements)
 - [Get](#get)
 - [Usage](#usage)
