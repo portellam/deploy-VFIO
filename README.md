@@ -291,6 +291,8 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 
 *\*\*BIOS-only.*
 
+**Note:** For emulating video devices on Windows 9x and older legacy Operating Systems, try the project [SoftGPU](https://github.com/JHRobotics/softgpu). Modern CPUs likely more than powerful to emulate such hardware.
+
 #### Apple Macintosh
 ##### [AMD and NVIDIA GPU compatibility list (Apple Support article)](https://support.apple.com/en-us/102734)
 
