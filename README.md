@@ -67,7 +67,12 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   - Debian Linux, or derivative.
 - Required software packages (for this script):
   `xmlstarlet`
-- To install packages:
+- Other requirements:
+  - `systemd` for system services.
+  - **IOMMU** is supported (by the CPU) and enabled in the motherboard firmware (BIOS or UEFI).
+    - For **AMD** machines:&ensp;&nbsp;`AMD-Vi`
+-   - For **Intel** machines:&nbsp;`VT-d`
+  To install packages:
     - Debian Linux: `sudo apt install -y xmlstarlet`
 
 ## Usage
@@ -224,7 +229,7 @@ Example: (assume a Host with 32 GiB of RAM)
   - Implementation is known as [zram-swap](#zram-swap).
 
 5. **Virtual Audio Capture**
-  - Setup a virtual audio driver for Windows that provides a discrete aAudio device.
+  - Setup a virtual audio driver for Windows that provides a discrete audio device.
   - Implementation is known as [Scream](#scream).
 
 6. **Virtual Video Capture**
@@ -292,7 +297,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 
 *\*\*BIOS-only.*
 
-**Legacy guests:** For emulating video devices on Windows 9x and older operating systems, try the project [SoftGPU](https://github.com/JHRobotics/softgpu).
+**Note:** For emulating video devices on Windows 9x and older legacy operating systems, try the project [SoftGPU](https://github.com/JHRobotics/softgpu). Modern CPUs are more than powerful enough to emulate such hardware.
 
 #### Apple Macintosh
 ##### [AMD and NVIDIA GPU compatibility list (Apple Support article)](https://support.apple.com/en-us/102734)
@@ -341,7 +346,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 &ensp;<sub>**[Tuning benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
 
 ## Disclaimer
-Use at your own risk. Please review your system's specifications and resources. Check BIOS/UEFI for Virtualization support (AMD IOMMU or Intel VT-d).
+Use at your own risk. Please review your system's specifications and resources.
 
 ## Contact
 Did you encounter a bug? Do you need help? Notice any dead links? Please contact by [raising an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/creating-an-issue) with the project itself. The project is still in active development and the Author monitors this repository occasionally.
