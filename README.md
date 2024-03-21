@@ -2,8 +2,8 @@
 ## Table of Contents
 - [Guest Machine Setup Guide](GUEST_MACHINE_SETUP_GUIDE)
 - [About](#about)
+- [Host Requirements](#host-requirements)
 - [Get](#get)
-- [Requirements](#requirements)
 - [Usage](#usage)
 - [Features](#features)
 - [Information](#information)
@@ -24,8 +24,8 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ### Why?
 1. **Separation of Concerns:** Independently operate your workstation, gaming, and school Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
 2. **No Need for a Server**
-  - Keep your Host OS desktop experience intact; turns your Host into a Type 2 [Hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor).
-  - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered Type 1 or "bare-metal" Hypervisors.
+  - Keep your Host OS desktop experience intact; turns your Host into a *Type-2* [Hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor).
+  - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered *Type-1* or bare-metal Hypervisors.
 
 3. **Securely run a modern OS:** limited access to real hardware means greater security.
 4. **Ease of use:** support for automation by use of the [Command Line Interface](#usage) (CLI).
@@ -37,30 +37,6 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 **Advertisement:** For even greater security, use [me_cleaner](#me_cleaner) alongside a VFIO setup.
 
 **Disclaimer:** See [below](#latest-graphics-hardware-for-various-guest-operating-systems) for supported [VGA](#VGA) devices.
-
-## Get
-- To download this script, you may:
-  - Clone the repository:
-    1. Open a Command Line Interface (CLI).
-      - Open a console emulator (for Debian systems: Konsole).
-      - Open a existing console: press `CTRL` + `ALT` +... `F2`, `F3`, `F4`, `F5`, or `F6`.
-        - **To return to the desktop,** press `CTRL + ALT + F7`.
-        - `F1` is reserved for debug output of the Linux kernel.
-        - `F7` is reserved for video output of the desktop environment.
-        - `F8` and above are unused.
-
-    2. Change your directory to your home folder or anywhere safe: `cd ~`
-    3. Clone the repository: `git clone https://www.github.com/portellam/deploy-vfio`
-  - Download the ZIP file:
-    1. Viewing from the top of the repository's (current) webpage, click the green `<> Code ` drop-down icon.
-    2. Click `Download ZIP`. Save this file.
-    3. Open the `.zip` file, then extract its contents.
-- To make this script executable, you must:
-  1. Open the CLI (see above).
-  2. Go to the directory of where the cloned/extracted repository folder is: `cd name_of_parent_folder/deploy-vfio/`
-  3. Make the installer script file executable: `chmod +x installer.bash`
-    - Do **not** make any other script files executable. The installer will perform this action.
-    - Do **not** make any non-script file executable. This is not necessary and potentially dangerous.
 
 ## Host Requirements
 - Currently supported operating systems:
@@ -76,6 +52,30 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
     - For AMD machines:&nbsp;`AMD-Vi`
     - For Intel machines:&ensp;&nbsp;`VT-d`
     - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this script.
+
+## Get
+- To download this script, you may:
+  - Clone the repository:
+    1. Open a Command Line Interface (CLI).
+      - Open a console emulator (for Debian systems: Konsole).
+      - Open a existing console: press `CTRL` + `ALT` + `F2`, `F3`, `F4`, `F5`, or `F6`.
+        - **To return to the desktop,** press `CTRL` + `ALT` + `F7`.
+        - `F1` is reserved for debug output of the Linux kernel.
+        - `F7` is reserved for video output of the desktop environment.
+        - `F8` and above are unused.
+
+    2. Change your directory to your home folder or anywhere safe: `cd ~`
+    3. Clone the repository: `git clone https://www.github.com/portellam/deploy-vfio`
+  - Download the ZIP file:
+    1. Viewing from the top of the repository's (current) webpage, click the green `<>&nbsp;Code&nbsp;` drop-down icon.
+    2. Click `Download ZIP`. Save this file.
+    3. Open the `.zip` file, then extract its contents.
+- To make this script executable, you must:
+  1. Open the CLI (see above).
+  2. Go to the directory of where the cloned/extracted repository folder is: `cd name_of_parent_folder/deploy-vfio/`
+  3. Make the installer script file executable: `chmod +x installer.bash`
+    - Do **not** make any other script files executable. The installer will perform this action.
+    - Do **not** make any non-script file executable. This is not necessary and potentially dangerous.
 
 ## Usage
 **`installer.bash`**
@@ -211,7 +211,7 @@ Example: (assume a Host with 32 GiB of RAM)
   - For an existing script of similar scope, you may try the project [VFIO-Tools](https://github.com/PassthroughPOST/VFIO-Tools).
 
 ### Post-setup (To be implemented in a future release)
-1. **auto-xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
+1. **auto-Xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
 2. **Guest Audio Capture**
   - Create an [audio loopback](https://github.com/portellam/audio-loopback) to output on the Host audio device Line-Out.
     - Listen on Host audio device Line-In (from Guest PCI Audio device Line-Out).
@@ -219,7 +219,7 @@ Example: (assume a Host with 32 GiB of RAM)
   - For virtual implementation, see *Virtual Audio Capture*.
 
 3. **Libvirt Hooks**
-- Invoke [hooks](#libvirt-hooks) (scripts) for all or individual Guests.
+- Invoke [hooks](#libvirt-hooks) or scripts for all or individual Guests.
 - Switch display input (video output) at Guest start.
 - **Dynamically** allocate CPU cores and prioritize CPU scheduler.
 - **Libvirt-nosleep**: per Guest system service, to prevent Host sleep while Guest is active.
