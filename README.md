@@ -71,7 +71,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   - `systemd` for system services.
   - **IOMMU** is supported (by the CPU) and enabled in the motherboard firmware (BIOS or UEFI).
     - For **AMD** machines:&ensp;&nbsp;`AMD-Vi`
--   - For **Intel** machines:&nbsp;`VT-d`
+    - For **Intel** machines:&nbsp;`VT-d`
   To install packages:
     - Debian Linux: `sudo apt install -y xmlstarlet`
 
