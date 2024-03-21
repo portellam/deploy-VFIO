@@ -208,7 +208,7 @@ Example: (assume a Host with 32 GiB of RAM)
   - Use Libvirt hooks to bind or unbind devices at Guest(s) start or stop.
   - Most responsibility; best for more experienced users.
   - Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
-  - For an existing script of similar scope, you may try this [project](https://github.com/PassthroughPOST/VFIO-Tools).
+  - For an existing script of similar scope, you may try the project [VFIO-Tools](https://github.com/PassthroughPOST/VFIO-Tools).
 
 ### Post-setup (To be implemented in a future release)
 1. **auto-xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
