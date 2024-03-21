@@ -33,7 +33,8 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 7. **Your Host OS is [supported](#supported-operating-systems).**
 8. **Securely run a [legacy OS](#legacy).**
 
-For even greater security, combine a VFIO setup with the use of [me_cleaner](#me_cleaner).
+**Advertisement:** For even greater security, use [me_cleaner](#me_cleaner) alongside a VFIO setup.
+**Disclaimer:** See [below](#latest-graphics-hardware-for-various-guest-operating-systems) for supported [VGA](#VGA) devices.
 
 ## Get
 - To download this script, you may:
@@ -176,16 +177,16 @@ Example: (assume a Host with 32 GiB of RAM)
     - Allow a user to swap a group of Input devices (as a whole) between active Guest(s) and Host.
     - Use the pre-defined macro: `L-CTRL` + `R-CTRL`
   - Implementation is known as [Evdev](#evdev) (Event Devices).
-  - **Disclaimer:** Guest PCI USB is good. Both implementations together is better.
+  - **Note:** Guest PCI USB is good. Both implementations together is better.
 
 ### Main setup
 - **Multi-boot VFIO setup**
   - Create multiple VFIO setups with corresponding GRUB menu entries. **More flexibility.**
     - Select a GRUB menu entry with a VGA device excluded from VFIO.
     - Default menu entry is without VFIO setup.
-    - Best for systems with two or more PCI [VGA](#VGA) devices, without an integrated VGA device (iGPU).
+    - Best for systems with two or more PCI VGA devices, without an integrated VGA device (iGPU).
 
-  - **Disclaimer:** For best results, use [auto-Xorg](https://github.com/portellam/auto-Xorg).
+  - **Ad:** For best results, use [auto-Xorg](https://github.com/portellam/auto-Xorg).
 
 - **Static VFIO setup**
   - Single, traditional VFIO setup. **Less flexibility.**
@@ -277,16 +278,21 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 
 ### Latest graphics hardware for various Guest Operating Systems
 #### Microsoft
-| Windows              | Device type    | Brand and model                        |
-| -------------------- | -------------- | -------------------------------------- |
-| 7 and above or NT 6+ | Video/graphics | NVIDIA RTX 3000-series** or before     |
-| XP or NT 4           | Video/graphics | NVIDIA GTX 900-series* or before**     |
-|                      |                | AMD Radeon HD 7000-series* or before** |
-| 9x                   | Video/graphics | NVIDIA 7000-series GTX* or before      |
-|                      |                | any ATI model** (before AMD)           |
+| Windows              | Device | Brand and model                        |
+| -------------------- | ------ | -------------------------------------- |
+| 7 and above or NT 6+ | VGA    | NVIDIA RTX 3000-series** or before     |
+| XP or NT 4           | VGA    | NVIDIA GTX 900-series* or before**     |
+|                      |        | AMD Radeon HD 7000-series* or before** |
+| 9x                   | VGA    | NVIDIA 7000-series GTX* or before      |
+|                      |        | any ATI model** (before AMD)           |
 
 *\*UEFI and BIOS compatible.*
 *\*\*BIOS-only.*
+
+#### Apple Macintosh
+##### [AMD and NVIDIA GPU compatibility list (Apple Support article)](https://support.apple.com/en-us/102734)
+
+##### [More detailed NVIDIA GPU compatibility list (TonyMacX86 forum thread)](https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/)
 
 ### Supported Host Operating Systems
 | Distribution Family | Supported? | Tested Distros             |
@@ -296,11 +302,6 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 | Gentoo              | No         | untested                   |
 | Red Hat             | No         | untested                   |
 | SUSE                | No         | untested                   |
-
-#### Apple Macintosh
-##### [AMD and NVIDIA GPU compatibility list (Apple Support article)](https://support.apple.com/en-us/102734)
-
-##### [More detailed NVIDIA GPU compatibility list (TonyMacX86 forum thread)](https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/)
 
 ## References
 #### Hugepages
