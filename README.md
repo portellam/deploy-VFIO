@@ -71,9 +71,10 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
     - Debian Linux: `sudo apt install -y xmlstarlet`
 - Other requirements:
   - `systemd` for system services.
-  - **IOMMU** is supported (by the CPU) and enabled in the motherboard firmware (BIOS or UEFI).
-    - For **AMD** machines:&nbsp;`AMD-Vi`
-    - For **Intel** machines:&nbsp;`VT-d`
+  - IOMMU is supported (by the CPU) and enabled in the motherboard firmware (BIOS or UEFI).
+    - For AMD machines:&nbsp;`AMD-Vi`
+    - For Intel machines:&nbsp;`VT-d`
+    - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this script.
 
 ## Usage
 **`installer.bash`**
