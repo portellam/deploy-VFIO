@@ -34,6 +34,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 8. **Securely run a [legacy OS](#legacy).**
 
 **Advertisement:** For even greater security, use [me_cleaner](#me_cleaner) alongside a VFIO setup.
+
 **Disclaimer:** See [below](#latest-graphics-hardware-for-various-guest-operating-systems) for supported [VGA](#VGA) devices.
 
 ## Get
