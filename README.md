@@ -293,7 +293,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 #### Apple Macintosh
 ##### [AMD and NVIDIA GPU compatibility list (Apple Support article)](https://support.apple.com/en-us/102734)
 
-##### [More detailed NVIDIA GPU compatibility list (TonyMacX86 forum thread)](https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/)
+##### [More detailed NVIDIA GPU compatibility list (archive of TonyMacX86 forum thread)](https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/)
 
 ### Supported Host Operating Systems
 | Distribution Family | Supported? | Tested Distros             |
