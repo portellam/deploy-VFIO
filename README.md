@@ -1,5 +1,6 @@
 # deploy-VFIO
 ## Table of Contents
+  - [Guest Machine Setup Guide](GUESTS_GUIDE.md)
   - [About](#about)
   - [Get](#get)
   - [Requirements](#requirements)
@@ -179,7 +180,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 ### Main setup
   - **Multi-boot VFIO setup**
-    - Create multiple VFIO setups with corresponding GRUB menu entries.     **More flexibility.**
+    - Create multiple VFIO setups with corresponding GRUB menu entries. **More flexibility.**
       - Select a GRUB menu entry with a VGA device excluded from VFIO.
       - Default menu entry is without VFIO setup.
       - Best for systems with two or more PCI [VGA](#VGA) devices, without an integrated VGA device (iGPU).
@@ -187,7 +188,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
     - **Disclaimer:** For best results, use [auto-Xorg](https://github.com/portellam/auto-Xorg).
 
   - **Static VFIO setup**
-    - Single, traditional VFIO setup.                                       **Less flexibility.**
+    - Single, traditional VFIO setup. **Less flexibility.**
     - Specify method of setup:
       - Append output to GRUB; single GRUB menu entry.
       - Append output to system configuration files.
@@ -202,28 +203,33 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ### Post-setup *(To be implemented in a future release)*
   1. **auto-xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
   2. **Guest Audio Capture**
+
     - Create an [Audio loopback](https://github.com/portellam/audio-loopback) to output on the *Host* Audio device *Line-Out*.
       - Listen on *Host* Audio device *Line-In* (from Guest PCI Audio device Line-Out).
       - Useful for systems with multiple Audio devices.
     - For virtual implementation, see *Virtual Audio Capture*.
 
   3. **Libvirt Hooks**
-    - Invoke [hooks](#libvirt-hooks) (scripts) for all or individual Guests.
-    - Switch display input (video output) at Guest start.
-    - **Dynamically** allocate CPU cores and CPU scheduler.
-    - **Libvirt-nosleep** system service(s) per Guest to prevent Host sleep while Guest is active.
+
+  - Invoke [hooks](#libvirt-hooks) (scripts) for all or individual Guests.
+  - Switch display input (video output) at Guest start.
+  - **Dynamically** allocate CPU cores and CPU scheduler.
+  - **Libvirt-nosleep** system service(s) per Guest to prevent Host sleep while Guest is active.
 
   4. **RAM as Compressed Swapfile/partition**
+
     - Create a compressed Swap device in Host memory, using the *lz4* algorithm (compression ratio of about 2:1).
       - Reduce swapiness to existing Host swap devices.
       - Reduce chances of Host memory exhaustion (given an event of memory over-allocation).
     - Implementation is known as [zram-swap](#zram-swap).
 
   5. **Virtual Audio Capture *(To be implemented in a future release)***
+
     - Setup a virtual Audio driver for Windows that provides a discrete Audio device.
     - Implementation is known as [Scream](#scream).
 
   6. **Virtual Video Capture *(To be implemented in a future release)***
+
     - Setup direct-memory-access (DMA) of a PCI VGA device output (Video and Audio) from a Guest to Host.
     - Implementation is known as [LookingGlass](https://looking-glass.io/).
     - **Disclaimer:** Only supported for Guests running Windows NT 6+ or Windows 7 and later.
@@ -304,25 +310,33 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 ## References
 #### Hugepages
   &ensp;<sub>**[Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
+
   &ensp;<sub>**[Debian Wiki article](https://wiki.debian.org/Hugepages)**</sub>
 
 #### Evdev
   &ensp;<sub>**[Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
+
   &ensp;<sub>**[GitHub project source](https://github.com/portellam/generate-evdev)**</sub>
 
 #### me_cleaner
   &ensp;<sub>**[GitHub project source](https://github.com/corna/me_cleaner)**</sub>
+
   &ensp;<sub>**[GitHub project fork](https://github.com/dt-zero/me_cleaner)**</sub>
 
 #### Scream
   &ensp;<sub>**[GitHub project source](https://github.com/duncanthrax/scream)**</sub>
+
   &ensp;<sub>**[LookingGlass Wiki guide](https://looking-glass.io/wiki/Using_Scream_over_LAN)**</sub>
 
 #### ZRAM Swap
   &ensp;<sub>**[Arch software package](https://aur.archlinux.org/packages/zramswap)**</sub>
+
   &ensp;<sub>**[Debian software package](https://wiki.debian.org/ZRam)**</sub>
+
   &ensp;<sub>**[GitHub project source](https://github.com/foundObjects/zram-swap)**</sub>
+
   &ensp;<sub>**[LZ4 GitHub project source](https://github.com/lz4/lz4)**</sub>
+
   &ensp;<sub>**[Tuning benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
 
 ## Disclaimer
