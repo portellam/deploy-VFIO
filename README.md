@@ -289,12 +289,12 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 #### Microsoft
 | Windows                | Device | Brand and model                           |
 | --------------------   | ------ | ----------------------------------------- |
-| 10 and above or NT 10+ | VGA    | NVIDIA RTX 4000-series[2](#2-uefi-only) or before       |
-| 7 and above or NT 6.1+ | VGA    | NVIDIA RTX 1000-series[2](#2-uefi-only) or before       |
-| XP or NT 4             | VGA    | NVIDIA GTX 900-series[3](#3-uefi-or-bios-compatible) or before[3](#3-uefi-or-bios-compatible)     |
-|                        |        | AMD Radeon HD 7000-series[3](#3-uefi-and-or-compatible) or before[3](#3-uefi-or-bios-compatible) |
-| 9x                     | VGA    | NVIDIA 7000-series GTX[1](#1-bios-only) or before       |
-|                        |        | any ATI model[1](#1-bios-only) (before AMD)             |
+| 10 and above or NT 10+ | VGA    | NVIDIA RTX 4000-series<sup>[2](#2-uefi-only)</sup> or before       |
+| 7 and above or NT 6.1+ | VGA    | NVIDIA RTX 1000-series<sup>[2](#2-uefi-only)</sup> or before       |
+| XP or NT 4             | VGA    | NVIDIA GTX 900-series<sup>[3](#3-uefi-or-bios-compatible)</sup> or before[3](#3-uefi-or-bios-compatible)</sup>     |
+|                        |        | AMD Radeon HD 7000-series<sup>[3](#3-uefi-and-or-compatible)</sup> or before[3](#3-uefi-or-bios-compatible)</sup> |
+| 9x                     | VGA    | NVIDIA 7000-series GTX[<sup>1](#1-bios-only)</sup> or before       |
+|                        |        | any ATI model<sup>[1](#1-bios-only)</sup> (before AMD)             |
 
 ##### 1. *BIOS only.*
 ##### 2. *UEFI only.*
