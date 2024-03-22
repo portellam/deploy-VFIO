@@ -1,5 +1,5 @@
 
-# Guest Machine Setup Guide
+# Guest Setup Guide
 This document is a general overview and guide of installation, features, and optimizations of a QEMU/KVM guest/virtual machine (VM). You may also view example XML files of which you may use as a template.
 
 ## Table of Contents
