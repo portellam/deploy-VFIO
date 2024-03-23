@@ -31,7 +31,7 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 
 ###### 1. `<name/>` Best practice:
 The following formatting examples are a personal preference of the [Author](https://github.com/portellam).
-  - Format: `purpose`_`vendor`*_`operating system`_`architecture`_`chipset`_`firmware`_`topology`
+  - Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`chipset`**_**`firmware`**_**`topology`
 
 **\*** Optional, if Host machine contains two (2) or more video devices (GPU/VGA).
   - Example systems and names:
