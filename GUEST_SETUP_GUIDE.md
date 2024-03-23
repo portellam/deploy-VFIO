@@ -45,6 +45,7 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 - `<nosharepages/>`: Prevents the Host from merging the same memory used among guests.
 
 | `<memoryBacking>` | Attribute | Value       | Description                                                       |
+| ----------------- | --------- | ----------- | ----------------------------------------------------------------- |
 | `<allocation/>`   | `mode`    | `immediate` | Specifies how memory allocation is performed.                     |
 | `<discard/>`      | none      | none        | TODO: add here.                                                   |
 | `<hugepages/>`[<sup>1</sup>](#1)    | none      | none        | Enable Huge memory pages.                                         |
