@@ -19,10 +19,10 @@
 - [References](#references)
 
 ## About
-This document is a general overview and guide of installation, features, and optimizations of a QEMU/KVM guest/virtual machine (VM). Review the XML references below or view example XML files, of which you may use as a template.
+This document is a general overview and guide of installation, features, and optimizations of a QEMU/KVM Virtual Machine (VM) or Guest. Review the XML references below or view example XML files, of which you may use as a template.
 
 ## Guest XML Layout
-Below is an *incomplete* layout for building a guest machine. The lines include additional features, of which are absent when creating a guest XML (with the `virsh` CLI command or `virt-manager` GUI application).
+Below is an *incomplete* layout for building a Guest machine. The lines include additional features, of which are absent when creating a Guest XML (with the `virsh` CLI command or `virt-manager` GUI application).
 
 ### Contents
 - [Syntax](#syntax)
@@ -90,13 +90,13 @@ Below is an *incomplete* layout for building a guest machine. The lines include 
   - Virtualized chipset<sup>[ref](#chipset)</sup>:
     - I440FX:&ensp;`i440fx`
       - Emulated, older chipset by Intel.
-      - Does support legacy guests (example: Windows NT 5 and before, XP/2000, 9x).
+      - Does support legacy Guests (example: Windows NT 5 and before, XP/2000, 9x).
       - PCI bus only; expansion devices will exist on a PCI topology.
       - Will accept PCIe devices.
     - Q35:&ensp;&ensp;&ensp;&nbsp;`q35`
       - Virtual, newer platform.
       - Native PCIe bus; expansion devices will exist on a PCIe topology.
-      - Does not support legacy guests.
+      - Does not support legacy Guests.
   - Firmware<sup>[ref](#firmware)</sup>:
     - BIOS:&ensp;`bios`
     - UEFI:&nbsp;&ensp;`uefi`
@@ -122,7 +122,7 @@ To gather information of system memory, execute: `free --kibi --total --wide`
 | `<allocation/>`       | `mode`    | `immediate` | Specifies how memory allocation is performed.                     |
 | `<discard/>`          | none      | none        | TODO: define, what is this?                                                   |
 | `<hugepages/>`[<sup>1</sup>](#1-hugepages)       | none      | none        | Enable Huge memory pages.                                         |
-| `<nosharepages/>`     | none      | none        | Prevents the Host from merging the same memory used among guests. |
+| `<nosharepages/>`     | none      | none        | Prevents the Host from merging the same memory used among Guests. |
 
 ###### 1. `<hugepages/>`
 - Static allocation of *Host* memory pages into *Guest* memory pages.
@@ -212,7 +212,6 @@ To gather information about your system, execute:
 TODO: make the following inline XML into chart, describe each feature.
 
 ```xml
-    <!-- Hyper-V: Enlightenments for Microsoft Windows guests only -->
     <hyperv mode="custom">
       <relaxed state="on"/>
       <vapic state="on"/>
