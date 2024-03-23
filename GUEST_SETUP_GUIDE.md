@@ -243,11 +243,11 @@ TODO: make the following inline XML into chart, describe each feature.
 ```xml
   <!-- CPU information and features -->
   <cpu mode="host-passthrough" check="none" migratable="on">  <!-- Spoof the CPU info, with the actual CPU info. -->
-    <topology sockets="1" dies="1" cores="6" threads="2"/>    <!-- Set CPU topology (2/2). -->
-    <cache mode="passthrough"/>                               <!--  -->
-    <feature policy="disable" name="hypervisor"/>             <!--  -->
-    <feature policy="disaFeatures" present="yes"/>            <!--  -->
-    <timer name="tsc" present="yes" mode="native"/>           <!--  -->
+    <topology sockets="1" dies="1" cores="6" threads="2"/>
+    <cache mode="passthrough"/>
+    <feature policy="disable" name="hypervisor"/>
+    <feature policy="disaFeatures" present="yes"/>
+    <timer name="tsc" present="yes" mode="native"/>
   </clock>
 ```
 
