@@ -154,16 +154,16 @@ To gather information about your CPU, execute: `lscpu | grep --extended-regexp -
 
 ##### Example XML:
 ```xml
-  <!-- CPU topology (1/2), given a 4-core, 8-thread CPU... -->
-  <vcpu placement="static">4</vcpu>
-  <iothreads>1</iothreads>
+  <!-- Given a 4-core, 8-thread CPU... -->
+  <vcpu placement="static">4</vcpu>           <!-- Statically allocate four (4) cores to Guest. -->
+  <iothreads>1</iothreads>                    <!-- Define one (1) thread to IO. -->
   <cputune>
     <vcpupin vcpu="0" cpuset="2"/>            <!-- Guest CPU: use the third core, first thread. -->
     <vcpupin vcpu="1" cpuset="6"/>            <!-- Guest CPU: use the third core, second thread. -->
     <vcpupin vcpu="2" cpuset="3"/>            <!-- Guest CPU: use the fourth core, first thread. -->
     <vcpupin vcpu="3" cpuset="7"/>            <!-- Guest CPU: use the fourth core, second thread. -->
-    <emulatorpin cpuset="1,4"/>               <!-- Guest IRQ: use the second core, two threads -->
-    <iothreadpin iothread="1" cpuset="1,4"/>  <!-- Guest IO: use the second core, two threads -->
+    <emulatorpin cpuset="1,4"/>               <!-- Guest IRQ: use the second core, two threads. -->
+    <iothreadpin iothread="1" cpuset="1,4"/>  <!-- Guest IO: use the second core, two threads. -->
   </cputune>
 ```
 
@@ -242,7 +242,6 @@ Socket(s):                          1
 TODO: make the following inline XML into chart, describe each feature.
 
 ```xml
-  <!-- CPU information and features -->
   <cpu mode="host-passthrough" check="none" migratable="on">  <!-- Spoof the CPU info, with the actual CPU info. -->
     <topology sockets="1" dies="1" cores="6" threads="2"/>
     <cache mode="passthrough"/>
