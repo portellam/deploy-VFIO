@@ -29,7 +29,10 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered *Type-1* or bare-metal Hypervisors.
 
 3. **Securely run a modern OS:** limited access to real hardware means greater security.
-4. **Ease of use:** support for automation by use of the [Command Line Interface](#usage) (CLI).
+4. **Ease of use:** 
+  - Usage of the [Command Line Interface](#usage) (CLI).
+  - Given a system update, automate changes by use a cron-job (example: upgraded Linux kernel).
+
 5. **PCI Passthrough:** prioritize real hardware over emulation.
 6. **Quality of Life**: utilize multiple common-sense [features](#features) that are known to experienced users.
 7. **Your Host OS is [supported](#supported-operating-systems).**
