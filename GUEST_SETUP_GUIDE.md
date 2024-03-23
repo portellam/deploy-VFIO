@@ -1,6 +1,6 @@
 
 # Guest Setup Guide
-This document is a general overview and guide of installation, features, and optimizations of a QEMU/KVM guest/virtual machine (VM). You may also view example XML files of which you may use as a template.
+This document is a general overview and guide of installation, features, and optimizations of a QEMU/KVM guest/virtual machine (VM). Review the XML references below or view example XML files, of which you may use as a template.
 
 ## Table of Contents
 - [Guest XML Layout](#guest-xml-layout)
@@ -139,18 +139,18 @@ To gather information about your CPU, execute: `lscpu | grep --extended-regexp -
 | `<iothreadpin>` | `cpuset`   | a number    | Guest IO: the Host thread ID numbers.[<sup>4</sup>](#4-iothreadpin-cpuset)      |
 
 ###### 1. `<vcpupin vcpu>`
-- Count does not exceed value defined in `<vcpu placement>`.
+- Count does not exceed value as defined in `<vcpu placement>`.
 
 ###### 2. `<vcpupin cpuset>`
 - Threads should not overlap Host process threads.
 
 ###### 3. `<emulatorpin cpuset>`
 - Emulator threads handle Interrupt Requests for Guest hardware emulation.
-- Threads should not overlap Guest CPU threads defined in `vcpupin cpuset`.
+- Threads should not overlap Guest CPU threads as defined in `vcpupin cpuset`.
 
 ###### 4. `<iothreadpin cpuset>`
 - IO threads handle IO processes for Guest virtual drives/disks.
-- Threads should not overlap Guest CPU threads defined in `vcpupin cpuset`.
+- Threads should not overlap Guest CPU threads as defined in `vcpupin cpuset`.
 
 ##### Example XML:
 ```xml
