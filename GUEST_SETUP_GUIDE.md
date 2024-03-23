@@ -246,7 +246,7 @@ TODO: make the following inline XML into chart, describe each feature.
     <topology sockets="1" dies="1" cores="6" threads="2"/>
     <cache mode="passthrough"/>
     <feature policy="disable" name="hypervisor"/>
-    <feature policy="disaFeatures" present="yes"/>
+    <feature policy="disable" present="yes"/>
     <timer name="tsc" present="yes" mode="native"/>
   </clock>
 ```
