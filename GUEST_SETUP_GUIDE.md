@@ -21,7 +21,7 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 
 ### Layout
 
-| `<domain>`         | Attribute    | Value                                          | Description                                        |
+| `<domain>` Tag     | Attribute    | Value                                          | Description                                        |
 | ------------------ | ------------ | ---------------------------------------------- | -------------------------------------------------- |
 |                    | `xmlns:qemu` | `"http://libvirt.org/schemas/domain/qemu/1.0"` | Enable QEMU command lines and overrides.           |
 |                    | `type`       | `"kvm"`                                        | Enable QEMU command lines and overrides.           |
@@ -82,12 +82,12 @@ The following formatting examples are a personal preference of the [Author](http
 
 #### `<domain>`
 
-| `<memoryBacking>` | Attribute | Value       | Description                                                       |
-| ----------------- | --------- | ----------- | ----------------------------------------------------------------- |
-| `<allocation/>`   | `mode`    | `immediate` | Specifies how memory allocation is performed.                     |
-| `<discard/>`      | none      | none        | TODO: add here.                                                   |
-| `<hugepages/>`[<sup>1</sup>](#1-hugepages)    | none      | none        | Enable Huge memory pages.                                         |
-| `<nosharepages/>` | none      | none        | Prevents the Host from merging the same memory used among guests. |
+| `<memoryBacking>` Tag | Attribute | Value       | Description                                                       |
+| --------------------- | --------- | ----------- | ----------------------------------------------------------------- |
+| `<allocation/>`       | `mode`    | `immediate` | Specifies how memory allocation is performed.                     |
+| `<discard/>`          | none      | none        | TODO: add here.                                                   |
+| `<hugepages/>`[<sup>1</sup>](#1-hugepages)       | none      | none        | Enable Huge memory pages.                                         |
+| `<nosharepages/>`     | none      | none        | Prevents the Host from merging the same memory used among guests. |
 
 ###### 1. `<hugepages/>`
 - Static allocation of *Host* memory pages into *Guest* memory pages.
