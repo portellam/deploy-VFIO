@@ -231,6 +231,13 @@ TODO: make the following inline XML into chart, describe each feature.
 ### CPU topology (2/2)
 To gather information about your CPU, execute: `lscpu | grep --extended-regexp --ignore-case "per core|per socket|socket"`
 
+##### Example output:
+```
+Thread(s) per core:                 2
+Core(s) per socket:                 8
+Socket(s):                          1
+```
+
 TODO: make the following inline XML into chart, describe each feature.
 
 ```xml
@@ -242,13 +249,6 @@ TODO: make the following inline XML into chart, describe each feature.
     <feature policy="disaFeatures" present="yes"/>       <!--  -->
     <timer name="tsc" present="yes" mode="native"/> <!--  -->
   </clock>
-```
-
-##### Example output:
-```
-Thread(s) per core:                 2
-Core(s) per socket:                 8
-Socket(s):                          1
 ```
 
 ### Power Management
