@@ -168,8 +168,11 @@ To gather information about your CPU, execute: `lscpu | grep --extended-regexp -
 
 ### System information spoofing
 To gather information about your BIOS, execute:
+
 &ensp;`sudo dmidecode --type bios | grep --extended-regexp --ignore-case "vendor|version|release date"`
+
 To gather information about your system, execute:
+
 &ensp;`sudo dmidecode --type system | grep --extended-regexp --ignore-case "manufacturer|product name|version|serial number|sku number|family"`
 
 ```xml
