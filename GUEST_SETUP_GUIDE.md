@@ -1,13 +1,16 @@
 
 # Guest Setup Guide
-This document is a general overview and guide of installation, features, and optimizations of a QEMU/KVM guest/virtual machine (VM). Review the XML references below or view example XML files, of which you may use as a template.
-
 ## Table of Contents
+- [deploy-VFIO README](deploy-vfio-readme)
+- [About](#about)
 - [Guest XML Layout](#guest-xml-layout)
 - [Host Optimizations](#host-optimizations)
 - [Guest Optimizations](#guest-optimizations)
 - [Benchmarking Guest Performance](#benchmarking-guest-performance)
 - [References](#references)
+
+## About
+This document is a general overview and guide of installation, features, and optimizations of a QEMU/KVM guest/virtual machine (VM). Review the XML references below or view example XML files, of which you may use as a template.
 
 ## Guest XML Layout
 Below is an *incomplete* layout for building a guest machine. The lines include additional features, of which are absent when creating a guest XML (with the `virsh` CLI command or `virt-manager` GUI application).
