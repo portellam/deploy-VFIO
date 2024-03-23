@@ -21,17 +21,17 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 
 ### Layout
 
-| `<domain>` Tag     | Attribute    | Value                                          | Description                                        |
-| ------------------ | ------------ | ---------------------------------------------- | -------------------------------------------------- |
-|                    | `xmlns:qemu` | `"http://libvirt.org/schemas/domain/qemu/1.0"` | Enable QEMU command lines and overrides.           |
-|                    | `type`       | `"kvm"`                                        | Enable QEMU command lines and overrides.           |
-| `<name/>`[<sup>1</sup>](#1-name-best-practice)          | none         | text                                           | Name of the Guest.                                 |
-| `<memory/>`        | none         | a number                                       | Total allowed memory to guest, in Kilobytes.       |
-| `<currentMemory/>` | none         | a number                                       | Currently allocated memory to guest, in Kilobytes. |
+| `<domain>` Tag      | Attribute    | Value                                          | Description                                        |
+| ------------------- | ------------ | ---------------------------------------------- | -------------------------------------------------- |
+|                     | `xmlns:qemu` | `"http://libvirt.org/schemas/domain/qemu/1.0"` | Enable QEMU command lines and overrides.           |
+|                     | `type`       | `"kvm"`                                        | Enable QEMU command lines and overrides.           |
+| `<name/>`[<sup>1</sup>](#1-name-best-practice)           | none         | text                                           | Name of the Guest.                                 |
+| `<memory/>`         | none         | a number                                       | Total allowed memory to guest, in Kilobytes.       |
+| `<currentMemory/>`  | none         | a number                                       | Currently allocated memory to guest, in Kilobytes. |
 
 ###### 1. `<name/>` Best practice:
-The following formatting examples are a personal preference of the [Author](https://github.com/portellam).
-  - Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`chipset`**_**`firmware`**_**`topology`
+**Note:** The following formatting examples are a personal preference of the Author.
+Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`chipset`**_**`firmware`**_**`topology`
 
 **\*** Optional, if Host machine contains two (2) or more video devices (GPU/VGA).
   - Example systems and names:
