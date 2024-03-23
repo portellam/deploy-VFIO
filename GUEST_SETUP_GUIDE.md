@@ -25,60 +25,60 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 | ------------------ | ------------ | ---------------------------------------------- | -------------------------------------------------- |
 |                    | `xmlns:qemu` | `"http://libvirt.org/schemas/domain/qemu/1.0"` | Enable QEMU command lines and overrides.           |
 |                    | `type`       | `"kvm"`                                        | Enable QEMU command lines and overrides.           |
-| `<name/>`          | none         | text                                           | Name of the Guest.                                 |
+| `<name/>`[<sup>1</sup>](#1-name-best-practice)          | none         | text                                           | Name of the Guest.                                 |
 | `<memory/>`        | none         | a number                                       | Total allowed memory to guest, in Kilobytes.       |
 | `<currentMemory/>` | none         | a number                                       | Currently allocated memory to guest, in Kilobytes. |
 
-###### 1. `<name/>` Best practice
-The following formatting examples are a personal preference of the [Author](https://github.com/portellam).
-  - Format: `<purpose>_<vendor*>_<operating-system>_<architecture>_<chipset>_<firmware>_<topology>`
+###### 1. `<name/>` Best practice:
+&ensp;The following formatting examples are a personal preference of the [Author](https://github.com/portellam).
+&ensp;- Format: `<purpose>_<vendor*>_<operating-system>_<architecture>_<chipset>_<firmware>_<topology>`
 
-**\*** Optional, if Host machine contains two (2) or more video devices (GPU/VGA).
-  - Example systems and names:
-    - Modern gaming machine:&ensp;&ensp;&ensp;&ensp;&ensp;`game_nvidia_win10_x64_q35_uefi_6c12t`
+&ensp;**\*** Optional, if Host machine contains two (2) or more video devices (GPU/VGA).
+&ensp;- Example systems and names:
+&ensp;  - Modern gaming machine:&ensp;&ensp;&ensp;&ensp;&ensp;`game_nvidia_win10_x64_q35_uefi_6c12t`
     - Older 2000s gaming machine:&ensp;`retro_amd_winxp_x86_i440fx_bios_2c4t`
     - Retro 1990s gaming machine:&ensp;`retro_3dfx_win98_x86_i440fx_bios_1c1t`
     - Intel MacOS workstation:&ensp;&ensp;&ensp;&ensp;&ensp;&nbsp;`work_macos_amd_x64_q35_uefi_6c12t`
-  - Purpose of the Guest (and suggested names):
-    - Gaming PC:&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;`game`
-    - Legacy/Retro PC:&ensp;`retro`
-    - Server:&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&nbsp;`server`
-    - Workstation PC:&ensp;&ensp;`work`
-    - etc.
-  - Vendor name of the Video device:
-    - AMD:&ensp;&ensp;&ensp;&ensp;&ensp;`amd`
-    - Intel:&ensp;&ensp;&ensp;&ensp;&ensp;`intel`
-    - NVIDIA:&ensp;&ensp;&ensp;`nvidia`
-    - emulated:&ensp;`emugpu`
-    - non-mainstream or legacy:
-      - 3DFX:&ensp;`3dfx`.
-  - Short name of the Operating System (OS):
-    - Apple Macintosh:&ensp;&ensp;&ensp;&nbsp;`macos`
-    - Linux:&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;`arch`, `debian`, `redhat`, `ubuntu`
-    - Microsoft Windows:&ensp;`win98`, `winxp`, `win10`
-    - etc.
-  - Short name of the CPU architecture<sup>[ref](#cpu-architecture)</sup>:
-    - AMD/Intel 32-bit:&ensp;`x86`
-    - AMD/Intel 64-bit:&ensp;`x64`
-    - ARM 32-bit:&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&nbsp;`aarch32`
-    - ARM 64-bit:&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&nbsp;`aarch64`
-    - etc.
-  - Virtualized chipset<sup>[ref](#chipset)</sup>:
-    - I440FX:&ensp;`i440fx`
-      - Emulated, older chipset by Intel.
-      - Does support legacy guests (example: Windows NT 5 and before, XP/2000, 9x).
-      - PCI bus only; expansion devices will exist on a PCI topology.
-      - Will accept PCIe devices.
-    - Q35:&ensp;&ensp;&ensp;&nbsp;`q35`
-      - Virtual, newer platform.
-      - Native PCIe bus; expansion devices will exist on a PCIe topology.
-      - Does not support legacy guests.
-  - Firmware<sup>[ref](#firmware)</sup>:
-    - BIOS:&ensp;`bios`
-    - UEFI:&nbsp;&ensp;`uefi`
-  - Short-hand of Core topology:&ensp;`4c8t`
-    - Given the amount of physical cores (example: 4).
-    - Given the amount of logical threads per core (2 * 4 = 8).
+&ensp;- Purpose of the Guest (and suggested names):
+&ensp;  - Gaming PC:&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;`game`
+&ensp;  - Legacy/Retro PC:&ensp;`retro`
+&ensp;  - Server:&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&nbsp;`server`
+&ensp;  - Workstation PC:&ensp;&ensp;`work`
+&ensp;  - etc.
+&ensp;- Vendor name of the Video device:
+&ensp;  - AMD:&ensp;&ensp;&ensp;&ensp;&ensp;`amd`
+&ensp;  - Intel:&ensp;&ensp;&ensp;&ensp;&ensp;`intel`
+&ensp;  - NVIDIA:&ensp;&ensp;&ensp;`nvidia`
+&ensp;  - emulated:&ensp;`emugpu`
+&ensp;  - non-mainstream or legacy:
+&ensp;    - 3DFX:&ensp;`3dfx`.
+&ensp;- Short name of the Operating System (OS):
+&ensp;  - Apple Macintosh:&ensp;&ensp;&ensp;&nbsp;`macos`
+&ensp;  - Linux:&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;`arch`, `debian`, `redhat`, `ubuntu`
+&ensp;  - Microsoft Windows:&ensp;`win98`, `winxp`, `win10`
+&ensp;  - etc.
+&ensp;- Short name of the CPU architecture<sup>[ref](#cpu-architecture)</sup>:
+&ensp;  - AMD/Intel 32-bit:&ensp;`x86`
+&ensp;  - AMD/Intel 64-bit:&ensp;`x64`
+&ensp;  - ARM 32-bit:&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&nbsp;`aarch32`
+&ensp;  - ARM 64-bit:&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&nbsp;`aarch64`
+&ensp;  - etc.
+&ensp;- Virtualized chipset<sup>[ref](#chipset)</sup>:
+&ensp;  - I440FX:&ensp;`i440fx`
+&ensp;    - Emulated, older chipset by Intel.
+&ensp;    - Does support legacy guests (example: Windows NT 5 and before, XP/2000, 9x).
+&ensp;    - PCI bus only; expansion devices will exist on a PCI topology.
+&ensp;    - Will accept PCIe devices.
+&ensp;  - Q35:&ensp;&ensp;&ensp;&nbsp;`q35`
+&ensp;    - Virtual, newer platform.
+&ensp;    - Native PCIe bus; expansion devices will exist on a PCIe topology.
+&ensp;    - Does not support legacy guests.
+&ensp;- Firmware<sup>[ref](#firmware)</sup>:
+&ensp;  - BIOS:&ensp;`bios`
+&ensp;  - UEFI:&nbsp;&ensp;`uefi`
+&ensp;- Short-hand of Core topology:&ensp;`4c8t`
+&ensp;  - Given the amount of physical cores (example: 4).
+&ensp;  - Given the amount of logical threads per core (2 * 4 = 8).
 
 #### `<domain>`
 
@@ -89,11 +89,11 @@ The following formatting examples are a personal preference of the [Author](http
 | `<hugepages/>`[<sup>1</sup>](#1-hugepages)    | none      | none        | Enable Huge memory pages.                                         |
 | `<nosharepages/>` | none      | none        | Prevents the Host from merging the same memory used among guests. |
 
-###### 1. `<hugepages/>`
-- Static allocation of *Host* memory pages into *Guest* memory pages.
-- Huge: Memory page size greater than 4K bytes (2M or 1G bytes). The greater the size, the lower the Host overhead.
-- Dynamic *Host* memory page allocation is more flexible, but will require defragmentation before use as *Guest* memory pages (before a Guest machine may start).
-- **Warning:** If the specified *Guest* memory pages exceeds the allocated *Host* memory pages, then the Guest machine will fail to start.
+###### 1. `<hugepages/>`:
+&ensp;- Static allocation of *Host* memory pages into *Guest* memory pages.
+&ensp;- Huge: Memory page size greater than 4K bytes (2M or 1G bytes). The greater the size, the lower the Host overhead.
+&ensp;- Dynamic *Host* memory page allocation is more flexible, but will require defragmentation before use as *Guest* memory pages (before a Guest machine may start).
+&ensp;- **Warning:** If the specified *Guest* memory pages exceeds the allocated *Host* memory pages, then the Guest machine will fail to start.
 
 #### `<vcpu>` Attributes:
 - TODO: add here.
