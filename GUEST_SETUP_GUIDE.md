@@ -42,7 +42,8 @@ Below is an *incomplete* layout for building a guest machine. The lines include 
 
 ###### 1. `<name/>` Best practice:
 **Note:** The following formatting examples are a personal preference of the Author.
-Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`chipset`**_**`firmware`**_**`topology`
+
+**Format:** `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`chipset`**_**`firmware`**_**`topology`
 
 **\*** Optional, if Host machine contains two (2) or more video devices (GPU/VGA).
   - Example systems and names:
@@ -113,7 +114,7 @@ To gather information of system memory, execute: `free --kibi --total --wide`
 
 ###### 1. `<hugepages/>`
 - Static allocation of *Host* memory pages into *Guest* memory pages.
-- Huge: Memory page size greater than 4K bytes (2M or 1G bytes). The greater the size, the lower the Host overhead.
+- **Huge:** Memory page size greater than 4K bytes (2M or 1G bytes). The greater the size, the lower the Host overhead.
 - Dynamic *Host* memory page allocation is more flexible, but will require defragmentation before use as *Guest* memory pages (before a Guest machine may start).
 - **Warning:** If the specified *Guest* memory pages exceeds the allocated *Host* memory pages, then the Guest machine will fail to start.
 
