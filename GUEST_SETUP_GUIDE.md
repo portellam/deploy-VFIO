@@ -12,37 +12,75 @@ This document is a general overview and guide of installation, features, and opt
 ## Guest XML Layout
 Below is an *incomplete* XML template for building a guest machine. The lines include additional features, of which are absent when creating a guest XML (with the `virsh` CLI command or `virt-manager` GUI application).
 
-### XML Syntax
+### Syntax
 ```xml
 <parent_tag_name attribute_name="attribute_value">
   <child_tag_name>child_tag_value</child_tag_name>
 </parent_tag_name>
 ```
 
-### `<domain>` Attributes:
-- Enable QEMU command lines and overrides:
-  - `xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0"`
-  - `type='kvm'`
+### Layout
 
-### `<domain>` Values:
-#### `<name>` Value:
-- Configured at guest initilization with `virsh` or `virt-manager`.
+| `<domain>`         | Attribute    | Value                                          | Description                                        |
+| ------------------ | ------------ | ---------------------------------------------- | -------------------------------------------------- |
+|                    | `xmlns:qemu` | `"http://libvirt.org/schemas/domain/qemu/1.0"` | Enable QEMU command lines and overrides.           |
+|                    | `type`       | `"kvm"`                                        | Enable QEMU command lines and overrides.           |
+| `<name/>`          | none         | text                                           | Name of the Guest.                                 |
+| `<memory/>`        | none         | a number                                       | Total allowed memory to guest, in Kilobytes.       |
+| `<currentMemory/>` | none         | a number                                       | Currently allocated memory to guest, in Kilobytes. |
 
-#### `<memory>` Value:
-- Total allowed memory to guest, in Kilobytes.
+###### 1. `<name/>` Best practice
+The following formatting examples are a personal preference of the [Author](https://github.com/portellam).
+  - Format: `<purpose>_<vendor*>_<operating-system>_<architecture>_<chipset>_<firmware>_<topology>`
 
-#### `<currentMemory>` Value:
-- Currently allocated memory to guest, in Kilobytes.
+**\*** Optional, if Host machine contains two (2) or more video devices (GPU/VGA).
+  - Example systems and names:
+    - Modern gaming machine:&ensp;&ensp;&ensp;&ensp;&ensp;`game_nvidia_win10_x64_q35_uefi_6c12t`
+    - Older 2000s gaming machine:&ensp;`retro_amd_winxp_x86_i440fx_bios_2c4t`
+    - Retro 1990s gaming machine:&ensp;`retro_3dfx_win98_x86_i440fx_bios_1c1t`
+    - Intel MacOS workstation:&ensp;&ensp;&ensp;&ensp;&ensp;&nbsp;`work_macos_amd_x64_q35_uefi_6c12t`
+  - Purpose of the Guest (and suggested names):
+    - Gaming PC:&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;`game`
+    - Legacy/Retro PC:&ensp;`retro`
+    - Server:&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&nbsp;`server`
+    - Workstation PC:&ensp;&ensp;`work`
+    - etc.
+  - Vendor name of the Video device:
+    - AMD:&ensp;&ensp;&ensp;&ensp;&ensp;`amd`
+    - Intel:&ensp;&ensp;&ensp;&ensp;&ensp;`intel`
+    - NVIDIA:&ensp;&ensp;&ensp;`nvidia`
+    - emulated:&ensp;`emugpu`
+    - non-mainstream or legacy:
+      - 3DFX:&ensp;`3dfx`.
+  - Short name of the Operating System (OS):
+    - Apple Macintosh:&ensp;&ensp;&ensp;&nbsp;`macos`
+    - Linux:&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;`arch`, `debian`, `redhat`, `ubuntu`
+    - Microsoft Windows:&ensp;`win98`, `winxp`, `win10`
+    - etc.
+  - Short name of the CPU architecture<sup>[ref](#cpu-architecture)</sup>:
+    - AMD/Intel 32-bit:&ensp;`x86`
+    - AMD/Intel 64-bit:&ensp;`x64`
+    - ARM 32-bit:&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&nbsp;`aarch32`
+    - ARM 64-bit:&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&nbsp;`aarch64`
+    - etc.
+  - Virtualized chipset<sup>[ref](#chipset)</sup>:
+    - I440FX:&ensp;`i440fx`
+      - Emulated, older chipset by Intel.
+      - Does support legacy guests (example: Windows NT 5 and before, XP/2000, 9x).
+      - PCI bus only; expansion devices will exist on a PCI topology.
+      - Will accept PCIe devices.
+    - Q35:&ensp;&ensp;&ensp;&nbsp;`q35`
+      - Virtual, newer platform.
+      - Native PCIe bus; expansion devices will exist on a PCIe topology.
+      - Does not support legacy guests.
+  - Firmware<sup>[ref](#firmware)</sup>:
+    - BIOS:&ensp;`bios`
+    - UEFI:&nbsp;&ensp;`uefi`
+  - Short-hand of Core topology:&ensp;`4c8t`
+    - Given the amount of physical cores (example: 4).
+    - Given the amount of logical threads per core (2 * 4 = 8).
 
-#### `<memoryBacking>` Value:
-- `<allocation mode="immediate"/>`: Specifies how memory allocation is performed.
-- `<discard/>`: TODO: add here.
-- `<hugepages/>`: Enable Huge memory pages.
-  - Static allocation of *Host* memory pages into *Guest* memory pages.
-  - Huge: Memory page size greater than 4K bytes (2M or 1G bytes). The greater the size, the lower the Host overhead.
-  - Dynamic *Host* memory page allocation is more flexible, but will require defragmentation before use as *Guest* memory pages (before a Guest machine may start).
-  - **Warning:** If the specified *Guest* memory pages exceeds the allocated *Host* memory pages, then the Guest machine will fail to start.
-- `<nosharepages/>`: Prevents the Host from merging the same memory used among guests.
+#### `<domain>`
 
 | `<memoryBacking>` | Attribute | Value       | Description                                                       |
 | ----------------- | --------- | ----------- | ----------------------------------------------------------------- |
@@ -51,7 +89,7 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 | `<hugepages/>`[<sup>1</sup>](#1-hugepages)    | none      | none        | Enable Huge memory pages.                                         |
 | `<nosharepages/>` | none      | none        | Prevents the Host from merging the same memory used among guests. |
 
-##### 1. `<hugepages/>`
+###### 1. `<hugepages/>`
 - Static allocation of *Host* memory pages into *Guest* memory pages.
 - Huge: Memory page size greater than 4K bytes (2M or 1G bytes). The greater the size, the lower the Host overhead.
 - Dynamic *Host* memory page allocation is more flexible, but will require defragmentation before use as *Guest* memory pages (before a Guest machine may start).
