@@ -48,7 +48,7 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 | ----------------- | --------- | ----------- | ----------------------------------------------------------------- |
 | `<allocation/>`   | `mode`    | `immediate` | Specifies how memory allocation is performed.                     |
 | `<discard/>`      | none      | none        | TODO: add here.                                                   |
-| `<hugepages/>`[<sup>1</sup>](#1)    | none      | none        | Enable Huge memory pages.                                         |
+| `<hugepages/>`[<sup>1</sup>](#1-hugepages)    | none      | none        | Enable Huge memory pages.                                         |
 | `<nosharepages/>` | none      | none        | Prevents the Host from merging the same memory used among guests. |
 
 ##### 1. `<hugepages/>`
