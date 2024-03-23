@@ -19,11 +19,11 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 </parent_tag_name>
 ```
 
-### Layout
+### `<domain>`
 
 | `<domain>` Tag     | Attribute    | Value                                          | Description                                        |
 | ------------------ | ------------ | ---------------------------------------------- | -------------------------------------------------- |
-|                    | `xmlns:qemu` | `"http://libvirt.org/schemas/domain/qemu/1.0"` | Enable QEMU command lines and overrides.           |
+|                    | `xmlns:qemu` | `"http://libvirt.org/schemas/domain/qemu/1.0"` | Enable QEMU [command lines](#qemu-command-line) and [overrides](#qemu-overrides).           |
 |                    | `type`       | `"kvm"`                                        | Enable QEMU command lines and overrides.           |
 | `<name/>`[<sup>1</sup>](#1-name-best-practice)          | none         | text                                           | Name of the Guest.                                 |
 | `<memory/>`        | none         | a number                                       | Total allowed memory to guest, in Kilobytes.       |
@@ -80,7 +80,7 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
     - Given the amount of physical cores (example: 4).
     - Given the amount of logical threads per core (2 * 4 = 8).
 
-#### `<domain>`
+#### Memory
 
 | `<memoryBacking>` Tag | Attribute | Value       | Description                                                       |
 | --------------------- | --------- | ----------- | ----------------------------------------------------------------- |
@@ -95,24 +95,38 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
 - Dynamic *Host* memory page allocation is more flexible, but will require defragmentation before use as *Guest* memory pages (before a Guest machine may start).
 - **Warning:** If the specified *Guest* memory pages exceeds the allocated *Host* memory pages, then the Guest machine will fail to start.
 
-#### `<vcpu>` Attributes:
-- TODO: add here.
+#### CPU topology (1/2)
 
-#### `<vcpu>` Value:
-- TODO: add here.
+| `<vcpu>` Tag | Attribute   | Value      | Description                                                     |
+| ------------ | ----------- | ---------- | --------------------------------------------------------------- |
+|              | parent      | a number   | Specify number of Host threads for Guest (same as `<cpu>` tag). |
+|              | `placement` | `"static"` | Static allocation of Guest CPU threads.                         |
 
-#### `<cputune>` Values:
-##### `<vcpupin>` Attributes:
-- TODO: add here.
+| `<iothreads>` Tag | Attribute | Value       | Description                                                                                  |
+| ----------------- | --------- | ----------- | -------------------------------------------------------------------------------------------- |
+|                   | none      | a number    | Specify number of Host threads to manage storage block devices (see as `<iothreadpin>` tag). |
 
-##### `<vcpupin>` Attributes:
-- TODO: add here.
+| `<cputune>` Tag | Attribute  | Value       | Description                                  |
+| --------------- | ---------- | ----------- | -------------------------------------------- |
+| `<vcpupin>`     | `vcpu`     | a number    | Guest CPU: the Guest thread ID number.[<sup>1</sup>]      |
+| `<vcpupin>`     | `cpuset`   | a number    | Guest CPU: the Host thread ID number.[<sup>2</sup>]      |
+| `<emulatorpin>` | `cpuset`   | a number    | Guest IRQ: the Guest IO thread ID number.[<sup>3</sup>]  |
+| `<iothreadpin>` | `iothread` | a number    | Guest IO: the Guest IO thread ID number.    |
+| `<iothreadpin>` | `cpuset`   | a number    | Guest IO: the Host thread ID numbers.[<sup>4</sup>]      |
 
-##### `<emulatorpin>` Attribute:
-- TODO: add here.
+###### 1. `<vcpupin vcpu>`
+- Count does not exceed value defined in `<vcpu placement>`.
 
-##### `<iothreadpin>` Attributes:
-- TODO: add here.
+###### 2. `<vcpupin cpuset>`
+- Threads should not overlap Host process threads.
+
+###### 3. `<emulatorpin cpuset>`
+- Emulator threads handle Interrupt Requests for Guest hardware emulation.
+- Threads should not overlap Guest CPU threads defined in `vcpupin cpuset`.
+
+###### 4. `<iothreadpin cpuset>`
+- IO threads handle IO processes for Guest virtual drives/disks.
+- Threads should not overlap Guest CPU threads defined in `vcpupin cpuset`.
 
 ```xml
   <!-- CPU topology (1/2), given a 4-core, 8-thread CPU -->
@@ -129,6 +143,7 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
   </cputune>
 ```
 
+#### System information spoofing
 ```xml
   <!-- BIOS and System spoofing (you may copy your actual info). -->
   <sysinfo type="smbios">                                       <!-- This line is necessary! -->
@@ -148,6 +163,7 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
   </sysinfo>
 ```
 
+#### Features
 ```xml
     <!-- Hyper-V: Enlightenments for Microsoft Windows guests only -->
     <hyperv mode="custom">
@@ -178,28 +194,19 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
   </features>
 ```
 
+#### CPU topology (2/2)
 ```xml
   <!-- CPU information and features -->
   <cpu mode="host-passthrough" check="none" migratable="on">  <!-- Spoof the CPU info, with the actual CPU info. -->
     <topology sockets="1" dies="1" cores="6" threads="2"/>    <!-- Set CPU topology (2/2). -->
     <cache mode="passthrough"/>                               <!--  -->
     <feature policy="disable" name="hypervisor"/>             <!--  -->
-    <feature policy="disable" name="svm"/>                    <!--  -->
-  </cpu>
-```
-
-```xml
-<!-- Clock -->
-  <clock offset="localtime">                        <!--  -->
-    <timer name="rtc" tickpolicy="catchup"/>        <!--  -->
-    <timer name="pit" tickpolicy="delay"/>          <!--  -->
-    <timer name="hpet" present="no"/>               <!--  -->
-    <timer name="kvmclock" present="no"/>           <!--  -->
-    <timer name="hypervclock" present="yes"/>       <!--  -->
+    <feature policy="disaFeatures" present="yes"/>       <!--  -->
     <timer name="tsc" present="yes" mode="native"/> <!--  -->
   </clock>
 ```
 
+#### Power Management
 ```xml
   <!-- Power Management -->
   <pm>
@@ -208,18 +215,22 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
   </pm>
 ```
 
+#### Devices
 ```xml
   <!-- Emulated, Paravirtual, Passed-through Real PCI/e, and Shared Memory devices -->
   <devices>
-  
-  
-  
-  
-  
+  ...
   </devices>
+```
+
+#### QEMU command line
+```xml
   <qemu:commandline>...</qemu:commandline>  <!-- Add Evdev here -->
+```
+
+#### QEMU overrides
+```xml
   <qemu:override>...</qemu:override>
-</domain>
 ```
 
 ## Host Optimizations
