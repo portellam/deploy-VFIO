@@ -109,15 +109,15 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 #### Example #1
   - Given a system with...
     - no previous VFIO setup.
-    - ten (10) PCI device groups (index starting at `1`).
+    - ten (10) PCI device groups (index starting at '1').
     - one integrated (iGPU) or low-powered VGA device.
     - one powerful (gaming, workstation) VGA device.
-    - `16` GiB of RAM.
+    - 16 GiB of RAM.
   - We wish to...
     - parse PCI devices from system database.
     - passthrough all external PCI devices, except first group (contains low-powered VGA device).
     - enable static CPU isolation.
-    - enable Hugepages of `1` GiB each, `8` GiB total.
+    - enable Hugepages of 1 GiB each, 8 GiB total.
     - enable Evdev
     - execute Static setup, output to `/etc` configuration files (and not GRUB).
   ```
@@ -132,16 +132,17 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 #### Example #2
   - Given a system with...
     - a previous VFIO setup.
-    - ten (10) PCI device groups (index starting at `1`).
+    - ten (10) PCI device groups (index starting at '1').
     - two external VGA devices, the first being the worse of the two.
-    - `32` GiB of RAM.
+    - 32 GiB of RAM.
   - We wish to...
     - parse PCI devices from the default XML file.
     - passthrough all external PCI devices.
     - enable static CPU isolation.
-    - enable Hugepages of `1` GiB each, `16` GiB total.
+    - enable Hugepages of 1 GiB each, 16 GiB total.
     - enable Evdev
-    - setup multiple boot entries (GRUB), and default to exclude the first device group (containing a VGA device). **Requires [auto-Xorg](https://github.com/portellam/auto-Xorg).**
+    - setup multiple boot entries (GRUB), and default to exclude the first device group (containing a VGA device).
+      - **Requires [auto-Xorg](https://github.com/portellam/auto-Xorg).**
   ```
   sudo bash deploy-vfio \
     --xml \
