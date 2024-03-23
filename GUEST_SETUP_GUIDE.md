@@ -13,6 +13,7 @@ This document is a general overview and guide of installation, features, and opt
 Below is an *incomplete* layout for building a guest machine. The lines include additional features, of which are absent when creating a guest XML (with the `virsh` CLI command or `virt-manager` GUI application).
 
 ### Contents
+- [Syntax](#syntax)
 - [First lines in XML](#first-lines-in-xml)
 - [Memory](#memory)
 - [CPU topology (1/2)](#cpu-topology-12)
