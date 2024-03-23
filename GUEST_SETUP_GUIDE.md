@@ -3,7 +3,7 @@
 This document is a general overview and guide of installation, features, and optimizations of a QEMU/KVM guest/virtual machine (VM). You may also view example XML files of which you may use as a template.
 
 ## Table of Contents
-- [Guest XML a](#guest-xml-layout)
+- [Guest XML Layout](#guest-xml-layout)
 - [Host Optimizations](#host-optimizations)
 - [Guest Optimizations](#guest-optimizations)
 - [Benchmarking Guest Performance](#benchmarking-guest-performance)
@@ -12,6 +12,18 @@ This document is a general overview and guide of installation, features, and opt
 ## Guest XML Layout
 Below is an *incomplete* XML template for building a guest machine. The lines include additional features, of which are absent when creating a guest XML (with the `virsh` CLI command or `virt-manager` GUI application).
 
+## Table of Contents
+- [First lines in XML](#first-lines-in-xml)
+- [Memory](#memory)
+- [CPU topology (1/2)](#cpu-topology-12)
+- [System information spoofing](#system-information-spoofing)
+- [Features](#features)
+- [CPU topology (2/2)](#cpu-topology-22)
+- [Power Management](#power-management)
+- [Devices](#devices)
+- [QEMU command line](#qemu-overrides)
+- [QEMU overrides](#qemu-overrides)
+
 ### Syntax
 ```xml
 <parent_tag_name attribute_name="attribute_value">
@@ -19,7 +31,7 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 </parent_tag_name>
 ```
 
-### `<domain>`
+### First lines in XML
 
 | `<domain>` Tag     | Attribute    | Value                                          | Description                                        |
 | ------------------ | ------------ | ---------------------------------------------- | -------------------------------------------------- |
@@ -80,7 +92,7 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
     - Given the amount of physical cores (example: 4).
     - Given the amount of logical threads per core (2 * 4 = 8).
 
-#### Memory
+### Memory
 
 | `<memoryBacking>` Tag | Attribute | Value       | Description                                                       |
 | --------------------- | --------- | ----------- | ----------------------------------------------------------------- |
@@ -95,7 +107,7 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
 - Dynamic *Host* memory page allocation is more flexible, but will require defragmentation before use as *Guest* memory pages (before a Guest machine may start).
 - **Warning:** If the specified *Guest* memory pages exceeds the allocated *Host* memory pages, then the Guest machine will fail to start.
 
-#### CPU topology (1/2)
+### CPU topology (1/2)
 
 | `<vcpu>` Tag | Attribute   | Value      | Description                                                     |
 | ------------ | ----------- | ---------- | --------------------------------------------------------------- |
@@ -128,7 +140,7 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
 - IO threads handle IO processes for Guest virtual drives/disks.
 - Threads should not overlap Guest CPU threads defined in `vcpupin cpuset`.
 
-#### Example XML:
+##### Example XML:
 ```xml
   <!-- CPU topology (1/2), given a 4-core, 8-thread CPU... -->
   <vcpu placement="static">4</vcpu>
@@ -143,7 +155,7 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
   </cputune>
 ```
 
-#### System information spoofing
+### System information spoofing
 ```xml
   <!-- BIOS and System spoofing (you may copy your actual info). -->
   <sysinfo type="smbios">                                       <!-- This line is necessary! -->
@@ -163,7 +175,7 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
   </sysinfo>
 ```
 
-#### Features
+### Features
 
 TODO: make the following inline XML into chart, describe each feature.
 
@@ -197,7 +209,7 @@ TODO: make the following inline XML into chart, describe each feature.
   </features>
 ```
 
-#### CPU topology (2/2)
+### CPU topology (2/2)
 
 TODO: make the following inline XML into chart, describe each feature.
 
@@ -212,7 +224,7 @@ TODO: make the following inline XML into chart, describe each feature.
   </clock>
 ```
 
-#### Power Management
+### Power Management
 ```xml
   <!-- Power Management -->
   <pm>
@@ -221,7 +233,7 @@ TODO: make the following inline XML into chart, describe each feature.
   </pm>
 ```
 
-#### Devices
+### Devices
 
 TODO: make the following inline XML into chart, describe each feature???
 ```xml
@@ -231,7 +243,7 @@ TODO: make the following inline XML into chart, describe each feature???
   </devices>
 ```
 
-#### QEMU command line
+### QEMU command line
 
 TODO: make the following inline XML into chart, describe each feature.
 
@@ -239,7 +251,7 @@ TODO: make the following inline XML into chart, describe each feature.
   <qemu:commandline>...</qemu:commandline>  <!-- Add Evdev here -->
 ```
 
-#### QEMU overrides
+### QEMU overrides
 
 TODO: make the following inline XML into chart, describe each feature.
 
