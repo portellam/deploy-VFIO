@@ -8,6 +8,8 @@
 - begin work on "Guest Optimizations".
 - begin work on "Benchmarking Guest Performance".
 - sort multiple related citations into "References".
+- add pictures of virt-manager.
+- how to setup virtio disks (virtio, virtio-scsi).
 
 ## Table of Contents
 - [deploy-VFIO README](deploy-vfio-readme)
@@ -299,9 +301,43 @@ TODO: make the following inline XML into chart, describe each feature???
   </devices>
 ```
 
+#### Emulated
+
+TODO: make this inline XML?
+- QEMU
+- RedHat
+- Other legacy devices
+  - SoftGPU https://github.com/JHRobotics/softgpu
+
+lorem ipsum
+
+#### Real/Passthrough
+TODO: make this inline XML?
+
+  - AMD
+    - Integrated
+    - Dedicated
+    - Reset bug
+  - Intel
+    - Integrated
+    - Dedicated
+      - **Note:** Not much research done regarding this topic. Please refer to any mentioned guides, the Reddit forum, or use an Internet search engine with the keywords `intel gpu vfio`.
+  - NVIDIA
+    - Problems:
+      - Boot bug (Solution: Use known-good copy of given GPU's video BIOS or VBIOS).
+      - TODO: add references, programs used, instructions, and XML here.
+
+#### Memory devices
+
+TODO: make this inline XML?
+  - Looking Glass
+  - Scream
+  - ???
+
 ### QEMU command line
 
 TODO: make the following inline XML into chart, describe each feature.
+  - Evdev
 
 ```xml
   <qemu:commandline>...</qemu:commandline>  <!-- Add Evdev here -->
@@ -325,4 +361,33 @@ TODO: add here.
 TODO: add here.
 
 ## References
-TODO: add here.
+#### Chipset
+&ensp;<sub>I440FX | **[Wikipedia](https://en.wikipedia.org/wiki/Intel_440FX)**</sub>
+
+&ensp;<sub>I440FX | **[QEMU documentation](https://www.qemu.org/docs/master/system/i386/pc.html)**</sub>
+
+&ensp;<sub>PCI vs PCIe | **[RedHat documentation](https://wiki.qemu.org/images/f/f6/PCIvsPCIe.pdf)**</sub>
+
+&ensp;<sub>Q35 | **[RedHat documentation](https://wiki.qemu.org/images/4/4e/Q35.pdf)**</sub>
+
+#### CPU architecture
+&ensp;<sub>AArch32 | **[Wikipedia](https://en.wikipedia.org/wiki/ARM_architecture_family#AArch32)**</sub>
+
+&ensp;<sub>AArch64 | **[Wikipedia](https://en.wikipedia.org/wiki/AArch64)**</sub>
+
+&ensp;<sub>x86 | **[Wikipedia](https://en.wikipedia.org/wiki/X86)**</sub>
+
+&ensp;<sub>x64 | **[Wikipedia](https://en.wikipedia.org/wiki/X64)**</sub>
+
+#### Firmware
+&ensp;<sub>BIOS | **[Wikipedia](https://en.wikipedia.org/wiki/BIOS)**</sub>
+
+&ensp;<sub>UEFI | **[Wikipedia](https://en.wikipedia.org/wiki/UEFI)**</sub>
+
+### Memory backing
+&ensp;<sub>Memory Tuning on Virtual Machines | **[RedHat documentation](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_tuning_and_optimization_guide/sect-virtualization_tuning_optimization_guide-memory-tuning)**</sub>
+
+#### Hugepages
+&ensp;<sub>Huge memory pages | **[Arch Wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
+
+&ensp;<sub>Huge pages | **[Debian Wiki](https://wiki.debian.org/Hugepages)**</sub>
