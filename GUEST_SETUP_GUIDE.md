@@ -36,15 +36,14 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 - Currently allocated memory to guest, in Kilobytes.
 
 #### <memoryBacking> Value
-- `<allocation mode="immediate"/>`&nbsp;Specifies how memory allocation is performed.
-- `<discard/>`&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&nbsp;TODO: add here.
-- `<hugepages>`&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;Enable Huge memory pages.
+- `<allocation mode="immediate"/>` Specifies how memory allocation is performed.
+- `<discard/>` TODO: add here.
+- `<hugepages>` Enable Huge memory pages.
   - Static allocation of into *Guest* huge pages.
   - Huge: Memory page size greater than 4K bytes (2M or 1G bytes). The greater the size, the lower the Host overhead.
   - Dynamic *Host* memory page allocation is more flexible, but will require defragmentation before use as *Guest* memory pages (before a Guest machine may start).
   - **Warning:** If the specified *Guest* memory pages exceeds the allocated *Host* memory pages, then the Guest machine will fail to start.
-
-- `<nosharepages/>`&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;Prevents the host from merging the same memory used among guests.
+- `<nosharepages/>` Prevents the host from merging the same memory used among guests.
 
 #### <vcpu> Attributes
 - TODO: add here.
