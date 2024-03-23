@@ -20,12 +20,12 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 </parent_tag_name>
 ```
 
-### <domain> Attributes:
+### "<domain>" Attributes:
 - Enable QEMU command lines and overrides:
   - `xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0"`
   - `type='kvm'`
 
-### <domain> Values
+### <domain><span style="color:white">_</span>Values
 #### <name> Value
 - Configured at guest initilization with `virsh` or `virt-manager`.
 
@@ -35,7 +35,7 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 #### <currentMemory> Value
 - Currently allocated memory to guest, in Kilobytes.
 
-#### <memoryBacking> Value
+#### <memoryBacking>Value
 - `<allocation mode="immediate"/>` Specifies how memory allocation is performed.
 - `<discard/>` TODO: add here.
 - `<hugepages>` Enable Huge memory pages.
