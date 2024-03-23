@@ -1,5 +1,14 @@
 
 # Guest Setup Guide
+## TODO:
+- flesh out "Guest XML Layout".
+- add Guest XML file with all lines referenced in "Guest XML Layout".
+- add citations!
+- begin work on "Host Optimizations".
+- begin work on "Guest Optimizations".
+- begin work on "Benchmarking Guest Performance".
+- sort multiple related citations into "References".
+
 ## Table of Contents
 - [deploy-VFIO README](deploy-vfio-readme)
 - [About](#about)
