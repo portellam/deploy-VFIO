@@ -20,22 +20,22 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 </parent_tag_name>
 ```
 
-### "<domain>" Attributes:
+### `<domain>` Attributes:
 - Enable QEMU command lines and overrides:
   - `xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0"`
   - `type='kvm'`
 
-### <domain><span style="color:white">_</span>Values
-#### <name> Value
+### `<domain>` Values
+#### `<name>` Value
 - Configured at guest initilization with `virsh` or `virt-manager`.
 
-#### <memory> Value
+#### `<memory>` Value
 - Total allowed memory to guest, in Kilobytes.
 
-#### <currentMemory> Value
+#### `<currentMemory>` Value
 - Currently allocated memory to guest, in Kilobytes.
 
-#### <memoryBacking>Value
+#### `<memoryBacking>` Value
 - `<allocation mode="immediate"/>` Specifies how memory allocation is performed.
 - `<discard/>` TODO: add here.
 - `<hugepages>` Enable Huge memory pages.
@@ -45,23 +45,23 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
   - **Warning:** If the specified *Guest* memory pages exceeds the allocated *Host* memory pages, then the Guest machine will fail to start.
 - `<nosharepages/>` Prevents the host from merging the same memory used among guests.
 
-#### <vcpu> Attributes
+#### `<vcpu>` Attributes
 - TODO: add here.
 
-#### <vcpu> Value
+#### `<vcpu>` Value
 - TODO: add here.
 
-#### <cputune> Values
-##### <vcpupin> Attributes
+#### `<cputune>` Values
+##### `<vcpupin>` Attributes
 - TODO: add here.
 
-##### <vcpupin> Attributes
+##### `<vcpupin>` Attributes
 - TODO: add here.
 
-##### <emulatorpin> Attribute
+##### `<emulatorpin>` Attribute
 - TODO: add here.
 
-##### <iothreadpin> Attributes
+##### `<iothreadpin>` Attributes
 - TODO: add here.
 
 ```xml
