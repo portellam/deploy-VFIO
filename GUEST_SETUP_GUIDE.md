@@ -39,8 +39,6 @@ Below is an *incomplete* layout for building a guest machine. The lines include 
 |                    | `xmlns:qemu` | `"http://libvirt.org/schemas/domain/qemu/1.0"` | Enable QEMU [command lines](#qemu-command-line) and [overrides](#qemu-overrides).           |
 |                    | `type`       | `"kvm"`                                        | Enable QEMU [command lines](#qemu-command-line) and [overrides](#qemu-overrides).           |
 | `<name/>`[<sup>1</sup>](#1-name-best-practice)          | none         | text                                           | Name of the Guest.                                 |
-| `<memory/>`        | none         | a number                                       | Total allowed memory to guest, in Kilobytes.       |
-| `<currentMemory/>` | none         | a number                                       | Currently allocated memory to guest, in Kilobytes. |
 
 ###### 1. `<name/>` Best practice:
 **Note:** The following formatting examples are a personal preference of the Author.
@@ -94,6 +92,17 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
     - Given the amount of logical threads per core (2 * 4 = 8).
 
 ### Memory
+To gather information of system memory, execute: `free --kibi --total --wide`
+
+| `<memory>` Tag | Attribute | Value    | Description                                                       |
+| -------------- | --------- | -------- | ----------------------------------------------------------------- |
+|                | parent    | a number | The total amount of memory.                                       |
+|                | `unit`    | `"KiB"`  | Amount of memory in Kibibytes (1024 bytes, Kilo is 1000 bytes).   |
+
+| `<currentMemory>` Tag | Attribute | Value    | Description                                                       |
+| --------------------- | --------- | -------- | ----------------------------------------------------------------- |
+|                       | parent    | a number | The current amount of memory.                                     |
+|                       | `unit`    | `"KiB"`  | Amount of memory in Kibibytes (1024 bytes, Kilo is 1000 bytes).   |
 
 | `<memoryBacking>` Tag | Attribute | Value       | Description                                                       |
 | --------------------- | --------- | ----------- | ----------------------------------------------------------------- |
@@ -109,6 +118,7 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
 - **Warning:** If the specified *Guest* memory pages exceeds the allocated *Host* memory pages, then the Guest machine will fail to start.
 
 ### CPU topology (1/2)
+To gather information about your CPU, execute: `lscpu | grep --extended-regexp --ignore-case "per core|per socket|socket"`
 
 | `<vcpu>` Tag | Attribute   | Value      | Description                                                     |
 | ------------ | ----------- | ---------- | --------------------------------------------------------------- |
@@ -157,6 +167,11 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
 ```
 
 ### System information spoofing
+To gather information about your BIOS, execute:
+&ensp;`sudo dmidecode --type bios | grep --extended-regexp --ignore-case "vendor|version|release date"`
+To gather information about your system, execute:
+&ensp;`sudo dmidecode --type system | grep --extended-regexp --ignore-case "manufacturer|product name|version|serial number|sku number|family"`
+
 ```xml
   <!-- BIOS and System spoofing (you may copy your actual info). -->
   <sysinfo type="smbios">                                       <!-- This line is necessary! -->
@@ -168,10 +183,10 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
     <system>
       <entry name="manufacturer">vendor_of_motherboard</entry>
       <entry name="product">product_name</entry>
-      <entry name="version">Default string</entry>              <!-- Leave this unchanged. -->
-      <entry name="serial">Default string</entry>               <!-- Leave this unchanged. -->
-      <entry name="sku">Default string</entry>                  <!-- Leave this unchanged. -->
-      <entry name="family">Default string</entry>               <!-- Leave this unchanged. -->
+      <entry name="version">Default string</entry>
+      <entry name="serial">Default string</entry>
+      <entry name="sku">Default string</entry>
+      <entry name="family">Default string</entry>
     </system>
   </sysinfo>
 ```
@@ -211,6 +226,7 @@ TODO: make the following inline XML into chart, describe each feature.
 ```
 
 ### CPU topology (2/2)
+To gather information about your CPU, execute: `lscpu | grep --extended-regexp --ignore-case "per core|per socket|socket"`
 
 TODO: make the following inline XML into chart, describe each feature.
 
@@ -223,6 +239,13 @@ TODO: make the following inline XML into chart, describe each feature.
     <feature policy="disaFeatures" present="yes"/>       <!--  -->
     <timer name="tsc" present="yes" mode="native"/> <!--  -->
   </clock>
+```
+
+##### Example output:
+```
+Thread(s) per core:                 2
+Core(s) per socket:                 8
+Socket(s):                          1
 ```
 
 ### Power Management
