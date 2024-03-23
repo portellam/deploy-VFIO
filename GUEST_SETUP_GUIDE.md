@@ -13,22 +13,59 @@ This document is a general overview and guide of installation, features, and opt
 ## Guest XML Template
 Below is an *incomplete* XML template for building a guest machine. The lines include additional features, of which are absent when creating a guest XML (with the `virsh` CLI command or `virt-manager` GUI application).
 
+### XML Syntax
 ```xml
-<domain xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0" type="kvm">     <!-- Add this line to allow for QEMU commandline and overrides-->
+<parent_tag_name attribute_name="attribute_value">
+  <child_tag_name>child_tag_value</child_tag_name>
+</parent_tag_name>
+```
 
-  <name>windows10_uefi</name>
+### <domain> Attributes:
+- Enable QEMU command lines and overrides:
+  - `xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0"`
+  - `type='kvm'`
 
-  <!-- Memory -->
-  <memory>...</memory>                <!-- Memory in KiB. Set in Virt-Manager -->
-  <currentMemory>...</currentMemory>  <!-- Memory in KiB. Set in Virt-Manager -->
+### <domain> Values
+#### <name> Value
+- Configured at guest initilization with `virsh` or `virt-manager`.
 
-  <memoryBacking>
-    <hugepages/>                      <!-- Enables Hugepages  -->
-    <nosharepages/>                   <!--   -->
-    <allocation mode="immediate"/>    <!--   -->
-    <discard/>                        <!--   -->
-  </memoryBacking>
+#### <memory> Value
+- Total allowed memory to guest, in Kilobytes.
 
+#### <currentMemory> Value
+- Currently allocated memory to guest, in Kilobytes.
+
+#### <memoryBacking> Value
+- `<allocation mode="immediate"/>`&nbsp;Specifies how memory allocation is performed.
+- `<discard/>`&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&nbsp;TODO: add here.
+- `<hugepages>`&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;Enable Huge memory pages.
+  - Static allocation of into *Guest* huge pages.
+  - Huge: Memory page size greater than 4K bytes (2M or 1G bytes). The greater the size, the lower the Host overhead.
+  - Dynamic *Host* memory page allocation is more flexible, but will require defragmentation before use as *Guest* memory pages (before a Guest machine may start).
+  - **Warning:** If the specified *Guest* memory pages exceeds the allocated *Host* memory pages, then the Guest machine will fail to start.
+
+- `<nosharepages/>`&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;Prevents the host from merging the same memory used among guests.
+
+#### <vcpu> Attributes
+- TODO: add here.
+
+#### <vcpu> Value
+- TODO: add here.
+
+#### <cputune> Values
+##### <vcpupin> Attributes
+- TODO: add here.
+
+##### <vcpupin> Attributes
+- TODO: add here.
+
+##### <emulatorpin> Attribute
+- TODO: add here.
+
+##### <iothreadpin> Attributes
+- TODO: add here.
+
+```xml
   <!-- CPU topology (1/2), given a 4-core, 8-thread CPU -->
   <vcpu placement="static">4</vcpu>           <!-- Specify number of Host threads for Guest (Copy this value from "cpu" tag). -->
   <iothreads>1</iothreads>                    <!-- Specify number of Host threads to manage storage block devices -->
@@ -41,7 +78,9 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
     <emulatorpin cpuset="1,4"/>               <!-- Guest IO: Use the second core, first thread -->
     <iothreadpin iothread="1" cpuset="1,4"/>  <!-- Guest IO: Use the second core, second thread -->
   </cputune>
+```
 
+```xml
   <!-- BIOS and System spoofing (you may copy your actual info). -->
   <sysinfo type="smbios">                                       <!-- This line is necessary! -->
     <bios>
@@ -58,12 +97,9 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
       <entry name="family">Default string</entry>               <!-- Leave this unchanged. -->
     </system>
   </sysinfo>
+```
 
-  <!-- Features and Optimiziations -->
-  <features>
-    <acpi/>
-    <apic/>
-
+```xml
     <!-- Hyper-V: Enlightenments for Microsoft Windows guests only -->
     <hyperv mode="custom">
       <relaxed state="on"/>
@@ -91,7 +127,9 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
     <vmport state="off"/>
     <ioapic driver="kvm"/>
   </features>
+```
 
+```xml
   <!-- CPU information and features -->
   <cpu mode="host-passthrough" check="none" migratable="on">  <!-- Spoof the CPU info, with the actual CPU info. -->
     <topology sockets="1" dies="1" cores="6" threads="2"/>    <!-- Set CPU topology (2/2). -->
@@ -99,23 +137,29 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
     <feature policy="disable" name="hypervisor"/>             <!--  -->
     <feature policy="disable" name="svm"/>                    <!--  -->
   </cpu>
+```
 
+```xml
 <!-- Clock -->
-  <clock offset="localtime">
-    <timer name="rtc" tickpolicy="catchup"/>
-    <timer name="pit" tickpolicy="delay"/>
-    <timer name="hpet" present="no"/>
-    <timer name="kvmclock" present="no"/>
-    <timer name="hypervclock" present="yes"/>
-    <timer name="tsc" present="yes" mode="native"/>
+  <clock offset="localtime">                        <!--  -->
+    <timer name="rtc" tickpolicy="catchup"/>        <!--  -->
+    <timer name="pit" tickpolicy="delay"/>          <!--  -->
+    <timer name="hpet" present="no"/>               <!--  -->
+    <timer name="kvmclock" present="no"/>           <!--  -->
+    <timer name="hypervclock" present="yes"/>       <!--  -->
+    <timer name="tsc" present="yes" mode="native"/> <!--  -->
   </clock>
+```
 
+```xml
   <!-- Power Management -->
   <pm>
     <suspend-to-mem enabled="yes"/>   <!-- Enable S3 Suspend (Sleep) -->
     <suspend-to-disk enabled="yes"/>  <!-- Enable S4 Suspend (Hibernation) -->
   </pm>
+```
 
+```xml
   <!-- Emulated, Paravirtual, Passed-through Real PCI/e, and Shared Memory devices -->
   <devices>
   
