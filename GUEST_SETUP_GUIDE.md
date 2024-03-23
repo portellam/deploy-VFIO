@@ -3,14 +3,13 @@
 This document is a general overview and guide of installation, features, and optimizations of a QEMU/KVM guest/virtual machine (VM). You may also view example XML files of which you may use as a template.
 
 ## Table of Contents
-- [Guest XML Template](#guest-xml-template)
+- [Guest XML a](#guest-xml-layout)
 - [Host Optimizations](#host-optimizations)
 - [Guest Optimizations](#guest-optimizations)
 - [Benchmarking Guest Performance](#benchmarking-guest-performance)
 - [References](#references)
-- [Disclaimer](#disclaimer)
 
-## Guest XML Template
+## Guest XML Layout
 Below is an *incomplete* XML template for building a guest machine. The lines include additional features, of which are absent when creating a guest XML (with the `virsh` CLI command or `virt-manager` GUI application).
 
 ### XML Syntax
@@ -39,11 +38,11 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 - `<allocation mode="immediate"/>`: Specifies how memory allocation is performed.
 - `<discard/>`: TODO: add here.
 - `<hugepages>`: Enable Huge memory pages.
-  - Static allocation of into *Guest* huge pages.
+  - Static allocation of *Host* memory pages into *Guest* memory pages.
   - Huge: Memory page size greater than 4K bytes (2M or 1G bytes). The greater the size, the lower the Host overhead.
   - Dynamic *Host* memory page allocation is more flexible, but will require defragmentation before use as *Guest* memory pages (before a Guest machine may start).
   - **Warning:** If the specified *Guest* memory pages exceeds the allocated *Host* memory pages, then the Guest machine will fail to start.
-- `<nosharepages/>`: Prevents the host from merging the same memory used among guests.
+- `<nosharepages/>`: Prevents the Host from merging the same memory used among guests.
 
 #### `<vcpu>` Attributes:
 - TODO: add here.
@@ -172,11 +171,10 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 </domain>
 ```
 
-##
+## Host Optimizations
+
+## Guest Optimizations
 
 ## Benchmarking Guest Performance
 
 ## References
-
-## Disclaimer
-The Author makes no guarantees of the stability, performance or success of the features, optimizations, and settings described in this document. The information detailed within should be applied and thoroughly tested before considering for a production environment.
