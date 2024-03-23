@@ -3,16 +3,17 @@
 This document is a general overview and guide of installation, features, and optimizations of a QEMU/KVM guest/virtual machine (VM). You may also view example XML files of which you may use as a template.
 
 ## Table of Contents
-- [Guest XML Layout](#guest-xml-layout)
+- [Guest XML](#guest-xml)
 - [Host Optimizations](#host-optimizations)
 - [Guest Optimizations](#guest-optimizations)
 - [Benchmarking Guest Performance](#benchmarking-guest-performance)
 - [References](#references)
 
-## Guest XML Layout
+## Guest XML
+### XML Layout
 Below is an *incomplete* XML template for building a guest machine. The lines include additional features, of which are absent when creating a guest XML (with the `virsh` CLI command or `virt-manager` GUI application).
 
-## Table of Contents
+### XML Contents
 - [First lines in XML](#first-lines-in-xml)
 - [Memory](#memory)
 - [CPU topology (1/2)](#cpu-topology-12)
