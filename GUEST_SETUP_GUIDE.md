@@ -251,6 +251,24 @@ TODO: make the following inline XML into chart, describe each feature.
   </clock>
 ```
 
+| `<cpu>` Tag  | Attribute    | Value                | Description                                                     |
+| ------------ | ------------ | -------------------- | --------------------------------------------------------------  |
+| parent       | `mode`       | `"host-passthrough"` | Spoof the Guest CPU info, with the actual Host CPU info.        |
+|              | `check`      | `"none"`             | TODO: add here.                                                 |
+|              | `migratable` | `"on"`               | TODO: add here.                                                 |
+| `<topology>` | `sockets`    | a number             | The number of CPU sockets, or maxmium number of dies.           |
+|              | `dies`       | a number             | The number of CPU dies (typically one).                         |
+|              | `cores`      | a number             | The number of CPU cores.                                        |
+|              | `threads`    | a number             | The number of CPU threads per core (typically a factor of two). |
+| `<cache>`    | `mode`       | `"passthrough"`      | TODO: add here.                                                 |
+| `<feature>`  | `policy`     | `"disable"`          | TODO: add here.                                                 |
+|              | `name`       | `"hypervisor"`       | TODO: add here.                                                 |
+| `<feature>`  | `policy`     | `"disable"`          | TODO: add here.                                                 |
+|              | `present`    | `"yes"`              | TODO: add here.                                                 |
+| `<timer>`    | `name`       | `"tsc"`              | TODO: add here.                                                 |
+|              | `present`    | `"yes"`              | TODO: add here.                                                 |
+|              | `mode`       | `"native"`           | TODO: add here.                                                 |
+
 ### Power Management
 ```xml
   <!-- Power Management -->
