@@ -24,7 +24,7 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 | `<domain>` Tag     | Attribute    | Value                                          | Description                                        |
 | ------------------ | ------------ | ---------------------------------------------- | -------------------------------------------------- |
 |                    | `xmlns:qemu` | `"http://libvirt.org/schemas/domain/qemu/1.0"` | Enable QEMU [command lines](#qemu-command-line) and [overrides](#qemu-overrides).           |
-|                    | `type`       | `"kvm"`                                        | Enable QEMU command lines and overrides.           |
+|                    | `type`       | `"kvm"`                                        | Enable QEMU [command lines](#qemu-command-line) and [overrides](#qemu-overrides).           |
 | `<name/>`[<sup>1</sup>](#1-name-best-practice)          | none         | text                                           | Name of the Guest.                                 |
 | `<memory/>`        | none         | a number                                       | Total allowed memory to guest, in Kilobytes.       |
 | `<currentMemory/>` | none         | a number                                       | Currently allocated memory to guest, in Kilobytes. |
@@ -85,7 +85,7 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
 | `<memoryBacking>` Tag | Attribute | Value       | Description                                                       |
 | --------------------- | --------- | ----------- | ----------------------------------------------------------------- |
 | `<allocation/>`       | `mode`    | `immediate` | Specifies how memory allocation is performed.                     |
-| `<discard/>`          | none      | none        | TODO: add here.                                                   |
+| `<discard/>`          | none      | none        | TODO: define, what is this?                                                   |
 | `<hugepages/>`[<sup>1</sup>](#1-hugepages)       | none      | none        | Enable Huge memory pages.                                         |
 | `<nosharepages/>`     | none      | none        | Prevents the Host from merging the same memory used among guests. |
 
@@ -108,11 +108,11 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
 
 | `<cputune>` Tag | Attribute  | Value       | Description                                  |
 | --------------- | ---------- | ----------- | -------------------------------------------- |
-| `<vcpupin>`     | `vcpu`     | a number    | Guest CPU: the Guest thread ID number.[<sup>1</sup>]      |
-| `<vcpupin>`     | `cpuset`   | a number    | Guest CPU: the Host thread ID number.[<sup>2</sup>]      |
-| `<emulatorpin>` | `cpuset`   | a number    | Guest IRQ: the Guest IO thread ID number.[<sup>3</sup>]  |
+| `<vcpupin>`     | `vcpu`     | a number    | Guest CPU: the Guest thread ID number.[<sup>1</sup>](#1-vcpupin-vcpu)      |
+| `<vcpupin>`     | `cpuset`   | a number    | Guest CPU: the Host thread ID number.[<sup>2</sup>](#2-vcpupin-cpuset)      |
+| `<emulatorpin>` | `cpuset`   | a number    | Guest IRQ: the Guest IO thread ID number.[<sup>3</sup>](#3-emulatorpin-cpuset)  |
 | `<iothreadpin>` | `iothread` | a number    | Guest IO: the Guest IO thread ID number.    |
-| `<iothreadpin>` | `cpuset`   | a number    | Guest IO: the Host thread ID numbers.[<sup>4</sup>]      |
+| `<iothreadpin>` | `cpuset`   | a number    | Guest IO: the Host thread ID numbers.[<sup>4</sup>](#4-iothreadpin-cpuset)      |
 
 ###### 1. `<vcpupin vcpu>`
 - Count does not exceed value defined in `<vcpu placement>`.
@@ -128,18 +128,18 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
 - IO threads handle IO processes for Guest virtual drives/disks.
 - Threads should not overlap Guest CPU threads defined in `vcpupin cpuset`.
 
+#### Example XML:
 ```xml
-  <!-- CPU topology (1/2), given a 4-core, 8-thread CPU -->
-  <vcpu placement="static">4</vcpu>           <!-- Specify number of Host threads for Guest (Copy this value from "cpu" tag). -->
-  <iothreads>1</iothreads>                    <!-- Specify number of Host threads to manage storage block devices -->
+  <!-- CPU topology (1/2), given a 4-core, 8-thread CPU... -->
+  <vcpu placement="static">4</vcpu>
+  <iothreads>1</iothreads>
   <cputune>
-    <vcpupin vcpu="0" cpuset="2"/>            <!-- Guest CPU: Use the third core, first thread -->
-    <vcpupin vcpu="1" cpuset="6"/>            <!-- Guest CPU: Use the third core, second thread -->
-    <vcpupin vcpu="2" cpuset="3"/>            <!-- Guest CPU: Use the fourth core, first thread -->
-    <vcpupin vcpu="3" cpuset="7"/>            <!-- Guest CPU: Use the fourth core, second thread -->
-
-    <emulatorpin cpuset="1,4"/>               <!-- Guest IO: Use the second core, first thread -->
-    <iothreadpin iothread="1" cpuset="1,4"/>  <!-- Guest IO: Use the second core, second thread -->
+    <vcpupin vcpu="0" cpuset="2"/>            <!-- Guest CPU: use the third core, first thread. -->
+    <vcpupin vcpu="1" cpuset="6"/>            <!-- Guest CPU: use the third core, second thread. -->
+    <vcpupin vcpu="2" cpuset="3"/>            <!-- Guest CPU: use the fourth core, first thread. -->
+    <vcpupin vcpu="3" cpuset="7"/>            <!-- Guest CPU: use the fourth core, second thread. -->
+    <emulatorpin cpuset="1,4"/>               <!-- Guest IRQ: use the second core, two threads -->
+    <iothreadpin iothread="1" cpuset="1,4"/>  <!-- Guest IO: use the second core, two threads -->
   </cputune>
 ```
 
@@ -164,6 +164,9 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
 ```
 
 #### Features
+
+TODO: make the following inline XML into chart, describe each feature.
+
 ```xml
     <!-- Hyper-V: Enlightenments for Microsoft Windows guests only -->
     <hyperv mode="custom">
@@ -195,6 +198,9 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
 ```
 
 #### CPU topology (2/2)
+
+TODO: make the following inline XML into chart, describe each feature.
+
 ```xml
   <!-- CPU information and features -->
   <cpu mode="host-passthrough" check="none" migratable="on">  <!-- Spoof the CPU info, with the actual CPU info. -->
@@ -216,6 +222,8 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
 ```
 
 #### Devices
+
+TODO: make the following inline XML into chart, describe each feature???
 ```xml
   <!-- Emulated, Paravirtual, Passed-through Real PCI/e, and Shared Memory devices -->
   <devices>
@@ -224,19 +232,29 @@ Format: `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`
 ```
 
 #### QEMU command line
+
+TODO: make the following inline XML into chart, describe each feature.
+
 ```xml
   <qemu:commandline>...</qemu:commandline>  <!-- Add Evdev here -->
 ```
 
 #### QEMU overrides
+
+TODO: make the following inline XML into chart, describe each feature.
+
 ```xml
   <qemu:override>...</qemu:override>
 ```
 
 ## Host Optimizations
+TODO: add here.
 
 ## Guest Optimizations
+TODO: add here.
 
 ## Benchmarking Guest Performance
+TODO: add here.
 
 ## References
+TODO: add here.
