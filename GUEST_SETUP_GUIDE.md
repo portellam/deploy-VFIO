@@ -24,7 +24,7 @@
 The purpose of this document is to inform a new or returning user how to optimize a Guest machine right n
 this moment, without demanding research and the time investment involved.
 
-This document serves not replace other Wikis ((ArchLinux))[] or forums ((VFIO forum (Reddit)))[https://old.reddit.com/r/vfio]. If you are a fact-checker, tinkerer and/or a more advanced user, then please do so.
+This document does not serve to replace existing knowledge-bases suxh as the [ArchLinux Wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF) the [VFIO forum (Reddit)](https://old.reddit.com/r/vfio). If you have any unexpected questions, wish to fact-check, or want to expand your knowledge, then please visit these places!
 
 Copy and paste what you need from here and/or any example XML files, to your Guest XML file.
 
