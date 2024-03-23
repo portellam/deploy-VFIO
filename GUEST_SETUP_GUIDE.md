@@ -37,12 +37,24 @@ Below is an *incomplete* XML template for building a guest machine. The lines in
 #### `<memoryBacking>` Value:
 - `<allocation mode="immediate"/>`: Specifies how memory allocation is performed.
 - `<discard/>`: TODO: add here.
-- `<hugepages>`: Enable Huge memory pages.
+- `<hugepages/>`: Enable Huge memory pages.
   - Static allocation of *Host* memory pages into *Guest* memory pages.
   - Huge: Memory page size greater than 4K bytes (2M or 1G bytes). The greater the size, the lower the Host overhead.
   - Dynamic *Host* memory page allocation is more flexible, but will require defragmentation before use as *Guest* memory pages (before a Guest machine may start).
   - **Warning:** If the specified *Guest* memory pages exceeds the allocated *Host* memory pages, then the Guest machine will fail to start.
 - `<nosharepages/>`: Prevents the Host from merging the same memory used among guests.
+
+| `<memoryBacking>` | Attribute | Value       | Description                                                       |
+| `<allocation/>`   | `mode`    | `immediate` | Specifies how memory allocation is performed.                     |
+| `<discard/>`      | none      | none        | TODO: add here.                                                   |
+| `<hugepages/>`[<sup>1</sup>](#1)    | none      | none        | Enable Huge memory pages.                                         |
+| `<nosharepages/>` | none      | none        | Prevents the Host from merging the same memory used among guests. |
+
+##### 1. <hugepages/>
+- Static allocation of *Host* memory pages into *Guest* memory pages.
+- Huge: Memory page size greater than 4K bytes (2M or 1G bytes). The greater the size, the lower the Host overhead.
+- Dynamic *Host* memory page allocation is more flexible, but will require defragmentation before use as *Guest* memory pages (before a Guest machine may start).
+- **Warning:** If the specified *Guest* memory pages exceeds the allocated *Host* memory pages, then the Guest machine will fail to start.
 
 #### `<vcpu>` Attributes:
 - TODO: add here.
