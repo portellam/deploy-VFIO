@@ -1,4 +1,3 @@
-
 # Guest Setup Guide
 ## TODO:
 - use collapsable dropdowns (https://gist.github.com/pierrejoubert73/902cc94d79424356a8d20be2b382e1ab).
@@ -22,7 +21,12 @@
 - [References](#references)
 
 ## About
-This document is a general overview and guide of installation, features, and optimizations of a QEMU/KVM Virtual Machine (VM) or Guest. Review the XML references below or view example XML files, of which you may use as a template.
+The purpose of this document is to inform a new or returning user how to optimize a Guest machine right n
+this moment, without demanding research and the time investment involved.
+
+This document serves not replace other Wikis ((ArchLinux))[] or forums ((VFIO forum (Reddit)))[https://old.reddit.com/r/vfio]. If you are a fact-checker, tinkerer and/or a more advanced user, then please do so.
+
+Copy and paste what you need from here and/or any example XML files, to your Guest XML file.
 
 ## Guest XML Layout
 Below is an *incomplete* layout for building a Guest machine. The lines include additional features, of which are absent when creating a Guest XML (with the `virsh` CLI command or `virt-manager` GUI application).
@@ -149,7 +153,7 @@ To gather information about your CPU, execute: `lscpu | grep --extended-regexp -
 | --------------- | ---------- | ----------- | -------------------------------------------- |
 | `<vcpupin>`     | `vcpu`     | a number    | Guest CPU: the Guest thread ID number.[<sup>1</sup>](#1-vcpupin-vcpu)      |
 | `<vcpupin>`     | `cpuset`   | a number    | Guest CPU: the Host thread ID number.[<sup>2</sup>](#2-vcpupin-cpuset)      |
-| `<emulatorpin>` | `cpuset`   | a number    | Guest IRQ: the Guest IO thread ID number.[<sup>3</sup>](#3-emulatorpin-cpuset)  |
+| `<emulatorpin>` | `cpuset`   | a number    | Guest IRQ: the Guest IRQ thread ID number.[<sup>3</sup>](#3-emulatorpin-cpuset) |
 | `<iothreadpin>` | `iothread` | a number    | Guest IO: the Guest IO thread ID number.    |
 | `<iothreadpin>` | `cpuset`   | a number    | Guest IO: the Host thread ID numbers.[<sup>4</sup>](#4-iothreadpin-cpuset)      |
 
