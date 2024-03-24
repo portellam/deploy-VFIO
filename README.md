@@ -7,7 +7,7 @@
 - [About](#about)
 - [Why?](#why)
 - [Host Requirements](#host-requirements)
-- [Get](#get)
+- [Download](#download)
 - [Usage](#usage)
 - [Features](#features)
 - [Information](#information)
@@ -47,15 +47,18 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 ## Host Requirements
 - Currently supported operating systems:
-  | Linux Distributions | Supported? | Tested  |
-  | ------------------- | ---------- | ------- |
-  | Arch                | No         | none    |
-  | Debian[<sup>1</sup>](#1-debian-derivatives-include-linux-mint-pop-os-and-ubuntu)           | Yes        | 11, 12  |
-  | Gentoo              | No         | none    |
-  | Red Hat Enterprise  | No         | none    |
-  | SUSE                | No         | none    |
+  | Linux Distributions | Supported? | Tested         |
+  | ------------------- | ---------- | -------------- |
+  | Arch[<sup>1</sup>](#1-arch-manjaro-and-endeavouros)               | No         | none           |
+  | Debian[<sup>1</sup>](#2-debian-derivatives-include-linux-mint-pop-os-and-ubuntu)           | Yes        | Debian 11, 12  |
+  | Gentoo              | No         | none           |
+  | Red Hat Enterprise[<sup>3</sup>](#3rhel-centos-fedora-oracle-and-rocky-linux) | No         | none           |
+  | openSUSE            | No         | none           |       
 
-##### 1. Debian derivatives include Linux Mint, Pop! OS, and Ubuntu.
+### Notable derivative distros:
+##### 1. Arch: Manjaro and EndeavourOS.
+##### 2. Debian Linux Mint, Pop! OS, and Ubuntu.
+##### 3. RHEL: CentOS, Fedora, Oracle, and Rocky Linux.
 
 - Required software packages (for this script):
   `xmlstarlet`
@@ -69,7 +72,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
     - For Intel machines:&ensp;&nbsp;`VT-d`
     - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this script.
 
-## Get
+## Download
 - To download this script, you may:
   - Clone the repository:
     1. Open a Command Line Interface (CLI).
