@@ -25,6 +25,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ##### [VFIO forum (Reddit)](https://old.reddit.com/r/VFIO)
 ##### [PCI Passthrough guide (ArchLinux Wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)
 
+## Why?
 1. **Separation of Concerns:** Independently operate your workstation, gaming, and school Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
 2. **No Need for a Server**
   - Keep your Host OS desktop experience intact; turns your Host into a *Type-2* [Hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor).
@@ -99,15 +100,14 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
     - Do **not** make any non-script file executable. This is not necessary and potentially dangerous.
 </details>
 
-**`installer.bash`**
-
 ## Usage
 <details closed>
   <summary>
-    **`installer.bash
+    Installer
   </summary>
 
-  - From the project folder, execute: `sudo bash installer.bash`
+- From the project folder, execute: `sudo bash installer.bash`
+
   ```xml
   -h, --help               Print this help and exit.
   -i, --install            Install deploy-VFIO to system.
@@ -118,68 +118,12 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 </details>
 
 <details closed>
-<summary>`deploy-vfio`</summary>
+  <summary>Script</summary>
+  
 - From anywhere, execute: `sudo bash deploy-vfio`
   - The CLI's shell (bash) should recognize that the script file is located in `/usr/local/bin`.
-</details>
-
-
-### Examples
-<details closed>
-  <summary>Example #1</summary>
-  
-  - Given a system with...
-    - no previous VFIO setup.
-    - ten (10) PCI device groups (index starting at '1').
-    - one integrated (iGPU) or low-powered VGA device.
-    - one powerful (gaming, workstation) VGA device.
-    - 16 GiB of RAM.
-  - We wish to...
-    - parse PCI devices from system database.
-    - passthrough all external PCI devices, except first group (contains low-powered VGA device).
-    - enable static CPU isolation.
-    - enable Hugepages of 1 GiB each, 8 GiB total.
-    - enable Evdev
-    - execute Static setup, output to `/etc` configuration files (and not GRUB).
+ 
   ```
-  sudo bash deploy-vfio \
-    --parse 2-10 \
-    --cpu \
-    --evdev \
-    --hugepages 1G 8 \
-    --static grub
-  ```
-</details>
-
-<details closed>
-  <summary>Example #2</summary>
-
-  - Given a system with...
-    - a previous VFIO setup.
-    - ten (10) PCI device groups (index starting at '1').
-    - two external VGA devices, the first being the worse of the two.
-    - 32 GiB of RAM.
-  - We wish to...
-    - parse PCI devices from the default XML file.
-    - passthrough all external PCI devices.
-    - enable static CPU isolation.
-    - enable Hugepages of 1 GiB each, 16 GiB total.
-    - enable Evdev
-    - setup multiple boot entries (GRUB), and default to exclude the first device group (containing a VGA device).
-      - **Requires [auto-Xorg](https://github.com/portellam/auto-Xorg).**
-  ```
-  sudo bash deploy-vfio \
-    --xml \
-    --parse all \
-    --cpu \
-    --evdev \
-    --hugepages 1G 16 \
-    --multiboot first
-  ```
-</details>
-
-### `sudo bash deploy-vfio --help`
-```
 -h, --help               Print this help and exit.
 -q, --quiet              Reduce verbosity; print only relevant questions and status statements.
 -u, --undo               Undo changes (restore files) if script has exited early or unexpectedly.
@@ -256,6 +200,61 @@ zram-swap:
 Example: (assume a Host with 32 GiB of RAM)
 --zram-swap force 1/4    Compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
 ```
+</details>
+
+### Script Examples
+<details closed>
+  <summary>Example #1</summary>
+  
+  - Given a system with...
+    - no previous VFIO setup.
+    - ten (10) PCI device groups (index starting at '1').
+    - one integrated (iGPU) or low-powered VGA device.
+    - one powerful (gaming, workstation) VGA device.
+    - 16 GiB of RAM.
+  - We wish to...
+    - parse PCI devices from system database.
+    - passthrough all external PCI devices, except first group (contains low-powered VGA device).
+    - enable static CPU isolation.
+    - enable Hugepages of 1 GiB each, 8 GiB total.
+    - enable Evdev
+    - execute Static setup, output to `/etc` configuration files (and not GRUB).
+  ```
+  sudo bash deploy-vfio \
+    --parse 2-10 \
+    --cpu \
+    --evdev \
+    --hugepages 1G 8 \
+    --static grub
+  ```
+</details>
+
+<details closed>
+  <summary>Example #2</summary>
+
+  - Given a system with...
+    - a previous VFIO setup.
+    - ten (10) PCI device groups (index starting at '1').
+    - two external VGA devices, the first being the worse of the two.
+    - 32 GiB of RAM.
+  - We wish to...
+    - parse PCI devices from the default XML file.
+    - passthrough all external PCI devices.
+    - enable static CPU isolation.
+    - enable Hugepages of 1 GiB each, 16 GiB total.
+    - enable Evdev
+    - setup multiple boot entries (GRUB), and default to exclude the first device group (containing a VGA device).
+      - **Requires [auto-Xorg](https://github.com/portellam/auto-Xorg).**
+  ```
+  sudo bash deploy-vfio \
+    --xml \
+    --parse all \
+    --cpu \
+    --evdev \
+    --hugepages 1G 16 \
+    --multiboot first
+  ```
+</details>
 
 ## Features
 ### Pre-setup
