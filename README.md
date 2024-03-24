@@ -25,8 +25,6 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ##### [VFIO forum (Reddit)](https://old.reddit.com/r/VFIO)
 ##### [PCI Passthrough guide (ArchLinux Wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)
 
-<details closed>
-<summary>### Why?</summary>
 1. **Separation of Concerns:** Independently operate your workstation, gaming, and school Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
 2. **No Need for a Server**
   - Keep your Host OS desktop experience intact; turns your Host into a *Type-2* [Hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor).
@@ -75,7 +73,8 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ##### 3. RHEL: CentOS, Fedora, Oracle, and Rocky Linux.
 
 ## Download
-- To download this script, you may:
+<details closed>
+  <summary>To download this script, you may:</summary>
   - Clone the repository:
     1. Open a Command Line Interface (CLI).
       - Open a console emulator (for Debian systems: Konsole).
@@ -97,9 +96,11 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   3. Make the installer script file executable: `chmod +x installer.bash`
     - Do **not** make any other script files executable. The installer will perform this action.
     - Do **not** make any non-script file executable. This is not necessary and potentially dangerous.
+</details>
 
 ## Usage
-**`installer.bash`**
+<details closed>
+  <summary>**`installer.bash`**</summary>
   - From the project folder, execute: `sudo bash installer.bash`
   ```xml
   -h, --help               Print this help and exit.
@@ -108,10 +109,13 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   ```
   - The installer will place all script files in `/usr/local/bin`.
   - The installer will place all configuration/text files in `/usr/local/etc`.
+</details>
 
-**`deploy-vfio`**
+<details closed>
+<summary>**`deploy-vfio`**</summary>
 - From anywhere, execute: `sudo bash deploy-vfio`
   - The CLI's shell (bash) should recognize that the script file is located in `/usr/local/bin`.
+</details>
 
 ### Examples
 #### Example #1
