@@ -46,6 +46,18 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 **Disclaimer:** See [below](#latest-graphics-hardware-for-various-guest-operating-systems) for supported [VGA](#VGA) devices.
 
 ## Host Requirements
+- Required software packages (for this script):
+  `xmlstarlet`
+  - To install packages:
+    - For `apt` package manager: `sudo apt install -y xmlstarlet`
+- Other requirements:
+  - `GRUB` to execute command lines at boot (if chosen).
+  - `systemd` for system services.
+  - IOMMU is supported (by the CPU) and enabled in the motherboard firmware (BIOS or UEFI).
+    - For AMD machines:&nbsp;`AMD-Vi`
+    - For Intel machines:&ensp;&nbsp;`VT-d`
+    - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this script.
+
 - Currently supported operating systems:
   | Linux Distributions | Supported? | Tested         |
   | ------------------- | ---------- | -------------- |
@@ -59,18 +71,6 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ##### 1. Arch: Manjaro and EndeavourOS.
 ##### 2. Debian Linux Mint, Pop! OS, and Ubuntu.
 ##### 3. RHEL: CentOS, Fedora, Oracle, and Rocky Linux.
-
-- Required software packages (for this script):
-  `xmlstarlet`
-  - To install packages:
-    - Debian Linux: `sudo apt install -y xmlstarlet`
-- Other requirements:
-  - `GRUB` to execute command lines at boot (if chosen).
-  - `systemd` for system services.
-  - IOMMU is supported (by the CPU) and enabled in the motherboard firmware (BIOS or UEFI).
-    - For AMD machines:&nbsp;`AMD-Vi`
-    - For Intel machines:&ensp;&nbsp;`VT-d`
-    - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this script.
 
 ## Download
 - To download this script, you may:
