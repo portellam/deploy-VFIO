@@ -25,7 +25,8 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ##### [VFIO forum (Reddit)](https://old.reddit.com/r/VFIO)
 ##### [PCI Passthrough guide (ArchLinux Wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)
 
-### Why?
+<details closed>
+<summary>### Why?</summary>
 1. **Separation of Concerns:** Independently operate your workstation, gaming, and school Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
 2. **No Need for a Server**
   - Keep your Host OS desktop experience intact; turns your Host into a *Type-2* [Hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor).
@@ -44,6 +45,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 **Advertisement:** For even greater security, use [me_cleaner](#me_cleaner) alongside a VFIO setup.
 
 **Disclaimer:** See [below](#latest-graphics-hardware-for-various-guest-operating-systems) for supported [VGA](#VGA) devices.
+</details>
 
 ## Host Requirements
 - Required software packages (for this script):
