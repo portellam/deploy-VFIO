@@ -50,9 +50,9 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   | Linux Distributions | Supported? | Tested         |
   | ------------------- | ---------- | -------------- |
   | Arch[<sup>1</sup>](#1-arch-manjaro-and-endeavouros)               | No         | none           |
-  | Debian[<sup>1</sup>](#2-debian-derivatives-include-linux-mint-pop-os-and-ubuntu)           | Yes        | Debian 11, 12  |
+  | Debian[<sup>2</sup>](#2-debian-derivatives-include-linux-mint-pop-os-and-ubuntu)           | Yes        | Debian 11, 12  |
   | Gentoo              | No         | none           |
-  | Red Hat Enterprise[<sup>3</sup>](#3rhel-centos-fedora-oracle-and-rocky-linux) | No         | none           |
+  | Red Hat Enterprise[<sup>3</sup>](#3-rhel-centos-fedora-oracle-and-rocky-linux) | No         | none           |
   | openSUSE            | No         | none           |       
 
 ### Notable derivative distros:
