@@ -100,7 +100,8 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 ## Usage
 <details closed>
-  <summary>**`installer.bash`**</summary>
+  <summary>__`installer.bash`__</summary>
+
   - From the project folder, execute: `sudo bash installer.bash`
   ```xml
   -h, --help               Print this help and exit.
@@ -116,6 +117,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 - From anywhere, execute: `sudo bash deploy-vfio`
   - The CLI's shell (bash) should recognize that the script file is located in `/usr/local/bin`.
 </details>
+
 
 ### Examples
 #### Example #1
