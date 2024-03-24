@@ -44,7 +44,6 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 **Advertisement:** For even greater security, use [me_cleaner](#me_cleaner) alongside a VFIO setup.
 
 **Disclaimer:** See [below](#latest-graphics-hardware-for-various-guest-operating-systems) for supported [VGA](#VGA) devices.
-</details>
 
 ## Host Requirements
 - Required software packages (for this script):
