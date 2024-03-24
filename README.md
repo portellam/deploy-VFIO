@@ -68,9 +68,9 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   | openSUSE            | No         | none           |       
 
 ### Notable derivative distros:
-##### 1. Arch: Manjaro and EndeavourOS.
-##### 2. Debian Linux Mint, Pop! OS, and Ubuntu.
-##### 3. RHEL: CentOS, Fedora, Oracle, and Rocky Linux.
+##### 1. Arch:    Manjaro and EndeavourOS.
+##### 2. Debian:  Linux Mint, Pop! OS, and Ubuntu.
+##### 3. RHEL:    CentOS, Fedora, Oracle, and Rocky Linux.
 
 ## Download
 <details closed>
