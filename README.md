@@ -60,7 +60,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 - Currently supported operating systems:
   | Linux Distributions | Supported? | Tested         |
-  | ------------------- | ---------- | -------------- |
+  | :------------------ | :--------: | :------------- |
   | Arch[<sup>1</sup>](#1-arch-manjaro-and-endeavouros)               | No         | none           |
   | Debian[<sup>2</sup>](#2-debian-linux-mint-pop-os-and-ubuntu)           | Yes        | Debian 11, 12  |
   | Gentoo              | No         | none           |
@@ -75,6 +75,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ## Download
 <details closed>
   <summary>To download this script, you may:</summary>
+  
   - Clone the repository:
     1. Open a Command Line Interface (CLI).
       - Open a console emulator (for Debian systems: Konsole).
@@ -98,9 +99,13 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
     - Do **not** make any non-script file executable. This is not necessary and potentially dangerous.
 </details>
 
+**`installer.bash`**
+
 ## Usage
 <details closed>
-  <summary>__`installer.bash`__</summary>
+  <summary>
+    **`installer.bash
+  </summary>
 
   - From the project folder, execute: `sudo bash installer.bash`
   ```xml
@@ -113,14 +118,16 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 </details>
 
 <details closed>
-<summary>**`deploy-vfio`**</summary>
+<summary>`deploy-vfio`</summary>
 - From anywhere, execute: `sudo bash deploy-vfio`
   - The CLI's shell (bash) should recognize that the script file is located in `/usr/local/bin`.
 </details>
 
 
 ### Examples
-#### Example #1
+<details closed>
+  <summary>Example #1</summary>
+  
   - Given a system with...
     - no previous VFIO setup.
     - ten (10) PCI device groups (index starting at '1').
@@ -142,8 +149,11 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
     --hugepages 1G 8 \
     --static grub
   ```
+</details>
 
-#### Example #2
+<details closed>
+  <summary>Example #2</summary>
+
   - Given a system with...
     - a previous VFIO setup.
     - ten (10) PCI device groups (index starting at '1').
@@ -166,6 +176,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
     --hugepages 1G 16 \
     --multiboot first
   ```
+</details>
 
 ### `sudo bash deploy-vfio --help`
 ```
