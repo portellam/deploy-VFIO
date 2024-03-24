@@ -122,7 +122,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 - From anywhere, execute: `sudo bash deploy-vfio`
   - The CLI's shell (bash) should recognize that the script file is located in `/usr/local/bin`.
  
-  ```
+```
 -h, --help               Print this help and exit.
 -q, --quiet              Reduce verbosity; print only relevant questions and status statements.
 -u, --undo               Undo changes (restore files) if script has exited early or unexpectedly.
@@ -199,6 +199,7 @@ zram-swap:
 Example: (assume a Host with 32 GiB of RAM)
 --zram-swap force 1/4    Compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
 ```
+
 </details>
 
 ### Script Examples
