@@ -123,7 +123,7 @@ openSUSE | No | none
 
 ## 5. Usage
 ### 5.1. `installer.bash`
-- From the project folder, execute: `sudo bash installer.bash`
+- From within project folder, execute: `sudo bash installer.bash`
 
   ```xml
   -h, --help               Print this help and exit.
@@ -133,9 +133,8 @@ openSUSE | No | none
   - The installer will place all script files in `/usr/local/bin`.
   - The installer will place all configuration/text files in `/usr/local/etc`.
 
-
 ### 5.2. `deploy-vfio`
-- From anywhere, execute: `sudo bash deploy-vfio`
+- From any folder, execute: `sudo bash deploy-vfio`
   - The CLI's shell (bash) should recognize that the script file is located in `/usr/local/bin`.
 
 ```
@@ -367,8 +366,8 @@ BIOS-only VGA devices may not be available as Host video output. BIOS-only VGA d
   - `/etc/systemd/system/`
 
 #### 7.2.d. Paths for project binaries and files
-  - `/usr/local/bin/`
-  - `/usr/local/etc/deploy-vfio.d`
+  - `/usr/local/bin/deploy-vfio.d/`
+  - `/usr/local/etc/deploy-vfio.d/`
 
 ### 7.3. VFIO
 Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.*<sup>[OpenSUSE documentation](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)</sup>
