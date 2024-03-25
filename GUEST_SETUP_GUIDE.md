@@ -1,26 +1,40 @@
 # Guest Setup Guide
 ## TODO:
-- use collapsable dropdowns (https://gist.github.com/pierrejoubert73/902cc94d79424356a8d20be2b382e1ab).
-- flesh out "Guest XML Layout".
-- add Guest XML file with all lines referenced in "Guest XML Layout".
-- add citations!
-- begin work on "Host Optimizations".
-- begin work on "Guest Optimizations".
-- begin work on "Benchmarking Guest Performance".
-- sort multiple related citations into "References".
-- add pictures of virt-manager.
-- how to setup virtio disks (virtio, virtio-scsi).
+- [ ] use collapsable dropdowns (https://gist.github.com/pierrejoubert73/902cc94d79424356a8d20be2b382e1ab).
+- [ ] flesh out "Guest XML Layout".
+- [ ] add Guest XML file with all lines referenced in "Guest XML Layout".
+- [ ] add citations!
+- [ ] begin work on "Host Optimizations".
+- [ ] begin work on "Guest Optimizations".
+- [ ] begin work on "Benchmarking Guest Performance".
+- [ ] sort multiple related citations into "References".
+- [ ] add pictures of virt-manager.
+- [ ] how to setup virtio disks (virtio, virtio-scsi).
+
+## Directory
+- [deploy-VFIO](deploy-vfio)
+- [License](LICENSE.md)
 
 ## Table of Contents
-- [deploy-VFIO README](deploy-vfio-readme)
-- [About](#about)
-- [Guest XML Layout](#guest-xml-layout)
-- [Host Optimizations](#host-optimizations)
-- [Guest Optimizations](#guest-optimizations)
-- [Benchmarking Guest Performance](#benchmarking-guest-performance)
-- [References](#references)
+- [1. About](#1-about)
+- [2. Guest XML Layout](#2-guest-xml-layout)
+  - [2.1. Syntax](#21-syntax)
+  - [2.2. First lines in XML](#22-first-lines-in-xml)
+  - [2.3. Memory](#23-memory)
+  - [2.4. CPU topology (1/2)](#24-cpu-topology-12)
+  - [2.5. System information spoofing](#25-system-information-spoofing)
+  - [2.6. Features](#26-features)
+  - [2.7. CPU topology (2/2)](#27-cpu-topology-22)
+  - [2.8. Power Management](#28-power-management)
+  - [2.9 Devices](#29-devices)
+  - [2.10 QEMU command line](#210-qemu-overrides)
+  - [2.11 QEMU overrides](#211-qemu-overrides)
+- [3. Host Optimizations](#3-host-optimizations)
+- [4. Guest Optimizations](#4-guest-optimizations)
+- [5. Benchmarking Guest Performance](#5-benchmarking-guest-performance)
+- [6. References](#6-references)
 
-## About
+## 1. About
 The purpose of this document is to inform a new or returning user how to optimize a Guest machine right n
 this moment, without demanding greater research and time.
 
@@ -28,38 +42,25 @@ This document does not serve to replace existing knowledge-bases such as the [Ar
 
 Copy and paste what you need from here and/or any example XML files, to your Guest XML file.
 
-## Guest XML Layout
+## 2. Guest XML Layout
 Below is an *incomplete* layout for building a Guest machine. The lines include additional features, of which are absent when creating a Guest XML (with the `virsh` CLI command or `virt-manager` GUI application).
 
-### Contents
-- [Syntax](#syntax)
-- [First lines in XML](#first-lines-in-xml)
-- [Memory](#memory)
-- [CPU topology (1/2)](#cpu-topology-12)
-- [System information spoofing](#system-information-spoofing)
-- [Features](#features)
-- [CPU topology (2/2)](#cpu-topology-22)
-- [Power Management](#power-management)
-- [Devices](#devices)
-- [QEMU command line](#qemu-overrides)
-- [QEMU overrides](#qemu-overrides)
-
-### Syntax
+### 2.1. Syntax
 ```xml
 <parent_tag_name attribute_name="attribute_value">
   <child_tag_name>child_tag_value</child_tag_name>
 </parent_tag_name>
 ```
 
-### First lines in XML
+### 2.2. First lines in XML
 
 | `<domain>` Tag     | Attribute    | Value                                          | Description                                        |
 | ------------------ | ------------ | ---------------------------------------------- | -------------------------------------------------- |
 |                    | `xmlns:qemu` | `"http://libvirt.org/schemas/domain/qemu/1.0"` | Enable QEMU [command lines](#qemu-command-line) and [overrides](#qemu-overrides).           |
 |                    | `type`       | `"kvm"`                                        | Enable QEMU [command lines](#qemu-command-line) and [overrides](#qemu-overrides).           |
-| `<name/>`[<sup>1</sup>](#1-name-best-practice)          | none         | text                                           | Name of the Guest.                                 |
+| `<name/>`[<sup>1</sup>](#21a-name-best-practice)          | none         | text                                           | Name of the Guest.                                 |
 
-###### 1. `<name/>` Best practice:
+#### 2.1.a. `<name/>` Best practice:
 **Note:** The following formatting examples are a personal preference of the Author.
 
 **Format:** `purpose`**_**`vendor`\***_**`operating system`**_**`architecture`**_**`chipset`**_**`firmware`**_**`topology`
@@ -111,7 +112,7 @@ Below is an *incomplete* layout for building a Guest machine. The lines include 
     - Given the amount of physical cores (example: 4).
     - Given the amount of logical threads per core (2 * 4 = 8).
 
-### Memory
+### 2.3. Memory
 To gather information of system memory, execute: `free --kibi --total --wide`
 
 | `<memory>` Tag | Attribute | Value    | Description                                                       |
@@ -131,13 +132,13 @@ To gather information of system memory, execute: `free --kibi --total --wide`
 | `<hugepages/>`[<sup>1</sup>](#1-hugepages)       | none      | none        | Enable Huge memory pages.                                         |
 | `<nosharepages/>`     | none      | none        | Prevents the Host from merging the same memory used among Guests. |
 
-###### 1. `<hugepages/>`
+###### 2.2.a. `<hugepages/>`
 - Static allocation of *Host* memory pages into *Guest* memory pages.
 - **Huge:** Memory page size greater than 4K bytes (2M or 1G bytes). The greater the size, the lower the Host overhead.
 - Dynamic *Host* memory page allocation is more flexible, but will require defragmentation before use as *Guest* memory pages (before a Guest machine may start).
 - **Warning:** If the specified *Guest* memory pages exceeds the allocated *Host* memory pages, then the Guest machine will fail to start.
 
-### CPU topology (1/2)
+### 2.4. CPU topology (1/2)
 To gather information about your CPU, execute: `lscpu | grep --extended-regexp --ignore-case "per core|per socket|socket"`
 
 | `<vcpu>` Tag | Attribute   | Value      | Description                                                     |
@@ -157,21 +158,21 @@ To gather information about your CPU, execute: `lscpu | grep --extended-regexp -
 | `<iothreadpin>` | `iothread` | a number    | Guest IO: the Guest IO thread ID number.    |
 | `<iothreadpin>` | `cpuset`   | a number    | Guest IO: the Host thread ID numbers.[<sup>4</sup>](#4-iothreadpin-cpuset)      |
 
-###### 1. `<vcpupin vcpu>`
+###### 2.3.a. `<vcpupin vcpu>`
 - Count does not exceed value as defined in `<vcpu placement>`.
 
-###### 2. `<vcpupin cpuset>`
+###### 2.3.b. `<vcpupin cpuset>`
 - Threads should not overlap Host process threads.
 
-###### 3. `<emulatorpin cpuset>`
+###### 2.3.c. `<emulatorpin cpuset>`
 - Emulator threads handle Interrupt Requests for Guest hardware emulation.
 - Threads should not overlap Guest CPU threads as defined in `vcpupin cpuset`.
 
-###### 4. `<iothreadpin cpuset>`
+###### 2.3.d. `<iothreadpin cpuset>`
 - IO threads handle IO processes for Guest virtual drives/disks.
 - Threads should not overlap Guest CPU threads as defined in `vcpupin cpuset`.
 
-##### Example XML:
+##### 2.3.e. Example XML:
 ```xml
   <!-- Given a 4-core, 8-thread CPU... -->
   <vcpu placement="static">4</vcpu>           <!-- Statically allocate four (4) cores to Guest. -->
@@ -186,7 +187,7 @@ To gather information about your CPU, execute: `lscpu | grep --extended-regexp -
   </cputune>
 ```
 
-### System information spoofing
+### 2.5. System information spoofing
 To gather information about your BIOS, execute:
 
 &ensp;`sudo dmidecode --type bios | grep --extended-regexp --ignore-case "vendor|version|release date"`
@@ -214,7 +215,7 @@ To gather information about your system, execute:
   </sysinfo>
 ```
 
-### Features
+### 2.6. Features
 
 TODO: make the following inline XML into chart, describe each feature.
 
@@ -247,10 +248,10 @@ TODO: make the following inline XML into chart, describe each feature.
   </features>
 ```
 
-### CPU topology (2/2)
+### 2.7. CPU topology (2/2)
 To gather information about your CPU, execute: `lscpu | grep --extended-regexp --ignore-case "per core|per socket|socket"`
 
-##### Example output:
+##### 2.6.a. Example output:
 ```
 Thread(s) per core:                 2
 Core(s) per socket:                 8
@@ -287,7 +288,7 @@ TODO: make the following inline XML into chart, describe each feature.
 |              | `present`    | `"yes"`              | TODO: add here.                                                 |
 |              | `mode`       | `"native"`           | TODO: add here.                                                 |
 
-### Power Management
+### 2.8. Power Management
 ```xml
   <!-- Power Management -->
   <pm>
@@ -296,7 +297,7 @@ TODO: make the following inline XML into chart, describe each feature.
   </pm>
 ```
 
-### Devices
+### 2.9. Devices
 
 TODO: make the following inline XML into chart, describe each feature???
 ```xml
@@ -306,7 +307,7 @@ TODO: make the following inline XML into chart, describe each feature???
   </devices>
 ```
 
-#### Emulated
+#### 2.8.a. Emulated
 
 TODO: make this inline XML?
 - QEMU
@@ -316,7 +317,7 @@ TODO: make this inline XML?
 
 lorem ipsum
 
-#### Real/Passthrough
+#### 2.8.b. Real/Passthrough
 TODO: make this inline XML?
 
   - AMD
@@ -332,14 +333,14 @@ TODO: make this inline XML?
       - Boot bug (Solution: Use known-good copy of given GPU's video BIOS or VBIOS).
       - TODO: add references, programs used, instructions, and XML here.
 
-#### Memory devices
+#### 2.8.c. Memory devices
 
 TODO: make this inline XML?
   - Looking Glass
   - Scream
   - ???
 
-### QEMU command line
+### 2.10. QEMU command line
 
 TODO: make the following inline XML into chart, describe each feature.
   - Evdev
@@ -348,7 +349,7 @@ TODO: make the following inline XML into chart, describe each feature.
   <qemu:commandline>...</qemu:commandline>  <!-- Add Evdev here -->
 ```
 
-### QEMU overrides
+### 2.11. QEMU overrides
 
 TODO: make the following inline XML into chart, describe each feature.
 
@@ -356,17 +357,17 @@ TODO: make the following inline XML into chart, describe each feature.
   <qemu:override>...</qemu:override>
 ```
 
-## Host Optimizations
+## 3. Host Optimizations
 TODO: add here.
 
-## Guest Optimizations
+## 4. Guest Optimizations
 TODO: add here.
 
-## Benchmarking Guest Performance
+## 5. Benchmarking Guest Performance
 TODO: add here.
 
-## References
-#### Chipset
+## 6. References
+#### 6.1. Chipset
 &ensp;<sub>I440FX | **[Wikipedia](https://en.wikipedia.org/wiki/Intel_440FX)**</sub>
 
 &ensp;<sub>I440FX | **[QEMU documentation](https://www.qemu.org/docs/master/system/i386/pc.html)**</sub>
@@ -375,7 +376,7 @@ TODO: add here.
 
 &ensp;<sub>Q35 | **[RedHat documentation](https://wiki.qemu.org/images/4/4e/Q35.pdf)**</sub>
 
-#### CPU architecture
+#### 6.2. CPU architecture
 &ensp;<sub>AArch32 | **[Wikipedia](https://en.wikipedia.org/wiki/ARM_architecture_family#AArch32)**</sub>
 
 &ensp;<sub>AArch64 | **[Wikipedia](https://en.wikipedia.org/wiki/AArch64)**</sub>
@@ -384,15 +385,15 @@ TODO: add here.
 
 &ensp;<sub>x64 | **[Wikipedia](https://en.wikipedia.org/wiki/X64)**</sub>
 
-#### Firmware
+#### 6.3. Firmware
 &ensp;<sub>BIOS | **[Wikipedia](https://en.wikipedia.org/wiki/BIOS)**</sub>
 
 &ensp;<sub>UEFI | **[Wikipedia](https://en.wikipedia.org/wiki/UEFI)**</sub>
 
-### Memory backing
-&ensp;<sub>Memory Tuning on Virtual Machines | **[RedHat documentation](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_tuning_and_optimization_guide/sect-virtualization_tuning_optimization_guide-memory-tuning)**</sub>
-
-#### Hugepages
+#### 6.4. Hugepages
 &ensp;<sub>Huge memory pages | **[Arch Wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
 
 &ensp;<sub>Huge pages | **[Debian Wiki](https://wiki.debian.org/Hugepages)**</sub>
+
+### 6.5. Memory backing
+&ensp;<sub>Memory Tuning on Virtual Machines | **[RedHat documentation](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_tuning_and_optimization_guide/sect-virtualization_tuning_optimization_guide-memory-tuning)**</sub>
