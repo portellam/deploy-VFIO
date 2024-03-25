@@ -34,7 +34,7 @@
 - [9. Disclaimer](#9-disclaimer)
 - [10. Contact](#10-contact)
 
-## 1. About:
+## 1. About
 Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine.
 
 **1. What is [VFIO?](#VFIO)**
@@ -46,23 +46,24 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 **4. [PCI Passthrough guide (ArchLinux Wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)**
 
 ## 2. Why?
-### 1. Separation of Concerns:
+### 1. Separation of Concerns
 - Independently operate your workstation, gaming, and school Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
+
 ### 2. No Need for a Server
 - Keep your Host OS desktop experience intact; turns your Host into a *Type-2* [Hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor).
 - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered *Type-1* or bare-metal Hypervisors.
 
-### 3. Securely run a modern OS:
+### 3. Securely run a modern OS
 - Limited access to real hardware means greater security.
 
-### 4. Ease of use:
+### 4. Ease of use
 - Usage of the [Command Line Interface](#usage) (CLI).
 - Given a system update, automate changes by specifying a cron-job (example: upgraded Linux kernel).
 
-### 5. PCI Passthrough:
+### 5. PCI Passthrough
 - Prioritize real hardware over emulation.
 
-### 6. Quality of Life:
+### 6. Quality of Life
 - Utilize multiple common-sense [features](#features) that are known to experienced users.
 
 ### 7. Your Host OS is [supported](#supported-operating-systems).
@@ -72,8 +73,8 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 **Disclaimer:** See [below](#latest-graphics-hardware-for-various-guest-operating-systems) for supported [VGA](#VGA) devices.
 
-## 3. Host Requirements:
-### 3.1. Main requirements:
+## 3. Host Requirements
+### 3.1. Main requirements
   - `GRUB` to execute command lines at boot (if chosen).
   - `systemd` for system services.
   - `IOMMU` is supported (by the CPU) and enabled in the motherboard firmware (BIOS or UEFI).
@@ -81,12 +82,12 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
     - For Intel machines:&ensp;&nbsp;`VT-d`
     - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this script.
 
-### 3.2. Required software packages for script execution:
+### 3.2. Required software packages for script execution
 1. `xmlstarlet`
 - To install packages:
   - For `apt` package manager: `sudo apt install -y xmlstarlet`
 
-### 3.3. Currently supported operating systems:
+### 3.3. Currently supported operating systems
 Linux Distributions | Supported? | Tested
 :--- | :---: | :---
 Arch | No | none
@@ -95,7 +96,7 @@ Gentoo | No | none
 Red Hat Enterprise | No | none
 openSUSE | No | none
 
-## 4. Download:
+## 4. Download
   - Clone the repository:
     1. Open a Command Line Interface (CLI).
       - Open a console emulator (for Debian systems: Konsole).
@@ -118,8 +119,8 @@ openSUSE | No | none
     - Do **not** make any other script files executable. The installer will perform this action.
     - Do **not** make any non-script file executable. This is not necessary and potentially dangerous.
 
-## 5. Usage:
-### 5.1. `installer.bash`:
+## 5. Usage
+### 5.1. `installer.bash`
 - From the project folder, execute: `sudo bash installer.bash`
 
   ```xml
@@ -131,7 +132,7 @@ openSUSE | No | none
   - The installer will place all configuration/text files in `/usr/local/etc`.
 
 
-### 5.2. `deploy-vfio`:
+### 5.2. `deploy-vfio`
 - From anywhere, execute: `sudo bash deploy-vfio`
   - The CLI's shell (bash) should recognize that the script file is located in `/usr/local/bin`.
 
@@ -213,8 +214,8 @@ Example: (assume a Host with 32 GiB of RAM)
 --zram-swap force 1/4    Compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
 ```
 
-### 5.3. Usage Examples:
-### 5.3.a. Example A:
+### 5.3. Usage Examples
+### 5.3.a. Example A
   - Given a system with...
     - no previous VFIO setup.
     - ten (10) PCI device groups (index starting at '1').
@@ -237,7 +238,7 @@ Example: (assume a Host with 32 GiB of RAM)
     --static grub
   ```
 
-### 5.3.b. Example B:
+### 5.3.b. Example B
   - Given a system with...
     - a previous VFIO setup.
     - ten (10) PCI device groups (index starting at '1').
@@ -261,27 +262,27 @@ Example: (assume a Host with 32 GiB of RAM)
     --multiboot first
   ```
 
-## 6. Features:
-### 6.1. Pre-setup:
-#### 6.1.a. Allocate CPU:
+## 6. Features
+### 6.1. Pre-setup
+#### 6.1.a. Allocate CPU
   - **Statically** [isolate Host CPU threads](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning) before allocating to Guest(s).
   -  Reduces Host overhead, and improves both Host and Guest performance.
   -  If installed, the **Dynamic** [Libvirt hook](https://github.com/portellam/libvirt-hooks) (see source) will skip its execution, to preserve the Static isolation.
 
-#### 6.1.b. Allocate RAM:
+#### 6.1.b. Allocate RAM
   - **Static** huge memory pages eliminate the need to defragment Host memory (RAM) before allocating to Guest(s).
   - Reduces Host overhead, and improves both Host and Guest performance.
   - If skipped, setup will install the Libvirt hook for **Dynamic** allocation (transparent hugepages).
 
-#### 6.1.c. Virtual Keyboard Video Mouse (KVM) switch:
+#### 6.1.c. Virtual Keyboard Video Mouse (KVM) switch
   - Create a virtual KVM switch.
     - Allow a user to swap a group of Input devices (as a whole) between active Guest(s) and Host.
     - Use the pre-defined macro: `L-CTRL` + `R-CTRL`
   - Implementation is known as [Evdev](#evdev) (Event Devices).
   - **Note:** Guest PCI USB is good. Both implementations together is better.
 
-### 6.2. Main setup:
-#### 6.2.a. Multi-boot VFIO setup:
+### 6.2. Main setup
+#### 6.2.a. Multi-boot VFIO setup
 - Create multiple VFIO setups with corresponding GRUB menu entries. **More flexibility.**
   - Select a GRUB menu entry with a VGA device excluded from VFIO.
   - Default menu entry is without VFIO setup.
@@ -289,14 +290,14 @@ Example: (assume a Host with 32 GiB of RAM)
 
 - **Ad:** For best results, use [auto-Xorg](https://github.com/portellam/auto-Xorg).
 
-#### 6.2.b. Static VFIO setup:
+#### 6.2.b. Static VFIO setup
 - Single, traditional VFIO setup. **Less flexibility.**
 - Specify method of setup:
   - Append output to GRUB; single GRUB menu entry.
   - Append output to system configuration files.
 - Best for systems with one or more PCI VGA device(s) and one integrated VGA device (iGPU).
 
-#### 6.2.c. Dynamic VFIO setup:
+#### 6.2.c. Dynamic VFIO setup
 
 **!** To be implemented in a future release.
 - Use Libvirt hooks to bind or unbind devices at Guest(s) start or stop.
@@ -304,53 +305,53 @@ Example: (assume a Host with 32 GiB of RAM)
 - Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
 - For an existing script of similar scope, you may try the project [VFIO-Tools](https://github.com/PassthroughPOST/VFIO-Tools).
 
-### 6.3. Post-setup:
+### 6.3. Post-setup
 
 **!** To be implemented in a future release.
 
-#### 6.3.a. auto-Xorg:
+#### 6.3.a. auto-Xorg
 - system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
 
-#### 6.3.b. Guest Audio Capture:
+#### 6.3.b. Guest Audio Capture
 - Create an [audio loopback](https://github.com/portellam/audio-loopback) to output on the Host audio device Line-Out.
   - Listen on Host audio device Line-In (from Guest PCI Audio device Line-Out).
   - Useful for systems with multiple audio devices.
 - For virtual implementation, see *Virtual Audio Capture*.
 
-#### 6.3.c. Libvirt Hooks:
+#### 6.3.c. Libvirt Hooks
 - Invoke [hooks](#libvirt-hooks) or scripts for all or individual Guests.
 - Switch display input (video output) at Guest start.
 - **Dynamically** allocate CPU cores and prioritize CPU scheduler.
 - **Libvirt-nosleep**: per Guest system service, to prevent Host sleep while Guest is active.
 
-#### 6.3.d. RAM as Compressed Swapfile/partition:
+#### 6.3.d. RAM as Compressed Swapfile/partition
 - Create a compressed Swap device in Host memory, using the *lz4* algorithm (compression ratio of about 2:1).
   - Reduce swapiness to existing Host swap devices.
   - Reduce chances of Host memory exhaustion (given an event of memory over-allocation).
 - Implementation is known as [zram-swap](#zram-swap).
 
-#### 6.3.e. Virtual Audio Capture:
+#### 6.3.e. Virtual Audio Capture
 - Setup a virtual audio driver for Windows that provides a discrete audio device.
 - Implementation is known as [Scream](#scream).
 
-#### 6.3.f. Virtual Video Capture:
+#### 6.3.f. Virtual Video Capture
 - Setup direct-memory-access (DMA) of a PCI VGA device output (video and audio) from a Guest to Host.
 - Implementation is known as [LookingGlass](https://looking-glass.io/).
 - **Disclaimer:** Only supported for Guests running Windows 7 and later (Windows NT 6.1+).
 
-## 7. Information:
-### 7.1. BIOS v. UEFI:
+## 7. Information
+### 7.1. BIOS v. UEFI
 - Some VGA devices, such as NVIDIA, may not be recognizable in a VM, as the video BIOS or VBIOS is *tainted* at Host OS start-up. This is usually the case if a given VGA device is used for the Host BIOS/UEFI booting process. To remedy this, you must obtain a clean copy of the VBIOS. You may reference this [project](https://github.com/Matoking/NVIDIA-vBIOS-VFIO-Patcher) for assistance, or review the [Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_the_boot_GPU_to_the_guest).
 
 - If your Host machine supports UEFI only and/or if UEFI is enabled (and CSM/BIOS is disabled),
 BIOS-only VGA devices may not be available as Host video output. BIOS-only VGA devices may only be available explicitly for hardware passthrough.
 
-### 7.2. Filenames and pathnames modified:
-#### 7.2.a. Pre-setup files:
+### 7.2. Filenames and pathnames modified
+#### 7.2.a. Pre-setup files
   - `/etc/apparmor.d/local/abstractions/libvirt-qemu`
   - `/etc/libvirt/qemu.conf`
 
-#### 7.2.b. VFIO setup files:
+#### 7.2.b. VFIO setup files
   - `/etc/default/grub`
   - `/etc/grub.d/proxifiedScripts/custom`
   - `/etc/initramfs-tools/modules`
@@ -358,38 +359,38 @@ BIOS-only VGA devices may not be available as Host video output. BIOS-only VGA d
   - `/etc/modprobe.d/vfio.conf`
   - `/etc/modules`
 
-#### 7.2.c. Post-setup paths:
+#### 7.2.c. Post-setup paths
   - `/etc/libvirt/hooks/`
   - `/usr/local/bin/`
   - `/etc/systemd/system/`
 
-#### 7.2.d. Paths for project binaries and files:
+#### 7.2.d. Paths for project binaries and files
   - `/usr/local/bin/`
   - `/usr/local/etc/deploy-vfio.d`
 
-### 7.3. VFIO:
+### 7.3. VFIO
 Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.*<sup>[OpenSUSE documentation](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)</sup>
 
-### 7.4. VGA:
+### 7.4. VGA
 Throughout the script source code and documentation, the acronym *VGA* is used.
 
 In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VGA may *refer to the computer display standard, the 15-pin D-subminiature VGA connector, or the 640×480 resolution characteristic of the VGA hardware.*<sup>[Wikipedia article](https://en.wikipedia.org/wiki/Video_Graphics_Array)</sup>
 
-#### 7.4.a. Example:
+#### 7.4.a. Example
 `lspci -nnk | grep --extended-regexp --ignore-case "vga|graphics"`
 
-##### 7.4.b. Output:
+##### 7.4.b. Output
 ```
 01:00.0 VGA compatible controller [0300]: NVIDIA Corporation GA104 [GeForce RTX 3070] [10de:2484] (rev a1)
 04:00.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Cayman PRO [Radeon HD 6950] [1002:6719]
 ```
 
-### 7.5. Latest VGA devices for Guest OS:
-#### 7.5.a. Apple Macintosh:
+### 7.5. Latest VGA devices for Guest OS
+#### 7.5.a. Apple Macintosh
 1. [AMD and NVIDIA GPU compatibility list (Apple Support article)](https://support.apple.com/en-us/102734)
 2. [More detailed NVIDIA GPU compatibility list (archive of TonyMacX86 forum thread)](https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/)
 
-#### 7.5.b. Microsoft Windows:
+#### 7.5.b. Microsoft Windows
 | Windows version        | Device type | Brand and model                           |
 | --------------------   | ----------- | ----------------------------------------- |
 | 10 and above or NT 10+ | VGA         | NVIDIA RTX 4000-series[<sup>1</sup>](#1-uefi-only) or before       |
@@ -405,28 +406,28 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 
 **Note:** For emulating video devices on Windows 9x and older legacy operating systems, try the project [SoftGPU](https://github.com/JHRobotics/softgpu). Modern CPUs are more than powerful enough to emulate such hardware.
 
-## 8. References:
-#### 8.1. Evdev:
+## 8. References
+#### 8.1. Evdev
 &ensp;<sub>**[Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
 
 &ensp;<sub>**[GitHub project source](https://github.com/portellam/generate-evdev)**</sub>
 
-#### 8.2. Hugepages:
+#### 8.2. Hugepages
 &ensp;<sub>**[Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
 
 &ensp;<sub>**[Debian Wiki article](https://wiki.debian.org/Hugepages)**</sub>
 
-#### 8.3. me_cleaner:
+#### 8.3. me_cleaner
 &ensp;<sub>**[GitHub project source](https://github.com/corna/me_cleaner)**</sub>
 
 &ensp;<sub>**[GitHub project fork](https://github.com/dt-zero/me_cleaner)**</sub>
 
-#### 8.4. Scream:
+#### 8.4. Scream
 &ensp;<sub>**[GitHub project source](https://github.com/duncanthrax/scream)**</sub>
 
 &ensp;<sub>**[LookingGlass Wiki guide](https://looking-glass.io/wiki/Using_Scream_over_LAN)**</sub>
 
-#### 8.5. ZRAM Swap:
+#### 8.5. ZRAM Swap
 &ensp;<sub>**[Arch software package](https://aur.archlinux.org/packages/zramswap)**</sub>
 
 &ensp;<sub>**[Debian software package](https://wiki.debian.org/ZRam)**</sub>
@@ -437,8 +438,8 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 
 &ensp;<sub>**[Tuning benchmarks (Reddit)](https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/)**</sub>
 
-## 9. Disclaimer:
+## 9. Disclaimer
 Use at your own risk. Please review your system's specifications and resources.
 
-## 10. Contact:
+## 10. Contact
 Did you encounter a bug? Do you need help? Notice any dead links? Please contact by [raising an issue](https://github.com/portellam/deploy-VFIO/issues) with the project itself. The project is still in active development and the [Author](https://github.com/portellam) monitors this repository occasionally.
