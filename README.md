@@ -312,26 +312,26 @@ Example: (assume a Host with 32 GiB of RAM)
   <summary>Details:</summary>
 ---
 
-- **Multi-boot VFIO setup**
-  - Create multiple VFIO setups with corresponding GRUB menu entries. **More flexibility.**
-    - Select a GRUB menu entry with a VGA device excluded from VFIO.
-    - Default menu entry is without VFIO setup.
-    - Best for systems with two or more PCI VGA devices, without an integrated VGA device (iGPU).
+#### Multi-boot VFIO setup
+- Create multiple VFIO setups with corresponding GRUB menu entries. **More flexibility.**
+  - Select a GRUB menu entry with a VGA device excluded from VFIO.
+  - Default menu entry is without VFIO setup.
+  - Best for systems with two or more PCI VGA devices, without an integrated VGA device (iGPU).
 
-  - **Ad:** For best results, use [auto-Xorg](https://github.com/portellam/auto-Xorg).
+- **Ad:** For best results, use [auto-Xorg](https://github.com/portellam/auto-Xorg).
 
-- **Static VFIO setup**
-  - Single, traditional VFIO setup. **Less flexibility.**
-  - Specify method of setup:
-    - Append output to GRUB; single GRUB menu entry.
-    - Append output to system configuration files.
-  - Best for systems with one or more PCI VGA device(s) and one integrated VGA device (iGPU).
+#### Static VFIO setup
+- Single, traditional VFIO setup. **Less flexibility.**
+- Specify method of setup:
+  - Append output to GRUB; single GRUB menu entry.
+  - Append output to system configuration files.
+- Best for systems with one or more PCI VGA device(s) and one integrated VGA device (iGPU).
 
-- **Dynamic VFIO setup** (To be implemented in a future release)
-  - Use Libvirt hooks to bind or unbind devices at Guest(s) start or stop.
-  - Most responsibility; best for more experienced users.
-  - Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
-  - For an existing script of similar scope, you may try the project [VFIO-Tools](https://github.com/PassthroughPOST/VFIO-Tools).
+#### Dynamic VFIO setup (To be implemented in a future release)
+- Use Libvirt hooks to bind or unbind devices at Guest(s) start or stop.
+- Most responsibility; best for more experienced users.
+- Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
+- For an existing script of similar scope, you may try the project [VFIO-Tools](https://github.com/PassthroughPOST/VFIO-Tools).
 </details>
 
 ### 6.3 Post-setup (To be implemented in a future release)
@@ -340,33 +340,35 @@ Example: (assume a Host with 32 GiB of RAM)
 
 ---
 
-1. **auto-Xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
-2. **Guest Audio Capture**
-  - Create an [audio loopback](https://github.com/portellam/audio-loopback) to output on the Host audio device Line-Out.
-    - Listen on Host audio device Line-In (from Guest PCI Audio device Line-Out).
-    - Useful for systems with multiple audio devices.
-  - For virtual implementation, see *Virtual Audio Capture*.
+#### 1. auto-Xorg
+- system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
 
-3. **Libvirt Hooks**
+#### 2. Guest Audio Capture
+- Create an [audio loopback](https://github.com/portellam/audio-loopback) to output on the Host audio device Line-Out.
+  - Listen on Host audio device Line-In (from Guest PCI Audio device Line-Out).
+  - Useful for systems with multiple audio devices.
+- For virtual implementation, see *Virtual Audio Capture*.
+
+#### 3. Libvirt Hooks
 - Invoke [hooks](#libvirt-hooks) or scripts for all or individual Guests.
 - Switch display input (video output) at Guest start.
 - **Dynamically** allocate CPU cores and prioritize CPU scheduler.
 - **Libvirt-nosleep**: per Guest system service, to prevent Host sleep while Guest is active.
 
-4. **RAM as Compressed Swapfile/partition**
-  - Create a compressed Swap device in Host memory, using the *lz4* algorithm (compression ratio of about 2:1).
-    - Reduce swapiness to existing Host swap devices.
-    - Reduce chances of Host memory exhaustion (given an event of memory over-allocation).
-  - Implementation is known as [zram-swap](#zram-swap).
+#### 4. RAM as Compressed Swapfile/partition
+- Create a compressed Swap device in Host memory, using the *lz4* algorithm (compression ratio of about 2:1).
+  - Reduce swapiness to existing Host swap devices.
+  - Reduce chances of Host memory exhaustion (given an event of memory over-allocation).
+- Implementation is known as [zram-swap](#zram-swap).
 
-5. **Virtual Audio Capture**
-  - Setup a virtual audio driver for Windows that provides a discrete audio device.
-  - Implementation is known as [Scream](#scream).
+#### 5. Virtual Audio Capture
+- Setup a virtual audio driver for Windows that provides a discrete audio device.
+- Implementation is known as [Scream](#scream).
 
-6. **Virtual Video Capture**
-  - Setup direct-memory-access (DMA) of a PCI VGA device output (video and audio) from a Guest to Host.
-  - Implementation is known as [LookingGlass](https://looking-glass.io/).
-  - **Disclaimer:** Only supported for Guests running Windows 7 and later (Windows NT 6.1+).
+#### 6. Virtual Video Capture
+- Setup direct-memory-access (DMA) of a PCI VGA device output (video and audio) from a Guest to Host.
+- Implementation is known as [LookingGlass](https://looking-glass.io/).
+- **Disclaimer:** Only supported for Guests running Windows 7 and later (Windows NT 6.1+).
 </details>
 
 ## 7. Information
