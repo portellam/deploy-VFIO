@@ -24,8 +24,11 @@
 Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine.
 
 **1. What is [VFIO?](#VFIO)**
+
 **2. [VFIO article (Linux kernel documentation)](https://www.kernel.org/doc/html/latest/driver-api/vfio.html)**
+
 **3. [VFIO forum (Reddit)](https://old.reddit.com/r/VFIO)**
+
 **4. [PCI Passthrough guide (ArchLinux Wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)**
 
 ## 2. Why?
