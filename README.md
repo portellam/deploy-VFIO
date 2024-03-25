@@ -39,7 +39,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ##### [PCI Passthrough guide (ArchLinux Wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)
 
 ## Why?
-<details open>
+<details closed>
   </summary>
 
 ---
@@ -65,7 +65,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 </details>
 
 ## Host Requirements
-<details open>
+<details closed>
   </summary>
 
 ---
@@ -99,7 +99,9 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 ## Download
 <details closed>
-  <summary>To download this script, you may:</summary>
+  <summary>Details:</summary>
+
+---
 
   - Clone the repository:
     1. Open a Command Line Interface (CLI).
@@ -131,7 +133,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   Details
   </summary>
 
------
+---
 
 - From the project folder, execute: `sudo bash installer.bash`
 
@@ -150,7 +152,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   Details
   </summary>
 
------
+---
 
 - From anywhere, execute: `sudo bash deploy-vfio`
   - The CLI's shell (bash) should recognize that the script file is located in `/usr/local/bin`.
@@ -387,7 +389,7 @@ Example: (assume a Host with 32 GiB of RAM)
 
 ## Information
 ### BIOS v. UEFI
-<details open>
+<details closed>
   </summary>
 
 ---
@@ -399,7 +401,7 @@ BIOS-only VGA devices may not be available as Host video output. BIOS-only VGA d
 </details>
 
 ### Filenames and pathnames modified:
-<details open>
+<details closed>
   </summary>
 
 ---
@@ -444,7 +446,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 ```
 
 ### Latest graphics hardware for various Guest Operating Systems
-<details open>
+<details closed>
   </summary>
 
 ---
@@ -471,7 +473,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 </details>
 
 ## References
-<details open>
+<details closed>
   </summary>
 
 ---
