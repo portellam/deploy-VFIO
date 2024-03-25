@@ -37,7 +37,7 @@
 - [10. Contact](#10-contact)
 
 ## 1. About
-Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine.
+Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine. Includes references to other self-made projects and external documentation.
 
 1. What is [VFIO?](#VFIO)
 
