@@ -1,8 +1,9 @@
 # deploy-VFIO
-
-## Table of Contents
+## Directory
 - [Guest Setup Guide](GUEST_SETUP_GUIDE.md)
 - [License](LICENSE.md)
+
+## Table of Contents
 - [1. About](#1-about)
 - [2. Why?](#2-why)
 - [3. Host Requirements](#3-host-requirements)
