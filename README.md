@@ -143,6 +143,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   <summary>
   Details
   </summary>
+
 ---
 
 - From anywhere, execute: `sudo bash deploy-vfio`
