@@ -14,7 +14,7 @@
 - [5. Usage](#5-usage)
   - [5.1. `installer.bash`](#51-installerbash)
   - [5.2. `deploy-vfio`](#52-deploy-vfio)
-  - [5.3. Examples](#53-examples)
+  - [5.3. Usage Examples](#53-usage-examples)
 - [6. Features](#6-features)
   - [6.1. Pre-setup](#61-pre-setup)
   - [6.2. Main setup](#62-main-setup)
@@ -213,7 +213,7 @@ Example: (assume a Host with 32 GiB of RAM)
 --zram-swap force 1/4    Compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
 ```
 
-### 5.3. Script Examples:
+### 5.3. Usage Examples:
 ### 5.3.a. Example A:
   - Given a system with...
     - no previous VFIO setup.
