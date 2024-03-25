@@ -12,7 +12,7 @@
 - [ ] how to setup virtio disks (virtio, virtio-scsi).
 
 ## Directory
-- [deploy-VFIO](deploy-vfio)
+- [README](README.md)
 - [License](LICENSE.md)
 
 ## Table of Contents
