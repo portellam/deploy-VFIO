@@ -29,7 +29,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ##### 1.4 [PCI Passthrough guide (ArchLinux Wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)
 
 ## 2. Why?
-<details closed>
+<details open>
   <summary>Details:</summary>
 
 ---
@@ -55,7 +55,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 </details>
 
 ## 3. Host Requirements
-<details closed>
+<details open>
   <summary>Details:</summary>
 
 ---
@@ -88,7 +88,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 </details>
 
 ## 4. Download:
-<details closed>
+<details open>
   <summary>Details:</summary>
 
 ---
@@ -118,7 +118,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 ## 5. Usage:
 ### 5.1 `installer.bash`:
-<details closed>
+<details open>
   <summary>Details:</summary>
 
 ---
@@ -135,7 +135,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 </details>
 
 ### 5.2 `deploy-vfio`:
-<details closed>
+<details open>
   <summary>Details:</summary>
 
 ---
@@ -225,7 +225,7 @@ Example: (assume a Host with 32 GiB of RAM)
 
 ### 5.3 Script Examples
 ### 5.3.a Example A:
-<details closed>
+<details open>
   <summary>Details:</summary>
 
 ---
@@ -254,7 +254,7 @@ Example: (assume a Host with 32 GiB of RAM)
 </details>
 
 ### 5.3.b Example B:
-<details closed>
+<details open>
   <summary>Details:</summary>
 
 ---
@@ -285,7 +285,7 @@ Example: (assume a Host with 32 GiB of RAM)
 
 ## 6. Features
 ### 6.1 Pre-setup
-<details closed>
+<details open>
   <summary>Details:</summary>
 
 ---
@@ -309,7 +309,7 @@ Example: (assume a Host with 32 GiB of RAM)
 </details>
 
 ### 6.2 Main setup
-<details closed>
+<details open>
   <summary>Details:</summary>
 ---
 
@@ -336,7 +336,7 @@ Example: (assume a Host with 32 GiB of RAM)
 </details>
 
 ### 6.3 Post-setup (To be implemented in a future release)
-<details closed>
+<details open>
   <summary>Details:</summary>
 
 ---
@@ -374,7 +374,7 @@ Example: (assume a Host with 32 GiB of RAM)
 
 ## 7. Information
 ### 7.1 BIOS v. UEFI
-<details closed>
+<details open>
   <summary>Details:</summary>
 
 ---
@@ -386,7 +386,7 @@ BIOS-only VGA devices may not be available as Host video output. BIOS-only VGA d
 </details>
 
 ### 7.2 Filenames and pathnames modified:
-<details closed>
+<details open>
   <summary>Details:</summary>
 
 ---
@@ -431,7 +431,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 ```
 
 ### 7.5 Latest graphics hardware for various Guest Operating Systems
-<details closed>
+<details open>
   <summary>Details:</summary>
 
 ---
@@ -458,7 +458,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 </details>
 
 ## 8. References
-<details closed>
+<details open>
   <summary>Details:</summary>
 
 ---
