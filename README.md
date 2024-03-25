@@ -40,7 +40,9 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 ## Why?
 <details open>
-  <summary>Details</summary>
+  </summary>
+
+---
 
 1. **Separation of Concerns:** Independently operate your workstation, gaming, and school Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
 2. **No Need for a Server**
@@ -64,7 +66,9 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 ## Host Requirements
 <details open>
-  <summary>Details</summary>
+  </summary>
+
+---
 
 - Required software packages (for this script):
   `xmlstarlet`
@@ -126,6 +130,8 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   <summary>
   Details
   </summary>
+
+---
 
 - From the project folder, execute: `sudo bash installer.bash`
 
@@ -236,6 +242,8 @@ Example: (assume a Host with 32 GiB of RAM)
   Details
   </summary>
 
+---
+
   - Given a system with...
     - no previous VFIO setup.
     - ten (10) PCI device groups (index starting at '1').
@@ -261,7 +269,9 @@ Example: (assume a Host with 32 GiB of RAM)
 
 #### Example #2
 <details closed>
-  <summary>Details</summary>
+  </summary>
+
+---
 
   - Given a system with...
     - a previous VFIO setup.
@@ -290,7 +300,9 @@ Example: (assume a Host with 32 GiB of RAM)
 ## Features
 ### Pre-setup
 <details closed>
-  <summary>Details</summary>
+  </summary>
+
+---
 
 1. **Allocate CPU**
   - **Statically** [isolate Host CPU threads](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning) before allocating to Guest(s).
@@ -312,7 +324,9 @@ Example: (assume a Host with 32 GiB of RAM)
 
 ### Main setup
 <details closed>
-  <summary>Details</summary>
+  </summary>
+
+---
 
 - **Multi-boot VFIO setup**
   - Create multiple VFIO setups with corresponding GRUB menu entries. **More flexibility.**
@@ -338,7 +352,9 @@ Example: (assume a Host with 32 GiB of RAM)
 
 ### Post-setup (To be implemented in a future release)
 <details closed>
-  <summary>Details</summary>
+  </summary>
+
+---
 
 1. **auto-Xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
 2. **Guest Audio Capture**
@@ -372,7 +388,9 @@ Example: (assume a Host with 32 GiB of RAM)
 ## Information
 ### BIOS v. UEFI
 <details open>
-  <summary>Details</summary>
+  </summary>
+
+---
 
 - Some VGA devices, such as NVIDIA, may not be recognizable in a VM, as the video BIOS or VBIOS is *tainted* at Host OS start-up. This is usually the case if a given VGA device is used for the Host BIOS/UEFI booting process. To remedy this, you must obtain a clean copy of the VBIOS. You may reference this [project](https://github.com/Matoking/NVIDIA-vBIOS-VFIO-Patcher) for assistance, or review the [Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_the_boot_GPU_to_the_guest).
 
@@ -382,7 +400,9 @@ BIOS-only VGA devices may not be available as Host video output. BIOS-only VGA d
 
 ### Filenames and pathnames modified:
 <details open>
-  <summary>Details</summary>
+  </summary>
+
+---
 
 #### Pre-setup files
   - `/etc/apparmor.d/local/abstractions/libvirt-qemu`
@@ -425,7 +445,9 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 
 ### Latest graphics hardware for various Guest Operating Systems
 <details open>
-  <summary>Details</summary>
+  </summary>
+
+---
 
 #### Apple Macintosh
 ##### [AMD and NVIDIA GPU compatibility list (Apple Support article)](https://support.apple.com/en-us/102734)
@@ -450,7 +472,9 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 
 ## References
 <details open>
-  <summary>Details</summary>
+  </summary>
+
+---
 
 #### Hugepages
 &ensp;<sub>**[Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
