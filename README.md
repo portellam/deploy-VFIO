@@ -143,7 +143,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   <summary>
   Details
   </summary>
-
+---
 - From anywhere, execute: `sudo bash deploy-vfio`
   - The CLI's shell (bash) should recognize that the script file is located in `/usr/local/bin`.
 
