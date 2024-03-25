@@ -76,7 +76,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ### 3.1. Main requirements:
   - `GRUB` to execute command lines at boot (if chosen).
   - `systemd` for system services.
-  - IOMMU is supported (by the CPU) and enabled in the motherboard firmware (BIOS or UEFI).
+  - `IOMMU` is supported (by the CPU) and enabled in the motherboard firmware (BIOS or UEFI).
     - For AMD machines:&nbsp;`AMD-Vi`
     - For Intel machines:&ensp;&nbsp;`VT-d`
     - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this script.
