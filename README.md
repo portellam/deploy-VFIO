@@ -7,9 +7,24 @@
 - [Host Requirements](#host-requirements)
 - [Download](#download)
 - [Usage](#usage)
+  - [`installer.bash`](#installerbash)
+  - [`deploy-vfio`](#deploy-vfio)
 - [Features](#features)
+  - [Pre-setup](#pre-setup)
+  - [Main setup](#main-setup)
+  - [Post-setup](#post-setup-to-be-implemented-in-a-future-release)
 - [Information](#information)
+  - [BIOS v. UEFI](#bios-v-uefi)
+  - [Filenames and pathnames modified](#filenames-and-pathnames-modified)
+  - [VFIO](#vfio)
+  - [VGA](#vga)
+  - [Latest graphics hardware for various Guest Operating Systems](#latest-graphics-hardware-for-various-guest-operating-systems)
 - [References](#references)
+  - [Evdev](#evdev)
+  - [Hugepages](#hugepages)
+  - [me_cleaner](#me_cleaner)
+  - [Scream](#scream)
+  - [ZRAM Swap](#zram-swap)
 - [Disclaimer](#disclaimer)
 - [Contact](#contact)
 - [License](LICENSE.md)
@@ -106,7 +121,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 </details>
 
 ## Usage
-**`installer.bash`**
+### `installer.bash`
 <details closed>
   <summary>
   Details
@@ -123,7 +138,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   - The installer will place all configuration/text files in `/usr/local/etc`.
 </details>
 
-**`deploy-vfio`**
+### `deploy-vfio`
 <details closed>
   <summary>
   Details
