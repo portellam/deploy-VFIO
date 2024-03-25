@@ -1,6 +1,6 @@
 # deploy-VFIO
 ## Directory
-- [Guest Setup Guide](GUEST_SETUP_GUIDE.md)
+- [~~Guest Setup Guide~~](GUEST_SETUP_GUIDE.md)
 - [License](LICENSE.md)
 
 ## Table of Contents
@@ -46,34 +46,44 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 4. [PCI Passthrough guide (ArchLinux Wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)
 
 ## 2. Why?
-### 1. Separation of Concerns
+### 2.1. Salesman pitch
+#### 1. Separation of Concerns
 - Independently operate your workstation, gaming, and school Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
 
-### 2. No Need for a Server
+#### 2. No Need for a Server
 - Keep your Host OS desktop experience intact; turns your Host into a *Type-2* [Hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor).
 - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered *Type-1* or bare-metal Hypervisors.
 
-### 3. Securely run a modern OS
+#### 3. Securely run a modern OS
 - Limited access to real hardware means greater security.
 
-### 4. Ease of use
+#### 4. Ease of use
 - Usage of the [Command Line Interface](#usage) (CLI).
 - Given a system update, automate changes by specifying a cron-job (example: upgraded Linux kernel).
 
-### 5. PCI Passthrough
+#### 5. PCI Passthrough
 - Prioritize real hardware over emulation.
 
-### 6. Quality of Life
+#### 6. Quality of Life
 - Utilize multiple common-sense [features](#features) that are known to experienced users.
 
-### 7. Your Host OS is [supported](#supported-operating-systems).
-### 8. Securely run a [legacy OS](#legacy).
+#### 7. Your Host OS is [supported](#supported-operating-systems).
+#### 8. Securely run a [legacy OS](#legacy).
 
 ---
 
 **Advertisement:** For even greater security, use [me_cleaner](#me_cleaner) alongside a VFIO setup.
 
 **Disclaimer:** See [below](#latest-graphics-hardware-for-various-guest-operating-systems) for supported [VGA](#VGA) devices.
+
+### 2.2. Greater reasoning
+The VFIO community (and greater Linux community) should break down barriers to entry into PCI passthrough on Linux. In similar attitude of my other projects, I believe high-quality scripts and tutorials should target the greatest demographic: Beginners.
+
+When I first tried VFIO in 2019, I struggled with having a stable, performant setup. I could tell right away there were things I was missing, be it a question already answered, or a solution which doesn't exist. Over the years, I learned to how program in Bash, research the many optimizations, and ask questions. Here in this project, I pieced everything together I feel is more than adequate for a Beginner user.
+
+Please, give this a try. Thanks!
+
+The development could not have been possible for the thorough documentation at the [ArchLinux Wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF), the helpful users at the [VFIO Reddit community](https://old.reddit.com/r/VFIO), and various other projects available here on GitHub. Please, check them out should you have any broader questions, or would like to learn more.
 
 ## 3. Host Requirements
 ### 3.1. Main requirements
@@ -99,6 +109,12 @@ Red Hat Enterprise | No | none
 openSUSE | No | none
 
 ## 4. Download
+- To download this script, you may:
+  - Download the ZIP file:
+    1. Viewing from the top of the repository's (current) webpage, click the green `<> Code ` drop-down icon.
+    2. Click `Download ZIP`. Save this file.
+    3. Open the `.zip` file, then extract its contents.
+
   - Clone the repository:
     1. Open a Command Line Interface (CLI).
       - Open a console emulator (for Debian systems: Konsole).
@@ -110,10 +126,7 @@ openSUSE | No | none
 
     2. Change your directory to your home folder or anywhere safe: `cd ~`
     3. Clone the repository: `git clone https://www.github.com/portellam/deploy-vfio`
-  - Download the ZIP file:
-    1. Viewing from the top of the repository's (current) webpage, click the green `<> Code ` drop-down icon.
-    2. Click `Download ZIP`. Save this file.
-    3. Open the `.zip` file, then extract its contents.
+
 - To make this script executable, you must:
   1. Open the CLI (see above).
   2. Go to the directory of where the cloned/extracted repository folder is: `cd name_of_parent_folder/deploy-vfio/`
