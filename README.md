@@ -2,9 +2,13 @@
 
 ## Table of Contents
 - [Guest Setup Guide](GUEST_SETUP_GUIDE.md)
+- [License](LICENSE.md)
 - [1. About](#1-about)
 - [2. Why?](#2-why)
 - [3. Host Requirements](#3-host-requirements)
+  - [3.1. Main Requirements](#31-main-requirements)
+  - [3.2. Required software packages for script execution](#32-required-software-packages-for-script-execution)
+  - [3.3. Currently supported operating systems](#33-currently-supported-operating-systems)
 - [4. Download](#4-download)
 - [5. Usage](#5-usage)
   - [5.1. `installer.bash`](#51-installerbash)
@@ -13,12 +17,21 @@
 - [6. Features](#6-features)
   - [6.1. Pre-setup](#61-pre-setup)
   - [6.2. Main setup](#62-main-setup)
-  - [6.3. Post-setup](#63-post-setup-to-be-implemented-in-a-future-release)
+  - [6.3. Post-setup](#63-post-setup) [ ] To be implemented in a future release.
 - [7. Information](#7-information)
+  - [7.1. BIOS v. UEFI](#71-bios-v-uefi)
+  - [7.2. Filenames and pathnames modified](#72-filenames-and-pathnames-modified)
+  - [7.3. VFIO](#73-vfio)
+  - [7.4. VGA](#74-vga)
+  - [7.5. Latest VGA devices for Guest OS](#75-latest-vga-devices-for-guest-os)
 - [8. References](#8-references)
+  - [8.1. Evdev](#81-evdev)
+  - [8.2. Hugepages](#82-hugepages)
+  - [8.3. me_cleaner](#83-me_cleaner)
+  - [8.4. Scream](#84-scream)
+  - [8.5. ZRAM Swap](#85-zram-swap)
 - [9. Disclaimer](#9-disclaimer)
 - [10. Contact](#10-contact)
-- [License](LICENSE.md)
 
 ## 1. About:
 Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine.
@@ -65,7 +78,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 - To install packages:
   - For `apt` package manager: `sudo apt install -y xmlstarlet`
 
-### 3.3 Currently supported operating systems:
+### 3.3. Currently supported operating systems:
 Linux Distributions | Supported? | Tested
 :--- | :---: | :---
 Arch | No | none
@@ -75,10 +88,8 @@ Red Hat Enterprise | No | none
 openSUSE | No | none
 
 ## 4. Download:
-<details open>
+<details closed>
   <summary>Details:</summary>
-
----
 
   - Clone the repository:
     1. Open a Command Line Interface (CLI).
@@ -104,11 +115,9 @@ openSUSE | No | none
 </details>
 
 ## 5. Usage:
-### 5.1 `installer.bash`:
-<details open>
+### 5.1. `installer.bash`:
+<details closed>
   <summary>Details:</summary>
-
----
 
 - From the project folder, execute: `sudo bash installer.bash`
 
@@ -121,11 +130,9 @@ openSUSE | No | none
   - The installer will place all configuration/text files in `/usr/local/etc`.
 </details>
 
-### 5.2 `deploy-vfio`:
+### 5.2. `deploy-vfio`:
 <details closed>
   <summary>Details:</summary>
-
----
 
 - From anywhere, execute: `sudo bash deploy-vfio`
   - The CLI's shell (bash) should recognize that the script file is located in `/usr/local/bin`.
@@ -210,12 +217,10 @@ Example: (assume a Host with 32 GiB of RAM)
 
 </details>
 
-### 5.3 Script Examples:
-### 5.3.a Example A:
-<details open>
+### 5.3. Script Examples:
+### 5.3.a. Example A:
+<details closed>
   <summary>Details:</summary>
-
----
 
   - Given a system with...
     - no previous VFIO setup.
@@ -240,11 +245,9 @@ Example: (assume a Host with 32 GiB of RAM)
   ```
 </details>
 
-### 5.3.b Example B:
-<details open>
+### 5.3.b. Example B:
+<details closed>
   <summary>Details:</summary>
-
----
 
   - Given a system with...
     - a previous VFIO setup.
@@ -271,7 +274,7 @@ Example: (assume a Host with 32 GiB of RAM)
 </details>
 
 ## 6. Features:
-### 6.1 Pre-setup:
+### 6.1. Pre-setup:
 #### 6.1.a. Allocate CPU:
   - **Statically** [isolate Host CPU threads](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning) before allocating to Guest(s).
   -  Reduces Host overhead, and improves both Host and Guest performance.
@@ -289,7 +292,7 @@ Example: (assume a Host with 32 GiB of RAM)
   - Implementation is known as [Evdev](#evdev) (Event Devices).
   - **Note:** Guest PCI USB is good. Both implementations together is better.
 
-### 6.2 Main setup:
+### 6.2. Main setup:
 #### 6.2.a. Multi-boot VFIO setup:
 - Create multiple VFIO setups with corresponding GRUB menu entries. **More flexibility.**
   - Select a GRUB menu entry with a VGA device excluded from VFIO.
@@ -311,7 +314,8 @@ Example: (assume a Host with 32 GiB of RAM)
 - Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
 - For an existing script of similar scope, you may try the project [VFIO-Tools](https://github.com/PassthroughPOST/VFIO-Tools).
 
-### 6.3 Post-setup (To be implemented in a future release):
+### 6.3. Post-setup:
+[ ] To be implemented in a future release.
 #### 6.3.a. auto-Xorg:
 - system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
 
@@ -343,13 +347,13 @@ Example: (assume a Host with 32 GiB of RAM)
 - **Disclaimer:** Only supported for Guests running Windows 7 and later (Windows NT 6.1+).
 
 ## 7. Information:
-### 7.1 BIOS v. UEFI:
+### 7.1. BIOS v. UEFI:
 - Some VGA devices, such as NVIDIA, may not be recognizable in a VM, as the video BIOS or VBIOS is *tainted* at Host OS start-up. This is usually the case if a given VGA device is used for the Host BIOS/UEFI booting process. To remedy this, you must obtain a clean copy of the VBIOS. You may reference this [project](https://github.com/Matoking/NVIDIA-vBIOS-VFIO-Patcher) for assistance, or review the [Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_the_boot_GPU_to_the_guest).
 
 - If your Host machine supports UEFI only and/or if UEFI is enabled (and CSM/BIOS is disabled),
 BIOS-only VGA devices may not be available as Host video output. BIOS-only VGA devices may only be available explicitly for hardware passthrough.
 
-### 7.2 Filenames and pathnames modified:
+### 7.2. Filenames and pathnames modified:
 #### 7.2.a. Pre-setup files:
   - `/etc/apparmor.d/local/abstractions/libvirt-qemu`
   - `/etc/libvirt/qemu.conf`
@@ -371,29 +375,29 @@ BIOS-only VGA devices may not be available as Host video output. BIOS-only VGA d
   - `/usr/local/bin/`
   - `/usr/local/etc/deploy-vfio.d`
 
-### 7.3 VFIO:
+### 7.3. VFIO:
 Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.*<sup>[OpenSUSE documentation](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)</sup>
 
-### 7.4 VGA:
+### 7.4. VGA:
 Throughout the script source code and documentation, the acronym *VGA* is used.
 
 In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VGA may *refer to the computer display standard, the 15-pin D-subminiature VGA connector, or the 640×480 resolution characteristic of the VGA hardware.*<sup>[Wikipedia article](https://en.wikipedia.org/wiki/Video_Graphics_Array)</sup>
 
-#### 7.4.a Example:
+#### 7.4.a. Example:
 `lspci -nnk | grep --extended-regexp --ignore-case "vga|graphics"`
 
-##### 7.4.b Output:
+##### 7.4.b. Output:
 ```
 01:00.0 VGA compatible controller [0300]: NVIDIA Corporation GA104 [GeForce RTX 3070] [10de:2484] (rev a1)
 04:00.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Cayman PRO [Radeon HD 6950] [1002:6719]
 ```
 
-### 7.5 Latest graphics hardware for various Guest Operating Systems:
-#### 7.5.a Apple Macintosh:
+### 7.5. Latest VGA devices for Guest OS:
+#### 7.5.a. Apple Macintosh:
 1. [AMD and NVIDIA GPU compatibility list (Apple Support article)](https://support.apple.com/en-us/102734)
 2. [More detailed NVIDIA GPU compatibility list (archive of TonyMacX86 forum thread)](https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/)
 
-#### 7.5.b Microsoft Windows:
+#### 7.5.b. Microsoft Windows:
 | Windows version        | Device type | Brand and model                           |
 | --------------------   | ----------- | ----------------------------------------- |
 | 10 and above or NT 10+ | VGA         | NVIDIA RTX 4000-series[<sup>1</sup>](#1-uefi-only) or before       |
