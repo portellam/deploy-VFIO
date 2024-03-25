@@ -297,21 +297,21 @@ Example: (assume a Host with 32 GiB of RAM)
 ---
 
 1. **Allocate CPU**
-  - **Statically** [isolate Host CPU threads](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning) before allocating to Guest(s).
-  -  Reduces Host overhead, and improves both Host and Guest performance.
-  -  If installed, the **Dynamic** [Libvirt hook](https://github.com/portellam/libvirt-hooks) (see source) will skip its execution, to preserve the Static isolation.
+&ensp;  - **Statically** [isolate Host CPU threads](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning) before allocating to Guest(s).
+&ensp;  -  Reduces Host overhead, and improves both Host and Guest performance.
+&ensp;  -  If installed, the **Dynamic** [Libvirt hook](https://github.com/portellam/libvirt-hooks) (see source) will skip its execution, to preserve the Static isolation.
 
-  2. **Allocate RAM**
-  - **Static** huge memory pages eliminate the need to defragment Host memory (RAM) before allocating to Guest(s).
-  - Reduces Host overhead, and improves both Host and Guest performance.
-  - If skipped, setup will install the Libvirt hook for **Dynamic** allocation (transparent hugepages).
+2. **Allocate RAM**
+&ensp;  - **Static** huge memory pages eliminate the need to defragment Host memory (RAM) before allocating to Guest(s).
+&ensp;  - Reduces Host overhead, and improves both Host and Guest performance.
+&ensp;  - If skipped, setup will install the Libvirt hook for **Dynamic** allocation (transparent hugepages).
 
 3. **Virtual Keyboard Video Mouse (KVM) switch**
-  - Create a virtual KVM switch.
-    - Allow a user to swap a group of Input devices (as a whole) between active Guest(s) and Host.
-    - Use the pre-defined macro: `L-CTRL` + `R-CTRL`
-  - Implementation is known as [Evdev](#evdev) (Event Devices).
-  - **Note:** Guest PCI USB is good. Both implementations together is better.
+&ensp;  - Create a virtual KVM switch.
+&ensp;    - Allow a user to swap a group of Input devices (as a whole) between active Guest(s) and Host.
+&ensp;    - Use the pre-defined macro: `L-CTRL` + `R-CTRL`
+&ensp;  - Implementation is known as [Evdev](#evdev) (Event Devices).
+&ensp;  - **Note:** Guest PCI USB is good. Both implementations together is better.
 </details>
 
 ### Main setup
@@ -350,31 +350,31 @@ Example: (assume a Host with 32 GiB of RAM)
 
 1. **auto-Xorg** system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
 2. **Guest Audio Capture**
-  - Create an [audio loopback](https://github.com/portellam/audio-loopback) to output on the Host audio device Line-Out.
-    - Listen on Host audio device Line-In (from Guest PCI Audio device Line-Out).
-    - Useful for systems with multiple audio devices.
-  - For virtual implementation, see *Virtual Audio Capture*.
+&ensp;  - Create an [audio loopback](https://github.com/portellam/audio-loopback) to output on the Host audio device Line-Out.
+&ensp;    - Listen on Host audio device Line-In (from Guest PCI Audio device Line-Out).
+&ensp;    - Useful for systems with multiple audio devices.
+&ensp;  - For virtual implementation, see *Virtual Audio Capture*.
 
 3. **Libvirt Hooks**
-- Invoke [hooks](#libvirt-hooks) or scripts for all or individual Guests.
-- Switch display input (video output) at Guest start.
-- **Dynamically** allocate CPU cores and prioritize CPU scheduler.
-- **Libvirt-nosleep**: per Guest system service, to prevent Host sleep while Guest is active.
+&ensp;- Invoke [hooks](#libvirt-hooks) or scripts for all or individual Guests.
+&ensp;- Switch display input (video output) at Guest start.
+&ensp;- **Dynamically** allocate CPU cores and prioritize CPU scheduler.
+&ensp;- **Libvirt-nosleep**: per Guest system service, to prevent Host sleep while Guest is active.
 
 4. **RAM as Compressed Swapfile/partition**
-  - Create a compressed Swap device in Host memory, using the *lz4* algorithm (compression ratio of about 2:1).
-    - Reduce swapiness to existing Host swap devices.
-    - Reduce chances of Host memory exhaustion (given an event of memory over-allocation).
-  - Implementation is known as [zram-swap](#zram-swap).
+&ensp;  - Create a compressed Swap device in Host memory, using the *lz4* algorithm (compression ratio of about 2:1).
+&ensp;    - Reduce swapiness to existing Host swap devices.
+&ensp;    - Reduce chances of Host memory exhaustion (given an event of memory over-allocation).
+&ensp;  - Implementation is known as [zram-swap](#zram-swap).
 
 5. **Virtual Audio Capture**
-  - Setup a virtual audio driver for Windows that provides a discrete audio device.
-  - Implementation is known as [Scream](#scream).
+&ensp;  - Setup a virtual audio driver for Windows that provides a discrete audio device.
+&ensp;  - Implementation is known as [Scream](#scream).
 
 6. **Virtual Video Capture**
-  - Setup direct-memory-access (DMA) of a PCI VGA device output (video and audio) from a Guest to Host.
-  - Implementation is known as [LookingGlass](https://looking-glass.io/).
-  - **Disclaimer:** Only supported for Guests running Windows 7 and later (Windows NT 6.1+).
+&ensp;  - Setup direct-memory-access (DMA) of a PCI VGA device output (video and audio) from a Guest to Host.
+&ensp;  - Implementation is known as [LookingGlass](https://looking-glass.io/).
+&ensp;  - **Disclaimer:** Only supported for Guests running Windows 7 and later (Windows NT 6.1+).
 </details>
 
 ## Information
