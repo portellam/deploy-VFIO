@@ -8,7 +8,7 @@
 - [Download](#download)
 - [Usage](#usage)
   - [`installer.bash`](#installerbash)
-  - [`deploy-vfio`](#deploy-vfio)
+  - [`deploy-vfio`](#deploy-vfio-1)
 - [Features](#features)
   - [Pre-setup](#pre-setup)
   - [Main setup](#main-setup)
@@ -131,7 +131,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   Details
   </summary>
 
----
+-
 
 - From the project folder, execute: `sudo bash installer.bash`
 
@@ -150,7 +150,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   Details
   </summary>
 
----
+--
 
 - From anywhere, execute: `sudo bash deploy-vfio`
   - The CLI's shell (bash) should recognize that the script file is located in `/usr/local/bin`.
