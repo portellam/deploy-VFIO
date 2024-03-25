@@ -1,11 +1,13 @@
 # deploy-VFIO
 ## Directory
-- [~~Guest Setup Guide~~](GUEST_SETUP_GUIDE.md)
+- [Guest Setup Guide](GUEST_SETUP_GUIDE.md)
 - [License](LICENSE.md)
 
 ## Table of Contents
 - [1. About](#1-about)
 - [2. Why?](#2-why)
+  - [2.1. Salesman pitch](#21-salesman-pitch)
+  - [2.2. Greater reasoning](#22-greater-reasoning)
 - [3. Host Requirements](#3-host-requirements)
   - [3.1. Main Requirements](#31-main-requirements)
   - [3.2. Required software packages for script execution](#32-required-software-packages-for-script-execution)
@@ -77,9 +79,9 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 **Disclaimer:** See [below](#latest-graphics-hardware-for-various-guest-operating-systems) for supported [VGA](#VGA) devices.
 
 ### 2.2. Greater reasoning
-The VFIO community (and greater Linux community) should break down barriers to entry into PCI passthrough on Linux. In similar attitude of my other projects, I believe high-quality scripts and tutorials should target the greatest demographic: Beginners.
+The VFIO community (and greater Linux community) should break down barriers to entry, into PCI passthrough on Linux. In similar attitude of my other projects, I believe high-quality scripts and tutorials should target the greatest demographic: Beginners.
 
-When I first tried VFIO in 2019, I struggled with having a stable, performant setup. I could tell right away there were things I was missing, be it a question already answered, or a solution which doesn't exist. Over the years, I learned to how program in Bash, research the many optimizations, and ask questions. Here in this project, I pieced everything together I feel is more than adequate for a Beginner user.
+When I first tried VFIO in 2019, I struggled with having a stable, performant setup. I could tell right away there were things I was missing, be it a question already answered, or a solution which doesn't exist. Over the years, I learned to how program in Bash, research the many optimizations, and ask questions. Here in this project, I pieced as much as possible together.
 
 Please, give this a try. Thanks!
 
