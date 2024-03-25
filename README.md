@@ -17,7 +17,7 @@
 - [6. Features](#6-features)
   - [6.1. Pre-setup](#61-pre-setup)
   - [6.2. Main setup](#62-main-setup)
-  - [6.3. Post-setup](#63-post-setup) [ ] To be implemented in a future release.
+  - [6.3. Post-setup](#63-post-setup) (To be implemented in a future release)
 - [7. Information](#7-information)
   - [7.1. BIOS v. UEFI](#71-bios-v-uefi)
   - [7.2. Filenames and pathnames modified](#72-filenames-and-pathnames-modified)
@@ -45,20 +45,27 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 **4. [PCI Passthrough guide (ArchLinux Wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)**
 
 ## 2. Why?
-1. **Separation of Concerns:** Independently operate your workstation, gaming, and school Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
-2. **No Need for a Server**
-  - Keep your Host OS desktop experience intact; turns your Host into a *Type-2* [Hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor).
-  - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered *Type-1* or bare-metal Hypervisors.
+### 1. Separation of Concerns:
+- Independently operate your workstation, gaming, and school Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
+### 2. No Need for a Server
+- Keep your Host OS desktop experience intact; turns your Host into a *Type-2* [Hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor).
+- Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered *Type-1* or bare-metal Hypervisors.
 
-3. **Securely run a modern OS:** limited access to real hardware means greater security.
-4. **Ease of use:**
-  - Usage of the [Command Line Interface](#usage) (CLI).
-  - Given a system update, automate changes by specifying a cron-job (example: upgraded Linux kernel).
+### 3. Securely run a modern OS:
+- Limited access to real hardware means greater security.
 
-5. **PCI Passthrough:** prioritize real hardware over emulation.
-6. **Quality of Life**: utilize multiple common-sense [features](#features) that are known to experienced users.
-7. **Your Host OS is [supported](#supported-operating-systems).**
-8. **Securely run a [legacy OS](#legacy).**
+### 4. Ease of use:
+- Usage of the [Command Line Interface](#usage) (CLI).
+- Given a system update, automate changes by specifying a cron-job (example: upgraded Linux kernel).
+
+### 5. PCI Passthrough:
+- Prioritize real hardware over emulation.
+
+### 6. Quality of Life:
+- Utilize multiple common-sense [features](#features) that are known to experienced users.
+
+### 7. Your Host OS is [supported](#supported-operating-systems).
+### 8. Securely run a [legacy OS](#legacy).
 
 **Advertisement:** For even greater security, use [me_cleaner](#me_cleaner) alongside a VFIO setup.
 
@@ -308,14 +315,18 @@ Example: (assume a Host with 32 GiB of RAM)
   - Append output to system configuration files.
 - Best for systems with one or more PCI VGA device(s) and one integrated VGA device (iGPU).
 
-#### 6.2.c. Dynamic VFIO setup (To be implemented in a future release):
+#### 6.2.c. Dynamic VFIO setup:
+
+**!** To be implemented in a future release.
 - Use Libvirt hooks to bind or unbind devices at Guest(s) start or stop.
 - Most responsibility; best for more experienced users.
 - Most flexibility; Libvirt hooks allow Host to allocate and release resources dynamically.
 - For an existing script of similar scope, you may try the project [VFIO-Tools](https://github.com/PassthroughPOST/VFIO-Tools).
 
 ### 6.3. Post-setup:
-[ ] To be implemented in a future release.
+
+**!** To be implemented in a future release.
+
 #### 6.3.a. auto-Xorg:
 - system service to find and set a valid Host boot [VGA](#VGA) device for Xorg.
 
