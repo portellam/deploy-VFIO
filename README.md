@@ -96,9 +96,6 @@ Red Hat Enterprise | No | none
 openSUSE | No | none
 
 ## 4. Download:
-<details closed>
-  <summary>Details:</summary>
-
   - Clone the repository:
     1. Open a Command Line Interface (CLI).
       - Open a console emulator (for Debian systems: Konsole).
@@ -120,13 +117,9 @@ openSUSE | No | none
   3. Make the installer script file executable: `chmod +x installer.bash`
     - Do **not** make any other script files executable. The installer will perform this action.
     - Do **not** make any non-script file executable. This is not necessary and potentially dangerous.
-</details>
 
 ## 5. Usage:
 ### 5.1. `installer.bash`:
-<details closed>
-  <summary>Details:</summary>
-
 - From the project folder, execute: `sudo bash installer.bash`
 
   ```xml
@@ -136,12 +129,9 @@ openSUSE | No | none
   ```
   - The installer will place all script files in `/usr/local/bin`.
   - The installer will place all configuration/text files in `/usr/local/etc`.
-</details>
+
 
 ### 5.2. `deploy-vfio`:
-<details closed>
-  <summary>Details:</summary>
-
 - From anywhere, execute: `sudo bash deploy-vfio`
   - The CLI's shell (bash) should recognize that the script file is located in `/usr/local/bin`.
 
@@ -223,13 +213,8 @@ Example: (assume a Host with 32 GiB of RAM)
 --zram-swap force 1/4    Compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
 ```
 
-</details>
-
 ### 5.3. Script Examples:
 ### 5.3.a. Example A:
-<details closed>
-  <summary>Details:</summary>
-
   - Given a system with...
     - no previous VFIO setup.
     - ten (10) PCI device groups (index starting at '1').
@@ -251,12 +236,8 @@ Example: (assume a Host with 32 GiB of RAM)
     --hugepages 1G 8 \
     --static grub
   ```
-</details>
 
 ### 5.3.b. Example B:
-<details closed>
-  <summary>Details:</summary>
-
   - Given a system with...
     - a previous VFIO setup.
     - ten (10) PCI device groups (index starting at '1').
@@ -279,7 +260,6 @@ Example: (assume a Host with 32 GiB of RAM)
     --hugepages 1G 16 \
     --multiboot first
   ```
-</details>
 
 ## 6. Features:
 ### 6.1. Pre-setup:
@@ -462,5 +442,3 @@ Use at your own risk. Please review your system's specifications and resources.
 
 ## 10. Contact:
 Did you encounter a bug? Do you need help? Notice any dead links? Please contact by [raising an issue](https://github.com/portellam/deploy-VFIO/issues) with the project itself. The project is still in active development and the [Author](https://github.com/portellam) monitors this repository occasionally.
-
-Thanks!
