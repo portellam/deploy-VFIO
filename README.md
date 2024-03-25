@@ -19,18 +19,17 @@
 - [Contact](#contact)
 - [License](LICENSE.md)
 
-## Contents
-### About
+## 1. About
 Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine.
 
-##### What is [VFIO?](#VFIO)
-##### [VFIO article (Linux kernel documentation)](https://www.kernel.org/doc/html/latest/driver-api/vfio.html)
-##### [VFIO forum (Reddit)](https://old.reddit.com/r/VFIO)
-##### [PCI Passthrough guide (ArchLinux Wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)
+##### 1.1 What is [VFIO?](#VFIO)
+##### 1.2 [VFIO article (Linux kernel documentation)](https://www.kernel.org/doc/html/latest/driver-api/vfio.html)
+##### 1.3 [VFIO forum (Reddit)](https://old.reddit.com/r/VFIO)
+##### 1.4 [PCI Passthrough guide (ArchLinux Wiki)](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)
 
-## Why?
+## 2. Why?
 <details closed>
-  </summary>
+  <summary>Details:</summary>
 
 ---
 
@@ -54,9 +53,9 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 **Disclaimer:** See [below](#latest-graphics-hardware-for-various-guest-operating-systems) for supported [VGA](#VGA) devices.
 </details>
 
-## Host Requirements
+## 3. Host Requirements
 <details closed>
-  </summary>
+  <summary>Details:</summary>
 
 ---
 
@@ -87,7 +86,7 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 ##### 3. RHEL:    CentOS, Fedora, Oracle, and Rocky Linux.
 </details>
 
-## Download
+## 4. Download
 <details closed>
   <summary>Details:</summary>
 
@@ -116,12 +115,10 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
     - Do **not** make any non-script file executable. This is not necessary and potentially dangerous.
 </details>
 
-## Usage
-### `installer.bash`
+## 5. Usage
+### 5.1 `installer.bash`
 <details closed>
-  <summary>
-  Details
-  </summary>
+  <summary>Details:</summary>
 
 ---
 
@@ -136,11 +133,9 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   - The installer will place all configuration/text files in `/usr/local/etc`.
 </details>
 
-### `deploy-vfio`
+### 5.2 `deploy-vfio`
 <details closed>
-  <summary>
-  Details
-  </summary>
+  <summary>Details:</summary>
 
 ---
 
@@ -227,12 +222,10 @@ Example: (assume a Host with 32 GiB of RAM)
 
 </details>
 
-### Script Examples
-#### Example #1
+### 5.3 Script Examples
+### 5.3.a Example #1
 <details closed>
-  <summary>
-  Details
-  </summary>
+  <summary>Details:</summary>
 
 ---
 
@@ -259,11 +252,9 @@ Example: (assume a Host with 32 GiB of RAM)
   ```
 </details>
 
-#### Example #2
+### 5.3.b Example #2
 <details closed>
-  <summary>
-  Details
-  </summary>
+  <summary>Details:</summary>
 
 ---
 
@@ -291,10 +282,10 @@ Example: (assume a Host with 32 GiB of RAM)
   ```
 </details>
 
-## Features
-### Pre-setup
+## 6. Features
+### 6.1 Pre-setup
 <details closed>
-&ensp;&ensp;<summary>Details</summary>
+  <summary>Details:</summary>
 
 ---
 
@@ -316,10 +307,9 @@ Example: (assume a Host with 32 GiB of RAM)
   - **Note:** Guest PCI USB is good. Both implementations together is better.
 </details>
 
-### Main setup
+### 6.2 Main setup
 <details closed>
-  </summary>
-
+  <summary>Details:</summary>
 ---
 
 - **Multi-boot VFIO setup**
@@ -344,9 +334,9 @@ Example: (assume a Host with 32 GiB of RAM)
   - For an existing script of similar scope, you may try the project [VFIO-Tools](https://github.com/PassthroughPOST/VFIO-Tools).
 </details>
 
-### Post-setup (To be implemented in a future release)
+### 6.3 Post-setup (To be implemented in a future release)
 <details closed>
-  </summary>
+  <summary>Details:</summary>
 
 ---
 
@@ -379,10 +369,10 @@ Example: (assume a Host with 32 GiB of RAM)
   - **Disclaimer:** Only supported for Guests running Windows 7 and later (Windows NT 6.1+).
 </details>
 
-## Information
-### BIOS v. UEFI
+## 7. Information
+### 7.1 BIOS v. UEFI
 <details closed>
-  </summary>
+  <summary>Details:</summary>
 
 ---
 
@@ -392,9 +382,9 @@ Example: (assume a Host with 32 GiB of RAM)
 BIOS-only VGA devices may not be available as Host video output. BIOS-only VGA devices may only be available explicitly for hardware passthrough.
 </details>
 
-### Filenames and pathnames modified:
+### 7.2 Filenames and pathnames modified:
 <details closed>
-  </summary>
+  <summary>Details:</summary>
 
 ---
 
@@ -420,10 +410,10 @@ BIOS-only VGA devices may not be available as Host video output. BIOS-only VGA d
   - `/usr/local/etc/deploy-vfio.d`
 </details>
 
-### VFIO
+### 7.3 VFIO
 Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.*<sup>[OpenSUSE documentation](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)</sup>
 
-### VGA
+### 7.4 VGA
 Throughout the script source code and documentation, the acronym *VGA* is used.
 
 In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VGA may *refer to the computer display standard, the 15-pin D-subminiature VGA connector, or the 640×480 resolution characteristic of the VGA hardware.*<sup>[Wikipedia article](https://en.wikipedia.org/wiki/Video_Graphics_Array)</sup>
@@ -437,17 +427,17 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 04:00.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Cayman PRO [Radeon HD 6950] [1002:6719]
 ```
 
-### Latest graphics hardware for various Guest Operating Systems
+### 7.5 Latest graphics hardware for various Guest Operating Systems
 <details closed>
-  </summary>
+  <summary>Details:</summary>
 
 ---
 
-#### Apple Macintosh
+#### 7.5.a Apple Macintosh
 ##### [AMD and NVIDIA GPU compatibility list (Apple Support article)](https://support.apple.com/en-us/102734)
 ##### [More detailed NVIDIA GPU compatibility list (archive of TonyMacX86 forum thread)](https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/)
 
-#### Microsoft Windows
+#### 7.5.b Microsoft Windows
 | Windows version        | Device type | Brand and model                           |
 | --------------------   | ----------- | ----------------------------------------- |
 | 10 and above or NT 10+ | VGA         | NVIDIA RTX 4000-series[<sup>2</sup>](#2-uefi-only) or before       |
@@ -464,9 +454,9 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 **Note:** For emulating video devices on Windows 9x and older legacy operating systems, try the project [SoftGPU](https://github.com/JHRobotics/softgpu). Modern CPUs are more than powerful enough to emulate such hardware.
 </details>
 
-## References
+## 8. References
 <details closed>
-  </summary>
+  <summary>Details:</summary>
 
 ---
 
@@ -503,7 +493,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 
 </details>
 
-## Disclaimer
+## 9. Disclaimer
 Use at your own risk. Please review your system's specifications and resources.
 
 ## Contact
