@@ -2,13 +2,15 @@
 ### v1.0.0
 Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine.
 
-**[Latest release](https://github.com/portellam/deploy-vfio/releases/latest) | [View develop branch...](https://github.com/portellam/deploy-vfio/tree/develop)**
+**[Latest release](/../../../releases/latest)**
 
-#### Related Projects:
-**[Auto X.Org](https://github.com/portellam/auto-xorg) | [Generate Evdev](https://github.com/portellam/generate-evdev) | [Guest Machine Guide](https://github.com/portellam/guest-machine-guide) | [Libvirt Hooks](https://github.com/portellam/libvirt-hooks) | [Power State Virtual Machine Manager](https://github.com/portellam/powerstate-virtmanager)**
+### Related Projects
+[Deploy VFIO](/../../../../deploy-VFIO) | **[Auto X.Org](/../../../../auto-xorg)** | **[Generate Evdev](/../../../../generate-evdev)**
 
-#### Other Links:
-**What is [VFIO?](#VFIO) | [VFIO Article](https://www.kernel.org/doc/html/latest/driver-api/vfio.html) | [VFIO Forum](https://old.reddit.com/r/VFIO) | [PCI Passthrough Guide](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)**
+**[Guest Machine Guide](/../../../../guest-machine-guide)** | **[Libvirt Hooks](/../../../../libvirt-hooks)** | **[Power State Virtual Machine Manager](/../../../../powerstate-virtmanager)**
+
+### Other Links:
+**[What is VFIO?](#VFIO) | [VFIO Article](https://www.kernel.org/doc/html/latest/driver-api/vfio.html) | [VFIO Forum](https://old.reddit.com/r/VFIO) | [PCI Passthrough Guide](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)**
 
 ## Table of Contents
 - [About](#about)
@@ -69,7 +71,14 @@ Collection of scripts to deploy and re-deploy a VFIO setup.
 
 ### Download
 - To download this script, you may:
-  - Download the latest release [here](https://github.com/portellam/deploy-vfio/releases/latest).
+  - Download the [latest release](/../../../releases/latest).
+  - Download the ZIP file:
+    1. Viewing from the top of the repository's (current) webpage, click the drop-down icon:
+      - `<> Code `&ensp;on **GitHub**.
+      - `···`&ensp;&ensp;on **Codeberg**.
+    2. Click `Download ZIP`. Save this file.
+    3. Open the `.zip` file, then extract its contents.
+
   - Clone the repository:
     1. Open a Command Line Interface (CLI).
       - Open a console emulator (for Debian systems: Konsole).
@@ -80,14 +89,13 @@ Collection of scripts to deploy and re-deploy a VFIO setup.
         - `F8` and above are unused.
 
     2. Change your directory to your home folder or anywhere safe: `cd ~`
-    3. Clone the repository: `git clone https://www.github.com/portellam/deploy-vfio`
-  - Download the ZIP file:
-    1. Viewing from the top of the repository's (current) webpage, click the green `<> Code ` drop-down icon.
-    2. Click `Download ZIP`. Save this file.
-    3. Open the `.zip` file, then extract its contents.
+    3. Clone the repository:
+      - `git clone https://www.codeberg.org/portellam/deploy-VFIO`
+      - `git clone https://www.github.com/portellam/deploy-VFIO`
+
 - To make this script executable, you must:
   1. Open the CLI (see above).
-  2. Go to the directory of where the cloned/extracted repository folder is: `cd name_of_parent_folder/deploy-vfio/`
+  2. Go to the directory of where the cloned/extracted repository folder is: `cd name_of_parent_folder/deploy-VFIO/`
   3. Make the installer script file executable: `chmod +x installer.bash`
     - Do **not** make any other script files executable. The installer will perform this action.
     - Do **not** make any non-script file executable. This is not necessary and potentially dangerous.
@@ -103,8 +111,8 @@ Collection of scripts to deploy and re-deploy a VFIO setup.
   - The installer will place all script files in `/usr/local/bin`.
   - The installer will place all configuration/text files in `/usr/local/etc`.
 
-**`deploy-vfio`**
-- From anywhere, execute: `sudo bash deploy-vfio`
+**`deploy-VFIO`**
+- From anywhere, execute: `sudo bash deploy-VFIO`
   - The CLI's shell (bash) should recognize that the script file is located in `/usr/local/bin`.
 ```
 -h, --help               Print this help and exit.
@@ -158,30 +166,6 @@ Multiboot VFIO:
 Static VFIO:
   file                   Append output to system configuration files.
   grub                   Append output to GRUB; single GRUB menu entry.
-
-Post-setup:
---audio-loopback         Install the audio loopback service...           Loopback audio from Guest to Host (over Line-out to Line-in).
---auto-xorg [ARGS]       Install Auto X.Org...                            System service to find and set a valid boot VGA device for X.Org.
---libvirt-hooks          Install recommended Libvirt hooks.
---zram-swap [ARGS]       Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
---skip-post-setup        Skip execution.
---uninstall-post-setup   Undo all changes made by post-setup.
-
-auto-xorg:
-  first  [vendor]        Find the first valid VGA device.
-  last   [vendor]        Find the last valid VGA device.
-  [sort] amd             Prefer AMD or ATI.
-  [sort] intel           Prefer Intel.
-  [sort] nvidia          Prefer NVIDIA.
-  [sort] other           Prefer any other brand.
-
-zram-swap:
-  [fraction]             Set the fraction of total available memory.
-  default                Automatically calculate the fraction of total available memory.
-  force                  Force changes, even if zram-swap is allocated and in use.
-
-Example: (assume a Host with 32 GiB of RAM)
---zram-swap force 1/4    Compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
 ```
 
 ### Features
@@ -189,7 +173,7 @@ Example: (assume a Host with 32 GiB of RAM)
 1. **Allocate CPU**
   - **Statically** [isolate Host CPU threads](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning) before allocating to Guest(s).
   -  Reduces Host overhead, and improves both Host and Guest performance.
-  -  If installed, the **Dynamic** [Libvirt hook](https://github.com/portellam/libvirt-hooks) (see source) will skip its execution, to preserve the Static isolation.
+  -  If installed, the **Dynamic** [Libvirt hook](/../../../../libvirt-hooks) (see source) will skip its execution, to preserve the Static isolation.
 
   2. **Allocate RAM**
   - **Static** huge memory pages eliminate the need to defragment Host memory (RAM) before allocating to Guest(s).
@@ -210,7 +194,7 @@ Example: (assume a Host with 32 GiB of RAM)
     - Default menu entry is without VFIO setup.
     - Best for systems with two or more PCI VGA devices, without an integrated VGA device (iGPU).
 
-  - **Ad:** For best results, use [Auto X.Org](https://github.com/portellam/auto-xorg).
+  - **Ad:** For best results, use [Auto X.Org](/../../../../auto-xorg).
 
 - **Static VFIO setup**
   - Single, traditional VFIO setup. **Less flexibility.**
@@ -228,7 +212,7 @@ Example: (assume a Host with 32 GiB of RAM)
 #### Post-setup (To be implemented in a future release)
 1. **Auto X.Org** system service to find and set a valid Host boot [VGA](#VGA) device for X.Org.
 2. **Guest Audio Capture**
-  - Create an [audio loopback](https://github.com/portellam/audio-loopback) to output on the Host audio device Line-Out.
+  - Create an [audio loopback](/../../../../audio-loopback) to output on the Host audio device Line-Out.
     - Listen on Host audio device Line-In (from Guest PCI Audio device Line-Out).
     - Useful for systems with multiple audio devices.
   - For virtual implementation, see *Virtual Audio Capture*.
@@ -281,7 +265,7 @@ BIOS-only VGA devices may not be available as Host video output. BIOS-only VGA d
 
 #### Paths for project binaries and files
   - `/usr/local/bin/`
-  - `/usr/local/etc/deploy-vfio.d`
+  - `/usr/local/etc/deploy-VFIO.d`
 
 #### VFIO
 Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.*<sup>[OpenSUSE documentation](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)</sup>
@@ -325,7 +309,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 #### Evdev
 &ensp;<sub>**[Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
 
-&ensp;<sub>**[GitHub project source](https://github.com/portellam/generate-evdev)**</sub>
+&ensp;<sub>**[GitHub project source](/../../../../portellam/generate-evdev)**</sub>
 #### Hugepages
 
 &ensp;<sub>**[Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
@@ -357,4 +341,4 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 Use at your own risk. Please review your system's specifications and resources.
 
 ### Contact
-Did you encounter a bug? Do you need help? Notice any dead links? Please contact by [raising an issue](https://github.com/portellam/deploy-VFIO/issues) with the project itself.
+Did you encounter a bug? Do you need help? Notice any dead links? Please contact by [raising an issue](/../../../../issues) with the project itself.
