@@ -2,12 +2,12 @@
 ### v1.0.0
 Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine.
 
-**[Latest release](/../../releases/latest)**
+**[Latest release](/../../../releases/latest)**
 
 ### Related Projects
-[Deploy VFIO](/../../../deploy-VFIO) | **[Auto X.Org](/../../../auto-xorg)** | **[Generate Evdev](/../../../generate-evdev)**
+[Deploy VFIO](/../../../../deploy-VFIO) | **[Auto X.Org](/../../../../auto-xorg)** | **[Generate Evdev](/../../../../generate-evdev)**
 
-**[Guest Machine Guide](/../../../guest-machine-guide)** | **[Libvirt Hooks](/../../../libvirt-hooks)** | **[Power State Virtual Machine Manager](/../../../powerstate-virtmanager)**
+**[Guest Machine Guide](/../../../../guest-machine-guide)** | **[Libvirt Hooks](/../../../../libvirt-hooks)** | **[Power State Virtual Machine Manager](/../../../../powerstate-virtmanager)**
 
 ### Other Links:
 **[What is VFIO?](#VFIO) | [VFIO Article](https://www.kernel.org/doc/html/latest/driver-api/vfio.html) | [VFIO Forum](https://old.reddit.com/r/VFIO) | [PCI Passthrough Guide](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)**
@@ -71,7 +71,7 @@ Collection of scripts to deploy and re-deploy a VFIO setup.
 
 ### Download
 - To download this script, you may:
-  - Download the [latest release](/../../releases/latest).
+  - Download the [latest release](/../../../releases/latest).
   - Download the ZIP file:
     1. Viewing from the top of the repository's (current) webpage, click the drop-down icon:
       - `<> Code ` on **GitHub**.
@@ -173,7 +173,7 @@ Static VFIO:
 1. **Allocate CPU**
   - **Statically** [isolate Host CPU threads](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#CPU_pinning) before allocating to Guest(s).
   -  Reduces Host overhead, and improves both Host and Guest performance.
-  -  If installed, the **Dynamic** [Libvirt hook](/../../../libvirt-hooks) (see source) will skip its execution, to preserve the Static isolation.
+  -  If installed, the **Dynamic** [Libvirt hook](/../../../../libvirt-hooks) (see source) will skip its execution, to preserve the Static isolation.
 
   2. **Allocate RAM**
   - **Static** huge memory pages eliminate the need to defragment Host memory (RAM) before allocating to Guest(s).
@@ -194,7 +194,7 @@ Static VFIO:
     - Default menu entry is without VFIO setup.
     - Best for systems with two or more PCI VGA devices, without an integrated VGA device (iGPU).
 
-  - **Ad:** For best results, use [Auto X.Org](/../../../auto-xorg).
+  - **Ad:** For best results, use [Auto X.Org](/../../../../auto-xorg).
 
 - **Static VFIO setup**
   - Single, traditional VFIO setup. **Less flexibility.**
@@ -212,7 +212,7 @@ Static VFIO:
 #### Post-setup (To be implemented in a future release)
 1. **Auto X.Org** system service to find and set a valid Host boot [VGA](#VGA) device for X.Org.
 2. **Guest Audio Capture**
-  - Create an [audio loopback](/../../../audio-loopback) to output on the Host audio device Line-Out.
+  - Create an [audio loopback](/../../../../audio-loopback) to output on the Host audio device Line-Out.
     - Listen on Host audio device Line-In (from Guest PCI Audio device Line-Out).
     - Useful for systems with multiple audio devices.
   - For virtual implementation, see *Virtual Audio Capture*.
@@ -309,7 +309,7 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 #### Evdev
 &ensp;<sub>**[Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
 
-&ensp;<sub>**[GitHub project source](/../../../portellam/generate-evdev)**</sub>
+&ensp;<sub>**[GitHub project source](/../../../../portellam/generate-evdev)**</sub>
 #### Hugepages
 
 &ensp;<sub>**[Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
@@ -341,4 +341,4 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 Use at your own risk. Please review your system's specifications and resources.
 
 ### Contact
-Did you encounter a bug? Do you need help? Notice any dead links? Please contact by [raising an issue](/../../../issues) with the project itself.
+Did you encounter a bug? Do you need help? Notice any dead links? Please contact by [raising an issue](/../../../../issues) with the project itself.
