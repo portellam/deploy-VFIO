@@ -2,7 +2,7 @@
 ### v1.0.0
 Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine.
 
-**[Latest release](/../../../releases/latest) | [View master branch...](/../../../tree/master)**
+**[Latest release](/../../../releases/latest)**
 
 ### Related Projects
 [Deploy VFIO](/../../../../deploy-VFIO) | **[Auto X.Org](/../../../../auto-xorg)** | **[Generate Evdev](/../../../../generate-evdev)**
@@ -70,9 +70,8 @@ Collection of scripts to deploy and re-deploy a VFIO setup.
     - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this script.
 
 ### Download
-### Download
 - To download this script, you may:
-  - Download the latest release [here](/../../../../deploy-VFIO/releases/latest).
+  - Download the [latest release](/../../../releases/latest).
   - Download the ZIP file:
     1. Viewing from the top of the repository's (current) webpage, click the drop-down icon:
       - `···` on Codeberg.
