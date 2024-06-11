@@ -166,30 +166,6 @@ Multiboot VFIO:
 Static VFIO:
   file                   Append output to system configuration files.
   grub                   Append output to GRUB; single GRUB menu entry.
-
-Post-setup:
---audio-loopback         Install the audio loopback service...           Loopback audio from Guest to Host (over Line-out to Line-in).
---auto-xorg [ARGS]       Install Auto X.Org...                            System service to find and set a valid boot VGA device for X.Org.
---libvirt-hooks          Install recommended Libvirt hooks.
---zram-swap [ARGS]       Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
---skip-post-setup        Skip execution.
---uninstall-post-setup   Undo all changes made by post-setup.
-
-auto-xorg:
-  first  [vendor]        Find the first valid VGA device.
-  last   [vendor]        Find the last valid VGA device.
-  [sort] amd             Prefer AMD or ATI.
-  [sort] intel           Prefer Intel.
-  [sort] nvidia          Prefer NVIDIA.
-  [sort] other           Prefer any other brand.
-
-zram-swap:
-  [fraction]             Set the fraction of total available memory.
-  default                Automatically calculate the fraction of total available memory.
-  force                  Force changes, even if zram-swap is allocated and in use.
-
-Example: (assume a Host with 32 GiB of RAM)
---zram-swap force 1/4    Compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
 ```
 
 ### Features
