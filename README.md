@@ -74,8 +74,8 @@ Collection of scripts to deploy and re-deploy a VFIO setup.
   - Download the [latest release](/../../../releases/latest).
   - Download the ZIP file:
     1. Viewing from the top of the repository's (current) webpage, click the drop-down icon:
-      - `<> Code `&ensp;on **GitHub**.
-      - `···`&ensp;&ensp;on **Codeberg**.
+      - `<> Code ` on **GitHub**.
+      - &ensp;&ensp;`···` on **Codeberg**.
     2. Click `Download ZIP`. Save this file.
     3. Open the `.zip` file, then extract its contents.
 
