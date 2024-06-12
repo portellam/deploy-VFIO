@@ -73,9 +73,7 @@ Collection of scripts to deploy and re-deploy a VFIO setup.
 - To download this script, you may:
   - Download the [latest release](https://github.com/portellam/deploy-VFIO/releases/latest).
   - Download the ZIP file:
-    1. Viewing from the top of the repository's (current) webpage, click the drop-down icon:
-      - `<> Code ` on **GitHub**.
-      - &nbsp;&ensp;&ensp;`···` on **Codeberg**.
+    1. Viewing from the top of the repository's (current) webpage, click the drop-down icon `<> Code `.
     2. Click `Download ZIP`. Save this file.
     3. Open the `.zip` file, then extract its contents.
 
