@@ -108,8 +108,8 @@ Collection of scripts to deploy and re-deploy a VFIO setup.
   - The installer will place all script files in `/usr/local/bin`.
   - The installer will place all configuration/text files in `/usr/local/etc`.
 
-**`deploy-vfio`**
-- From anywhere, execute: `sudo bash deploy-vfio`
+**`deploy-VFIO`**
+- From anywhere, execute: `sudo bash deploy-VFIO`
   - The CLI's shell (bash) should recognize that the script file is located in `/usr/local/bin`.
 ```
 -h, --help               Print this help and exit.
@@ -163,29 +163,6 @@ Multiboot VFIO:
 Static VFIO:
   file                   Append output to system configuration files.
   grub                   Append output to GRUB; single GRUB menu entry.
-
-Post-setup:
---auto-xorg [ARGS]       Install Auto X.Org...                           System service to find and set a valid boot VGA device for X.Org.
---libvirt-hooks          Install recommended Libvirt hooks.
---zram-swap [ARGS]       Create compressed swap in RAM (about 2:1)...    Reduce chances of memory exhaustion for Host.
---skip-post-setup        Skip execution.
---uninstall-post-setup   Undo all changes made by post-setup.
-
-Auto X.Org:
-  first  [vendor]        Find the first valid VGA device.
-  last   [vendor]        Find the last valid VGA device.
-  [sort] amd             Prefer AMD or ATI.
-  [sort] intel           Prefer Intel.
-  [sort] nvidia          Prefer NVIDIA.
-  [sort] other           Prefer any other brand.
-
-zram-swap:
-  [fraction]             Set the fraction of total available memory.
-  default                Automatically calculate the fraction of total available memory.
-  force                  Force changes, even if zram-swap is allocated and in use.
-
-Example: (assume a Host with 32 GiB of RAM)
---zram-swap force 1/4    Compress 8 GiB of RAM, to create 16 GiB of swap, with 16 GiB free.
 ```
 
 ### Features
@@ -285,7 +262,7 @@ BIOS-only VGA devices may not be available as Host video output. BIOS-only VGA d
 
 #### Paths for project binaries and files
   - `/usr/local/bin/`
-  - `/usr/local/etc/deploy-vfio.d`
+  - `/usr/local/etc/deploy-VFIO.d`
 
 #### VFIO
 Virtual Function I/O (Input Output), or VFIO, *is a new user-level driver framework for Linux...  With VFIO, a VM Guest can directly access hardware devices on the VM Host Server (pass-through), avoiding performance issues caused by emulation in performance critical paths.*<sup>[OpenSUSE documentation](https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html)</sup>
@@ -330,8 +307,8 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 &ensp;<sub>**[Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_keyboard/mouse_via_Evdev)**</sub>
 
 &ensp;<sub>**[GitHub project source](https://github.com/portellam/generate-evdev)**</sub>
-#### Hugepages
 
+#### Hugepages
 &ensp;<sub>**[Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages)**</sub>
 
 &ensp;<sub>**[Debian Wiki article](https://wiki.debian.org/Hugepages)**</sub>
