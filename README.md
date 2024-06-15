@@ -2,19 +2,16 @@
 ### v1.0.0
 Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine.
 
-**[Latest release](https://github.com/portellam/deploy-VFIO/releases/latest)**
+**Download the Latest Release:**&ensp;[Codeberg][codeberg-releases],
+[GitHub][github-releases]
 
-### Related Projects
-[Deploy VFIO](https://github.com/portellam/deploy-VFIO) | **[Auto X.Org](https://github.com/portellam/auto-xorg)** | **[Generate Evdev](https://github.com/portellam/generate-evdev)**
-
-**[Guest Machine Guide](https://github.com/portellam/guest-machine-guide)** | **[Libvirt Hooks](https://github.com/portellam/libvirt-hooks)** | **[Power State Virtual Machine Manager](https://github.com/portellam/powerstate-virtmanager)**
-
-### Other Links:
-**[What is VFIO?](#VFIO) | [VFIO Article](https://www.kernel.org/doc/html/latest/driver-api/vfio.html) | [VFIO Forum](https://old.reddit.com/r/VFIO) | [PCI Passthrough Guide](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF)**
+[codeberg-releases]: https://codeberg.org/portellam/libvirt-hooks/releases/latest
+[github-releases]:   https://github.com/portellam/libvirt-hooks/releases/latest
 
 ## Table of Contents
-- [About](#about)
 - [Why?](#why)
+- [Related Projects](#related-projects)
+- [Documentation](#documentation)
 - [Host Requirements](#host-requirements)
 - [Download](#download)
 - [Usage](#usage)
@@ -25,9 +22,6 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 - [Contact](#contact)
 
 ## Contents
-### About
-Collection of scripts to deploy and re-deploy a VFIO setup.
-
 ### Why?
 1. **Separation of Concerns:** Independently operate your workstation, gaming, and school Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
 2. **No Need for a Server**
@@ -44,6 +38,36 @@ Collection of scripts to deploy and re-deploy a VFIO setup.
 **Advertisement:** For even greater security, use [me_cleaner](#me_cleaner) alongside a VFIO setup.
 
 **Disclaimer:** See [below](#latest-graphics-hardware-for-various-guest-operating-systems) for supported [VGA](#VGA) devices.
+
+### Related Projects
+| Project                             | Codeberg          | GitHub          |
+| :---                                | :---:             | :---:           |
+| **Deploy VFIO**                     | [link][codeberg1] | [link][github1] |
+| Auto X.Org                          | [link][codeberg2] | [link][github2] |
+| Generate Evdev                      | [link][codeberg3] | [link][github3] |
+| Guest Machine Guide                 | [link][codeberg4] | [link][github4] |
+| Libvirt Hooks                       | [link][codeberg5] | [link][github5] |
+| Power State Virtual Machine Manager | [link][codeberg6] | [link][github6] |
+
+[codeberg1]: https://codeberg.org/portellam/deploy-VFIO
+[github1]:   https://github.com/portellam/deploy-VFIO
+[codeberg2]: https://codeberg.org/portellam/auto-xorg
+[github2]:   https://github.com/portellam/auto-xorg
+[codeberg3]: https://codeberg.org/portellam/generate-evdev
+[github3]:   https://github.com/portellam/generate-evdev
+[codeberg4]: https://codeberg.org/portellam/guest-machine-guide
+[github4]:   https://github.com/portellam/guest-machine-guide
+[codeberg5]: https://codeberg.org/portellam/libvirt-hooks
+[github5]:   https://github.com/portellam/libvirt-hooks
+[codeberg6]: https://codeberg.org/portellam/powerstate-virtmanager
+[github6]:   https://github.com/portellam/powerstate-virtmanager
+
+### Documentation
+[VFIO article] | [VFIO forum] | [PCI Passthrough Guide]
+
+[VFIO Article]:          https://www.kernel.org/doc/html/latest/driver-api/vfio.html
+[VFIO Forum]:            https://old.reddit.com/r/VFIO
+[PCI Passthrough Guide]: https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
 
 ## Host Requirements
 - Currently supported operating systems:
@@ -73,7 +97,10 @@ Collection of scripts to deploy and re-deploy a VFIO setup.
 - To download this script, you may:
   - Download the [latest release](https://github.com/portellam/deploy-VFIO/releases/latest).
   - Download the ZIP file:
-    1. Viewing from the top of the repository's (current) webpage, click the drop-down icon `<> Code `.
+    1. Viewing from the top of the repository's (current) webpage, click the
+       drop-down icon:
+      - `···` on Codeberg.
+      - `<> Code ` on GitHub.
     2. Click `Download ZIP`. Save this file.
     3. Open the `.zip` file, then extract its contents.
 
@@ -88,6 +115,7 @@ Collection of scripts to deploy and re-deploy a VFIO setup.
 
     2. Change your directory to your home folder or anywhere safe: `cd ~`
     3. Clone the repository:
+      - `git clone https://www.codeberg.org/portellam/deploy-VFIO`
       - `git clone https://www.github.com/portellam/deploy-VFIO`
 
 - To make this script executable, you must:
