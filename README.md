@@ -17,9 +17,9 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 - [Usage](#usage)
 - [Features](#features)
 - [Information](#information)
-- [References](#references)
 - [Disclaimer](#disclaimer)
 - [Contact](#contact)
+- [References](#references)
 
 ## Contents
 ### Why?
@@ -63,11 +63,9 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 [github6]:   https://github.com/portellam/powerstate-virtmanager
 
 ### Documentation
-[VFIO article] | [VFIO forum] | [PCI Passthrough Guide]
-
-[VFIO Article]:          https://www.kernel.org/doc/html/latest/driver-api/vfio.html
-[VFIO Forum]:            https://old.reddit.com/r/VFIO
-[PCI Passthrough Guide]: https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF
+- [What is VFIO?](#3)
+- [VFIO Forum](#2)
+- [PCI Passthrough Guide](#1)
 
 ## Host Requirements
 - Currently supported operating systems:
@@ -366,4 +364,22 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 Use at your own risk. Please review your system's specifications and resources.
 
 ### Contact
-Did you encounter a bug? Do you need help? Notice any dead links? Please contact by [raising an issue](https://github.com/portellam/issues) with the project itself.
+Did you encounter a bug? Do you need help? Please visit the **Issues page**
+([Codeberg][codeberg-issues], [GitHub][github-issues]).
+
+[codeberg-issues]: https://codeberg.org/portellam/deploy-VFIO/issues
+[github-issues]:   https://github.com/portellam/deploy-VFIO/issues
+
+### References
+#### 1.
+**PCI passthrough via OVMF**. ArchWiki. Accessed June 14, 2024.
+<sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF.</sup>
+
+#### 2.
+**r/VFIO**. Accessed June 14, 2024.
+<sup>https://www.reddit.com/r/VFIO/.</sup>
+
+#### 3.
+**VFIO - ‘Virtual Function I/O’ - The Linux Kernel Documentation**.
+The linux kernel. Accessed June 14, 2024.
+<sup>https://www.kernel.org/doc/html/latest/driver-api/vfio.html.</sup>
