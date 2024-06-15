@@ -91,9 +91,11 @@ alongside a VFIO setup.
   `xmlstarlet`
   - To install packages:
     - Debian Linux: `sudo apt install -y xmlstarlet`
+
 - Other requirements:
   - `GRUB` to execute command lines at boot (if chosen).
   - `systemd` for system services.
+
   - IOMMU is supported (by the CPU) and enabled in the motherboard firmware
   (BIOS or UEFI).
     - For AMD machines:&nbsp;`AMD-Vi`
@@ -103,18 +105,23 @@ alongside a VFIO setup.
 
 ### Download
 - To download this script, you may:
-  - Download the [latest release](https://github.com/portellam/deploy-VFIO/releases/latest).
+  - Download the Latest Release:&ensp;[Codeberg][codeberg-releases],
+[GitHub][github-releases]
+
   - Download the ZIP file:
     1. Viewing from the top of the repository's (current) webpage, click the
        drop-down icon:
       - `···` on Codeberg.
       - `<> Code ` on GitHub.
+
     2. Click `Download ZIP`. Save this file.
+
     3. Open the `.zip` file, then extract its contents.
 
   - Clone the repository:
     1. Open a Command Line Interface (CLI).
       - Open a console emulator (for Debian systems: Konsole).
+
       - Open a existing console: press `CTRL` + `ALT` + `F2`, `F3`, `F4`, `F5`,
       or `F6`.
         - **To return to the desktop,** press `CTRL` + `ALT` + `F7`.
@@ -123,14 +130,17 @@ alongside a VFIO setup.
         - `F8` and above are unused.
 
     2. Change your directory to your home folder or anywhere safe: `cd ~`
+
     3. Clone the repository:
       - `git clone https://www.codeberg.org/portellam/deploy-VFIO`
       - `git clone https://www.github.com/portellam/deploy-VFIO`
 
 - To make this script executable, you must:
   1. Open the CLI (see above).
+
   2. Go to the directory of where the cloned/extracted repository folder is:
   `cd name_of_parent_folder/deploy-VFIO/`
+
   3. Make the installer script file executable: `chmod +x installer.bash`
     - Do **not** make any other script files executable. The installer will perform
     this action.
