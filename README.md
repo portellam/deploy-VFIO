@@ -1,8 +1,8 @@
 # Deploy VFIO
 ### v1.0.1
-Effortlessly deploy changes to enable virtualization, hardware-passthrough
-(VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux
-desktop machine.
+Effortlessly deploy a VFIO setup on a Linux machine. Includes quality-of-life
+enhancements: boot menu entries, database backup and restore, Hugepages, a
+virtual KVM switch, CPU isolation, RAM compression, and more.
 
 **Download the Latest Release:**&ensp;[Codeberg][codeberg-releases],
 [GitHub][github-releases]
