@@ -1,6 +1,8 @@
 # Deploy VFIO
-### v1.0.0
-Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux desktop machine.
+### v1.0.1
+Effortlessly deploy a hardware passthrough (VFIO) setup for Virtual Machines
+(VMs) on a Linux desktop. Includes quality-of-life enhancements that you needed
+the first time you tried VFIO.
 
 **Download the Latest Release:**&ensp;[Codeberg][codeberg-releases],
 [GitHub][github-releases]
@@ -23,19 +25,25 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 ## Contents
 ### Why?
-1. **Separation of Concerns:** Independently operate your workstation, gaming, and school Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
+1. **Separation of Concerns:** Independently operate your workstation, gaming,
+and school Operating Systems (OS), as [Virtual Machines](https://en.wikipedia.org/wiki/Virtual_machine) (VMs), under one Host machine.
 2. **No Need for a Server**
-  - Keep your Host OS desktop experience intact; turns your Host into a *Type-2* [Hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor).
-  - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered *Type-1* or bare-metal Hypervisors.
+  - Keep your Host OS desktop experience intact; turns your Host into a *Type-2*
+  [Hypervisor](https://www.redhat.com/en/topics/virtualization/what-is-a-hypervisor).
+  - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered
+  *Type-1* or bare-metal Hypervisors.
 
-3. **Securely run a modern OS:** limited access to real hardware means greater security.
+3. **Securely run a modern OS:** limited access to real hardware means greater
+security.
 4. **Ease of use:** support for automation by use of the [Command Line Interface](#usage) (CLI).
 5. **PCI Passthrough:** prioritize real hardware over emulation.
-6. **Quality of Life**: utilize multiple common-sense [features](#features) that are known to experienced users.
+6. **Quality of Life**: utilize multiple common-sense [features](#features) that
+are known to experienced users.
 7. **Your Host OS is [supported](#supported-operating-systems).**
 8. **Securely run a [legacy OS](#legacy).**
 
-**Advertisement:** For even greater security, use [me_cleaner](#me_cleaner) alongside a VFIO setup.
+**Advertisement:** For even greater security, use [me_cleaner](#me_cleaner)
+alongside a VFIO setup.
 
 **Disclaimer:** See [below](#latest-graphics-hardware-for-various-guest-operating-systems) for supported [VGA](#VGA) devices.
 
@@ -83,45 +91,61 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
   `xmlstarlet`
   - To install packages:
     - Debian Linux: `sudo apt install -y xmlstarlet`
+
 - Other requirements:
   - `GRUB` to execute command lines at boot (if chosen).
   - `systemd` for system services.
-  - IOMMU is supported (by the CPU) and enabled in the motherboard firmware (BIOS or UEFI).
+
+  - IOMMU is supported (by the CPU) and enabled in the motherboard firmware
+  (BIOS or UEFI).
     - For AMD machines:&nbsp;`AMD-Vi`
     - For Intel machines:&ensp;&nbsp;`VT-d`
-    - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this script.
+    - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this
+    script.
 
 ### Download
 - To download this script, you may:
-  - Download the [latest release](https://github.com/portellam/deploy-VFIO/releases/latest).
+  - Download the Latest Release:&ensp;[Codeberg][codeberg-releases],
+[GitHub][github-releases]
+
   - Download the ZIP file:
     1. Viewing from the top of the repository's (current) webpage, click the
        drop-down icon:
       - `···` on Codeberg.
       - `<> Code ` on GitHub.
+
     2. Click `Download ZIP`. Save this file.
+
     3. Open the `.zip` file, then extract its contents.
 
   - Clone the repository:
     1. Open a Command Line Interface (CLI).
       - Open a console emulator (for Debian systems: Konsole).
-      - Open a existing console: press `CTRL` + `ALT` + `F2`, `F3`, `F4`, `F5`, or `F6`.
+
+      - Open a existing console: press `CTRL` + `ALT` + `F2`, `F3`, `F4`, `F5`,
+      or `F6`.
         - **To return to the desktop,** press `CTRL` + `ALT` + `F7`.
         - `F1` is reserved for debug output of the Linux kernel.
         - `F7` is reserved for video output of the desktop environment.
         - `F8` and above are unused.
 
     2. Change your directory to your home folder or anywhere safe: `cd ~`
+
     3. Clone the repository:
       - `git clone https://www.codeberg.org/portellam/deploy-VFIO`
       - `git clone https://www.github.com/portellam/deploy-VFIO`
 
 - To make this script executable, you must:
   1. Open the CLI (see above).
-  2. Go to the directory of where the cloned/extracted repository folder is: `cd name_of_parent_folder/deploy-VFIO/`
+
+  2. Go to the directory of where the cloned/extracted repository folder is:
+  `cd name_of_parent_folder/deploy-VFIO/`
+
   3. Make the installer script file executable: `chmod +x installer.bash`
-    - Do **not** make any other script files executable. The installer will perform this action.
-    - Do **not** make any non-script file executable. This is not necessary and potentially dangerous.
+    - Do **not** make any other script files executable. The installer will perform
+    this action.
+    - Do **not** make any non-script file executable. This is not necessary and
+    potentially dangerous.
 
 ### Usage
 **`installer.bash`**
@@ -136,15 +160,19 @@ Effortlessly deploy changes to enable virtualization, hardware-passthrough (VFIO
 
 **`deploy-VFIO`**
 - From anywhere, execute: `sudo bash deploy-VFIO`
-  - The CLI's shell (bash) should recognize that the script file is located in `/usr/local/bin`.
+  - The CLI's shell (bash) should recognize that the script file is located in
+  `/usr/local/bin`.
 ```
 -h, --help               Print this help and exit.
--q, --quiet              Reduce verbosity; print only relevant questions and status statements.
--u, --undo               Undo changes (restore files) if script has exited early or unexpectedly.
+-q, --quiet              Reduce verbosity; print only relevant questions and
+status statements.
+-u, --undo               Undo changes (restore files) if script has exited early
+or unexpectedly.
   --ignore-distro        Ignore distribution check for Debian or Ubuntu system.
 
 Specify the database to reference before parsing IOMMU groups:
-  --xml [filename]       Cross-reference XML file. First-time, export if VFIO is not setup. Consecutive-times, imports if VFIO is setup.
+  --xml [filename]       Cross-reference XML file. First-time, export if VFIO is
+  not setup. Consecutive-times, imports if VFIO is setup.
   [filename]             Reference specific file.
   --no-xml               Skips prompt.
 
@@ -162,20 +190,23 @@ Example:
 Pre-setup:
 -c, --cpu                Allocate CPU.
 -e, --evdev              Setup a virtual KVM switch.
--h, --hugepages [ARGS]   Create static hugepages (pages greater than 4 KiB) to allocate RAM for Guest(s).
+-h, --hugepages [ARGS]   Create static hugepages (pages greater than 4 KiB) to
+allocate RAM for Guest(s).
   --skip-pre-setup       Skip execution.
   --uninstall-pre-setup  Undo all changes made by pre-setup.
 
 Hugepages:
   2M, 1G                 Hugepage size (2 MiB or 1 GiB).
-  [x]                    Amount of Hugepages (maximum amount is total memory subtracted by 4 GiB).
+  [x]                    Amount of Hugepages (maximum amount is total memory
+  subtracted by 4 GiB).
 
 Example:
 --hugepages 1G 16        1 GiB hugepage 16   == 16 GiB allocated to hugepages.
 --hugepages 2M 8192      2 MiB hugepage 8912 == 16 GiB allocated to hugepages.
 
 VFIO setup:
--m, --multiboot [ARGS]   Create multiple VFIO setups with corresponding GRUB menu entries. Specify default GRUB menu entry by VGA IOMMU group ID.
+-m, --multiboot [ARGS]   Create multiple VFIO setups with corresponding GRUB
+menu entries. Specify default GRUB menu entry by VGA IOMMU group ID.
 -s, --static [ARGS]      Single VFIO setup. Specify method of setup.
 --skip-vfio-setup        Skip execution.
 --uninstall-vfio-setup   Undo an existing VFIO setup.
@@ -263,10 +294,15 @@ Static VFIO:
 
 ### Information
 #### BIOS v. UEFI
-- Some VGA devices, such as NVIDIA, may not be recognizable in a VM, as the video BIOS or VBIOS is *tainted* at Host OS start-up. This is usually the case if a given VGA device is used for the Host BIOS/UEFI booting process. To remedy this, you must obtain a clean copy of the VBIOS. You may reference this [project](https://github.com/Matoking/NVIDIA-vBIOS-VFIO-Patcher) for assistance, or review the [Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_the_boot_GPU_to_the_guest).
+- Some VGA devices, such as NVIDIA, may not be recognizable in a VM, as the
+video BIOS or VBIOS is *tainted* at Host OS start-up. This is usually the case
+if a given VGA device is used for the Host BIOS/UEFI booting process. To remedy
+this, you must obtain a clean copy of the VBIOS. You may reference this [project](https://github.com/Matoking/NVIDIA-vBIOS-VFIO-Patcher) for assistance, or review the [Arch Wiki article](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Passing_the_boot_GPU_to_the_guest).
 
-- If your Host machine supports UEFI only and/or if UEFI is enabled (and CSM/BIOS is disabled),
-BIOS-only VGA devices may not be available as Host video output. BIOS-only VGA devices may only be available explicitly for hardware passthrough.
+- If your Host machine supports UEFI only and/or if UEFI is enabled
+(and CSM/BIOS is disabled), BIOS-only VGA devices may not be available as Host
+video output. BIOS-only VGA devices may only be available explicitly for
+hardware passthrough.
 
 ### Filenames and pathnames modified:
 #### Pre-setup files
@@ -326,7 +362,9 @@ In Linux, a Video device or GPU, is listed as *VGA*, or Video Graphics Array. VG
 ##### 2. *UEFI only.*
 ##### 3. *UEFI or BIOS compatible.*
 
-**Note:** For emulating video devices on Windows 9x and older legacy operating systems, try the project [SoftGPU](https://github.com/JHRobotics/softgpu). Modern CPUs are more than powerful enough to emulate such hardware.
+**Note:** For emulating video devices on Windows 9x and older legacy operating
+systems, try the project [SoftGPU](https://github.com/JHRobotics/softgpu).
+Modern CPUs are more than powerful enough to emulate such hardware.
 
 ### References
 #### Evdev
