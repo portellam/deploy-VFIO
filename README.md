@@ -1,5 +1,5 @@
 # Deploy VFIO
-### v1.0.0
+### v1.0.1
 Effortlessly deploy changes to enable virtualization, hardware-passthrough
 (VFIO), and quality-of-life enhancements for a seamless VFIO setup on a Linux
 desktop machine.
