@@ -265,11 +265,11 @@ Static VFIO:
   execution, to preserve the Static isolation.
 
   2. **Allocate RAM**
-    - **Static** [huge memory pages](#5) eliminate the need to defragment Host
-  memory (RAM) before allocating to Guest(s).
-    - Reduces Host overhead, and improves both Host and Guest performance.
-    - If skipped, setup will install the Libvirt hook for **dynamic** allocation
-  (transparent hugepages).
+  - **Static** [huge memory pages](#5) eliminate the need to defragment Host
+memory (RAM) before allocating to Guest(s).
+  - Reduces Host overhead, and improves both Host and Guest performance.
+  - If skipped, setup will install the Libvirt hook for **dynamic** allocation
+(transparent hugepages).
 
 3. **Virtual Keyboard Video Mouse (KVM) switch**
     - Create a virtual KVM switch by [Evdev](#12) (Event Devices).
@@ -287,18 +287,18 @@ Static VFIO:
     - Create multiple VFIO setups with corresponding GRUB menu entries.
     **More flexibility.**
     - Select a GRUB menu entry with a VGA device excluded from VFIO.
-    - Default menu entry is without VFIO setup.
+      - Default menu entry is without VFIO setup.
     - Best for systems with two or more PCI VGA devices, without an integrated VGA
     device (iGPU).
 
     - **Ad:** For best results, use [Auto X.Org](#2).
 
 - **Static VFIO Setup**
-    - Single, traditional VFIO setup. **Less flexibility than Multi-boot or **
+    - Single, traditional VFIO setup. **Less flexibility than Multi-boot or**
     **Dynamic.**
     - Specify method of setup:
-    - Append output to GRUB; single GRUB menu entry.
-    - Append output to system configuration files.
+     - Append output to GRUB; single GRUB menu entry.
+      - Append output to system configuration files.
 
     - Best for systems with one or more PCI VGA device(s) and one integrated VGA
   device (iGPU).
