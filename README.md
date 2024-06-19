@@ -20,18 +20,18 @@ think you need!
     - [4.3. Hardware](#43-hardware)
 - [5. Download](#5-download)
 - [6. Usage](#6-usage)
-    - [6.1. Verify script is executable](#61-verify-script-is-executable)
+    - [6.1. Verify Installer is Executable](#61-verify-script-is-executable)
     - [6.2. `installer.bash`](#61-installerbash)
     - [6.3. `deploy-VFIO`](#62-deploy-vfio)
 - [7. Features](#7-features)
-    - [7.1. Pre-setup](#71-pre-setup)
-    - [7.2. VFIO setup](#72-vfio-setup)
-    - [7.3. Post-setup](#73-post-setup)
-- [8. Filenames and Pathnames modified by deploy-VFIO](#8-filenames-and-pathnames-modified-by-deploy-vfio)
-    - [8.1. Pre-setup files ](#81-pre-setup-files)
-    - [8.2. VFIO setup files](#82-vfio-setup-files)
-    - [8.3. Post-setup paths](#83-post-setup-files)
-    - [8.4. Paths for binaries and files](#84-paths-for-binaries-and-files)
+    - [7.1. Pre-Setup](#71-pre-setup)
+    - [7.2. Main Setup](#72-main-setup)
+    - [7.3. Post-Setup](#73-post-setup)
+- [8. Filenames and Pathnames Modified by deploy-VFIO](#8-filenames-and-pathnames-modified-by-deploy-vfio)
+    - [8.1. Pre-Setup Files](#81-pre-setup-files)
+    - [8.2. Main Setup Files](#82-main-setup-files)
+    - [8.3. Post-Setup Pathnames](#83-post-setup-files)
+    - [8.4. Paths for Binaries and Files](#84-paths-for-binaries-and-files)
 - [9. Graphics Hardware (GPUs)](#9-graphics-hardware-gpus)
     - [9.1. How to Query Host Machine for Graphics Hardware](#91-how-to-query-host-machine-for-graphics-hardware)
     - [9.2. Troubleshooting Graphics Hardware](#92-troubleshooting-graphics-hardware)
@@ -170,7 +170,7 @@ or UEFI).
 - `git clone https://www.github.com/portellam/deploy-VFIO`
 
 ### 6. Usage
-#### 6.1. Verify script is executable
+#### 6.1. Verify Installer is Executable
 1. Open the CLI (see [Download](#5-download)).
 
 2. Go to the directory of where the cloned/extracted repository folder is:
@@ -183,7 +183,7 @@ or UEFI).
   potentially dangerous.
 
 #### 6.2. `installer.bash`
-    - From the project folder, execute: `sudo bash installer.bash`
+- From the project folder, execute: `sudo bash installer.bash`
   ```xml
   -h, --help               Print this help and exit.
   -i, --install            Install deploy-VFIO to system.
@@ -257,7 +257,7 @@ Static VFIO:
 ```
 
 ### 7. Features
-#### 7.1. Pre-setup
+#### 7.1. Pre-Setup
 1. **Allocate CPU**
     - **Statically** isolate Host CPU threads before allocating to Guest(s).
     -  Reduces Host overhead, and improves both Host and Guest performance.
@@ -282,10 +282,10 @@ Static VFIO:
     - **Note:** Using guest PCI USB alone is good. Using both implementations is
   better.
 
-#### 7.2. Main setup
-- **Multi-boot VFIO setup**
+#### 7.2. Main Setup
+- **Multi-boot VFIO Setup**
     - Create multiple VFIO setups with corresponding GRUB menu entries.
-  **More flexibility.**
+    **More flexibility.**
     - Select a GRUB menu entry with a VGA device excluded from VFIO.
     - Default menu entry is without VFIO setup.
     - Best for systems with two or more PCI VGA devices, without an integrated VGA
@@ -293,8 +293,9 @@ Static VFIO:
 
     - **Ad:** For best results, use [Auto X.Org](#2).
 
-- **Static VFIO setup**
-    - Single, traditional VFIO setup. **Less flexibility.**
+- **Static VFIO Setup**
+    - Single, traditional VFIO setup. **Less flexibility than Multi-boot or **
+    **Dynamic.**
     - Specify method of setup:
     - Append output to GRUB; single GRUB menu entry.
     - Append output to system configuration files.
@@ -302,7 +303,7 @@ Static VFIO:
     - Best for systems with one or more PCI VGA device(s) and one integrated VGA
   device (iGPU).
 
-- **Dynamic VFIO setup** (To be implemented in a future release)
+- **Dynamic VFIO Setup** (To be implemented in a future release)
     - Use Libvirt hooks to bind or unbind devices at Guest(s) start or stop.
     - Most responsibility; best for more experienced users.
     - Most flexibility; Libvirt hooks allow Host to allocate and release resources
@@ -310,7 +311,7 @@ Static VFIO:
     - For an existing script of similar scope, you may try the project
   [VFIO-Tools](#21).
 
-#### 7.3. Post-setup (To be implemented in a future release)
+#### 7.3. Post-Setup (To be implemented in a future release)
 1. **Auto X.Org** system service to find and set a valid Host boot [VGA](#22)
 device for X.Org.
 
@@ -351,12 +352,12 @@ Guest is active.
     - **Disclaimer:** Only supported for Guests running Windows 7 and later
   (Windows NT 6.1+).
 
-### 8. Filenames and Pathnames modified by deploy-VFIO
-##### 8.1. Pre-setup files
+### 8. Filenames and Pathnames Modified by deploy-VFIO
+##### 8.1. Pre-Setup Files
   - `/etc/apparmor.d/local/abstractions/libvirt-qemu`
     - `/etc/libvirt/qemu.conf`
 
-##### 8.2. VFIO setup files
+##### 8.2. Main Setup Files
   - `/etc/default/grub`
   - `/etc/grub.d/proxifiedScripts/custom`
   - `/etc/initramfs-tools/modules`
@@ -364,12 +365,12 @@ Guest is active.
   - `/etc/modprobe.d/vfio.conf`
   - `/etc/modules`
 
-##### 8.3. Post-setup paths
+##### 8.3. Post-Setup Pathnames
   - `/etc/libvirt/hooks/`
   - `/usr/local/bin/`
   - `/etc/systemd/system/`
 
-##### 8.4. Paths for binaries and files
+##### 8.4. Paths for Binaries and Files
   - `/usr/local/bin/`
   - `/usr/local/etc/deploy-VFIO.d`
 
