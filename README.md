@@ -18,7 +18,8 @@ think you need!
 - [5. Download](#5-download)
 - [6. Usage](#6-usage)
 - [7. Features](#7-features)
-- [8. Information](#8-information)
+- [8. Filenames and Pathnames modified by deploy-VFIO](#8-filenames-and-pathnames-modified-by-deploy-vfio)
+- [9. Graphics Hardware (GPUs)](#9-graphics-hardware-gpus)
 - [10. Disclaimer](#10-disclaimer)
 - [11. Contact](#11-contact)
 - [12. References](#12-references)
@@ -161,7 +162,7 @@ or UEFI).
     potentially dangerous.
 
 ### 6. Usage
-### 6.1. `installer.bash`
+#### 6.1. `installer.bash`
   - From the project folder, execute: `sudo bash installer.bash`
   ```xml
   -h, --help               Print this help and exit.
@@ -171,7 +172,7 @@ or UEFI).
   - The installer will place all script files in `/usr/local/bin`.
   - The installer will place all configuration/text files in `/usr/local/etc`.
 
-### 6.2. `deploy-VFIO`
+#### 6.2. `deploy-VFIO`
 - From anywhere, execute: `sudo bash deploy-VFIO`
   - The CLI's shell (bash) should recognize that the script file is located in
   `/usr/local/bin`.
@@ -330,20 +331,12 @@ Guest is active.
   - **Disclaimer:** Only supported for Guests running Windows 7 and later
   (Windows NT 6.1+).
 
-### 8. Information
-#### 8.1. BIOS v. UEFI
-- Some VGA devices, such as NVIDIA, may not be recognizable in a VM, as the
-video BIOS or VBIOS is *tainted* at Host OS start-up. This is usually the case
-if a given VGA device is used for the Host BIOS/UEFI booting process. To remedy
-this, you must obtain a clean copy of the VBIOS. You may review either
-[NVIDIA-vBIOS-VFIO-Patcher](#11), or the [ArchWiki](#13).
-
-#### 8.2. Filenames and pathnames modified:
-##### 8.2.1. Pre-setup files
+### 8. Filenames and Pathnames modified by deploy-VFIO
+##### 8.1. Pre-setup files
   - `/etc/apparmor.d/local/abstractions/libvirt-qemu`
   - `/etc/libvirt/qemu.conf`
 
-##### 8.2.2. VFIO setup files
+##### 8.2. VFIO setup files
   - `/etc/default/grub`
   - `/etc/grub.d/proxifiedScripts/custom`
   - `/etc/initramfs-tools/modules`
@@ -351,12 +344,12 @@ this, you must obtain a clean copy of the VBIOS. You may review either
   - `/etc/modprobe.d/vfio.conf`
   - `/etc/modules`
 
-##### 8.2.3.  Post-setup paths
+##### 8.3. Post-setup paths
   - `/etc/libvirt/hooks/`
   - `/usr/local/bin/`
   - `/etc/systemd/system/`
 
-##### 8.2.4. Paths for project binaries and files
+##### 8.4. Paths for binaries and files
   - `/usr/local/bin/`
   - `/usr/local/etc/deploy-VFIO.d`
 
@@ -373,6 +366,13 @@ currently or known-to-be compatible with VFIO.
 01:00.0 VGA compatible controller [0300]: NVIDIA Corporation GA104 [GeForce RTX 3070] [10de:2484] (rev a1)
 04:00.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Cayman PRO [Radeon HD 6950] [1002:6719]
 ```
+
+#### 9.2. Troubleshooting Graphics Hardware
+Some VGA devices, such as NVIDIA, may not be recognizable in a VM, as the video
+BIOS or VBIOS is *tainted* at Host OS start-up. This is usually the case if a
+given VGA device is used for the Host BIOS/UEFI booting process. To remedy this,
+you must obtain a clean copy of the VBIOS. You may review either
+[NVIDIA-vBIOS-VFIO-Patcher](#11), or the [ArchWiki](#13).
 
 #### 9.2. List of UEFI-compatible Graphics Hardware
 **Note:** Vendors that are unlisted are more than likely to be legacy graphics
