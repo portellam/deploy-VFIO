@@ -49,7 +49,7 @@ are known to experienced users.
 
 7. **Your Host OS is [supported](#host-requirements).**
 
-**Note:** For even greater security, use [me_cleaner](#9) alongside a VFIO
+**Note:** For even greater security, use [me_cleaner](#10) alongside a VFIO
 setup.
 
 **Disclaimer:** See [below] for supported [VGA](#20) devices.
@@ -250,13 +250,13 @@ Static VFIO:
   (transparent hugepages).
 
 3. **Virtual Keyboard Video Mouse (KVM) switch**
-  - Create a virtual KVM switch.
+  - Create a virtual KVM switch by [Evdev](#12) (Event Devices).
     - Allow a user to swap a group of Input devices (as a whole) between active
     Guest(s) and Host.
     - Set and use a [defined macro](#6).
       - Default macro: `L-CTRL` + `R-CTRL`
 
-  - Implementation is known as [Evdev](#3) (Event Devices).
+  - Implementation is known as [Generate Evdev](#3).
   - **Note:** Using guest PCI USB alone is good. Using both implementations is
   better.
 
