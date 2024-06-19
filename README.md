@@ -14,12 +14,38 @@ think you need!
 - [1. Why?](#1-why)
 - [2. Related Projects](#2-related-projects)
 - [3. Documentation](#3-documentation)
+
 - [4. Host Requirements](#4-host-requirements)
+  - [4.1. Operating Systems ](#41-operating-systems)
+  - [4.2. Software](#42-software)
+  - [4.3. Hardware](#43-hardware)
+
 - [5. Download](#5-download)
+
 - [6. Usage](#6-usage)
+  - [6.1. `installer.bash`](#61-installerbash)
+  - [6.2. `deploy-VFIO`](#62-deploy-vfio)
+
 - [7. Features](#7-features)
+  - [7.1. Pre-setup](#71-pre-setup)
+  - [7.2. VFIO setup](#72-vfio-setup)
+  - [7.3. Post-setup](#73-post-setup)
+
 - [8. Filenames and Pathnames modified by deploy-VFIO](#8-filenames-and-pathnames-modified-by-deploy-vfio)
+  - [8.1. Pre-setup files ](#81-pre-setup-files)
+  - [8.2. VFIO setup files](#82-vfio-setup-files)
+  - [8.3. Post-setup paths](#83-post-setup-files)
+  - [8.4. Paths for binaries and files](#84-paths-for-binaries-and-files)
+
 - [9. Graphics Hardware (GPUs)](#9-graphics-hardware-gpus)
+  - [9.1. How to Query Host Machine for Graphics Hardware](#91-how-to-query-host-machine-for-graphics-hardware)
+  - [9.2. Troubleshooting Graphics Hardware](#92-troubleshooting-graphics-hardware)
+  - [9.3. List of UEFI-compatible Graphics Hardware](#93-list-of-uefi-compatible-graphics-hardware)
+  - [9.4. Alternatives to BIOS-only Graphics Hardware](#94-Alternatives to BIOS-only Graphics Hardware)
+  - [9.5. Apple macOS](#95-apple-macos)
+  - [9.6. Linux](#96-linux)
+  - [9.7. Microsoft Windows](#97-microsoft-windows)
+
 - [10. Disclaimer](#10-disclaimer)
 - [11. Contact](#11-contact)
 - [12. References](#12-references)
@@ -358,10 +384,8 @@ Guest is active.
 currently or known-to-be compatible with VFIO.
 
 #### 9.1. How to Query Host Machine for Graphics Hardware
-#### 9.1.1. Command
 `lspci -nnk | grep --extended-regexp --ignore-case "vga|graphics"`
 
-#### 9.1.2. Output
 ```
 01:00.0 VGA compatible controller [0300]: NVIDIA Corporation GA104 [GeForce RTX 3070] [10de:2484] (rev a1)
 04:00.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Cayman PRO [Radeon HD 6950] [1002:6719]
@@ -374,7 +398,7 @@ given VGA device is used for the Host BIOS/UEFI booting process. To remedy this,
 you must obtain a clean copy of the VBIOS. You may review either
 [NVIDIA-vBIOS-VFIO-Patcher](#11), or the [ArchWiki](#13).
 
-#### 9.2. List of UEFI-compatible Graphics Hardware
+#### 9.3. List of UEFI-compatible Graphics Hardware
 **Note:** Vendors that are unlisted are more than likely to be legacy graphics
 hardware. Therefore, it is safe to assume such hardware is BIOS-only.
 
@@ -391,22 +415,22 @@ hardware. Therefore, it is safe to assume such hardware is BIOS-only.
 | NVIDIA | GeForce GTX 700 to 1000-series    | UEFI |
 | NVIDIA | GeForce GTX 600-series and older  | BIOS |
 
-#### 9.3. Alternatives to BIOS-only Graphics Hardware
+#### 9.4. Alternatives to BIOS-only Graphics Hardware
 For emulating video devices on old, legacy operating systems (such as Microsoft
 Windows 9x ), try [SoftGPU](#17). Modern CPUs are more than powerful enough to
 emulate such hardware. **Note:** Fortunately, this implementation is not
 software rendering.
 
-#### 9.4. Apple macOS
-##### 9.4.1. [AMD and NVIDIA GPU compatibility list](#4)
-##### 9.4.2. [More detailed NVIDIA GPU compatibility list](#15)
+#### 9.5. Apple macOS
+##### 9.5.1. [AMD and NVIDIA GPU compatibility list](#4)
+##### 9.5.2. [More detailed NVIDIA GPU compatibility list](#15)
 
-#### 9.5. Linux
+#### 9.6. Linux
 Typically, Linux is compatible with graphics hardware dating back to the end of
 the 20th century. Still, GPU-compatibility may vary among different Linux
 distributions. Please review the documentation of your Linux distribution.
 
-#### 9.6. Microsoft Windows
+#### 9.7. Microsoft Windows
 | Legacy Windows version | Vendor | Model                             |
 | :--------------------- | :----- | :-------------------------------- |
 | XP / NT 4 and older    | AMD    | Radeon HD 7970 and older          |
