@@ -264,7 +264,7 @@ Static VFIO:
     -  If installed, the **dynamic** [Libvirt hook](#7) will skip its
   execution, to preserve the Static isolation.
 
-2. **[Huge pages]**
+2. **Huge pages**
     - **Statically** isolate Host memory (RAM) into **[Huge memory pages](#5)**
     before allocating to Guest(s).
     - Reduces Host overhead, and improves both Host and Guest performance.
@@ -276,7 +276,7 @@ Static VFIO:
     - Allow a user to swap a group of Input devices (as a whole) between active
     Guest(s) and Host.
     - Set and use a [defined macro](#6).
-      - Default macro: `L-CTRL` + `R-CTRL`
+        - Default macro: `L-CTRL` + `R-CTRL`
 
     - Implementation is known as [Generate Evdev](#3).
     - **Note:** Using guest PCI USB alone is good. Using both implementations is
@@ -287,7 +287,7 @@ Static VFIO:
     - Create multiple VFIO setups with corresponding GRUB menu entries.
     **More flexibility.**
     - Select a GRUB menu entry with a VGA device excluded from VFIO.
-      - Default menu entry is without VFIO setup.
+        - Default menu entry is without VFIO setup.
     - Best for systems with two or more PCI VGA devices, without an integrated VGA
     device (iGPU).
 
@@ -297,8 +297,8 @@ Static VFIO:
     - Single, traditional VFIO setup. **Less flexibility than Multi-boot or**
     **Dynamic.**
     - Specify method of setup:
-     - Append output to GRUB; single GRUB menu entry.
-      - Append output to system configuration files.
+        - Append output to GRUB; single GRUB menu entry.
+        - Append output to system configuration files.
 
     - Best for systems with one or more PCI VGA device(s) and one integrated VGA
   device (iGPU).
@@ -319,7 +319,6 @@ device for X.Org.
     - Create an [audio loopback](#1) to output on the Host audio device Line-Out.
     - Listen on Host audio device Line-In (from Guest PCI Audio device Line-Out).
     - Useful for systems with multiple audio devices.
-
     - For virtual implementation, see *Virtual Audio Capture*.
 
 3. **Libvirt Hooks**
@@ -335,7 +334,6 @@ Guest is active.
     - Reduce swapiness to existing Host swap devices.
     - Reduce chances of Host memory exhaustion (given an event of memory
     over-allocation).
-
     - Implementation is known as [zram-swap](#24).
 
 5. **Virtual Audio Capture**
@@ -343,7 +341,6 @@ Guest is active.
   device and passthrough from a Guest to Host.
     - Passthrough audio by direct-memory-access (DMA).
     - Passthrough audio by a [virtual Local Area Network (LAN) device](#18).
-
     - Implementation is known as [Scream](#16).
 
 6. **Virtual Video Capture**
