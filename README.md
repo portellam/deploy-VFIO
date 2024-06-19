@@ -265,11 +265,11 @@ Static VFIO:
   execution, to preserve the Static isolation.
 
   2. **Allocate RAM**
-  - **Static** [huge memory pages](#5) eliminate the need to defragment Host
-memory (RAM) before allocating to Guest(s).
-  - Reduces Host overhead, and improves both Host and Guest performance.
-  - If skipped, setup will install the Libvirt hook for **dynamic** allocation
-(transparent hugepages).
+    - **Static** [huge memory pages](#5) eliminate the need to defragment Host
+  memory (RAM) before allocating to Guest(s).
+    - Reduces Host overhead, and improves both Host and Guest performance.
+    - If skipped, setup will install the Libvirt hook for **dynamic** allocation
+  (transparent hugepages).
 
 3. **Virtual Keyboard Video Mouse (KVM) switch**
     - Create a virtual KVM switch by [Evdev](#12) (Event Devices).
