@@ -259,29 +259,28 @@ Static VFIO:
 ### 7. Features
 #### 7.1. Pre-Setup
 1. **Allocate CPU**
-    - **Statically** isolate Host CPU threads before allocating to Guest(s).
-    -  Reduces Host overhead, and improves both Host and Guest performance.
-    -  If installed, the **dynamic** [Libvirt hook](#7) will skip its
-  execution, to preserve the Static isolation.
+- **Statically** isolate Host CPU threads before allocating to Guest(s).
+-  Reduces Host overhead, and improves both Host and Guest performance.
+-  If installed, the **dynamic** [Libvirt hook](#7) will skip its
+execution, to preserve the Static isolation.
 
   2. **Allocate RAM**
-
-    - **Static** [huge memory pages](#5) eliminate the need to defragment Host
-  memory (RAM) before allocating to Guest(s).
-    - Reduces Host overhead, and improves both Host and Guest performance.
-    - If skipped, setup will install the Libvirt hook for **dynamic** allocation
-  (transparent hugepages).
+- **Static** [huge memory pages](#5) eliminate the need to defragment Host
+memory (RAM) before allocating to Guest(s).
+- Reduces Host overhead, and improves both Host and Guest performance.
+- If skipped, setup will install the Libvirt hook for **dynamic** allocation
+(transparent hugepages).
 
 3. **Virtual Keyboard Video Mouse (KVM) switch**
-    - Create a virtual KVM switch by [Evdev](#12) (Event Devices).
-    - Allow a user to swap a group of Input devices (as a whole) between active
-    Guest(s) and Host.
-    - Set and use a [defined macro](#6).
-      - Default macro: `L-CTRL` + `R-CTRL`
+- Create a virtual KVM switch by [Evdev](#12) (Event Devices).
+- Allow a user to swap a group of Input devices (as a whole) between active
+Guest(s) and Host.
+- Set and use a [defined macro](#6).
+  - Default macro: `L-CTRL` + `R-CTRL`
 
-    - Implementation is known as [Generate Evdev](#3).
-    - **Note:** Using guest PCI USB alone is good. Using both implementations is
-  better.
+- Implementation is known as [Generate Evdev](#3).
+- **Note:** Using guest PCI USB alone is good. Using both implementations is
+better.
 
 #### 7.2. Main Setup
 - **Multi-boot VFIO Setup**
