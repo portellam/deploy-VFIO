@@ -265,6 +265,7 @@ Static VFIO:
   execution, to preserve the Static isolation.
 
   2. **Allocate RAM**
+
     - **Static** [huge memory pages](#5) eliminate the need to defragment Host
   memory (RAM) before allocating to Guest(s).
     - Reduces Host overhead, and improves both Host and Guest performance.
