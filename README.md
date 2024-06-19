@@ -294,12 +294,10 @@ Static VFIO:
     - **Ad:** For best results, use [Auto X.Org](#2).
 
 - **Static VFIO Setup**
-    - Single, traditional VFIO setup. **Less flexibility than Multi-boot or**
-    **Dynamic.**
-    - Specify method of setup:
-        - Append output to GRUB; single GRUB menu entry.
+    - Specify method:
+        - Append output to GRUB (single GRUB menu entry).
         - Append output to system configuration files.
-
+    - **Less flexible than either setups.**
     - Best for systems with one or more PCI VGA device(s) and one integrated VGA
   device (iGPU).
 
