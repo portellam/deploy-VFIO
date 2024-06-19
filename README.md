@@ -11,20 +11,20 @@ think you need!
 [github-releases]:   https://github.com/portellam/libvirt-hooks/releases/latest
 
 ## Table of Contents
-- [Why?](#why)
-- [Related Projects](#related-projects)
-- [Documentation](#documentation)
-- [Host Requirements](#host-requirements)
-- [Download](#download)
-- [Usage](#usage)
-- [Features](#features)
-- [Information](#information)
-- [Disclaimer](#disclaimer)
-- [Contact](#contact)
-- [References](#references)
+- [1. Why?](#1-why)
+- [2. Related Projects](#2-related-projects)
+- [3. Documentation](#3-documentation)
+- [4. Host Requirements](#4-host-requirements)
+- [5. Download](#5-download)
+- [6. Usage](#6-usage)
+- [7. Features](#7-features)
+- [8. Information](#8-information)
+- [10. Disclaimer](#10-disclaimer)
+- [11. Contact](#11-contact)
+- [12. References](#12-references)
 
 ## Contents
-### Why?
+### 1. Why?
 1. **Separation of Concerns:** Independently operate your workstation, gaming,
 and school Operating Systems (OS), as [Virtual Machines](#20) (VMs), under one
 Host machine.
@@ -56,7 +56,7 @@ setup.
 
 [below]: (#latest-graphics-hardware-for-various-guest-operating-systems)
 
-### Related Projects
+### 2. Related Projects
 | Project                             | Codeberg          | GitHub          |
 | :---                                | :---:             | :---:           |
 | **Deploy VFIO**                     | [link][codeberg1] | [link][github1] |
@@ -79,13 +79,13 @@ setup.
 [codeberg6]: https://codeberg.org/portellam/powerstate-virtmanager
 [github6]:   https://github.com/portellam/powerstate-virtmanager
 
-### Documentation
+### 3. Documentation
 - [What is VFIO?](#20)
 - [VFIO Forum](#14)
 - [Hardware-Passthrough Guide](#13)
 - [Virtual Machine XML Format Guide](#23)
 
-## Host Requirements
+### 4. Host Requirements
 - Currently supported operating systems:
   | Linux Distributions  | Tested | Supported  |
   | :------------------- | :----: | :--------: |
@@ -115,7 +115,7 @@ setup.
     - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this
     script.
 
-### Download
+### 5. Download
 - To download this script, you may:
   - Download the Latest Release:&ensp;[Codeberg][codeberg-releases],
 [GitHub][github-releases]
@@ -159,7 +159,7 @@ setup.
     - Do **not** make any non-script file executable. This is not necessary and
     potentially dangerous.
 
-### Usage
+### 6. Usage
 **`installer.bash`**
   - From the project folder, execute: `sudo bash installer.bash`
   ```xml
@@ -234,7 +234,7 @@ Static VFIO:
   grub                   Append output to GRUB; single GRUB menu entry.
 ```
 
-### Features
+### 7. Features
 #### Pre-setup
 1. **Allocate CPU**
   - **Statically** isolate Host CPU threads before allocating to Guest(s).
@@ -329,8 +329,8 @@ Guest is active.
   - **Disclaimer:** Only supported for Guests running Windows 7 and later
   (Windows NT 6.1+).
 
-### Information
-#### BIOS v. UEFI
+### 8. Information
+#### 8.1. BIOS v. UEFI
 - Some VGA devices, such as NVIDIA, may not be recognizable in a VM, as the
 video BIOS or VBIOS is *tainted* at Host OS start-up. This is usually the case
 if a given VGA device is used for the Host BIOS/UEFI booting process. To remedy
@@ -342,12 +342,12 @@ this, you must obtain a clean copy of the VBIOS. You may review either
 video output. BIOS-only VGA devices may only be available explicitly for
 hardware passthrough.
 
-### Filenames and pathnames modified:
-#### Pre-setup files
+#### 8.2. Filenames and pathnames modified:
+##### 8.2.1. Pre-setup files
   - `/etc/apparmor.d/local/abstractions/libvirt-qemu`
   - `/etc/libvirt/qemu.conf`
 
-#### VFIO setup files
+#### 8.2.2. VFIO setup files
   - `/etc/default/grub`
   - `/etc/grub.d/proxifiedScripts/custom`
   - `/etc/initramfs-tools/modules`
@@ -355,30 +355,54 @@ hardware passthrough.
   - `/etc/modprobe.d/vfio.conf`
   - `/etc/modules`
 
-#### Post-setup paths
+#### 8.2.3.  Post-setup paths
   - `/etc/libvirt/hooks/`
   - `/usr/local/bin/`
   - `/etc/systemd/system/`
 
-#### Paths for project binaries and files
+#### 8.2.4. Paths for project binaries and files
   - `/usr/local/bin/`
   - `/usr/local/etc/deploy-VFIO.d`
 
-##### Example
+### 9. VFIO-Compatible Graphics Hardware
+**Note:** Unfortunately, GPUs without UEFI support (BIOS only) are not
+compatible with VFIO.
+
+#### 9.1. Command to Get Current Graphics Hardware
 `lspci -nnk | grep --extended-regexp --ignore-case "vga|graphics"`
 
-##### Output:
+#### 9.1.1 Output:
 ```
 01:00.0 VGA compatible controller [0300]: NVIDIA Corporation GA104 [GeForce RTX 3070] [10de:2484] (rev a1)
 04:00.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Cayman PRO [Radeon HD 6950] [1002:6719]
 ```
 
-#### Latest graphics hardware for various Guest Operating Systems
-##### Apple Macintosh
-###### [AMD and NVIDIA GPU compatibility list](#4)
-###### [More detailed NVIDIA GPU compatibility list](#15)
+#### 9.2. List of UEFI-compatible Graphics Hardware
+| Vendor | Model                         |
+| :----- | :---------------------------- |
+| AMD    | Radeon HD 7750-7970 and newer |
+| NVIDIA | GeForce 600-series and newer  |
 
-##### Microsoft Windows
+#### 9.3. Alternatives to BIOS-only Graphics Hardware
+For emulating video devices on Windows 9x and older legacy operating
+systems, try [SoftGPU](#17). Modern CPUs are more than powerful enough to
+emulate such hardware.
+
+#### Apple Macintosh Compatibility
+**Note:** The listed hardware below is not indicative of VFIO-compatibility.
+
+##### [AMD and NVIDIA GPU compatibility list](#4)
+##### [More detailed NVIDIA GPU compatibility list](#15)
+
+#### Linux Compatibility
+Typically, the Linux is compatible with graphics hardware dating back to the end
+of the 20th century. Still, graphics hardware compatibility may vary among
+different Linux distributions. Please review the documentation of your Linux
+distribution.
+
+#### Microsoft Windows Compatibility
+**Note:** The listed hardware below is not indicative of VFIO-compatibility.
+
 | Windows version        | Device type | Brand and model                           |
 | --------------------   | ----------- | ----------------------------------------- |
 | 10 and above or NT 10+ | VGA         | NVIDIA RTX 4000-series[<sup>2</sup>](#2-uefi-only) or before       |
@@ -388,25 +412,21 @@ hardware passthrough.
 | 9x                     | VGA         | NVIDIA 7000-series GTX[<sup>1</sup>](#1-bios-only) or before       |
 |                        |             | any ATI model[<sup>1</sup>](#1-bios-only) (before AMD)             |
 
-##### 1. *BIOS only.*
-##### 2. *UEFI only.*
-##### 3. *UEFI or BIOS compatible.*
+#### 1. *BIOS only.*
+#### 2. *UEFI only.*
+#### 3. *UEFI or BIOS compatible.*
 
-**Note:** For emulating video devices on Windows 9x and older legacy operating
-systems, try the [SoftGPU](#17). Modern CPUs are more than powerful enough to
-emulate such hardware.
-
-### Disclaimer
+### 10. Disclaimer
 Use at your own risk. Please review your system's specifications and resources.
 
-### Contact
+### 11. Contact
 Did you encounter a bug? Do you need help? Please visit the **Issues page**
 ([Codeberg][codeberg-issues], [GitHub][github-issues]).
 
 [codeberg-issues]: https://codeberg.org/portellam/deploy-VFIO/issues
 [github-issues]:   https://github.com/portellam/deploy-VFIO/issues
 
-### References
+### 12. References
 #### 1.
 **portellam/audio-loopback.** Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/audio-loopback.
