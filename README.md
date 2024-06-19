@@ -30,8 +30,8 @@ and school Operating Systems (OS), as [Virtual Machines](#10) (VMs), under one
 Host machine.
 
 2. **No Need for a Server**
-  - Keep your Host OS desktop experience intact; turns your Host into a *Type-2*
-  [Hypervisor](#17).
+  - Keep your Host OS **desktop** experience intact; turns your Host into a
+  *Type-2* [Hypervisor](#17).
   - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered
   *Type-1* or bare-metal Hypervisors.
 
@@ -86,13 +86,15 @@ setup.
 
 ## Host Requirements
 - Currently supported operating systems:
-  | Linux Distributions | Supported? | Tested  |
-  | ------------------- | ---------- | ------- |
-  | Arch                | No         | none    |
-  | Debian[<sup>1</sup>](#1-debian-derivatives-include-linux-mint-pop-os-and-ubuntu)           | Yes        | 11, 12  |
-  | Gentoo              | No         | none    |
-  | Red Hat Enterprise  | No         | none    |
-  | SUSE                | No         | none    |
+  | Linux Distributions  | Tested | Supported  |
+  | :------------------- | :----: | :--------: |
+  | Arch                 | No     | none       |
+  | Debian<sup>[1]</sup> | Yes    | 11, 12     |
+  | Gentoo               | No     | none       |
+  | Red Hat Enterprise   | No     | none       |
+  | SUSE                 | No     | none       |
+
+[1]: (#1-debian-derivatives-include-linux-mint-pop-os-and-ubuntu)
 
 ##### 1. Debian derivatives include Linux Mint, Pop! OS, and Ubuntu.
 
@@ -250,8 +252,9 @@ Static VFIO:
   - Create a virtual KVM switch.
     - Allow a user to swap a group of Input devices (as a whole) between active
     Guest(s) and Host.
-    - Set and use a defined macro.
+    - Set and use a [defined macro](#23).
       - Default macro: `L-CTRL` + `R-CTRL`
+
   - Implementation is known as [Evdev](#2) (Event Devices).
   - **Note:** Using guest PCI USB alone is good. Using both implementations is
   better.
@@ -272,6 +275,7 @@ Static VFIO:
   - Specify method of setup:
     - Append output to GRUB; single GRUB menu entry.
     - Append output to system configuration files.
+
   - Best for systems with one or more PCI VGA device(s) and one integrated VGA
   device (iGPU).
 
@@ -286,10 +290,12 @@ Static VFIO:
 #### Post-setup (To be implemented in a future release)
 1. **Auto X.Org** system service to find and set a valid Host boot [VGA](#20)
 device for X.Org.
+
 2. **Guest Audio Capture**
-  - Create an [audio loopback](#) to output on the Host audio device Line-Out.
+  - Create an [audio loopback](#22) to output on the Host audio device Line-Out.
     - Listen on Host audio device Line-In (from Guest PCI Audio device Line-Out).
     - Useful for systems with multiple audio devices.
+
   - For virtual implementation, see *Virtual Audio Capture*.
 
 3. **Libvirt Hooks**
@@ -305,6 +311,7 @@ Guest is active.
     - Reduce swapiness to existing Host swap devices.
     - Reduce chances of Host memory exhaustion (given an event of memory
     over-allocation).
+
   - Implementation is known as [zram-swap](#21).
 
 5. **Virtual Audio Capture**
@@ -324,8 +331,8 @@ Guest is active.
 - Some VGA devices, such as NVIDIA, may not be recognizable in a VM, as the
 video BIOS or VBIOS is *tainted* at Host OS start-up. This is usually the case
 if a given VGA device is used for the Host BIOS/UEFI booting process. To remedy
-this, you must obtain a clean copy of the VBIOS. You may review either the
-project [NVIDIA-vBIOS-VFIO-Patcher](#9), or the [ArchWiki](#11).
+this, you must obtain a clean copy of the VBIOS. You may review either
+[NVIDIA-vBIOS-VFIO-Patcher](#9), or the [ArchWiki](#11).
 
 - If your Host machine supports UEFI only and/or if UEFI is enabled
 (and CSM/BIOS is disabled), BIOS-only VGA devices may not be available as Host
@@ -383,8 +390,8 @@ hardware passthrough.
 ##### 3. *UEFI or BIOS compatible.*
 
 **Note:** For emulating video devices on Windows 9x and older legacy operating
-systems, try the project [SoftGPU](#15).
-Modern CPUs are more than powerful enough to emulate such hardware.
+systems, try the [SoftGPU](#15). Modern CPUs are more than powerful enough to
+emulate such hardware.
 
 ### Disclaimer
 Use at your own risk. Please review your system's specifications and resources.
@@ -510,3 +517,14 @@ The linux kernel. Accessed June 14, 2024.
 
 **zramswap**. Arch Linux User Repository. Accessed June 17, 2024.
 <sup>https://aur.archlinux.org/packages/zramswap.</sup>
+
+#### 22.
+**portellam/audio-loopback.** Codeberg. Accessed June 18, 2024.
+<sup>https://codeberg.org/portellam/audio-loopback.
+
+**portellam/audio-loopback.** GitHub. Accessed June 18, 2024.
+<sup>https://github.com/portellam/audio-loopback.
+
+#### 23.
+**libvirt/libvirt - Input Devices**. GitHub. Accessed June 18, 2024.
+<sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst#input-devices.</sup>
