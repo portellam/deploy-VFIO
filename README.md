@@ -26,12 +26,12 @@ think you need!
 ## Contents
 ### Why?
 1. **Separation of Concerns:** Independently operate your workstation, gaming,
-and school Operating Systems (OS), as [Virtual Machines](#10) (VMs), under one
+and school Operating Systems (OS), as [Virtual Machines](#20) (VMs), under one
 Host machine.
 
 2. **No Need for a Server**
   - Keep your Host OS **desktop** experience intact; turns your Host into a
-  *Type-2* [Hypervisor](#17).
+  *Type-2* [Hypervisor](#19).
   - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered
   *Type-1* or bare-metal Hypervisors.
 
@@ -49,7 +49,7 @@ are known to experienced users.
 
 7. **Your Host OS is [supported](#host-requirements).**
 
-**Note:** For even greater security, use [me_cleaner](#8) alongside a VFIO
+**Note:** For even greater security, use [me_cleaner](#9) alongside a VFIO
 setup.
 
 **Disclaimer:** See [below] for supported [VGA](#20) devices.
@@ -80,9 +80,10 @@ setup.
 [github6]:   https://github.com/portellam/powerstate-virtmanager
 
 ### Documentation
-- [What is VFIO?](#18)
-- [VFIO Forum](#12)
-- [PCI Passthrough Guide](#11)
+- [What is VFIO?](#20)
+- [VFIO Forum](#14)
+- [PCI Passthrough Guide](#13)
+- [Virtual Machine XML Configuration Guide](#23)
 
 ## Host Requirements
 - Currently supported operating systems:
@@ -238,12 +239,12 @@ Static VFIO:
 1. **Allocate CPU**
   - **Statically** isolate Host CPU threads before allocating to Guest(s).
   -  Reduces Host overhead, and improves both Host and Guest performance.
-  -  If installed, the **Dynamic** [Libvirt hook](#5) (see source) will skip its
+  -  If installed, the **Dynamic** [Libvirt hook](#7) (see source) will skip its
   execution, to preserve the Static isolation.
 
   2. **Allocate RAM**
-  - **Static** huge memory pages eliminate the need to defragment Host memory
-  (RAM) before allocating to Guest(s).
+  - **Static** [huge memory pages](#5) eliminate the need to defragment Host
+  memory (RAM) before allocating to Guest(s).
   - Reduces Host overhead, and improves both Host and Guest performance.
   - If skipped, setup will install the Libvirt hook for **Dynamic** allocation
   (transparent hugepages).
@@ -252,10 +253,10 @@ Static VFIO:
   - Create a virtual KVM switch.
     - Allow a user to swap a group of Input devices (as a whole) between active
     Guest(s) and Host.
-    - Set and use a [defined macro](#23).
+    - Set and use a [defined macro](#6).
       - Default macro: `L-CTRL` + `R-CTRL`
 
-  - Implementation is known as [Evdev](#2) (Event Devices).
+  - Implementation is known as [Evdev](#3) (Event Devices).
   - **Note:** Using guest PCI USB alone is good. Using both implementations is
   better.
 
@@ -268,7 +269,7 @@ Static VFIO:
     - Best for systems with two or more PCI VGA devices, without an integrated VGA
     device (iGPU).
 
-  - **Ad:** For best results, use [Auto X.Org](#1).
+  - **Ad:** For best results, use [Auto X.Org](#2).
 
 - **Static VFIO setup**
   - Single, traditional VFIO setup. **Less flexibility.**
@@ -285,44 +286,46 @@ Static VFIO:
   - Most flexibility; Libvirt hooks allow Host to allocate and release resources
   dynamically.
   - For an existing script of similar scope, you may try the project
-  [VFIO-Tools](#19).
+  [VFIO-Tools](#21).
 
 #### Post-setup (To be implemented in a future release)
-1. **Auto X.Org** system service to find and set a valid Host boot [VGA](#20)
+1. **Auto X.Org** system service to find and set a valid Host boot [VGA](#22)
 device for X.Org.
 
 2. **Guest Audio Capture**
-  - Create an [audio loopback](#22) to output on the Host audio device Line-Out.
+  - Create an [audio loopback](#1) to output on the Host audio device Line-Out.
     - Listen on Host audio device Line-In (from Guest PCI Audio device Line-Out).
     - Useful for systems with multiple audio devices.
 
   - For virtual implementation, see *Virtual Audio Capture*.
 
 3. **Libvirt Hooks**
-- Invoke [hooks](#5) or scripts for all or individual Guests.
+- Invoke [hooks](#7) or scripts for all or individual Guests.
 - Switch display input (video output) at Guest start.
 - **Dynamically** allocate CPU cores and prioritize CPU scheduler.
 - **Libvirt-nosleep**: per Guest system service, to prevent Host sleep while
 Guest is active.
 
 4. **RAM as Compressed Swapfile/partition**
-  - Create a compressed Swap device in Host memory, using the [lz4](#6) algorithm
+  - Create a compressed Swap device in Host memory, using the [lz4](#9) algorithm
   (compression ratio of about 2:1).
     - Reduce swapiness to existing Host swap devices.
     - Reduce chances of Host memory exhaustion (given an event of memory
     over-allocation).
 
-  - Implementation is known as [zram-swap](#21).
+  - Implementation is known as [zram-swap](#24).
 
 5. **Virtual Audio Capture**
   - Setup a virtual audio driver for Windows that provides a discrete audio
-  device.
-  - Implementation is known as [Scream](#14).
+  device and passthrough from a Guest to Host.
+    - Passthrough audio by direct-memory-access (DMA).
+    - Passthrough audio by a [virtual Local Area Network (LAN) device](#18).
+
+  - Implementation is known as [Scream](#16).
 
 6. **Virtual Video Capture**
-  - Setup direct-memory-access (DMA) of a PCI VGA device output (video and audio)
-  from a Guest to Host.
-  - Implementation is known as [Looking Glass](#7).
+  - Setup DMA of a PCI VGA device output (video and audio) from a Guest to Host.
+  - Implementation is known as [Looking Glass](#8).
   - **Disclaimer:** Only supported for Guests running Windows 7 and later
   (Windows NT 6.1+).
 
@@ -332,7 +335,7 @@ Guest is active.
 video BIOS or VBIOS is *tainted* at Host OS start-up. This is usually the case
 if a given VGA device is used for the Host BIOS/UEFI booting process. To remedy
 this, you must obtain a clean copy of the VBIOS. You may review either
-[NVIDIA-vBIOS-VFIO-Patcher](#9), or the [ArchWiki](#11).
+[NVIDIA-vBIOS-VFIO-Patcher](#11), or the [ArchWiki](#13).
 
 - If your Host machine supports UEFI only and/or if UEFI is enabled
 (and CSM/BIOS is disabled), BIOS-only VGA devices may not be available as Host
@@ -372,8 +375,8 @@ hardware passthrough.
 
 #### Latest graphics hardware for various Guest Operating Systems
 ##### Apple Macintosh
-###### [AMD and NVIDIA GPU compatibility list](#3)
-###### [More detailed NVIDIA GPU compatibility list](#13)
+###### [AMD and NVIDIA GPU compatibility list](#4)
+###### [More detailed NVIDIA GPU compatibility list](#15)
 
 ##### Microsoft Windows
 | Windows version        | Device type | Brand and model                           |
@@ -390,7 +393,7 @@ hardware passthrough.
 ##### 3. *UEFI or BIOS compatible.*
 
 **Note:** For emulating video devices on Windows 9x and older legacy operating
-systems, try the [SoftGPU](#15). Modern CPUs are more than powerful enough to
+systems, try the [SoftGPU](#17). Modern CPUs are more than powerful enough to
 emulate such hardware.
 
 ### Disclaimer
@@ -405,25 +408,32 @@ Did you encounter a bug? Do you need help? Please visit the **Issues page**
 
 ### References
 #### 1.
+**portellam/audio-loopback.** Codeberg. Accessed June 18, 2024.
+<sup>https://codeberg.org/portellam/audio-loopback.
+
+**portellam/audio-loopback.** GitHub. Accessed June 18, 2024.
+<sup>https://github.com/portellam/audio-loopback.
+
+#### 2.
 **portellam/auto-xorg.** Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/auto-xorg.
 
 **portellam/auto-xorg.** GitHub. Accessed June 18, 2024.
 <sup>https://github.com/portellam/auto-xorg.
 
-#### 2.
+#### 3.
 **portellam/generate-evdev**. Codeberg. Accessed June 17, 2024.
 <sup>https://codeberg.org/portellam/generate-evdev.</sup>
 
 **portellam/generate-evdev**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/portellam/generate-evdev.</sup>
 
-#### 3.
+#### 4.
 **Graphics card compatibility for Final Cut Pro, Motion, and Compressor**. Apple
 Support. October 31, 2023. Accessed June 18, 2024.
 <sup>https://support.apple.com/en-us/102734.</sup>
 
-#### 4.
+#### 5.
 **Hugepages**. Debian Wiki. Accessed June 17, 2024.
 <sup>https://wiki.debian.org/Hugepages.</sup>
 
@@ -431,68 +441,72 @@ Support. October 31, 2023. Accessed June 18, 2024.
 2024.
 <sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages.</sup>
 
-#### 5.
+#### 6.
+**libvirt/libvirt - Input Devices**. GitHub. Accessed June 18, 2024.
+<sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst#input-devices.</sup>
+
+#### 7.
 **portellam/libvirt-hooks.** Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/libvirt-hooks.</sup>
 
 **portellam/libvirt-hooks.** GitHub. Accessed June 18, 2024.
 <sup>https://github.com/portellam/libvirt-hooks.</sup>
 
-#### 6.
+#### 8.
+**Looking Glass**. Looking Glass. Accessed June 17, 2024.
+<sup>https://looking-glass.io/</sup>
+
+#### 9.
 **LZ4/LZ4: Extremely Fast Compression Algorithm**. GitHub. Accessed June 17,
 2024.
 <sup>https://github.com/lz4/lz4.</sup>
 
-#### 7.
-**Looking Glass**. Looking Glass. Accessed June 17, 2024.
-<sup>https://looking-glass.io/</sup>
-
-#### 8.
+#### 10.
 **corna/me_cleaner**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/corna/me_cleaner.</sup>
 
 **dt-zero/me_cleaner**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/dt-zero/me_cleaner.</sup>
 
-#### 9.
+#### 11.
 **Matoking/NVIDIA-vBIOS-VFIO-Patcher**: GitHub. Accessed June 18, 2024.
 <sup>https://github.com/Matoking/NVIDIA-vBIOS-VFIO-Patcher.</sup>
 
-#### 10.
+#### 12.
 **4.5 Passing Keyboard/Mouse via Evdev**. PCI passthrough via OVMF - ArchWiki.
 Accessed June 14, 2024.
 <sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF.</sup>
 
-#### 11.
+#### 13.
 **PCI passthrough via OVMF**. ArchWiki. Accessed June 14, 2024.
 <sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF.</sup>
 
-#### 12.
+#### 14.
 **r/VFIO**. Accessed June 14, 2024.
 <sup>https://www.reddit.com/r/VFIO/.</sup>
 
-#### 13.
+#### 15.
 **tonymacx86 - Will my Nvidia Graphics Card work with macOS ? List of Desktop**
 **Cards with Native Support** Archive.org. Accessed June 18, 2024.
 <sup>https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/.
 
-#### 14.
+#### 16.
 **duncanthrax/scream**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/duncanthrax/scream.</sup>
 
-#### 15.
+#### 17.
 **JHRobotics/SoftGPU**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/JHRobotics/SoftGPU.</sup>
 
-#### 16.
+#### 18.
 **Using Scream Over LAN**. Looking Glass. Accessed June 17, 2024.
 <sup>https://looking-glass.io/wiki/Using_Scream_over_LAN.</sup>
 
-#### 17.
+#### 19.
 **Type 1 vs. Type 2 hypervisors**. IBM. Accessed June 18, 2024.
 <sup>https://www.ibm.com/topics/hypervisors.</sup>
 
-#### 18.
+#### 20.
 **VFIO - ‘Virtual Function I/O’ - The Linux Kernel Documentation**.
 The linux kernel. Accessed June 14, 2024.
 <sup>https://www.kernel.org/doc/html/latest/driver-api/vfio.html.</sup>
@@ -500,15 +514,19 @@ The linux kernel. Accessed June 14, 2024.
 **Virtualization technology**. OpenSUSE Leap 15.5. Accessed June 18, 2024.
 <sup>https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html.</sup>
 
-#### 19.
+#### 21.
 **PassthroughPOST/VFIO-Tools.** GitHub. Accessed June 18, 2024.
 <sup>https://github.com/PassthroughPOST/VFIO-Tools.</sup>
 
-#### 20.
+#### 22.
 **Video Graphics Array**. Wikipedia. August 18, 2002. Accessed June 18, 2024.
 <sup>https://en.wikipedia.org/wiki/Video_Graphics_Array.</sup>
 
-#### 21.
+#### 23.
+**libvirt/libvirt - XML Design Format** GitHub. Accessed June 18, 2024.
+<sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst.</sup>
+
+#### 24.
 **foundObjects/zram-swap**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/foundObjects/zram-swap.</sup>
 
@@ -517,14 +535,3 @@ The linux kernel. Accessed June 14, 2024.
 
 **zramswap**. Arch Linux User Repository. Accessed June 17, 2024.
 <sup>https://aur.archlinux.org/packages/zramswap.</sup>
-
-#### 22.
-**portellam/audio-loopback.** Codeberg. Accessed June 18, 2024.
-<sup>https://codeberg.org/portellam/audio-loopback.
-
-**portellam/audio-loopback.** GitHub. Accessed June 18, 2024.
-<sup>https://github.com/portellam/audio-loopback.
-
-#### 23.
-**libvirt/libvirt - Input Devices**. GitHub. Accessed June 18, 2024.
-<sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst#input-devices.</sup>
