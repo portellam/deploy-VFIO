@@ -11,6 +11,13 @@ think you need!
 [github-releases]:   https://github.com/portellam/libvirt-hooks/releases/latest
 
 ## Table of Contents
+
+<details><summary>
+
+## Table of Contents
+
+</summary>
+
 [1. Why?](#1-why)
 
 [2. Related Projects](#2-related-projects)
@@ -74,6 +81,7 @@ think you need!
 
 [12. References](#12-references)
 
+</details>
 
 ## Contents
 ### 1. Why?
