@@ -113,8 +113,8 @@ IOMMU is supported (by the CPU) and enabled in the motherboard firmware (BIOS
 or UEFI).
   - For AMD machines:&nbsp;`AMD-Vi`
   - For Intel machines:&ensp;&nbsp;`VT-d`
-  - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this
-    script.
+  - ARM (`SMMU`) and other CPU architectures are not **explicitly** supported by
+  this script.
 
 ### 5. Download
 - To download this script, you may:
@@ -362,7 +362,7 @@ this, you must obtain a clean copy of the VBIOS. You may review either
 
 ### 9. Graphics Hardware (GPUs)
 **Note:** Unfortunately, GPUs without UEFI support (BIOS-only) are not
-compatible with VFIO.
+currently or known-to-be compatible with VFIO.
 
 #### 9.1. How to Query Host Machine for Graphics Hardware
 #### 9.1.1. Command
@@ -394,7 +394,8 @@ hardware. Therefore, it is safe to assume such hardware is BIOS-only.
 #### 9.3. Alternatives to BIOS-only Graphics Hardware
 For emulating video devices on old, legacy operating systems (such as Microsoft
 Windows 9x ), try [SoftGPU](#17). Modern CPUs are more than powerful enough to
-emulate such hardware. **Note:** This implementation is not software rendering.
+emulate such hardware. **Note:** Fortunately, this implementation is not
+software rendering.
 
 #### 9.4. Apple macOS
 ##### 9.4.1. [AMD and NVIDIA GPU compatibility list](#4)
@@ -424,33 +425,33 @@ Did you encounter a bug? Do you need help? Please visit the **Issues page**
 [github-issues]:   https://github.com/portellam/deploy-VFIO/issues
 
 ### 12. References
-#### 12.1.
+#### 1.
 **portellam/audio-loopback.** Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/audio-loopback.
 
 **portellam/audio-loopback.** GitHub. Accessed June 18, 2024.
 <sup>https://github.com/portellam/audio-loopback.
 
-#### 12.2.
+#### 2.
 **portellam/auto-xorg.** Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/auto-xorg.
 
 **portellam/auto-xorg.** GitHub. Accessed June 18, 2024.
 <sup>https://github.com/portellam/auto-xorg.
 
-#### 12.3.
+#### 3.
 **portellam/generate-evdev**. Codeberg. Accessed June 17, 2024.
 <sup>https://codeberg.org/portellam/generate-evdev.</sup>
 
 **portellam/generate-evdev**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/portellam/generate-evdev.</sup>
 
-#### 12.4.
+#### 4.
 **Graphics card compatibility for Final Cut Pro, Motion, and Compressor**. Apple
 Support. October 31, 2023. Accessed June 18, 2024.
 <sup>https://support.apple.com/en-us/102734.</sup>
 
-#### 12.5.
+#### 5.
 **Hugepages**. Debian Wiki. Accessed June 17, 2024.
 <sup>https://wiki.debian.org/Hugepages.</sup>
 
@@ -458,72 +459,72 @@ Support. October 31, 2023. Accessed June 18, 2024.
 2024.
 <sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages.</sup>
 
-#### 12.6.
+#### 6.
 **libvirt/libvirt - Input Devices**. GitHub. Accessed June 18, 2024.
 <sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst#input-devices.</sup>
 
-#### 12.7.
+#### 7.
 **portellam/libvirt-hooks.** Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/libvirt-hooks.</sup>
 
 **portellam/libvirt-hooks.** GitHub. Accessed June 18, 2024.
 <sup>https://github.com/portellam/libvirt-hooks.</sup>
 
-#### 12.8.
+#### 8.
 **Looking Glass**. Looking Glass. Accessed June 17, 2024.
 <sup>https://looking-glass.io/</sup>
 
-#### 12.9.
+#### 9.
 **LZ4/LZ4: Extremely Fast Compression Algorithm**. GitHub. Accessed June 17,
 2024.
 <sup>https://github.com/lz4/lz4.</sup>
 
-#### 12.10.
+#### 10.
 **corna/me_cleaner**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/corna/me_cleaner.</sup>
 
 **dt-zero/me_cleaner**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/dt-zero/me_cleaner.</sup>
 
-#### 12.11.
+#### 11.
 **Matoking/NVIDIA-vBIOS-VFIO-Patcher**: GitHub. Accessed June 18, 2024.
 <sup>https://github.com/Matoking/NVIDIA-vBIOS-VFIO-Patcher.</sup>
 
-#### 12.12.
+#### 12.
 **4.5 Passing Keyboard/Mouse via Evdev**. PCI passthrough via OVMF - ArchWiki.
 Accessed June 14, 2024.
 <sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF.</sup>
 
-#### 12.13.
+#### 13.
 **PCI passthrough via OVMF**. ArchWiki. Accessed June 14, 2024.
 <sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF.</sup>
 
-#### 12.14.
+#### 14.
 **r/VFIO**. Accessed June 14, 2024.
 <sup>https://www.reddit.com/r/VFIO/.</sup>
 
-#### 12.15.
+#### 15.
 **tonymacx86 - Will my Nvidia Graphics Card work with macOS ? List of Desktop**
 **Cards with Native Support** Archive.org. Accessed June 18, 2024.
 <sup>https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/.
 
-#### 12.16.
+#### 16.
 **duncanthrax/scream**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/duncanthrax/scream.</sup>
 
-#### 12.17.
+#### 17.
 **JHRobotics/SoftGPU**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/JHRobotics/SoftGPU.</sup>
 
-#### 12.18.
+#### 18.
 **Using Scream Over LAN**. Looking Glass. Accessed June 17, 2024.
 <sup>https://looking-glass.io/wiki/Using_Scream_over_LAN.</sup>
 
-#### 12.19.
+#### 19.
 **Type 1 vs. Type 2 hypervisors**. IBM. Accessed June 18, 2024.
 <sup>https://www.ibm.com/topics/hypervisors.</sup>
 
-#### 12.20.
+#### 20.
 **VFIO - ‘Virtual Function I/O’ - The Linux Kernel Documentation**.
 The linux kernel. Accessed June 14, 2024.
 <sup>https://www.kernel.org/doc/html/latest/driver-api/vfio.html.</sup>
@@ -531,19 +532,19 @@ The linux kernel. Accessed June 14, 2024.
 **Virtualization technology**. OpenSUSE Leap 15.5. Accessed June 18, 2024.
 <sup>https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html.</sup>
 
-#### 12.21.
+#### 21.
 **PassthroughPOST/VFIO-Tools.** GitHub. Accessed June 18, 2024.
 <sup>https://github.com/PassthroughPOST/VFIO-Tools.</sup>
 
-#### 12.22.
+#### 22.
 **Video Graphics Array**. Wikipedia. August 18, 2002. Accessed June 18, 2024.
 <sup>https://en.wikipedia.org/wiki/Video_Graphics_Array.</sup>
 
-#### 12.23.
+#### 23.
 **libvirt/libvirt - XML Design Format** GitHub. Accessed June 18, 2024.
 <sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst.</sup>
 
-#### 12.24.
+#### 24.
 **foundObjects/zram-swap**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/foundObjects/zram-swap.</sup>
 
