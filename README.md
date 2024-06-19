@@ -145,29 +145,29 @@ or UEFI).
     - Download the ZIP file:
     1. Viewing from the top of the repository's (current) webpage, click the
        drop-down icon:
-      - `···` on Codeberg.
-      - `<> Code ` on GitHub.
+  - `···` on Codeberg.
+  - `<> Code ` on GitHub.
 
     2. Click `Download ZIP`. Save this file.
 
     3. Open the `.zip` file, then extract its contents.
 
-    - Clone the repository:
+- Clone the repository:
     1. Open a Command Line Interface (CLI).
-      - Open a console emulator (for Debian systems: Konsole).
+  - Open a console emulator (for Debian systems: Konsole).
 
-      - Open a existing console: press `CTRL` + `ALT` + `F2`, `F3`, `F4`, `F5`,
+  - Open a existing console: press `CTRL` + `ALT` + `F2`, `F3`, `F4`, `F5`,
       or `F6`.
-        - **To return to the desktop,** press `CTRL` + `ALT` + `F7`.
-        - `F1` is reserved for debug output of the Linux kernel.
-        - `F7` is reserved for video output of the desktop environment.
-        - `F8` and above are unused.
+    - **To return to the desktop,** press `CTRL` + `ALT` + `F7`.
+    - `F1` is reserved for debug output of the Linux kernel.
+    - `F7` is reserved for video output of the desktop environment.
+    - `F8` and above are unused.
 
     2. Change your directory to your home folder or anywhere safe: `cd ~`
 
     3. Clone the repository:
-      - `git clone https://www.codeberg.org/portellam/deploy-VFIO`
-      - `git clone https://www.github.com/portellam/deploy-VFIO`
+  - `git clone https://www.codeberg.org/portellam/deploy-VFIO`
+  - `git clone https://www.github.com/portellam/deploy-VFIO`
 
 - To make this script executable, you must:
   1. Open the CLI (see above).
@@ -261,14 +261,14 @@ Static VFIO:
 1. **Allocate CPU**
     - **Statically** isolate Host CPU threads before allocating to Guest(s).
     -  Reduces Host overhead, and improves both Host and Guest performance.
-    -  If installed, the **Dynamic** [Libvirt hook](#7) (see source) will skip its
+    -  If installed, the **dynamic** [Libvirt hook](#7) will skip its
   execution, to preserve the Static isolation.
 
   2. **Allocate RAM**
     - **Static** [huge memory pages](#5) eliminate the need to defragment Host
   memory (RAM) before allocating to Guest(s).
     - Reduces Host overhead, and improves both Host and Guest performance.
-    - If skipped, setup will install the Libvirt hook for **Dynamic** allocation
+    - If skipped, setup will install the Libvirt hook for **dynamic** allocation
   (transparent hugepages).
 
 3. **Virtual Keyboard Video Mouse (KVM) switch**
@@ -353,25 +353,25 @@ Guest is active.
 
 ### 8. Filenames and Pathnames modified by deploy-VFIO
 ##### 8.1. Pre-setup files
-    - `/etc/apparmor.d/local/abstractions/libvirt-qemu`
+  - `/etc/apparmor.d/local/abstractions/libvirt-qemu`
     - `/etc/libvirt/qemu.conf`
 
 ##### 8.2. VFIO setup files
-    - `/etc/default/grub`
-    - `/etc/grub.d/proxifiedScripts/custom`
-    - `/etc/initramfs-tools/modules`
-    - `/etc/modprobe.d/pci-blacklists.conf`
-    - `/etc/modprobe.d/vfio.conf`
-    - `/etc/modules`
+  - `/etc/default/grub`
+  - `/etc/grub.d/proxifiedScripts/custom`
+  - `/etc/initramfs-tools/modules`
+  - `/etc/modprobe.d/pci-blacklists.conf`
+  - `/etc/modprobe.d/vfio.conf`
+  - `/etc/modules`
 
 ##### 8.3. Post-setup paths
-    - `/etc/libvirt/hooks/`
-    - `/usr/local/bin/`
-    - `/etc/systemd/system/`
+  - `/etc/libvirt/hooks/`
+  - `/usr/local/bin/`
+  - `/etc/systemd/system/`
 
 ##### 8.4. Paths for binaries and files
-    - `/usr/local/bin/`
-    - `/usr/local/etc/deploy-VFIO.d`
+  - `/usr/local/bin/`
+  - `/usr/local/etc/deploy-VFIO.d`
 
 ### 9. Graphics Hardware (GPUs)
 **Note:** Unfortunately, GPUs without UEFI support (BIOS-only) are not
