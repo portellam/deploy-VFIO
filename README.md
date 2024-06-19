@@ -7,8 +7,8 @@ think you need!
 **Download the Latest Release:**&ensp;[Codeberg][codeberg-releases],
 [GitHub][github-releases]
 
-[codeberg-releases]: https://codeberg.org/portellam/libvirt-hooks/releases/latest
-[github-releases]:   https://github.com/portellam/libvirt-hooks/releases/latest
+[codeberg-releases]: https://codeberg.org/portellam/deploy-VFIO/releases/latest
+[github-releases]:   https://github.com/portellam/deploy-VFIO/releases/latest
 
 ## Table of Contents
 - [1. Why?](#1-why)
