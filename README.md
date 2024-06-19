@@ -86,33 +86,34 @@ setup.
 - [Virtual Machine XML Format Guide](#23)
 
 ### 4. Host Requirements
-- Currently supported operating systems:
+#### 4.1. Operating Systems
   | Linux Distributions  | Tested | Supported  |
   | :------------------- | :----: | :--------: |
-  | Arch                 | No     | none       |
+  | Arch                 | No     | N/A        |
   | Debian<sup>[1]</sup> | Yes    | 11, 12     |
-  | Gentoo               | No     | none       |
-  | Red Hat Enterprise   | No     | none       |
-  | SUSE                 | No     | none       |
+  | Gentoo               | No     | N/A        |
+  | Red Hat Enterprise   | No     | N/A        |
+  | SUSE                 | No     | N/A        |
 
 [1]: (#1-debian-derivatives-include-linux-mint-pop-os-and-ubuntu)
 
 ##### 1. Debian derivatives include Linux Mint, Pop! OS, and Ubuntu.
-
-- Required software packages (for this script):
+#### 4.2. Software
+Required software packages (for this script):
   `xmlstarlet`
   - To install packages:
     - Debian Linux: `sudo apt install -y xmlstarlet`
 
-- Other requirements:
+Other requirements:
   - `GRUB` to execute command lines at boot (if chosen).
   - `systemd` for system services.
 
-  - IOMMU is supported (by the CPU) and enabled in the motherboard firmware
-  (BIOS or UEFI).
-    - For AMD machines:&nbsp;`AMD-Vi`
-    - For Intel machines:&ensp;&nbsp;`VT-d`
-    - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this
+#### 4.3. Hardware
+IOMMU is supported (by the CPU) and enabled in the motherboard firmware (BIOS
+or UEFI).
+  - For AMD machines:&nbsp;`AMD-Vi`
+  - For Intel machines:&ensp;&nbsp;`VT-d`
+  - ARM (`SMMU`) and other CPU architectures are not explicitly supported by this
     script.
 
 ### 5. Download
@@ -160,7 +161,7 @@ setup.
     potentially dangerous.
 
 ### 6. Usage
-**`installer.bash`**
+### 6.1. `installer.bash`
   - From the project folder, execute: `sudo bash installer.bash`
   ```xml
   -h, --help               Print this help and exit.
@@ -170,7 +171,7 @@ setup.
   - The installer will place all script files in `/usr/local/bin`.
   - The installer will place all configuration/text files in `/usr/local/etc`.
 
-**`deploy-VFIO`**
+### 6.2. `deploy-VFIO`
 - From anywhere, execute: `sudo bash deploy-VFIO`
   - The CLI's shell (bash) should recognize that the script file is located in
   `/usr/local/bin`.
@@ -235,7 +236,7 @@ Static VFIO:
 ```
 
 ### 7. Features
-#### Pre-setup
+#### 7.1. Pre-setup
 1. **Allocate CPU**
   - **Statically** isolate Host CPU threads before allocating to Guest(s).
   -  Reduces Host overhead, and improves both Host and Guest performance.
@@ -260,7 +261,7 @@ Static VFIO:
   - **Note:** Using guest PCI USB alone is good. Using both implementations is
   better.
 
-#### Main setup
+#### 7.2. Main setup
 - **Multi-boot VFIO setup**
   - Create multiple VFIO setups with corresponding GRUB menu entries.
   **More flexibility.**
@@ -288,7 +289,7 @@ Static VFIO:
   - For an existing script of similar scope, you may try the project
   [VFIO-Tools](#21).
 
-#### Post-setup (To be implemented in a future release)
+#### 7.3. Post-setup (To be implemented in a future release)
 1. **Auto X.Org** system service to find and set a valid Host boot [VGA](#22)
 device for X.Org.
 
@@ -337,17 +338,12 @@ if a given VGA device is used for the Host BIOS/UEFI booting process. To remedy
 this, you must obtain a clean copy of the VBIOS. You may review either
 [NVIDIA-vBIOS-VFIO-Patcher](#11), or the [ArchWiki](#13).
 
-- If your Host machine supports UEFI only and/or if UEFI is enabled
-(and CSM/BIOS is disabled), BIOS-only VGA devices may not be available as Host
-video output. BIOS-only VGA devices may only be available explicitly for
-hardware passthrough.
-
 #### 8.2. Filenames and pathnames modified:
 ##### 8.2.1. Pre-setup files
   - `/etc/apparmor.d/local/abstractions/libvirt-qemu`
   - `/etc/libvirt/qemu.conf`
 
-#### 8.2.2. VFIO setup files
+##### 8.2.2. VFIO setup files
   - `/etc/default/grub`
   - `/etc/grub.d/proxifiedScripts/custom`
   - `/etc/initramfs-tools/modules`
@@ -355,23 +351,24 @@ hardware passthrough.
   - `/etc/modprobe.d/vfio.conf`
   - `/etc/modules`
 
-#### 8.2.3.  Post-setup paths
+##### 8.2.3.  Post-setup paths
   - `/etc/libvirt/hooks/`
   - `/usr/local/bin/`
   - `/etc/systemd/system/`
 
-#### 8.2.4. Paths for project binaries and files
+##### 8.2.4. Paths for project binaries and files
   - `/usr/local/bin/`
   - `/usr/local/etc/deploy-VFIO.d`
 
 ### 9. Graphics Hardware (GPUs)
-**Note:** Unfortunately, GPUs without UEFI support (BIOS only) are not
+**Note:** Unfortunately, GPUs without UEFI support (BIOS-only) are not
 compatible with VFIO.
 
-#### 9.1. Command to Get Current Graphics Hardware
+#### 9.1. How to Query Host Machine for Graphics Hardware
+#### 9.1.1. Command
 `lspci -nnk | grep --extended-regexp --ignore-case "vga|graphics"`
 
-#### 9.1.1 Output:
+#### 9.1.2. Output
 ```
 01:00.0 VGA compatible controller [0300]: NVIDIA Corporation GA104 [GeForce RTX 3070] [10de:2484] (rev a1)
 04:00.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Cayman PRO [Radeon HD 6950] [1002:6719]
@@ -397,7 +394,7 @@ hardware. Therefore, it is safe to assume such hardware is BIOS-only.
 #### 9.3. Alternatives to BIOS-only Graphics Hardware
 For emulating video devices on old, legacy operating systems (such as Microsoft
 Windows 9x ), try [SoftGPU](#17). Modern CPUs are more than powerful enough to
-emulate such hardware.
+emulate such hardware. **Note:** This implementation is not software rendering.
 
 #### 9.4. Apple macOS
 ##### 9.4.1. [AMD and NVIDIA GPU compatibility list](#4)
@@ -427,7 +424,7 @@ Did you encounter a bug? Do you need help? Please visit the **Issues page**
 [github-issues]:   https://github.com/portellam/deploy-VFIO/issues
 
 ### 12. References
-### 12.1.
+#### 12.1.
 **portellam/audio-loopback.** Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/audio-loopback.
 
