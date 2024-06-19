@@ -35,8 +35,7 @@ think you need!
     - [9.1. How to Query Host Machine for Graphics Hardware](#91-how-to-query-host-machine-for-graphics-hardware)
     - [9.2. Troubleshooting Graphics Hardware](#92-troubleshooting-graphics-hardware)
     - [9.3. List of UEFI-compatible Graphics Hardware](#93-list-of-uefi-compatible-graphics-hardware)
-    - [9.4. Alternatives to BIOS-only Graphics Hardware]
-(#94-alternatives-to-bios-only-graphics-hardware)
+    - [9.4. Alternatives to BIOS-only Graphics Hardware](#94-alternatives-to-bios-only-graphics-hardware)
     - [9.5. Apple macOS](#95-apple-macos)
     - [9.6. Linux](#96-linux)
     - [9.7. Microsoft Windows](#97-microsoft-windows)
@@ -52,14 +51,14 @@ and school Operating Systems (OS), as [Virtual Machines](#20) (VMs), under one
 Host machine.
 
 2. **No Need for a Server**
-  - Keep your Host OS **desktop** experience intact; turns your Host into a
+    - Keep your Host OS **desktop** experience intact; turns your Host into a
   *Type-2* [Hypervisor](#19).
-  - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered
+    - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered
   *Type-1* or bare-metal Hypervisors.
 
 3. **Securely run a an OS**
-  - Limited access to real hardware means greater security.
-  - The benefits extend to untrusted or legacy OSes.
+    - Limited access to real hardware means greater security.
+    - The benefits extend to untrusted or legacy OSes.
 
 4. **Ease of use:** support for automation by use of the
 [Command Line Interface](#usage) (CLI).
@@ -123,27 +122,27 @@ setup.
 #### 4.2. Software
 Required software packages (for this script):
   `xmlstarlet`
-  - To install packages:
+    - To install packages:
     - Debian Linux: `sudo apt install -y xmlstarlet`
 
 Other requirements:
-  - `GRUB` to execute command lines at boot (if chosen).
-  - `systemd` for system services.
+    - `GRUB` to execute command lines at boot (if chosen).
+    - `systemd` for system services.
 
 #### 4.3. Hardware
 IOMMU is supported (by the CPU) and enabled in the motherboard firmware (BIOS
 or UEFI).
-  - For AMD machines:&nbsp;`AMD-Vi`
-  - For Intel machines:&ensp;&nbsp;`VT-d`
-  - ARM (`SMMU`) and other CPU architectures are not **explicitly** supported by
+    - For AMD machines:&nbsp;`AMD-Vi`
+    - For Intel machines:&ensp;&nbsp;`VT-d`
+    - ARM (`SMMU`) and other CPU architectures are not **explicitly** supported by
   this script.
 
 ### 5. Download
 - To download this script, you may:
-  - Download the Latest Release:&ensp;[Codeberg][codeberg-releases],
+    - Download the Latest Release:&ensp;[Codeberg][codeberg-releases],
 [GitHub][github-releases]
 
-  - Download the ZIP file:
+    - Download the ZIP file:
     1. Viewing from the top of the repository's (current) webpage, click the
        drop-down icon:
       - `···` on Codeberg.
@@ -153,7 +152,7 @@ or UEFI).
 
     3. Open the `.zip` file, then extract its contents.
 
-  - Clone the repository:
+    - Clone the repository:
     1. Open a Command Line Interface (CLI).
       - Open a console emulator (for Debian systems: Konsole).
 
@@ -184,18 +183,18 @@ or UEFI).
 
 ### 6. Usage
 #### 6.1. `installer.bash`
-  - From the project folder, execute: `sudo bash installer.bash`
+    - From the project folder, execute: `sudo bash installer.bash`
   ```xml
   -h, --help               Print this help and exit.
   -i, --install            Install deploy-VFIO to system.
   -u, --uninstall          Uninstall deploy-VFIO from system.
   ```
-  - The installer will place all script files in `/usr/local/bin`.
-  - The installer will place all configuration/text files in `/usr/local/etc`.
+    - The installer will place all script files in `/usr/local/bin`.
+    - The installer will place all configuration/text files in `/usr/local/etc`.
 
 #### 6.2. `deploy-VFIO`
 - From anywhere, execute: `sudo bash deploy-VFIO`
-  - The CLI's shell (bash) should recognize that the script file is located in
+    - The CLI's shell (bash) should recognize that the script file is located in
   `/usr/local/bin`.
 ```
 -h, --help               Print this help and exit.
@@ -260,55 +259,55 @@ Static VFIO:
 ### 7. Features
 #### 7.1. Pre-setup
 1. **Allocate CPU**
-  - **Statically** isolate Host CPU threads before allocating to Guest(s).
-  -  Reduces Host overhead, and improves both Host and Guest performance.
-  -  If installed, the **Dynamic** [Libvirt hook](#7) (see source) will skip its
+    - **Statically** isolate Host CPU threads before allocating to Guest(s).
+    -  Reduces Host overhead, and improves both Host and Guest performance.
+    -  If installed, the **Dynamic** [Libvirt hook](#7) (see source) will skip its
   execution, to preserve the Static isolation.
 
   2. **Allocate RAM**
-  - **Static** [huge memory pages](#5) eliminate the need to defragment Host
+    - **Static** [huge memory pages](#5) eliminate the need to defragment Host
   memory (RAM) before allocating to Guest(s).
-  - Reduces Host overhead, and improves both Host and Guest performance.
-  - If skipped, setup will install the Libvirt hook for **Dynamic** allocation
+    - Reduces Host overhead, and improves both Host and Guest performance.
+    - If skipped, setup will install the Libvirt hook for **Dynamic** allocation
   (transparent hugepages).
 
 3. **Virtual Keyboard Video Mouse (KVM) switch**
-  - Create a virtual KVM switch by [Evdev](#12) (Event Devices).
+    - Create a virtual KVM switch by [Evdev](#12) (Event Devices).
     - Allow a user to swap a group of Input devices (as a whole) between active
     Guest(s) and Host.
     - Set and use a [defined macro](#6).
       - Default macro: `L-CTRL` + `R-CTRL`
 
-  - Implementation is known as [Generate Evdev](#3).
-  - **Note:** Using guest PCI USB alone is good. Using both implementations is
+    - Implementation is known as [Generate Evdev](#3).
+    - **Note:** Using guest PCI USB alone is good. Using both implementations is
   better.
 
 #### 7.2. Main setup
 - **Multi-boot VFIO setup**
-  - Create multiple VFIO setups with corresponding GRUB menu entries.
+    - Create multiple VFIO setups with corresponding GRUB menu entries.
   **More flexibility.**
     - Select a GRUB menu entry with a VGA device excluded from VFIO.
     - Default menu entry is without VFIO setup.
     - Best for systems with two or more PCI VGA devices, without an integrated VGA
     device (iGPU).
 
-  - **Ad:** For best results, use [Auto X.Org](#2).
+    - **Ad:** For best results, use [Auto X.Org](#2).
 
 - **Static VFIO setup**
-  - Single, traditional VFIO setup. **Less flexibility.**
-  - Specify method of setup:
+    - Single, traditional VFIO setup. **Less flexibility.**
+    - Specify method of setup:
     - Append output to GRUB; single GRUB menu entry.
     - Append output to system configuration files.
 
-  - Best for systems with one or more PCI VGA device(s) and one integrated VGA
+    - Best for systems with one or more PCI VGA device(s) and one integrated VGA
   device (iGPU).
 
 - **Dynamic VFIO setup** (To be implemented in a future release)
-  - Use Libvirt hooks to bind or unbind devices at Guest(s) start or stop.
-  - Most responsibility; best for more experienced users.
-  - Most flexibility; Libvirt hooks allow Host to allocate and release resources
+    - Use Libvirt hooks to bind or unbind devices at Guest(s) start or stop.
+    - Most responsibility; best for more experienced users.
+    - Most flexibility; Libvirt hooks allow Host to allocate and release resources
   dynamically.
-  - For an existing script of similar scope, you may try the project
+    - For an existing script of similar scope, you may try the project
   [VFIO-Tools](#21).
 
 #### 7.3. Post-setup (To be implemented in a future release)
@@ -316,11 +315,11 @@ Static VFIO:
 device for X.Org.
 
 2. **Guest Audio Capture**
-  - Create an [audio loopback](#1) to output on the Host audio device Line-Out.
+    - Create an [audio loopback](#1) to output on the Host audio device Line-Out.
     - Listen on Host audio device Line-In (from Guest PCI Audio device Line-Out).
     - Useful for systems with multiple audio devices.
 
-  - For virtual implementation, see *Virtual Audio Capture*.
+    - For virtual implementation, see *Virtual Audio Capture*.
 
 3. **Libvirt Hooks**
 - Invoke [hooks](#7) or scripts for all or individual Guests.
@@ -330,49 +329,49 @@ device for X.Org.
 Guest is active.
 
 4. **RAM as Compressed Swapfile/partition**
-  - Create a compressed Swap device in Host memory, using the [lz4](#9) algorithm
+    - Create a compressed Swap device in Host memory, using the [lz4](#9) algorithm
   (compression ratio of about 2:1).
     - Reduce swapiness to existing Host swap devices.
     - Reduce chances of Host memory exhaustion (given an event of memory
     over-allocation).
 
-  - Implementation is known as [zram-swap](#24).
+    - Implementation is known as [zram-swap](#24).
 
 5. **Virtual Audio Capture**
-  - Setup a virtual audio driver for Windows that provides a discrete audio
+    - Setup a virtual audio driver for Windows that provides a discrete audio
   device and passthrough from a Guest to Host.
     - Passthrough audio by direct-memory-access (DMA).
     - Passthrough audio by a [virtual Local Area Network (LAN) device](#18).
 
-  - Implementation is known as [Scream](#16).
+    - Implementation is known as [Scream](#16).
 
 6. **Virtual Video Capture**
-  - Setup DMA of a PCI VGA device output (video and audio) from a Guest to Host.
-  - Implementation is known as [Looking Glass](#8).
-  - **Disclaimer:** Only supported for Guests running Windows 7 and later
+    - Setup DMA of a PCI VGA device output (video and audio) from a Guest to Host.
+    - Implementation is known as [Looking Glass](#8).
+    - **Disclaimer:** Only supported for Guests running Windows 7 and later
   (Windows NT 6.1+).
 
 ### 8. Filenames and Pathnames modified by deploy-VFIO
 ##### 8.1. Pre-setup files
-  - `/etc/apparmor.d/local/abstractions/libvirt-qemu`
-  - `/etc/libvirt/qemu.conf`
+    - `/etc/apparmor.d/local/abstractions/libvirt-qemu`
+    - `/etc/libvirt/qemu.conf`
 
 ##### 8.2. VFIO setup files
-  - `/etc/default/grub`
-  - `/etc/grub.d/proxifiedScripts/custom`
-  - `/etc/initramfs-tools/modules`
-  - `/etc/modprobe.d/pci-blacklists.conf`
-  - `/etc/modprobe.d/vfio.conf`
-  - `/etc/modules`
+    - `/etc/default/grub`
+    - `/etc/grub.d/proxifiedScripts/custom`
+    - `/etc/initramfs-tools/modules`
+    - `/etc/modprobe.d/pci-blacklists.conf`
+    - `/etc/modprobe.d/vfio.conf`
+    - `/etc/modules`
 
 ##### 8.3. Post-setup paths
-  - `/etc/libvirt/hooks/`
-  - `/usr/local/bin/`
-  - `/etc/systemd/system/`
+    - `/etc/libvirt/hooks/`
+    - `/usr/local/bin/`
+    - `/etc/systemd/system/`
 
 ##### 8.4. Paths for binaries and files
-  - `/usr/local/bin/`
-  - `/usr/local/etc/deploy-VFIO.d`
+    - `/usr/local/bin/`
+    - `/usr/local/etc/deploy-VFIO.d`
 
 ### 9. Graphics Hardware (GPUs)
 **Note:** Unfortunately, GPUs without UEFI support (BIOS-only) are not
