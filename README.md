@@ -378,19 +378,28 @@ compatible with VFIO.
 ```
 
 #### 9.2. List of UEFI-compatible Graphics Hardware
-| Vendor | Model                         |
-| :----- | :---------------------------- |
-| AMD    | Radeon HD 7750-7970 and newer |
-| NVIDIA | GeForce 600-series and newer  |
+**Note:** Vendors that are unlisted are more than likely to be legacy graphics
+hardware. Therefore, it is safe to assume such hardware is BIOS-only.
+
+| Vendor | Model                             | ROM  |
+| :----- | :-------------------------------- | :--: |
+| 3dfx   | any                               | BIOS |
+| AMD    | Radeon HD 7750,7970 and newer     | UEFI |
+| AMD    | Radeon HD 7000-series and older   | BIOS |
+| ATI    | any                               | BIOS |
+| Intel  | HD Graphics (2010) and newer      | UEFI |
+| NVIDIA | GeForce GTX 700 to 1000-series    | UEFI |
+| NVIDIA | GeForce GTX 600-series and older  | BIOS |
+| NVIDIA | GeForce RTX 2000-series and newer | UEFI |
+| NVIDIA | GeForce GTX 700 to 1000-series    | UEFI |
+| NVIDIA | GeForce GTX 600-series and older  | BIOS |
 
 #### 9.3. Alternatives to BIOS-only Graphics Hardware
 For emulating video devices on old, legacy operating systems (such as Microsoft
 Windows 9x ), try [SoftGPU](#17). Modern CPUs are more than powerful enough to
 emulate such hardware.
 
-#### 9.4. Apple MacOS
-**Note:** The listed hardware below is not indicative of VFIO-compatibility.
-
+#### 9.4. Apple macOS
 ##### 9.4.1. [AMD and NVIDIA GPU compatibility list](#4)
 ##### 9.4.2. [More detailed NVIDIA GPU compatibility list](#15)
 
@@ -400,24 +409,12 @@ the 20th century. Still, GPU-compatibility may vary among different Linux
 distributions. Please review the documentation of your Linux distribution.
 
 #### 9.6. Microsoft Windows
-**Note:** The listed hardware below is not indicative of VFIO-compatibility.
-
-| Windows version        | Vendor and model                                                           |
-| :--------------------: | :------------------------------------------------------------------------- |
-| 10 and above or NT 10+ | NVIDIA GeForce RTX 4000-series<sup>[1]</sup> or before                     |
-| 7 and above or NT 6.1+ | NVIDIA GeForce RTX 1000-series<sup>[1]</sup> or before                     |
-| XP or NT 4             | NVIDIA GeForce GTX 700 to 900-series<sup>[2]</sup> or before<sup>[3]</sup> |
-|                        | AMD Radeon HD 8000-series<sup>[2]</sup> or before<sup>[3]</sup>            |
-| 9x                     | NVIDIA 7000-series GTX<sup>[3]</sup> or before                             |
-|                        | any ATI model<sup>[3]</sup> (before AMD ownership)                         |
-
-[1]: (#1-uefi-only)
-[2]: (#2-uefi-and-bios)
-[3]: (#3-bios-only)
-
-#### 1. *UEFI only.*
-#### 2. *UEFI and BIOS.*
-#### 3. *BIOS only.*
+| Legacy Windows version | Vendor | Model                             |
+| :--------------------- | :----- | :-------------------------------- |
+| XP / NT 4 and older    | AMD    | Radeon HD 7970 and older          |
+| XP / NT 4 and older    | NVIDIA | GeForce GTX 900-series            |
+| 7 / NT 6.1             | AMD    | Radeon R9 200-series and newer    |
+| 7 / NT 6.1             | NVIDIA | GeForce GTX 3000-series and older |
 
 ### 10. Disclaimer
 Use at your own risk. Please review your system's specifications and resources.
