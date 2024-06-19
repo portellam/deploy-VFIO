@@ -82,8 +82,8 @@ setup.
 ### Documentation
 - [What is VFIO?](#20)
 - [VFIO Forum](#14)
-- [PCI Passthrough Guide](#13)
-- [Virtual Machine XML Configuration Guide](#23)
+- [Hardware-Passthrough Guide](#13)
+- [Virtual Machine XML Format Guide](#23)
 
 ## Host Requirements
 - Currently supported operating systems:
