@@ -264,10 +264,11 @@ Static VFIO:
     -  If installed, the **dynamic** [Libvirt hook](#7) will skip its
   execution, to preserve the Static isolation.
 
-  2. **[Huge memory pages](#5)**
-    - **Static** huge pages is the allocation of memory (RAM).
+2. **[Huge pages]**
+    - **Statically** isolate Host memory (RAM) into **[Huge memory pages](#5)**
+    before allocating to Guest(s).
     - Reduces Host overhead, and improves both Host and Guest performance.
-    - Eliminates the need to defragment Host memory before allocation to Guest(s)
+    - Eliminates the need to defragment RAM before allocation to Guest(s)
     (as in the case with **transparent hugepages**).
 
 3. **Virtual Keyboard Video Mouse (KVM) switch**
