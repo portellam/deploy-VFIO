@@ -4,8 +4,8 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup for Virtual Machines
 (VMs) on a Linux desktop. Includes quality-of-life enhancements that you didn't
 think you need!
 
-**Download the Latest Release:**
-    - [Codeberg][codeberg-releases],
+## Download the Latest Release
+    - [Codeberg][codeberg-releases]
     - [GitHub][github-releases]
 
 [codeberg-releases]: https://codeberg.org/portellam/libvirt-hooks/releases/latest
