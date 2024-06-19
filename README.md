@@ -41,7 +41,7 @@ think you need!
   - [9.1. How to Query Host Machine for Graphics Hardware](#91-how-to-query-host-machine-for-graphics-hardware)
   - [9.2. Troubleshooting Graphics Hardware](#92-troubleshooting-graphics-hardware)
   - [9.3. List of UEFI-compatible Graphics Hardware](#93-list-of-uefi-compatible-graphics-hardware)
-  - [9.4. Alternatives to BIOS-only Graphics Hardware](#94-Alternatives to BIOS-only Graphics Hardware)
+  - [9.4. Alternatives to BIOS-only Graphics Hardware](#94-alternatives-to-bios-only-graphics-hardware)
   - [9.5. Apple macOS](#95-apple-macos)
   - [9.6. Linux](#96-linux)
   - [9.7. Microsoft Windows](#97-microsoft-windows)
