@@ -4,8 +4,9 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup for Virtual Machines
 (VMs) on a Linux desktop. Includes quality-of-life enhancements that you didn't
 think you need!
 
-**Download the Latest Release:**&ensp;[Codeberg][codeberg-releases],
-[GitHub][github-releases]
+**Download the Latest Release:**
+    - [Codeberg][codeberg-releases],
+    - [GitHub][github-releases]
 
 [codeberg-releases]: https://codeberg.org/portellam/libvirt-hooks/releases/latest
 [github-releases]:   https://github.com/portellam/libvirt-hooks/releases/latest
@@ -371,16 +372,17 @@ Guest is active.
   - `/etc/systemd/system/`
 
 ##### 8.4. Binaries and Files
-  - `/usr/local/bin/`
-  - `/usr/local/etc/deploy-VFIO.d`
+  - `/usr/local/bin/deploy-VFIO`
+  - `/usr/local/etc/deploy-VFIO.d/`
 
 ### 9. Graphics Hardware (GPUs)
-**Note:** Unfortunately, GPUs without UEFI support (BIOS-only) are not
-currently or known-to-be compatible with VFIO.
+**Note:** Unfortunately, GPUs without UEFI firmware (BIOS-only) are not
+currently compatible with VFIO.
 
 #### 9.1. How to Query Host Machine for Graphics Hardware
 `lspci -nnk | grep --extended-regexp --ignore-case "vga|graphics"`
 
+**Example:**
 ```
 01:00.0 VGA compatible controller [0300]: NVIDIA Corporation GA104 [GeForce RTX 3070] [10de:2484] (rev a1)
 04:00.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Cayman PRO [Radeon HD 6950] [1002:6719]
@@ -393,27 +395,25 @@ given VGA device is used for the Host BIOS/UEFI booting process. To remedy this,
 you must obtain a clean copy of the VBIOS. You may review either
 [NVIDIA-vBIOS-VFIO-Patcher](#11), or the [ArchWiki](#13).
 
-#### 9.3. List of UEFI-compatible Graphics Hardware
-**Note:** Vendors that are unlisted are more than likely to be legacy graphics
+#### 9.3. List of Supported Firmware by Graphics Hardware
+**Note:** Vendors that are unlisted are more than likely legacy graphics
 hardware. Therefore, it is safe to assume such hardware is BIOS-only.
 
-| Vendor | Model                             | ROM  |
-| :----- | :-------------------------------- | :--: |
-| 3dfx   | any                               | BIOS |
-| AMD    | Radeon HD 7750,7970 and newer     | UEFI |
-| AMD    | Radeon HD 7000-series and older   | BIOS |
-| ATI    | any                               | BIOS |
-| Intel  | HD Graphics (2010) and newer      | UEFI |
-| NVIDIA | GeForce GTX 700 to 1000-series    | UEFI |
-| NVIDIA | GeForce GTX 600-series and older  | BIOS |
-| NVIDIA | GeForce RTX 2000-series and newer | UEFI |
-| NVIDIA | GeForce GTX 700 to 1000-series    | UEFI |
-| NVIDIA | GeForce GTX 600-series and older  | BIOS |
+| Vendor | Model                             | Firmware  |
+| :----- | :-------------------------------- | :-------: |
+| AMD    | Radeon HD 7750,7970 and newer     | UEFI      |
+| AMD    | Radeon HD 7000-series and older   | BIOS      |
+| Intel  | HD Graphics (2010) and newer      | UEFI      |
+| NVIDIA | GeForce GTX 700 to 1000-series    | UEFI      |
+| NVIDIA | GeForce GTX 600-series and older  | BIOS      |
+| NVIDIA | GeForce RTX 2000-series and newer | UEFI      |
+| NVIDIA | GeForce GTX 700 to 1000-series    | UEFI      |
+| NVIDIA | GeForce GTX 600-series and older  | BIOS      |
 
 #### 9.4. Alternatives to BIOS-only Graphics Hardware
-For emulating video devices on old, legacy operating systems (such as Microsoft
-Windows 9x ), try [SoftGPU](#17). Modern CPUs are more than powerful enough to
-emulate such hardware. **Note:** Fortunately, this implementation is not
+For emulating graphics hardware on old, legacy operating systems (such as
+Microsoft Windows 9x ), try [SoftGPU](#17). Modern CPUs are more than powerful
+enough to emulate such hardware. Fortunately, this implementation is not
 software rendering.
 
 #### 9.5. Apple macOS
