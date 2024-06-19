@@ -364,7 +364,7 @@ hardware passthrough.
   - `/usr/local/bin/`
   - `/usr/local/etc/deploy-VFIO.d`
 
-### 9. VFIO-Compatible Graphics Hardware
+### 9. Graphics Hardware (GPUs)
 **Note:** Unfortunately, GPUs without UEFI support (BIOS only) are not
 compatible with VFIO.
 
@@ -384,37 +384,40 @@ compatible with VFIO.
 | NVIDIA | GeForce 600-series and newer  |
 
 #### 9.3. Alternatives to BIOS-only Graphics Hardware
-For emulating video devices on Windows 9x and older legacy operating
-systems, try [SoftGPU](#17). Modern CPUs are more than powerful enough to
+For emulating video devices on old, legacy operating systems (such as Microsoft
+Windows 9x ), try [SoftGPU](#17). Modern CPUs are more than powerful enough to
 emulate such hardware.
 
-#### Apple Macintosh Compatibility
+#### 9.4. Apple MacOS
 **Note:** The listed hardware below is not indicative of VFIO-compatibility.
 
-##### [AMD and NVIDIA GPU compatibility list](#4)
-##### [More detailed NVIDIA GPU compatibility list](#15)
+##### 9.4.1. [AMD and NVIDIA GPU compatibility list](#4)
+##### 9.4.2. [More detailed NVIDIA GPU compatibility list](#15)
 
-#### Linux Compatibility
-Typically, the Linux is compatible with graphics hardware dating back to the end
-of the 20th century. Still, graphics hardware compatibility may vary among
-different Linux distributions. Please review the documentation of your Linux
-distribution.
+#### 9.5. Linux
+Typically, Linux is compatible with graphics hardware dating back to the end of
+the 20th century. Still, GPU-compatibility may vary among different Linux
+distributions. Please review the documentation of your Linux distribution.
 
-#### Microsoft Windows Compatibility
+#### 9.6. Microsoft Windows
 **Note:** The listed hardware below is not indicative of VFIO-compatibility.
 
-| Windows version        | Device type | Brand and model                           |
-| --------------------   | ----------- | ----------------------------------------- |
-| 10 and above or NT 10+ | VGA         | NVIDIA RTX 4000-series[<sup>2</sup>](#2-uefi-only) or before       |
-| 7 and above or NT 6.1+ | VGA         | NVIDIA RTX 1000-series[<sup>2</sup>](#2-uefi-only) or before       |
-| XP or NT 4             | VGA         | NVIDIA GTX 900-series[<sup>3</sup>](#3-uefi-or-bios-compatible) or before[<sup>3</sup>](#3-uefi-or-bios-compatible)          |
-|                        |             | AMD Radeon HD 7000-series[<sup>3</sup>](#3-uefi-and-or-compatible) or before[<sup>3</sup>](#3-uefi-or-bios-compatible) |
-| 9x                     | VGA         | NVIDIA 7000-series GTX[<sup>1</sup>](#1-bios-only) or before       |
-|                        |             | any ATI model[<sup>1</sup>](#1-bios-only) (before AMD)             |
+| Windows version        | Vendor and model                                                           |
+| :--------------------: | :------------------------------------------------------------------------- |
+| 10 and above or NT 10+ | NVIDIA GeForce RTX 4000-series<sup>[1]</sup> or before                     |
+| 7 and above or NT 6.1+ | NVIDIA GeForce RTX 1000-series<sup>[1]</sup> or before                     |
+| XP or NT 4             | NVIDIA GeForce GTX 700 to 900-series<sup>[2]</sup> or before<sup>[3]</sup> |
+|                        | AMD Radeon HD 8000-series<sup>[2]</sup> or before<sup>[3]</sup>            |
+| 9x                     | NVIDIA 7000-series GTX<sup>[3]</sup> or before                             |
+|                        | any ATI model<sup>[3]</sup> (before AMD ownership)                         |
 
-#### 1. *BIOS only.*
-#### 2. *UEFI only.*
-#### 3. *UEFI or BIOS compatible.*
+[1]: (#1-uefi-only)
+[2]: (#2-uefi-and-bios)
+[3]: (#3-bios-only)
+
+#### 1. *UEFI only.*
+#### 2. *UEFI and BIOS.*
+#### 3. *BIOS only.*
 
 ### 10. Disclaimer
 Use at your own risk. Please review your system's specifications and resources.
@@ -427,33 +430,33 @@ Did you encounter a bug? Do you need help? Please visit the **Issues page**
 [github-issues]:   https://github.com/portellam/deploy-VFIO/issues
 
 ### 12. References
-#### 1.
+### 12.1.
 **portellam/audio-loopback.** Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/audio-loopback.
 
 **portellam/audio-loopback.** GitHub. Accessed June 18, 2024.
 <sup>https://github.com/portellam/audio-loopback.
 
-#### 2.
+#### 12.2.
 **portellam/auto-xorg.** Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/auto-xorg.
 
 **portellam/auto-xorg.** GitHub. Accessed June 18, 2024.
 <sup>https://github.com/portellam/auto-xorg.
 
-#### 3.
+#### 12.3.
 **portellam/generate-evdev**. Codeberg. Accessed June 17, 2024.
 <sup>https://codeberg.org/portellam/generate-evdev.</sup>
 
 **portellam/generate-evdev**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/portellam/generate-evdev.</sup>
 
-#### 4.
+#### 12.4.
 **Graphics card compatibility for Final Cut Pro, Motion, and Compressor**. Apple
 Support. October 31, 2023. Accessed June 18, 2024.
 <sup>https://support.apple.com/en-us/102734.</sup>
 
-#### 5.
+#### 12.5.
 **Hugepages**. Debian Wiki. Accessed June 17, 2024.
 <sup>https://wiki.debian.org/Hugepages.</sup>
 
@@ -461,72 +464,72 @@ Support. October 31, 2023. Accessed June 18, 2024.
 2024.
 <sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages.</sup>
 
-#### 6.
+#### 12.6.
 **libvirt/libvirt - Input Devices**. GitHub. Accessed June 18, 2024.
 <sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst#input-devices.</sup>
 
-#### 7.
+#### 12.7.
 **portellam/libvirt-hooks.** Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/libvirt-hooks.</sup>
 
 **portellam/libvirt-hooks.** GitHub. Accessed June 18, 2024.
 <sup>https://github.com/portellam/libvirt-hooks.</sup>
 
-#### 8.
+#### 12.8.
 **Looking Glass**. Looking Glass. Accessed June 17, 2024.
 <sup>https://looking-glass.io/</sup>
 
-#### 9.
+#### 12.9.
 **LZ4/LZ4: Extremely Fast Compression Algorithm**. GitHub. Accessed June 17,
 2024.
 <sup>https://github.com/lz4/lz4.</sup>
 
-#### 10.
+#### 12.10.
 **corna/me_cleaner**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/corna/me_cleaner.</sup>
 
 **dt-zero/me_cleaner**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/dt-zero/me_cleaner.</sup>
 
-#### 11.
+#### 12.11.
 **Matoking/NVIDIA-vBIOS-VFIO-Patcher**: GitHub. Accessed June 18, 2024.
 <sup>https://github.com/Matoking/NVIDIA-vBIOS-VFIO-Patcher.</sup>
 
-#### 12.
+#### 12.12.
 **4.5 Passing Keyboard/Mouse via Evdev**. PCI passthrough via OVMF - ArchWiki.
 Accessed June 14, 2024.
 <sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF.</sup>
 
-#### 13.
+#### 12.13.
 **PCI passthrough via OVMF**. ArchWiki. Accessed June 14, 2024.
 <sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF.</sup>
 
-#### 14.
+#### 12.14.
 **r/VFIO**. Accessed June 14, 2024.
 <sup>https://www.reddit.com/r/VFIO/.</sup>
 
-#### 15.
+#### 12.15.
 **tonymacx86 - Will my Nvidia Graphics Card work with macOS ? List of Desktop**
 **Cards with Native Support** Archive.org. Accessed June 18, 2024.
 <sup>https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/.
 
-#### 16.
+#### 12.16.
 **duncanthrax/scream**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/duncanthrax/scream.</sup>
 
-#### 17.
+#### 12.17.
 **JHRobotics/SoftGPU**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/JHRobotics/SoftGPU.</sup>
 
-#### 18.
+#### 12.18.
 **Using Scream Over LAN**. Looking Glass. Accessed June 17, 2024.
 <sup>https://looking-glass.io/wiki/Using_Scream_over_LAN.</sup>
 
-#### 19.
+#### 12.19.
 **Type 1 vs. Type 2 hypervisors**. IBM. Accessed June 18, 2024.
 <sup>https://www.ibm.com/topics/hypervisors.</sup>
 
-#### 20.
+#### 12.20.
 **VFIO - ‘Virtual Function I/O’ - The Linux Kernel Documentation**.
 The linux kernel. Accessed June 14, 2024.
 <sup>https://www.kernel.org/doc/html/latest/driver-api/vfio.html.</sup>
@@ -534,19 +537,19 @@ The linux kernel. Accessed June 14, 2024.
 **Virtualization technology**. OpenSUSE Leap 15.5. Accessed June 18, 2024.
 <sup>https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html.</sup>
 
-#### 21.
+#### 12.21.
 **PassthroughPOST/VFIO-Tools.** GitHub. Accessed June 18, 2024.
 <sup>https://github.com/PassthroughPOST/VFIO-Tools.</sup>
 
-#### 22.
+#### 12.22.
 **Video Graphics Array**. Wikipedia. August 18, 2002. Accessed June 18, 2024.
 <sup>https://en.wikipedia.org/wiki/Video_Graphics_Array.</sup>
 
-#### 23.
+#### 12.23.
 **libvirt/libvirt - XML Design Format** GitHub. Accessed June 18, 2024.
 <sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst.</sup>
 
-#### 24.
+#### 12.24.
 **foundObjects/zram-swap**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/foundObjects/zram-swap.</sup>
 
