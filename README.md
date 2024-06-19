@@ -10,8 +10,6 @@ think you need!
 [codeberg-releases]: https://codeberg.org/portellam/libvirt-hooks/releases/latest
 [github-releases]:   https://github.com/portellam/libvirt-hooks/releases/latest
 
-## Table of Contents
-
 <details><summary>
 
 ## Table of Contents
@@ -81,10 +79,16 @@ think you need!
 
 [12. References](#12-references)
 
+## Contents
+
 </details>
 
-## Contents
 ### 1. Why?
+
+<details><summary>
+
+</summary>
+
 1. **Separation of Concerns:** Independently operate your workstation, gaming,
 and school Operating Systems (OS), as [Virtual Machines](#20) (VMs), under one
 Host machine.
@@ -115,6 +119,8 @@ setup.
 **Disclaimer:** See [below] for supported [VGA](#20) devices.
 
 [below]: (#latest-graphics-hardware-for-various-guest-operating-systems)
+
+</details>
 
 ### 2. Related Projects
 | Project                             | Codeberg          | GitHub          |
