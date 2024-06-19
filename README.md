@@ -5,8 +5,8 @@ Effortlessly deploy a hardware-passthrough (VFIO) setup for Virtual Machines
 think you need!
 
 ## Download the Latest Release
-    - [Codeberg][codeberg-releases]
-    - [GitHub][github-releases]
+- [Codeberg][codeberg-releases]
+- [GitHub][github-releases]
 
 [codeberg-releases]: https://codeberg.org/portellam/libvirt-hooks/releases/latest
 [github-releases]:   https://github.com/portellam/libvirt-hooks/releases/latest
