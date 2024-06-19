@@ -28,10 +28,10 @@ think you need!
     - [7.2. Main Setup](#72-main-setup)
     - [7.3. Post-Setup](#73-post-setup)
 - [8. Filenames and Pathnames Modified by deploy-VFIO](#8-filenames-and-pathnames-modified-by-deploy-vfio)
-    - [8.1. Pre-Setup Files](#81-pre-setup-files)
-    - [8.2. Main Setup Files](#82-main-setup-files)
-    - [8.3. Post-Setup Pathnames](#83-post-setup-files)
-    - [8.4. Paths for Binaries and Files](#84-paths-for-binaries-and-files)
+    - [8.1. Pre-Setup](#81-pre-setup)
+    - [8.2. Main Setup](#82-main-setup)
+    - [8.3. Post-Setup](#83-post-setup)
+    - [8.4. Binaries and Files](#84-binaries-and-files)
 - [9. Graphics Hardware (GPUs)](#9-graphics-hardware-gpus)
     - [9.1. How to Query Host Machine for Graphics Hardware](#91-how-to-query-host-machine-for-graphics-hardware)
     - [9.2. Troubleshooting Graphics Hardware](#92-troubleshooting-graphics-hardware)
@@ -353,11 +353,11 @@ Guest is active.
   (Windows NT 6.1+).
 
 ### 8. Filenames and Pathnames Modified by deploy-VFIO
-##### 8.1. Pre-Setup Files
+##### 8.1. Pre-Setup
   - `/etc/apparmor.d/local/abstractions/libvirt-qemu`
     - `/etc/libvirt/qemu.conf`
 
-##### 8.2. Main Setup Files
+##### 8.2. Main Setup
   - `/etc/default/grub`
   - `/etc/grub.d/proxifiedScripts/custom`
   - `/etc/initramfs-tools/modules`
@@ -365,12 +365,12 @@ Guest is active.
   - `/etc/modprobe.d/vfio.conf`
   - `/etc/modules`
 
-##### 8.3. Post-Setup Pathnames
+##### 8.3. Post-Setup
   - `/etc/libvirt/hooks/`
   - `/usr/local/bin/`
   - `/etc/systemd/system/`
 
-##### 8.4. Paths for Binaries and Files
+##### 8.4. Binaries and Files
   - `/usr/local/bin/`
   - `/usr/local/etc/deploy-VFIO.d`
 
