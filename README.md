@@ -12,36 +12,68 @@ think you need!
 
 ## Table of Contents
 [1. Why?](#1-why)
+
 [2. Related Projects](#2-related-projects)
+
 [3. Documentation](#3-documentation)
+
 [4. Host Requirements](#4-host-requirements)
+
 &ensp;[4.1. Operating Systems ](#41-operating-systems)
+
 &ensp;[4.2. Software](#42-software)
+
 &ensp;[4.3. Hardware](#43-hardware)
+
 [5. Download](#5-download)
+
 [6. Usage](#6-usage)
+
 &ensp;[6.1. `installer.bash`](#61-installerbash)
+
 &ensp;[6.2. `deploy-VFIO`](#62-deploy-vfio)
+
 [7. Features](#7-features)
+
 &ensp;[7.1. Pre-setup](#71-pre-setup)
+
 &ensp;[7.2. VFIO setup](#72-vfio-setup)
+
 &ensp;[7.3. Post-setup](#73-post-setup)
+
 [8. Filenames and Pathnames modified by deploy-VFIO](#8-filenames-and-pathnames-modified-by-deploy-vfio)
+
 &ensp;[8.1. Pre-setup files ](#81-pre-setup-files)
+
 &ensp;[8.2. VFIO setup files](#82-vfio-setup-files)
+
 &ensp;[8.3. Post-setup paths](#83-post-setup-files)
+
 &ensp;[8.4. Paths for binaries and files](#84-paths-for-binaries-and-files)
+
 [9. Graphics Hardware (GPUs)](#9-graphics-hardware-gpus)
+
 &ensp;[9.1. How to Query Host Machine for Graphics Hardware](#91-how-to-query-host-machine-for-graphics-hardware)
+
 &ensp;[9.2. Troubleshooting Graphics Hardware](#92-troubleshooting-graphics-hardware)
+
 &ensp;[9.3. List of UEFI-compatible Graphics Hardware](#93-list-of-uefi-compatible-graphics-hardware)
-&ensp;[9.4. Alternatives to BIOS-only Graphics Hardware](#94-alternatives-to-bios-only-graphics-hardware)
+
+&ensp;[9.4. Alternatives to BIOS-only Graphics Hardware]
+(#94-alternatives-to-bios-only-graphics-hardware)
+
 &ensp;[9.5. Apple macOS](#95-apple-macos)
+
 &ensp;[9.6. Linux](#96-linux)
+
 &ensp;[9.7. Microsoft Windows](#97-microsoft-windows)
+
 [10. Disclaimer](#10-disclaimer)
+
 [11. Contact](#11-contact)
+
 [12. References](#12-references)
+
 
 ## Contents
 ### 1. Why?
