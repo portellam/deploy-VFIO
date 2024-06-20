@@ -103,7 +103,7 @@ setup.
 
 ### 3. Documentation
 - [What is VFIO?](#20)
-- [VFIO Forum](#14)
+- [VFIO Discussion and Support](#14)
 - [Hardware-Passthrough Guide](#13)
 - [Virtual Machine XML Format Guide](#23)
 
@@ -513,7 +513,7 @@ Accessed June 14, 2024.
 <sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF.</sup>
 
 #### 14.
-**r/VFIO**. Accessed June 14, 2024.
+**VFIO Discussion and Support**. Reddit. Accessed June 14, 2024.
 <sup>https://www.reddit.com/r/VFIO/.</sup>
 
 #### 15.
