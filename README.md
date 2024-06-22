@@ -127,11 +127,11 @@ Other requirements:
   - `systemd` for system services.
 
 #### 4.3. Hardware
-IOMMU is supported (by the CPU) and enabled in the motherboard firmware (BIOS
-or UEFI).
-  - For AMD machines:&nbsp;`AMD-Vi`
-  - For Intel machines:&ensp;&nbsp;`VT-d`
-  - ARM (`SMMU`) and other CPU architectures are not **explicitly** supported by
+The following firmware options are supported and enabled (motherboard and CPU):
+- IOMMU
+    - For AMD machines:&nbsp;`AMD-Vi`
+    - For Intel machines:&ensp;&nbsp;`VT-d`
+    - ARM (`SMMU`) and other CPU architectures are not **explicitly** supported by
   this script.
 
 ### 5. Download
