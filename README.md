@@ -1,7 +1,7 @@
 # Deploy VFIO
 ### v1.0.1
 Effortlessly deploy a hardware-passthrough (VFIO) setup for Virtual Machines
-(VMs) on a Linux desktop. Includes quality-of-life enhancements that you didn't
+(VMs) on a Linux desktop. Includes quality-of-life features that you didn't
 think you need!
 
 **Download the Latest Release:**&ensp;[Codeberg][codeberg-releases],
@@ -48,35 +48,31 @@ think you need!
 
 ### 1. Why?
 1. **Separation of Concerns:** Independently operate your workstation, gaming,
-and school Operating Systems (OS), as [Virtual Machines](#20) (VMs), under one
+and school Operating Systems (OS), as [Virtual Machines](#19) (VMs), under one
 Host machine.
 
 2. **No Need for a Server**
-    - Keep your Host OS **desktop** experience intact; turns your Host into a
-  *Type-2* [Hypervisor](#19).
+    - **Keep your Host's desktop experience intact;** turns your Host into a
+  Type-2 [Hypervisor](#18).
     - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered
-  *Type-1* or bare-metal Hypervisors.
+  Type-1 or bare-metal Hypervisors.
 
 3. **Securely run a an OS**
     - Limited access to real hardware means greater security.
     - The benefits extend to untrusted or legacy OSes.
 
 4. **Ease of use:** support for automation by use of the
-[Command Line Interface](#usage) (CLI).
+[Command Line Interface](#6-usage) (CLI).
 
 5. **PCI Passthrough:** prioritize real hardware over emulation.
 
-6. **Quality of Life**: utilize multiple common-sense [features](#features) that
+6. **Quality of Life**: utilize multiple common-sense [features](#7-features) that
 are known to experienced users.
 
-7. **Your Host OS is [supported](#host-requirements).**
+7. **Your Host OS is [supported](#4-host-requirements).**
 
-**Note:** For even greater security, use [me_cleaner](#10) alongside a VFIO
+**Note:** For even greater security, use [me_cleaner](#9) alongside a VFIO
 setup.
-
-**Disclaimer:** See [below] for supported [VGA](#20) devices.
-
-[below]: (#latest-graphics-hardware-for-various-guest-operating-systems)
 
 ### 2. Related Projects
 | Project                             | Codeberg          | GitHub          |
@@ -102,13 +98,13 @@ setup.
 [github6]:   https://github.com/portellam/powerstate-virtmanager
 
 ### 3. Documentation
-- [What is VFIO?](#20)
-- [VFIO Forum](#14)
-- [Hardware-Passthrough Guide](#13)
-- [Virtual Machine XML Format Guide](#23)
+- [What is VFIO?](#19)
+- [VFIO Discussion and Support](#13)
+- [Hardware-Passthrough Guide](#12)
+- [Virtual Machine XML Format Guide](#22)
 
 ### 4. Host Requirements
-#### 4.1. Operating Systems
+#### 4.1. Operating System
   | Linux Distributions  | Tested | Supported  |
   | :------------------- | :----: | :--------: |
   | Arch                 | No     | N/A        |
@@ -131,43 +127,42 @@ Other requirements:
   - `systemd` for system services.
 
 #### 4.3. Hardware
-IOMMU is supported (by the CPU) and enabled in the motherboard firmware (BIOS
-or UEFI).
-  - For AMD machines:&nbsp;`AMD-Vi`
-  - For Intel machines:&ensp;&nbsp;`VT-d`
-  - ARM (`SMMU`) and other CPU architectures are not **explicitly** supported by
+The following firmware options are supported and enabled (motherboard and CPU):
+- IOMMU
+    - For AMD machines:&nbsp;`AMD-Vi`
+    - For Intel machines:&ensp;&nbsp;`VT-d`
+    - ARM (`SMMU`) and other CPU architectures are not **explicitly** supported by
   this script.
 
 ### 5. Download
 - Download the Latest Release:&ensp;[Codeberg][codeberg-releases],
 [GitHub][github-releases]
 
-- Download the ZIP file:
-  1. Viewing from the top of the repository's (current) webpage, click the
-      drop-down icon:
-  - `···` on Codeberg.
-  - `<> Code ` on GitHub.
-
-  2. Click `Download ZIP`. Save this file.
-
-  3. Open the `.zip` file, then extract its contents.
+- Download the `.zip` file:
+    1. Viewing from the top of the repository's (current) webpage, click the
+        drop-down icon:
+        - `···` on Codeberg.
+        - `<> Code ` on GitHub.
+    2. Click `Download ZIP` and save.
+    3. Open the `.zip` file, then extract its contents.
 
 - Clone the repository:
-  1. Open a Command Line Interface (CLI).
-- Open a console emulator (for Debian systems: Konsole).
+    1. Open a Command Line Interface (CLI).
+        - Open a console emulator (for Debian systems: Konsole).
+        - Open a existing console: press `CTRL` + `ALT` + `F2`, `F3`, `F4`, `F5`,  or
+        `F6`.
+            - **To return to the desktop,** press `CTRL` + `ALT` + `F7`.
+            - `F1` is reserved for debug output of the Linux kernel.
+            - `F7` is reserved for video output of the desktop environment.
+            - `F8` and above are unused.
+    2. Change your directory to your home folder or anywhere safe:
+        - `cd ~`
+    3. Clone the repository:
+        - `git clone https://www.codeberg.org/portellam/deploy-VFIO`
+        - `git clone https://www.github.com/portellam/deploy-VFIO`
 
-- Open a existing console: press `CTRL` + `ALT` + `F2`, `F3`, `F4`, `F5`,  or
-`F6`.
-  - **To return to the desktop,** press `CTRL` + `ALT` + `F7`.
-  - `F1` is reserved for debug output of the Linux kernel.
-  - `F7` is reserved for video output of the desktop environment.
-  - `F8` and above are unused.
-
-  2. Change your directory to your home folder or anywhere safe: `cd ~`
-
-  3. Clone the repository:
-- `git clone https://www.codeberg.org/portellam/deploy-VFIO`
-- `git clone https://www.github.com/portellam/deploy-VFIO`
+[codeberg-releases]: https://codeberg.org/portellam/deploy-VFIO/releases/latest
+[github-releases]:   https://github.com/portellam/deploy-VFIO/releases/latest
 
 ### 6. Usage
 #### 6.1. Verify Installer is Executable
@@ -261,7 +256,7 @@ Static VFIO:
 1. **Isolate CPU**
     - **Statically** isolate Host CPU threads before allocating to Guest(s).
     -  Reduces Host overhead, and improves both Host and Guest performance.
-    -  If installed, the **dynamic** [Libvirt hook](#7) will skip its
+    -  If installed, the **dynamic** [Libvirt hook](#6) will skip its
   execution, to preserve the Static isolation.
 
 2. **Huge pages**
@@ -272,12 +267,12 @@ Static VFIO:
     (as in the case with **transparent hugepages**).
 
 3. **Virtual Keyboard Video Mouse (KVM) switch**
-    - Create a virtual KVM switch by [Evdev](#12) (Event Devices).
+    - Create a virtual KVM switch by [Evdev](#11) (Event Devices).
     - Allow a user to swap a group of Input devices (as a whole) between active
     Guest(s) and Host.
-    - Set and use a [defined macro](#6).
-        - Default macro: `L-CTRL` + `R-CTRL`
-
+    - Use a defined macro.
+        - Default macro: `L-CTRL` + `R-CTRL`.
+        - Change the macro for each VM in the [XML configuration](#23).
     - Implementation is known as [Generate Evdev](#3).
     - **Note:** Using guest PCI USB alone is good. Using both implementations is
   better.
@@ -307,10 +302,10 @@ Static VFIO:
     - Most flexibility; Libvirt hooks allow Host to allocate and release resources
   dynamically.
     - For an existing script of similar scope, you may try the project
-  [VFIO-Tools](#21).
+  [VFIO-Tools](#20).
 
 #### 7.3. Post-Setup (To be implemented in a future release)
-1. **Auto X.Org** system service to find and set a valid Host boot [VGA](#22)
+1. **Auto X.Org** system service to find and set a valid Host boot [VGA](#21)
 device for X.Org.
 
 2. **Guest Audio Capture**
@@ -320,14 +315,14 @@ device for X.Org.
     - For virtual implementation, see *Virtual Audio Capture*.
 
 3. **Libvirt Hooks**
-- Invoke [hooks](#7) or scripts for all or individual Guests.
-- Switch display input (video output) at Guest start.
-- **Dynamically** allocate CPU cores and prioritize CPU scheduler.
-- **Libvirt-nosleep**: per Guest system service, to prevent Host sleep while
-Guest is active.
+    - Invoke [hooks](#6) or scripts for all or individual Guests.
+    - Switch display input (video output) at Guest start.
+    - **Dynamically** allocate CPU cores and prioritize CPU scheduler.
+    - **Libvirt-nosleep**: per Guest system service, to prevent Host sleep while
+    Guest is active.
 
 4. **RAM as Compressed Swapfile/partition**
-    - Create a compressed Swap device in Host memory, using the [lz4](#9) algorithm
+    - Create a compressed Swap device in Host memory, using the [lz4](#8) algorithm
   (compression ratio of about 2:1).
     - Reduce swapiness to existing Host swap devices.
     - Reduce chances of Host memory exhaustion (given an event of memory
@@ -338,12 +333,12 @@ Guest is active.
     - Setup a virtual audio driver for Windows that provides a discrete audio
   device and passthrough from a Guest to Host.
     - Passthrough audio by direct-memory-access (DMA).
-    - Passthrough audio by a [virtual Local Area Network (LAN) device](#18).
-    - Implementation is known as [Scream](#16).
+    - Passthrough audio by a [virtual Local Area Network (LAN) device](#17).
+    - Implementation is known as [Scream](#15).
 
 6. **Virtual Video Capture**
     - Setup DMA of a PCI VGA device output (video and audio) from a Guest to Host.
-    - Implementation is known as [Looking Glass](#8).
+    - Implementation is known as [Looking Glass](#7).
     - **Disclaimer:** Only supported for Guests running Windows 7 and later
   (Windows NT 6.1+).
 
@@ -370,8 +365,10 @@ Guest is active.
   - `/usr/local/etc/deploy-VFIO.d/`
 
 ### 9. Graphics Hardware (GPUs)
-**Note:** Unfortunately, GPUs without UEFI firmware (BIOS-only) are not
-currently compatible with VFIO.
+**Note:** Unfortunately, most or all GPUs without UEFI firmware (BIOS-only) are
+not currently compatible with VFIO. If your GPU does work, please share your
+success with [this project](#11-contact) and/or
+[the VFIO community](#3-documentation).
 
 #### 9.1. How to Query Host Machine for Graphics Hardware
 `lspci -nnk | grep --extended-regexp --ignore-case "vga|graphics"`
@@ -387,7 +384,7 @@ Some VGA devices, such as NVIDIA, may not be recognizable in a VM, as the video
 BIOS or VBIOS is *tainted* at Host OS start-up. This is usually the case if a
 given VGA device is used for the Host BIOS/UEFI booting process. To remedy this,
 you must obtain a clean copy of the VBIOS. You may review either
-[NVIDIA-vBIOS-VFIO-Patcher](#11), or the [ArchWiki](#13).
+[NVIDIA-vBIOS-VFIO-Patcher](#10), or the [ArchWiki](#12).
 
 #### 9.3. List of Supported Firmware by Graphics Hardware
 **Note:** Vendors that are unlisted are more than likely legacy graphics
@@ -395,24 +392,26 @@ hardware. Therefore, it is safe to assume such hardware is BIOS-only.
 
 | Vendor | Model                             | Firmware  |
 | :----- | :-------------------------------- | :-------: |
+| 3dfx   | any                               | BIOS      |
 | AMD    | Radeon HD 7750,7970 and newer     | UEFI      |
 | AMD    | Radeon HD 7000-series and older   | BIOS      |
-| Intel  | HD Graphics (2010) and newer      | UEFI      |
-| NVIDIA | GeForce GTX 700 to 1000-series    | UEFI      |
-| NVIDIA | GeForce GTX 600-series and older  | BIOS      |
-| NVIDIA | GeForce RTX 2000-series and newer | UEFI      |
+| ATI    | any                               | BIOS      |
+| Intel  | Gen5 (HD Graphics) and newer      | UEFI      |
+| Intel  | Gen4 and older                    | BIOS      |
 | NVIDIA | GeForce GTX 700 to 1000-series    | UEFI      |
 | NVIDIA | GeForce GTX 600-series and older  | BIOS      |
 
 #### 9.4. Alternatives to BIOS-only Graphics Hardware
+##### 9.4.1. GPU Emulation
 For emulating graphics hardware on old, legacy operating systems (such as
-Microsoft Windows 9x ), try [SoftGPU](#17). Modern CPUs are more than powerful
+Microsoft Windows 9x ), try [SoftGPU](#16). Modern CPUs are more than powerful
 enough to emulate such hardware. Fortunately, this implementation is not
-software rendering.
+software rendering; you may use whatever graphics API which is supported by the
+emulated GPU (example: Glide for 3dfx).
 
 #### 9.5. Apple macOS
 ##### 9.5.1. [AMD and NVIDIA GPU compatibility list](#4)
-##### 9.5.2. [More detailed NVIDIA GPU compatibility list](#15)
+##### 9.5.2. [More detailed NVIDIA GPU compatibility list](#14)
 
 #### 9.6. Linux
 Typically, Linux is compatible with graphics hardware dating back to the end of
@@ -439,17 +438,17 @@ Did you encounter a bug? Do you need help? Please visit the **Issues page**
 
 ### 12. References
 #### 1.
-**portellam/audio-loopback.** Codeberg. Accessed June 18, 2024.
+**portellam/audio-loopback**. Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/audio-loopback.
 
-**portellam/audio-loopback.** GitHub. Accessed June 18, 2024.
+**portellam/audio-loopback**. GitHub. Accessed June 18, 2024.
 <sup>https://github.com/portellam/audio-loopback.
 
 #### 2.
-**portellam/auto-xorg.** Codeberg. Accessed June 18, 2024.
+**portellam/auto-xorg**. Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/auto-xorg.
 
-**portellam/auto-xorg.** GitHub. Accessed June 18, 2024.
+**portellam/auto-xorg**. GitHub. Accessed June 18, 2024.
 <sup>https://github.com/portellam/auto-xorg.
 
 #### 3.
@@ -473,71 +472,67 @@ Support. October 31, 2023. Accessed June 18, 2024.
 <sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages.</sup>
 
 #### 6.
-**libvirt/libvirt - Input Devices**. GitHub. Accessed June 18, 2024.
-<sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst#input-devices.</sup>
-
-#### 7.
-**portellam/libvirt-hooks.** Codeberg. Accessed June 18, 2024.
+**portellam/libvirt-hooks**. Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/libvirt-hooks.</sup>
 
-**portellam/libvirt-hooks.** GitHub. Accessed June 18, 2024.
+**portellam/libvirt-hooks**. GitHub. Accessed June 18, 2024.
 <sup>https://github.com/portellam/libvirt-hooks.</sup>
 
-#### 8.
+#### 7.
 **Looking Glass**. Looking Glass. Accessed June 17, 2024.
 <sup>https://looking-glass.io/</sup>
 
-#### 9.
-**LZ4/LZ4: Extremely Fast Compression Algorithm**. GitHub. Accessed June 17,
+#### 8.
+**LZ4/LZ4**. GitHub. Accessed June 17,
 2024.
 <sup>https://github.com/lz4/lz4.</sup>
 
-#### 10.
+#### 9.
 **corna/me_cleaner**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/corna/me_cleaner.</sup>
 
 **dt-zero/me_cleaner**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/dt-zero/me_cleaner.</sup>
 
-#### 11.
-**Matoking/NVIDIA-vBIOS-VFIO-Patcher**: GitHub. Accessed June 18, 2024.
+#### 10.
+**Matoking/NVIDIA-vBIOS-VFIO-Patcher**. GitHub. Accessed June 18, 2024.
 <sup>https://github.com/Matoking/NVIDIA-vBIOS-VFIO-Patcher.</sup>
 
-#### 12.
+#### 11.
 **4.5 Passing Keyboard/Mouse via Evdev**. PCI passthrough via OVMF - ArchWiki.
 Accessed June 14, 2024.
 <sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF.</sup>
 
-#### 13.
+#### 12.
 **PCI passthrough via OVMF**. ArchWiki. Accessed June 14, 2024.
 <sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF.</sup>
 
-#### 14.
-**r/VFIO**. Accessed June 14, 2024.
+#### 13.
+**VFIO Discussion and Support**. Reddit. Accessed June 14, 2024.
 <sup>https://www.reddit.com/r/VFIO/.</sup>
 
-#### 15.
+#### 14.
 **tonymacx86 - Will my Nvidia Graphics Card work with macOS ? List of Desktop**
-**Cards with Native Support** Archive.org. Accessed June 18, 2024.
+**Cards with Native Support**. Archive.org. Accessed June 18, 2024.
 <sup>https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/.
 
-#### 16.
+#### 15.
 **duncanthrax/scream**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/duncanthrax/scream.</sup>
 
-#### 17.
+#### 16.
 **JHRobotics/SoftGPU**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/JHRobotics/SoftGPU.</sup>
 
-#### 18.
+#### 17.
 **Using Scream Over LAN**. Looking Glass. Accessed June 17, 2024.
 <sup>https://looking-glass.io/wiki/Using_Scream_over_LAN.</sup>
 
-#### 19.
+#### 18.
 **Type 1 vs. Type 2 hypervisors**. IBM. Accessed June 18, 2024.
 <sup>https://www.ibm.com/topics/hypervisors.</sup>
 
-#### 20.
+#### 19.
 **VFIO - ‘Virtual Function I/O’ - The Linux Kernel Documentation**.
 The linux kernel. Accessed June 14, 2024.
 <sup>https://www.kernel.org/doc/html/latest/driver-api/vfio.html.</sup>
@@ -545,16 +540,21 @@ The linux kernel. Accessed June 14, 2024.
 **Virtualization technology**. OpenSUSE Leap 15.5. Accessed June 18, 2024.
 <sup>https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html.</sup>
 
-#### 21.
-**PassthroughPOST/VFIO-Tools.** GitHub. Accessed June 18, 2024.
+#### 20.
+**PassthroughPOST/VFIO-Tools**. GitHub. Accessed June 18, 2024.
 <sup>https://github.com/PassthroughPOST/VFIO-Tools.</sup>
 
-#### 22.
+#### 21.
 **Video Graphics Array**. Wikipedia. August 18, 2002. Accessed June 18, 2024.
 <sup>https://en.wikipedia.org/wiki/Video_Graphics_Array.</sup>
 
+#### 22.
+**XML Design Format**. GitHub - libvirt/libvirt. Accessed June 18, 2024.
+<sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst.</sup>
+
 #### 23.
-**libvirt/libvirt - XML Design Format** GitHub. Accessed June 18, 2024.
+**XML Design Format: Input Devices**. GitHub - libvirt/libvirt.Accessed June 18,
+2024.
 <sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst.</sup>
 
 #### 24.
