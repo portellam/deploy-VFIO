@@ -15,7 +15,7 @@ think you need!
 - [2. Related Projects](#2-related-projects)
 - [3. Documentation](#3-documentation)
 - [4. Host Requirements](#4-host-requirements)
-    - [4.1. Operating Systems ](#41-operating-systems)
+    - [4.1. Operating System](#41-operating-system)
     - [4.2. Software](#42-software)
     - [4.3. Hardware](#43-hardware)
 - [5. Download](#5-download)
