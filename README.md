@@ -557,7 +557,7 @@ The linux kernel. Accessed June 14, 2024.
 <sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst.</sup>
 
 #### 24.
-**XML Design Format: Input Devices** GitHub - libvirt/libvirt.Accessed June 18,
+**XML Design Format: Input Devices**. GitHub - libvirt/libvirt.Accessed June 18,
 2024.
 <sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst.</sup>
 
