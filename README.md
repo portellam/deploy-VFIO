@@ -108,7 +108,7 @@ setup.
 - [Virtual Machine XML Format Guide](#23)
 
 ### 4. Host Requirements
-#### 4.1. Operating Systems
+#### 4.1. Operating System
   | Linux Distributions  | Tested | Supported  |
   | :------------------- | :----: | :--------: |
   | Arch                 | No     | N/A        |
@@ -554,7 +554,7 @@ The linux kernel. Accessed June 14, 2024.
 <sup>https://en.wikipedia.org/wiki/Video_Graphics_Array.</sup>
 
 #### 23.
-**libvirt/libvirt - XML Design Format** GitHub. Accessed June 18, 2024.
+**XML Design Format** GitHub - libvirt/libvirt. Accessed June 18, 2024.
 <sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst.</sup>
 
 #### 24.
