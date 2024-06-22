@@ -1,7 +1,7 @@
 # Deploy VFIO
 ### v1.0.1
 Effortlessly deploy a hardware-passthrough (VFIO) setup for Virtual Machines
-(VMs) on a Linux desktop. Includes quality-of-life enhancements that you didn't
+(VMs) on a Linux desktop. Includes quality-of-life features that you didn't
 think you need!
 
 **Download the Latest Release:**&ensp;[Codeberg][codeberg-releases],
@@ -52,31 +52,27 @@ and school Operating Systems (OS), as [Virtual Machines](#20) (VMs), under one
 Host machine.
 
 2. **No Need for a Server**
-    - Keep your Host OS **desktop** experience intact; turns your Host into a
-  *Type-2* [Hypervisor](#19).
+    - **Keep your Host's desktop experience intact;** turns your Host into a
+  Type-2 [Hypervisor](#19).
     - Servers like Microsoft Hyper-V, Oracle VM, and Proxmox Linux are considered
-  *Type-1* or bare-metal Hypervisors.
+  Type-1 or bare-metal Hypervisors.
 
 3. **Securely run a an OS**
     - Limited access to real hardware means greater security.
     - The benefits extend to untrusted or legacy OSes.
 
 4. **Ease of use:** support for automation by use of the
-[Command Line Interface](#usage) (CLI).
+[Command Line Interface](#6-usage) (CLI).
 
 5. **PCI Passthrough:** prioritize real hardware over emulation.
 
-6. **Quality of Life**: utilize multiple common-sense [features](#features) that
+6. **Quality of Life**: utilize multiple common-sense [features](#7-features) that
 are known to experienced users.
 
-7. **Your Host OS is [supported](#host-requirements).**
+7. **Your Host OS is [supported](#4-host-requirements).**
 
 **Note:** For even greater security, use [me_cleaner](#10) alongside a VFIO
 setup.
-
-**Disclaimer:** See [below] for supported [VGA](#20) devices.
-
-[below]: (#latest-graphics-hardware-for-various-guest-operating-systems)
 
 ### 2. Related Projects
 | Project                             | Codeberg          | GitHub          |
@@ -275,9 +271,9 @@ Static VFIO:
     - Create a virtual KVM switch by [Evdev](#12) (Event Devices).
     - Allow a user to swap a group of Input devices (as a whole) between active
     Guest(s) and Host.
-    - Set and use a [defined macro](#6).
-        - Default macro: `L-CTRL` + `R-CTRL`
-
+    - Use a [defined macro](#6).
+        - Default macro: `L-CTRL` + `R-CTRL`.
+        - Change the macro for each VM in the [XML configuration](#24).
     - Implementation is known as [Generate Evdev](#3).
     - **Note:** Using guest PCI USB alone is good. Using both implementations is
   better.
@@ -320,11 +316,11 @@ device for X.Org.
     - For virtual implementation, see *Virtual Audio Capture*.
 
 3. **Libvirt Hooks**
-- Invoke [hooks](#7) or scripts for all or individual Guests.
-- Switch display input (video output) at Guest start.
-- **Dynamically** allocate CPU cores and prioritize CPU scheduler.
-- **Libvirt-nosleep**: per Guest system service, to prevent Host sleep while
-Guest is active.
+    - Invoke [hooks](#7) or scripts for all or individual Guests.
+    - Switch display input (video output) at Guest start.
+    - **Dynamically** allocate CPU cores and prioritize CPU scheduler.
+    - **Libvirt-nosleep**: per Guest system service, to prevent Host sleep while
+    Guest is active.
 
 4. **RAM as Compressed Swapfile/partition**
     - Create a compressed Swap device in Host memory, using the [lz4](#9) algorithm
@@ -332,7 +328,7 @@ Guest is active.
     - Reduce swapiness to existing Host swap devices.
     - Reduce chances of Host memory exhaustion (given an event of memory
     over-allocation).
-    - Implementation is known as [zram-swap](#24).
+    - Implementation is known as [zram-swap](#25).
 
 5. **Virtual Audio Capture**
     - Setup a virtual audio driver for Windows that provides a discrete audio
@@ -370,8 +366,10 @@ Guest is active.
   - `/usr/local/etc/deploy-VFIO.d/`
 
 ### 9. Graphics Hardware (GPUs)
-**Note:** Unfortunately, GPUs without UEFI firmware (BIOS-only) are not
-currently compatible with VFIO.
+**Note:** Unfortunately, most or all GPUs without UEFI firmware (BIOS-only) are
+not currently compatible with VFIO. If your GPU does work, please share your
+success with [this project](#11-contact) and/or
+[the VFIO community](#3-documentation).
 
 #### 9.1. How to Query Host Machine for Graphics Hardware
 `lspci -nnk | grep --extended-regexp --ignore-case "vga|graphics"`
@@ -395,20 +393,22 @@ hardware. Therefore, it is safe to assume such hardware is BIOS-only.
 
 | Vendor | Model                             | Firmware  |
 | :----- | :-------------------------------- | :-------: |
+| 3dfx   | any                               | BIOS      |
 | AMD    | Radeon HD 7750,7970 and newer     | UEFI      |
 | AMD    | Radeon HD 7000-series and older   | BIOS      |
-| Intel  | HD Graphics (2010) and newer      | UEFI      |
-| NVIDIA | GeForce GTX 700 to 1000-series    | UEFI      |
-| NVIDIA | GeForce GTX 600-series and older  | BIOS      |
-| NVIDIA | GeForce RTX 2000-series and newer | UEFI      |
+| ATI    | any                               | BIOS      |
+| Intel  | Gen5 (HD Graphics) and newer      | UEFI      |
+| Intel  | Gen4 and older                    | BIOS      |
 | NVIDIA | GeForce GTX 700 to 1000-series    | UEFI      |
 | NVIDIA | GeForce GTX 600-series and older  | BIOS      |
 
 #### 9.4. Alternatives to BIOS-only Graphics Hardware
+##### 9.4.1. GPU Emulation
 For emulating graphics hardware on old, legacy operating systems (such as
 Microsoft Windows 9x ), try [SoftGPU](#17). Modern CPUs are more than powerful
 enough to emulate such hardware. Fortunately, this implementation is not
-software rendering.
+software rendering; you may use whatever graphics API which is supported by the
+emulated GPU (example: Glide for 3dfx).
 
 #### 9.5. Apple macOS
 ##### 9.5.1. [AMD and NVIDIA GPU compatibility list](#4)
@@ -439,17 +439,17 @@ Did you encounter a bug? Do you need help? Please visit the **Issues page**
 
 ### 12. References
 #### 1.
-**portellam/audio-loopback.** Codeberg. Accessed June 18, 2024.
+**portellam/audio-loopback**. Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/audio-loopback.
 
-**portellam/audio-loopback.** GitHub. Accessed June 18, 2024.
+**portellam/audio-loopback**. GitHub. Accessed June 18, 2024.
 <sup>https://github.com/portellam/audio-loopback.
 
 #### 2.
-**portellam/auto-xorg.** Codeberg. Accessed June 18, 2024.
+**portellam/auto-xorg**. Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/auto-xorg.
 
-**portellam/auto-xorg.** GitHub. Accessed June 18, 2024.
+**portellam/auto-xorg**. GitHub. Accessed June 18, 2024.
 <sup>https://github.com/portellam/auto-xorg.
 
 #### 3.
@@ -477,10 +477,10 @@ Support. October 31, 2023. Accessed June 18, 2024.
 <sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst#input-devices.</sup>
 
 #### 7.
-**portellam/libvirt-hooks.** Codeberg. Accessed June 18, 2024.
+**portellam/libvirt-hooks**. Codeberg. Accessed June 18, 2024.
 <sup>https://codeberg.org/portellam/libvirt-hooks.</sup>
 
-**portellam/libvirt-hooks.** GitHub. Accessed June 18, 2024.
+**portellam/libvirt-hooks**. GitHub. Accessed June 18, 2024.
 <sup>https://github.com/portellam/libvirt-hooks.</sup>
 
 #### 8.
@@ -518,7 +518,7 @@ Accessed June 14, 2024.
 
 #### 15.
 **tonymacx86 - Will my Nvidia Graphics Card work with macOS ? List of Desktop**
-**Cards with Native Support** Archive.org. Accessed June 18, 2024.
+**Cards with Native Support**. Archive.org. Accessed June 18, 2024.
 <sup>https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/.
 
 #### 16.
@@ -546,7 +546,7 @@ The linux kernel. Accessed June 14, 2024.
 <sup>https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html.</sup>
 
 #### 21.
-**PassthroughPOST/VFIO-Tools.** GitHub. Accessed June 18, 2024.
+**PassthroughPOST/VFIO-Tools**. GitHub. Accessed June 18, 2024.
 <sup>https://github.com/PassthroughPOST/VFIO-Tools.</sup>
 
 #### 22.
@@ -554,10 +554,15 @@ The linux kernel. Accessed June 14, 2024.
 <sup>https://en.wikipedia.org/wiki/Video_Graphics_Array.</sup>
 
 #### 23.
-**XML Design Format** GitHub - libvirt/libvirt. Accessed June 18, 2024.
+**XML Design Format**. GitHub - libvirt/libvirt. Accessed June 18, 2024.
 <sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst.</sup>
 
 #### 24.
+**XML Design Format: Input Devices** GitHub - libvirt/libvirt.Accessed June 18,
+2024.
+<sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst.</sup>
+
+#### 25.
 **foundObjects/zram-swap**. GitHub. Accessed June 17, 2024.
 <sup>https://github.com/foundObjects/zram-swap.</sup>
 
