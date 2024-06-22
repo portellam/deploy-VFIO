@@ -404,18 +404,18 @@ hardware. Therefore, it is safe to assume such hardware is BIOS-only.
 #### 9.4. Alternatives to BIOS-only Graphics Hardware
 ##### 9.4.1. GPU Emulation
 For emulating graphics hardware on old, legacy operating systems (such as
-Microsoft Windows 9x ), try [SoftGPU](#16). Modern CPUs are more than powerful
-enough to emulate such hardware. Fortunately, this implementation is not
-software rendering; you may use whatever graphics API which is supported by the
-emulated GPU (example: Glide for 3dfx).
+Windows 98), try [SoftGPU](#16). Modern CPUs are more than powerful enough to
+emulate such hardware. Fortunately, this implementation is not software
+rendering. You may use whichever graphics API which is supported by the emulated
+GPU (example: Glide for 3dfx).
 
 #### 9.5. Apple macOS
 ##### 9.5.1. [AMD and NVIDIA GPU compatibility list](#4)
 ##### 9.5.2. [More detailed NVIDIA GPU compatibility list](#14)
 
 #### 9.6. Linux
-Typically, Linux is compatible with graphics hardware dating back to the end of
-the 20th century. Still, GPU-compatibility may vary among different Linux
+Typically, Linux is compatible with GPUs dating back to the end of the 20th
+century. However, GPU-compatibility may vary among different Linux
 distributions. Please review the documentation of your Linux distribution.
 
 #### 9.7. Microsoft Windows
