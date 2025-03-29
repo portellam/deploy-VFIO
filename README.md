@@ -419,131 +419,164 @@ Did you encounter a bug? Do you need help? Please visit the **Issues page**
 
 ### 12. References
 #### 1.
-**portellam/audio-loopback**. Codeberg. Accessed June 18, 2024.
-<sup>https://codeberg.org/portellam/audio-loopback.
+&nbsp;&nbsp;**portellam/audio-loopback**. Codeberg. Accessed June 18, 2024.
 
-**portellam/audio-loopback**. GitHub. Accessed June 18, 2024.
-<sup>https://github.com/portellam/audio-loopback.
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://codeberg.org/portellam/audio-loopback.
+
+&nbsp;&nbsp;**portellam/audio-loopback**. GitHub. Accessed June 18, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://github.com/portellam/audio-loopback.
 
 #### 2.
-**portellam/auto-xorg**. Codeberg. Accessed June 18, 2024.
-<sup>https://codeberg.org/portellam/auto-xorg.
+&nbsp;&nbsp;**portellam/auto-xorg**. Codeberg. Accessed June 18, 2024.
 
-**portellam/auto-xorg**. GitHub. Accessed June 18, 2024.
-<sup>https://github.com/portellam/auto-xorg.
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://codeberg.org/portellam/auto-xorg.
+
+&nbsp;&nbsp;**portellam/auto-xorg**. GitHub. Accessed June 18, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://github.com/portellam/auto-xorg.
 
 #### 3.
-**portellam/generate-evdev**. Codeberg. Accessed June 17, 2024.
-<sup>https://codeberg.org/portellam/generate-evdev.</sup>
+&nbsp;&nbsp;**portellam/generate-evdev**. Codeberg. Accessed June 17, 2024.
 
-**portellam/generate-evdev**. GitHub. Accessed June 17, 2024.
-<sup>https://github.com/portellam/generate-evdev.</sup>
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://codeberg.org/portellam/generate-evdev.</sup>
+
+&nbsp;&nbsp;**portellam/generate-evdev**. GitHub. Accessed June 17, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://github.com/portellam/generate-evdev.</sup>
 
 #### 4.
-**Graphics card compatibility for Final Cut Pro, Motion, and Compressor**. Apple
+&nbsp;&nbsp;**Graphics card compatibility for Final Cut Pro, Motion, and Compressor**. Apple
 Support. October 31, 2023. Accessed June 18, 2024.
-<sup>https://support.apple.com/en-us/102734.</sup>
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://support.apple.com/en-us/102734.</sup>
 
 #### 5.
-**Hugepages**. Debian Wiki. Accessed June 17, 2024.
-<sup>https://wiki.debian.org/Hugepages.</sup>
+&nbsp;&nbsp;**Hugepages**. Debian Wiki. Accessed June 17, 2024.
 
-**Huge memory pages**. PCI passthrough via OVMF - ArchWiki. Accessed June 14,
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://wiki.debian.org/Hugepages.</sup>
+
+&nbsp;&nbsp;**Huge memory pages**. PCI passthrough via OVMF - ArchWiki. Accessed June 14,
 2024.
-<sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages.</sup>
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF#Huge_memory_pages.</sup>
 
 #### 6.
-**portellam/libvirt-hooks**. Codeberg. Accessed June 18, 2024.
-<sup>https://codeberg.org/portellam/libvirt-hooks.</sup>
+&nbsp;&nbsp;**portellam/libvirt-hooks**. Codeberg. Accessed June 18, 2024.
 
-**portellam/libvirt-hooks**. GitHub. Accessed June 18, 2024.
-<sup>https://github.com/portellam/libvirt-hooks.</sup>
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://codeberg.org/portellam/libvirt-hooks.</sup>
+
+&nbsp;&nbsp;**portellam/libvirt-hooks**. GitHub. Accessed June 18, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://github.com/portellam/libvirt-hooks.</sup>
 
 #### 7.
-**Looking Glass**. Looking Glass. Accessed June 17, 2024.
-<sup>https://looking-glass.io/</sup>
+&nbsp;&nbsp;**Looking Glass**. Looking Glass. Accessed June 17, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://looking-glass.io/</sup>
 
 #### 8.
-**LZ4/LZ4**. GitHub. Accessed June 17,
+&nbsp;&nbsp;**LZ4/LZ4**. GitHub. Accessed June 17,
 2024.
-<sup>https://github.com/lz4/lz4.</sup>
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://github.com/lz4/lz4.</sup>
 
 #### 9.
-**corna/me_cleaner**. GitHub. Accessed June 17, 2024.
-<sup>https://github.com/corna/me_cleaner.</sup>
+&nbsp;&nbsp;**corna/me_cleaner**. GitHub. Accessed June 17, 2024.
 
-**dt-zero/me_cleaner**. GitHub. Accessed June 17, 2024.
-<sup>https://github.com/dt-zero/me_cleaner.</sup>
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://github.com/corna/me_cleaner.</sup>
+
+&nbsp;&nbsp;**dt-zero/me_cleaner**. GitHub. Accessed June 17, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://github.com/dt-zero/me_cleaner.</sup>
 
 #### 10.
-**Matoking/NVIDIA-vBIOS-VFIO-Patcher**. GitHub. Accessed June 18, 2024.
-<sup>https://github.com/Matoking/NVIDIA-vBIOS-VFIO-Patcher.</sup>
+&nbsp;&nbsp;**Matoking/NVIDIA-vBIOS-VFIO-Patcher**. GitHub. Accessed June 18, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://github.com/Matoking/NVIDIA-vBIOS-VFIO-Patcher.</sup>
 
 #### 11.
-**4.5 Passing Keyboard/Mouse via Evdev**. PCI passthrough via OVMF - ArchWiki.
+&nbsp;&nbsp;**4.5 Passing Keyboard/Mouse via Evdev**. PCI passthrough via OVMF - ArchWiki.
 Accessed June 14, 2024.
-<sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF.</sup>
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF.</sup>
 
 #### 12.
-**PCI passthrough via OVMF**. ArchWiki. Accessed June 14, 2024.
-<sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF.</sup>
+&nbsp;&nbsp;**PCI passthrough via OVMF**. ArchWiki. Accessed June 14, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF.</sup>
 
 #### 13.
-**VFIO Discussion and Support**. Reddit. Accessed June 14, 2024.
-<sup>https://www.reddit.com/r/VFIO/.</sup>
+&nbsp;&nbsp;**VFIO Discussion and Support**. Reddit. Accessed June 14, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://www.reddit.com/r/VFIO/.</sup>
 
 #### 14.
-**tonymacx86 - Will my Nvidia Graphics Card work with macOS ? List of Desktop**
+&nbsp;&nbsp;**tonymacx86 - Will my Nvidia Graphics Card work with macOS ? List of Desktop**
 **Cards with Native Support**. Archive.org. Accessed June 18, 2024.
-<sup>https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://web.archive.org/web/20230926193339/https://www.tonymacx86.com/threads/will-my-nvidia-graphics-card-work-with-macos-list-of-desktop-cards-with-native-support.283700/.
 
 #### 15.
-**duncanthrax/scream**. GitHub. Accessed June 17, 2024.
-<sup>https://github.com/duncanthrax/scream.</sup>
+&nbsp;&nbsp;**duncanthrax/scream**. GitHub. Accessed June 17, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://github.com/duncanthrax/scream.</sup>
 
 #### 16.
-**JHRobotics/SoftGPU**. GitHub. Accessed June 17, 2024.
-<sup>https://github.com/JHRobotics/SoftGPU.</sup>
+&nbsp;&nbsp;**JHRobotics/SoftGPU**. GitHub. Accessed June 17, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://github.com/JHRobotics/SoftGPU.</sup>
 
 #### 17.
-**Using Scream Over LAN**. Looking Glass. Accessed June 17, 2024.
-<sup>https://looking-glass.io/wiki/Using_Scream_over_LAN.</sup>
+&nbsp;&nbsp;**Using Scream Over LAN**. Looking Glass. Accessed June 17, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://looking-glass.io/wiki/Using_Scream_over_LAN.</sup>
 
 #### 18.
-**Type 1 vs. Type 2 hypervisors**. IBM. Accessed June 18, 2024.
-<sup>https://www.ibm.com/topics/hypervisors.</sup>
+&nbsp;&nbsp;**Type 1 vs. Type 2 hypervisors**. IBM. Accessed June 18, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://www.ibm.com/topics/hypervisors.</sup>
 
 #### 19.
-**VFIO - ‘Virtual Function I/O’ - The Linux Kernel Documentation**.
+&nbsp;&nbsp;**VFIO - ‘Virtual Function I/O’ - The Linux Kernel Documentation**.
 The linux kernel. Accessed June 14, 2024.
-<sup>https://www.kernel.org/doc/html/latest/driver-api/vfio.html.</sup>
 
-**Virtualization technology**. OpenSUSE Leap 15.5. Accessed June 18, 2024.
-<sup>https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html.</sup>
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://www.kernel.org/doc/html/latest/driver-api/vfio.html.</sup>
+
+&nbsp;&nbsp;**Virtualization technology**. OpenSUSE Leap 15.5. Accessed June 18, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://doc.opensuse.org/documentation/leap/virtualization/html/book-virtualization/chap-virtualization-introduction.html.</sup>
 
 #### 20.
-**PassthroughPOST/VFIO-Tools**. GitHub. Accessed June 18, 2024.
-<sup>https://github.com/PassthroughPOST/VFIO-Tools.</sup>
+&nbsp;&nbsp;**PassthroughPOST/VFIO-Tools**. GitHub. Accessed June 18, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://github.com/PassthroughPOST/VFIO-Tools.</sup>
 
 #### 21.
-**Video Graphics Array**. Wikipedia. August 18, 2002. Accessed June 18, 2024.
-<sup>https://en.wikipedia.org/wiki/Video_Graphics_Array.</sup>
+&nbsp;&nbsp;**Video Graphics Array**. Wikipedia. August 18, 2002. Accessed June 18, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://en.wikipedia.org/wiki/Video_Graphics_Array.</sup>
 
 #### 22.
-**XML Design Format**. GitHub - libvirt/libvirt. Accessed June 18, 2024.
-<sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst.</sup>
+&nbsp;&nbsp;**XML Design Format**. GitHub - libvirt/libvirt. Accessed June 18, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst.</sup>
 
 #### 23.
-**XML Design Format: Input Devices**. GitHub - libvirt/libvirt.Accessed June 18,
+&nbsp;&nbsp;**XML Design Format: Input Devices**. GitHub - libvirt/libvirt.Accessed June 18,
 2024.
-<sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst.</sup>
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://github.com/libvirt/libvirt/blob/master/docs/formatdomain.rst.</sup>
 
 #### 24.
-**foundObjects/zram-swap**. GitHub. Accessed June 17, 2024.
-<sup>https://github.com/foundObjects/zram-swap.</sup>
+&nbsp;&nbsp;**foundObjects/zram-swap**. GitHub. Accessed June 17, 2024.
 
-**New zram tuning benchmarks**. Reddit. Accessed June 17, 2024.
-<sup>https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/.</sup>
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://github.com/foundObjects/zram-swap.</sup>
 
-**zramswap**. Arch Linux User Repository. Accessed June 17, 2024.
-<sup>https://aur.archlinux.org/packages/zramswap.</sup>
+&nbsp;&nbsp;**New zram tuning benchmarks**. Reddit. Accessed June 17, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://web.archive.org/web/20220201101923/https://old.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks/.</sup>
+
+&nbsp;&nbsp;**zramswap**. Arch Linux User Repository. Accessed June 17, 2024.
+
+&nbsp;&nbsp;&nbsp;&nbsp;<sup>https://aur.archlinux.org/packages/zramswap.</sup>
