@@ -1,10 +1,14 @@
 # Deploy VFIO
-### v1.0.1
+### v1.0.2
 Effortlessly deploy a hardware-passthrough (VFIO) setup for Virtual Machines
 (VMs) on a Linux desktop. Includes quality-of-life features that you didn't
 think you need!
 
 ## [Download](#5-download)
+#### View this repository on [Codeberg][01], [GitHub][02].
+[01]: https://codeberg.org/portellam/deploy-VFIO
+[02]: https://github.com/portellam/deploy-VFIO
+##
 
 ## Table of Contents
 - [1. Why?](#1-why)
@@ -115,8 +119,7 @@ The following firmware options are supported and enabled (motherboard and CPU):
   this script.
 
 ## 5. Download
-- Download the Latest Release:&ensp;[Codeberg][51],
-[GitHub][52]
+- Download the Latest Release:&ensp;[Codeberg][51], [GitHub][52]
 
 - Download the `.zip` file:
     1. Viewing from the top of the repository's (current) webpage, click the
@@ -127,10 +130,10 @@ The following firmware options are supported and enabled (motherboard and CPU):
     3. Open the `.zip` file, then extract its contents.
 
 - Clone the repository:
-    1. Open a Command Line Interface (CLI).
+    1. Open a Command Line Interface (CLI) or Terminal.
         - Open a console emulator (for Debian systems: Konsole).
-        - Open an existing console: press `CTRL` + `ALT` + `F2`, `F3`, `F4`, `F5`,  or
-        `F6`.
+        - **Linux only:** Open an existing console: press `CTRL` + `ALT` + `F2`,
+        `F3`, `F4`, `F5`, or `F6`.
             - **To return to the desktop,** press `CTRL` + `ALT` + `F7`.
             - `F1` is reserved for debug output of the Linux kernel.
             - `F7` is reserved for video output of the desktop environment.
@@ -411,11 +414,9 @@ distributions. Please review the documentation of your Linux distribution.
 Use at your own risk. Please review your system's specifications and resources.
 
 ### 11. Contact
-Did you encounter a bug? Do you need help? Please visit the **Issues page**
-([Codeberg][codeberg-issues], [GitHub][github-issues]).
+Wish to recommend a project? Do you need help? Please visit the [Issues][111] page.
 
-[codeberg-issues]: https://codeberg.org/portellam/deploy-VFIO/issues
-[github-issues]:   https://github.com/portellam/deploy-VFIO/issues
+[111]: https://github.com/portellam/deploy-VFIO/issues
 
 ### 12. References
 #### 1.
@@ -580,3 +581,6 @@ The linux kernel. Accessed June 14, 2024.
 &nbsp;&nbsp;**zramswap**. Arch Linux User Repository. Accessed June 17, 2024.
 
 &nbsp;&nbsp;&nbsp;&nbsp;<sup>https://aur.archlinux.org/packages/zramswap.</sup>
+##
+
+#### Click [here](#deploy-vfio) to return to the top of this document.
