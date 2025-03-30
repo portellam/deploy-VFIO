@@ -414,7 +414,7 @@ distributions. Please review the documentation of your Linux distribution.
 Use at your own risk. Please review your system's specifications and resources.
 
 ### 11. Contact
-Wish to recommend a project? Do you need help? Please visit the [Issues][111] page.
+Do you need help? Please visit the [Issues][111] page.
 
 [111]: https://github.com/portellam/deploy-VFIO/issues
 
